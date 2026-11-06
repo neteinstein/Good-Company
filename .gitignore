@@ -1,0 +1,55 @@
+# --- Gradle / Kotlin ---
+.gradle/
+build/
+!build-logic/
+!**/src/**/build/
+.kotlin/
+*.log
+local.properties
+
+# --- IDEs ---
+.idea/
+*.iml
+.vscode/
+.fleet/
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# --- Android ---
+*.apk
+*.aab
+*.ap_
+*.dex
+*.keystore
+*.jks
+!debug.keystore
+keystore.properties
+# Firebase / Google services: real file is a secret. CI copies androidApp/google-services.json.ci instead.
+google-services.json
+!google-services.json.ci
+
+# --- iOS / Xcode ---
+iosApp/build/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM/
+# Firebase iOS config: secret. CI copies iosApp/iosApp/GoogleService-Info.plist.ci instead.
+GoogleService-Info.plist
+!GoogleService-Info.plist.ci
+iosApp/Configuration/Signing.xcconfig
+
+# --- Web / Node (Kotlin/Wasm toolchain) ---
+node_modules/
+kotlin-js-store/
+.npm/
+
+# --- Secrets ---
+.env
+*.env
+secrets.properties
