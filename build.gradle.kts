@@ -46,7 +46,7 @@ kover {
         verify {
             // CI fails if aggregated line coverage drops below this. Raise it as coverage grows; never lower it to get green.
             rule("Minimum line coverage") {
-                minBound(75)
+                minBound(77)
             }
         }
         filters {
