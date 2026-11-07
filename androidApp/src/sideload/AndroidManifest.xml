@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Sideload-only additions. READ_CALL_LOG is a Google Play *restricted* permission (default dialer apps
-    only), so it must never reach the Play build. Used to match calls with friends' phone numbers.
+    Sideload-only additions, never in the Play build:
+    - READ_CALL_LOG is a Google Play *restricted* permission (default dialer apps only). Used to match calls
+      with friends' phone numbers.
+    - READ_CONTACTS (full address-book sync). The Play build adds people with the system contact picker,
+      which needs no permission (owner decision 2026-11-07).
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
 </manifest>

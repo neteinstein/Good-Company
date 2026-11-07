@@ -31,6 +31,14 @@ data class PlatformCapabilities(
 expect val platformCapabilities: PlatformCapabilities
 
 /**
+ * [platformCapabilities] adjusted for the build that's actually installed. On Android, the Play build has no
+ * READ_CONTACTS or READ_CALL_LOG (only the sideload build does), so address-book sync and call matching are off
+ * there and people are added with the contact picker. Prefer this in composables.
+ */
+@Composable
+expect fun currentPlatformCapabilities(): PlatformCapabilities
+
+/**
  * Returns a launcher that asks the OS for [permission] and reports whether it was granted.
  * Already-granted permissions report `true` without showing UI.
  */

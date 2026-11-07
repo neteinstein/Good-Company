@@ -47,7 +47,18 @@ private fun AppPermission.manifestPermissions(): Array<String> = when (this) {
     AppPermission.CALL_LOG -> arrayOf(Manifest.permission.READ_CALL_LOG)
 }
 
-/** True when the merged manifest declares [permission] (READ_CALL_LOG is only in the sideload build). */
+@Composable
+actual fun currentPlatformCapabilities(): PlatformCapabilities {
+    val context = LocalContext.current
+    return remember(context) {
+        platformCapabilities.copy(
+            hasAddressBook = context.declares(Manifest.permission.READ_CONTACTS),
+            hasCallLog = context.declares(Manifest.permission.READ_CALL_LOG),
+        )
+    }
+}
+
+/** True when the merged manifest declares [permission] (READ_CONTACTS and READ_CALL_LOG: sideload build only). */
 private fun Context.declares(permission: String): Boolean = runCatching {
     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty().contains(permission)
 }.getOrDefault(false)

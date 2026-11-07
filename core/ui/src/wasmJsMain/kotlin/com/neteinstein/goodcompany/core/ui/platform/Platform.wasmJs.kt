@@ -131,3 +131,6 @@ private fun downloadText(fileName: String, mimeType: String, content: String): U
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     }""",
 )
+
+@Composable
+actual fun currentPlatformCapabilities(): PlatformCapabilities = platformCapabilities

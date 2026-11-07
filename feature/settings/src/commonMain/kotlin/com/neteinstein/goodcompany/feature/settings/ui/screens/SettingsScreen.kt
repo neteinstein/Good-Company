@@ -82,7 +82,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
-import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
@@ -196,13 +196,14 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS, viewModel::onNotificationPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickBackup = rememberTextFilePicker(FileKind.JSON, onPicked = viewModel::onBackupPicked)
+    val capabilities = currentPlatformCapabilities()
     val saveFile = rememberFileSaver("application/json", onDone = viewModel::onExportHandled)
     val authenticator = rememberDeviceAuthenticator()
     val lockReason = stringResource(CoreRes.string.lock_reason)
     LaunchedEffect(state.export) { state.export?.let { saveFile.save(it.name, it.content) } }
     SettingsContent(
         state = state,
-        capabilities = platformCapabilities,
+        capabilities = capabilities,
         canLock = authenticator.isAvailable || state.settings.appLock,
         appVersion = appVersion,
         actions = SettingsActions(

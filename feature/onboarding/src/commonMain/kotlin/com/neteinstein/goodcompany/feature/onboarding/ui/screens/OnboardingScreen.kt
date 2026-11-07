@@ -61,13 +61,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.ui.components.BlobBackground
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
-import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.feature.onboarding.resources.Res
 import com.neteinstein.goodcompany.feature.onboarding.resources.allow
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_picked
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.done
 import com.neteinstein.goodcompany.feature.onboarding.resources.explore_sample
@@ -86,6 +88,9 @@ import com.neteinstein.goodcompany.feature.onboarding.resources.page2_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.page2_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.page3_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.page3_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.pick
+import com.neteinstein.goodcompany.feature.onboarding.resources.pick_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.pick_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
@@ -128,10 +133,13 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: OnboardingViewModel = koinVi
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS, viewModel::onNotificationsPermissionResult)
     LaunchedEffect(state.finished) { if (state.finished) onDone() }
+    val capabilities = currentPlatformCapabilities()
+    val pickContact = rememberContactPicker(onPicked = viewModel::onContactsPicked)
     OnboardingContent(
         state = state,
-        capabilities = platformCapabilities,
+        capabilities = capabilities,
         onImportContacts = requestContacts,
+        onPickContacts = pickContact,
         onAllowNotifications = requestNotifications,
         onExploreSample = viewModel::onExploreWithSample,
         onFinish = viewModel::onFinish,
@@ -146,6 +154,7 @@ fun OnboardingContent(
     onAllowNotifications: () -> Unit,
     onExploreSample: () -> Unit,
     onFinish: () -> Unit,
+    onPickContacts: () -> Unit = {},
     initialPage: Int = 0,
 ) {
     val pageCount = PAGES.size + 1
@@ -169,7 +178,7 @@ fun OnboardingContent(
                 ) {
                     IntroPage(PAGES[page])
                 } else {
-                    SetupPage(state, capabilities, onImportContacts, onAllowNotifications, onExploreSample)
+                    SetupPage(state, capabilities, onImportContacts, onAllowNotifications, onExploreSample, onPickContacts)
                 }
             }
             Dots(pager.currentPage, pageCount)
@@ -226,6 +235,7 @@ private fun SetupPage(
     onImportContacts: () -> Unit,
     onAllowNotifications: () -> Unit,
     onExploreSample: () -> Unit,
+    onPickContacts: () -> Unit,
 ) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
@@ -251,6 +261,20 @@ private fun SetupPage(
                 action = stringResource(Res.string.import),
                 busy = state.isWorking && state.contactsImported == null,
                 onClick = onImportContacts,
+            )
+        } else if (capabilities.hasContactPicker) {
+            // Play build: no address-book access, people are picked one by one (the app only sees those).
+            SetupItem(
+                icon = Icons.Rounded.Contacts,
+                title = stringResource(Res.string.pick_title),
+                body = if (state.contactsPicked > 0) {
+                    pluralStringResource(Res.plurals.contacts_picked, state.contactsPicked, state.contactsPicked)
+                } else {
+                    stringResource(Res.string.pick_body)
+                },
+                done = false,
+                action = stringResource(Res.string.pick),
+                onClick = onPickContacts,
             )
         }
         if (capabilities.hasBackgroundNotifications) {
