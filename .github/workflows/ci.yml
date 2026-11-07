@@ -42,6 +42,16 @@ jobs:
           fi
       - name: Assemble debug + release (R8) + sideload
         run: ./gradlew :androidApp:assembleDebug :androidApp:assembleRelease :androidApp:assembleSideload
+      - name: Verify APKs bundle Compose resources
+        run: |
+          # Compose Multiplatform reads strings/fonts from APK assets; without them the app crashes on open.
+          for apk in androidApp/build/outputs/apk/*/*.apk; do
+            for f in core.ui.resources/values/strings.commonMain.cvr core.ui.resources/font/plus_jakarta_sans_regular.ttf \
+                     feature.friends.resources/values/strings.commonMain.cvr composeApp.resources/values/strings.commonMain.cvr; do
+              unzip -l "$apk" | grep -q "assets/composeResources/com.neteinstein.goodcompany.$f" \
+                || { echo "::error::$apk is missing Compose resources ($f)"; exit 1; }
+            done
+          done
       - name: Verify Play build has no restricted permissions
         run: |
           AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)

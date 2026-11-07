@@ -170,49 +170,54 @@ Seen in practice:
    is required for that. When adding a Swift file, add a `PBXFileReference`, a `PBXBuildFile`, the group child and the
    Sources entry, all with new unique 24-hex IDs. Settings (team, bundle id, version) live in
    `iosApp/Configuration/Config.xcconfig`; put a personal `TEAM_ID` in the gitignored `Signing.xcconfig`.
-5. **Unit-test task name.** With the AGP 9 KMP library plugin the JVM test task is `testAndroidHostTest`; the convention
+5. **Compose resources on Android.** AGP 9's KMP library plugin has Android resources **off** by default, and Compose
+   Multiplatform only packages `composeResources` (strings, fonts) into the APK's `assets/` when they're on. The
+   `goodcompany.kmp.compose` convention sets `androidResources { enable = true }`; never drop it. Without it the web
+   and iOS builds and every JVM test still pass, but the Android app crashes on open (first `stringResource()`).
+   CI's "Verify APKs bundle Compose resources" step guards this.
+6. **Unit-test task name.** With the AGP 9 KMP library plugin the JVM test task is `testAndroidHostTest`; the convention
    plugin adds the `testDebugUnitTest` alias. `testDebugUnitTest` in `androidApp` is the real AGP task.
-6. **Secrets are gitignored.** `androidApp/google-services.json` is never committed. CI copies
+7. **Secrets are gitignored.** `androidApp/google-services.json` is never committed. CI copies
    `androidApp/google-services.json.ci` (a placeholder) for build validation; real builds use the `GOOGLE_SERVICES_JSON`
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
-7. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
+8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
    `androidApp/src/sideload/AndroidManifest.xml`: the Play build adds people through the system contact picker.
    CI fails if the Play `release` APK declares SMS, call-log, contacts or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
-8. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
+9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
    `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
    or changing types, needs a new key suffix (`.v2`) plus a migration. Corrupt data falls back to defaults instead of crashing.
    A new store must also be added to `BackupRepositoryImpl` and the domain `Backup` (export / restore).
-9. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
+10. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
    `anthropic-version: 2026-10-21`, the `web_search_20260209` server tool, `fallbacks: "default"`
    (beta `server-side-fallback-2026-07-01`) and `anthropic-dangerous-direct-browser-access: true` (needed for the
    wasm build). It handles `pause_turn` and `refusal`. Don't add `temperature`/`top_p` (rejected on this API version)
    or `thinking: disabled`.
-10. **Shared elements.** Features tag elements with `Modifier.sharedElement("avatar-<id>")` from `core:ui`; the actual
+11. **Shared elements.** Features tag elements with `Modifier.sharedElement("avatar-<id>")` from `core:ui`; the actual
     `SharedTransitionLayout` wiring is in `AppNavHost`. Don't import navigation types into feature modules.
-11. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
+12. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
     insets. Don't add hard-coded status-bar padding.
-12. **Design system first.** Reuse `core:ui` building blocks (`ScreenHeader`, `SectionCard`, `QuickAction`, `ProgressRing`,
+13. **Design system first.** Reuse `core:ui` building blocks (`ScreenHeader`, `SectionCard`, `QuickAction`, `ProgressRing`,
     `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`) and theme tokens
     (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
     (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an
     **Undo** snackbar; primary actions get haptics.
-13. **Sample data & launch options.** `SampleData` (domain) builds a demo circle whose ids all start with `sample-`
+14. **Sample data & launch options.** `SampleData` (domain) builds a demo circle whose ids all start with `sample-`
     (Load/Remove use cases; Settings → Your data). The web build reads URL options (`?demo&tab=…&friend=…&theme=…`)
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
-14. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
+15. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
     `capture-screenshots` skill and look at every image. Never hand-edit or fake them.
-15. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,
+16. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,
     quieter when the app isn't opened). Don't schedule catch-up notifications anywhere else. Birthdays, events, reminders
     and plans are never throttled.
-16. **Google Drive backup.** Scope `drive.file` only (`DRIVE_FILE_SCOPE`), one file named `DRIVE_BACKUP_FILE_NAME`,
+17. **Google Drive backup.** Scope `drive.file` only (`DRIVE_FILE_SCOPE`), one file named `DRIVE_BACKUP_FILE_NAME`,
     content = `ExportBackupUseCase` (never the API key). OAuth clients live in a Google Cloud project, not in the repo
     (see `docs/GOOGLE_DRIVE.md`): Android needs none in code; iOS reads `GOOGLE_DRIVE_IOS_CLIENT_ID` (xcconfig →
     Info.plist `GoogleDriveClientId`); web reads `<meta name="google-drive-client-id">`. Empty → the row is hidden.
     Obj-C helper classes (e.g. the `ASWebAuthenticationSession` anchor) must be `class`, never `object`.
-17. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
+18. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
     resources in `androidApp/src/main/res/values-*` (all five languages). What it shows comes from `ObserveHomeWidgetUseCase`.
-18. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+19. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). No iOS widget yet (WidgetKit
     needs an app group and an extension target in the hand-authored Xcode project).

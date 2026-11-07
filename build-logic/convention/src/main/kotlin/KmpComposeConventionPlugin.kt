@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
@@ -23,6 +24,12 @@ class KmpComposeConventionPlugin : Plugin<Project> {
         }
 
         extensions.configure<KotlinMultiplatformExtension> {
+            // AGP 9's KMP library plugin turns Android resources off by default. Compose Multiplatform only copies
+            // `composeResources` (strings, plurals, fonts) into the APK's assets when they're on; without this the
+            // app has no resources on Android and crashes on its first stringResource()/Font().
+            (this as ExtensionAware).extensions.configure<KotlinMultiplatformAndroidLibraryTarget> {
+                androidResources { enable = true }
+            }
             sourceSets.getByName("commonMain").dependencies {
                 implementation(libs.lib("compose-runtime"))
                 implementation(libs.lib("compose-foundation"))
