@@ -2,6 +2,9 @@ package com.neteinstein.goodcompany.feature.settings.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
+import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
@@ -17,12 +20,27 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** One-off feedback for the snackbar; the screen turns it into localised text. */
+sealed interface SettingsMessage {
+    data object KeySaved : SettingsMessage
+
+    data object KeyRemoved : SettingsMessage
+
+    data class Notifications(val granted: Boolean) : SettingsMessage
+
+    data object SampleAdded : SettingsMessage
+
+    data object SampleRemoved : SettingsMessage
+
+    data class FileImported(val result: ContactsFileImportResult) : SettingsMessage
+}
+
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
     /** Masked form of the saved key, e.g. "sk-ant-…9f3a". */
     val maskedKey: String? = null,
     val hasSampleData: Boolean = false,
-    val message: String? = null,
+    val message: SettingsMessage? = null,
 )
 
 class SettingsViewModel(
@@ -31,6 +49,7 @@ class SettingsViewModel(
     hasSampleData: HasSampleDataUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
     private val removeSampleData: RemoveSampleDataUseCase,
+    private val importContactsFile: ImportContactsFileUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
 
@@ -46,12 +65,12 @@ class SettingsViewModel(
         val trimmed = key.trim()
         if (trimmed.isEmpty()) return
         update { it.copy(aiApiKey = trimmed) }
-        local.update { it.copy(message = "API key saved on this device") }
+        local.update { it.copy(message = SettingsMessage.KeySaved) }
     }
 
     fun onClearApiKey() {
         update { it.copy(aiApiKey = null) }
-        local.update { it.copy(message = "API key removed") }
+        local.update { it.copy(message = SettingsMessage.KeyRemoved) }
     }
 
     fun onThemeChange(mode: ThemeMode) = update { it.copy(themeMode = mode) }
@@ -62,23 +81,41 @@ class SettingsViewModel(
 
     fun onHomeAreaChange(area: String) = update { it.copy(homeArea = area) }
 
+    /** Default "meet every N days" for a circle. */
+    fun onCircleDaysChange(circle: Circle, days: Int) = update {
+        val d = days.coerceIn(1, 365)
+        when (circle) {
+            Circle.INNER -> it.copy(innerCircleDays = d)
+            Circle.CLOSE -> it.copy(closeCircleDays = d)
+            Circle.GOOD -> it.copy(goodFriendsDays = d)
+        }
+    }
+
+    fun onContactsFilePicked(text: String?) {
+        if (text.isNullOrBlank()) return
+        viewModelScope.launch {
+            val result = importContactsFile(text)
+            local.update { it.copy(message = SettingsMessage.FileImported(result)) }
+        }
+    }
+
     fun onReminderHourChange(hour: Int) = update { it.copy(reminderHour = hour.coerceIn(0, 23)) }
 
     fun onNotificationPermissionResult(granted: Boolean) = local.update {
-        it.copy(message = if (granted) "Notifications on 🔔" else "Notifications are off — enable them in system settings.")
+        it.copy(message = SettingsMessage.Notifications(granted))
     }
 
     fun onLoadSampleData() {
         viewModelScope.launch {
             loadSampleData()
-            local.update { it.copy(message = "Sample friends added") }
+            local.update { it.copy(message = SettingsMessage.SampleAdded) }
         }
     }
 
     fun onRemoveSampleData() {
         viewModelScope.launch {
             removeSampleData()
-            local.update { it.copy(message = "Sample friends removed — your own data is untouched") }
+            local.update { it.copy(message = SettingsMessage.SampleRemoved) }
         }
     }
 
