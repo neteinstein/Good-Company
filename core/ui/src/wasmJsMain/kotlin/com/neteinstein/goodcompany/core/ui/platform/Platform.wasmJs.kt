@@ -14,6 +14,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasCallLog = false,
     hasBackgroundNotifications = false,
     hasDynamicColor = false,
+    hasGoogleDrive = googleDriveClientId() != null,
 )
 
 @Composable

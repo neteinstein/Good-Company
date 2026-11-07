@@ -20,6 +20,9 @@ import com.neteinstein.goodcompany.core.domain.model.RenderedAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
@@ -281,4 +284,35 @@ object Fixtures {
         Friend(id = FriendId(id), name = name).block()
 
     fun at(y: Int, m: Int, d: Int, h: Int = 12, min: Int = 0): Instant = LocalDateTime(y, m, d, h, min).toInstant(TimeZone.UTC)
+}
+
+/** In-memory Google Drive: one map of files; [failure] makes every call throw. */
+class FakeCloudBackupStore : CloudBackupStore {
+    data class File(val id: String, val name: String, val content: String, val modifiedAt: Instant?)
+
+    val files = mutableListOf<File>()
+    val tokens = mutableListOf<String>()
+    var failure: CloudBackupFailure? = null
+    var now: Instant? = null
+
+    override suspend fun save(accessToken: String, fileName: String, content: String): CloudBackupInfo {
+        tokens += accessToken
+        failure?.let { throw it }
+        val existing = files.lastOrNull { it.name == fileName }
+        val file = File(existing?.id ?: "drive-${files.size + 1}", fileName, content, now)
+        if (existing != null) files[files.indexOf(existing)] = file else files += file
+        return CloudBackupInfo(file.id, file.modifiedAt)
+    }
+
+    override suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo? {
+        tokens += accessToken
+        failure?.let { throw it }
+        return files.lastOrNull { it.name == fileName }?.let { CloudBackupInfo(it.id, it.modifiedAt) }
+    }
+
+    override suspend fun download(accessToken: String, id: String): String {
+        tokens += accessToken
+        failure?.let { throw it }
+        return files.first { it.id == id }.content
+    }
 }

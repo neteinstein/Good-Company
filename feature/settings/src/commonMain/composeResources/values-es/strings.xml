@@ -37,7 +37,7 @@
     <string name="privacy_base">Amigos, gustos, hijos, regalos, quedadas y recordatorios se guardan solo en este dispositivo.</string>
     <string name="privacy_contacts">Los contactos solo se leen para crear tu lista.</string>
     <string name="privacy_call_log">El registro de llamadas solo se lee en la versión sideload.</string>
-    <string name="privacy_end">No se sube nada salvo las peticiones a la IA que hagas. Los SMS nunca se leen.</string>
+    <string name="privacy_end">No se sube nada salvo las peticiones a la IA y las copias en Google Drive que hagas. Los SMS nunca se leen.</string>
     <string name="footer">Good Company %1$s · %2$s · hecho con 💛</string>
     <string name="msg_key_saved">Clave de API guardada en este dispositivo</string>
     <string name="msg_key_removed">Clave de API eliminada</string>
@@ -72,4 +72,18 @@
         <item quantity="one">%1$d amigo restaurado</item>
         <item quantity="other">%1$d amigos restaurados</item>
     </plurals>
+    <string name="drive_title">Google Drive</string>
+    <string name="drive_hint">Guarda una copia en tu Google Drive. La app solo puede ver allí su propio archivo de copia.</string>
+    <string name="drive_last">Última copia guardada %1$s</string>
+    <string name="drive_backup_button">Hacer copia</string>
+    <string name="drive_restore_button">Restaurar</string>
+    <string name="drive_confirm_body">¿Sustituir todo en este dispositivo por la copia de Google Drive de %1$s? Tu clave de API y el bloqueo de la app no cambian.</string>
+    <string name="msg_drive_saved">Guardado en Google Drive</string>
+    <string name="msg_drive_none">Todavía no hay copia en este Google Drive.</string>
+    <string name="msg_drive_not_configured">Google Drive aún no está configurado en esta versión de la app.</string>
+    <string name="msg_drive_unauthorized">Google no aceptó el inicio de sesión. Vuelve a intentarlo.</string>
+    <string name="msg_drive_forbidden">Google Drive rechazó la petición. Comprueba que la cuenta tiene Drive activado.</string>
+    <string name="msg_drive_full">Tu Google Drive está lleno.</string>
+    <string name="msg_drive_offline">No se ha podido contactar con Google Drive. Revisa la conexión.</string>
+    <string name="msg_drive_failed">Algo ha fallado con Google Drive. Vuelve a intentarlo.</string>
 </resources>

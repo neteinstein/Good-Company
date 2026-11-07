@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.ui.platform
 
 import android.Manifest
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import android.os.CancellationSignal
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -24,7 +26,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.AuthorizationResult
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.common.api.Scope
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -37,6 +46,9 @@ actual val platformCapabilities = PlatformCapabilities(
     hasBackgroundNotifications = true,
     hasDynamicColor = true,
     hasContactPicker = true,
+    // Needs an Android OAuth client (package + signing SHA-1) in the Google Cloud project; without it the
+    // authorizer reports NotConfigured and the Settings row explains it.
+    hasGoogleDrive = true,
     hasHomeWidget = true,
 )
 
@@ -236,4 +248,41 @@ private class AndroidDeviceAuthenticator(private val context: Context) : DeviceA
             )
         }.onFailure { onResult(false) }
     }
+}
+
+@Composable
+actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val callback = rememberUpdatedState(onResult)
+    val consent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode != Activity.RESULT_OK) {
+            callback.value(DriveAuthResult.Cancelled)
+            return@rememberLauncherForActivityResult
+        }
+        val outcome = runCatching { Identity.getAuthorizationClient(context).getAuthorizationResultFromIntent(result.data) }
+        callback.value(outcome.fold({ it.toDriveResult() }, { it.toDriveFailure() }))
+    }
+    return {
+        val request = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(DRIVE_FILE_SCOPE))).build()
+        Identity.getAuthorizationClient(context).authorize(request)
+            .addOnSuccessListener { result ->
+                val pending = result.pendingIntent
+                if (result.hasResolution() && pending != null) {
+                    consent.launch(IntentSenderRequest.Builder(pending.intentSender).build())
+                } else {
+                    callback.value(result.toDriveResult())
+                }
+            }
+            .addOnFailureListener { callback.value(it.toDriveFailure()) }
+    }
+}
+
+private fun AuthorizationResult.toDriveResult(): DriveAuthResult =
+    accessToken?.let { DriveAuthResult.Token(it) } ?: DriveAuthResult.Failed("No access token")
+
+/** DEVELOPER_ERROR = no OAuth client registered for this package + signing certificate. */
+private fun Throwable.toDriveFailure(): DriveAuthResult = when {
+    this is ApiException && statusCode == CommonStatusCodes.DEVELOPER_ERROR -> DriveAuthResult.NotConfigured
+    this is ApiException && statusCode == CommonStatusCodes.CANCELED -> DriveAuthResult.Cancelled
+    else -> DriveAuthResult.Failed(message)
 }

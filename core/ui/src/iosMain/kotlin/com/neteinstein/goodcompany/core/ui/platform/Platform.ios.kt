@@ -63,6 +63,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasDynamicColor = false,
     smsBodySeparator = "&",
     hasContactPicker = true,
+    hasGoogleDrive = googleDriveClientId != null,
 )
 
 @Composable
@@ -124,6 +125,11 @@ private class PickerDelegate(var onPicked: (String?) -> Unit) : NSObject(), UIDo
 
     override fun documentPickerWasCancelled(controller: UIDocumentPickerViewController) = onPicked(null)
 }
+
+internal fun keyWindow(): UIWindow? = UIApplication.sharedApplication.connectedScenes
+    .filterIsInstance<UIWindowScene>()
+    .flatMap { scene -> scene.windows.filterIsInstance<UIWindow>() }
+    .firstOrNull { it.isKeyWindow() }
 
 private fun topViewController(): UIViewController? {
     val window = UIApplication.sharedApplication.connectedScenes

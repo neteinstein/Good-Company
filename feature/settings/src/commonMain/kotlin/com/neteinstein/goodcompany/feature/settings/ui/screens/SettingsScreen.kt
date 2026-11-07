@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Download
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -74,8 +76,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
@@ -85,6 +89,7 @@ import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
+import com.neteinstein.goodcompany.core.ui.platform.rememberGoogleDriveAuthorizer
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -115,6 +120,12 @@ import com.neteinstein.goodcompany.feature.settings.resources.circles_hint
 import com.neteinstein.goodcompany.feature.settings.resources.digest
 import com.neteinstein.goodcompany.feature.settings.resources.digest_day
 import com.neteinstein.goodcompany.feature.settings.resources.digest_hint
+import com.neteinstein.goodcompany.feature.settings.resources.drive_backup_button
+import com.neteinstein.goodcompany.feature.settings.resources.drive_confirm_body
+import com.neteinstein.goodcompany.feature.settings.resources.drive_hint
+import com.neteinstein.goodcompany.feature.settings.resources.drive_last
+import com.neteinstein.goodcompany.feature.settings.resources.drive_restore_button
+import com.neteinstein.goodcompany.feature.settings.resources.drive_title
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color_hint
 import com.neteinstein.goodcompany.feature.settings.resources.eyebrow
@@ -128,6 +139,14 @@ import com.neteinstein.goodcompany.feature.settings.resources.language_note
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_failed
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_forbidden
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_full
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_none
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_not_configured
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_offline
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_saved
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_unauthorized
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_lock_failed
@@ -187,6 +206,18 @@ suspend fun SettingsMessage.text(): String = when (this) {
     SettingsMessage.BackupSaved -> getString(Res.string.msg_backup_saved)
     is SettingsMessage.BackupRestored -> getPluralString(Res.plurals.msg_backup_restored, friends, friends)
     SettingsMessage.BackupInvalid -> getString(Res.string.msg_backup_invalid)
+    SettingsMessage.DriveBackedUp -> getString(Res.string.msg_drive_saved)
+    SettingsMessage.DriveNoBackup -> getString(Res.string.msg_drive_none)
+    SettingsMessage.DriveNotConfigured -> getString(Res.string.msg_drive_not_configured)
+    is SettingsMessage.DriveFailed -> getString(
+        when (reason) {
+            CloudBackupFailure.Reason.UNAUTHORIZED -> Res.string.msg_drive_unauthorized
+            CloudBackupFailure.Reason.FORBIDDEN -> Res.string.msg_drive_forbidden
+            CloudBackupFailure.Reason.STORAGE_FULL -> Res.string.msg_drive_full
+            CloudBackupFailure.Reason.NETWORK -> Res.string.msg_drive_offline
+            CloudBackupFailure.Reason.OTHER -> Res.string.msg_drive_failed
+        },
+    )
     SettingsMessage.LockFailed -> getString(Res.string.msg_lock_failed)
 }
 
@@ -199,6 +230,7 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
     val capabilities = currentPlatformCapabilities()
     val saveFile = rememberFileSaver("application/json", onDone = viewModel::onExportHandled)
     val authenticator = rememberDeviceAuthenticator()
+    val authorizeDrive = rememberGoogleDriveAuthorizer(viewModel::onDriveAuthResult)
     val lockReason = stringResource(CoreRes.string.lock_reason)
     LaunchedEffect(state.export) { state.export?.let { saveFile.save(it.name, it.content) } }
     SettingsContent(
@@ -236,6 +268,14 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
             onRestoreBackup = pickBackup,
             onConfirmRestore = viewModel::onConfirmRestore,
             onCancelRestore = viewModel::onCancelRestore,
+            onDriveBackup = {
+                viewModel.onDriveRequested(DriveAction.BACKUP)
+                authorizeDrive()
+            },
+            onDriveRestore = {
+                viewModel.onDriveRequested(DriveAction.RESTORE)
+                authorizeDrive()
+            },
         ),
     )
 }
@@ -264,6 +304,8 @@ data class SettingsActions(
     val onRestoreBackup: () -> Unit = {},
     val onConfirmRestore: () -> Unit = {},
     val onCancelRestore: () -> Unit = {},
+    val onDriveBackup: () -> Unit = {},
+    val onDriveRestore: () -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -488,6 +530,32 @@ fun SettingsContent(
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
+                if (capabilities.hasGoogleDrive) {
+                    ListItem(
+                        leadingContent = { Icon(Icons.Rounded.CloudUpload, null) },
+                        headlineContent = { Text(stringResource(Res.string.drive_title), style = MaterialTheme.typography.titleSmall) },
+                        supportingContent = {
+                            Text(
+                                s.lastDriveBackupAt?.let { stringResource(Res.string.drive_last, relativePast(it, state.now, state.zone)) }
+                                    ?: stringResource(Res.string.drive_hint),
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilledTonalButton(onClick = actions.onDriveBackup, enabled = !state.driveBusy) {
+                            Text(stringResource(Res.string.drive_backup_button))
+                        }
+                        OutlinedButton(onClick = actions.onDriveRestore, enabled = !state.driveBusy) {
+                            Text(stringResource(Res.string.drive_restore_button))
+                        }
+                        if (state.driveBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    }
+                }
                 ListItem(
                     modifier = Modifier.clickable(onClick = actions.onReplayIntro),
                     leadingContent = { Icon(Icons.Rounded.Replay, null) },
@@ -517,7 +585,13 @@ fun SettingsContent(
                     onDismissRequest = actions.onCancelRestore,
                     icon = { Icon(Icons.Rounded.Restore, null) },
                     title = { Text(stringResource(Res.string.backup_confirm_title)) },
-                    text = { Text(stringResource(Res.string.backup_confirm_body)) },
+                    text = {
+                        Text(
+                            state.pendingRestoreFrom?.let {
+                                stringResource(Res.string.drive_confirm_body, relativePast(it, state.now, state.zone))
+                            } ?: stringResource(Res.string.backup_confirm_body),
+                        )
+                    },
                     confirmButton = { TextButton(onClick = actions.onConfirmRestore) { Text(stringResource(Res.string.backup_restore_button)) } },
                     dismissButton = { TextButton(onClick = actions.onCancelRestore) { Text(stringResource(CoreRes.string.cancel)) } },
                 )

@@ -1,11 +1,16 @@
 package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
+import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
+import com.neteinstein.goodcompany.feature.settings.ui.screens.DriveAction
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import kotlin.test.Test
@@ -27,6 +32,9 @@ class SettingsViewModelTest {
         g.importContactsFile,
         g.exportBackup,
         g.restoreBackup,
+        g.backupToDrive,
+        g.fetchDriveBackup,
+        g.clock,
     )
 
     @Test
@@ -143,5 +151,50 @@ class SettingsViewModelTest {
         vm.onBackupPicked(file.content)
         vm.onConfirmRestore()
         assertEquals(SettingsMessage.BackupRestored(1), state.value.message)
+    }
+
+    @Test
+    fun driveBackupAndRestoreAfterTheTokenArrives() = runViewModelTest {
+        g.friendRepo.upsert(friend("ana"))
+        g.cloudStore.now = g.clock.now()
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        assertTrue(state.value.driveBusy)
+        vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
+        assertEquals(SettingsMessage.DriveBackedUp, state.value.message)
+        assertEquals(g.clock.now(), state.value.settings.lastDriveBackupAt)
+        assertFalse(state.value.driveBusy)
+
+        g.friendRepo.delete(FriendId("ana"))
+        vm.onDriveRequested(DriveAction.RESTORE)
+        vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
+        assertEquals(g.clock.now(), state.value.pendingRestoreFrom)
+        vm.onConfirmRestore()
+        assertEquals(SettingsMessage.BackupRestored(1), state.value.message)
+        assertNull(state.value.pendingRestoreFrom)
+        assertEquals(listOf("Ana"), g.friendRepo.friends.value.map { it.name })
+    }
+
+    @Test
+    fun driveOutcomesWithoutData() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onDriveRequested(DriveAction.RESTORE)
+        vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
+        assertEquals(SettingsMessage.DriveNoBackup, state.value.message)
+
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Cancelled)
+        assertFalse(state.value.driveBusy)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.NotConfigured)
+        assertEquals(SettingsMessage.DriveNotConfigured, state.value.message)
+
+        g.cloudStore.failure = CloudBackupFailure(CloudBackupFailure.Reason.STORAGE_FULL)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
+        assertEquals(SettingsMessage.DriveFailed(CloudBackupFailure.Reason.STORAGE_FULL), state.value.message)
+        assertNull(state.value.settings.lastDriveBackupAt)
     }
 }

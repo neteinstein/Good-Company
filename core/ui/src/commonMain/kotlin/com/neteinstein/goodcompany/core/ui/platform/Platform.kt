@@ -24,6 +24,8 @@ data class PlatformCapabilities(
     val smsBodySeparator: String = "?",
     /** The system contact picker (no address-book permission needed). */
     val hasContactPicker: Boolean = false,
+    /** Google Drive backup is set up for this build (an OAuth client exists for it; see docs/GOOGLE_DRIVE.md). */
+    val hasGoogleDrive: Boolean = false,
     /** A home-screen widget exists for this platform. */
     val hasHomeWidget: Boolean = false,
 )
@@ -104,3 +106,24 @@ interface DeviceAuthenticator {
 
 @Composable
 expect fun rememberDeviceAuthenticator(): DeviceAuthenticator
+
+/** Outcome of asking the user to let the app use its own file in their Google Drive. */
+sealed interface DriveAuthResult {
+    data class Token(val accessToken: String) : DriveAuthResult
+
+    /** The user closed the Google sheet. */
+    data object Cancelled : DriveAuthResult
+
+    /** No OAuth client for this build (Google Cloud project not set up): see docs/GOOGLE_DRIVE.md. */
+    data object NotConfigured : DriveAuthResult
+
+    data class Failed(val detail: String?) : DriveAuthResult
+}
+
+/**
+ * Returns a launcher that asks Google for an access token with the `drive.file` scope (shows Google's consent the
+ * first time). Android: Play services authorization; iOS: Google sign-in in the system browser sheet (PKCE);
+ * web: Google Identity Services.
+ */
+@Composable
+expect fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): () -> Unit

@@ -46,6 +46,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
                     appLock = current.appLock,
                     onboardingDone = true,
                     lastOpenedAt = current.lastOpenedAt,
+                    lastDriveBackupAt = current.lastDriveBackupAt,
                 ),
             ),
         )
