@@ -32,7 +32,7 @@
     <string name="private_body">No account, no server. SMS are never read.</string>
     <string name="done">Done</string>
     <string name="pick_title">Add your people</string>
-    <string name="pick_body">Pick friends from your contacts, one at a time. The app only sees the people you choose.</string>
+    <string name="pick_body">Pick friends from your contacts. The app only sees the people you choose.</string>
     <string name="pick">Pick</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d friend added. Pick another?</item>
