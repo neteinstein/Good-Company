@@ -65,4 +65,17 @@ class RelationshipsTest {
         assertEquals(LocalDate(2026, 3, 10), status.dueDate)
         assertNull(status.daysSinceLastSeen)
     }
+
+    @Test
+    fun monthStatsCountsThisMonthOnly() {
+        val hs = hangouts + listOf(
+            Hangout("4", listOf(ana), at(2026, 3, 5), com.neteinstein.goodcompany.core.domain.model.Place("Café")),
+            Hangout("5", listOf(ana, rui), at(2026, 3, 8), com.neteinstein.goodcompany.core.domain.model.Place("Café")),
+            Hangout("6", listOf(rui), at(2026, 3, 20)), // future
+        )
+        val stats = Relationships.monthStats(hs, LocalDate(2026, 3, 10), TimeZone.UTC)
+        assertEquals(3, stats.meetups) // 1st, 5th, 8th
+        assertEquals(2, stats.friendsSeen)
+        assertEquals("Café", stats.topPlace)
+    }
 }

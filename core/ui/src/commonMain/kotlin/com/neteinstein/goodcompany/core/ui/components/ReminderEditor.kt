@@ -1,4 +1,4 @@
-package com.neteinstein.goodcompany.feature.agenda.ui.components
+package com.neteinstein.goodcompany.core.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import kotlinx.datetime.LocalDate
 
@@ -41,9 +40,11 @@ fun ReminderEditor(
     today: LocalDate,
     onDismiss: () -> Unit,
     onSave: (title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) -> Unit,
+    preselected: Set<FriendId> = emptySet(),
+    initialTitle: String = "",
 ) {
-    var title by remember { mutableStateOf("") }
-    var selected by remember { mutableStateOf(emptySet<FriendId>()) }
+    var title by remember { mutableStateOf(initialTitle) }
+    var selected by remember { mutableStateOf(preselected) }
     var date by remember { mutableStateOf<LocalDate?>(today) }
     var hour by remember { mutableStateOf(18) }
     var pickDate by remember { mutableStateOf(false) }
@@ -62,7 +63,11 @@ fun ReminderEditor(
                 )
                 Text("With", style = MaterialTheme.typography.labelLarge)
                 FlowRow(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    friends.sortedByDescending { it.isCloseFriend }.take(40).forEach { f ->
+                    friends.sortedWith(
+                        compareByDescending<Friend> {
+                            it.id in preselected
+                        }.thenByDescending { it.isCloseFriend },
+                    ).take(40).forEach { f ->
                         FilterChip(
                             f.id in selected,
                             { selected = if (f.id in selected) selected - f.id else selected + f.id },

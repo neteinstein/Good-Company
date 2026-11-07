@@ -41,7 +41,8 @@ core/domain/          Pure Kotlin: models, repository interfaces ("ports"), use 
 core/data/            Repository implementations, JSON persistence, platform data sources (expect/actual), Claude client.
 core/ui/              Design system: theme (light/dark/dynamic), shared components, formatters, UI platform hooks.
 core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by every module's commonTest.
-feature/friends/      Friend list + detail (likes/dislikes, kids, events, meet-every rule, chat import, talking points)
+feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
+feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, AI)
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
@@ -167,7 +168,17 @@ Seen in practice:
     `SharedTransitionLayout` wiring is in `AppNavHost`. Don't import navigation types into feature modules.
 11. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
     insets. Don't add hard-coded status-bar padding.
-12. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+12. **Design system first.** Reuse `core:ui` building blocks (`ScreenHeader`, `SectionCard`, `QuickAction`, `ProgressRing`,
+    `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`) and theme tokens
+    (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
+    (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an
+    **Undo** snackbar; primary actions get haptics.
+13. **Sample data & launch options.** `SampleData` (domain) builds a demo circle whose ids all start with `sample-`
+    (Load/Remove use cases; Settings → Your data). The web build reads URL options (`?demo&tab=…&friend=…&theme=…`)
+    through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
+14. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
+    `capture-screenshots` skill and look at every image. Never hand-edit or fake them.
+15. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md).
 
@@ -177,3 +188,4 @@ Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:
 - `new-feature-module`: scaffold a `:feature:*` module that follows these conventions.
 - `verify-offline`: set up a sandbox (SDK, Maven mirror) and run every check that works without macOS or an emulator.
 - `regenerate-app-icons`: re-render the iOS app icons from `docs/brand/*.svg` (the Android adaptive icon is vector XML).
+- `capture-screenshots`: re-render the README screenshots from the real Compose web build in headless Chromium.

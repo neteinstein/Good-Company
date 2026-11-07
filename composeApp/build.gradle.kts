@@ -32,6 +32,7 @@ kotlin {
             implementation(projects.core.domain)
             implementation(projects.core.data)
             implementation(projects.core.ui)
+            implementation(projects.feature.onboarding)
             implementation(projects.feature.friends)
             implementation(projects.feature.hangouts)
             implementation(projects.feature.agenda)

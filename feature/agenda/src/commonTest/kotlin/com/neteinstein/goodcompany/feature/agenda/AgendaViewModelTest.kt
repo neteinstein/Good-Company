@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
@@ -40,6 +41,7 @@ class AgendaViewModelTest {
         AddReminderUseCase(reminders, clock, SequentialIds()),
         SetReminderDoneUseCase(reminders),
         DeleteReminderUseCase(reminders),
+        RestoreReminderUseCase(reminders),
         clock,
     )
 
@@ -69,5 +71,9 @@ class AgendaViewModelTest {
         assertTrue(state.value.agenda.none { it is AgendaItem.ReminderDue })
         vm.onDeleteReminder(r.id)
         assertTrue(state.value.reminders.isEmpty())
+        vm.onUndoDelete()
+        assertEquals(1, state.value.reminders.size)
+        // Restored reminder is still done, so Mar 11 is empty; Mar 12 has Ana's birthday.
+        assertEquals(listOf(0, 1), state.value.week.take(3).drop(1).map { it.second })
     }
 }

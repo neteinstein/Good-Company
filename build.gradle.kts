@@ -31,6 +31,7 @@ dependencies {
     kover(projects.core.domain)
     kover(projects.core.data)
     kover(projects.core.ui)
+    kover(projects.feature.onboarding)
     kover(projects.feature.friends)
     kover(projects.feature.hangouts)
     kover(projects.feature.agenda)

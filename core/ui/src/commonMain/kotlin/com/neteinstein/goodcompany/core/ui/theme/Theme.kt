@@ -7,12 +7,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.ui.platform.platformDynamicColorScheme
 
@@ -23,18 +20,6 @@ private val AppShapes = Shapes(
     large = RoundedCornerShape(28.dp),
     extraLarge = RoundedCornerShape(36.dp),
 )
-
-private val AppTypography = Typography().run {
-    copy(
-        displaySmall = displaySmall.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp),
-        headlineLarge = headlineLarge.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp),
-        headlineMedium = headlineMedium.copy(fontWeight = FontWeight.Bold),
-        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold),
-        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold),
-        titleMedium = titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold),
-    )
-}
 
 /**
  * App theme. Light/dark follows [themeMode]; on Android 12+ [dynamicColor] uses the wallpaper palette.
@@ -54,7 +39,7 @@ fun GoodCompanyTheme(
     val target = platformDynamicColorScheme(dark).takeIf { dynamicColor } ?: if (dark) DarkColors else LightColors
     MaterialTheme(
         colorScheme = target.animated(),
-        typography = AppTypography,
+        typography = appTypography(),
         shapes = AppShapes,
         content = content,
     )

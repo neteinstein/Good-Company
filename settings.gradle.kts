@@ -41,6 +41,7 @@ include(":core:ui")
 include(":core:testing")
 
 // Features — one module each, never depending on each other
+include(":feature:onboarding")
 include(":feature:friends")
 include(":feature:hangouts")
 include(":feature:agenda")

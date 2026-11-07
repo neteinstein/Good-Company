@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
@@ -41,8 +42,10 @@ class HangoutsViewModelTest {
         ObserveFriendsUseCase(friends, hangouts, FakeInteractionRepository(), clock),
         ObserveHangoutHistoryUseCase(friends, hangouts),
         ObserveMeetupStatusUseCase(friends, hangouts, clock),
+        ObserveHangoutHistoryUseCase(friends, hangouts),
         CheckInUseCase(hangouts, clock, SequentialIds()),
         DeleteHangoutUseCase(hangouts),
+        RestoreHangoutUseCase(hangouts),
         GetCurrentLocationUseCase(location),
         clock,
     )
@@ -93,5 +96,22 @@ class HangoutsViewModelTest {
         assertTrue(state.value.message!!.contains("denied"))
         vm.onDismissCheckIn()
         assertNull(state.value.draft)
+    }
+
+    @Test
+    fun statsCelebrationAndUndoDelete() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(1, state.value.stats.meetups) // only the Mar 1 hangout is this month
+        vm.onStartCheckIn(ana)
+        vm.onSaveCheckIn()
+        assertEquals(1, state.value.celebrate)
+        assertEquals(2, state.value.stats.meetups)
+
+        vm.onDeleteHangout("1")
+        assertEquals("Memory deleted", state.value.message)
+        assertTrue(hangouts.hangouts.value.none { it.id == "1" })
+        vm.onUndoDelete()
+        assertTrue(hangouts.hangouts.value.any { it.id == "1" })
     }
 }

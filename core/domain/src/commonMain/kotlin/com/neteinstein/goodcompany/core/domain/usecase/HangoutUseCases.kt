@@ -42,6 +42,11 @@ class DeleteHangoutUseCase(private val hangouts: HangoutRepository) {
     suspend operator fun invoke(id: String) = hangouts.delete(id)
 }
 
+/** Puts back a hangout removed a moment ago (snackbar "Undo"). */
+class RestoreHangoutUseCase(private val hangouts: HangoutRepository) {
+    suspend operator fun invoke(hangout: Hangout) = hangouts.add(hangout)
+}
+
 class GetCurrentLocationUseCase(private val location: LocationProvider) {
     suspend operator fun invoke(): GeoPoint? = runCatching { location.currentLocation() }.getOrNull()
 }

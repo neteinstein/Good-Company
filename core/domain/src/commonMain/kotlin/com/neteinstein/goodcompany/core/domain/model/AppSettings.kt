@@ -17,6 +17,8 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     /** Hour of day (local) at which date-based reminders fire. */
     val reminderHour: Int = 9,
+    /** First-run onboarding completed (or skipped). */
+    val onboardingDone: Boolean = false,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }

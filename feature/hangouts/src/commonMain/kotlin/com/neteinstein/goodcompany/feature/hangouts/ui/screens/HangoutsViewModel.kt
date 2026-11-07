@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
@@ -13,12 +14,14 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -47,6 +50,11 @@ data class HangoutsUiState(
     val overdue: List<Relationships.MeetupStatus> = emptyList(),
     val upcoming: List<Relationships.MeetupStatus> = emptyList(),
     val draft: CheckInDraft? = null,
+    val stats: Relationships.MonthStats = Relationships.MonthStats(0, 0, null),
+    /** Hangout deleted a moment ago, offered for undo. */
+    val recentlyDeleted: Hangout? = null,
+    /** Increments on every check-in so the UI can celebrate. */
+    val celebrate: Int = 0,
     val message: String? = null,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
@@ -60,8 +68,10 @@ class HangoutsViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeHistory: ObserveHangoutHistoryUseCase,
     observeMeetups: ObserveMeetupStatusUseCase,
+    observeAllHangouts: ObserveHangoutHistoryUseCase,
     private val checkIn: CheckInUseCase,
     private val deleteHangout: DeleteHangoutUseCase,
+    private val restoreHangout: RestoreHangoutUseCase,
     private val currentLocation: GetCurrentLocationUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
@@ -72,10 +82,12 @@ class HangoutsViewModel(
         observeFriends(),
         observeHistory(filter),
         observeMeetups(),
+        observeAllHangouts(flowOf(emptySet())),
         local,
-    ) { friends, history, meetups, ui ->
+    ) { friends, history, meetups, all, ui ->
         val today = clock.today()
         ui.copy(
+            stats = Relationships.monthStats(all.map { it.hangout }, today, clock.timeZone),
             friends = friends.map { it.friend },
             history = history,
             overdue = meetups.filter { it.isOverdue(today) },
@@ -128,15 +140,27 @@ class HangoutsViewModel(
         viewModelScope.launch {
             checkIn(draft.selected, draft.place, draft.location, draft.note)
             val names = state.value.friends.filter { it.id in draft.selected }.map { it.name.substringBefore(' ') }
-            local.update { it.copy(draft = null, message = "Logged time with ${names.joinToString()} ✨") }
+            local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = "Logged time with ${names.joinToString()} ✨") }
         }
     }
 
     fun onDeleteHangout(id: String) {
-        viewModelScope.launch { deleteHangout(id) }
+        val hangout = state.value.history.firstOrNull { it.hangout.id == id }?.hangout
+        viewModelScope.launch {
+            deleteHangout(id)
+            local.update { it.copy(recentlyDeleted = hangout, message = "Memory deleted") }
+        }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null) }
+    fun onUndoDelete() {
+        val hangout = local.value.recentlyDeleted ?: return
+        viewModelScope.launch {
+            restoreHangout(hangout)
+            local.update { it.copy(recentlyDeleted = null) }
+        }
+    }
+
+    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null) }
 
     private fun Set<FriendId>.toggle(id: FriendId) = if (id in this) this - id else this + id
 

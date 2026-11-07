@@ -4,7 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
+import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,17 +21,21 @@ data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
     /** Masked form of the saved key, e.g. "sk-ant-…9f3a". */
     val maskedKey: String? = null,
+    val hasSampleData: Boolean = false,
     val message: String? = null,
 )
 
 class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val updateSettings: UpdateSettingsUseCase,
+    hasSampleData: HasSampleDataUseCase,
+    private val loadSampleData: LoadSampleDataUseCase,
+    private val removeSampleData: RemoveSampleDataUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
 
-    val state: StateFlow<SettingsUiState> = combine(observeSettings(), local) { settings, ui ->
-        ui.copy(settings = settings, maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask))
+    val state: StateFlow<SettingsUiState> = combine(observeSettings(), hasSampleData(), local) { settings, sample, ui ->
+        ui.copy(settings = settings, maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask), hasSampleData = sample)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     private fun update(transform: (AppSettings) -> AppSettings) {
@@ -60,6 +67,23 @@ class SettingsViewModel(
     fun onNotificationPermissionResult(granted: Boolean) = local.update {
         it.copy(message = if (granted) "Notifications on 🔔" else "Notifications are off — enable them in system settings.")
     }
+
+    fun onLoadSampleData() {
+        viewModelScope.launch {
+            loadSampleData()
+            local.update { it.copy(message = "Sample friends added") }
+        }
+    }
+
+    fun onRemoveSampleData() {
+        viewModelScope.launch {
+            removeSampleData()
+            local.update { it.copy(message = "Sample friends removed — your own data is untouched") }
+        }
+    }
+
+    /** Shows the intro again on next launch of the main screen. */
+    fun onReplayIntro() = update { it.copy(onboardingDone = false) }
 
     fun onMessageShown() = local.update { it.copy(message = null) }
 

@@ -29,13 +29,7 @@ private fun FriendsPreview(dark: Boolean) = GoodCompanyTheme(if (dark) ThemeMode
     FriendsContent(
         state = FriendsUiState(friends = sample, totalCount = 3, isLoading = false, now = now, today = LocalDate(2026, 3, 10)),
         canSyncContacts = true,
-        onQueryChange = {},
-        onFilterChange = {},
-        onSync = {},
-        onOpenFriend = {},
-        onToggleClose = {},
-        onAddFriend = {},
-        onMessageShown = {},
+        actions = FriendsActions(),
     )
 }
 
@@ -50,5 +44,5 @@ private fun FriendsDarkPreview() = FriendsPreview(dark = true)
 @Preview
 @Composable
 private fun FriendsEmptyPreview() = GoodCompanyTheme(dynamicColor = false) {
-    FriendsContent(FriendsUiState(isLoading = false), true, {}, {}, {}, {}, {}, {}, {})
+    FriendsContent(FriendsUiState(isLoading = false), true, FriendsActions())
 }

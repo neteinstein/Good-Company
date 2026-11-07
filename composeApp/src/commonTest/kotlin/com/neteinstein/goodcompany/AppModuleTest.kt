@@ -63,5 +63,7 @@ class AppModuleTest {
         assertNotNull(koin.get<IdeasViewModel>())
         assertNotNull(koin.get<SettingsViewModel>())
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
+        assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
+        assertNotNull(koin.get<ApplyLaunchOptions>())
     }
 }

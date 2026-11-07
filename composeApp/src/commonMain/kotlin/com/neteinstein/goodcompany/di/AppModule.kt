@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.di
 
 import com.neteinstein.goodcompany.AppViewModel
+import com.neteinstein.goodcompany.ApplyLaunchOptions
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
@@ -34,8 +35,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -44,6 +47,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -56,6 +62,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetai
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
@@ -103,6 +110,7 @@ val appModule = module {
     factoryOf(::ImportChatUseCase)
     factoryOf(::CheckInUseCase)
     factoryOf(::DeleteHangoutUseCase)
+    factoryOf(::RestoreHangoutUseCase)
     factoryOf(::GetCurrentLocationUseCase)
     factoryOf(::ObserveHangoutHistoryUseCase)
     factoryOf(::ObserveMeetupStatusUseCase)
@@ -110,6 +118,7 @@ val appModule = module {
     factoryOf(::AddReminderUseCase)
     factoryOf(::SetReminderDoneUseCase)
     factoryOf(::DeleteReminderUseCase)
+    factoryOf(::RestoreReminderUseCase)
     factoryOf(::ObserveAgendaUseCase)
     factoryOf(::KeepNotificationsScheduledUseCase)
     factoryOf(::ObserveIdeasUseCase)
@@ -118,13 +127,18 @@ val appModule = module {
     factoryOf(::RunWeeklyIdeasUseCase)
     factoryOf(::ObserveSettingsUseCase)
     factoryOf(::UpdateSettingsUseCase)
+    factoryOf(::LoadSampleDataUseCase)
+    factoryOf(::RemoveSampleDataUseCase)
+    factoryOf(::HasSampleDataUseCase)
     singleOf(::AppStartup)
+    factoryOf(::ApplyLaunchOptions)
 
     // --- ViewModels ---
     viewModelOf(::AppViewModel)
+    viewModelOf(::OnboardingViewModel)
     viewModelOf(::FriendsViewModel)
     viewModel { (id: FriendId) ->
-        FriendDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get())
+        FriendDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::AgendaViewModel)

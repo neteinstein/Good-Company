@@ -8,13 +8,16 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Diversity3
@@ -28,50 +31,86 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
+import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 
-/** The big, softly pulsing "I'm with…" button. */
+/** Gradient hero card: the big pulsing "I'm with…" button plus this month's numbers. */
 @Composable
-fun CheckInHero(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val pulse = rememberInfiniteTransition(label = "pulse")
-    val halo by pulse.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "halo",
-    )
-    val colors = MaterialTheme.colorScheme
-    Column(
-        modifier.fillMaxWidth().padding(vertical = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val halo by pulse.animateFloat(0.9f, 1.18f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "halo")
+    val c = MaterialTheme.colorScheme
+    val haptics = LocalHapticFeedback.current
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(Brush.linearGradient(listOf(Color(0xFFFF8A80), c.primary, Color(0xFF8E2DE2).copy(alpha = 0.85f)))),
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Box(
-                Modifier.size(150.dp).scale(halo).graphicsLayer { alpha = 1.6f - halo }
-                    .background(colors.primary.copy(alpha = 0.25f), CircleShape),
-            )
-            Box(
-                Modifier
-                    .size(124.dp)
-                    .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(colors.primary, colors.tertiary)))
-                    .clickable(role = Role.Button, onClick = onClick)
-                    .semantics { contentDescription = "I'm with someone now" },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.Diversity3, null, tint = colors.onPrimary, modifier = Modifier.size(56.dp))
+        Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(contentAlignment = Alignment.Center) {
+                Box(Modifier.size(132.dp).scale(halo).graphicsLayer { alpha = 1.5f - halo }.background(Color.White.copy(alpha = 0.25f), CircleShape))
+                Box(
+                    Modifier
+                        .size(108.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .clickable(role = Role.Button) {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onClick()
+                        }
+                        .semantics { contentDescription = "I'm with someone now" },
+                    contentAlignment = Alignment.Center,
+                ) { Icon(Icons.Rounded.Diversity3, null, tint = c.primary, modifier = Modifier.size(52.dp)) }
+                HeartBurst(celebrate, Modifier.size(132.dp))
+            }
+            Spacer(Modifier.height(14.dp))
+            Text("I'm with…", style = MaterialTheme.typography.headlineSmall, color = Color.White)
+            Text("Tap to remember who you're with, and where", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+            Spacer(Modifier.height(18.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Stat(stats.meetups, "meetups\nthis month")
+                Stat(stats.friendsSeen, "friends\nseen")
+                Column(Modifier.width(110.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        stats.topPlace ?: "—",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "favourite\nspot",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.85f),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    )
+                }
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Text("I'm with…", style = MaterialTheme.typography.headlineSmall)
+    }
+}
+
+@Composable
+private fun Stat(value: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        AnimatedNumber(value, style = MaterialTheme.typography.headlineMedium.copy(color = Color.White))
         Text(
-            "One tap to remember who you saw, and where",
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.onSurfaceVariant,
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.85f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
 }

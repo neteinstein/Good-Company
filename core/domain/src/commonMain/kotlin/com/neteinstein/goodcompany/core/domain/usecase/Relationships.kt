@@ -72,4 +72,17 @@ object Relationships {
             )
         }.sortedBy { it.dueDate }
     }
+
+    data class MonthStats(val meetups: Int, val friendsSeen: Int, val topPlace: String?)
+
+    /** Meetups, distinct friends and most frequent place in the calendar month containing [today]. */
+    fun monthStats(hangouts: List<Hangout>, today: LocalDate, zone: TimeZone): MonthStats {
+        val inMonth = hangouts.filter { h ->
+            val d = h.at.toLocalDate(zone)
+            d.year == today.year && d.month == today.month && d <= today
+        }
+        val topPlace = inMonth.mapNotNull { it.place?.name?.takeIf(String::isNotBlank) }
+            .groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
+        return MonthStats(inMonth.size, inMonth.flatMap { it.friendIds }.distinct().size, topPlace)
+    }
 }

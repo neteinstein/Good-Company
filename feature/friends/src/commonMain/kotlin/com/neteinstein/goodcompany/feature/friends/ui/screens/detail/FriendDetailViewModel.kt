@@ -7,7 +7,10 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -26,7 +29,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 data class FriendDetailUiState(
@@ -37,6 +43,11 @@ data class FriendDetailUiState(
     val isGenerating: Boolean = false,
     val message: String? = null,
     val deleted: Boolean = false,
+    /** Hangout just logged with "Together now", offered for undo. */
+    val undoHangoutId: String? = null,
+    /** Increments on every "Together now" so the UI can play the heart burst. */
+    val celebrate: Int = 0,
+    val showReminderEditor: Boolean = false,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -51,6 +62,9 @@ class FriendDetailViewModel(
     private val importChat: ImportChatUseCase,
     private val generateTalkingPoints: GenerateTalkingPointsUseCase,
     private val dismissIdea: DismissIdeaUseCase,
+    private val checkIn: CheckInUseCase,
+    private val deleteHangout: DeleteHangoutUseCase,
+    private val addReminder: AddReminderUseCase,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -159,5 +173,35 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null) }
+    /** One tap: "we're together right now". */
+    fun onTogetherNow() {
+        viewModelScope.launch {
+            val hangout = checkIn(listOf(friendId))
+            val name = state.value.detail?.friend?.name?.substringBefore(' ') ?: "them"
+            local.update { it.copy(message = "Logged time with $name ✨", undoHangoutId = hangout.id, celebrate = it.celebrate + 1) }
+        }
+    }
+
+    fun onUndoTogether() {
+        val id = local.value.undoHangoutId ?: return
+        viewModelScope.launch {
+            deleteHangout(id)
+            local.update { it.copy(undoHangoutId = null) }
+        }
+    }
+
+    fun onOpenReminderEditor() = local.update { it.copy(showReminderEditor = true) }
+
+    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false) }
+
+    fun onSaveReminder(title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            val due = date?.atTime(LocalTime(hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
+            addReminder(title, friendIds.ifEmpty { listOf(friendId) }, due)
+            local.update { it.copy(showReminderEditor = false, message = "Reminder saved") }
+        }
+    }
+
+    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null) }
 }

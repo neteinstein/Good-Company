@@ -50,6 +50,11 @@ class DeleteReminderUseCase(private val reminders: ReminderRepository) {
     suspend operator fun invoke(id: String) = reminders.delete(id)
 }
 
+/** Puts back a reminder deleted a moment ago (snackbar "Undo"). */
+class RestoreReminderUseCase(private val reminders: ReminderRepository) {
+    suspend operator fun invoke(reminder: Reminder) = reminders.upsert(reminder)
+}
+
 class ObserveAgendaUseCase(
     private val friends: FriendRepository,
     private val reminders: ReminderRepository,

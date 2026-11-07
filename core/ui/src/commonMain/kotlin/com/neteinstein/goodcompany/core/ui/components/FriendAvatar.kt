@@ -33,7 +33,7 @@ fun FriendAvatar(
     highlighted: Boolean = false,
     sharedKey: String? = null,
 ) {
-    val (start, end) = AvatarGradients[name.hashCode().absoluteValue % AvatarGradients.size]
+    val (start, end) = avatarColors(name)
     val ring by animateDpAsState(if (highlighted) 2.5.dp else 0.dp)
     Box(
         modifier = modifier
@@ -53,3 +53,6 @@ fun FriendAvatar(
         )
     }
 }
+
+/** The stable gradient pair for [name] — reuse it to tint a friend's screen so it feels like "theirs". */
+fun avatarColors(name: String): Pair<Color, Color> = AvatarGradients[name.hashCode().absoluteValue % AvatarGradients.size]

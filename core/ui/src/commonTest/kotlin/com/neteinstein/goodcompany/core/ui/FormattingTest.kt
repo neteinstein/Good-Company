@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.ui
 
 import com.neteinstein.goodcompany.core.ui.format.parseTags
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import kotlinx.datetime.LocalDate
@@ -25,6 +26,14 @@ class FormattingTest {
         assertEquals("In 4 days", relativeDay(LocalDate(2026, 3, 14), today))
         assertEquals("Mar 30", relativeDay(LocalDate(2026, 3, 30), today))
         assertEquals("Yesterday", relativeDay(LocalDate(2026, 3, 9), today))
+    }
+
+    @Test
+    fun relativeDayPhrases() {
+        assertEquals("today", relativeDayPhrase(today, today))
+        assertEquals("tomorrow", relativeDayPhrase(LocalDate(2026, 3, 11), today))
+        assertEquals("in 4 days", relativeDayPhrase(LocalDate(2026, 3, 14), today))
+        assertEquals("on Mar 30", relativeDayPhrase(LocalDate(2026, 3, 30), today))
     }
 
     @Test

@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 
 data class AgendaUiState(
@@ -32,6 +34,7 @@ data class AgendaUiState(
     val friends: List<Friend> = emptyList(),
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
+    val recentlyDeleted: Reminder? = null,
     val message: String? = null,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -39,6 +42,15 @@ data class AgendaUiState(
     /** Agenda grouped by day, preserving order. */
     val agendaByDay: List<Pair<LocalDate, List<AgendaItem>>>
         get() = agenda.groupBy { it.date }.toList()
+
+    /** Next 7 days with how many agenda items fall on each — the week strip. */
+    val week: List<Pair<LocalDate, Int>>
+        get() = (0 until 7).map { offset ->
+            val day = today.plus(offset, kotlinx.datetime.DateTimeUnit.DAY)
+            day to agenda.count { it.date == day }
+        }
+
+    val openReminders: Int get() = reminders.count { !it.done }
 }
 
 class AgendaViewModel(
@@ -48,6 +60,7 @@ class AgendaViewModel(
     private val addReminder: AddReminderUseCase,
     private val setReminderDone: SetReminderDoneUseCase,
     private val deleteReminder: DeleteReminderUseCase,
+    private val restoreReminder: RestoreReminderUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
@@ -82,8 +95,20 @@ class AgendaViewModel(
     }
 
     fun onDeleteReminder(id: String) {
-        viewModelScope.launch { deleteReminder(id) }
+        val reminder = state.value.reminders.firstOrNull { it.id == id }
+        viewModelScope.launch {
+            deleteReminder(id)
+            local.update { it.copy(recentlyDeleted = reminder, message = "Reminder deleted") }
+        }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null) }
+    fun onUndoDelete() {
+        val reminder = local.value.recentlyDeleted ?: return
+        viewModelScope.launch {
+            restoreReminder(reminder)
+            local.update { it.copy(recentlyDeleted = null) }
+        }
+    }
+
+    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null) }
 }

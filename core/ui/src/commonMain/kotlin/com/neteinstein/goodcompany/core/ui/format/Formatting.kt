@@ -30,6 +30,16 @@ fun relativeDay(date: LocalDate, today: LocalDate): String = when (val d = today
     else -> date.shortLabel()
 }
 
+/** Lower-case phrase for use mid-sentence: "today", "tomorrow", "in 4 days", "on Mar 30", "2 days ago". */
+fun relativeDayPhrase(date: LocalDate, today: LocalDate): String = when (val d = today.daysUntil(date)) {
+    0 -> "today"
+    1 -> "tomorrow"
+    -1 -> "yesterday"
+    in 2..6 -> "in $d days"
+    in -6..-2 -> "${-d} days ago"
+    else -> "on ${date.shortLabel()}"
+}
+
 /** "just now", "3h ago", "yesterday", "12 days ago", "3 months ago", "over a year ago". */
 fun relativePast(instant: Instant, now: Instant, zone: TimeZone): String {
     val minutes = (now - instant).inWholeMinutes

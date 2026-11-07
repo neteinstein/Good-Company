@@ -14,3 +14,9 @@ kotlin {
         }
     }
 }
+
+compose.resources {
+    // Fonts live in src/commonMain/composeResources/font; other modules use them through the theme.
+    publicResClass = true
+    packageOfResClass = "com.neteinstein.goodcompany.core.ui.resources"
+}

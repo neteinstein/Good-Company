@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Idea
+import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
@@ -26,6 +27,7 @@ data class IdeaCard(val idea: Idea, val friends: List<Friend>)
 
 data class IdeasUiState(
     val ideas: List<IdeaCard> = emptyList(),
+    val kindFilter: IdeaKind? = null,
     val hasAiKey: Boolean = false,
     val weeklyEnabled: Boolean = true,
     val optedInFriends: Int = 0,
@@ -51,7 +53,7 @@ class IdeasViewModel(
     val state: StateFlow<IdeasUiState> = combine(observeIdeas(), observeFriends(), observeSettings(), local) { ideas, friends, settings, ui ->
         val byId = friends.associate { it.friend.id to it.friend }
         ui.copy(
-            ideas = ideas.map { IdeaCard(it, it.friendIds.mapNotNull(byId::get)) },
+            ideas = ideas.filter { ui.kindFilter == null || it.kind == ui.kindFilter }.map { IdeaCard(it, it.friendIds.mapNotNull(byId::get)) },
             hasAiKey = settings.hasAiKey,
             weeklyEnabled = settings.weeklyIdeasEnabled,
             optedInFriends = friends.count { it.friend.suggestEvents },
@@ -74,6 +76,8 @@ class IdeasViewModel(
     fun onWeeklyToggle(enabled: Boolean) {
         viewModelScope.launch { updateSettings { it.copy(weeklyIdeasEnabled = enabled) } }
     }
+
+    fun onKindFilter(kind: IdeaKind?) = local.update { it.copy(kindFilter = kind) }
 
     fun onDismiss(id: String) {
         viewModelScope.launch { dismissIdea(id) }

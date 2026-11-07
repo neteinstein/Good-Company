@@ -1,14 +1,27 @@
 package com.neteinstein.goodcompany
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -19,45 +32,66 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
+import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
+import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
+import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
 import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /** Root composable shared by Android, iOS and Web. */
 @Composable
-fun App(viewModel: AppViewModel = koinViewModel()) {
+fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinViewModel()) {
+    val applyLaunchOptions: ApplyLaunchOptions = koinInject()
+    LaunchedEffect(launch) { applyLaunchOptions(launch) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     GoodCompanyTheme(themeMode = state.settings.themeMode, dynamicColor = state.settings.dynamicColor) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            AppScaffold()
+            if (state.isReady) {
+                AnimatedContent(
+                    targetState = state.settings.onboardingDone,
+                    transitionSpec = { (fadeIn(tween(400)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(250)) },
+                ) { done ->
+                    if (done) AppScaffold(launch) else OnboardingScreen(onDone = {})
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun AppScaffold() {
+private fun AppScaffold(launch: LaunchOptions) {
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val current = entry?.destination
     val selected = TopLevelDestination.entries.firstOrNull { d -> current?.hierarchy?.any { it.hasRoute(d.route::class) } == true }
     val showChrome = selected != null
+    val start = launch.startTab?.route ?: FriendsRoute
+    LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
 
     BoxWithConstraints {
         val wide = maxWidth >= 720.dp
         if (wide) {
-            // Tablets / desktop browsers: navigation rail on the side.
+            // Tablets / desktop browsers: navigation rail + centred content column.
             Row {
-                NavigationRail(Modifier.fillMaxHeight()) {
+                NavigationRail(Modifier.fillMaxHeight(), header = { AppMark() }) {
+                    Spacer(Modifier.weight(1f))
                     TopLevelDestination.entries.forEach { d ->
                         NavigationRailItem(
                             selected = d == selected,
@@ -66,27 +100,40 @@ private fun AppScaffold() {
                             label = { Text(d.label) },
                         )
                     }
+                    Spacer(Modifier.weight(1f))
                 }
-                AppNavHost(navController, Modifier.weight(1f))
+                Box(Modifier.weight(1f)) { ContentWidth { AppNavHost(navController, startDestination = start) } }
             }
         } else {
             Scaffold(
                 contentWindowInsets = WindowInsets(0),
                 bottomBar = {
                     AnimatedVisibility(showChrome, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
-                        NavigationBar {
+                        NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                             TopLevelDestination.entries.forEach { d ->
                                 NavigationBarItem(
                                     selected = d == selected,
                                     onClick = { navController.navigateTopLevel(d) },
                                     icon = { Icon(if (d == selected) d.selectedIcon else d.icon, null) },
-                                    label = { Text(d.label, maxLines = 1) },
+                                    label = { Text(d.label, maxLines = 1, style = MaterialTheme.typography.labelSmall) },
                                 )
                             }
                         }
                     }
                 },
-            ) { padding -> AppNavHost(navController, Modifier.padding(padding)) }
+            ) { padding -> AppNavHost(navController, Modifier.padding(padding), startDestination = start) }
         }
     }
+}
+
+/** The two-hearts brand mark, drawn in Compose (no bitmap) for the navigation rail header. */
+@Composable
+private fun AppMark() {
+    Box(
+        Modifier.padding(top = 12.dp).size(48.dp).background(
+            Brush.linearGradient(listOf(Color(0xFFFF8A80), MaterialTheme.colorScheme.primary)),
+            CircleShape,
+        ),
+        contentAlignment = Alignment.Center,
+    ) { Icon(Icons.Rounded.Favorite, contentDescription = "Good Company", tint = Color.White) }
 }

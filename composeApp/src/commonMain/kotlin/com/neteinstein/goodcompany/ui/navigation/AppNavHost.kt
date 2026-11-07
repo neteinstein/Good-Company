@@ -32,13 +32,13 @@ const val APP_VERSION = "1.0.0"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
+fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, startDestination: Any = FriendsRoute) {
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
-            startDestination = FriendsRoute,
+            startDestination = startDestination,
             enterTransition = { fadeIn(tween(220)) + scaleIn(initialScale = 0.98f) },
             exitTransition = { fadeOut(tween(160)) },
             popEnterTransition = { fadeIn(tween(220)) },
