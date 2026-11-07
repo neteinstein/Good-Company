@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -53,11 +54,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 class TestGraph(
     friends: List<Friend> = emptyList(),
     settings: AppSettings = AppSettings(),
+    hangouts: List<Hangout> = emptyList(),
     val clock: FixedClock = FixedClock(),
     val ids: SequentialIds = SequentialIds(),
 ) {
     val friendRepo = FakeFriendRepository(friends)
-    val hangoutRepo = FakeHangoutRepository()
+    val hangoutRepo = FakeHangoutRepository(hangouts)
     val reminderRepo = FakeReminderRepository()
     val interactionRepo = FakeInteractionRepository()
     val ideaRepo = FakeIdeaRepository()

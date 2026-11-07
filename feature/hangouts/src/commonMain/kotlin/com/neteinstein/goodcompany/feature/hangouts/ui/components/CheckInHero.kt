@@ -1,5 +1,12 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.components
 
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta_description
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_friends
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_hint
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_meetups
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_spot
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -25,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +56,7 @@ import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 @Composable
 fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val pulse = rememberInfiniteTransition(label = "pulse")
+    val cta = stringResource(Res.string.hero_cta_description)
     val halo by pulse.animateFloat(0.9f, 1.18f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "halo")
     val c = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
@@ -70,18 +79,18 @@ fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> 
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             onClick()
                         }
-                        .semantics { contentDescription = "I'm with someone now" },
+                        .semantics { contentDescription = cta },
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Rounded.Diversity3, null, tint = c.primary, modifier = Modifier.size(52.dp)) }
                 HeartBurst(celebrate, Modifier.size(132.dp))
             }
             Spacer(Modifier.height(14.dp))
-            Text("I'm with…", style = MaterialTheme.typography.headlineSmall, color = Color.White)
-            Text("Tap to remember who you're with, and where", style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+            Text(stringResource(Res.string.hero_cta), style = MaterialTheme.typography.headlineSmall, color = Color.White)
+            Text(stringResource(Res.string.hero_hint), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
             Spacer(Modifier.height(18.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Stat(stats.meetups, "meetups\nthis month")
-                Stat(stats.friendsSeen, "friends\nseen")
+                Stat(stats.meetups, stringResource(Res.string.hero_meetups))
+                Stat(stats.friendsSeen, stringResource(Res.string.hero_friends))
                 Column(Modifier.width(110.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         stats.topPlace ?: "—",
@@ -91,7 +100,7 @@ fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> 
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "favourite\nspot",
+                        stringResource(Res.string.hero_spot),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.85f),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
