@@ -88,8 +88,11 @@ internal class IosNotificationScheduler : NotificationScheduler {
     }
 }
 
-/** Receives quick-action taps (and shows banners while the app is open). Must be installed at launch. */
-internal object IosNotificationDelegate : NSObject(), UNUserNotificationCenterDelegateProtocol {
+/**
+ * Receives quick-action taps (and shows banners while the app is open). Must be installed at launch.
+ * A class, not an `object`: Kotlin/Native can't allocate an Obj-C subclass as a singleton object.
+ */
+internal class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDelegateProtocol {
     // Obj-C classes can't also implement KoinComponent, so resolve through the global Koin instance.
     private val handle: HandleNotificationActionUseCase by lazy { KoinPlatform.getKoin().get() }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)

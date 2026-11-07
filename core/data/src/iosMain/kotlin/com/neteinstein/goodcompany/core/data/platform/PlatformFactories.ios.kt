@@ -15,6 +15,10 @@ actual fun Scope.createLocationProvider(): LocationProvider = IosLocationProvide
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()
 
+/** UNUserNotificationCenter holds its delegate weakly, so keep the instance alive here. */
+private var notificationDelegate: IosNotificationDelegate? = null
+
 actual fun installNotificationActionHandling() {
-    platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().delegate = IosNotificationDelegate
+    val delegate = notificationDelegate ?: IosNotificationDelegate().also { notificationDelegate = it }
+    platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().delegate = delegate
 }
