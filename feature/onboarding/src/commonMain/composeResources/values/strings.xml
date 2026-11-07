@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="page1_title">Your people,\nremembered</string>
+    <string name="page1_body">A little CRM for friendship. Keep what your friends love, their kids’ names and the dates that matter — all on your device.</string>
+    <string name="page2_title">One tap:\n“I’m with…”</string>
+    <string name="page2_body">Log who you’re with and where. See the last time you were with any group — and who you haven’t seen in a while.</string>
+    <string name="page3_title">Never miss\nwhat matters</string>
+    <string name="page3_body">Birthdays, a friend’s surgery, “book tickets with Rui” — gentle reminders at the right time, plus AI ideas for things to do together.</string>
+    <string name="skip">Skip</string>
+    <string name="next">Next</string>
+    <string name="lets_go">Let’s go</string>
+    <string name="start_empty">Start with an empty list</string>
+    <string name="setup_title">Let’s set you up</string>
+    <string name="setup_body">Everything is optional and you can change it later in Settings.</string>
+    <string name="contacts_title">Bring in your contacts</string>
+    <plurals name="contacts_imported">
+        <item quantity="one">%1$d contact imported. Tap ♥ on the real friends.</item>
+        <item quantity="other">%1$d contacts imported. Tap ♥ on the real friends.</item>
+    </plurals>
+    <string name="contacts_denied">No problem — you can add friends by hand.</string>
+    <string name="contacts_body">We read names, phone numbers and birthdays. Nothing leaves your device.</string>
+    <string name="import">Import</string>
+    <string name="notifications_title">Birthday &amp; check-in reminders</string>
+    <string name="notifications_on">You’re all set — we’ll nudge you at the right time.</string>
+    <string name="notifications_off">Reminders are off. You can turn them on in Settings.</string>
+    <string name="notifications_body">A nudge on birthdays, important days and when it’s been too long.</string>
+    <string name="allow">Allow</string>
+    <string name="looking_title">Just looking around?</string>
+    <string name="looking_body">Explore with a sample circle of friends — remove it anytime from Settings.</string>
+    <string name="explore_sample">Explore with sample friends</string>
+    <string name="private_title">Private by design</string>
+    <string name="private_body">No account, no server. SMS are never read.</string>
+    <string name="done">Done</string>
+</resources>

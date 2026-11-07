@@ -1,5 +1,34 @@
 package com.neteinstein.goodcompany.feature.onboarding.ui.screens
 
+import com.neteinstein.goodcompany.feature.onboarding.resources.Res
+import com.neteinstein.goodcompany.feature.onboarding.resources.allow
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.done
+import com.neteinstein.goodcompany.feature.onboarding.resources.explore_sample
+import com.neteinstein.goodcompany.feature.onboarding.resources.import
+import com.neteinstein.goodcompany.feature.onboarding.resources.lets_go
+import com.neteinstein.goodcompany.feature.onboarding.resources.looking_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.looking_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.next
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_off
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_on
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page1_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page1_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page2_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page2_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page3_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page3_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.setup_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.skip
+import com.neteinstein.goodcompany.feature.onboarding.resources.start_empty
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -66,25 +95,28 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.feature.onboarding.ui.components.OrbitIllustration
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
-private data class Page(val title: String, val body: String, val main: ImageVector, val satellites: List<ImageVector>)
+private data class Page(val title: StringResource, val body: StringResource, val main: ImageVector, val satellites: List<ImageVector>)
 
 private val PAGES = listOf(
     Page(
-        "Your people,\nremembered",
-        "A little CRM for friendship. Keep what your friends love, their kids' names and the dates that matter — all on your device.",
+        Res.string.page1_title,
+        Res.string.page1_body,
         Icons.Rounded.Favorite,
         listOf(Icons.Rounded.MusicNote, Icons.Rounded.LocalCafe, Icons.Rounded.ChildCare, Icons.Rounded.Cake),
     ),
     Page(
-        "One tap:\n“I'm with…”",
-        "Log who you're with and where. See the last time you were with any group — and who you haven't seen in a while.",
+        Res.string.page2_title,
+        Res.string.page2_body,
         Icons.Rounded.Diversity3,
         listOf(Icons.Rounded.Place, Icons.Rounded.Schedule, Icons.Rounded.Favorite),
     ),
     Page(
-        "Never miss\nwhat matters",
-        "Birthdays, a friend's surgery, “book tickets with Rui” — gentle reminders at the right time, plus AI ideas for things to do together.",
+        Res.string.page3_title,
+        Res.string.page3_body,
         Icons.Rounded.Notifications,
         listOf(Icons.Rounded.Cake, Icons.Rounded.Event, Icons.Rounded.AutoAwesome, Icons.Rounded.ChildCare),
     ),
@@ -125,7 +157,7 @@ fun OnboardingContent(
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.End) {
                 AnimatedContent(pager.currentPage < PAGES.size) { show ->
                     if (show) {
-                        TextButton(onClick = { scope.launch { pager.animateScrollToPage(PAGES.size) } }) { Text("Skip") }
+                        TextButton(onClick = { scope.launch { pager.animateScrollToPage(PAGES.size) } }) { Text(stringResource(Res.string.skip)) }
                     } else {
                         Spacer(Modifier.height(48.dp))
                     }
@@ -148,7 +180,7 @@ fun OnboardingContent(
                         onClick = { if (last) onFinish() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
                         enabled = !state.isWorking,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
-                    ) { Text(if (last) startLabel(state) else "Next", style = MaterialTheme.typography.titleMedium) }
+                    ) { Text(if (last) startLabel(state) else stringResource(Res.string.next), style = MaterialTheme.typography.titleMedium) }
                 }
             }
             Spacer(Modifier.height(20.dp))
@@ -156,7 +188,8 @@ fun OnboardingContent(
     }
 }
 
-private fun startLabel(state: OnboardingUiState) = if ((state.contactsImported ?: 0) > 0) "Let's go" else "Start with an empty list"
+@Composable
+private fun startLabel(state: OnboardingUiState) = stringResource(if ((state.contactsImported ?: 0) > 0) Res.string.lets_go else Res.string.start_empty)
 
 @Composable
 private fun IntroPage(page: Page) {
@@ -167,9 +200,9 @@ private fun IntroPage(page: Page) {
     ) {
         OrbitIllustration(page.main, page.satellites)
         Spacer(Modifier.height(28.dp))
-        Text(page.title, style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
+        Text(stringResource(page.title), style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(14.dp))
-        Text(page.body, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(stringResource(page.body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }
 
@@ -185,9 +218,9 @@ private fun SetupPage(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
-        Text("Let's set you up", style = MaterialTheme.typography.displaySmall)
+        Text(stringResource(Res.string.setup_title), style = MaterialTheme.typography.displaySmall)
         Text(
-            "Everything is optional and you can change it later in Settings.",
+            stringResource(Res.string.setup_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -195,14 +228,14 @@ private fun SetupPage(
         if (capabilities.hasAddressBook) {
             SetupItem(
                 icon = Icons.Rounded.Contacts,
-                title = "Bring in your contacts",
+                title = stringResource(Res.string.contacts_title),
                 body = when {
-                    state.contactsImported != null -> "${state.contactsImported} contacts imported. Tap ♥ on the real friends."
-                    state.contactsDenied -> "No problem — you can add friends by hand."
-                    else -> "We read names, phone numbers and birthdays. Nothing leaves your device."
+                    state.contactsImported != null -> state.contactsImported.let { pluralStringResource(Res.plurals.contacts_imported, it, it) }
+                    state.contactsDenied -> stringResource(Res.string.contacts_denied)
+                    else -> stringResource(Res.string.contacts_body)
                 },
                 done = state.contactsImported != null,
-                action = "Import",
+                action = stringResource(Res.string.import),
                 busy = state.isWorking && state.contactsImported == null,
                 onClick = onImportContacts,
             )
@@ -210,35 +243,35 @@ private fun SetupPage(
         if (capabilities.hasBackgroundNotifications) {
             SetupItem(
                 icon = Icons.Rounded.Notifications,
-                title = "Birthday & check-in reminders",
+                title = stringResource(Res.string.notifications_title),
                 body = when (state.notificationsGranted) {
-                    true -> "You're all set — we'll nudge you at the right time."
-                    false -> "Reminders are off. You can turn them on in Settings."
-                    null -> "A nudge on birthdays, important days and when it's been too long."
+                    true -> stringResource(Res.string.notifications_on)
+                    false -> stringResource(Res.string.notifications_off)
+                    null -> stringResource(Res.string.notifications_body)
                 },
                 done = state.notificationsGranted == true,
-                action = "Allow",
+                action = stringResource(Res.string.allow),
                 onClick = onAllowNotifications,
             )
         }
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.tertiaryContainer) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Just looking around?", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(Res.string.looking_title), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Explore with a sample circle of friends — remove it anytime from Settings.",
+                    stringResource(Res.string.looking_body),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 FilledTonalButton(onClick = onExploreSample, enabled = !state.isWorking) {
                     Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Explore with sample friends")
+                    Text(stringResource(Res.string.explore_sample))
                 }
             }
         }
         ListItem(
             leadingContent = { Icon(Icons.Rounded.Shield, null, tint = MaterialTheme.colorScheme.secondary) },
-            headlineContent = { Text("Private by design", style = MaterialTheme.typography.titleSmall) },
-            supportingContent = { Text("No account, no server. SMS are never read.") },
+            headlineContent = { Text(stringResource(Res.string.private_title), style = MaterialTheme.typography.titleSmall) },
+            supportingContent = { Text(stringResource(Res.string.private_body)) },
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
         )
     }
@@ -259,7 +292,7 @@ private fun SetupItem(icon: ImageVector, title: String, body: String, done: Bool
             Spacer(Modifier.width(8.dp))
             AnimatedContent(Triple(done, busy, action)) { (isDone, isBusy, label) ->
                 when {
-                    isDone -> Icon(Icons.Rounded.Check, "Done", tint = MaterialTheme.colorScheme.primary)
+                    isDone -> Icon(Icons.Rounded.Check, stringResource(Res.string.done), tint = MaterialTheme.colorScheme.primary)
                     isBusy -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
                     else -> OutlinedButton(onClick = onClick) { Text(label) }
                 }
