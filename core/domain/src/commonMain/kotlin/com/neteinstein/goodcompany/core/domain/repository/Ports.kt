@@ -15,8 +15,11 @@ interface NotificationScheduler {
 }
 
 /** Turns a [PlannedNotification] into localised text + actions (implemented with UI string resources). */
-fun interface NotificationRenderer {
+interface NotificationRenderer {
     suspend fun render(notification: PlannedNotification): RenderedNotification
+
+    /** Neutral text shown on the lock screen when notifications are private ("You have a reminder"). */
+    suspend fun privateText(): String
 }
 
 /** The user's UI language as a BCP-47 tag (e.g. "pt-PT"), used to ask the AI to answer in it. */

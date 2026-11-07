@@ -1,0 +1,56 @@
+package com.neteinstein.goodcompany.core.domain.usecase
+
+import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.util.AppClock
+import kotlinx.serialization.json.Json
+
+/** Serialises everything (minus the AI key) to a JSON document the user can save anywhere. */
+class ExportBackupUseCase(private val backups: BackupRepository, private val clock: AppClock) {
+    suspend operator fun invoke(): String {
+        val snapshot = backups.snapshot()
+        val clean = snapshot.copy(format = Backup.FORMAT, version = Backup.VERSION, exportedAt = clock.now(), settings = snapshot.settings.copy(aiApiKey = null))
+        return BackupJson.encodeToString(Backup.serializer(), clean)
+    }
+
+    /** Suggested file name, e.g. `good-company-2026-11-07.json`. */
+    fun fileName(): String = "good-company-${clock.today()}.json"
+}
+
+sealed interface RestoreResult {
+    data class Restored(val friends: Int, val hangouts: Int) : RestoreResult
+
+    /** Not a Good Company backup, or from a newer app version. */
+    data object NotABackup : RestoreResult
+}
+
+/**
+ * Replaces all app data with a backup. Device-specific settings that a backup shouldn't move (the AI key, the
+ * app lock, onboarding state) stay as they are on this device.
+ */
+class RestoreBackupUseCase(private val backups: BackupRepository) {
+    suspend operator fun invoke(raw: String): RestoreResult {
+        val backup = runCatching { BackupJson.decodeFromString(Backup.serializer(), raw) }.getOrNull()
+            ?.takeIf { it.format == Backup.FORMAT && it.version <= Backup.VERSION }
+            ?: return RestoreResult.NotABackup
+        val current = backups.snapshot().settings
+        backups.restore(
+            backup.copy(
+                settings = backup.settings.copy(
+                    aiApiKey = current.aiApiKey,
+                    appLock = current.appLock,
+                    onboardingDone = true,
+                    lastOpenedAt = current.lastOpenedAt,
+                ),
+            ),
+        )
+        return RestoreResult.Restored(backup.friends.size, backup.hangouts.size)
+    }
+}
+
+internal val BackupJson = Json {
+    ignoreUnknownKeys = true
+    encodeDefaults = false
+    explicitNulls = false
+    prettyPrint = true
+}

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
@@ -42,6 +43,8 @@ class AppStartupTest {
             FakeHangoutRepository(),
             settings,
             FakeGroupRepository(),
+            FakePlanRepository(),
+            interactions,
             scheduler,
             FakeNotificationRenderer,
             clock,

@@ -17,6 +17,15 @@ sealed interface NotificationContent {
     data class MeetupDue(val friendId: FriendId, val friendName: String, val daysSince: Int?, val everyDays: Int) : NotificationContent
 
     data class GroupMeetupDue(val groupId: String, val groupName: String, val daysSince: Int?, val everyDays: Int) : NotificationContent
+
+    /** The weekly catch-up note: a few names worth reaching out to (instead of one notification per friend). */
+    data class CatchUpDigest(val names: List<String>, val total: Int) : NotificationContent
+
+    /** A planned meetup is today. */
+    data class PlanToday(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
+
+    /** The day after a plan: "Did you meet?" — answered with quick actions. */
+    data class PlanFollowUp(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
 }
 
 /** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */
@@ -24,7 +33,9 @@ data class PlannedNotification(val id: String, val at: Instant, val content: Not
 
 /** Quick actions offered on catch-up notifications. */
 data class NotificationAction(val kind: Kind, val targetId: String, val isGroup: Boolean = false) {
-    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND }
+    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND, PLAN_HAPPENED, PLAN_SKIPPED }
+
+    val isPlan: Boolean get() = kind == Kind.PLAN_HAPPENED || kind == Kind.PLAN_SKIPPED
 
     /** Compact form for platform payloads (Android intent extras, iOS userInfo). */
     fun encode(): String = "${kind.name}|${if (isGroup) "g" else "f"}|$targetId"
@@ -48,4 +59,6 @@ data class RenderedNotification(
     val title: String,
     val body: String,
     val actions: List<RenderedAction> = emptyList(),
+    /** What the lock screen shows instead of [title]/[body] when notifications are private. Null = not private. */
+    val publicText: String? = null,
 )

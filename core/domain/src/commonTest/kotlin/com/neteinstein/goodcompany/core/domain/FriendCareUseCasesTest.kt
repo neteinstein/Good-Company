@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -89,7 +91,13 @@ class FriendCareUseCasesTest {
     @Test
     fun notificationActionsDoTheRightThing() = runTest {
         val handle =
-            HandleNotificationActionUseCase(CheckInUseCase(hangouts, clock, ids), LogCallUseCase(interactions, snooze, clock), snooze, groups)
+            HandleNotificationActionUseCase(
+                CheckInUseCase(hangouts, clock, ids),
+                LogCallUseCase(interactions, snooze, clock),
+                snooze,
+                groups,
+                ConfirmPlanUseCase(FakePlanRepository(), friends, CheckInUseCase(hangouts, clock, ids), clock),
+            )
         handle(NotificationAction.decode(NotificationAction(NotificationAction.Kind.MET, "ana").encode())!!)
         assertEquals(listOf(ana), hangouts.hangouts.value.single().friendIds)
         handle(NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, "rui"))
