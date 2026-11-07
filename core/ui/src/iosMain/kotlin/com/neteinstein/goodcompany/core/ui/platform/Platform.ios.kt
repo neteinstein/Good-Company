@@ -24,6 +24,9 @@ import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.UniformTypeIdentifiers.UTTypePlainText
 import platform.UniformTypeIdentifiers.UTTypeText
+import platform.UniformTypeIdentifiers.UTTypeVCard
+import platform.UIKit.UIActivityViewController
+import platform.UIKit.popoverPresentationController
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
@@ -36,6 +39,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasCallLog = false,
     hasBackgroundNotifications = true,
     hasDynamicColor = false,
+    smsBodySeparator = "&",
 )
 
 @Composable
@@ -63,12 +67,16 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
 }
 
 @Composable
-actual fun rememberTextFilePicker(onPicked: (text: String?) -> Unit): () -> Unit {
+actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> Unit): () -> Unit {
     val callback = rememberUpdatedState(onPicked)
     val delegate = remember { PickerDelegate { callback.value(it) } }
     DisposableEffect(Unit) { onDispose { delegate.onPicked = {} } }
     return {
-        val picker = UIDocumentPickerViewController(forOpeningContentTypes = listOf(UTTypePlainText, UTTypeText))
+        val types = when (kind) {
+            FileKind.TEXT -> listOf(UTTypePlainText, UTTypeText)
+            FileKind.VCARD -> listOf(UTTypeVCard, UTTypeText)
+        }
+        val picker = UIDocumentPickerViewController(forOpeningContentTypes = types)
         picker.delegate = delegate
         picker.allowsMultipleSelection = false
         topViewController()?.presentViewController(picker, animated = true, completion = null)
@@ -101,6 +109,18 @@ private fun topViewController(): UIViewController? {
     var top = window?.rootViewController
     while (top?.presentedViewController != null) top = top.presentedViewController
     return top
+}
+
+@Composable
+actual fun rememberTextSharer(): TextSharer = remember {
+    TextSharer { text ->
+        val controller = UIActivityViewController(activityItems = listOf(text), applicationActivities = null)
+        val top = topViewController()
+        // iPad needs an anchor for the popover.
+        controller.popoverPresentationController?.sourceView = top?.view
+        top?.presentViewController(controller, animated = true, completion = null)
+        ShareOutcome.SHARE_SHEET
+    }
 }
 
 @Composable

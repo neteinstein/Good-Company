@@ -65,4 +65,5 @@ internal object Keys {
     const val MESSAGES = "messages.v1"
     const val IDEAS = "ideas.v1"
     const val SETTINGS = "settings.v1"
+    const val GROUPS = "groups.v1"
 }

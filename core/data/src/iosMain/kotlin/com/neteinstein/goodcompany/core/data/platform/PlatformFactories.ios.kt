@@ -14,3 +14,7 @@ actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = Commun
 actual fun Scope.createLocationProvider(): LocationProvider = IosLocationProvider()
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()
+
+actual fun installNotificationActionHandling() {
+    platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().delegate = IosNotificationDelegate
+}

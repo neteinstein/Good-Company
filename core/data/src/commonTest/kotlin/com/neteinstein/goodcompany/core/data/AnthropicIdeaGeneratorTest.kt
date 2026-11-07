@@ -1,8 +1,10 @@
 package com.neteinstein.goodcompany.core.data
 
+import com.neteinstein.goodcompany.core.data.ai.AnthropicClient
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
 import com.neteinstein.goodcompany.core.data.ai.IdeaJsonParser
 import com.neteinstein.goodcompany.core.data.ai.IdeaPrompts
+import com.neteinstein.goodcompany.core.domain.model.AiFailure
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRequest
 import io.ktor.client.HttpClient
@@ -53,7 +55,7 @@ class AnthropicIdeaGeneratorTest {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         }
-        val ideas = AnthropicIdeaGenerator(HttpClient(engine)).generate(request).getOrThrow()
+        val ideas = AnthropicIdeaGenerator(AnthropicClient(HttpClient(engine))).generate(request).getOrThrow()
         assertEquals("Jazz night", ideas.single().title)
         assertEquals("Fri", ideas.single().whenText)
 
@@ -79,21 +81,22 @@ class AnthropicIdeaGeneratorTest {
                 respond(reply("end_turn", "{\"ideas\":[]}"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
             }
         }
-        assertTrue(AnthropicIdeaGenerator(HttpClient(engine)).generate(request).getOrThrow().isEmpty())
+        assertTrue(AnthropicIdeaGenerator(AnthropicClient(HttpClient(engine))).generate(request).getOrThrow().isEmpty())
         assertEquals(2, calls)
     }
 
     @Test
     fun mapsErrorsToFriendlyMessages() = runTest {
         val engine = MockEngine { respond("""{"error":{"message":"invalid x-api-key"}}""", HttpStatusCode.Unauthorized) }
-        val error = AnthropicIdeaGenerator(HttpClient(engine)).generate(request).exceptionOrNull()
-        assertEquals("Your API key was rejected. Check it in Settings.", error?.message)
+        val error = AnthropicIdeaGenerator(AnthropicClient(HttpClient(engine))).generate(request).exceptionOrNull()
+        assertEquals(AiFailure.Reason.INVALID_KEY, (error as AiFailure).reason)
     }
 
     @Test
     fun refusalIsAFailure() = runTest {
         val engine = MockEngine { respond(reply("refusal", ""), HttpStatusCode.OK) }
-        assertTrue(AnthropicIdeaGenerator(HttpClient(engine)).generate(request).isFailure)
+        val refused = AnthropicIdeaGenerator(AnthropicClient(HttpClient(engine))).generate(request).exceptionOrNull()
+        assertEquals(AiFailure.Reason.REFUSED, (refused as AiFailure).reason)
     }
 
     @Test
@@ -107,6 +110,7 @@ class AnthropicIdeaGeneratorTest {
     @Test
     fun promptIncludesProfileAndArea() {
         val prompt = IdeaPrompts.user(request)
+        assertTrue("BCP-47 tag \"pt-PT\"" in IdeaPrompts.user(request.copy(languageTag = "pt-PT")))
         listOf("Lisbon", "id=ana", "likes: jazz", "dislikes: crowds", "Leo (likes lego)", "Ana: jazz fest?").forEach {
             assertTrue(it in prompt, "missing $it")
         }

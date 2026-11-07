@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.data
 
 import com.neteinstein.goodcompany.core.data.repository.FriendRepositoryImpl
+import com.neteinstein.goodcompany.core.data.repository.GroupRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.IdeaRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.InteractionRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
@@ -10,6 +11,7 @@ import com.neteinstein.goodcompany.core.data.source.LogEntry
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
@@ -96,5 +98,20 @@ class RepositoriesTest {
         val s = SettingsRepositoryImpl(settings)
         s.update { it.copy(themeMode = ThemeMode.DARK, aiApiKey = "k") }
         assertEquals(ThemeMode.DARK, SettingsRepositoryImpl(settings).settings.first().themeMode)
+    }
+
+    @Test
+    fun groupsPersistAndIdeasCanBeMarkedProposed() = runTest {
+        val repo = GroupRepositoryImpl(settings)
+        repo.upsert(FriendGroup("g", "Crew", "🎲", listOf(FriendId("ana"), FriendId("rui")), 30))
+        repo.upsert(FriendGroup("g", "Crew 2", "🎲", listOf(FriendId("ana"), FriendId("rui")), 30))
+        assertEquals("Crew 2", GroupRepositoryImpl(settings).groups.first().single().name)
+        repo.delete("g")
+        assertTrue(repo.groups.first().isEmpty())
+
+        val ideas = IdeaRepositoryImpl(settings)
+        ideas.addAll(listOf(Idea("i", listOf(FriendId("ana")), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 1, 1))))
+        ideas.markProposed("i", at(2026, 1, 2))
+        assertEquals(at(2026, 1, 2), IdeaRepositoryImpl(settings).ideas.first().single().proposedAt)
     }
 }

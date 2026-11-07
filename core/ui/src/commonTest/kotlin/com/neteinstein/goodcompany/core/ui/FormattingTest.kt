@@ -1,16 +1,17 @@
 package com.neteinstein.goodcompany.core.ui
 
+import com.neteinstein.goodcompany.core.ui.format.RelativeDay
+import com.neteinstein.goodcompany.core.ui.format.RelativePast
+import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.parseTags
-import com.neteinstein.goodcompany.core.ui.format.relativeDay
-import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
-import com.neteinstein.goodcompany.core.ui.format.relativePast
-import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.format.urlEncode
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -21,37 +22,32 @@ class FormattingTest {
 
     @Test
     fun relativeDays() {
-        assertEquals("Today", relativeDay(today, today))
-        assertEquals("Tomorrow", relativeDay(LocalDate(2026, 3, 11), today))
-        assertEquals("In 4 days", relativeDay(LocalDate(2026, 3, 14), today))
-        assertEquals("Mar 30", relativeDay(LocalDate(2026, 3, 30), today))
-        assertEquals("Yesterday", relativeDay(LocalDate(2026, 3, 9), today))
-    }
-
-    @Test
-    fun relativeDayPhrases() {
-        assertEquals("today", relativeDayPhrase(today, today))
-        assertEquals("tomorrow", relativeDayPhrase(LocalDate(2026, 3, 11), today))
-        assertEquals("in 4 days", relativeDayPhrase(LocalDate(2026, 3, 14), today))
-        assertEquals("on Mar 30", relativeDayPhrase(LocalDate(2026, 3, 30), today))
+        assertEquals(RelativeDay.Today, RelativeDay.of(today, today))
+        assertEquals(RelativeDay.Tomorrow, RelativeDay.of(LocalDate(2026, 3, 11), today))
+        assertEquals(RelativeDay.InDays(4), RelativeDay.of(LocalDate(2026, 3, 14), today))
+        assertEquals(RelativeDay.On(LocalDate(2026, 3, 30)), RelativeDay.of(LocalDate(2026, 3, 30), today))
+        assertEquals(RelativeDay.Yesterday, RelativeDay.of(LocalDate(2026, 3, 9), today))
+        assertEquals(RelativeDay.DaysAgo(3), RelativeDay.of(LocalDate(2026, 3, 7), today))
+        assertTrue(isFarDate(LocalDate(2026, 4, 1), today))
     }
 
     @Test
     fun relativePastBuckets() {
         val z = TimeZone.UTC
-        assertEquals("just now", relativePast(now, now, z))
-        assertEquals("5m ago", relativePast(now - 5.minutes, now, z))
-        assertEquals("3h ago", relativePast(now - 3.hours, now, z))
-        assertEquals("yesterday", relativePast(now - 20.hours, now, z))
-        assertEquals("10 days ago", relativePast(now - 10.days, now, z))
-        assertEquals("3 weeks ago", relativePast(now - 21.days, now, z))
-        assertEquals("4 months ago", relativePast(now - 125.days, now, z))
-        assertEquals("over a year ago", relativePast(now - 400.days, now, z))
+        assertEquals(RelativePast.JustNow, RelativePast.of(now, now, z))
+        assertEquals(RelativePast.Minutes(5), RelativePast.of(now - 5.minutes, now, z))
+        assertEquals(RelativePast.Hours(3), RelativePast.of(now - 3.hours, now, z))
+        assertEquals(RelativePast.Yesterday, RelativePast.of(now - 20.hours, now, z))
+        assertEquals(RelativePast.Days(10), RelativePast.of(now - 10.days, now, z))
+        assertEquals(RelativePast.Weeks(3), RelativePast.of(now - 21.days, now, z))
+        assertEquals(RelativePast.Months(4), RelativePast.of(now - 125.days, now, z))
+        assertEquals(RelativePast.OverAYear, RelativePast.of(now - 400.days, now, z))
     }
 
     @Test
-    fun labelsAndTags() {
-        assertEquals("Dec 1", LocalDate(2026, 12, 1).shortLabel())
+    fun tagsAndUrlEncoding() {
         assertEquals(listOf("jazz", "sushi"), parseTags(" jazz, sushi ,, jazz\n"))
+        assertEquals("Parab%C3%A9ns%2C%20Ana%21%20%F0%9F%8E%89", urlEncode("Parabéns, Ana! 🎉"))
+        assertEquals("a-b_c.d~e", urlEncode("a-b_c.d~e"))
     }
 }

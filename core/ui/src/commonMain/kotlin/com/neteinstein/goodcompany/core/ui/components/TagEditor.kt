@@ -1,5 +1,9 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.remove_item
+import com.neteinstein.goodcompany.core.ui.resources.tags_add
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -61,7 +65,7 @@ fun TagEditor(
                         selected = false,
                         onClick = { onRemove(tag) },
                         label = { Text(tag) },
-                        trailingIcon = { Icon(Icons.Rounded.Close, "Remove $tag", Modifier.size(InputChipDefaults.IconSize)) },
+                        trailingIcon = { Icon(Icons.Rounded.Close, stringResource(Res.string.remove_item, tag), Modifier.size(InputChipDefaults.IconSize)) },
                         colors = InputChipDefaults.inputChipColors(containerColor = chipColor),
                         border = null,
                     )
@@ -78,7 +82,7 @@ fun TagEditor(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { submit() }),
             trailingIcon = {
-                IconButton(onClick = ::submit, enabled = draft.isNotBlank()) { Icon(Icons.Rounded.Add, "Add") }
+                IconButton(onClick = ::submit, enabled = draft.isNotBlank()) { Icon(Icons.Rounded.Add, stringResource(Res.string.tags_add)) }
             },
         )
     }

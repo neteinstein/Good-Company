@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- core:ui — shared words, dates, notifications, sample data, AI errors. Keep keys stable; translations live in values-pt/es/fr/ro. -->
+<resources>
+    <!-- Common actions -->
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="add">Add</string>
+    <string name="remove">Remove</string>
+    <string name="delete">Delete</string>
+    <string name="undo">Undo</string>
+    <string name="edit">Edit</string>
+    <string name="close">Close</string>
+    <string name="share">Share</string>
+    <string name="open">Open</string>
+    <string name="back">Back</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
+    <string name="remove_item">Remove %1$s</string>
+
+    <!-- Relative days -->
+    <string name="day_today">Today</string>
+    <string name="day_tomorrow">Tomorrow</string>
+    <string name="day_yesterday">Yesterday</string>
+    <plurals name="day_in_days">
+        <item quantity="one">In %1$d day</item>
+        <item quantity="other">In %1$d days</item>
+    </plurals>
+    <plurals name="day_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="phrase_today">today</string>
+    <string name="phrase_tomorrow">tomorrow</string>
+    <string name="phrase_yesterday">yesterday</string>
+    <plurals name="phrase_in_days">
+        <item quantity="one">in %1$d day</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
+    <string name="phrase_on_date">on %1$s</string>
+
+    <!-- Relative past -->
+    <string name="past_just_now">just now</string>
+    <string name="past_minutes">%1$dm ago</string>
+    <string name="past_hours">%1$dh ago</string>
+    <string name="past_yesterday">yesterday</string>
+    <plurals name="past_days">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <plurals name="past_weeks">
+        <item quantity="one">%1$d week ago</item>
+        <item quantity="other">%1$d weeks ago</item>
+    </plurals>
+    <plurals name="past_months">
+        <item quantity="one">%1$d month ago</item>
+        <item quantity="other">%1$d months ago</item>
+    </plurals>
+    <string name="past_over_a_year">over a year ago</string>
+
+    <!-- Dates. %1$s = month name, %2$d = day, %3$d = year -->
+    <string name="date_short">%1$s %2$d</string>
+    <string name="date_long">%1$s %2$d, %3$d</string>
+    <string-array name="months_short">
+        <item>Jan</item><item>Feb</item><item>Mar</item><item>Apr</item><item>May</item><item>Jun</item>
+        <item>Jul</item><item>Aug</item><item>Sep</item><item>Oct</item><item>Nov</item><item>Dec</item>
+    </string-array>
+    <string-array name="months_long">
+        <item>January</item><item>February</item><item>March</item><item>April</item><item>May</item><item>June</item>
+        <item>July</item><item>August</item><item>September</item><item>October</item><item>November</item><item>December</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>Mon</item><item>Tue</item><item>Wed</item><item>Thu</item><item>Fri</item><item>Sat</item><item>Sun</item>
+    </string-array>
+    <string-array name="weekdays_long">
+        <item>Monday</item><item>Tuesday</item><item>Wednesday</item><item>Thursday</item><item>Friday</item><item>Saturday</item><item>Sunday</item>
+    </string-array>
+    <string-array name="weekdays_initial">
+        <item>M</item><item>T</item><item>W</item><item>T</item><item>F</item><item>S</item><item>S</item>
+    </string-array>
+
+    <!-- Cadence -->
+    <plurals name="every_n_days">
+        <item quantity="one">every day</item>
+        <item quantity="other">every %1$d days</item>
+    </plurals>
+    <string name="cadence_weekly">Weekly</string>
+    <string name="cadence_two_weeks">2 weeks</string>
+    <string name="cadence_monthly">Monthly</string>
+    <string name="cadence_quarterly">Quarterly</string>
+    <string name="cadence_off">Off</string>
+
+    <!-- Circles -->
+    <string name="circle_inner">Inner circle</string>
+    <string name="circle_close">Close friends</string>
+    <string name="circle_good">Good friends</string>
+    <string name="circle_inner_short">Inner</string>
+    <string name="circle_close_short">Close</string>
+    <string name="circle_good_short">Good</string>
+
+    <!-- Warmth -->
+    <string name="warmth_warm">Warm</string>
+    <string name="warmth_cooling">Cooling</string>
+    <string name="warmth_fading">Fading</string>
+
+    <!-- Gift occasions -->
+    <string name="occasion_birthday">Birthday</string>
+    <string name="occasion_christmas">Christmas</string>
+    <string name="occasion_thank_you">Thank you</string>
+    <string name="occasion_just_because">Just because</string>
+
+    <!-- Tag editor -->
+    <string name="tags_add">Add</string>
+
+    <!-- Reminder editor -->
+    <string name="reminder_new">New reminder</string>
+    <string name="reminder_label">Remind me to…</string>
+    <string name="reminder_placeholder">Book tickets for the concert</string>
+    <string name="reminder_with">With</string>
+    <string name="reminder_when">When</string>
+    <string name="reminder_no_date">No date</string>
+    <string name="reminder_morning">Morning</string>
+    <string name="reminder_lunch">Lunch</string>
+    <string name="reminder_evening">Evening</string>
+    <string name="reminder_night">Night</string>
+    <string name="reminder_slot">%1$s · %2$d:00</string>
+
+    <!-- Share / messaging -->
+    <string name="send_whatsapp">WhatsApp</string>
+    <string name="send_sms">Text message</string>
+    <string name="send_share">Share…</string>
+
+    <!-- Notifications -->
+    <string name="notif_bday_title">🎂 %1$s\'s birthday</string>
+    <string name="notif_bday_body_age">%1$s turns %2$d today — say hi!</string>
+    <string name="notif_bday_body">It\'s %1$s\'s birthday today — say hi!</string>
+    <string name="notif_kid_title">🎈 %1$s (%2$s\'s kid)</string>
+    <string name="notif_kid_body_age">Turns %1$d today.</string>
+    <string name="notif_kid_body">Birthday today.</string>
+    <string name="notif_kid_likes">Likes: %1$s</string>
+    <string name="notif_event_today_title">💬 Ping %1$s</string>
+    <string name="notif_event_today_body">%1$s is today. A quick message goes a long way.</string>
+    <string name="notif_event_soon_title">📅 %1$s: %2$s</string>
+    <plurals name="notif_event_soon_body">
+        <item quantity="one">Coming up in %1$d day.</item>
+        <item quantity="other">Coming up in %1$d days.</item>
+    </plurals>
+    <string name="notif_reminder_title">⏰ %1$s</string>
+    <string name="notif_reminder_with">With %1$s</string>
+    <string name="notif_reminder_body">Reminder</string>
+    <string name="notif_meet_title">👋 Time to see %1$s</string>
+    <plurals name="notif_meet_body">
+        <item quantity="one">It\'s been %1$d day — you wanted to meet %2$s.</item>
+        <item quantity="other">It\'s been %1$d days — you wanted to meet %2$s.</item>
+    </plurals>
+    <string name="notif_meet_body_never">You haven\'t logged a meetup yet — you wanted to meet %1$s.</string>
+    <string name="notif_group_title">%1$s: get everyone together</string>
+    <plurals name="notif_group_body">
+        <item quantity="one">Last time all together was %1$d day ago.</item>
+        <item quantity="other">Last time all together was %1$d days ago.</item>
+    </plurals>
+    <string name="notif_group_body_never">You haven\'t all met up yet.</string>
+    <string name="notif_action_met">We met</string>
+    <string name="notif_action_called">Called</string>
+    <string name="notif_action_snooze_week">Next week</string>
+    <string name="notif_action_snooze_weekend">This weekend</string>
+
+    <!-- AI errors -->
+    <string name="ai_error_no_key">Add an Anthropic API key in Settings to use AI features.</string>
+    <string name="ai_error_invalid_key">Your API key was rejected. Check it in Settings.</string>
+    <string name="ai_error_rate_limited">Rate limited by the AI service. Try again in a minute.</string>
+    <string name="ai_error_unavailable">The AI service is having trouble. Try again later.</string>
+    <string name="ai_error_refused">The request was declined by the AI safety system.</string>
+    <string name="ai_error_truncated">The answer was cut off. Try again.</string>
+    <string name="ai_error_too_slow">The search took too long. Try again later.</string>
+    <string name="ai_error_other">Couldn\'t reach the AI service. Check your connection.</string>
+
+    <!-- Sample data (demo circle) -->
+    <string name="sample_ana_notes">Partner: Tiago. Allergic to peanuts.</string>
+    <string name="sample_knee_surgery">Knee surgery</string>
+    <string name="sample_job_interview">Job interview</string>
+    <string name="sample_jazz_night">Jazz night 🎷</string>
+    <string name="sample_board_games_note">Board games</string>
+    <string name="sample_surf_morning">Surf morning</string>
+    <string name="sample_ruis_place">Rui\'s place</string>
+    <string name="sample_beatriz_dinner">Beatriz\'s dinner party</string>
+    <string name="sample_reminder_tickets">Book tickets for the jazz festival</string>
+    <string name="sample_reminder_present">Buy Leo\'s birthday present</string>
+    <string name="sample_reminder_ask_marta">Ask Marta how the interview went</string>
+    <string name="sample_reminder_surf">Plan the surf weekend</string>
+    <string name="sample_reminder_photos">Send Sofia the trip photos</string>
+    <string name="sample_idea_jazz_title">Lisbon Jazz Festival — late show</string>
+    <string name="sample_idea_jazz_body">Ana loves jazz and Rui\'s into anything live. The Friday late set is small and seated — no crowds.</string>
+    <string name="sample_idea_jazz_when">Fri, 22:00</string>
+    <string name="sample_idea_photo_title">Street photography walk in Alfama</string>
+    <string name="sample_idea_photo_body">A guided golden-hour walk — perfect for Sofia\'s new camera, and it ends at a specialty coffee bar.</string>
+    <string name="sample_idea_photo_when">Sat, 17:30</string>
+    <string name="sample_idea_f1_title">New F1 street circuit announced</string>
+    <string name="sample_idea_f1_body">Big news for Rui — bring it up next time; he\'s been talking about going to a race abroad.</string>
+    <string name="sample_idea_ceramics_title">Ceramics studio she mentioned</string>
+    <string name="sample_idea_ceramics_body">Marta said she wanted to try wheel throwing again — ask whether she found a studio.</string>
+    <string name="sample_gift_vinyl">Kind of Blue on vinyl</string>
+    <string name="sample_gift_murakami">Murakami first edition</string>
+    <string name="sample_gift_dino_lego">LEGO dinosaur set</string>
+    <string name="sample_gift_board_game">Wingspan board game</string>
+    <string name="sample_gift_ceramics">Ceramics class voucher</string>
+    <string name="sample_group_board_games">Board game night</string>
+    <string name="sample_group_surf">Surf crew</string>
+    <string name="sample_taste_jazz">Jazz</string>
+    <string name="sample_taste_sushi">Sushi</string>
+    <string name="sample_taste_hiking">Hiking</string>
+    <string name="sample_taste_crowds">Crowds</string>
+    <string name="sample_taste_cilantro">Cilantro</string>
+    <string name="sample_taste_dinosaurs">Dinosaurs</string>
+    <string name="sample_taste_pancakes">Pancakes</string>
+    <string name="sample_taste_formula1">Formula 1</string>
+    <string name="sample_taste_craft_beer">Craft beer</string>
+    <string name="sample_taste_board_games">Board games</string>
+    <string name="sample_taste_early_mornings">Early mornings</string>
+    <string name="sample_taste_yoga">Yoga</string>
+    <string name="sample_taste_indie_films">Indie films</string>
+    <string name="sample_taste_ceramics">Ceramics</string>
+    <string name="sample_taste_horror">Horror movies</string>
+    <string name="sample_taste_painting">Painting</string>
+    <string name="sample_taste_football">Football</string>
+    <string name="sample_taste_bbq">BBQ</string>
+    <string name="sample_taste_surfing">Surfing</string>
+    <string name="sample_taste_photography">Photography</string>
+    <string name="sample_taste_travel">Travel</string>
+    <string name="sample_taste_coffee">Specialty coffee</string>
+    <string name="sample_taste_spicy">Spicy food</string>
+    <string name="sample_taste_theatre">Theatre</string>
+    <string name="sample_taste_cooking">Cooking</string>
+    <string name="sample_taste_wine">Wine</string>
+    <string name="sample_taste_ballet">Ballet</string>
+    <string name="sample_taste_running">Running</string>
+</resources>

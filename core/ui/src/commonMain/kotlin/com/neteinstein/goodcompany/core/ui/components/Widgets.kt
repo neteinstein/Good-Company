@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import com.neteinstein.goodcompany.core.ui.format.monthShort
+import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -146,9 +148,6 @@ fun ProgressRing(
     }
 }
 
-private val WEEKDAYS = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
-private val MONTHS = listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
-
 /** Calendar-tile date: weekday / big day number / month. Today is filled with the primary colour. */
 @Composable
 fun DateBadge(date: LocalDate, today: LocalDate, modifier: Modifier = Modifier) {
@@ -159,9 +158,9 @@ fun DateBadge(date: LocalDate, today: LocalDate, modifier: Modifier = Modifier) 
         modifier.width(56.dp).clip(RoundedCornerShape(16.dp)).background(bg).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(WEEKDAYS[date.dayOfWeek.ordinal], style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.8f))
+        Text(weekdayShort(date.dayOfWeek).uppercase(), style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.8f))
         Text(date.day.toString(), style = MaterialTheme.typography.headlineSmall, color = fg, fontWeight = FontWeight.ExtraBold)
-        Text(MONTHS[date.month.ordinal], style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.8f))
+        Text(monthShort(date.month).uppercase().trimEnd('.'), style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.8f))
     }
 }
 

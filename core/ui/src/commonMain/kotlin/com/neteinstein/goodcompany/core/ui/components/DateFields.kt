@@ -1,5 +1,9 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.ok
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,8 +36,8 @@ fun LocalDatePickerDialog(
                     }
                     onDismiss()
                 },
-            ) { Text("OK") }
+            ) { Text(stringResource(Res.string.ok)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     ) { DatePicker(state = state) }
 }

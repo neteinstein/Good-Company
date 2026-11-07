@@ -1,5 +1,20 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.reminder_evening
+import com.neteinstein.goodcompany.core.ui.resources.reminder_label
+import com.neteinstein.goodcompany.core.ui.resources.reminder_lunch
+import com.neteinstein.goodcompany.core.ui.resources.reminder_morning
+import com.neteinstein.goodcompany.core.ui.resources.reminder_new
+import com.neteinstein.goodcompany.core.ui.resources.reminder_night
+import com.neteinstein.goodcompany.core.ui.resources.reminder_no_date
+import com.neteinstein.goodcompany.core.ui.resources.reminder_placeholder
+import com.neteinstein.goodcompany.core.ui.resources.reminder_slot
+import com.neteinstein.goodcompany.core.ui.resources.reminder_when
+import com.neteinstein.goodcompany.core.ui.resources.reminder_with
+import com.neteinstein.goodcompany.core.ui.resources.save
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,7 +45,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import kotlinx.datetime.LocalDate
 
-private val HOURS = listOf(9 to "Morning", 13 to "Lunch", 18 to "Evening", 21 to "Night")
+private val HOURS = listOf(9 to Res.string.reminder_morning, 13 to Res.string.reminder_lunch, 18 to Res.string.reminder_evening, 21 to Res.string.reminder_night)
 
 /** "Remind me to book tickets for X to go with Y." */
 @OptIn(ExperimentalLayoutApi::class)
@@ -51,17 +66,17 @@ fun ReminderEditor(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.AlarmAdd, null) },
-        title = { Text("New reminder") },
+        title = { Text(stringResource(Res.string.reminder_new)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     title,
                     { title = it },
-                    label = { Text("Remind me to…") },
-                    placeholder = { Text("Book tickets for the concert") },
+                    label = { Text(stringResource(Res.string.reminder_label)) },
+                    placeholder = { Text(stringResource(Res.string.reminder_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Text("With", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(Res.string.reminder_with), style = MaterialTheme.typography.labelLarge)
                 FlowRow(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     friends.sortedWith(
                         compareByDescending<Friend> {
@@ -75,20 +90,20 @@ fun ReminderEditor(
                         )
                     }
                 }
-                Text("When", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(Res.string.reminder_when), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { pickDate = true }) { Text(date?.longLabel() ?: "No date") }
-                    if (date != null) TextButton(onClick = { date = null }) { Text("No date") }
+                    OutlinedButton(onClick = { pickDate = true }) { Text(date?.longLabel() ?: stringResource(Res.string.reminder_no_date)) }
+                    if (date != null) TextButton(onClick = { date = null }) { Text(stringResource(Res.string.reminder_no_date)) }
                 }
                 if (date != null) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HOURS.forEach { (h, label) -> FilterChip(hour == h, { hour = h }, label = { Text("$label · $h:00") }) }
+                        HOURS.forEach { (h, label) -> FilterChip(hour == h, { hour = h }, label = { Text(stringResource(Res.string.reminder_slot, stringResource(label), h)) }) }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(title, selected.toList(), date, hour) }, enabled = title.isNotBlank()) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onSave(title, selected.toList(), date, hour) }, enabled = title.isNotBlank()) { Text(stringResource(Res.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date ?: today, onDismiss = { pickDate = false }, onPicked = { date = it })
 }

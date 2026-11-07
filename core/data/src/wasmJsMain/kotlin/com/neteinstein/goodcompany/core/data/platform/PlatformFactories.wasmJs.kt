@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.core.data.platform
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
-import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
+import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -22,7 +22,7 @@ actual fun Scope.createLocationProvider(): LocationProvider = BrowserLocationPro
 
 /** A closed tab can't fire reminders; the web build shows them in the agenda only. */
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = object : NotificationScheduler {
-    override suspend fun replaceAll(notifications: List<PlannedNotification>) = Unit
+    override suspend fun replaceAll(notifications: List<RenderedNotification>) = Unit
 }
 
 private class BrowserLocationProvider : LocationProvider {
@@ -47,3 +47,5 @@ private fun requestPosition(onSuccess: (Double, Double) -> Unit, onError: () -> 
         );
     }""",
 )
+
+actual fun installNotificationActionHandling() = Unit

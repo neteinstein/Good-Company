@@ -77,7 +77,7 @@ object YearInReviewBuilder {
 
     /** Consecutive Monday-based weeks containing at least one date. */
     fun longestWeekStreak(dates: List<LocalDate>): Int {
-        val weeks = dates.map { it.minus(it.dayOfWeek.ordinal, DateTimeUnit.DAY) }.toSortedSet()
+        val weeks = dates.map { it.minus(it.dayOfWeek.ordinal, DateTimeUnit.DAY) }.distinct().sorted()
         var best = 0
         var run = 0
         var prev: LocalDate? = null
