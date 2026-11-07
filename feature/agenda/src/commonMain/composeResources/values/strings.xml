@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Coming up</string>
+    <string name="eyebrow">%1$s, %2$s</string>
+    <string name="nothing_ahead">Nothing on the horizon</string>
+    <plurals name="things_ahead">
+        <item quantity="one">%1$d thing in the next two months</item>
+        <item quantity="other">%1$d things in the next two months</item>
+    </plurals>
+    <string name="empty_title">All quiet</string>
+    <string name="empty_body">Mark real friends and add birthdays, kids and important moments — they’ll show up here.</string>
+    <string name="fab_reminder">Reminder</string>
+    <string name="reminders_header">Your reminders · %1$d open</string>
+    <string name="reminders_empty">“Book tickets for the concert with Rui” — add one with the button below.</string>
+    <string name="reminder_with">with %1$s</string>
+    <string name="reminder_delete">Delete reminder</string>
+
+    <string name="label_birthday">BIRTHDAY</string>
+    <string name="label_kid_birthday">KID’S BIRTHDAY</string>
+    <string name="label_big_day">BIG DAY</string>
+    <string name="label_reminder">REMINDER</string>
+    <string name="label_catch_up">CATCH UP</string>
+    <string name="label_group">GROUP</string>
+    <string name="row_birthday">%1$s’s birthday</string>
+    <string name="row_turns">Turns %1$d</string>
+    <string name="row_loves">loves %1$s</string>
+    <string name="row_kid">%1$s (%2$s’s)</string>
+    <string name="row_gift_idea">gift idea: %1$s</string>
+    <string name="row_ping">Ping %1$s</string>
+    <string name="row_with">With %1$s</string>
+    <string name="row_see">See %1$s</string>
+    <plurals name="row_days_since">
+        <item quantity="one">%1$d day since you met</item>
+        <item quantity="other">%1$d days since you met</item>
+    </plurals>
+    <string name="row_never">No meetup logged yet</string>
+    <plurals name="row_group_days">
+        <item quantity="one">%1$s · %2$d day since you were all together</item>
+        <item quantity="other">%1$s · %2$d days since you were all together</item>
+    </plurals>
+    <string name="row_send_wishes">Send wishes</string>
+    <string name="row_we_met">We met</string>
+    <string name="wish_title">Birthday wishes for %1$s</string>
+    <string name="wish_gift_hint">Gift ideas: %1$s</string>
+
+    <string name="msg_reminder_saved">Reminder saved</string>
+    <string name="msg_reminder_deleted">Reminder deleted</string>
+    <string name="msg_group_met">Logged time with %1$s ✨</string>
+</resources>

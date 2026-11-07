@@ -7,6 +7,9 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -28,6 +31,17 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 
+/** One-off feedback for the snackbar; the screen turns it into localised text. */
+sealed interface AgendaMessage {
+    data object ReminderSaved : AgendaMessage
+
+    data object ReminderDeleted : AgendaMessage
+
+    data class GroupMet(val name: String) : AgendaMessage
+
+    data class AiError(val error: Throwable) : AgendaMessage
+}
+
 data class AgendaUiState(
     val agenda: List<AgendaItem> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
@@ -35,7 +49,12 @@ data class AgendaUiState(
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
     val recentlyDeleted: Reminder? = null,
-    val message: String? = null,
+    val message: AgendaMessage? = null,
+    val hasAiKey: Boolean = false,
+    /** Friend whose birthday-wish sheet is open. */
+    val wishFor: Friend? = null,
+    val wishDraft: String? = null,
+    val isDraftingWish: Boolean = false,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
 ) {
@@ -57,6 +76,9 @@ class AgendaViewModel(
     observeAgenda: ObserveAgendaUseCase,
     observeReminders: ObserveRemindersUseCase,
     observeFriends: ObserveFriendsUseCase,
+    observeSettings: ObserveSettingsUseCase,
+    private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
+    private val checkIn: CheckInUseCase,
     private val addReminder: AddReminderUseCase,
     private val setReminderDone: SetReminderDoneUseCase,
     private val deleteReminder: DeleteReminderUseCase,
@@ -65,8 +87,15 @@ class AgendaViewModel(
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
 
-    val state: StateFlow<AgendaUiState> = combine(observeAgenda(), observeReminders(), observeFriends(), local) { agenda, reminders, friends, ui ->
+    val state: StateFlow<AgendaUiState> = combine(
+        observeAgenda(),
+        observeReminders(),
+        observeFriends(),
+        observeSettings(),
+        local,
+    ) { agenda, reminders, friends, settings, ui ->
         ui.copy(
+            hasAiKey = settings.hasAiKey,
             agenda = agenda,
             reminders = reminders,
             friends = friends.map { it.friend },
@@ -86,7 +115,7 @@ class AgendaViewModel(
         viewModelScope.launch {
             val due = date?.atTime(LocalTime(hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
             addReminder(title, friendIds, due)
-            local.update { it.copy(showReminderEditor = false, message = "Reminder saved") }
+            local.update { it.copy(showReminderEditor = false, message = AgendaMessage.ReminderSaved) }
         }
     }
 
@@ -98,7 +127,7 @@ class AgendaViewModel(
         val reminder = state.value.reminders.firstOrNull { it.id == id }
         viewModelScope.launch {
             deleteReminder(id)
-            local.update { it.copy(recentlyDeleted = reminder, message = "Reminder deleted") }
+            local.update { it.copy(recentlyDeleted = reminder, message = AgendaMessage.ReminderDeleted) }
         }
     }
 
@@ -107,6 +136,38 @@ class AgendaViewModel(
         viewModelScope.launch {
             restoreReminder(reminder)
             local.update { it.copy(recentlyDeleted = null) }
+        }
+    }
+
+    fun onOpenWish(id: FriendId) {
+        val friend = state.value.friends.firstOrNull { it.id == id } ?: return
+        local.update { it.copy(wishFor = friend, wishDraft = null) }
+    }
+
+    fun onDismissWish() = local.update { it.copy(wishFor = null, wishDraft = null) }
+
+    fun onPersonaliseWish() {
+        val friend = local.value.wishFor ?: return
+        if (local.value.isDraftingWish) return
+        viewModelScope.launch {
+            local.update { it.copy(isDraftingWish = true) }
+            val result = draftBirthdayMessage(friend.id)
+            local.update {
+                result.fold(
+                    { text -> it.copy(isDraftingWish = false, wishDraft = text) },
+                    { e -> it.copy(isDraftingWish = false, message = AgendaMessage.AiError(e)) },
+                )
+            }
+        }
+    }
+
+    /** "We met" on an overdue group: logs a hangout with every member. */
+    fun onGroupMet(groupId: String) {
+        val item = state.value.agenda.filterIsInstance<AgendaItem.GroupOverdue>().firstOrNull { it.group.id == groupId } ?: return
+        if (item.group.memberIds.isEmpty()) return
+        viewModelScope.launch {
+            checkIn(item.group.memberIds)
+            local.update { it.copy(message = AgendaMessage.GroupMet(item.group.name)) }
         }
     }
 
