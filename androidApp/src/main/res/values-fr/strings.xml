@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Good Company</string>
+    <string name="widget_label">À venir</string>
+    <string name="widget_description">Le prochain anniversaire ou projet, et qui revoir.</string>
+    <string name="widget_birthday">Anniversaire de %1$s</string>
+    <string name="widget_kid_birthday">Anniversaire de %1$s (enfant de %2$s)</string>
+    <string name="widget_event">%1$s : %2$s</string>
+    <string name="widget_today">Aujourd’hui</string>
+    <string name="widget_tomorrow">Demain</string>
+    <string name="widget_nothing">Rien de prévu</string>
+    <string name="widget_see">Le moment de voir %1$s</string>
+    <string name="widget_caught_up">Tout est à jour 💛</string>
+    <string name="widget_met">On s’est vus</string>
+    <string name="widget_private">Ouvrez Good Company pour voir la suite</string>
+    <plurals name="widget_in_days">
+        <item quantity="one">Dans %1$d jour</item>
+        <item quantity="other">Dans %1$d jours</item>
+    </plurals>
 </resources>

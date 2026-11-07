@@ -239,3 +239,25 @@ class NewUseCasesTest {
         assertEquals("Lunch", detail.plans.single().title)
     }
 }
+
+class HomeWidgetTest {
+    @Test
+    fun showsNextThingAndMostOverdueFriend() = kotlinx.coroutines.test.runTest {
+        val g = TestGraph(
+            friends = listOf(
+                friend("ana") { copy(meetEveryDays = 7) },
+                friend("bob") { copy(notifyBirthday = true, birthday = Birthday(3, 12)) },
+            ),
+        )
+        val widget = com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase(g.observeAgenda, g.observeMeetups, g.settingsRepo, g.clock)
+        val summary = widget().first()
+        assertIs<com.neteinstein.goodcompany.core.domain.model.AgendaItem.FriendBirthday>(summary.next)
+        assertEquals("ana", summary.catchUp?.friend?.id?.value)
+        assertFalse(summary.isPrivate)
+        g.settingsRepo.update { it.copy(appLock = true) }
+        assertTrue(widget().first().isPrivate)
+        val empty = com.neteinstein.goodcompany.core.domain.usecase.HomeWidget.summarize(emptyList(), emptyList(), LocalDate(2026, 3, 10), false)
+        assertNull(empty.next)
+        assertNull(empty.catchUp)
+    }
+}

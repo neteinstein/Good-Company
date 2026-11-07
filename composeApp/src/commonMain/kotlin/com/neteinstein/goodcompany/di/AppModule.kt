@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.di
 
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
@@ -204,6 +205,7 @@ val appModule = module {
     factoryOf(::ObserveOccasionMatchesUseCase)
     factoryOf(::ExportBackupUseCase)
     factoryOf(::RestoreBackupUseCase)
+    factoryOf(::ObserveHomeWidgetUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
