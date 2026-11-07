@@ -1,5 +1,14 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.components
 
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.dismiss
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_event
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_news
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_talk
+import com.neteinstein.goodcompany.feature.ideas.resources.open
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_to
+import com.neteinstein.goodcompany.feature.ideas.resources.proposed
+import com.neteinstein.goodcompany.feature.ideas.resources.share_with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +35,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material3.Button
+import androidx.compose.ui.text.style.TextOverflow
+import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
+import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -43,14 +61,21 @@ internal fun IdeaKind.accent(): Pair<Color, Color> = when (this) {
 }
 
 @Composable
-fun IdeaCardView(card: IdeaCard, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun IdeaCardView(
+    card: IdeaCard,
+    now: Instant,
+    zone: TimeZone,
+    onDismiss: () -> Unit,
+    onPropose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val uri = LocalUriHandler.current
     val idea = card.idea
     val (start, end) = idea.kind.accent()
     val (icon, label) = when (idea.kind) {
-        IdeaKind.EVENT -> Icons.Rounded.Event to "Plan together"
-        IdeaKind.NEWS -> Icons.Rounded.Newspaper to "They'd love this news"
-        IdeaKind.TALKING_POINT -> Icons.Rounded.Forum to "Bring it up"
+        IdeaKind.EVENT -> Icons.Rounded.Event to stringResource(Res.string.kind_event)
+        IdeaKind.NEWS -> Icons.Rounded.Newspaper to stringResource(Res.string.kind_news)
+        IdeaKind.TALKING_POINT -> Icons.Rounded.Forum to stringResource(Res.string.kind_talk)
     }
     Surface(
         modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
@@ -67,7 +92,7 @@ fun IdeaCardView(card: IdeaCard, onDismiss: () -> Unit, modifier: Modifier = Mod
                     }
                     Spacer(Modifier.width(8.dp))
                     Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = end, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Dismiss idea") }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, stringResource(Res.string.dismiss)) }
                 }
                 Text(idea.title, style = MaterialTheme.typography.titleLarge)
                 if (idea.description.isNotBlank()) {
@@ -88,9 +113,33 @@ fun IdeaCardView(card: IdeaCard, onDismiss: () -> Unit, modifier: Modifier = Mod
                     }
                     idea.url?.let { url ->
                         FilledTonalButton(onClick = { uri.openUri(url) }) {
-                            Text("Open")
+                            Text(stringResource(Res.string.open))
                             Spacer(Modifier.width(4.dp))
                             Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(16.dp))
+                        }
+                    }
+                }
+                if (card.friends.isNotEmpty() && idea.kind != IdeaKind.TALKING_POINT) {
+                    val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(onClick = onPropose) {
+                            Icon(Icons.AutoMirrored.Rounded.Send, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(if (idea.kind == IdeaKind.EVENT) Res.string.propose_to else Res.string.share_with, names),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        idea.proposedAt?.let {
+                            Spacer(Modifier.width(10.dp))
+                            Icon(Icons.Rounded.CheckCircle, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(Res.string.proposed, relativePast(it, now, zone)),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
                         }
                     }
                 }

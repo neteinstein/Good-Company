@@ -1,5 +1,37 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.screens
 
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
+import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
+import com.neteinstein.goodcompany.feature.ideas.resources.eyebrow
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_all
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_news
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_plans
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_talk
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_last_run
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_opted_in
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_run
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_searching
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_title
+import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_body
+import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_title
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_found
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_friends
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_key
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_none
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_nothing
+import com.neteinstein.goodcompany.feature.ideas.resources.names_and
+import com.neteinstein.goodcompany.feature.ideas.resources.news_message
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_action
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_body
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step1
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step2
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step3
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_title
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_message
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_title
+import com.neteinstein.goodcompany.feature.ideas.resources.subtitle
+import com.neteinstein.goodcompany.feature.ideas.resources.title
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +83,26 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.feature.ideas.ui.components.IdeaCardView
 import org.koin.compose.viewmodel.koinViewModel
+import org.jetbrains.compose.resources.getPluralString
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
+import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
+import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+
+/** Localised snackbar text for an [IdeasMessage]. */
+suspend fun IdeasMessage.text(): String = when (this) {
+    is IdeasMessage.Found -> if (count == 0) getString(Res.string.msg_none) else getPluralString(Res.plurals.msg_found, count, count)
+    is IdeasMessage.Failed -> aiErrorText(error)
+    is IdeasMessage.Skipped -> getString(
+        when (reason) {
+            WeeklyIdeasOutcome.Reason.NO_API_KEY -> Res.string.msg_no_key
+            WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN -> Res.string.msg_no_friends
+            WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
+        },
+    )
+}
 
 @Composable
 fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinViewModel()) {
@@ -63,7 +115,36 @@ fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinView
         viewModel::onDismiss,
         viewModel::onMessageShown,
         viewModel::onKindFilter,
+        viewModel::onPropose,
     )
+    state.proposing?.let { card ->
+        val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+        SendMessageSheet(
+            title = stringResource(Res.string.propose_title, names),
+            suggestion = proposalText(card),
+            phone = card.friends.singleOrNull()?.phoneNumbers?.firstOrNull(),
+            onDismiss = viewModel::onDismissPropose,
+            onSent = viewModel::onProposed,
+        )
+    }
+}
+
+/** "Ana", "Ana & Rui", "Ana, Rui & Bea". */
+@Composable
+fun friendNames(names: List<String>): String = when (names.size) {
+    0 -> ""
+    1 -> names.single()
+    else -> stringResource(Res.string.names_and, names.dropLast(1).joinToString(), names.last())
+}
+
+/** The drafted WhatsApp/text message for an idea, in the user's language. */
+@Composable
+fun proposalText(card: IdeaCard): String {
+    val idea = card.idea
+    val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+    val what = listOfNotNull(idea.title, idea.whenText?.let { "($it)" }).joinToString(" ")
+    val base = if (idea.kind == IdeaKind.EVENT) stringResource(Res.string.propose_message, names, what) else stringResource(Res.string.news_message, names, what)
+    return listOfNotNull(base, idea.url).joinToString("\n")
 }
 
 @Composable
@@ -75,11 +156,12 @@ fun IdeasContent(
     onDismiss: (String) -> Unit,
     onMessageShown: () -> Unit,
     onKindFilter: (IdeaKind?) -> Unit = {},
+    onPropose: (String) -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let {
-            snackbar.showSnackbar(it)
+            snackbar.showSnackbar(it.text())
             onMessageShown()
         }
     }
@@ -94,9 +176,9 @@ fun IdeasContent(
         ) {
             item(key = "header") {
                 ScreenHeader(
-                    eyebrow = "Powered by Claude",
-                    title = "Ideas",
-                    subtitle = "Plans and conversation starters matched to your friends' tastes",
+                    eyebrow = stringResource(Res.string.eyebrow),
+                    title = stringResource(Res.string.title),
+                    subtitle = stringResource(Res.string.subtitle),
                 )
             }
             if (!state.isLoading && !state.hasAiKey && state.ideas.isEmpty() && state.kindFilter == null) {
@@ -109,25 +191,37 @@ fun IdeasContent(
                 item(key = "key-banner") { KeyBanner(onOpenSettings) }
             }
             item(key = "filters") {
-                val options = listOf(null to "All", IdeaKind.EVENT to "Plans", IdeaKind.NEWS to "News", IdeaKind.TALKING_POINT to "Talk about")
+                val options = listOf(
+                    null to Res.string.filter_all,
+                    IdeaKind.EVENT to Res.string.filter_plans,
+                    IdeaKind.NEWS to Res.string.filter_news,
+                    IdeaKind.TALKING_POINT to Res.string.filter_talk,
+                )
                 LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(options, key = {
-                        it.second
-                    }) { (kind, label) -> FilterChip(state.kindFilter == kind, { onKindFilter(kind) }, label = { Text(label) }) }
+                    items(options, key = { it.first?.name ?: "all" }) { (kind, label) ->
+                        FilterChip(state.kindFilter == kind, { onKindFilter(kind) }, label = { Text(stringResource(label)) })
+                    }
                 }
             }
             if (!state.isLoading && state.ideas.isEmpty()) {
                 item(key = "empty") {
                     EmptyState(
                         icon = Icons.Rounded.AutoAwesome,
-                        title = "No ideas yet",
-                        message = "Turn on “Weekly event ideas” for a few friends, add what they love, then tap “Find plans now”.",
+                        title = stringResource(Res.string.empty_title),
+                        message = stringResource(Res.string.empty_body),
                     )
                 }
             }
-            items(state.ideas, key = {
-                it.idea.id
-            }) { card -> IdeaCardView(card, onDismiss = { onDismiss(card.idea.id) }, modifier = Modifier.animateItem()) }
+            items(state.ideas, key = { it.idea.id }) { card ->
+                IdeaCardView(
+                    card,
+                    now = state.now,
+                    zone = state.zone,
+                    onDismiss = { onDismiss(card.idea.id) },
+                    onPropose = { onPropose(card.idea.id) },
+                    modifier = Modifier.animateItem(),
+                )
+            }
         }
     }
 }
@@ -145,10 +239,11 @@ private fun Hero(state: IdeasUiState, onRunNow: () -> Unit, onWeeklyToggle: (Boo
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("Weekly plans", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                    Text(stringResource(Res.string.hero_title), style = MaterialTheme.typography.titleLarge, color = Color.White)
                     Text(
-                        "${state.optedInFriends} friends opted in" +
-                            (state.lastRunAt?.let { " · last run ${relativePast(it, state.now, state.zone)}" } ?: ""),
+                        pluralStringResource(Res.plurals.hero_opted_in, state.optedInFriends, state.optedInFriends).let { base ->
+                            state.lastRunAt?.let { stringResource(Res.string.hero_last_run, base, relativePast(it, state.now, state.zone)) } ?: base
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.85f),
                     )
@@ -171,11 +266,11 @@ private fun Hero(state: IdeasUiState, onRunNow: () -> Unit, onWeeklyToggle: (Boo
                         if (running) {
                             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Color(0xFF6A3DE8))
                             Spacer(Modifier.width(10.dp))
-                            Text("Searching what's on near you…")
+                            Text(stringResource(Res.string.hero_searching))
                         } else {
                             Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Find plans now")
+                            Text(stringResource(Res.string.hero_run))
                         }
                     }
                 }
@@ -196,8 +291,8 @@ private fun KeyBanner(onOpenSettings: () -> Unit) {
             Icon(Icons.Rounded.Key, null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Add your API key for fresh ideas", style = MaterialTheme.typography.titleSmall)
-                Text("Tap to open Settings — the key stays on this device.", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(Res.string.key_banner_title), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(Res.string.key_banner_body), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -208,9 +303,9 @@ private fun NoKey(onOpenSettings: () -> Unit) {
     Column {
         EmptyState(
             icon = Icons.Rounded.Key,
-            title = "Bring your own AI key",
-            message = "Ideas match your friends' tastes with today's news and events near you, using Claude and your own Anthropic API key.",
-            actionLabel = "Add API key in Settings",
+            title = stringResource(Res.string.no_key_title),
+            message = stringResource(Res.string.no_key_body),
+            actionLabel = stringResource(Res.string.no_key_action),
             onAction = onOpenSettings,
         )
         Surface(
@@ -220,9 +315,9 @@ private fun NoKey(onOpenSettings: () -> Unit) {
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf(
-                    "Create a key at console.anthropic.com",
-                    "Paste it in Settings → AI ideas (it stays on this device)",
-                    "On a friend's page, turn on “Weekly event ideas”",
+                    stringResource(Res.string.no_key_step1),
+                    stringResource(Res.string.no_key_step2),
+                    stringResource(Res.string.no_key_step3),
                 ).forEachIndexed { i, step ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Powered by Claude</string>
+    <string name="title">Ideas</string>
+    <string name="subtitle">Plans and conversation starters matched to your friends’ tastes</string>
+    <string name="filter_all">All</string>
+    <string name="filter_plans">Plans</string>
+    <string name="filter_news">News</string>
+    <string name="filter_talk">Talk about</string>
+    <string name="empty_title">No ideas yet</string>
+    <string name="empty_body">Turn on “Weekly event ideas” for a few friends, add what they love, then tap “Find plans now”.</string>
+    <string name="hero_title">Weekly plans</string>
+    <plurals name="hero_opted_in">
+        <item quantity="one">%1$d friend opted in</item>
+        <item quantity="other">%1$d friends opted in</item>
+    </plurals>
+    <string name="hero_last_run">%1$s · last run %2$s</string>
+    <string name="hero_searching">Searching what’s on near you…</string>
+    <string name="hero_run">Find plans now</string>
+    <string name="key_banner_title">Add your API key for fresh ideas</string>
+    <string name="key_banner_body">Tap to open Settings — the key stays on this device.</string>
+    <string name="no_key_title">Bring your own AI key</string>
+    <string name="no_key_body">Ideas match your friends’ tastes with today’s news and events near you, using Claude and your own Anthropic API key.</string>
+    <string name="no_key_action">Add API key in Settings</string>
+    <string name="no_key_step1">Create a key at console.anthropic.com</string>
+    <string name="no_key_step2">Paste it in Settings → AI ideas (it stays on this device)</string>
+    <string name="no_key_step3">On a friend’s page, turn on “Weekly event ideas”</string>
+
+    <string name="kind_event">Plan together</string>
+    <string name="kind_news">They’d love this news</string>
+    <string name="kind_talk">Bring it up</string>
+    <string name="dismiss">Dismiss idea</string>
+    <string name="open">Open</string>
+    <string name="propose_to">Propose to %1$s</string>
+    <string name="share_with">Send to %1$s</string>
+    <string name="proposed">Proposed %1$s</string>
+    <string name="propose_title">Propose to %1$s</string>
+    <string name="propose_message">Hey %1$s! 😊 How about this: %2$s. Up for it?</string>
+    <string name="news_message">Hey %1$s! Saw this and thought of you: %2$s</string>
+    <string name="names_and">%1$s &amp; %2$s</string>
+
+    <string name="msg_none">No great matches this time.</string>
+    <plurals name="msg_found">
+        <item quantity="one">%1$d new idea ✨</item>
+        <item quantity="other">%1$d new ideas ✨</item>
+    </plurals>
+    <string name="msg_no_key">Add your API key in Settings first.</string>
+    <string name="msg_no_friends">Turn on “Weekly event ideas” for at least one friend.</string>
+    <string name="msg_nothing">Nothing to do right now.</string>
+</resources>
