@@ -1,0 +1,174 @@
+# Good Company CI — see CI_CD.md for the topology, secrets and signing status.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  JAVA_VERSION: "21"
+
+jobs:
+  # ── Android compile + R8 release build ──────────────────────────────────────────────
+  build-android:
+    name: Build (Android)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Provide google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ] && [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > androidApp/google-services.json
+          else
+            cp androidApp/google-services.json.ci androidApp/google-services.json
+          fi
+      - name: Assemble debug + release (R8) + sideload
+        run: ./gradlew :androidApp:assembleDebug :androidApp:assembleRelease :androidApp:assembleSideload
+      - name: Verify Play build has no restricted permissions
+        run: |
+          AAPT2=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          PERMS=$("$AAPT2" dump permissions androidApp/build/outputs/apk/release/*.apk)
+          echo "$PERMS"
+          if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|AD_ID"; then
+            echo "::error::Release (Play) APK declares a restricted permission"; exit 1
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-apks
+          path: androidApp/build/outputs/apk/**/*.apk
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        with:
+          name: r8-mapping
+          path: androidApp/build/outputs/mapping/release/mapping.txt
+          retention-days: 30
+
+  # ── Unit tests (commonTest on the JVM) + coverage ──────────────────────────────────
+  unit-tests:
+    name: Unit tests + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Run tests and coverage
+        run: ./gradlew testDebugUnitTest koverXmlReport koverHtmlReport koverVerify
+      - name: Coverage summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import os, xml.etree.ElementTree as ET
+          path = "build/reports/kover/report.xml"
+          if not os.path.exists(path):
+              print("No coverage report produced."); raise SystemExit
+          root = ET.parse(path).getroot()
+          print("### Coverage (Kover, aggregated)\n\n| Metric | Covered |\n|---|---|")
+          for c in root.findall("counter"):
+              m, cv = int(c.get("missed")), int(c.get("covered"))
+              print(f"| {c.get('type').title()} | {100 * cv / max(1, m + cv):.1f}% |")
+          PY
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-and-coverage-reports
+          path: |
+            **/build/reports/tests/
+            **/build/test-results/
+            build/reports/kover/
+          retention-days: 14
+
+  # ── Lint: ktlint (Spotless) + Android Lint (app + dependencies) ─────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+      - name: ktlint (Spotless)
+        run: ./gradlew spotlessCheck
+      - name: Android Lint
+        run: ./gradlew :androidApp:lintDebug
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lint-reports
+          path: androidApp/build/reports/lint-results-*
+          retention-days: 14
+
+  # ── iOS: Kotlin framework + hand-authored Xcode project (simulator, unsigned) ───────
+  build-ios:
+    name: Build (iOS)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v6
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+      - name: xcodebuild (simulator, no signing)
+        run: |
+          xcodebuild -version
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+  # ── Web: Kotlin/Wasm production bundle ──────────────────────────────────────────────
+  build-web:
+    name: Build (Web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+      - name: wasmJs production distribution
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-dist
+          path: composeApp/build/dist/wasmJs/productionExecutable
+          retention-days: 7

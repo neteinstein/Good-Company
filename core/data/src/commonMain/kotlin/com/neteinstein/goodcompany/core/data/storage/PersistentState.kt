@@ -1,0 +1,68 @@
+package com.neteinstein.goodcompany.core.data.storage
+
+import com.russhwolf.settings.Settings
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
+
+/**
+ * A JSON document persisted in a key-value [Settings] store (SharedPreferences / NSUserDefaults /
+ * localStorage) and exposed as a hot [StateFlow].
+ *
+ * Why not Room/SQLDelight: the app must also run on wasmJs, where Room 2.x has no target and
+ * SQLDelight needs an async web-worker driver. The data set (hundreds of friends) is small, so
+ * whole-document JSON is simple, fast enough, and identical on every platform. Swap the
+ * implementation behind the repositories if that ever stops being true.
+ *
+ * Corrupt or schema-incompatible data falls back to [default] rather than crashing the app.
+ */
+class PersistentState<T>(
+    private val settings: Settings,
+    private val key: String,
+    private val serializer: KSerializer<T>,
+    private val default: T,
+    private val json: Json = DefaultJson,
+) {
+    private val mutex = Mutex()
+    private val state = MutableStateFlow(load())
+    val flow: StateFlow<T> = state.asStateFlow()
+
+    val value: T get() = state.value
+
+    suspend fun update(transform: (T) -> T) {
+        mutex.withLock {
+            val next = transform(state.value)
+            if (next != state.value) {
+                settings.putString(key, json.encodeToString(serializer, next))
+                state.value = next
+            }
+        }
+    }
+
+    private fun load(): T = settings.getStringOrNull(key)
+        ?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }
+        ?: default
+
+    companion object {
+        val DefaultJson = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = false
+            explicitNulls = false
+        }
+    }
+}
+
+/** Storage keys. Bump the suffix when making an incompatible schema change. */
+internal object Keys {
+    const val FRIENDS = "friends.v1"
+    const val HANGOUTS = "hangouts.v1"
+    const val REMINDERS = "reminders.v1"
+    const val INTERACTIONS = "interactions.v1"
+    const val MESSAGES = "messages.v1"
+    const val IDEAS = "ideas.v1"
+    const val SETTINGS = "settings.v1"
+}

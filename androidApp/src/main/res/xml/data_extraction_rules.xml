@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Cloud backup excludes app preferences: they hold the user's Anthropic API key (and friends' data,
+    which we don't want sitting in a third-party backup). Device-to-device transfer keeps everything,
+    so moving to a new phone still works.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,8 @@
+{
+  "name": "good-company-screenshots",
+  "private": true,
+  "description": "Renders the real Compose web build in headless Chromium to produce README screenshots. See .claude/skills/capture-screenshots.",
+  "dependencies": {
+    "@js-joda/core": "5.7.0"
+  }
+}
