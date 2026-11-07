@@ -111,20 +111,24 @@ sealed interface RelativePast {
     }
 }
 
+/*
+ * stringArrayResource is empty on the first frame while the web build loads resources asynchronously,
+ * so these never index blindly.
+ */
 @Composable
-fun monthShort(month: Month): String = stringArrayResource(Res.array.months_short)[month.ordinal]
+fun monthShort(month: Month): String = stringArrayResource(Res.array.months_short).getOrElse(month.ordinal) { "" }
 
 @Composable
-fun monthLong(month: Month): String = stringArrayResource(Res.array.months_long)[month.ordinal]
+fun monthLong(month: Month): String = stringArrayResource(Res.array.months_long).getOrElse(month.ordinal) { "" }
 
 @Composable
-fun weekdayShort(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_short)[day.ordinal]
+fun weekdayShort(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_short).getOrElse(day.ordinal) { "" }
 
 @Composable
-fun weekdayLong(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_long)[day.ordinal]
+fun weekdayLong(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_long).getOrElse(day.ordinal) { "" }
 
 @Composable
-fun weekdayInitial(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_initial)[day.ordinal]
+fun weekdayInitial(day: DayOfWeek): String = stringArrayResource(Res.array.weekdays_initial).getOrElse(day.ordinal) { "" }
 
 /** "Mar 10" / "10 mar" depending on the language. */
 @Composable

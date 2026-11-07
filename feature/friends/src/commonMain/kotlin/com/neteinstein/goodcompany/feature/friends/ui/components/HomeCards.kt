@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -195,8 +196,13 @@ fun CatchUpCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
+                // Under the text, not beside it: labels like "Estivemos juntos" are long in some languages.
+                FilledTonalButton(
+                    onClick = onMet,
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(top = 6.dp).height(34.dp),
+                ) { Text(stringResource(Res.string.catch_up_met), style = MaterialTheme.typography.labelLarge, maxLines = 1) }
             }
-            FilledTonalButton(onClick = onMet) { Text(stringResource(Res.string.catch_up_met)) }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {

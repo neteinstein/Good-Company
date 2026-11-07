@@ -482,12 +482,21 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                     color = if (overdue && snoozed == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(6.dp))
-                StackedAvatars(status.members.map { it.name to it.initials }, size = 24.dp, max = 6)
-            }
-            if (overdue && snoozed == null) {
-                Button(onClick = { actions.onCheckInGroup(g.id) }) { Text(stringResource(Res.string.group_met)) }
-            } else {
-                FilledTonalButton(onClick = { actions.onCheckInGroup(g.id) }) { Text(stringResource(Res.string.group_met)) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StackedAvatars(status.members.map { it.name to it.initials }, size = 24.dp, max = 6)
+                    Spacer(Modifier.width(10.dp))
+                    val pad = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
+                    val label: @Composable () -> Unit = {
+                        Text(stringResource(Res.string.group_met), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                    }
+                    if (overdue && snoozed == null) {
+                        Button(onClick = { actions.onCheckInGroup(g.id) }, contentPadding = pad, modifier = Modifier.height(34.dp)) { label() }
+                    } else {
+                        FilledTonalButton(onClick = {
+                            actions.onCheckInGroup(g.id)
+                        }, contentPadding = pad, modifier = Modifier.height(34.dp)) { label() }
+                    }
+                }
             }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
