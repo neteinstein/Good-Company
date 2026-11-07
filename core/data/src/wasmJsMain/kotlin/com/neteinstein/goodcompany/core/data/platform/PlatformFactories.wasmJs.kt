@@ -36,6 +36,7 @@ private class BrowserLocationProvider : LocationProvider {
     }
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun requestPosition(onSuccess: (Double, Double) -> Unit, onError: () -> Unit): Unit = js(
     """{
         if (!navigator.geolocation) { onError(); return; }

@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsSchedule
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -17,15 +18,20 @@ class AppStartup(
     private val syncContacts: SyncContactsUseCase,
     private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
 ) {
-    private var started = false
+    private var job: Job? = null
 
+    /**
+     * Starts the work in [scope] (the root ViewModel's scope). Safe to call repeatedly: it's a no-op while a previous
+     * run is still alive, and restarts when the app UI is re-created after the old scope was cancelled.
+     */
     fun start(scope: CoroutineScope) {
-        if (started) return
-        started = true
-        scope.launch { keepNotificationsScheduled() }
-        scope.launch {
-            runCatching { syncContacts() }
-            runCatching { runWeeklyIdeas() }
+        if (job?.isActive == true) return
+        job = scope.launch {
+            launch { keepNotificationsScheduled() }
+            launch {
+                runCatching { syncContacts() }
+                runCatching { runWeeklyIdeas() }
+            }
         }
     }
 }

@@ -25,6 +25,7 @@ actual fun rememberTextFilePicker(onPicked: (text: String?) -> Unit): () -> Unit
     return { pickTextFile({ callback.value(it) }, { callback.value(null) }) }
 }
 
+@OptIn(ExperimentalWasmJsInterop::class)
 private fun pickTextFile(onText: (String) -> Unit, onCancel: () -> Unit): Unit = js(
     """{
         const input = document.createElement('input');
