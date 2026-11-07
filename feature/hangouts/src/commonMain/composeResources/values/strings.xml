@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Together</string>
+    <string name="subtitle_seen">You’ve seen %1$d friends this month 💛</string>
+    <string name="subtitle_none">Make some memories this month</string>
+
+    <string name="hero_cta">I’m with…</string>
+    <string name="hero_cta_description">I’m with someone now</string>
+    <string name="hero_hint">Tap to remember who you’re with, and where</string>
+    <string name="hero_meetups">meetups\nthis month</string>
+    <string name="hero_friends">friends\nseen</string>
+    <string name="hero_spot">favourite\nspot</string>
+
+    <string name="section_catch_up">Time to catch up</string>
+    <string name="section_coming_due">Coming due</string>
+    <plurals name="meet_days_since">
+        <item quantity="one">%1$d day since you met · goal %2$s</item>
+        <item quantity="other">%1$d days since you met · goal %2$s</item>
+    </plurals>
+    <string name="meet_never">No meetup logged yet</string>
+    <string name="meet_due">Due %1$s · %2$s</string>
+    <string name="meet_met">Met</string>
+
+    <string name="groups_title">Your groups</string>
+    <string name="groups_new">New group</string>
+    <string name="groups_hint">Board-game crew, surf buddies, the old team… Save a group to check in with everyone at once and get a nudge when it’s been too long.</string>
+    <string name="group_last_together">All together %1$s</string>
+    <string name="group_never">Not all together yet</string>
+    <string name="group_overdue">Overdue · %1$s</string>
+    <string name="group_due">Due %1$s · %2$s</string>
+    <string name="group_snoozed">Snoozed until %1$s</string>
+    <string name="group_met">We met</string>
+    <string name="group_edit">Edit</string>
+    <string name="group_delete">Delete group</string>
+    <string name="group_snooze_week">Snooze a week</string>
+    <string name="group_snooze_weekend">Remind me Saturday</string>
+    <string name="group_more">More</string>
+    <string name="group_editor_new">New group</string>
+    <string name="group_editor_edit">Edit group</string>
+    <string name="group_name">Group name</string>
+    <string name="group_emoji">Emoji</string>
+    <string name="group_members">Members (at least two)</string>
+    <string name="group_rhythm">Meet up</string>
+
+    <string name="review_card_title">Your %1$d in friendship</string>
+    <string name="review_card_body">Who you saw most, your favourite spots and your longest streak — ready to share.</string>
+    <string name="review_card_cta">See your year</string>
+
+    <string name="section_last_time_with">Last time with…</string>
+    <string name="clear">Clear</string>
+    <string name="last_together">Last together %1$s</string>
+    <string name="last_together_place">Last together %1$s · %2$s</string>
+    <plurals name="times_total">
+        <item quantity="one">%1$s · %2$d× in total</item>
+        <item quantity="other">%1$s · %2$d× in total</item>
+    </plurals>
+    <string name="never_all">You haven’t logged a meetup with all of them yet.</string>
+    <string name="section_memories">Memories</string>
+    <string name="section_memories_together">Memories together</string>
+    <string name="memories_empty_title">No memories yet</string>
+    <string name="memories_empty_body">Tap “I’m with…” when you’re with friends. Over time you’ll see who you’ve been missing.</string>
+    <string name="someone">Someone</string>
+    <string name="delete_memory">Delete memory</string>
+
+    <string name="sheet_title">I’m with…</string>
+    <string name="sheet_find">Find a friend</string>
+    <string name="sheet_groups">Groups</string>
+    <string name="sheet_where">Where? (optional)</string>
+    <string name="sheet_locating">Finding you…</string>
+    <string name="sheet_clear_location">Clear location</string>
+    <string name="sheet_use_location">Use my location</string>
+    <string name="sheet_note">Note (optional)</string>
+    <string name="sheet_pick">Pick who you’re with</string>
+    <string name="sheet_log">Log it · %1$d</string>
+
+    <string name="msg_location_denied">Location permission denied — type the place instead.</string>
+    <string name="msg_location_unavailable">Couldn’t get your location right now.</string>
+    <string name="msg_logged_with">Logged time with %1$s ✨</string>
+    <string name="msg_memory_deleted">Memory deleted</string>
+    <string name="msg_group_saved">Saved %1$s</string>
+    <string name="msg_group_deleted">Deleted %1$s</string>
+    <string name="msg_group_snoozed">%1$s snoozed until %2$s</string>
+</resources>

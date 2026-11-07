@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Make it yours</string>
+    <string name="title">Settings</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_auto">Auto</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_color">Colours from wallpaper</string>
+    <string name="dynamic_color_hint">Material You dynamic colour</string>
+    <string name="language_note">Language follows your device: English, Português, Español, Français or Română.</string>
+
+    <string name="circles">Circles</string>
+    <string name="circles_hint">How often you’d like to see each circle. A friend’s own rhythm on their page wins over these.</string>
+
+    <string name="ai">AI ideas</string>
+    <string name="ai_hint">Uses Claude with your own Anthropic API key (console.anthropic.com). The key stays on this device and is only sent to api.anthropic.com, with the tastes and chat snippets of the friends involved. Usage is billed to your account.</string>
+    <string name="home_area">Your city or area</string>
+    <string name="home_area_placeholder">Leave empty to use your location</string>
+    <string name="weekly_plans">Weekly plans</string>
+    <string name="weekly_plans_hint">Once a week, for friends you opt in</string>
+    <string name="api_key">Anthropic API key</string>
+    <string name="api_key_hide">Hide key</string>
+    <string name="api_key_show">Show key</string>
+
+    <string name="reminders">Reminders</string>
+    <string name="allow_notifications">Allow notifications</string>
+    <string name="web_notifications">Browsers can’t remind you when the tab is closed — check “Coming up”, or install the mobile app.</string>
+    <string name="pings_at">Birthday &amp; big-day pings at</string>
+
+    <string name="your_data">Your data</string>
+    <string name="sample_loaded">Sample friends are loaded</string>
+    <string name="sample">Sample friends</string>
+    <string name="sample_remove_hint">Remove them — your own friends stay untouched.</string>
+    <string name="sample_add_hint">Add a demo circle to explore every feature.</string>
+    <string name="import_vcf">Import contacts file</string>
+    <string name="import_vcf_hint">A .vcf export from Google Contacts, iCloud, Outlook or your phone.</string>
+    <string name="import">Import</string>
+    <string name="replay_intro">Replay the intro</string>
+
+    <string name="privacy">Privacy</string>
+    <string name="privacy_base">Friends, tastes, kids, gifts, meetups and reminders are stored only on this device.</string>
+    <string name="privacy_contacts">Contacts are read only to build your list.</string>
+    <string name="privacy_call_log">The call log is only read in the sideload build.</string>
+    <string name="privacy_end">Nothing is uploaded except the AI requests you trigger. SMS are never read.</string>
+    <string name="footer">Good Company %1$s · %2$s · made with 💛</string>
+
+    <string name="msg_key_saved">API key saved on this device</string>
+    <string name="msg_key_removed">API key removed</string>
+    <string name="msg_notifications_on">Notifications on 🔔</string>
+    <string name="msg_notifications_off">Notifications are off — enable them in system settings.</string>
+    <string name="msg_sample_added">Sample friends added</string>
+    <string name="msg_sample_removed">Sample friends removed — your own data is untouched</string>
+    <string name="msg_vcf_result">%1$d added · %2$d updated · %3$d unchanged</string>
+    <string name="msg_vcf_empty">No contacts found in that file.</string>
+</resources>

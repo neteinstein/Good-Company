@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Quick actions on catch-up notifications ("We met", "Called", "Next week"). Not exported: only our own PendingIntents reach it. -->
+        <receiver
+            android:name="com.neteinstein.goodcompany.core.data.platform.NotificationActionReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

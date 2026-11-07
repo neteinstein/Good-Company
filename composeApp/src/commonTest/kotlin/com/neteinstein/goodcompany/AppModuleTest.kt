@@ -5,6 +5,8 @@ import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
@@ -14,6 +16,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetai
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
@@ -65,5 +68,9 @@ class AppModuleTest {
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
         assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
         assertNotNull(koin.get<ApplyLaunchOptions>())
+        assertNotNull(koin.get<YearReviewViewModel> { parametersOf(null) })
+        assertNotNull(koin.get<YearReviewViewModel> { parametersOf(2025) })
+        assertNotNull(koin.get<HandleNotificationActionUseCase>())
+        assertNotNull(koin.get<KeepNotificationsScheduledUseCase>())
     }
 }

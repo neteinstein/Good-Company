@@ -7,14 +7,20 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HangoutWithFriends
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.YearInReviewBuilder
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -28,6 +34,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /** The "I'm with…" sheet. */
@@ -42,6 +49,34 @@ data class CheckInDraft(
     val canSave: Boolean get() = selected.isNotEmpty()
 }
 
+/** The group editor dialog. id == null → new group. */
+data class GroupDraft(
+    val id: String? = null,
+    val name: String = "",
+    val emoji: String = "👥",
+    val members: Set<FriendId> = emptySet(),
+    val meetEveryDays: Int? = 30,
+) {
+    val canSave: Boolean get() = name.isNotBlank() && members.size >= 2
+}
+
+/** One-off feedback for the snackbar; the screen turns it into localised text. */
+sealed interface HangoutsMessage {
+    data object LocationDenied : HangoutsMessage
+
+    data object LocationUnavailable : HangoutsMessage
+
+    data class LoggedWith(val names: List<String>) : HangoutsMessage
+
+    data object MemoryDeleted : HangoutsMessage
+
+    data class GroupSaved(val name: String) : HangoutsMessage
+
+    data class GroupDeleted(val name: String) : HangoutsMessage
+
+    data class GroupSnoozed(val name: String, val until: LocalDate) : HangoutsMessage
+}
+
 data class HangoutsUiState(
     /** Close friends first — the check-in picker and the "with…" filter. */
     val friends: List<Friend> = emptyList(),
@@ -50,12 +85,16 @@ data class HangoutsUiState(
     val overdue: List<Relationships.MeetupStatus> = emptyList(),
     val upcoming: List<Relationships.MeetupStatus> = emptyList(),
     val draft: CheckInDraft? = null,
+    val groups: List<Relationships.GroupStatus> = emptyList(),
+    val groupDraft: GroupDraft? = null,
+    /** The year the "Your year in friendship" card opens, or null when there's nothing to show yet. */
+    val reviewYear: Int? = null,
     val stats: Relationships.MonthStats = Relationships.MonthStats(0, 0, null),
     /** Hangout deleted a moment ago, offered for undo. */
     val recentlyDeleted: Hangout? = null,
     /** Increments on every check-in so the UI can celebrate. */
     val celebrate: Int = 0,
-    val message: String? = null,
+    val message: HangoutsMessage? = null,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -69,6 +108,10 @@ class HangoutsViewModel(
     observeHistory: ObserveHangoutHistoryUseCase,
     observeMeetups: ObserveMeetupStatusUseCase,
     observeAllHangouts: ObserveHangoutHistoryUseCase,
+    observeGroups: ObserveGroupsUseCase,
+    private val saveGroup: SaveGroupUseCase,
+    private val deleteGroup: DeleteGroupUseCase,
+    private val snooze: SnoozeCatchUpUseCase,
     private val checkIn: CheckInUseCase,
     private val deleteHangout: DeleteHangoutUseCase,
     private val restoreHangout: RestoreHangoutUseCase,
@@ -82,11 +125,15 @@ class HangoutsViewModel(
         observeFriends(),
         observeHistory(filter),
         observeMeetups(),
-        observeAllHangouts(flowOf(emptySet())),
+        combine(observeAllHangouts(flowOf(emptySet())), observeGroups()) { all, groups -> all to groups },
         local,
-    ) { friends, history, meetups, all, ui ->
+    ) { friends, history, meetups, (all, groups), ui ->
         val today = clock.today()
+        val hangouts = all.map { it.hangout }
+        val reviewYear = YearInReviewBuilder.defaultYear(today, hangouts, clock.timeZone)
         ui.copy(
+            groups = groups,
+            reviewYear = reviewYear.takeIf { y -> hangouts.any { it.at.toLocalDateTime(clock.timeZone).year == y } },
             stats = Relationships.monthStats(all.map { it.hangout }, today, clock.timeZone),
             friends = friends.map { it.friend },
             history = history,
@@ -112,6 +159,54 @@ class HangoutsViewModel(
 
     fun onToggleDraftFriend(id: FriendId) = editDraft { it.copy(selected = it.selected.toggle(id)) }
 
+    /** Tapping a saved group in the check-in sheet adds all its members. */
+    fun onPickDraftGroup(groupId: String) {
+        val members = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.memberIds ?: return
+        editDraft { it.copy(selected = if (it.selected.containsAll(members)) it.selected - members.toSet() else it.selected + members) }
+    }
+
+    /** "We met" on a group card: opens the check-in sheet with every member selected. */
+    fun onCheckInGroup(groupId: String) {
+        val members = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.memberIds ?: return
+        local.update { it.copy(draft = CheckInDraft(selected = members.toSet())) }
+    }
+
+    fun onNewGroup() = local.update { it.copy(groupDraft = GroupDraft()) }
+
+    fun onEditGroup(groupId: String) {
+        val g = state.value.groups.firstOrNull { it.group.id == groupId }?.group ?: return
+        local.update { it.copy(groupDraft = GroupDraft(g.id, g.name, g.emoji, g.memberIds.toSet(), g.meetEveryDays)) }
+    }
+
+    fun onDismissGroup() = local.update { it.copy(groupDraft = null) }
+
+    fun onGroupDraftChange(draft: GroupDraft) = local.update { it.copy(groupDraft = draft) }
+
+    fun onSaveGroup() {
+        val draft = local.value.groupDraft ?: return
+        if (!draft.canSave) return
+        viewModelScope.launch {
+            val group = saveGroup(draft.id, draft.name, draft.emoji, draft.members, draft.meetEveryDays)
+            local.update { it.copy(groupDraft = null, message = HangoutsMessage.GroupSaved(group.name)) }
+        }
+    }
+
+    fun onDeleteGroup(groupId: String) {
+        val name = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.name ?: return
+        viewModelScope.launch {
+            deleteGroup(groupId)
+            local.update { it.copy(groupDraft = null, message = HangoutsMessage.GroupDeleted(name)) }
+        }
+    }
+
+    fun onSnoozeGroup(groupId: String, option: SnoozeOption) {
+        val name = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.name ?: return
+        viewModelScope.launch {
+            snooze.group(groupId, option)
+            local.update { it.copy(message = HangoutsMessage.GroupSnoozed(name, option.until(clock.today()))) }
+        }
+    }
+
     fun onDraftQueryChange(query: String) = editDraft { it.copy(query = query) }
 
     fun onDraftPlaceChange(place: String) = editDraft { it.copy(place = place) }
@@ -123,14 +218,14 @@ class HangoutsViewModel(
     /** Called once the location permission prompt resolves. */
     fun onLocationPermissionResult(granted: Boolean) {
         if (!granted) {
-            local.update { it.copy(message = "Location permission denied — type the place instead.") }
+            local.update { it.copy(message = HangoutsMessage.LocationDenied) }
             return
         }
         editDraft { it.copy(isLocating = true) }
         viewModelScope.launch {
             val point = currentLocation()
             editDraft { it.copy(isLocating = false, location = point) }
-            if (point == null) local.update { it.copy(message = "Couldn't get your location right now.") }
+            if (point == null) local.update { it.copy(message = HangoutsMessage.LocationUnavailable) }
         }
     }
 
@@ -140,7 +235,7 @@ class HangoutsViewModel(
         viewModelScope.launch {
             checkIn(draft.selected, draft.place, draft.location, draft.note)
             val names = state.value.friends.filter { it.id in draft.selected }.map { it.name.substringBefore(' ') }
-            local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = "Logged time with ${names.joinToString()} ✨") }
+            local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = HangoutsMessage.LoggedWith(names)) }
         }
     }
 
@@ -148,7 +243,7 @@ class HangoutsViewModel(
         val hangout = state.value.history.firstOrNull { it.hangout.id == id }?.hangout
         viewModelScope.launch {
             deleteHangout(id)
-            local.update { it.copy(recentlyDeleted = hangout, message = "Memory deleted") }
+            local.update { it.copy(recentlyDeleted = hangout, message = HangoutsMessage.MemoryDeleted) }
         }
     }
 

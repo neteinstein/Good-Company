@@ -27,11 +27,13 @@ import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaGenerator
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
+import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
@@ -72,7 +74,7 @@ class UseCasesTest {
     @Test
     fun observeFriends_sortsCloseFirstAndFlagsOverdue() = runTest {
         hangouts.add(Hangout("h", listOf(FriendId("bob")), at(2026, 3, 1)))
-        val list = ObserveFriendsUseCase(friends, hangouts, interactions, clock)().first()
+        val list = ObserveFriendsUseCase(friends, hangouts, interactions, settings, clock)().first()
         assertEquals(listOf("ana", "bob", "cat"), list.map { it.friend.id.value })
         assertTrue(list[0].meetupOverdue)
         assertEquals(at(2026, 3, 1), list[1].lastSeen)
@@ -138,12 +140,22 @@ class UseCasesTest {
     fun friendDetail_combinesEverything() = runTest {
         hangouts.add(Hangout("1", listOf(FriendId("ana"), FriendId("bob")), at(2026, 3, 1)))
         interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 5))))
-        val detail = ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas)(FriendId("ana")).first()!!
+        val detail = ObserveFriendDetailUseCase(
+            friends,
+            hangouts,
+            interactions,
+            ideas,
+            settings,
+            FakeGroupRepository(),
+            clock,
+        )(FriendId("ana")).first()!!
         assertEquals(at(2026, 3, 1), detail.lastSeen)
         assertEquals(at(2026, 3, 5), detail.lastContactByType[InteractionType.CALL])
         assertEquals(at(2026, 3, 1), detail.lastContactByType[InteractionType.MEETUP])
         assertEquals(listOf("Ana", "Bob"), detail.hangouts.single().friends.map { it.name })
-        assertNull(ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas)(FriendId("nope")).first())
+        assertNull(
+            ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas, settings, FakeGroupRepository(), clock)(FriendId("nope")).first(),
+        )
     }
 
     @Test
@@ -218,7 +230,19 @@ class UseCasesTest {
     @Test
     fun keepNotificationsScheduled_replansOnChange() = runTest {
         val scheduler = FakeNotificationScheduler()
-        val job = launch { KeepNotificationsScheduledUseCase(friends, reminders, hangouts, settings, scheduler, clock)() }
+        val job =
+            launch {
+                KeepNotificationsScheduledUseCase(
+                    friends,
+                    reminders,
+                    hangouts,
+                    settings,
+                    FakeGroupRepository(),
+                    scheduler,
+                    FakeNotificationRenderer,
+                    clock,
+                )()
+            }
         advanceUntilIdle()
         val first = scheduler.scheduled.last()
         assertTrue(first.any { it.id.startsWith("meet:ana") })

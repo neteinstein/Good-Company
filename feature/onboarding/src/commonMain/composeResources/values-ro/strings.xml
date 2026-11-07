@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="page1_title">Oamenii tăi,\nmereu aproape</string>
+    <string name="page1_body">Un mic CRM pentru prietenie. Ține minte ce adoră prietenii tăi, numele copiilor lor și datele importante — totul pe dispozitivul tău.</string>
+    <string name="page2_title">O atingere:\n„Sunt cu…”</string>
+    <string name="page2_body">Notează cu cine ești și unde. Vezi ultima dată când ai fost cu orice grup — și pe cine n-ai mai văzut de mult.</string>
+    <string name="page3_title">Nu rata\nce contează</string>
+    <string name="page3_body">Zile de naștere, operația unui prieten, „cumpăr bilete cu Rui” — mementouri blânde la momentul potrivit, plus idei cu AI de făcut împreună.</string>
+    <string name="skip">Sari peste</string>
+    <string name="next">Înainte</string>
+    <string name="lets_go">Să începem</string>
+    <string name="start_empty">Începe cu o listă goală</string>
+    <string name="setup_title">Să pregătim totul</string>
+    <string name="setup_body">Totul e opțional și poți schimba mai târziu din Setări.</string>
+    <string name="contacts_title">Adu-ți contactele</string>
+    <plurals name="contacts_imported">
+        <item quantity="one">%1$d contact importat. Atinge ♥ la prietenii adevărați.</item>
+        <item quantity="few">%1$d contacte importate. Atinge ♥ la prietenii adevărați.</item>
+        <item quantity="other">%1$d de contacte importate. Atinge ♥ la prietenii adevărați.</item>
+    </plurals>
+    <string name="contacts_denied">Nicio problemă — poți adăuga prieteni manual.</string>
+    <string name="contacts_body">Citim nume, numere de telefon și zile de naștere. Nimic nu pleacă de pe dispozitiv.</string>
+    <string name="import">Importă</string>
+    <string name="notifications_title">Mementouri pentru zile de naștere și întâlniri</string>
+    <string name="notifications_on">Totul e gata — îți vom aminti la momentul potrivit.</string>
+    <string name="notifications_off">Mementourile sunt dezactivate. Le poți activa din Setări.</string>
+    <string name="notifications_body">Un memento la zile de naștere, zile importante și când a trecut prea mult timp.</string>
+    <string name="allow">Permite</string>
+    <string name="looking_title">Doar te uiți?</string>
+    <string name="looking_body">Explorează cu un cerc de prieteni de exemplu — îl poți elimina oricând din Setări.</string>
+    <string name="explore_sample">Explorează cu prieteni de exemplu</string>
+    <string name="private_title">Privat din construcție</string>
+    <string name="private_body">Fără cont, fără server. SMS-urile nu sunt citite niciodată.</string>
+    <string name="done">Gata</string>
+</resources>

@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SampleData
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
@@ -24,7 +25,7 @@ class OnboardingViewModelTest {
     private fun vm() = OnboardingViewModel(
         UpdateSettingsUseCase(settings),
         SyncContactsUseCase(friends, FakeInteractionRepository()),
-        LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FixedClock()),
+        LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FakeGroupRepository(), FixedClock()),
     )
 
     @Test

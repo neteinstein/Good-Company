@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="page1_title">Tes proches,\nà ne pas oublier</string>
+    <string name="page1_body">Un petit CRM pour l’amitié. Retiens ce que tes amis adorent, le prénom de leurs enfants et les dates qui comptent — le tout sur ton appareil.</string>
+    <string name="page2_title">Une touche :\n« Je suis avec… »</string>
+    <string name="page2_body">Note avec qui tu es et où. Retrouve la dernière fois avec n’importe quel groupe — et qui tu n’as pas vu depuis longtemps.</string>
+    <string name="page3_title">Ne rate plus\nl’essentiel</string>
+    <string name="page3_body">Anniversaires, l’opération d’un ami, « réserver le concert avec Rui » — des rappels en douceur au bon moment, plus des idées de sorties par l’IA.</string>
+    <string name="skip">Passer</string>
+    <string name="next">Suivant</string>
+    <string name="lets_go">C’est parti</string>
+    <string name="start_empty">Commencer avec une liste vide</string>
+    <string name="setup_title">On s’installe</string>
+    <string name="setup_body">Tout est facultatif et modifiable plus tard dans les Réglages.</string>
+    <string name="contacts_title">Importe tes contacts</string>
+    <plurals name="contacts_imported">
+        <item quantity="one">%1$d contact importé. Touche ♥ sur tes vrais amis.</item>
+        <item quantity="other">%1$d contacts importés. Touche ♥ sur tes vrais amis.</item>
+    </plurals>
+    <string name="contacts_denied">Pas de souci — tu peux ajouter tes amis à la main.</string>
+    <string name="contacts_body">On lit les noms, numéros et anniversaires. Rien ne quitte ton appareil.</string>
+    <string name="import">Importer</string>
+    <string name="notifications_title">Rappels d’anniversaires et de retrouvailles</string>
+    <string name="notifications_on">Tout est prêt — on te préviendra au bon moment.</string>
+    <string name="notifications_off">Les rappels sont désactivés. Tu peux les activer dans les Réglages.</string>
+    <string name="notifications_body">Un petit rappel pour les anniversaires, les grands jours et quand ça fait trop longtemps.</string>
+    <string name="allow">Autoriser</string>
+    <string name="looking_title">Juste pour voir ?</string>
+    <string name="looking_body">Explore avec un cercle d’amis d’exemple — retire-le quand tu veux dans les Réglages.</string>
+    <string name="explore_sample">Explorer avec des amis d’exemple</string>
+    <string name="private_title">Privé par conception</string>
+    <string name="private_body">Pas de compte, pas de serveur. Les SMS ne sont jamais lus.</string>
+    <string name="done">Terminé</string>
+</resources>

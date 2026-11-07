@@ -37,6 +37,7 @@ dependencies {
     kover(projects.feature.agenda)
     kover(projects.feature.ideas)
     kover(projects.feature.settings)
+    kover(projects.feature.review)
     kover(projects.composeApp)
 }
 
@@ -45,13 +46,14 @@ kover {
         verify {
             // CI fails if aggregated line coverage drops below this. Raise it as coverage grows; never lower it to get green.
             rule("Minimum line coverage") {
-                minBound(65)
+                minBound(72)
             }
         }
         filters {
             excludes {
                 // Generated code and Compose UI aren't meaningfully covered by JVM unit tests.
-                classes("*.BuildConfig", "*ComposableSingletons*", "*.generated.resources.*")
+                // Compose resources: each module's generated `<namespace>.resources.Res` accessors.
+                classes("*.BuildConfig", "*ComposableSingletons*", "*.generated.resources.*", "com.neteinstein.goodcompany.*.resources.*")
                 annotatedBy("androidx.compose.runtime.Composable")
             }
         }

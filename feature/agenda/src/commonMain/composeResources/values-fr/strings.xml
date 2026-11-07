@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">À venir</string>
+    <string name="eyebrow">%1$s %2$s</string>
+    <string name="nothing_ahead">Rien à l’horizon</string>
+    <plurals name="things_ahead">
+        <item quantity="one">%1$d chose dans les deux prochains mois</item>
+        <item quantity="other">%1$d choses dans les deux prochains mois</item>
+    </plurals>
+    <string name="empty_title">Tout est calme</string>
+    <string name="empty_body">Marque tes vrais amis et ajoute anniversaires, enfants et moments importants — ils apparaîtront ici.</string>
+    <string name="fab_reminder">Rappel</string>
+    <string name="reminders_header">Tes rappels · %1$d à faire</string>
+    <string name="reminders_empty">« Réserver le concert avec Rui » — ajoute-en un avec le bouton ci-dessous.</string>
+    <string name="reminder_with">avec %1$s</string>
+    <string name="reminder_delete">Supprimer le rappel</string>
+    <string name="label_birthday">ANNIVERSAIRE</string>
+    <string name="label_kid_birthday">ANNIVERSAIRE D’UN ENFANT</string>
+    <string name="label_big_day">GRAND JOUR</string>
+    <string name="label_reminder">RAPPEL</string>
+    <string name="label_catch_up">À REVOIR</string>
+    <string name="label_group">GROUPE</string>
+    <string name="row_birthday">Anniversaire de %1$s</string>
+    <string name="row_turns">Fête ses %1$d ans</string>
+    <string name="row_loves">adore %1$s</string>
+    <string name="row_kid">%1$s (enfant de %2$s)</string>
+    <string name="row_gift_idea">idée cadeau : %1$s</string>
+    <string name="row_ping">Écris à %1$s</string>
+    <string name="row_with">Avec %1$s</string>
+    <string name="row_see">Voir %1$s</string>
+    <plurals name="row_days_since">
+        <item quantity="one">%1$d jour depuis votre dernière rencontre</item>
+        <item quantity="other">%1$d jours depuis votre dernière rencontre</item>
+    </plurals>
+    <string name="row_never">Aucune rencontre enregistrée</string>
+    <plurals name="row_group_days">
+        <item quantity="one">%1$s · %2$d jour depuis que vous étiez tous ensemble</item>
+        <item quantity="other">%1$s · %2$d jours depuis que vous étiez tous ensemble</item>
+    </plurals>
+    <string name="row_send_wishes">Souhaiter</string>
+    <string name="row_we_met">On s’est vus</string>
+    <string name="wish_title">Vœux pour %1$s</string>
+    <string name="wish_gift_hint">Idées cadeaux : %1$s</string>
+    <string name="msg_reminder_saved">Rappel enregistré</string>
+    <string name="msg_reminder_deleted">Rappel supprimé</string>
+    <string name="msg_group_met">Moment avec %1$s enregistré ✨</string>
+</resources>

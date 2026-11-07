@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -46,31 +47,79 @@ object Relationships {
     data class MeetupStatus(
         val friend: Friend,
         val lastSeenDate: LocalDate?,
-        /** Date the "meet every N days" rule falls due. */
+        /** Date the "meet every N days" rule falls due (pushed out by a snooze). */
         val dueDate: LocalDate,
         val daysSinceLastSeen: Int?,
+        /** The effective cadence (per-friend override or circle default). */
+        val cadenceDays: Int = friend.meetEveryDays ?: 0,
+        val snoozedUntil: LocalDate? = null,
     ) {
         fun isOverdue(today: LocalDate) = dueDate <= today
     }
 
-    /** Status of every friend that has a "meet every N days" rule. Never-met friends are due immediately. */
+    /**
+     * Status of every friend with a cadence (own "meet every" or their circle's default).
+     * Never-met friends are due immediately; a snooze pushes the due date to the day after it ends.
+     */
     fun meetupStatuses(
         friends: List<Friend>,
         hangouts: List<Hangout>,
         today: LocalDate,
         zone: TimeZone,
+        rules: CadenceRules = CadenceRules(),
     ): List<MeetupStatus> {
         val seen = lastSeen(hangouts)
         return friends.mapNotNull { friend ->
-            val every = friend.meetEveryDays?.takeIf { it > 0 } ?: return@mapNotNull null
+            val every = rules.cadenceFor(friend) ?: return@mapNotNull null
             val last = seen[friend.id]?.toLocalDate(zone)
+            val due = last?.plus(every, DateTimeUnit.DAY) ?: today
+            val snooze = friend.snoozedUntil?.takeIf { it >= today && (last == null || it > last) }
             MeetupStatus(
                 friend = friend,
                 lastSeenDate = last,
-                dueDate = last?.plus(every, DateTimeUnit.DAY) ?: today,
+                dueDate = snooze?.let { maxOf(due, it.plus(1, DateTimeUnit.DAY)) } ?: due,
                 daysSinceLastSeen = last?.daysUntil(today),
+                cadenceDays = every,
+                snoozedUntil = snooze,
             )
         }.sortedBy { it.dueDate }
+    }
+
+    data class GroupStatus(
+        val group: FriendGroup,
+        val members: List<Friend>,
+        /** Last hangout that included every member. */
+        val lastTogether: Instant?,
+        val daysSince: Int?,
+        /** Null when the group has no cadence. */
+        val dueDate: LocalDate?,
+    ) {
+        fun isOverdue(today: LocalDate) = dueDate != null && dueDate <= today
+    }
+
+    fun groupStatuses(
+        groups: List<FriendGroup>,
+        friends: List<Friend>,
+        hangouts: List<Hangout>,
+        today: LocalDate,
+        zone: TimeZone,
+    ): List<GroupStatus> {
+        val byId = friends.associateBy { it.id }
+        return groups.map { g ->
+            val members = g.memberIds.mapNotNull(byId::get)
+            val last = if (g.memberIds.isEmpty()) null else hangoutsWithAll(hangouts, g.memberIds.toSet()).firstOrNull()?.at
+            val lastDate = last?.toLocalDate(zone)
+            val every = g.meetEveryDays?.takeIf { it > 0 }
+            val baseDue = every?.let { lastDate?.plus(it, DateTimeUnit.DAY) ?: today }
+            val snooze = g.snoozedUntil?.takeIf { it >= today }
+            GroupStatus(
+                group = g,
+                members = members,
+                lastTogether = last,
+                daysSince = lastDate?.daysUntil(today),
+                dueDate = baseDue?.let { d -> snooze?.let { maxOf(d, it.plus(1, DateTimeUnit.DAY)) } ?: d },
+            )
+        }
     }
 
     data class MonthStats(val meetups: Int, val friendsSeen: Int, val topPlace: String?)

@@ -38,6 +38,7 @@ kotlin {
             implementation(projects.feature.agenda)
             implementation(projects.feature.ideas)
             implementation(projects.feature.settings)
+            implementation(projects.feature.review)
 
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)

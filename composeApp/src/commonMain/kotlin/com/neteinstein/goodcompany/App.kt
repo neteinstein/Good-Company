@@ -44,6 +44,8 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.neteinstein.goodcompany.composeApp.resources.Res
+import com.neteinstein.goodcompany.composeApp.resources.app_name
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
@@ -51,7 +53,9 @@ import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
+import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -84,6 +88,7 @@ private fun AppScaffold(launch: LaunchOptions) {
     val showChrome = selected != null
     val start = launch.startTab?.route ?: FriendsRoute
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
+    LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
 
     BoxWithConstraints {
         val wide = maxWidth >= 720.dp
@@ -97,7 +102,7 @@ private fun AppScaffold(launch: LaunchOptions) {
                             selected = d == selected,
                             onClick = { navController.navigateTopLevel(d) },
                             icon = { Icon(if (d == selected) d.selectedIcon else d.icon, null) },
-                            label = { Text(d.label) },
+                            label = { Text(stringResource(d.label)) },
                         )
                     }
                     Spacer(Modifier.weight(1f))
@@ -115,7 +120,7 @@ private fun AppScaffold(launch: LaunchOptions) {
                                     selected = d == selected,
                                     onClick = { navController.navigateTopLevel(d) },
                                     icon = { Icon(if (d == selected) d.selectedIcon else d.icon, null) },
-                                    label = { Text(d.label, maxLines = 1, style = MaterialTheme.typography.labelSmall) },
+                                    label = { Text(stringResource(d.label), maxLines = 1, style = MaterialTheme.typography.labelSmall) },
                                 )
                             }
                         }
@@ -135,5 +140,5 @@ private fun AppMark() {
             CircleShape,
         ),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Rounded.Favorite, contentDescription = "Good Company", tint = Color.White) }
+    ) { Icon(Icons.Rounded.Favorite, contentDescription = stringResource(Res.string.app_name), tint = Color.White) }
 }

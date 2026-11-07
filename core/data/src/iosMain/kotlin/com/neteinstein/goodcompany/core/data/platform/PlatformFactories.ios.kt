@@ -14,3 +14,11 @@ actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = Commun
 actual fun Scope.createLocationProvider(): LocationProvider = IosLocationProvider()
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()
+
+/** UNUserNotificationCenter holds its delegate weakly, so keep the instance alive here. */
+private var notificationDelegate: IosNotificationDelegate? = null
+
+actual fun installNotificationActionHandling() {
+    val delegate = notificationDelegate ?: IosNotificationDelegate().also { notificationDelegate = it }
+    platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().delegate = delegate
+}

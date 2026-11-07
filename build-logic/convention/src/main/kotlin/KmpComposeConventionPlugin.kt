@@ -1,6 +1,9 @@
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.compose.ComposeExtension
+import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /** [KmpLibraryConventionPlugin] + Compose Multiplatform and the shared UI baseline dependencies. */
@@ -9,6 +12,15 @@ class KmpComposeConventionPlugin : Plugin<Project> {
         pluginManager.apply("goodcompany.kmp.library")
         pluginManager.apply(libs.pluginId("compose-multiplatform"))
         pluginManager.apply(libs.pluginId("compose-compiler"))
+
+        // Each module gets its own generated `Res` class in `<namespace>.resources`, e.g.
+        // `com.neteinstein.goodcompany.feature.friends.resources.Res`. Strings live in src/commonMain/composeResources/values*/.
+        extensions.configure<ComposeExtension> {
+            (this as ExtensionAware).extensions.configure<ResourcesExtension> {
+                packageOfResClass = "$goodCompanyNamespace.resources"
+                publicResClass = true
+            }
+        }
 
         extensions.configure<KotlinMultiplatformExtension> {
             sourceSets.getByName("commonMain").dependencies {

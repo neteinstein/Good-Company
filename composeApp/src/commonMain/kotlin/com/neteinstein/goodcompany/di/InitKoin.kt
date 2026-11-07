@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.di
 
+import com.neteinstein.goodcompany.core.data.platform.installNotificationActionHandling
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 
@@ -16,6 +17,8 @@ fun initKoin(appDeclaration: KoinAppDeclaration) {
         appDeclaration()
         modules(appModule)
     }
+    // Quick actions on catch-up notifications ("Called", "Snooze") need Koin, so wire them after it starts.
+    installNotificationActionHandling()
 }
 
 /** Parameterless overload for callers that can't pass a Kotlin lambda (Swift). */

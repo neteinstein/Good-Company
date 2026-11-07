@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Tu %1$d en amistad</string>
+    <string name="back">Atrás</string>
+    <string name="share">Compartir</string>
+    <string name="empty_title">Aún no hay nada que recordar</string>
+    <string name="empty_body">Registra algunas quedadas con “Estoy con…” y aquí aparecerá tu año en amistad.</string>
+    <string name="copied">Copiado — pégalo donde quieras</string>
+    <string name="hero_kicker">Tu año en amistad</string>
+    <plurals name="hero_meetups">
+        <item quantity="one">%1$d quedada</item>
+        <item quantity="other">%1$d quedadas</item>
+    </plurals>
+    <plurals name="hero_meetups_word">
+        <item quantity="one">quedada</item>
+        <item quantity="other">quedadas</item>
+    </plurals>
+    <plurals name="hero_friends">
+        <item quantity="one">con %1$d amigo</item>
+        <item quantity="other">con %1$d amigos distintos</item>
+    </plurals>
+    <string name="top_title">Tu gente</string>
+    <string name="top_body">Los amigos a los que más viste.</string>
+    <plurals name="times">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d veces</item>
+    </plurals>
+    <string name="places_title">Sitios favoritos</string>
+    <string name="places_none">Añade un sitio al registrar una quedada y tus favoritos aparecerán aquí.</string>
+    <string name="rhythm_title">Tu ritmo</string>
+    <string name="rhythm_month">Mes con más planes: %1$s (%2$d)</string>
+    <string name="rhythm_weekday">Día favorito: %1$s</string>
+    <plurals name="rhythm_streak">
+        <item quantity="one">Racha más larga: %1$d semana seguida</item>
+        <item quantity="other">Racha más larga: %1$d semanas seguidas</item>
+    </plurals>
+    <string name="biggest_title">La quedada más grande</string>
+    <plurals name="biggest_body">
+        <item quantity="one">%1$d amigo el %2$s</item>
+        <item quantity="other">%1$d amigos el %2$s</item>
+    </plurals>
+    <string name="new_title">Caras nuevas</string>
+    <plurals name="new_body">
+        <item quantity="one">%1$d persona se unió a tu círculo</item>
+        <item quantity="other">%1$d personas se unieron a tu círculo</item>
+    </plurals>
+    <plurals name="reminders_done">
+        <item quantity="one">…y cumpliste %1$d recordatorio ✅</item>
+        <item quantity="other">…y cumpliste %1$d recordatorios ✅</item>
+    </plurals>
+    <string name="share_header">Mi %1$d en amistad 💛</string>
+    <string name="share_meetups">%1$s, %2$s</string>
+    <string name="share_top">A quien más vi: %1$s</string>
+    <string name="share_place">Sitio favorito: %1$s</string>
+    <string name="share_footer">— hecho con Good Company</string>
+</resources>

@@ -32,6 +32,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.ui.format.parseTags
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.remove_item
+import com.neteinstein.goodcompany.core.ui.resources.tags_add
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Chips for a list of short strings (likes, dislikes, kid's favourite things) with an inline add field.
@@ -61,7 +65,9 @@ fun TagEditor(
                         selected = false,
                         onClick = { onRemove(tag) },
                         label = { Text(tag) },
-                        trailingIcon = { Icon(Icons.Rounded.Close, "Remove $tag", Modifier.size(InputChipDefaults.IconSize)) },
+                        trailingIcon = {
+                            Icon(Icons.Rounded.Close, stringResource(Res.string.remove_item, tag), Modifier.size(InputChipDefaults.IconSize))
+                        },
                         colors = InputChipDefaults.inputChipColors(containerColor = chipColor),
                         border = null,
                     )
@@ -78,7 +84,7 @@ fun TagEditor(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { submit() }),
             trailingIcon = {
-                IconButton(onClick = ::submit, enabled = draft.isNotBlank()) { Icon(Icons.Rounded.Add, "Add") }
+                IconButton(onClick = ::submit, enabled = draft.isNotBlank()) { Icon(Icons.Rounded.Add, stringResource(Res.string.tags_add)) }
             },
         )
     }

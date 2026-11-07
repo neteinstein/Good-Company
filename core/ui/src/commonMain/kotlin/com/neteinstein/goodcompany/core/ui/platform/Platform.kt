@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 
 /*
  * UI-side platform hooks. Only things Compose Multiplatform genuinely can't share live here:
- * runtime permission prompts, the system file picker and wallpaper-based dynamic colour.
+ * runtime permission prompts, the system file picker, the share sheet and wallpaper-based dynamic colour.
  */
 
 enum class AppPermission { CONTACTS, LOCATION, NOTIFICATIONS, CALL_LOG }
@@ -17,6 +17,8 @@ data class PlatformCapabilities(
     val hasCallLog: Boolean,
     val hasBackgroundNotifications: Boolean,
     val hasDynamicColor: Boolean,
+    /** Separator before `body=` in `sms:` links (`?` on Android/web, `&` on iOS). */
+    val smsBodySeparator: String = "?",
 )
 
 expect val platformCapabilities: PlatformCapabilities
@@ -28,9 +30,23 @@ expect val platformCapabilities: PlatformCapabilities
 @Composable
 expect fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit
 
-/** Returns a launcher for the system document picker that reads a plain-text file (null if cancelled/unreadable). */
+/** What kind of file the picker should offer. */
+enum class FileKind { TEXT, VCARD }
+
+/** Returns a launcher for the system document picker that reads a text file (null if cancelled/unreadable). */
 @Composable
-expect fun rememberTextFilePicker(onPicked: (text: String?) -> Unit): () -> Unit
+expect fun rememberTextFilePicker(kind: FileKind = FileKind.TEXT, onPicked: (text: String?) -> Unit): () -> Unit
+
+/** Result of [TextSharer.share]. */
+enum class ShareOutcome { SHARE_SHEET, COPIED }
+
+/** Opens the system share sheet with plain text (web without Web Share: copies to the clipboard instead). */
+fun interface TextSharer {
+    fun share(text: String): ShareOutcome
+}
+
+@Composable
+expect fun rememberTextSharer(): TextSharer
 
 /** Wallpaper-derived colours where supported (Android 12+), otherwise null. */
 @Composable

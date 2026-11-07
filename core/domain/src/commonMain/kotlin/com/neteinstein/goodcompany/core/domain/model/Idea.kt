@@ -17,4 +17,6 @@ data class Idea(
     val whenText: String? = null,
     val createdAt: Instant,
     val dismissed: Boolean = false,
+    /** Set when the user sent this plan to the friends ("Propose"). */
+    val proposedAt: Instant? = null,
 )

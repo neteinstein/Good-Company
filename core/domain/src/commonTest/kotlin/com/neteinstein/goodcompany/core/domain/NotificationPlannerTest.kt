@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.NotificationPlanner
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
@@ -28,8 +29,8 @@ class NotificationPlannerTest {
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
         assertEquals(listOf("bday:ana:2026-03-20", "kid:k:2026-03-25"), planned.map { it.id })
         assertEquals(at(2026, 3, 20, 9), planned[0].at)
-        assertTrue(planned[0].body.contains("turns 36"))
-        assertTrue(planned[1].body.contains("lego"))
+        assertEquals(NotificationContent.FriendBirthday("Ana", 36), planned[0].content)
+        assertEquals(listOf("lego"), (planned[1].content as NotificationContent.KidBirthday).likes)
     }
 
     @Test
@@ -64,7 +65,7 @@ class NotificationPlannerTest {
         val planned = NotificationPlanner.plan(listOf(friend("ana")), reminders, emptyList(), now, TimeZone.UTC, 9)
         val single = planned.single()
         assertEquals("reminder:a", single.id)
-        assertEquals("With Ana", single.body)
+        assertEquals(NotificationContent.ReminderDue("Book tickets", listOf("Ana")), single.content)
     }
 
     @Test

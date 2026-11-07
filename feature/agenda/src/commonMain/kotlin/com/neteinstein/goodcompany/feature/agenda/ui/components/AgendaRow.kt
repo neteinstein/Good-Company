@@ -3,6 +3,8 @@ package com.neteinstein.goodcompany.feature.agenda.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -17,7 +19,9 @@ import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,62 +37,107 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
+import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.label_catch_up
+import com.neteinstein.goodcompany.feature.agenda.resources.label_group
+import com.neteinstein.goodcompany.feature.agenda.resources.label_kid_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.label_reminder
+import com.neteinstein.goodcompany.feature.agenda.resources.row_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.row_days_since
+import com.neteinstein.goodcompany.feature.agenda.resources.row_gift_idea
+import com.neteinstein.goodcompany.feature.agenda.resources.row_group_days
+import com.neteinstein.goodcompany.feature.agenda.resources.row_kid
+import com.neteinstein.goodcompany.feature.agenda.resources.row_loves
+import com.neteinstein.goodcompany.feature.agenda.resources.row_never
+import com.neteinstein.goodcompany.feature.agenda.resources.row_ping
+import com.neteinstein.goodcompany.feature.agenda.resources.row_see
+import com.neteinstein.goodcompany.feature.agenda.resources.row_send_wishes
+import com.neteinstein.goodcompany.feature.agenda.resources.row_turns
+import com.neteinstein.goodcompany.feature.agenda.resources.row_we_met
+import com.neteinstein.goodcompany.feature.agenda.resources.row_with
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
-/** A colour-coded agenda card: birthday (sunflower), kid (teal), big day (coral), reminder (violet), catch-up (red). */
+/**
+ * A colour-coded agenda card: birthday (sunflower), kid (teal), big day (coral), reminder (violet), catch-up (red),
+ * group (secondary). Birthdays today or tomorrow get a "Send wishes" button; overdue groups get "We met".
+ */
 @Composable
-fun AgendaRow(item: AgendaItem, onOpenFriend: (FriendId) -> Unit, modifier: Modifier = Modifier) {
+fun AgendaRow(
+    item: AgendaItem,
+    today: LocalDate,
+    onOpenFriend: (FriendId) -> Unit,
+    modifier: Modifier = Modifier,
+    onOpenWish: (FriendId) -> Unit = {},
+    onGroupMet: (String) -> Unit = {},
+) {
     val colors = MaterialTheme.colorScheme
     data class Spec(val icon: ImageVector, val tint: Color, val label: String, val title: String, val subtitle: String?, val friend: Friend?)
     val spec = when (item) {
         is AgendaItem.FriendBirthday -> Spec(
             Icons.Rounded.Cake,
             Color(0xFFF2A100),
-            "BIRTHDAY",
-            "${item.friend.name}'s birthday",
+            stringResource(Res.string.label_birthday),
+            stringResource(Res.string.row_birthday, item.friend.name),
             listOfNotNull(
-                item.turning?.let {
-                    "Turns $it"
-                },
-                item.friend.likes.takeIf { it.isNotEmpty() }?.joinToString(prefix = "loves ", limit = 3),
+                item.turning?.let { stringResource(Res.string.row_turns, it) },
+                item.friend.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
             ).joinToString(" · "),
             item.friend,
         )
         is AgendaItem.KidBirthday -> Spec(
             Icons.Rounded.ChildCare,
             Color(0xFF00A88F),
-            "KID'S BIRTHDAY",
-            "${item.kid.name} (${item.parent.name.substringBefore(' ')}'s)",
+            stringResource(Res.string.label_kid_birthday),
+            stringResource(Res.string.row_kid, item.kid.name, item.parent.name.substringBefore(' ')),
             listOfNotNull(
-                item.turning?.let {
-                    "Turns $it"
-                },
-                item.kid.likes.takeIf { it.isNotEmpty() }?.joinToString(prefix = "gift idea: ", limit = 2),
+                item.turning?.let { stringResource(Res.string.row_turns, it) },
+                (item.parent.gifts.filter { it.isIdea && it.forKidId == item.kid.id }.map { it.title } + item.kid.likes)
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { stringResource(Res.string.row_gift_idea, it.joinToString(limit = 2)) },
             ).joinToString(" · "),
             item.parent,
         )
         is AgendaItem.FriendEvent -> Spec(
             Icons.Rounded.Favorite,
             colors.primary,
-            "BIG DAY",
-            "Ping ${item.friend.name}",
+            stringResource(Res.string.label_big_day),
+            stringResource(Res.string.row_ping, item.friend.name),
             item.event.title,
             item.friend,
         )
         is AgendaItem.ReminderDue -> Spec(
             Icons.Rounded.Alarm,
             Color(0xFF7E57C2),
-            "REMINDER",
+            stringResource(Res.string.label_reminder),
             item.reminder.title,
-            item.friends.takeIf { it.isNotEmpty() }?.joinToString(prefix = "With ") { it.name.substringBefore(' ') },
+            item.friends.takeIf {
+                it.isNotEmpty()
+            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
             item.friends.firstOrNull(),
         )
         is AgendaItem.MeetupOverdue -> Spec(
             Icons.Rounded.Schedule,
             colors.error,
-            "CATCH UP",
-            "See ${item.friend.name}",
-            item.daysSince?.let { "$it days since you met" } ?: "No meetup logged yet",
+            stringResource(Res.string.label_catch_up),
+            stringResource(Res.string.row_see, item.friend.name),
+            item.daysSince?.let { pluralStringResource(Res.plurals.row_days_since, it, it) } ?: stringResource(Res.string.row_never),
             item.friend,
+        )
+        is AgendaItem.GroupOverdue -> Spec(
+            Icons.Rounded.Groups,
+            colors.secondary,
+            stringResource(Res.string.label_group),
+            "${item.group.emoji} ${item.group.name}",
+            item.members.joinToString { it.name.substringBefore(' ') }.let { names ->
+                item.daysSince?.let { pluralStringResource(Res.plurals.row_group_days, it, names, it) } ?: names
+            },
+            null,
         )
     }
     Surface(
@@ -98,7 +147,7 @@ fun AgendaRow(item: AgendaItem, onOpenFriend: (FriendId) -> Unit, modifier: Modi
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Row(Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(5.dp).fillMaxHeight().background(spec.tint))
             Box(
                 Modifier.padding(start = 12.dp).size(40.dp).background(spec.tint.copy(alpha = 0.15f), CircleShape),
@@ -118,8 +167,29 @@ fun AgendaRow(item: AgendaItem, onOpenFriend: (FriendId) -> Unit, modifier: Modi
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+                if (item is AgendaItem.FriendBirthday && today.daysUntil(item.date) in 0..1) {
+                    FilledTonalButton(
+                        onClick = { onOpenWish(item.friend.id) },
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(top = 6.dp).height(34.dp),
+                    ) {
+                        Icon(Icons.Rounded.Cake, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(Res.string.row_send_wishes), style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+                if (item is AgendaItem.GroupOverdue && item.group.memberIds.isNotEmpty()) {
+                    FilledTonalButton(
+                        onClick = { onGroupMet(item.group.id) },
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(top = 6.dp).height(34.dp),
+                    ) { Text(stringResource(Res.string.row_we_met), style = MaterialTheme.typography.labelLarge) }
+                }
             }
-            spec.friend?.let { FriendAvatar(it.name, it.initials, size = 36.dp) }
+            when {
+                spec.friend != null -> FriendAvatar(spec.friend.name, spec.friend.initials, size = 36.dp)
+                item is AgendaItem.GroupOverdue -> StackedAvatars(item.members.map { it.name to it.initials }, size = 26.dp, max = 3)
+            }
             Spacer(Modifier.width(12.dp))
         }
     }

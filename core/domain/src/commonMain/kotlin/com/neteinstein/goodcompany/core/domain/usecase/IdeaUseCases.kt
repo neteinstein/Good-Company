@@ -13,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.repository.IdeaGenerator
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRequest
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -81,6 +82,7 @@ class GenerateTalkingPointsUseCase(
     private val generator: IdeaGenerator,
     private val clock: AppClock,
     private val ids: IdGenerator,
+    private val language: LanguageProvider = LanguageProvider { "en" },
 ) {
     suspend operator fun invoke(id: FriendId): Result<Int> {
         val s = settings.settings.first()
@@ -92,6 +94,7 @@ class GenerateTalkingPointsUseCase(
             friends = listOf(IdeaMapper.profile(friend, interactions.messages.first())),
             area = s.homeArea.ifBlank { null },
             todayIso = clock.today().toString(),
+            languageTag = language.languageTag(),
         )
         return generator.generate(request).map { generated ->
             val mapped = IdeaMapper.map(generated, mapOf(friend.id.value to friend), listOf(friend.id), IdeaKind.TALKING_POINT, clock, ids)
@@ -125,6 +128,7 @@ class RunWeeklyIdeasUseCase(
     private val location: LocationProvider,
     private val clock: AppClock,
     private val ids: IdGenerator,
+    private val language: LanguageProvider = LanguageProvider { "en" },
 ) {
     suspend operator fun invoke(force: Boolean = false): WeeklyIdeasOutcome {
         val s = settings.settings.first()
@@ -144,6 +148,7 @@ class RunWeeklyIdeasUseCase(
             friends = optedIn.map { IdeaMapper.profile(it, messages) },
             area = area,
             todayIso = clock.today().toString(),
+            languageTag = language.languageTag(),
         )
         return generator.generate(request).fold(
             onSuccess = { generated ->

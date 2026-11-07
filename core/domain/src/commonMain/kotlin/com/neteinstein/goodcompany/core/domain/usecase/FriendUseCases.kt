@@ -2,15 +2,18 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
@@ -27,6 +30,8 @@ data class FriendSummary(
     val lastContact: Instant?,
     val nextBirthday: LocalDate?,
     val meetupOverdue: Boolean,
+    val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
+    val cadenceDays: Int? = null,
 )
 
 /** Friends sorted close-friends-first, then alphabetically, with last-seen/contact info attached. */
@@ -34,25 +39,31 @@ class ObserveFriendsUseCase(
     private val friends: FriendRepository,
     private val hangouts: HangoutRepository,
     private val interactions: InteractionRepository,
+    private val settings: SettingsRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(): Flow<List<FriendSummary>> = combine(
         friends.friends,
         hangouts.hangouts,
         interactions.interactions,
-    ) { all, hs, ints ->
+        settings.settings,
+    ) { all, hs, ints, s ->
         val today = clock.today()
+        val rules = CadenceRules.from(s)
         val seen = Relationships.lastSeen(hs)
         val contact = Relationships.lastContact(hs, ints)
-        val overdue = Relationships.meetupStatuses(all, hs, today, clock.timeZone)
+        val overdue = Relationships.meetupStatuses(all, hs, today, clock.timeZone, rules)
             .filter { it.isOverdue(today) }.map { it.friend.id }.toSet()
         all.map { f ->
+            val cadence = rules.cadenceFor(f)
             FriendSummary(
                 friend = f,
                 lastSeen = seen[f.id],
                 lastContact = contact[f.id],
                 nextBirthday = f.birthday?.nextOccurrence(today),
                 meetupOverdue = f.id in overdue,
+                warmth = Warmth.score(f, hs, ints, cadence, today, clock.timeZone),
+                cadenceDays = cadence,
             )
         }.sortedWith(compareByDescending<FriendSummary> { it.friend.isCloseFriend }.thenBy { it.friend.name.lowercase() })
     }
@@ -67,6 +78,10 @@ data class FriendDetail(
     val lastContactByType: Map<InteractionType, Instant>,
     val messageCount: Int,
     val ideas: List<Idea>,
+    val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
+    val cadenceDays: Int? = null,
+    val cadenceSource: CadenceRules.Source? = null,
+    val groups: List<FriendGroup> = emptyList(),
 )
 
 class ObserveFriendDetailUseCase(
@@ -74,14 +89,17 @@ class ObserveFriendDetailUseCase(
     private val hangouts: HangoutRepository,
     private val interactions: InteractionRepository,
     private val ideas: IdeaRepository,
+    private val settings: SettingsRepository,
+    private val groups: GroupRepository,
+    private val clock: AppClock,
 ) {
     operator fun invoke(id: FriendId): Flow<FriendDetail?> = combine(
         friends.friends,
         hangouts.hangouts,
         interactions.interactions,
         interactions.messages,
-        ideas.ideas,
-    ) { all, hs, ints, msgs, ideaList ->
+        combine(ideas.ideas, settings.settings, groups.groups) { i, s, g -> Triple(i, s, g) },
+    ) { all, hs, ints, msgs, (ideaList, s, gs) ->
         val friend = all.firstOrNull { it.id == id } ?: return@combine null
         val byId = all.associateBy { it.id }
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
@@ -95,6 +113,10 @@ class ObserveFriendDetailUseCase(
             lastContactByType = byType,
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },
+            warmth = Warmth.score(friend, hs, ints, CadenceRules.from(s).cadenceFor(friend), clock.today(), clock.timeZone),
+            cadenceDays = CadenceRules.from(s).cadenceFor(friend),
+            cadenceSource = CadenceRules.from(s).sourceFor(friend),
+            groups = gs.filter { id in it.memberIds },
         )
     }
 }

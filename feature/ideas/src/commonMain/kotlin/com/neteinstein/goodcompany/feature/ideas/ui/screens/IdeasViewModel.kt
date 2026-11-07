@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -25,6 +26,15 @@ import kotlin.time.Instant
 
 data class IdeaCard(val idea: Idea, val friends: List<Friend>)
 
+/** One-off feedback for the snackbar; the screen turns it into localised text. */
+sealed interface IdeasMessage {
+    data class Found(val count: Int) : IdeasMessage
+
+    data class Failed(val error: Throwable) : IdeasMessage
+
+    data class Skipped(val reason: WeeklyIdeasOutcome.Reason) : IdeasMessage
+}
+
 data class IdeasUiState(
     val ideas: List<IdeaCard> = emptyList(),
     val kindFilter: IdeaKind? = null,
@@ -34,7 +44,9 @@ data class IdeasUiState(
     val lastRunAt: Instant? = null,
     val isRunning: Boolean = false,
     val isLoading: Boolean = true,
-    val message: String? = null,
+    val message: IdeasMessage? = null,
+    /** The idea whose "Propose to…" sheet is open. */
+    val proposing: IdeaCard? = null,
     val now: Instant = Instant.DISTANT_PAST,
     val zone: TimeZone = TimeZone.UTC,
 )
@@ -46,6 +58,7 @@ class IdeasViewModel(
     private val updateSettings: UpdateSettingsUseCase,
     private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
     private val dismissIdea: DismissIdeaUseCase,
+    private val markProposed: MarkIdeaProposedUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(IdeasUiState())
@@ -83,15 +96,22 @@ class IdeasViewModel(
         viewModelScope.launch { dismissIdea(id) }
     }
 
+    /** Opens the "Propose to…" sheet with a drafted message for the idea's friends. */
+    fun onPropose(id: String) = local.update { s -> s.copy(proposing = state.value.ideas.firstOrNull { it.idea.id == id }) }
+
+    fun onDismissPropose() = local.update { it.copy(proposing = null) }
+
+    /** The user sent the plan through WhatsApp, a text or the share sheet. */
+    fun onProposed() {
+        val id = local.value.proposing?.idea?.id ?: return
+        viewModelScope.launch { markProposed(id) }
+    }
+
     fun onMessageShown() = local.update { it.copy(message = null) }
 
-    private fun WeeklyIdeasOutcome.toMessage(): String = when (this) {
-        is WeeklyIdeasOutcome.Done -> if (ideas == 0) "No great matches this time." else "$ideas new ideas ✨"
-        is WeeklyIdeasOutcome.Failed -> "Couldn't fetch ideas: ${error.message}"
-        is WeeklyIdeasOutcome.Skipped -> when (reason) {
-            WeeklyIdeasOutcome.Reason.NO_API_KEY -> "Add your API key in Settings first."
-            WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN -> "Turn on “Weekly event ideas” for at least one friend."
-            WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> "Nothing to do right now."
-        }
+    private fun WeeklyIdeasOutcome.toMessage(): IdeasMessage = when (this) {
+        is WeeklyIdeasOutcome.Done -> IdeasMessage.Found(ideas)
+        is WeeklyIdeasOutcome.Failed -> IdeasMessage.Failed(error)
+        is WeeklyIdeasOutcome.Skipped -> IdeasMessage.Skipped(reason)
     }
 }

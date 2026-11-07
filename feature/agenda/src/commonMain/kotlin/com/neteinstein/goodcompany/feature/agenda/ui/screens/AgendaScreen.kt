@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material3.Checkbox
@@ -49,21 +50,54 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
+import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
+import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
+import com.neteinstein.goodcompany.core.ui.format.weekdayLong
+import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.resources.undo
+import com.neteinstein.goodcompany.core.ui.resources.wish_default
+import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
+import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
+import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
+import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_group_met
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
+import com.neteinstein.goodcompany.feature.agenda.resources.reminder_delete
+import com.neteinstein.goodcompany.feature.agenda.resources.reminder_with
+import com.neteinstein.goodcompany.feature.agenda.resources.reminders_empty
+import com.neteinstein.goodcompany.feature.agenda.resources.reminders_header
+import com.neteinstein.goodcompany.feature.agenda.resources.things_ahead
+import com.neteinstein.goodcompany.feature.agenda.resources.title
+import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
+import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
-private val WEEKDAYS = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-private val SHORT_DAYS = listOf("M", "T", "W", "T", "F", "S", "S")
-private val MONTHS = listOf("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+/** Localised snackbar text for an [AgendaMessage]. */
+suspend fun AgendaMessage.text(): String = when (this) {
+    AgendaMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
+    AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
+    is AgendaMessage.GroupMet -> getString(Res.string.msg_group_met, name)
+    is AgendaMessage.AiError -> aiErrorText(error)
+}
 
 @Composable
 fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = koinViewModel()) {
@@ -76,9 +110,28 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         onDeleteReminder = viewModel::onDeleteReminder,
         onMessageShown = viewModel::onMessageShown,
         onUndoDelete = viewModel::onUndoDelete,
+        onOpenWish = viewModel::onOpenWish,
+        onGroupMet = viewModel::onGroupMet,
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
+    }
+    state.wishFor?.let { friend ->
+        val firstName = friend.name.substringBefore(' ')
+        val ideas = friend.gifts.filter { it.isIdea && it.forKidId == null }
+        SendMessageSheet(
+            title = stringResource(Res.string.wish_title, firstName),
+            suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
+            phone = friend.phoneNumbers.firstOrNull(),
+            onDismiss = viewModel::onDismissWish,
+            isGenerating = state.isDraftingWish,
+            onPersonalise = if (state.hasAiKey) viewModel::onPersonaliseWish else null,
+            header = if (ideas.isEmpty()) {
+                null
+            } else {
+                { InfoPill(stringResource(Res.string.wish_gift_hint, ideas.joinToString(limit = 3) { it.title }), icon = Icons.Rounded.CardGiftcard) }
+            },
+        )
     }
 }
 
@@ -91,13 +144,16 @@ fun AgendaContent(
     onDeleteReminder: (String) -> Unit,
     onMessageShown: () -> Unit,
     onUndoDelete: () -> Unit = {},
+    onOpenWish: (FriendId) -> Unit = {},
+    onGroupMet: (String) -> Unit = {},
 ) {
+    val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message, actionLabel = if (state.recentlyDeleted != null) "Undo" else null)
+        val result = snackbar.showSnackbar(message.text(), actionLabel = if (state.recentlyDeleted != null) undo else null)
         if (result == SnackbarResult.ActionPerformed) onUndoDelete()
         onMessageShown()
     }
@@ -108,7 +164,9 @@ fun AgendaContent(
     }
     Scaffold(
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = onNewReminder, icon = { Icon(Icons.Rounded.AlarmAdd, null) }, text = { Text("Reminder") })
+            ExtendedFloatingActionButton(onClick = onNewReminder, icon = {
+                Icon(Icons.Rounded.AlarmAdd, null)
+            }, text = { Text(stringResource(Res.string.fab_reminder)) })
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -119,12 +177,11 @@ fun AgendaContent(
         ) {
             item(key = "header") {
                 ScreenHeader(
-                    eyebrow = "${WEEKDAYS[state.today.dayOfWeek.ordinal]}, ${MONTHS[state.today.month.ordinal]} ${state.today.day}",
-                    title = "Coming up",
+                    eyebrow = stringResource(Res.string.eyebrow, weekdayLong(state.today.dayOfWeek), state.today.shortLabel()),
+                    title = stringResource(Res.string.title),
                     subtitle = when (val n = state.agenda.size) {
-                        0 -> "Nothing on the horizon"
-                        1 -> "1 thing in the next two months"
-                        else -> "$n things in the next two months"
+                        0 -> stringResource(Res.string.nothing_ahead)
+                        else -> pluralStringResource(Res.plurals.things_ahead, n, n)
                     },
                 )
             }
@@ -135,8 +192,8 @@ fun AgendaContent(
                 item(key = "empty") {
                     EmptyState(
                         icon = Icons.Rounded.EventAvailable,
-                        title = "All quiet",
-                        message = "Mark real friends and add birthdays, kids and important moments — they'll show up here.",
+                        title = stringResource(Res.string.empty_title),
+                        message = stringResource(Res.string.empty_body),
                     )
                 }
             }
@@ -148,14 +205,23 @@ fun AgendaContent(
                         Text(relativeDay(day, state.today), style = MaterialTheme.typography.titleMedium)
                     }
                 }
-                items(items, key = { it.key }) { AgendaRow(it, onOpenFriend, Modifier.padding(start = 84.dp, end = 16.dp).animateItem()) }
+                items(items, key = { it.key }) {
+                    AgendaRow(
+                        it,
+                        state.today,
+                        onOpenFriend,
+                        onOpenWish = onOpenWish,
+                        onGroupMet = onGroupMet,
+                        modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
+                    )
+                }
             }
 
-            item(key = "reminders-h") { SectionHeader("Your reminders · ${state.openReminders} open") }
+            item(key = "reminders-h") { SectionHeader(stringResource(Res.string.reminders_header, state.openReminders)) }
             if (state.reminders.isEmpty()) {
                 item(key = "reminders-empty") {
                     Text(
-                        "“Book tickets for the concert with Rui” — add one with the button below.",
+                        stringResource(Res.string.reminders_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
@@ -184,7 +250,7 @@ fun AgendaContent(
                                 due,
                                 people.joinToString {
                                     it.name.substringBefore(' ')
-                                }.ifBlank { null }?.let { "with $it" },
+                                }.ifBlank { null }?.let { stringResource(Res.string.reminder_with, it) },
                             ).joinToString(" · ")
                             if (text.isNotBlank()) {
                                 Text(
@@ -195,7 +261,7 @@ fun AgendaContent(
                             }
                         }
                         if (people.isNotEmpty()) StackedAvatars(people.map { it.name to it.initials }, size = 28.dp, max = 3)
-                        IconButton(onClick = { onDeleteReminder(r.id) }) { Icon(Icons.Rounded.Close, "Delete reminder") }
+                        IconButton(onClick = { onDeleteReminder(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.reminder_delete)) }
                     }
                 }
             }
@@ -215,7 +281,7 @@ private fun WeekStrip(days: List<Pair<LocalDate, Int>>, today: LocalDate, onDay:
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                Text(SHORT_DAYS[day.dayOfWeek.ordinal], style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.7f))
+                Text(weekdayInitial(day.dayOfWeek), style = MaterialTheme.typography.labelSmall, color = fg.copy(alpha = 0.7f))
                 Text(day.day.toString(), style = MaterialTheme.typography.titleMedium, color = fg)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {

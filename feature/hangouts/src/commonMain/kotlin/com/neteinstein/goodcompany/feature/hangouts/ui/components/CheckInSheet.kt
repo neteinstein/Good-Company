@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.components
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -40,16 +41,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_clear_location
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_locating
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_log
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_note
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_pick
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_use_location
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_where
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInDraft
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CheckInSheet(
     draft: CheckInDraft,
     friends: List<Friend>,
+    groups: List<FriendGroup>,
+    onPickGroup: (String) -> Unit,
     onToggleFriend: (FriendId) -> Unit,
     onQueryChange: (String) -> Unit,
     onPlaceChange: (String) -> Unit,
@@ -64,12 +79,20 @@ fun CheckInSheet(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("I'm with…", style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(Res.string.sheet_title), style = MaterialTheme.typography.headlineSmall)
+            if (groups.isNotEmpty()) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    groups.forEach { g ->
+                        val all = g.memberIds.isNotEmpty() && draft.selected.containsAll(g.memberIds)
+                        FilterChip(selected = all, onClick = { onPickGroup(g.id) }, label = { Text("${g.emoji} ${g.name}") })
+                    }
+                }
+            }
             OutlinedTextField(
                 value = draft.query,
                 onValueChange = onQueryChange,
                 leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                placeholder = { Text("Find a friend") },
+                placeholder = { Text(stringResource(Res.string.sheet_find)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.extraLarge,
@@ -105,7 +128,7 @@ fun CheckInSheet(
                 value = draft.place,
                 onValueChange = onPlaceChange,
                 leadingIcon = { Icon(Icons.Rounded.Place, null) },
-                label = { Text("Where? (optional)") },
+                label = { Text(stringResource(Res.string.sheet_where)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
@@ -116,18 +139,18 @@ fun CheckInSheet(
                     draft.isLocating -> {
                         CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text("Finding you…")
+                        Text(stringResource(Res.string.sheet_locating))
                     }
                     location != null -> InputChip(
                         selected = true,
                         onClick = onClearLocation,
                         label = { Text(Place(null, location.latitude, location.longitude).label.orEmpty()) },
                         leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
-                        trailingIcon = { Icon(Icons.Rounded.Close, "Clear location", Modifier.size(18.dp)) },
+                        trailingIcon = { Icon(Icons.Rounded.Close, stringResource(Res.string.sheet_clear_location), Modifier.size(18.dp)) },
                     )
                     else -> AssistChip(
                         onClick = onUseLocation,
-                        label = { Text("Use my location") },
+                        label = { Text(stringResource(Res.string.sheet_use_location)) },
                         leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
                     )
                 }
@@ -135,12 +158,18 @@ fun CheckInSheet(
             OutlinedTextField(
                 value = draft.note,
                 onValueChange = onNoteChange,
-                label = { Text("Note (optional)") },
+                label = { Text(stringResource(Res.string.sheet_note)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
             )
             Button(onClick = onSave, enabled = draft.canSave, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text(if (draft.selected.isEmpty()) "Pick who you're with" else "Log it · ${draft.selected.size}")
+                Text(
+                    if (draft.selected.isEmpty()) {
+                        stringResource(Res.string.sheet_pick)
+                    } else {
+                        stringResource(Res.string.sheet_log, draft.selected.size)
+                    },
+                )
             }
             Spacer(Modifier.height(12.dp))
         }

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Anulează</string>
+    <string name="save">Salvează</string>
+    <string name="add">Adaugă</string>
+    <string name="remove">Elimină</string>
+    <string name="delete">Șterge</string>
+    <string name="undo">Anulează</string>
+    <string name="edit">Editează</string>
+    <string name="close">Închide</string>
+    <string name="share">Distribuie</string>
+    <string name="open">Deschide</string>
+    <string name="back">Înapoi</string>
+    <string name="copied_to_clipboard">Copiat în clipboard</string>
+    <string name="remove_item">Elimină %1$s</string>
+    <string name="day_today">Azi</string>
+    <string name="day_tomorrow">Mâine</string>
+    <string name="day_yesterday">Ieri</string>
+    <plurals name="day_in_days">
+        <item quantity="one">Peste %1$d zi</item>
+        <item quantity="few">Peste %1$d zile</item>
+        <item quantity="other">Peste %1$d de zile</item>
+    </plurals>
+    <plurals name="day_days_ago">
+        <item quantity="one">Acum %1$d zi</item>
+        <item quantity="few">Acum %1$d zile</item>
+        <item quantity="other">Acum %1$d de zile</item>
+    </plurals>
+    <string name="phrase_today">azi</string>
+    <string name="phrase_tomorrow">mâine</string>
+    <string name="phrase_yesterday">ieri</string>
+    <plurals name="phrase_in_days">
+        <item quantity="one">peste %1$d zi</item>
+        <item quantity="few">peste %1$d zile</item>
+        <item quantity="other">peste %1$d de zile</item>
+    </plurals>
+    <string name="phrase_on_date">pe %1$s</string>
+    <string name="past_just_now">chiar acum</string>
+    <string name="past_minutes">acum %1$d min</string>
+    <string name="past_hours">acum %1$d h</string>
+    <string name="past_yesterday">ieri</string>
+    <plurals name="past_days">
+        <item quantity="one">acum %1$d zi</item>
+        <item quantity="few">acum %1$d zile</item>
+        <item quantity="other">acum %1$d de zile</item>
+    </plurals>
+    <plurals name="past_weeks">
+        <item quantity="one">acum %1$d săptămână</item>
+        <item quantity="few">acum %1$d săptămâni</item>
+        <item quantity="other">acum %1$d de săptămâni</item>
+    </plurals>
+    <plurals name="past_months">
+        <item quantity="one">acum %1$d lună</item>
+        <item quantity="few">acum %1$d luni</item>
+        <item quantity="other">acum %1$d de luni</item>
+    </plurals>
+    <string name="past_over_a_year">acum peste un an</string>
+    <string name="date_short">%2$d %1$s</string>
+    <string name="date_long">%2$d %1$s %3$d</string>
+    <string-array name="months_short">
+        <item>ian.</item>
+        <item>feb.</item>
+        <item>mar.</item>
+        <item>apr.</item>
+        <item>mai</item>
+        <item>iun.</item>
+        <item>iul.</item>
+        <item>aug.</item>
+        <item>sept.</item>
+        <item>oct.</item>
+        <item>nov.</item>
+        <item>dec.</item>
+    </string-array>
+    <string-array name="months_long">
+        <item>ianuarie</item>
+        <item>februarie</item>
+        <item>martie</item>
+        <item>aprilie</item>
+        <item>mai</item>
+        <item>iunie</item>
+        <item>iulie</item>
+        <item>august</item>
+        <item>septembrie</item>
+        <item>octombrie</item>
+        <item>noiembrie</item>
+        <item>decembrie</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>lun.</item>
+        <item>mar.</item>
+        <item>mie.</item>
+        <item>joi</item>
+        <item>vin.</item>
+        <item>sâm.</item>
+        <item>dum.</item>
+    </string-array>
+    <string-array name="weekdays_long">
+        <item>luni</item>
+        <item>marți</item>
+        <item>miercuri</item>
+        <item>joi</item>
+        <item>vineri</item>
+        <item>sâmbătă</item>
+        <item>duminică</item>
+    </string-array>
+    <string-array name="weekdays_initial">
+        <item>L</item>
+        <item>M</item>
+        <item>M</item>
+        <item>J</item>
+        <item>V</item>
+        <item>S</item>
+        <item>D</item>
+    </string-array>
+    <plurals name="every_n_days">
+        <item quantity="one">în fiecare zi</item>
+        <item quantity="few">la fiecare %1$d zile</item>
+        <item quantity="other">la fiecare %1$d de zile</item>
+    </plurals>
+    <string name="cadence_weekly">Săptămânal</string>
+    <string name="cadence_two_weeks">2 săptămâni</string>
+    <string name="cadence_monthly">Lunar</string>
+    <string name="cadence_quarterly">Trimestrial</string>
+    <string name="cadence_off">Dezactivat</string>
+    <string name="circle_inner">Cercul apropiat</string>
+    <string name="circle_close">Prieteni apropiați</string>
+    <string name="circle_good">Prieteni buni</string>
+    <string name="circle_inner_short">Intim</string>
+    <string name="circle_close_short">Apropiat</string>
+    <string name="circle_good_short">Bun prieten</string>
+    <string name="warmth_warm">Caldă</string>
+    <string name="warmth_cooling">Se răcește</string>
+    <string name="warmth_fading">Se stinge</string>
+    <string name="occasion_birthday">Zi de naștere</string>
+    <string name="occasion_christmas">Crăciun</string>
+    <string name="occasion_thank_you">Mulțumire</string>
+    <string name="occasion_just_because">Pur și simplu</string>
+    <string name="tags_add">Adaugă</string>
+    <string name="reminder_new">Memento nou</string>
+    <string name="reminder_label">Amintește-mi să…</string>
+    <string name="reminder_placeholder">Cumpăr bilete la concert</string>
+    <string name="reminder_with">Cu</string>
+    <string name="reminder_when">Când</string>
+    <string name="reminder_no_date">Fără dată</string>
+    <string name="reminder_morning">Dimineața</string>
+    <string name="reminder_lunch">Prânz</string>
+    <string name="reminder_evening">Seara</string>
+    <string name="reminder_night">Noaptea</string>
+    <string name="reminder_slot">%1$s · %2$d:00</string>
+    <string name="send_title_message">Mesajul tău</string>
+    <string name="send_ai_personalise">Personalizează cu AI</string>
+    <string name="send_ai_writing">Se scrie…</string>
+    <string name="wish_default">La mulți ani, %1$s! 🎉 Să ai o zi plină de oameni dragi. Sărbătorim curând!</string>
+    <string name="send_whatsapp">WhatsApp</string>
+    <string name="send_sms">SMS</string>
+    <string name="send_share">Distribuie…</string>
+    <string name="notif_bday_title">🎂 Ziua lui/ei %1$s</string>
+    <string name="notif_bday_body_age">%1$s împlinește %2$d ani azi — urează-i la mulți ani!</string>
+    <string name="notif_bday_body">Azi e ziua lui/ei %1$s — urează-i la mulți ani!</string>
+    <string name="notif_kid_title">🎈 %1$s (copilul lui/ei %2$s)</string>
+    <string name="notif_kid_body_age">Împlinește %1$d ani azi.</string>
+    <string name="notif_kid_body">Își serbează ziua azi.</string>
+    <string name="notif_kid_likes">Îi place: %1$s</string>
+    <string name="notif_event_today_title">💬 Scrie-i lui/ei %1$s</string>
+    <string name="notif_event_today_body">%1$s e azi. Un mesaj scurt contează mult.</string>
+    <string name="notif_event_soon_title">📅 %1$s: %2$s</string>
+    <plurals name="notif_event_soon_body">
+        <item quantity="one">Peste %1$d zi.</item>
+        <item quantity="few">Peste %1$d zile.</item>
+        <item quantity="other">Peste %1$d de zile.</item>
+    </plurals>
+    <string name="notif_reminder_title">⏰ %1$s</string>
+    <string name="notif_reminder_with">Cu %1$s</string>
+    <string name="notif_reminder_body">Memento</string>
+    <string name="notif_meet_title">👋 E timpul să-l/s-o vezi pe %1$s</string>
+    <plurals name="notif_meet_body">
+        <item quantity="one">A trecut %1$d zi — voiai să vă vedeți %2$s.</item>
+        <item quantity="few">Au trecut %1$d zile — voiai să vă vedeți %2$s.</item>
+        <item quantity="other">Au trecut %1$d de zile — voiai să vă vedeți %2$s.</item>
+    </plurals>
+    <string name="notif_meet_body_never">Nu ai înregistrat încă nicio întâlnire — voiai să vă vedeți %1$s.</string>
+    <string name="notif_group_title">%1$s: adunați-vă cu toții</string>
+    <plurals name="notif_group_body">
+        <item quantity="one">Ultima dată ați fost toți împreună acum %1$d zi.</item>
+        <item quantity="few">Ultima dată ați fost toți împreună acum %1$d zile.</item>
+        <item quantity="other">Ultima dată ați fost toți împreună acum %1$d de zile.</item>
+    </plurals>
+    <string name="notif_group_body_never">Încă nu v-ați adunat cu toții.</string>
+    <string name="notif_action_met">Ne-am văzut</string>
+    <string name="notif_action_called">Am sunat</string>
+    <string name="notif_action_snooze_week">Săptămâna viitoare</string>
+    <string name="notif_action_snooze_weekend">Weekendul ăsta</string>
+    <string name="ai_error_no_key">Adaugă o cheie API Anthropic în Setări ca să folosești AI.</string>
+    <string name="ai_error_invalid_key">Cheia API a fost respinsă. Verific-o în Setări.</string>
+    <string name="ai_error_rate_limited">Serviciul AI a limitat cererile. Încearcă peste un minut.</string>
+    <string name="ai_error_unavailable">Serviciul AI are probleme. Încearcă mai târziu.</string>
+    <string name="ai_error_refused">Cererea a fost refuzată de sistemul de siguranță AI.</string>
+    <string name="ai_error_truncated">Răspunsul a fost întrerupt. Încearcă din nou.</string>
+    <string name="ai_error_too_slow">Căutarea a durat prea mult. Încearcă mai târziu.</string>
+    <string name="ai_error_other">Nu s-a putut contacta serviciul AI. Verifică conexiunea.</string>
+    <string name="sample_ana_notes">Partener: Tiago. Alergică la arahide.</string>
+    <string name="sample_knee_surgery">Operație la genunchi</string>
+    <string name="sample_job_interview">Interviu de angajare</string>
+    <string name="sample_jazz_night">Seară de jazz 🎷</string>
+    <string name="sample_board_games_note">Jocuri de societate</string>
+    <string name="sample_surf_morning">Dimineață de surf</string>
+    <string name="sample_ruis_place">La Rui acasă</string>
+    <string name="sample_beatriz_dinner">Cină la Beatriz</string>
+    <string name="sample_reminder_tickets">Cumpăr bilete la festivalul de jazz</string>
+    <string name="sample_reminder_present">Cumpăr cadoul de ziua lui Leo</string>
+    <string name="sample_reminder_ask_marta">O întreb pe Marta cum a fost la interviu</string>
+    <string name="sample_reminder_surf">Plănuiesc weekendul de surf</string>
+    <string name="sample_reminder_photos">Îi trimit Sofiei pozele din excursie</string>
+    <string name="sample_idea_jazz_title">Festivalul de Jazz din Lisabona — spectacolul de noapte</string>
+    <string name="sample_idea_jazz_body">Ana adoră jazzul, iar Rui e mereu pe fază când e ceva live. Spectacolul târziu de vineri e mic și cu locuri pe scaune — fără aglomerație.</string>
+    <string name="sample_idea_jazz_when">Vin., 22:00</string>
+    <string name="sample_idea_photo_title">Plimbare de fotografie stradală prin Alfama</string>
+    <string name="sample_idea_photo_body">O plimbare ghidată la apus — perfectă pentru noul aparat al Sofiei, și se termină la o cafenea de specialitate.</string>
+    <string name="sample_idea_photo_when">Sâm., 17:30</string>
+    <string name="sample_idea_f1_title">A fost anunțat un nou circuit stradal de F1</string>
+    <string name="sample_idea_f1_body">Veste mare pentru Rui — adu vorba data viitoare; tot vorbește să meargă la o cursă în străinătate.</string>
+    <string name="sample_idea_ceramics_title">Atelierul de ceramică despre care a vorbit</string>
+    <string name="sample_idea_ceramics_body">Marta a zis că vrea să se apuce iar de olărit — întreab-o dacă a găsit un atelier.</string>
+    <string name="sample_gift_vinyl">Kind of Blue pe vinil</string>
+    <string name="sample_gift_murakami">Prima ediție Murakami</string>
+    <string name="sample_gift_dino_lego">Set LEGO cu dinozauri</string>
+    <string name="sample_gift_board_game">Jocul de societate Wingspan</string>
+    <string name="sample_gift_ceramics">Voucher pentru un curs de ceramică</string>
+    <string name="sample_group_board_games">Seara de jocuri</string>
+    <string name="sample_group_surf">Gașca de surf</string>
+    <string name="sample_taste_jazz">Jazz</string>
+    <string name="sample_taste_sushi">Sushi</string>
+    <string name="sample_taste_hiking">Drumeții</string>
+    <string name="sample_taste_crowds">Aglomerația</string>
+    <string name="sample_taste_cilantro">Coriandru</string>
+    <string name="sample_taste_dinosaurs">Dinozauri</string>
+    <string name="sample_taste_pancakes">Clătite</string>
+    <string name="sample_taste_formula1">Formula 1</string>
+    <string name="sample_taste_craft_beer">Bere artizanală</string>
+    <string name="sample_taste_board_games">Jocuri de societate</string>
+    <string name="sample_taste_early_mornings">Trezitul devreme</string>
+    <string name="sample_taste_yoga">Yoga</string>
+    <string name="sample_taste_indie_films">Filme independente</string>
+    <string name="sample_taste_ceramics">Ceramică</string>
+    <string name="sample_taste_horror">Filme horror</string>
+    <string name="sample_taste_painting">Pictură</string>
+    <string name="sample_taste_football">Fotbal</string>
+    <string name="sample_taste_bbq">Grătare</string>
+    <string name="sample_taste_surfing">Surf</string>
+    <string name="sample_taste_photography">Fotografie</string>
+    <string name="sample_taste_travel">Călătorii</string>
+    <string name="sample_taste_coffee">Cafea de specialitate</string>
+    <string name="sample_taste_spicy">Mâncare picantă</string>
+    <string name="sample_taste_theatre">Teatru</string>
+    <string name="sample_taste_cooking">Gătit</string>
+    <string name="sample_taste_wine">Vin</string>
+    <string name="sample_taste_ballet">Balet</string>
+    <string name="sample_taste_running">Alergat</string>
+</resources>

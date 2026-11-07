@@ -23,6 +23,12 @@ expect fun Scope.createLocationProvider(): LocationProvider
 
 expect fun Scope.createNotificationScheduler(): NotificationScheduler
 
+/**
+ * Hooks notification quick actions up to the app (iOS: installs the UNUserNotificationCenter delegate; Android:
+ * no-op, a manifest receiver handles them; web: no notifications). Call right after Koin starts.
+ */
+expect fun installNotificationActionHandling()
+
 /** Ktor picks the platform engine (OkHttp / Darwin / JS fetch) from the classpath. */
 fun createHttpClient(): HttpClient = HttpClient {
     install(HttpTimeout) {

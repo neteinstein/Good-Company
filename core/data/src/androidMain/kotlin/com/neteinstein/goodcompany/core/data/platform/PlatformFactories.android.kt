@@ -14,3 +14,5 @@ actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = Androi
 actual fun Scope.createLocationProvider(): LocationProvider = AndroidLocationProvider(androidContext())
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = AndroidNotificationScheduler(androidContext())
+
+actual fun installNotificationActionHandling() = Unit

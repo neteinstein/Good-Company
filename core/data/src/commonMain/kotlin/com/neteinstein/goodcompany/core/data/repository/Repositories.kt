@@ -8,12 +8,14 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
@@ -25,6 +27,7 @@ import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 class FriendRepositoryImpl(settings: Settings, private val contacts: ContactsSource) : FriendRepository {
     private val store = PersistentState(settings, Keys.FRIENDS, ListSerializer(Friend.serializer()), emptyList())
@@ -115,6 +118,10 @@ class IdeaRepositoryImpl(settings: Settings) : IdeaRepository {
         list.map { if (it.id == id) it.copy(dismissed = true) else it }
     }
 
+    override suspend fun markProposed(id: String, at: Instant) = store.update { list ->
+        list.map { if (it.id == id) it.copy(proposedAt = at) else it }
+    }
+
     private companion object {
         const val MAX_IDEAS = 200
     }
@@ -125,4 +132,15 @@ class SettingsRepositoryImpl(settings: Settings) : SettingsRepository {
     override val settings: Flow<AppSettings> = store.flow
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) = store.update(transform)
+}
+
+class GroupRepositoryImpl(settings: Settings) : GroupRepository {
+    private val store = PersistentState(settings, Keys.GROUPS, ListSerializer(FriendGroup.serializer()), emptyList())
+    override val groups: Flow<List<FriendGroup>> = store.flow
+
+    override suspend fun upsert(group: FriendGroup) = store.update { list ->
+        if (list.any { it.id == group.id }) list.map { if (it.id == group.id) group else it } else list + group
+    }
+
+    override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
 }

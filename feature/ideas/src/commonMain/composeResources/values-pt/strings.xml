@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Com tecnologia Claude</string>
+    <string name="title">Ideias</string>
+    <string name="subtitle">Planos e temas de conversa à medida dos gostos dos teus amigos</string>
+    <string name="filter_all">Todas</string>
+    <string name="filter_plans">Planos</string>
+    <string name="filter_news">Notícias</string>
+    <string name="filter_talk">Para conversar</string>
+    <string name="empty_title">Ainda sem ideias</string>
+    <string name="empty_body">Liga as “Ideias de eventos semanais” para alguns amigos, junta o que adoram e toca em “Procurar planos agora”.</string>
+    <string name="hero_title">Planos semanais</string>
+    <plurals name="hero_opted_in">
+        <item quantity="one">%1$d amigo aderiu</item>
+        <item quantity="other">%1$d amigos aderiram</item>
+    </plurals>
+    <string name="hero_last_run">%1$s · última vez %2$s</string>
+    <string name="hero_searching">À procura do que há perto de ti…</string>
+    <string name="hero_run">Procurar planos agora</string>
+    <string name="key_banner_title">Adiciona a tua chave da API para ter ideias novas</string>
+    <string name="key_banner_body">Toca para abrir as Definições — a chave fica neste dispositivo.</string>
+    <string name="no_key_title">Traz a tua própria chave de IA</string>
+    <string name="no_key_body">As ideias cruzam os gostos dos teus amigos com as notícias de hoje e eventos perto de ti, com o Claude e a tua chave da API da Anthropic.</string>
+    <string name="no_key_action">Adicionar chave nas Definições</string>
+    <string name="no_key_step1">Cria uma chave em console.anthropic.com</string>
+    <string name="no_key_step2">Cola-a em Definições → Ideias com IA (fica neste dispositivo)</string>
+    <string name="no_key_step3">Na página de um amigo, liga as “Ideias de eventos semanais”</string>
+    <string name="kind_event">Planear juntos</string>
+    <string name="kind_news">Uma notícia que vão adorar</string>
+    <string name="kind_talk">Puxar o assunto</string>
+    <string name="dismiss">Dispensar ideia</string>
+    <string name="open">Abrir</string>
+    <string name="propose_to">Propor a %1$s</string>
+    <string name="share_with">Enviar a %1$s</string>
+    <string name="proposed">Proposto %1$s</string>
+    <string name="propose_title">Propor a %1$s</string>
+    <string name="propose_message">Olá %1$s! 😊 Que tal isto: %2$s. Alinham?</string>
+    <string name="news_message">Olá %1$s! Vi isto e lembrei-me de ti: %2$s</string>
+    <string name="names_and">%1$s e %2$s</string>
+    <string name="msg_none">Desta vez não houve boas combinações.</string>
+    <plurals name="msg_found">
+        <item quantity="one">%1$d ideia nova ✨</item>
+        <item quantity="other">%1$d ideias novas ✨</item>
+    </plurals>
+    <string name="msg_no_key">Adiciona primeiro a tua chave da API nas Definições.</string>
+    <string name="msg_no_friends">Liga as “Ideias de eventos semanais” para pelo menos um amigo.</string>
+    <string name="msg_nothing">Nada para fazer agora.</string>
+</resources>
