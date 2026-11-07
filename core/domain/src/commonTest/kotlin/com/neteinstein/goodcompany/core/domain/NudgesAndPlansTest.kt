@@ -123,3 +123,27 @@ class NudgesAndPlansTest {
         assertTrue(action.isPlan)
     }
 }
+
+class CalendarFileTest {
+    @Test
+    fun allDayEventIsValidIcs() {
+        val ics = com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.allDayEvent(
+            uid = "p1",
+            title = "Jazz, wine; fun",
+            date = LocalDate(2026, 12, 31),
+            location = "Hot Clube",
+            notes = "Line 1\nLine 2",
+            stamp = at(2026, 3, 10, 8, 5),
+        )
+        val lines = ics.split("\r\n")
+        assertEquals("BEGIN:VCALENDAR", lines.first())
+        assertTrue("DTSTART;VALUE=DATE:20261231" in lines)
+        assertTrue("DTEND;VALUE=DATE:20270101" in lines)
+        assertTrue("DTSTAMP:20260310T080500Z" in lines)
+        assertTrue("SUMMARY:Jazz\\, wine\; fun" in lines)
+        assertTrue("DESCRIPTION:Line 1\\nLine 2" in lines)
+        assertTrue("LOCATION:Hot Clube" in lines)
+        assertEquals("jazz-wine-fun.ics", com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.fileName("Jazz, wine; fun!"))
+        assertEquals("plan.ics", com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.fileName("!!"))
+    }
+}

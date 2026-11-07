@@ -61,6 +61,35 @@ import com.neteinstein.goodcompany.core.ui.resources.occasion_thank_you
 import com.neteinstein.goodcompany.core.ui.resources.warmth_cooling
 import com.neteinstein.goodcompany.core.ui.resources.warmth_fading
 import com.neteinstein.goodcompany.core.ui.resources.warmth_warm
+import com.neteinstein.goodcompany.core.ui.resources.names_and
+import com.neteinstein.goodcompany.core.ui.resources.names_and_more
+import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_no
+import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_yes
+import com.neteinstein.goodcompany.core.ui.resources.notif_digest_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_digest_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_plan_ask_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_plan_ask_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_private
+import com.neteinstein.goodcompany.core.ui.resources.occasion_coffee
+import com.neteinstein.goodcompany.core.ui.resources.occasion_culture
+import com.neteinstein.goodcompany.core.ui.resources.occasion_dinner
+import com.neteinstein.goodcompany.core.ui.resources.occasion_drinks
+import com.neteinstein.goodcompany.core.ui.resources.occasion_family_time
+import com.neteinstein.goodcompany.core.ui.resources.occasion_outdoors
+import com.neteinstein.goodcompany.core.ui.resources.occasion_sports
+import com.neteinstein.goodcompany.core.ui.resources.occasion_weekday_lunch
+import com.neteinstein.goodcompany.core.ui.resources.topic_event_past
+import com.neteinstein.goodcompany.core.ui.resources.topic_event_soon
+import com.neteinstein.goodcompany.core.ui.resources.topic_kid_birthday
+import com.neteinstein.goodcompany.core.ui.resources.topic_kid_birthday_age
+import com.neteinstein.goodcompany.core.ui.resources.topic_like
+import com.neteinstein.goodcompany.core.ui.resources.topic_note
+import com.neteinstein.goodcompany.core.ui.resources.topic_note_place
+import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.usecase.TopicHint
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
@@ -146,9 +175,78 @@ object ResourceNotificationRenderer : NotificationRenderer {
                     ),
                 ),
             )
+            is NotificationContent.CatchUpDigest -> Triple(
+                getString(Res.string.notif_digest_title),
+                getString(Res.string.notif_digest_body, namesText(c.names, c.total)),
+                emptyList(),
+            )
+            is NotificationContent.PlanToday -> Triple(
+                getString(Res.string.notif_plan_today_title, c.title),
+                if (c.withNames.isEmpty()) "" else getString(Res.string.notif_plan_today_body, namesText(c.withNames, c.withNames.size)),
+                emptyList(),
+            )
+            is NotificationContent.PlanFollowUp -> Triple(
+                getString(Res.string.notif_plan_ask_title, namesText(c.withNames, c.withNames.size)),
+                getString(Res.string.notif_plan_ask_body, c.title),
+                listOf(
+                    RenderedAction(
+                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.planId),
+                        getString(Res.string.notif_action_plan_yes),
+                    ),
+                    RenderedAction(
+                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.planId),
+                        getString(Res.string.notif_action_plan_no),
+                    ),
+                ),
+            )
         }
         return RenderedNotification(notification.id, notification.at, title, body, actions)
     }
+
+    override suspend fun privateText(): String = getString(Res.string.notif_private)
+}
+
+/** "Ana", "Ana and Rui", "Ana, Rui and Cat", "Ana, Rui, Cat and 2 more" — [total] counts everyone, named or not. */
+suspend fun namesText(names: List<String>, total: Int): String {
+    if (names.isEmpty()) return ""
+    val extra = total - names.size
+    return when {
+        extra > 0 -> getPluralString(Res.plurals.names_and_more, extra, names.joinToString(", "), extra)
+        names.size == 1 -> names.single()
+        else -> getString(Res.string.names_and, names.dropLast(1).joinToString(", "), names.last())
+    }
+}
+
+@Composable
+fun occasionLabel(occasion: Occasion): String = stringResource(
+    when (occasion) {
+        Occasion.WEEKDAY_LUNCH -> Res.string.occasion_weekday_lunch
+        Occasion.COFFEE -> Res.string.occasion_coffee
+        Occasion.DINNER -> Res.string.occasion_dinner
+        Occasion.DRINKS -> Res.string.occasion_drinks
+        Occasion.OUTDOORS -> Res.string.occasion_outdoors
+        Occasion.SPORTS -> Res.string.occasion_sports
+        Occasion.CULTURE -> Res.string.occasion_culture
+        Occasion.FAMILY_TIME -> Res.string.occasion_family_time
+    },
+)
+
+/** One offline talking point as a sentence. */
+@Composable
+fun topicText(topic: TopicHint): String = when (topic) {
+    is TopicHint.FromNote -> stringResource(
+        Res.string.topic_note,
+        topic.place?.let { stringResource(Res.string.topic_note_place, topic.date.shortLabel(), it) } ?: topic.date.shortLabel(),
+        topic.note,
+    )
+    is TopicHint.EventFollowUp -> stringResource(
+        if (topic.isPast) Res.string.topic_event_past else Res.string.topic_event_soon,
+        topic.title,
+        topic.date.shortLabel(),
+    )
+    is TopicHint.KidBirthday -> topic.turning?.let { stringResource(Res.string.topic_kid_birthday_age, topic.kidName, topic.date.shortLabel(), it) }
+        ?: stringResource(Res.string.topic_kid_birthday, topic.kidName, topic.date.shortLabel())
+    is TopicHint.Like -> stringResource(Res.string.topic_like, topic.like)
 }
 
 /** A localised, user-facing explanation of an AI failure. */

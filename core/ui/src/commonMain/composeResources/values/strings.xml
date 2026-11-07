@@ -237,4 +237,37 @@
     <string name="sample_taste_wine">Wine</string>
     <string name="sample_taste_ballet">Ballet</string>
     <string name="sample_taste_running">Running</string>
+    <string name="notif_digest_title">🌿 People to catch up with this week</string>
+    <string name="notif_digest_body">%1$s — whenever suits you.</string>
+    <string name="notif_plan_today_title">📅 Today: %1$s</string>
+    <string name="notif_plan_today_body">With %1$s. Have fun!</string>
+    <string name="notif_plan_ask_title">Did you meet %1$s?</string>
+    <string name="notif_plan_ask_body">“%1$s” — tell us how it went so it counts.</string>
+    <string name="notif_action_plan_yes">Yes, we met</string>
+    <string name="notif_action_plan_no">It didn’t happen</string>
+    <string name="notif_private">You have a gentle reminder from Good Company</string>
+    <string name="names_and">%1$s and %2$s</string>
+    <string name="occasion_weekday_lunch">Weekday lunch</string>
+    <string name="occasion_coffee">Coffee</string>
+    <string name="occasion_dinner">Dinner</string>
+    <string name="occasion_drinks">Drinks</string>
+    <string name="occasion_outdoors">Outdoors</string>
+    <string name="occasion_sports">Sports</string>
+    <string name="occasion_culture">Shows &amp; culture</string>
+    <string name="occasion_family_time">Family time</string>
+    <string name="topic_note">Last time (%1$s) you noted: “%2$s”</string>
+    <string name="topic_note_place">%1$s, %2$s</string>
+    <string name="topic_event_past">Ask how “%1$s” went (%2$s)</string>
+    <string name="topic_event_soon">Wish them luck with “%1$s” (%2$s)</string>
+    <string name="topic_kid_birthday">%1$s’s birthday is coming up (%2$s)</string>
+    <string name="topic_kid_birthday_age">%1$s turns %3$d soon (%2$s)</string>
+    <string name="topic_like">Talk about %1$s</string>
+    <string name="lock_title">Good Company is locked</string>
+    <string name="lock_body">Your notes about friends stay private.</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_reason">Unlock Good Company</string>
+    <plurals name="names_and_more">
+        <item quantity="one">%1$s and %2$d more</item>
+        <item quantity="other">%1$s and %2$d more</item>
+    </plurals>
 </resources>

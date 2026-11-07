@@ -247,4 +247,37 @@
     <string name="sample_taste_wine">Vinho</string>
     <string name="sample_taste_ballet">Ballet</string>
     <string name="sample_taste_running">Corrida</string>
+    <string name="notif_digest_title">🌿 Pessoas com quem pôr a conversa em dia esta semana</string>
+    <string name="notif_digest_body">%1$s — quando te der jeito.</string>
+    <string name="notif_plan_today_title">📅 Hoje: %1$s</string>
+    <string name="notif_plan_today_body">Com %1$s. Diverte-te!</string>
+    <string name="notif_plan_ask_title">Estiveste com %1$s?</string>
+    <string name="notif_plan_ask_body">“%1$s” — diz-nos se aconteceu para contar.</string>
+    <string name="notif_action_plan_yes">Sim, estivemos</string>
+    <string name="notif_action_plan_no">Não aconteceu</string>
+    <string name="notif_private">Tens um lembrete do Good Company</string>
+    <string name="names_and">%1$s e %2$s</string>
+    <string name="occasion_weekday_lunch">Almoço durante a semana</string>
+    <string name="occasion_coffee">Café</string>
+    <string name="occasion_dinner">Jantar</string>
+    <string name="occasion_drinks">Copos</string>
+    <string name="occasion_outdoors">Ar livre</string>
+    <string name="occasion_sports">Desporto</string>
+    <string name="occasion_culture">Espetáculos e cultura</string>
+    <string name="occasion_family_time">Programa em família</string>
+    <string name="topic_note">Da última vez (%1$s) anotaste: “%2$s”</string>
+    <string name="topic_note_place">%1$s, %2$s</string>
+    <string name="topic_event_past">Pergunta como correu “%1$s” (%2$s)</string>
+    <string name="topic_event_soon">Deseja boa sorte para “%1$s” (%2$s)</string>
+    <string name="topic_kid_birthday">O aniversário de %1$s está a chegar (%2$s)</string>
+    <string name="topic_kid_birthday_age">%1$s faz %3$d anos em breve (%2$s)</string>
+    <string name="topic_like">Falem de %1$s</string>
+    <string name="lock_title">O Good Company está bloqueado</string>
+    <string name="lock_body">As tuas notas sobre amigos ficam privadas.</string>
+    <string name="lock_unlock">Desbloquear</string>
+    <string name="lock_reason">Desbloquear o Good Company</string>
+    <plurals name="names_and_more">
+        <item quantity="one">%1$s e mais %2$d</item>
+        <item quantity="other">%1$s e mais %2$d</item>
+    </plurals>
 </resources>

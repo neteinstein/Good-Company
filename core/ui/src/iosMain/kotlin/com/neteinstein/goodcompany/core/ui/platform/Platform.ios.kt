@@ -10,7 +10,28 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import platform.Contacts.CNContact
 import platform.Contacts.CNContactStore
+import platform.Contacts.CNLabeledValue
+import platform.Contacts.CNPhoneNumber
+import platform.ContactsUI.CNContactPickerDelegateProtocol
+import platform.ContactsUI.CNContactPickerViewController
+import platform.EventKit.EKEvent
+import platform.EventKit.EKEventStore
+import platform.EventKitUI.EKEventEditViewAction
+import platform.EventKitUI.EKEventEditViewController
+import platform.EventKitUI.EKEventEditViewDelegateProtocol
+import platform.Foundation.NSDate
+import platform.Foundation.NSDateComponentUndefined
+import platform.Foundation.NSTemporaryDirectory
+import platform.Foundation.dateWithTimeIntervalSince1970
+import platform.Foundation.writeToFile
+import platform.LocalAuthentication.LAContext
+import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
 import platform.Contacts.CNEntityType
 import platform.Foundation.NSString
 import platform.Foundation.NSURL
@@ -40,6 +61,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasBackgroundNotifications = true,
     hasDynamicColor = false,
     smsBodySeparator = "&",
+    hasContactPicker = true,
 )
 
 @Composable
@@ -125,3 +147,107 @@ actual fun rememberTextSharer(): TextSharer = remember {
 
 @Composable
 actual fun platformDynamicColorScheme(dark: Boolean): ColorScheme? = null
+
+@Composable
+actual fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () -> Unit {
+    val callback = rememberUpdatedState(onPicked)
+    val delegate = remember { ContactPickerDelegate { callback.value(it) } }
+    DisposableEffect(Unit) { onDispose { delegate.onPicked = {} } }
+    return {
+        val picker = CNContactPickerViewController()
+        picker.delegate = delegate
+        topViewController()?.presentViewController(picker, animated = true, completion = null)
+    }
+}
+
+/** Implementing only the plural callback makes the picker multi-select. Picked contacts need no permission. */
+private class ContactPickerDelegate(var onPicked: (List<ContactRecord>) -> Unit) : NSObject(), CNContactPickerDelegateProtocol {
+    override fun contactPicker(picker: CNContactPickerViewController, didSelectContacts: List<*>) {
+        onPicked(didSelectContacts.filterIsInstance<CNContact>().mapNotNull { it.toRecord() })
+    }
+
+    override fun contactPickerDidCancel(picker: CNContactPickerViewController) = onPicked(emptyList())
+}
+
+private fun CNContact.toRecord(): ContactRecord? = runCatching {
+    val name = listOf(givenName, familyName).filter { it.isNotBlank() }.joinToString(" ")
+    if (name.isBlank()) return@runCatching null
+    val phones = phoneNumbers.mapNotNull { ((it as? CNLabeledValue)?.value as? CNPhoneNumber)?.stringValue }
+    val b = birthday
+    val birthday = if (b != null && b.month in 1..12 && b.day in 1..31) {
+        Birthday(b.month.toInt(), b.day.toInt(), b.year.takeIf { it != NSDateComponentUndefined }?.toInt())
+    } else {
+        null
+    }
+    ContactRecord(identifier, name, phones, birthday)
+}.getOrNull()
+
+@Composable
+actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {
+    val delegate = remember { EventEditDelegate() }
+    return remember {
+        { entry ->
+            // iOS 17+: the system event editor runs out of process and needs no calendar permission.
+            val store = EKEventStore()
+            val event = EKEvent.eventWithEventStore(store)
+            val start = entry.date.atStartOfDayIn(TimeZone.currentSystemDefault()).epochSeconds.toDouble()
+            event.title = entry.title
+            event.allDay = true
+            event.startDate = NSDate.dateWithTimeIntervalSince1970(start)
+            event.endDate = NSDate.dateWithTimeIntervalSince1970(start)
+            event.location = entry.location
+            event.notes = entry.notes
+            val editor = EKEventEditViewController()
+            editor.eventStore = store
+            editor.event = event
+            editor.editViewDelegate = delegate
+            topViewController()?.presentViewController(editor, animated = true, completion = null)
+        }
+    }
+}
+
+private class EventEditDelegate : NSObject(), EKEventEditViewDelegateProtocol {
+    override fun eventEditViewController(controller: EKEventEditViewController, didCompleteWithAction: EKEventEditViewAction) {
+        controller.dismissViewControllerAnimated(true, completion = null)
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+@Composable
+actual fun rememberFileSaver(mimeType: String, onDone: (saved: Boolean) -> Unit): FileSaver {
+    val callback = rememberUpdatedState(onDone)
+    return remember {
+        FileSaver { fileName, content ->
+            val path = NSTemporaryDirectory() + fileName
+            @Suppress("CAST_NEVER_SUCCEEDS")
+            val written = (content as NSString).writeToFile(path, atomically = true, encoding = NSUTF8StringEncoding, error = null)
+            if (!written) {
+                callback.value(false)
+                return@FileSaver
+            }
+            val controller = UIActivityViewController(activityItems = listOf(NSURL.fileURLWithPath(path)), applicationActivities = null)
+            val top = topViewController()
+            controller.popoverPresentationController?.sourceView = top?.view
+            controller.completionWithItemsHandler = { _, completed, _, _ -> callback.value(completed) }
+            top?.presentViewController(controller, animated = true, completion = null)
+        }
+    }
+}
+
+@Composable
+actual fun rememberDeviceAuthenticator(): DeviceAuthenticator {
+    val scope = rememberCoroutineScope()
+    return remember { IosDeviceAuthenticator { block -> scope.launch(Dispatchers.Main) { block() } } }
+}
+
+private class IosDeviceAuthenticator(private val onMain: (() -> Unit) -> Unit) : DeviceAuthenticator {
+    @OptIn(ExperimentalForeignApi::class)
+    override val isAvailable: Boolean
+        get() = LAContext().canEvaluatePolicy(LAPolicyDeviceOwnerAuthentication, error = null)
+
+    override fun authenticate(reason: String, onResult: (success: Boolean) -> Unit) {
+        LAContext().evaluatePolicy(LAPolicyDeviceOwnerAuthentication, localizedReason = reason) { success, _ ->
+            onMain { onResult(success) }
+        }
+    }
+}
