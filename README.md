@@ -29,8 +29,10 @@
       <ul>
         <li>A greeting that tells you what matters this week — <i>“2 birthdays · 1 big day · 1 to catch up with”</i>.</li>
         <li><b>Coming up</b>: swipeable cards for birthdays (theirs <i>and their kids'</i>), big days and reminders.</li>
-        <li><b>Time to catch up</b>: friends past your “meet every N days” goal, with a one-tap <i>We met</i>.</li>
-        <li><b>Real friends</b>: pull in your address book, then tap ♥ on the people who actually matter.</li>
+        <li><b>Time to catch up</b>: friends past their rhythm, with one-tap <i>We met</i>, <i>Called them</i> or a snooze (“remind me Saturday”).</li>
+        <li><b>Drifting apart</b>: real friends whose <b>warmth score</b> is fading — sort everyone by “needs attention first”.</li>
+        <li><b>Real friends in circles</b>: Inner (weekly), Close (monthly) or Good friends (quarterly) — every circle has its own default rhythm.</li>
+        <li>Pull in your address book — or import a <b>.vcf</b> file from Google Contacts / iCloud (handy on the web).</li>
         <li>Search by name <i>or taste</i> — “jazz”, “F1”, “sushi”.</li>
       </ul>
     </td>
@@ -41,7 +43,9 @@
       <h3>Everything about a friend</h3>
       <ul>
         <li>A page tinted in their own colours, with one-tap <b>Together now</b> (with a little heart burst 💛), <b>Call</b>, <b>Text</b>, <b>WhatsApp</b> and <b>Remind me</b>.</li>
-        <li><b>Stay in touch</b> ring: days since you last met against your goal.</li>
+        <li><b>Stay in touch</b>: days since you last met against their circle's rhythm (or a custom one), a warmth score, snooze and “Called”.</li>
+        <li><b>Birthday wishes</b>: a banner when it's their day, with a ready message for WhatsApp, text or share — personalised by AI if you like.</li>
+        <li><b>Gifts</b>: jot ideas (for them or their kids), get AI suggestions, mark what you gave and for which occasion — never repeat a present.</li>
         <li><b>Loves / not a fan of</b>, <b>kids</b> (names, birthdays, what each one likes — perfect before a party), <b>important moments</b> (“knee surgery on Friday”) and notes.</li>
         <li><b>Things to talk about</b>: AI-matched news and conversation starters from their tastes and recent chats.</li>
         <li>Import a WhatsApp chat export to keep last-contact dates and context.</li>
@@ -53,7 +57,8 @@
     <td>
       <h3>One tap: “I'm with…”</h3>
       <ul>
-        <li>Pick who you're with, optionally where (typed, or your location) and a note. Done.</li>
+        <li>Pick who you're with — or a whole saved group — optionally where (typed, or your location) and a note. Done.</li>
+        <li><b>Saved groups</b> (“Board game night”, “Surf crew”) with their own rhythm: get a nudge when you haven't all been together in a while.</li>
         <li>See <b>the last time you were with any group</b> — “Ana & Rui: last together 2 days ago at Hot Clube, 3× in total”.</li>
         <li>A monthly view of meetups, friends seen and your favourite spot.</li>
       </ul>
@@ -66,7 +71,8 @@
       <ul>
         <li>A week strip and timeline of birthdays, kids' birthdays, big days, overdue catch-ups and your reminders.</li>
         <li>Reminders like <i>“Book tickets for the jazz festival with Ana & Rui”</i>, with undo on delete.</li>
-        <li>Local notifications on Android and iOS at the hour you choose — nothing scheduled on a server.</li>
+        <li>Local notifications on Android and iOS at the hour you choose — nothing scheduled on a server. Catch-up nudges have quick actions: <i>We met</i>, <i>Called</i>, <i>Next week</i>.</li>
+        <li><i>Send wishes</i> right from a birthday in the agenda.</li>
       </ul>
     </td>
   </tr>
@@ -76,12 +82,29 @@
       <h3>Ideas, powered by Claude</h3>
       <ul>
         <li><b>Weekly plans</b>: once a week, real events near you that match the tastes of friends you opt in — grouped by who'd enjoy them together.</li>
+        <li><b>Turn an idea into a plan</b>: “Propose to Ana & Rui” drafts the invite and opens WhatsApp, a text or the share sheet.</li>
         <li><b>News & talking points</b> per friend, grounded with web search and linked to the source.</li>
         <li>Bring your own Anthropic API key — stored only on your device.</li>
       </ul>
     </td>
   </tr>
+  <tr>
+    <td><img src="docs/screenshots/review.png" alt="Year in friendship"></td>
+    <td>
+      <h3>Your year in friendship</h3>
+      <ul>
+        <li>A Wrapped-style look back: meetups, who you saw most, favourite spots, busiest month, longest weekly streak, biggest get-together and new faces.</li>
+        <li>Built only from what's on your device — and shareable as text in one tap.</li>
+      </ul>
+    </td>
+  </tr>
 </table>
+
+### 🌍 In your language
+
+English, **Português**, **Español**, **Français** and **Română** — the app follows your device language (Android 13+ also lets you pick it per app). AI messages and suggestions come back in the same language.
+
+<p align="center"><img src="docs/screenshots/home-pt.png" width="32%" alt="Home in Portuguese"></p>
 
 ### 🌗 Light & dark
 
@@ -155,7 +178,7 @@ flowchart TB
   end
   C[composeApp<br/>App · navigation · Koin AppModule]
   subgraph Features
-    F1[friends] --- F2[hangouts] --- F3[agenda] --- F4[ideas] --- F5[settings] --- F6[onboarding]
+    F1[friends] --- F2[hangouts] --- F3[agenda] --- F4[ideas] --- F5[settings] --- F6[onboarding] --- F7[review]
   end
   UI[core:ui<br/>theme · components · platform hooks]
   D[core:data<br/>repositories · persistence · contacts · notifications · Claude client]

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="page1_title">A tua gente,\nsempre presente</string>
+    <string name="page1_body">Um pequeno CRM para a amizade. Guarda o que os teus amigos adoram, os nomes dos filhos e as datas que importam — tudo no teu dispositivo.</string>
+    <string name="page2_title">Um toque:\n“Estou com…”</string>
+    <string name="page2_body">Regista com quem estás e onde. Vê a última vez que estiveste com qualquer grupo — e quem não vês há algum tempo.</string>
+    <string name="page3_title">Nunca percas\no que importa</string>
+    <string name="page3_body">Aniversários, a cirurgia de um amigo, “comprar bilhetes com o Rui” — lembretes suaves na hora certa, e ideias com IA para fazerem juntos.</string>
+    <string name="skip">Saltar</string>
+    <string name="next">Seguinte</string>
+    <string name="lets_go">Vamos lá</string>
+    <string name="start_empty">Começar com a lista vazia</string>
+    <string name="setup_title">Vamos preparar tudo</string>
+    <string name="setup_body">Tudo é opcional e podes mudar mais tarde nas Definições.</string>
+    <string name="contacts_title">Traz os teus contactos</string>
+    <plurals name="contacts_imported">
+        <item quantity="one">%1$d contacto importado. Toca em ♥ nos amigos a sério.</item>
+        <item quantity="other">%1$d contactos importados. Toca em ♥ nos amigos a sério.</item>
+    </plurals>
+    <string name="contacts_denied">Sem problema — podes adicionar amigos à mão.</string>
+    <string name="contacts_body">Lemos nomes, números e aniversários. Nada sai do teu dispositivo.</string>
+    <string name="import">Importar</string>
+    <string name="notifications_title">Lembretes de aniversários e encontros</string>
+    <string name="notifications_on">Está tudo pronto — vamos lembrar-te na hora certa.</string>
+    <string name="notifications_off">Os lembretes estão desligados. Podes ligá-los nas Definições.</string>
+    <string name="notifications_body">Um lembrete nos aniversários, nos dias importantes e quando já passou demasiado tempo.</string>
+    <string name="allow">Permitir</string>
+    <string name="looking_title">Só a espreitar?</string>
+    <string name="looking_body">Explora com um círculo de amigos de exemplo — remove-o quando quiseres nas Definições.</string>
+    <string name="explore_sample">Explorar com amigos de exemplo</string>
+    <string name="private_title">Privado por natureza</string>
+    <string name="private_body">Sem conta, sem servidor. As SMS nunca são lidas.</string>
+    <string name="done">Feito</string>
+</resources>

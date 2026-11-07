@@ -1,0 +1,3 @@
+/* Localised permission prompts. Keep in sync with Info.plist. */
+"NSContactsUsageDescription" = "Good Company lee tus contactos para crear tu lista de amigos y conocer sus cumpleaños. Nada sale de tu dispositivo.";
+"NSLocationWhenInUseUsageDescription" = "Solo se usa cuando tocas “Usar mi ubicación”, para recordar dónde os visteis y sugerir planes cercanos.";

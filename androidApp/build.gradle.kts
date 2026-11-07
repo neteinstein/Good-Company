@@ -31,6 +31,11 @@ android {
         versionName = "1.0.0"
     }
 
+    // Per-app language picker (Android 13+): generates the locale list from the res/values-* folders.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     signingConfigs {
         if (signingProps.isNotEmpty()) {
             create("release") {

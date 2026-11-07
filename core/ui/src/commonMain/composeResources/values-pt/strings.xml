@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="add">Adicionar</string>
+    <string name="remove">Remover</string>
+    <string name="delete">Apagar</string>
+    <string name="undo">Anular</string>
+    <string name="edit">Editar</string>
+    <string name="close">Fechar</string>
+    <string name="share">Partilhar</string>
+    <string name="open">Abrir</string>
+    <string name="back">Voltar</string>
+    <string name="copied_to_clipboard">Copiado para a área de transferência</string>
+    <string name="remove_item">Remover %1$s</string>
+    <string name="day_today">Hoje</string>
+    <string name="day_tomorrow">Amanhã</string>
+    <string name="day_yesterday">Ontem</string>
+    <plurals name="day_in_days">
+        <item quantity="one">Daqui a %1$d dia</item>
+        <item quantity="other">Daqui a %1$d dias</item>
+    </plurals>
+    <plurals name="day_days_ago">
+        <item quantity="one">Há %1$d dia</item>
+        <item quantity="other">Há %1$d dias</item>
+    </plurals>
+    <string name="phrase_today">hoje</string>
+    <string name="phrase_tomorrow">amanhã</string>
+    <string name="phrase_yesterday">ontem</string>
+    <plurals name="phrase_in_days">
+        <item quantity="one">daqui a %1$d dia</item>
+        <item quantity="other">daqui a %1$d dias</item>
+    </plurals>
+    <string name="phrase_on_date">a %1$s</string>
+    <string name="past_just_now">agora mesmo</string>
+    <string name="past_minutes">há %1$d min</string>
+    <string name="past_hours">há %1$d h</string>
+    <string name="past_yesterday">ontem</string>
+    <plurals name="past_days">
+        <item quantity="one">há %1$d dia</item>
+        <item quantity="other">há %1$d dias</item>
+    </plurals>
+    <plurals name="past_weeks">
+        <item quantity="one">há %1$d semana</item>
+        <item quantity="other">há %1$d semanas</item>
+    </plurals>
+    <plurals name="past_months">
+        <item quantity="one">há %1$d mês</item>
+        <item quantity="other">há %1$d meses</item>
+    </plurals>
+    <string name="past_over_a_year">há mais de um ano</string>
+    <string name="date_short">%2$d %1$s</string>
+    <string name="date_long">%2$d %1$s %3$d</string>
+    <string-array name="months_short">
+        <item>jan</item>
+        <item>fev</item>
+        <item>mar</item>
+        <item>abr</item>
+        <item>mai</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>ago</item>
+        <item>set</item>
+        <item>out</item>
+        <item>nov</item>
+        <item>dez</item>
+    </string-array>
+    <string-array name="months_long">
+        <item>janeiro</item>
+        <item>fevereiro</item>
+        <item>março</item>
+        <item>abril</item>
+        <item>maio</item>
+        <item>junho</item>
+        <item>julho</item>
+        <item>agosto</item>
+        <item>setembro</item>
+        <item>outubro</item>
+        <item>novembro</item>
+        <item>dezembro</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>seg</item>
+        <item>ter</item>
+        <item>qua</item>
+        <item>qui</item>
+        <item>sex</item>
+        <item>sáb</item>
+        <item>dom</item>
+    </string-array>
+    <string-array name="weekdays_long">
+        <item>segunda-feira</item>
+        <item>terça-feira</item>
+        <item>quarta-feira</item>
+        <item>quinta-feira</item>
+        <item>sexta-feira</item>
+        <item>sábado</item>
+        <item>domingo</item>
+    </string-array>
+    <string-array name="weekdays_initial">
+        <item>S</item>
+        <item>T</item>
+        <item>Q</item>
+        <item>Q</item>
+        <item>S</item>
+        <item>S</item>
+        <item>D</item>
+    </string-array>
+    <plurals name="every_n_days">
+        <item quantity="one">todos os dias</item>
+        <item quantity="other">a cada %1$d dias</item>
+    </plurals>
+    <string name="cadence_weekly">Semanal</string>
+    <string name="cadence_two_weeks">2 semanas</string>
+    <string name="cadence_monthly">Mensal</string>
+    <string name="cadence_quarterly">Trimestral</string>
+    <string name="cadence_off">Desligado</string>
+    <string name="circle_inner">Círculo íntimo</string>
+    <string name="circle_close">Amigos próximos</string>
+    <string name="circle_good">Bons amigos</string>
+    <string name="circle_inner_short">Íntimo</string>
+    <string name="circle_close_short">Próximo</string>
+    <string name="circle_good_short">Bom amigo</string>
+    <string name="warmth_warm">Calorosa</string>
+    <string name="warmth_cooling">A arrefecer</string>
+    <string name="warmth_fading">A desvanecer</string>
+    <string name="occasion_birthday">Aniversário</string>
+    <string name="occasion_christmas">Natal</string>
+    <string name="occasion_thank_you">Agradecimento</string>
+    <string name="occasion_just_because">Só porque sim</string>
+    <string name="tags_add">Adicionar</string>
+    <string name="reminder_new">Novo lembrete</string>
+    <string name="reminder_label">Lembrar-me de…</string>
+    <string name="reminder_placeholder">Comprar bilhetes para o concerto</string>
+    <string name="reminder_with">Com</string>
+    <string name="reminder_when">Quando</string>
+    <string name="reminder_no_date">Sem data</string>
+    <string name="reminder_morning">Manhã</string>
+    <string name="reminder_lunch">Almoço</string>
+    <string name="reminder_evening">Fim de tarde</string>
+    <string name="reminder_night">Noite</string>
+    <string name="reminder_slot">%1$s · %2$d:00</string>
+    <string name="send_title_message">A tua mensagem</string>
+    <string name="send_ai_personalise">Personalizar com IA</string>
+    <string name="send_ai_writing">A escrever…</string>
+    <string name="wish_default">Parabéns, %1$s! 🎉 Que hoje seja um dia cheio de boa companhia. Vamos celebrar em breve!</string>
+    <string name="send_whatsapp">WhatsApp</string>
+    <string name="send_sms">SMS</string>
+    <string name="send_share">Partilhar…</string>
+    <string name="notif_bday_title">🎂 Aniversário de %1$s</string>
+    <string name="notif_bday_body_age">%1$s faz %2$d anos hoje — dá-lhe os parabéns!</string>
+    <string name="notif_bday_body">Hoje é o aniversário de %1$s — dá-lhe os parabéns!</string>
+    <string name="notif_kid_title">🎈 %1$s (filho/a de %2$s)</string>
+    <string name="notif_kid_body_age">Faz %1$d anos hoje.</string>
+    <string name="notif_kid_body">Faz anos hoje.</string>
+    <string name="notif_kid_likes">Gosta de: %1$s</string>
+    <string name="notif_event_today_title">💬 Fala com %1$s</string>
+    <string name="notif_event_today_body">%1$s é hoje. Uma mensagem rápida faz toda a diferença.</string>
+    <string name="notif_event_soon_title">📅 %1$s: %2$s</string>
+    <plurals name="notif_event_soon_body">
+        <item quantity="one">Daqui a %1$d dia.</item>
+        <item quantity="other">Daqui a %1$d dias.</item>
+    </plurals>
+    <string name="notif_reminder_title">⏰ %1$s</string>
+    <string name="notif_reminder_with">Com %1$s</string>
+    <string name="notif_reminder_body">Lembrete</string>
+    <string name="notif_meet_title">👋 Está na hora de ver %1$s</string>
+    <plurals name="notif_meet_body">
+        <item quantity="one">Já passou %1$d dia — querias encontrar-te %2$s.</item>
+        <item quantity="other">Já passaram %1$d dias — querias encontrar-te %2$s.</item>
+    </plurals>
+    <string name="notif_meet_body_never">Ainda não registaste nenhum encontro — querias encontrar-te %1$s.</string>
+    <string name="notif_group_title">%1$s: juntem-se todos</string>
+    <plurals name="notif_group_body">
+        <item quantity="one">A última vez que estiveram todos juntos foi há %1$d dia.</item>
+        <item quantity="other">A última vez que estiveram todos juntos foi há %1$d dias.</item>
+    </plurals>
+    <string name="notif_group_body_never">Ainda não estiveram todos juntos.</string>
+    <string name="notif_action_met">Estivemos juntos</string>
+    <string name="notif_action_called">Liguei</string>
+    <string name="notif_action_snooze_week">Próxima semana</string>
+    <string name="notif_action_snooze_weekend">Este fim de semana</string>
+    <string name="ai_error_no_key">Adiciona uma chave da API da Anthropic nas Definições para usar a IA.</string>
+    <string name="ai_error_invalid_key">A tua chave da API foi rejeitada. Verifica-a nas Definições.</string>
+    <string name="ai_error_rate_limited">O serviço de IA limitou os pedidos. Tenta daqui a um minuto.</string>
+    <string name="ai_error_unavailable">O serviço de IA está com problemas. Tenta mais tarde.</string>
+    <string name="ai_error_refused">O pedido foi recusado pelo sistema de segurança da IA.</string>
+    <string name="ai_error_truncated">A resposta ficou cortada. Tenta outra vez.</string>
+    <string name="ai_error_too_slow">A pesquisa demorou demasiado. Tenta mais tarde.</string>
+    <string name="ai_error_other">Não foi possível contactar o serviço de IA. Verifica a ligação.</string>
+    <string name="sample_ana_notes">Companheiro: Tiago. Alérgica a amendoins.</string>
+    <string name="sample_knee_surgery">Cirurgia ao joelho</string>
+    <string name="sample_job_interview">Entrevista de emprego</string>
+    <string name="sample_jazz_night">Noite de jazz 🎷</string>
+    <string name="sample_board_games_note">Jogos de tabuleiro</string>
+    <string name="sample_surf_morning">Manhã de surf</string>
+    <string name="sample_ruis_place">Casa do Rui</string>
+    <string name="sample_beatriz_dinner">Jantar em casa da Beatriz</string>
+    <string name="sample_reminder_tickets">Comprar bilhetes para o festival de jazz</string>
+    <string name="sample_reminder_present">Comprar a prenda de anos do Leo</string>
+    <string name="sample_reminder_ask_marta">Perguntar à Marta como correu a entrevista</string>
+    <string name="sample_reminder_surf">Planear o fim de semana de surf</string>
+    <string name="sample_reminder_photos">Enviar à Sofia as fotos da viagem</string>
+    <string name="sample_idea_jazz_title">Festival de Jazz de Lisboa — sessão da noite</string>
+    <string name="sample_idea_jazz_body">A Ana adora jazz e o Rui alinha em tudo o que é ao vivo. A sessão tardia de sexta é pequena e sentada — sem multidões.</string>
+    <string name="sample_idea_jazz_when">Sex, 22:00</string>
+    <string name="sample_idea_photo_title">Passeio de fotografia de rua em Alfama</string>
+    <string name="sample_idea_photo_body">Um passeio guiado ao pôr do sol — perfeito para a máquina nova da Sofia, e acaba num café de especialidade.</string>
+    <string name="sample_idea_photo_when">Sáb, 17:30</string>
+    <string name="sample_idea_f1_title">Anunciado novo circuito citadino de F1</string>
+    <string name="sample_idea_f1_body">Grande notícia para o Rui — fala nisto da próxima vez; ele anda a pensar ir ver uma corrida lá fora.</string>
+    <string name="sample_idea_ceramics_title">O atelier de cerâmica de que ela falou</string>
+    <string name="sample_idea_ceramics_body">A Marta disse que queria voltar à roda de oleiro — pergunta se já encontrou um atelier.</string>
+    <string name="sample_gift_vinyl">Kind of Blue em vinil</string>
+    <string name="sample_gift_murakami">Primeira edição de Murakami</string>
+    <string name="sample_gift_dino_lego">Conjunto LEGO de dinossauros</string>
+    <string name="sample_gift_board_game">Jogo de tabuleiro Wingspan</string>
+    <string name="sample_gift_ceramics">Vale para aula de cerâmica</string>
+    <string name="sample_group_board_games">Noite de jogos</string>
+    <string name="sample_group_surf">Malta do surf</string>
+    <string name="sample_taste_jazz">Jazz</string>
+    <string name="sample_taste_sushi">Sushi</string>
+    <string name="sample_taste_hiking">Caminhadas</string>
+    <string name="sample_taste_crowds">Multidões</string>
+    <string name="sample_taste_cilantro">Coentros</string>
+    <string name="sample_taste_dinosaurs">Dinossauros</string>
+    <string name="sample_taste_pancakes">Panquecas</string>
+    <string name="sample_taste_formula1">Fórmula 1</string>
+    <string name="sample_taste_craft_beer">Cerveja artesanal</string>
+    <string name="sample_taste_board_games">Jogos de tabuleiro</string>
+    <string name="sample_taste_early_mornings">Madrugar</string>
+    <string name="sample_taste_yoga">Ioga</string>
+    <string name="sample_taste_indie_films">Cinema independente</string>
+    <string name="sample_taste_ceramics">Cerâmica</string>
+    <string name="sample_taste_horror">Filmes de terror</string>
+    <string name="sample_taste_painting">Pintura</string>
+    <string name="sample_taste_football">Futebol</string>
+    <string name="sample_taste_bbq">Churrascos</string>
+    <string name="sample_taste_surfing">Surf</string>
+    <string name="sample_taste_photography">Fotografia</string>
+    <string name="sample_taste_travel">Viajar</string>
+    <string name="sample_taste_coffee">Café de especialidade</string>
+    <string name="sample_taste_spicy">Comida picante</string>
+    <string name="sample_taste_theatre">Teatro</string>
+    <string name="sample_taste_cooking">Cozinhar</string>
+    <string name="sample_taste_wine">Vinho</string>
+    <string name="sample_taste_ballet">Ballet</string>
+    <string name="sample_taste_running">Corrida</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Good Company</string>
+    <string name="nav_friends">Amigos</string>
+    <string name="nav_together">Juntos</string>
+    <string name="nav_agenda">A seguir</string>
+    <string name="nav_ideas">Ideias</string>
+    <string name="nav_settings">Definições</string>
+</resources>

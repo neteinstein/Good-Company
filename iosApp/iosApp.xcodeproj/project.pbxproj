@@ -14,6 +14,7 @@
 		A1000000000000000000B002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000F002 /* ContentView.swift */; };
 		A1000000000000000000B003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000F003 /* Assets.xcassets */; };
 		A1000000000000000000B004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000F006 /* PrivacyInfo.xcprivacy */; };
+		A1000000000000000000B005 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000V001 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,11 @@
 		A1000000000000000000F005 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		A1000000000000000000F006 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A1000000000000000000F0FF /* Good Company.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Good Company.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000F010 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1000000000000000000F011 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1000000000000000000F012 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1000000000000000000F013 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A1000000000000000000F014 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +60,7 @@
 				A1000000000000000000F003 /* Assets.xcassets */,
 				A1000000000000000000F004 /* Info.plist */,
 				A1000000000000000000F006 /* PrivacyInfo.xcprivacy */,
+				A1000000000000000000V001 /* InfoPlist.strings */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -117,6 +124,10 @@
 			knownRegions = (
 				en,
 				Base,
+				pt,
+				es,
+				fr,
+				ro,
 			);
 			mainGroup = A1000000000000000000G000;
 			productRefGroup = A1000000000000000000G003 /* Products */;
@@ -135,6 +146,7 @@
 			files = (
 				A1000000000000000000B003 /* Assets.xcassets in Resources */,
 				A1000000000000000000B004 /* PrivacyInfo.xcprivacy in Resources */,
+				A1000000000000000000B005 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,6 +185,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A1000000000000000000V001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1000000000000000000F010 /* en */,
+				A1000000000000000000F011 /* pt */,
+				A1000000000000000000F012 /* es */,
+				A1000000000000000000F013 /* fr */,
+				A1000000000000000000F014 /* ro */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		A1000000000000000000C001 /* Debug */ = {

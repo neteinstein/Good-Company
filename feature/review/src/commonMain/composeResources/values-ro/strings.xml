@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Anul tău %1$d în prietenie</string>
+    <string name="back">Înapoi</string>
+    <string name="share">Distribuie</string>
+    <string name="empty_title">Încă nu ai la ce privi înapoi</string>
+    <string name="empty_body">Înregistrează câteva întâlniri cu „Sunt cu…” și anul tău în prietenie va apărea aici.</string>
+    <string name="copied">Copiat — lipește-l oriunde</string>
+    <string name="hero_kicker">Anul tău în prietenie</string>
+    <plurals name="hero_meetups">
+        <item quantity="one">%1$d întâlnire</item>
+        <item quantity="few">%1$d întâlniri</item>
+        <item quantity="other">%1$d de întâlniri</item>
+    </plurals>
+    <plurals name="hero_meetups_word">
+        <item quantity="one">întâlnire</item>
+        <item quantity="few">întâlniri</item>
+        <item quantity="other">de întâlniri</item>
+    </plurals>
+    <plurals name="hero_friends">
+        <item quantity="one">cu %1$d prieten</item>
+        <item quantity="few">cu %1$d prieteni diferiți</item>
+        <item quantity="other">cu %1$d de prieteni diferiți</item>
+    </plurals>
+    <string name="top_title">Oamenii tăi</string>
+    <string name="top_body">Prietenii pe care i-ai văzut cel mai des.</string>
+    <plurals name="times">
+        <item quantity="one">%1$d dată</item>
+        <item quantity="few">de %1$d ori</item>
+        <item quantity="other">de %1$d de ori</item>
+    </plurals>
+    <string name="places_title">Locuri preferate</string>
+    <string name="places_none">Adaugă un loc când înregistrezi o întâlnire și locurile preferate vor apărea aici.</string>
+    <string name="rhythm_title">Ritmul tău</string>
+    <string name="rhythm_month">Cea mai plină lună: %1$s (%2$d)</string>
+    <string name="rhythm_weekday">Ziua preferată: %1$s</string>
+    <plurals name="rhythm_streak">
+        <item quantity="one">Cea mai lungă serie: %1$d săptămână la rând</item>
+        <item quantity="few">Cea mai lungă serie: %1$d săptămâni la rând</item>
+        <item quantity="other">Cea mai lungă serie: %1$d de săptămâni la rând</item>
+    </plurals>
+    <string name="biggest_title">Cea mai mare întâlnire</string>
+    <plurals name="biggest_body">
+        <item quantity="one">%1$d prieten pe %2$s</item>
+        <item quantity="few">%1$d prieteni pe %2$s</item>
+        <item quantity="other">%1$d de prieteni pe %2$s</item>
+    </plurals>
+    <string name="new_title">Fețe noi</string>
+    <plurals name="new_body">
+        <item quantity="one">%1$d om s-a alăturat cercului tău</item>
+        <item quantity="few">%1$d oameni s-au alăturat cercului tău</item>
+        <item quantity="other">%1$d de oameni s-au alăturat cercului tău</item>
+    </plurals>
+    <plurals name="reminders_done">
+        <item quantity="one">…și ai bifat %1$d memento ✅</item>
+        <item quantity="few">…și ai bifat %1$d mementouri ✅</item>
+        <item quantity="other">…și ai bifat %1$d de mementouri ✅</item>
+    </plurals>
+    <string name="share_header">Anul meu %1$d în prietenie 💛</string>
+    <string name="share_meetups">%1$s, %2$s</string>
+    <string name="share_top">Pe cine am văzut cel mai des: %1$s</string>
+    <string name="share_place">Locul preferat: %1$s</string>
+    <string name="share_footer">— făcut cu Good Company</string>
+</resources>

@@ -27,6 +27,10 @@ const scenes = [
   { name: 'together-dark', query: '?demo&theme=dark&tab=together', viewport: phone },
   { name: 'agenda-dark', query: '?demo&theme=dark&tab=agenda', viewport: phone },
   { name: 'desktop', query: '?demo&theme=light', viewport: { width: 1280, height: 800 } },
+  { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 11000 },
+  // Localised renders: the browser locale drives the app language.
+  { name: 'home-pt', query: '?demo&theme=light', viewport: phone, locale: 'pt-PT' },
+  { name: 'friend-es', query: '?demo&theme=light&friend=sample-rui', viewport: phone, locale: 'es-ES' },
 ];
 
 const types = { '.html': 'text/html', '.mjs': 'text/javascript', '.js': 'text/javascript', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.ttf': 'font/ttf', '.json': 'application/json' };
@@ -45,7 +49,12 @@ const server = http.createServer((req, res) => {
   const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   for (const scene of scenes.filter((s) => wanted.length === 0 || wanted.includes(s.name))) {
     // Fresh context per scene = fresh localStorage, so every scene starts from the same state.
-    const context = await browser.newContext({ viewport: scene.viewport, deviceScaleFactor: 2, colorScheme: scene.name.includes('dark') ? 'dark' : 'light' });
+    const context = await browser.newContext({
+      viewport: scene.viewport,
+      deviceScaleFactor: 2,
+      colorScheme: scene.name.includes('dark') ? 'dark' : 'light',
+      locale: scene.locale || 'en-GB',
+    });
     const page = await context.newPage();
     page.on('pageerror', (e) => console.log(`[${scene.name}] pageerror: ${e.message.slice(0, 200)}`));
     await page.goto(`http://localhost:${PORT}/index.html${scene.query}`);

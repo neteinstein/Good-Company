@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Propulsé par Claude</string>
+    <string name="title">Idées</string>
+    <string name="subtitle">Sorties et sujets de conversation selon les goûts de tes amis</string>
+    <string name="filter_all">Toutes</string>
+    <string name="filter_plans">Sorties</string>
+    <string name="filter_news">Actualités</string>
+    <string name="filter_talk">À aborder</string>
+    <string name="empty_title">Pas encore d’idées</string>
+    <string name="empty_body">Active « Idées de sorties chaque semaine » pour quelques amis, ajoute ce qu’ils adorent, puis touche « Trouver des sorties ».</string>
+    <string name="hero_title">Sorties de la semaine</string>
+    <plurals name="hero_opted_in">
+        <item quantity="one">%1$d ami inscrit</item>
+        <item quantity="other">%1$d amis inscrits</item>
+    </plurals>
+    <string name="hero_last_run">%1$s · dernière fois %2$s</string>
+    <string name="hero_searching">On cherche ce qui se passe près de chez toi…</string>
+    <string name="hero_run">Trouver des sorties</string>
+    <string name="key_banner_title">Ajoute ta clé d’API pour de nouvelles idées</string>
+    <string name="key_banner_body">Touche pour ouvrir les Réglages — la clé reste sur cet appareil.</string>
+    <string name="no_key_title">Utilise ta propre clé d’IA</string>
+    <string name="no_key_body">Les idées croisent les goûts de tes amis avec l’actualité du jour et les événements près de chez toi, grâce à Claude et ta propre clé d’API Anthropic.</string>
+    <string name="no_key_action">Ajouter la clé dans les Réglages</string>
+    <string name="no_key_step1">Crée une clé sur console.anthropic.com</string>
+    <string name="no_key_step2">Colle-la dans Réglages → Idées avec l’IA (elle reste sur cet appareil)</string>
+    <string name="no_key_step3">Sur la page d’un ami, active « Idées de sorties chaque semaine »</string>
+    <string name="kind_event">À faire ensemble</string>
+    <string name="kind_news">Une actu qui va lui plaire</string>
+    <string name="kind_talk">À aborder</string>
+    <string name="dismiss">Ignorer l’idée</string>
+    <string name="open">Ouvrir</string>
+    <string name="propose_to">Proposer à %1$s</string>
+    <string name="share_with">Envoyer à %1$s</string>
+    <string name="proposed">Proposé %1$s</string>
+    <string name="propose_title">Proposer à %1$s</string>
+    <string name="propose_message">Salut %1$s ! 😊 Ça vous dit : %2$s ? Partants ?</string>
+    <string name="news_message">Salut %1$s ! J’ai vu ça et j’ai pensé à toi : %2$s</string>
+    <string name="names_and">%1$s et %2$s</string>
+    <string name="msg_none">Pas de bonne correspondance cette fois.</string>
+    <plurals name="msg_found">
+        <item quantity="one">%1$d nouvelle idée ✨</item>
+        <item quantity="other">%1$d nouvelles idées ✨</item>
+    </plurals>
+    <string name="msg_no_key">Ajoute d’abord ta clé d’API dans les Réglages.</string>
+    <string name="msg_no_friends">Active « Idées de sorties chaque semaine » pour au moins un ami.</string>
+    <string name="msg_nothing">Rien à faire pour le moment.</string>
+</resources>

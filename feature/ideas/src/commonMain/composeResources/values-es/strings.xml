@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Con la tecnología de Claude</string>
+    <string name="title">Ideas</string>
+    <string name="subtitle">Planes y temas de conversación según los gustos de tus amigos</string>
+    <string name="filter_all">Todas</string>
+    <string name="filter_plans">Planes</string>
+    <string name="filter_news">Noticias</string>
+    <string name="filter_talk">Para hablar</string>
+    <string name="empty_title">Aún no hay ideas</string>
+    <string name="empty_body">Activa “Ideas de planes semanales” para algunos amigos, añade lo que les encanta y toca “Buscar planes ahora”.</string>
+    <string name="hero_title">Planes semanales</string>
+    <plurals name="hero_opted_in">
+        <item quantity="one">%1$d amigo apuntado</item>
+        <item quantity="other">%1$d amigos apuntados</item>
+    </plurals>
+    <string name="hero_last_run">%1$s · última vez %2$s</string>
+    <string name="hero_searching">Buscando qué hay cerca de ti…</string>
+    <string name="hero_run">Buscar planes ahora</string>
+    <string name="key_banner_title">Añade tu clave de API para tener ideas nuevas</string>
+    <string name="key_banner_body">Toca para abrir Ajustes — la clave se queda en este dispositivo.</string>
+    <string name="no_key_title">Usa tu propia clave de IA</string>
+    <string name="no_key_body">Las ideas cruzan los gustos de tus amigos con las noticias de hoy y los eventos cercanos, usando Claude y tu propia clave de API de Anthropic.</string>
+    <string name="no_key_action">Añadir clave en Ajustes</string>
+    <string name="no_key_step1">Crea una clave en console.anthropic.com</string>
+    <string name="no_key_step2">Pégala en Ajustes → Ideas con IA (se queda en este dispositivo)</string>
+    <string name="no_key_step3">En la página de un amigo, activa “Ideas de planes semanales”</string>
+    <string name="kind_event">Plan juntos</string>
+    <string name="kind_news">Le encantará esta noticia</string>
+    <string name="kind_talk">Sácalo en la conversación</string>
+    <string name="dismiss">Descartar idea</string>
+    <string name="open">Abrir</string>
+    <string name="propose_to">Proponer a %1$s</string>
+    <string name="share_with">Enviar a %1$s</string>
+    <string name="proposed">Propuesto %1$s</string>
+    <string name="propose_title">Proponer a %1$s</string>
+    <string name="propose_message">¡Hola %1$s! 😊 ¿Qué os parece esto?: %2$s. ¿Os apuntáis?</string>
+    <string name="news_message">¡Hola %1$s! He visto esto y me he acordado de ti: %2$s</string>
+    <string name="names_and">%1$s y %2$s</string>
+    <string name="msg_none">Esta vez no ha habido buenas coincidencias.</string>
+    <plurals name="msg_found">
+        <item quantity="one">%1$d idea nueva ✨</item>
+        <item quantity="other">%1$d ideas nuevas ✨</item>
+    </plurals>
+    <string name="msg_no_key">Primero añade tu clave de API en Ajustes.</string>
+    <string name="msg_no_friends">Activa “Ideas de planes semanales” para al menos un amigo.</string>
+    <string name="msg_nothing">Nada que hacer ahora mismo.</string>
+</resources>

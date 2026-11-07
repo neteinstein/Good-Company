@@ -46,7 +46,8 @@ feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend p
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
-feature/settings/     Theme, API key, notifications, privacy
+feature/settings/     Theme, circles, API key, notifications, .vcf import, privacy
+feature/review/       "Your year in friendship" (story cards + share)
 iosApp/               Hand-authored Xcode project (SwiftUI shell)
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
 ```
@@ -78,6 +79,21 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
 - ViewModels depend on **use cases** only (plus `AppClock` / `IdGenerator`), never on repositories or data sources.
 - Time is always injected through `AppClock`; ids through `IdGenerator`. Never call `Clock.System` in logic.
 
+### Strings and languages
+- Supported: English (`values/`), European Portuguese (`values-pt/`), Spanish (`values-es/`), French (`values-fr/`),
+  Romanian (`values-ro/`). **No user-facing string literals in Kotlin.**
+- Each Compose module has its own `src/commonMain/composeResources/values*/strings.xml` and a generated
+  `<module namespace>.resources.Res` (e.g. `com.neteinstein.goodcompany.feature.friends.resources.Res`). Shared words,
+  dates, notification text, sample data and AI errors live in `:core:ui` (import its `Res` as `CoreRes` in features).
+- When you add an English string, add it to all four translations in the same change. Plurals: Romanian needs
+  `one`/`few`/`other`; the others `one`/`other`. Use typographic apostrophes (’), not `\'`.
+- Domain code never formats text: it emits structured data (`NotificationContent`, `AiFailure.Reason`, `SampleTexts`
+  via `SampleTextsProvider`) that `:core:ui` renders (`ResourceNotificationRenderer`, `aiErrorText`,
+  `SampleTextsFromResources`). AI requests carry `LanguageProvider.languageTag()` so Claude answers in the UI language.
+- Platform strings: Android notification channel in `core/data/src/androidMain/res/values-*`, per-app language list via
+  `generateLocaleConfig` in `androidApp`; iOS permission prompts in `iosApp/iosApp/<lang>.lproj/InfoPlist.strings`
+  (a `PBXVariantGroup` in the hand-authored project) and `CFBundleLocalizations` in `Info.plist`.
+
 ### Koin
 - **Every** registration lives in `composeApp/src/commonMain/.../di/AppModule.kt`. Don't add per-platform modules.
   Platform-specific objects are built by calling the `expect` factories from `:core:data` inside that module.
@@ -90,7 +106,11 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
   compilation. `./gradlew testDebugUnitTest` is an alias that runs `testAndroidHostTest` in every KMP module.
 - New domain or data code arrives with tests. CI can verify those on every PR without an emulator.
 - Use the fakes in `:core:testing` (`FakeFriendRepository`, `FixedClock`, `SequentialIds`, …).
+  `TestGraph` wires every fake repository to every use case, so a ViewModel test builds its subject in one line
+  (`FooViewModel(g.observeFoo, g.doBar, g.clock)`) and asserts against `g.friendRepo` etc.
   For ViewModels, use `runViewModelTest { }` and `collecting(vm.state)`.
+- ViewModels never hold user-facing text. One-off messages are a sealed `FooMessage` type; the screen turns it into a
+  string with a `suspend fun FooMessage.text()` (compose-resources `getString`). Tests assert the message type.
 - Coverage is gated: `koverVerify` fails below the minimum set in the root `build.gradle.kts`. Raise it when coverage
   grows; never lower it to get a green build.
 

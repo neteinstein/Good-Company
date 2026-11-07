@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Good Company</string>
+    <string name="nav_friends">Prieteni</string>
+    <string name="nav_together">Împreună</string>
+    <string name="nav_agenda">Urmează</string>
+    <string name="nav_ideas">Idei</string>
+    <string name="nav_settings">Setări</string>
+</resources>

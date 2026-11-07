@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">Urmează</string>
+    <string name="eyebrow">%1$s, %2$s</string>
+    <string name="nothing_ahead">Nimic la orizont</string>
+    <plurals name="things_ahead">
+        <item quantity="one">%1$d lucru în următoarele două luni</item>
+        <item quantity="few">%1$d lucruri în următoarele două luni</item>
+        <item quantity="other">%1$d de lucruri în următoarele două luni</item>
+    </plurals>
+    <string name="empty_title">Liniște</string>
+    <string name="empty_body">Marchează prietenii adevărați și adaugă zile de naștere, copii și momente importante — vor apărea aici.</string>
+    <string name="fab_reminder">Memento</string>
+    <string name="reminders_header">Mementourile tale · %1$d active</string>
+    <string name="reminders_empty">„Cumpăr bilete la concert cu Rui” — adaugă unul cu butonul de mai jos.</string>
+    <string name="reminder_with">cu %1$s</string>
+    <string name="reminder_delete">Șterge mementoul</string>
+    <string name="label_birthday">ZI DE NAȘTERE</string>
+    <string name="label_kid_birthday">ZIUA UNUI COPIL</string>
+    <string name="label_big_day">ZI IMPORTANTĂ</string>
+    <string name="label_reminder">MEMENTO</string>
+    <string name="label_catch_up">DE REVĂZUT</string>
+    <string name="label_group">GRUP</string>
+    <string name="row_birthday">Ziua lui/ei %1$s</string>
+    <string name="row_turns">Împlinește %1$d ani</string>
+    <string name="row_loves">adoră %1$s</string>
+    <string name="row_kid">%1$s (copilul lui/ei %2$s)</string>
+    <string name="row_gift_idea">idee de cadou: %1$s</string>
+    <string name="row_ping">Scrie-i lui/ei %1$s</string>
+    <string name="row_with">Cu %1$s</string>
+    <string name="row_see">Vezi-l/o pe %1$s</string>
+    <plurals name="row_days_since">
+        <item quantity="one">%1$d zi de când v-ați văzut</item>
+        <item quantity="few">%1$d zile de când v-ați văzut</item>
+        <item quantity="other">%1$d de zile de când v-ați văzut</item>
+    </plurals>
+    <string name="row_never">Nicio întâlnire înregistrată încă</string>
+    <plurals name="row_group_days">
+        <item quantity="one">%1$s · %2$d zi de când ați fost toți împreună</item>
+        <item quantity="few">%1$s · %2$d zile de când ați fost toți împreună</item>
+        <item quantity="other">%1$s · %2$d de zile de când ați fost toți împreună</item>
+    </plurals>
+    <string name="row_send_wishes">Trimite urări</string>
+    <string name="row_we_met">Ne-am văzut</string>
+    <string name="wish_title">Urări pentru %1$s</string>
+    <string name="wish_gift_hint">Idei de cadou: %1$s</string>
+    <string name="msg_reminder_saved">Memento salvat</string>
+    <string name="msg_reminder_deleted">Memento șters</string>
+    <string name="msg_group_met">Timp cu %1$s înregistrat ✨</string>
+</resources>

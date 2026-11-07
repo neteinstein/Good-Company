@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="eyebrow">Cu Claude</string>
+    <string name="title">Idei</string>
+    <string name="subtitle">Planuri și subiecte de discuție pe gustul prietenilor tăi</string>
+    <string name="filter_all">Toate</string>
+    <string name="filter_plans">Planuri</string>
+    <string name="filter_news">Știri</string>
+    <string name="filter_talk">De discutat</string>
+    <string name="empty_title">Încă nu ai idei</string>
+    <string name="empty_body">Activează „Idei de ieșiri săptămânale” pentru câțiva prieteni, adaugă ce le place, apoi atinge „Găsește planuri acum”.</string>
+    <string name="hero_title">Planuri săptămânale</string>
+    <plurals name="hero_opted_in">
+        <item quantity="one">%1$d prieten înscris</item>
+        <item quantity="few">%1$d prieteni înscriși</item>
+        <item quantity="other">%1$d de prieteni înscriși</item>
+    </plurals>
+    <string name="hero_last_run">%1$s · ultima dată %2$s</string>
+    <string name="hero_searching">Căutăm ce e prin apropiere…</string>
+    <string name="hero_run">Găsește planuri acum</string>
+    <string name="key_banner_title">Adaugă cheia API pentru idei noi</string>
+    <string name="key_banner_body">Atinge ca să deschizi Setările — cheia rămâne pe acest dispozitiv.</string>
+    <string name="no_key_title">Folosește-ți propria cheie AI</string>
+    <string name="no_key_body">Ideile potrivesc pasiunile prietenilor cu știrile zilei și evenimentele din apropiere, folosind Claude și propria ta cheie API Anthropic.</string>
+    <string name="no_key_action">Adaugă cheia API în Setări</string>
+    <string name="no_key_step1">Creează o cheie pe console.anthropic.com</string>
+    <string name="no_key_step2">Lipește-o în Setări → Idei cu AI (rămâne pe acest dispozitiv)</string>
+    <string name="no_key_step3">Pe pagina unui prieten, activează „Idei de ieșiri săptămânale”</string>
+    <string name="kind_event">De făcut împreună</string>
+    <string name="kind_news">O știre care i-ar plăcea</string>
+    <string name="kind_talk">Adu vorba</string>
+    <string name="dismiss">Ignoră ideea</string>
+    <string name="open">Deschide</string>
+    <string name="propose_to">Propune-i lui/ei %1$s</string>
+    <string name="share_with">Trimite-i lui/ei %1$s</string>
+    <string name="proposed">Propus %1$s</string>
+    <string name="propose_title">Propune-i lui/ei %1$s</string>
+    <string name="propose_message">Salut, %1$s! 😊 Ce ziceți de asta: %2$s? Veniți?</string>
+    <string name="news_message">Salut, %1$s! Am văzut asta și m-am gândit la tine: %2$s</string>
+    <string name="names_and">%1$s și %2$s</string>
+    <string name="msg_none">De data asta nu am găsit potriviri bune.</string>
+    <plurals name="msg_found">
+        <item quantity="one">%1$d idee nouă ✨</item>
+        <item quantity="few">%1$d idei noi ✨</item>
+        <item quantity="other">%1$d de idei noi ✨</item>
+    </plurals>
+    <string name="msg_no_key">Adaugă mai întâi cheia API în Setări.</string>
+    <string name="msg_no_friends">Activează „Idei de ieșiri săptămânale” pentru cel puțin un prieten.</string>
+    <string name="msg_nothing">Nimic de făcut acum.</string>
+</resources>
