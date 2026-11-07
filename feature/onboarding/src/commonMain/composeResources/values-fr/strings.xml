@@ -31,4 +31,11 @@
     <string name="private_title">Privé par conception</string>
     <string name="private_body">Pas de compte, pas de serveur. Les SMS ne sont jamais lus.</string>
     <string name="done">Terminé</string>
+    <string name="pick_title">Ajoute tes proches</string>
+    <string name="pick_body">Choisis tes amis dans tes contacts, un par un. L’app ne voit que les personnes que tu choisis.</string>
+    <string name="pick">Choisir</string>
+    <plurals name="contacts_picked">
+        <item quantity="one">%1$d ami ajouté. En choisir un autre ?</item>
+        <item quantity="other">%1$d amis ajoutés. En choisir un autre ?</item>
+    </plurals>
 </resources>

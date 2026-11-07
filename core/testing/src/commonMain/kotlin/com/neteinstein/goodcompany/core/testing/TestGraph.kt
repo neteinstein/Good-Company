@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -16,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
@@ -110,6 +112,9 @@ class TestGraph(
     val importPickedContacts = ImportPickedContactsUseCase(friendRepo)
     val exportBackup = ExportBackupUseCase(backupRepo, clock)
     val restoreBackup = RestoreBackupUseCase(backupRepo)
+    val cloudStore = FakeCloudBackupStore()
+    val backupToDrive = BackupToDriveUseCase(exportBackup, cloudStore, settingsRepo, clock)
+    val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
     val currentLocation = GetCurrentLocationUseCase(location)
     val observeHistory = ObserveHangoutHistoryUseCase(friendRepo, hangoutRepo)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)

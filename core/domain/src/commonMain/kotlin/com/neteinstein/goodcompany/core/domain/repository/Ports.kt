@@ -76,3 +76,36 @@ data class GeneratedIdea(
     val url: String?,
     val whenText: String?,
 )
+
+/** A backup file in the user's own cloud storage (Google Drive). */
+data class CloudBackupInfo(val id: String, val modifiedAt: kotlin.time.Instant?)
+
+/** Why a cloud backup call failed, so the UI can say something useful. */
+class CloudBackupFailure(val reason: Reason, detail: String? = null) : Exception(detail ?: reason.name) {
+    enum class Reason {
+        /** The access token was refused (expired or revoked): authorise again. */
+        UNAUTHORIZED,
+
+        /** Drive refused the call: the Drive API isn't enabled for this app's Google Cloud project, or no access. */
+        FORBIDDEN,
+
+        /** Drive storage is full. */
+        STORAGE_FULL,
+        NETWORK,
+        OTHER,
+    }
+}
+
+/**
+ * The user's Google Drive, reached with an OAuth access token the UI obtained (scope `drive.file`: the app sees
+ * only the files it created). There is no server of ours in between.
+ */
+interface CloudBackupStore {
+    /** Creates the backup file, or replaces the newest one with the same [fileName]. */
+    suspend fun save(accessToken: String, fileName: String, content: String): CloudBackupInfo
+
+    /** The newest backup file called [fileName], or null when there isn't one. */
+    suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo?
+
+    suspend fun download(accessToken: String, id: String): String
+}

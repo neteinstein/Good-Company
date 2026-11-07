@@ -24,11 +24,21 @@ data class PlatformCapabilities(
     val smsBodySeparator: String = "?",
     /** The system contact picker (no address-book permission needed). */
     val hasContactPicker: Boolean = false,
+    /** Google Drive backup is set up for this build (an OAuth client exists for it; see docs/GOOGLE_DRIVE.md). */
+    val hasGoogleDrive: Boolean = false,
     /** A home-screen widget exists for this platform. */
     val hasHomeWidget: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities
+
+/**
+ * [platformCapabilities] adjusted for the build that's actually installed. On Android, the Play build has no
+ * READ_CONTACTS or READ_CALL_LOG (only the sideload build does), so address-book sync and call matching are off
+ * there and people are added with the contact picker. Prefer this in composables.
+ */
+@Composable
+expect fun currentPlatformCapabilities(): PlatformCapabilities
 
 /**
  * Returns a launcher that asks the OS for [permission] and reports whether it was granted.
@@ -96,3 +106,24 @@ interface DeviceAuthenticator {
 
 @Composable
 expect fun rememberDeviceAuthenticator(): DeviceAuthenticator
+
+/** Outcome of asking the user to let the app use its own file in their Google Drive. */
+sealed interface DriveAuthResult {
+    data class Token(val accessToken: String) : DriveAuthResult
+
+    /** The user closed the Google sheet. */
+    data object Cancelled : DriveAuthResult
+
+    /** No OAuth client for this build (Google Cloud project not set up): see docs/GOOGLE_DRIVE.md. */
+    data object NotConfigured : DriveAuthResult
+
+    data class Failed(val detail: String?) : DriveAuthResult
+}
+
+/**
+ * Returns a launcher that asks Google for an access token with the `drive.file` scope (shows Google's consent the
+ * first time). Android: Play services authorization; iOS: Google sign-in in the system browser sheet (PKCE);
+ * web: Google Identity Services.
+ */
+@Composable
+expect fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): () -> Unit

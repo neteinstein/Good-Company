@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.ApplyLaunchOptions
 import com.neteinstein.goodcompany.core.data.ai.AnthropicAssistant
 import com.neteinstein.goodcompany.core.data.ai.AnthropicClient
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
+import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
@@ -24,6 +25,7 @@ import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -39,6 +41,7 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -49,6 +52,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
@@ -134,6 +138,7 @@ val appModule = module {
     single { AnthropicClient(get()) }
     single<IdeaGenerator> { AnthropicIdeaGenerator(get()) }
     single<AiAssistant> { AnthropicAssistant(get()) }
+    single<CloudBackupStore> { GoogleDriveBackupStore(get()) }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
@@ -194,6 +199,8 @@ val appModule = module {
     factoryOf(::SaveGroupUseCase)
     factoryOf(::DeleteGroupUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
+    factoryOf(::BackupToDriveUseCase)
+    factoryOf(::FetchDriveBackupUseCase)
     factoryOf(::ObservePlansUseCase)
     factoryOf(::SavePlanUseCase)
     factoryOf(::ConfirmPlanUseCase)

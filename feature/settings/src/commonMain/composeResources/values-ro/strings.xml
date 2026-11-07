@@ -37,7 +37,7 @@
     <string name="privacy_base">Prietenii, pasiunile, copiii, cadourile, întâlnirile și mementourile sunt stocate doar pe acest dispozitiv.</string>
     <string name="privacy_contacts">Contactele sunt citite doar ca să-ți construim lista.</string>
     <string name="privacy_call_log">Jurnalul de apeluri e citit doar în versiunea sideload.</string>
-    <string name="privacy_end">Nu se trimite nimic în afara cererilor către AI pe care le faci tu. SMS-urile nu sunt citite niciodată.</string>
+    <string name="privacy_end">Nu se trimite nimic în afara cererilor către AI și a copiilor în Google Drive pe care le faci tu. SMS-urile nu sunt citite niciodată.</string>
     <string name="footer">Good Company %1$s · %2$s · făcut cu 💛</string>
     <string name="msg_key_saved">Cheia API a fost salvată pe acest dispozitiv</string>
     <string name="msg_key_removed">Cheia API a fost eliminată</string>
@@ -73,4 +73,18 @@
         <item quantity="few">%1$d prieteni restaurați</item>
         <item quantity="other">%1$d de prieteni restaurați</item>
     </plurals>
+    <string name="drive_title">Google Drive</string>
+    <string name="drive_hint">Păstrează o copie în Google Drive-ul tău. Aplicația vede acolo doar propriul fișier de rezervă.</string>
+    <string name="drive_last">Ultima copie salvată %1$s</string>
+    <string name="drive_backup_button">Fă o copie</string>
+    <string name="drive_restore_button">Restaurează</string>
+    <string name="drive_confirm_body">Înlocuiești tot de pe acest dispozitiv cu copia din Google Drive de %1$s? Cheia API și blocarea aplicației rămân neschimbate.</string>
+    <string name="msg_drive_saved">Salvat în Google Drive</string>
+    <string name="msg_drive_none">Încă nu există o copie în acest Google Drive.</string>
+    <string name="msg_drive_not_configured">Google Drive nu este încă configurat pentru această versiune a aplicației.</string>
+    <string name="msg_drive_unauthorized">Google nu a acceptat autentificarea. Încearcă din nou.</string>
+    <string name="msg_drive_forbidden">Google Drive a refuzat cererea. Verifică dacă Drive e activat pe cont.</string>
+    <string name="msg_drive_full">Google Drive-ul tău este plin.</string>
+    <string name="msg_drive_offline">Nu s-a putut contacta Google Drive. Verifică conexiunea.</string>
+    <string name="msg_drive_failed">Ceva n-a mers cu Google Drive. Încearcă din nou.</string>
 </resources>

@@ -2,6 +2,8 @@ package com.neteinstein.goodcompany.feature.onboarding.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -14,6 +16,8 @@ import kotlinx.coroutines.launch
 data class OnboardingUiState(
     val contactsImported: Int? = null,
     val contactsDenied: Boolean = false,
+    /** People added with the contact picker (Play build, no address-book access). */
+    val contactsPicked: Int = 0,
     val notificationsGranted: Boolean? = null,
     val isWorking: Boolean = false,
     val finished: Boolean = false,
@@ -22,6 +26,7 @@ data class OnboardingUiState(
 class OnboardingViewModel(
     private val updateSettings: UpdateSettingsUseCase,
     private val syncContacts: SyncContactsUseCase,
+    private val importPickedContacts: ImportPickedContactsUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(OnboardingUiState())
@@ -36,6 +41,15 @@ class OnboardingViewModel(
             _state.update { it.copy(isWorking = true) }
             val count = runCatching { syncContacts().contacts }.getOrDefault(0)
             _state.update { it.copy(isWorking = false, contactsImported = count, contactsDenied = false) }
+        }
+    }
+
+    /** People chosen in the system contact picker; the app only ever sees those. */
+    fun onContactsPicked(records: List<ContactRecord>) {
+        if (records.isEmpty()) return
+        viewModelScope.launch {
+            val result = importPickedContacts(records)
+            _state.update { it.copy(contactsPicked = it.contactsPicked + result.added) }
         }
     }
 

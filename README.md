@@ -154,11 +154,11 @@ friends by hand (browsers have no address book).
 ## 🔒 Privacy
 
 - No account, no server. Everything lives on your device.
-- Contacts are read only to build your list. **SMS are never read.** The call log is only matched in the separate *sideload* Android build (Play restricts that permission).
+- On Android (Play) you **pick** people with the system contact picker, so the app never sees your whole address book. Full address-book sync and call matching exist only in the separate *sideload* build (Play restricts those permissions). **SMS are never read.**
 - WhatsApp and Messenger can't be read by any app; you can import a WhatsApp chat **export** per friend.
-- The only network traffic is the AI requests you trigger, sent with **your** key to `api.anthropic.com`.
+- The only network traffic is what you start: AI requests with **your** key to `api.anthropic.com`, and Google Drive backups.
 - Optional **app lock** (fingerprint, face or device PIN) and **private lock-screen notifications**.
-- **Export / restore** everything as one file you keep — no cloud account. Your API key is never in it.
+- **Export / restore** everything as one file, or **back up to your own Google Drive** (the app can only see its own backup file there). Your API key is never in it. Setup: [docs/GOOGLE_DRIVE.md](docs/GOOGLE_DRIVE.md).
 - Prefer fewer numbers? Turn off **Show warmth** in Settings.
 
 ## 🚀 Getting started

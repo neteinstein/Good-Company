@@ -35,6 +35,8 @@ data class AppSettings(
     val showWarmth: Boolean = true,
     /** Last time the app was opened, so nudges can back off when it's ignored. */
     val lastOpenedAt: Instant? = null,
+    /** When the last copy was saved to the user's Google Drive (device-specific; kept on restore). */
+    val lastDriveBackupAt: Instant? = null,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }

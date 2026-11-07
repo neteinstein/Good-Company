@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
+import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
@@ -15,6 +18,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +27,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlin.time.Instant
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface SettingsMessage {
@@ -44,7 +51,18 @@ sealed interface SettingsMessage {
     data object BackupInvalid : SettingsMessage
 
     data object LockFailed : SettingsMessage
+
+    data object DriveBackedUp : SettingsMessage
+
+    data object DriveNoBackup : SettingsMessage
+
+    data object DriveNotConfigured : SettingsMessage
+
+    data class DriveFailed(val reason: CloudBackupFailure.Reason) : SettingsMessage
 }
+
+/** What to do once Google hands back an access token. */
+enum class DriveAction { BACKUP, RESTORE }
 
 /** A backup ready to be handed to the platform "save file" UI. */
 data class ExportFile(val name: String, val content: String)
@@ -58,6 +76,13 @@ data class SettingsUiState(
     val export: ExportFile? = null,
     /** A picked backup waiting for the "Replace everything?" confirmation. */
     val pendingRestore: String? = null,
+    /** When [pendingRestore] came from Google Drive: the backup's date, shown in the confirmation. */
+    val pendingRestoreFrom: Instant? = null,
+    /** Waiting for Google, or uploading/downloading. */
+    val driveBusy: Boolean = false,
+    val driveAction: DriveAction? = null,
+    val now: Instant = Instant.DISTANT_PAST,
+    val zone: TimeZone = TimeZone.UTC,
 )
 
 class SettingsViewModel(
@@ -69,11 +94,20 @@ class SettingsViewModel(
     private val importContactsFile: ImportContactsFileUseCase,
     private val exportBackup: ExportBackupUseCase,
     private val restoreBackup: RestoreBackupUseCase,
+    private val backupToDrive: BackupToDriveUseCase,
+    private val fetchDriveBackup: FetchDriveBackupUseCase,
+    private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
 
     val state: StateFlow<SettingsUiState> = combine(observeSettings(), hasSampleData(), local) { settings, sample, ui ->
-        ui.copy(settings = settings, maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask), hasSampleData = sample)
+        ui.copy(
+            settings = settings,
+            maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask),
+            hasSampleData = sample,
+            now = clock.now(),
+            zone = clock.timeZone,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     private fun update(transform: (AppSettings) -> AppSettings) {
@@ -178,7 +212,57 @@ class SettingsViewModel(
         local.update { it.copy(pendingRestore = text) }
     }
 
-    fun onCancelRestore() = local.update { it.copy(pendingRestore = null) }
+    fun onCancelRestore() = local.update { it.copy(pendingRestore = null, pendingRestoreFrom = null) }
+
+    // --- Google Drive --------------------------------------------------------------------------------------------
+
+    /** Called right before the screen asks Google for a token. */
+    fun onDriveRequested(action: DriveAction) = local.update { it.copy(driveAction = action, driveBusy = true) }
+
+    fun onDriveAuthResult(result: DriveAuthResult) {
+        val action = local.value.driveAction
+        when (result) {
+            is DriveAuthResult.Token -> when (action) {
+                DriveAction.BACKUP -> viewModelScope.launch {
+                    val outcome = backupToDrive(result.accessToken)
+                    local.update {
+                        it.copy(driveBusy = false, driveAction = null, message = outcome.fold({ SettingsMessage.DriveBackedUp }, ::driveFailure))
+                    }
+                }
+                DriveAction.RESTORE -> viewModelScope.launch {
+                    val outcome = fetchDriveBackup(result.accessToken)
+                    local.update { s ->
+                        outcome.fold(
+                            { backup ->
+                                if (backup == null) {
+                                    s.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveNoBackup)
+                                } else {
+                                    s.copy(
+                                        driveBusy = false,
+                                        driveAction = null,
+                                        pendingRestore = backup.content,
+                                        pendingRestoreFrom = backup.info.modifiedAt,
+                                    )
+                                }
+                            },
+                            { s.copy(driveBusy = false, driveAction = null, message = driveFailure(it)) },
+                        )
+                    }
+                }
+                null -> local.update { it.copy(driveBusy = false) }
+            }
+            DriveAuthResult.Cancelled -> local.update { it.copy(driveBusy = false, driveAction = null) }
+            DriveAuthResult.NotConfigured -> local.update {
+                it.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveNotConfigured)
+            }
+            is DriveAuthResult.Failed -> local.update {
+                it.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveFailed(CloudBackupFailure.Reason.OTHER))
+            }
+        }
+    }
+
+    private fun driveFailure(e: Throwable): SettingsMessage =
+        SettingsMessage.DriveFailed((e as? CloudBackupFailure)?.reason ?: CloudBackupFailure.Reason.OTHER)
 
     fun onConfirmRestore() {
         val raw = local.value.pendingRestore ?: return
@@ -187,6 +271,7 @@ class SettingsViewModel(
             local.update {
                 it.copy(
                     pendingRestore = null,
+                    pendingRestoreFrom = null,
                     message = when (result) {
                         is RestoreResult.Restored -> SettingsMessage.BackupRestored(result.friends)
                         RestoreResult.NotABackup -> SettingsMessage.BackupInvalid

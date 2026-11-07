@@ -76,7 +76,7 @@ import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
-import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
@@ -156,10 +156,11 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, viewModel: FriendsViewModel 
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickContacts = rememberContactPicker(onPicked = viewModel::onContactsPicked)
+    val capabilities = currentPlatformCapabilities()
     FriendsContent(
         state = state,
-        canSyncContacts = platformCapabilities.hasAddressBook,
-        canPickContacts = platformCapabilities.hasContactPicker,
+        canSyncContacts = capabilities.hasAddressBook,
+        canPickContacts = capabilities.hasContactPicker,
         actions = FriendsActions(
             onQueryChange = viewModel::onQueryChange,
             onFilterChange = viewModel::onFilterChange,

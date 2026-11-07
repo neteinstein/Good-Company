@@ -46,7 +46,7 @@ feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend p
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules, "Who's free for…?"
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
-feature/settings/     Theme, circles, API key, notifications (digest, privacy), .vcf import, backup, app lock
+feature/settings/     Theme, circles, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
 feature/review/       "Your year in friendship" (story cards + share)
 iosApp/               Hand-authored Xcode project (SwiftUI shell)
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
@@ -61,7 +61,8 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
   or `expect`/`actual` only for things a platform genuinely can't share. Today that's:
   - `core/data/.../platform/`: contacts, call log, location, local notifications (`create*()` factories)
   - `core/ui/.../platform/`: permission prompts, text-file picker, contact picker, file saver, add-to-calendar,
-    device lock (biometrics/PIN), dynamic colour, `platformCapabilities`
+    device lock (biometrics/PIN), Google Drive sign-in, dynamic colour, `platformCapabilities` /
+    `currentPlatformCapabilities()` (use the latter in composables: on Android it reflects the installed build type)
   - entry points (`MainViewController`, wasm `main`)
 - Packages: `com.neteinstein.goodcompany.<module path>` (e.g. `...feature.friends.ui.screens.detail`). Inside a module:
   `domain/` (models, use cases, repository interfaces), `data/` (repositories, data sources),
@@ -174,8 +175,9 @@ Seen in practice:
 6. **Secrets are gitignored.** `androidApp/google-services.json` is never committed. CI copies
    `androidApp/google-services.json.ci` (a placeholder) for build validation; real builds use the `GOOGLE_SERVICES_JSON`
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
-7. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` belongs only in `androidApp/src/sideload/AndroidManifest.xml`.
-   CI fails if the Play `release` APK declares SMS, call-log or AD_ID permissions. iOS needs usage strings in
+7. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
+   `androidApp/src/sideload/AndroidManifest.xml`: the Play build adds people through the system contact picker.
+   CI fails if the Play `release` APK declares SMS, call-log, contacts or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
 8. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
    `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
@@ -203,9 +205,14 @@ Seen in practice:
 15. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,
     quieter when the app isn't opened). Don't schedule catch-up notifications anywhere else. Birthdays, events, reminders
     and plans are never throttled.
-16. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
+16. **Google Drive backup.** Scope `drive.file` only (`DRIVE_FILE_SCOPE`), one file named `DRIVE_BACKUP_FILE_NAME`,
+    content = `ExportBackupUseCase` (never the API key). OAuth clients live in a Google Cloud project, not in the repo
+    (see `docs/GOOGLE_DRIVE.md`): Android needs none in code; iOS reads `GOOGLE_DRIVE_IOS_CLIENT_ID` (xcconfig →
+    Info.plist `GoogleDriveClientId`); web reads `<meta name="google-drive-client-id">`. Empty → the row is hidden.
+    Obj-C helper classes (e.g. the `ASWebAuthenticationSession` anchor) must be `class`, never `object`.
+17. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
     resources in `androidApp/src/main/res/values-*` (all five languages). What it shows comes from `ObserveHomeWidgetUseCase`.
-17. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+18. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). No iOS widget yet (WidgetKit
     needs an app group and an extension target in the hand-authored Xcode project).

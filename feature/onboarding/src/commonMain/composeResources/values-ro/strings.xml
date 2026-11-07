@@ -32,4 +32,12 @@
     <string name="private_title">Privat din construcție</string>
     <string name="private_body">Fără cont, fără server. SMS-urile nu sunt citite niciodată.</string>
     <string name="done">Gata</string>
+    <string name="pick_title">Adaugă-ți oamenii</string>
+    <string name="pick_body">Alege prieteni din contacte, pe rând. Aplicația vede doar persoanele pe care le alegi.</string>
+    <string name="pick">Alege</string>
+    <plurals name="contacts_picked">
+        <item quantity="one">%1$d prieten adăugat. Alegi altul?</item>
+        <item quantity="few">%1$d prieteni adăugați. Alegi altul?</item>
+        <item quantity="other">%1$d de prieteni adăugați. Alegi altul?</item>
+    </plurals>
 </resources>

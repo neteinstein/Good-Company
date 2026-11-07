@@ -42,7 +42,7 @@
     <string name="privacy_base">Friends, tastes, kids, gifts, meetups and reminders are stored only on this device.</string>
     <string name="privacy_contacts">Contacts are read only to build your list.</string>
     <string name="privacy_call_log">The call log is only read in the sideload build.</string>
-    <string name="privacy_end">Nothing is uploaded except the AI requests you trigger. SMS are never read.</string>
+    <string name="privacy_end">Nothing is uploaded except the AI requests and Google Drive backups you start. SMS are never read.</string>
     <string name="footer">Good Company %1$s · %2$s · made with 💛</string>
 
     <string name="msg_key_saved">API key saved on this device</string>
@@ -78,4 +78,18 @@
         <item quantity="one">Restored %1$d friend</item>
         <item quantity="other">Restored %1$d friends</item>
     </plurals>
+    <string name="drive_title">Google Drive</string>
+    <string name="drive_hint">Keep a copy in your own Google Drive. The app can only see its own backup file there.</string>
+    <string name="drive_last">Last copy saved %1$s</string>
+    <string name="drive_backup_button">Back up</string>
+    <string name="drive_restore_button">Restore</string>
+    <string name="drive_confirm_body">Replace everything on this device with your Google Drive backup from %1$s? Your API key and app lock stay as they are.</string>
+    <string name="msg_drive_saved">Saved to Google Drive</string>
+    <string name="msg_drive_none">No backup in this Google Drive yet.</string>
+    <string name="msg_drive_not_configured">Google Drive isn’t set up for this build of the app yet.</string>
+    <string name="msg_drive_unauthorized">Google didn’t accept the sign-in. Try again.</string>
+    <string name="msg_drive_forbidden">Google Drive refused the request. Check the account has Drive enabled.</string>
+    <string name="msg_drive_full">Your Google Drive is full.</string>
+    <string name="msg_drive_offline">Couldn’t reach Google Drive. Check your connection.</string>
+    <string name="msg_drive_failed">Something went wrong with Google Drive. Try again.</string>
 </resources>

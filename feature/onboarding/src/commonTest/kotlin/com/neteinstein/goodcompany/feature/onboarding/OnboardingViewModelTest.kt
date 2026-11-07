@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.onboarding
 
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleData
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -25,6 +26,7 @@ class OnboardingViewModelTest {
     private fun vm() = OnboardingViewModel(
         UpdateSettingsUseCase(settings),
         SyncContactsUseCase(friends, FakeInteractionRepository()),
+        ImportPickedContactsUseCase(friends),
         LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FakeGroupRepository(), FixedClock()),
     )
 
@@ -47,5 +49,16 @@ class OnboardingViewModelTest {
         vm.onExploreWithSample()
         assertTrue(vm.state.value.finished)
         assertTrue(friends.friends.value.any { SampleData.isSample(it.id.value) })
+    }
+
+    @Test
+    fun pickedContactsAreAddedAndCounted() = runViewModelTest {
+        val vm = vm()
+        vm.onContactsPicked(emptyList())
+        assertEquals(0, vm.state.value.contactsPicked)
+        vm.onContactsPicked(listOf(ContactRecord("7", "Rui", listOf("+351 912"), null)))
+        vm.onContactsPicked(listOf(ContactRecord("8", "Bea", emptyList(), null)))
+        assertEquals(2, vm.state.value.contactsPicked)
+        assertTrue(friends.friends.value.any { it.name == "Rui" })
     }
 }

@@ -14,6 +14,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasCallLog = false,
     hasBackgroundNotifications = false,
     hasDynamicColor = false,
+    hasGoogleDrive = googleDriveClientId() != null,
 )
 
 @Composable
@@ -131,3 +132,6 @@ private fun downloadText(fileName: String, mimeType: String, content: String): U
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
     }""",
 )
+
+@Composable
+actual fun currentPlatformCapabilities(): PlatformCapabilities = platformCapabilities
