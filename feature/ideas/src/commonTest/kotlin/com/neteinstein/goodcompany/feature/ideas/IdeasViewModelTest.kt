@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany.feature.ideas
 
+import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
@@ -9,6 +11,7 @@ import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasMessage
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,6 +29,7 @@ class IdeasViewModelTest {
         g.runWeeklyIdeas,
         g.dismissIdea,
         g.markIdeaProposed,
+        g.savePlan,
         g.clock,
     )
 
@@ -75,5 +79,24 @@ class IdeasViewModelTest {
         assertEquals(g.clock.now(), state.value.ideas.single().idea.proposedAt)
         vm.onDismissPropose()
         assertNull(state.value.proposing)
+    }
+
+    @Test
+    fun anIdeaBecomesAPlan() = runViewModelTest {
+        g.ideaRepo.addAll(listOf(Idea("i1", listOf(FriendId("ana")), IdeaKind.EVENT, "Jazz night", "", createdAt = g.clock.now())))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onPlan("i1")
+        assertEquals("i1", state.value.planning?.idea?.id)
+        vm.onSavePlan("Jazz night", emptyList(), LocalDate(2026, 3, 13), "Hot Clube")
+        assertNull(state.value.planning)
+        assertEquals(IdeasMessage.PlanSaved, state.value.message)
+        val plan = g.planRepo.plans.value.single()
+        assertEquals("i1", plan.ideaId)
+        assertEquals(listOf(FriendId("ana")), plan.friendIds)
+        assertTrue(g.ideaRepo.ideas.value.single().proposedAt != null)
+        vm.onPlan("i1")
+        vm.onDismissPlan()
+        assertNull(state.value.planning)
     }
 }

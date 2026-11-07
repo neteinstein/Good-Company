@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -56,11 +58,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
@@ -72,12 +76,20 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
+import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.clear
 import com.neteinstein.goodcompany.feature.hangouts.resources.delete_memory
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_days
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_due
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_hint
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_never
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_plan
+import com.neteinstein.goodcompany.feature.hangouts.resources.free_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_delete
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_due
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_edit
@@ -152,8 +164,20 @@ fun HangoutsScreen(onOpenFriend: (FriendId) -> Unit, onOpenYearReview: (Int) -> 
             onSnoozeGroup = viewModel::onSnoozeGroup,
             onDeleteGroup = viewModel::onDeleteGroup,
             onMessageShown = viewModel::onMessageShown,
+            onSelectOccasion = viewModel::onSelectOccasion,
+            onPlanWith = viewModel::onPlanWith,
         ),
     )
+    state.planDraft?.let { draft ->
+        PlanEditor(
+            friends = state.friends,
+            today = state.today,
+            onDismiss = viewModel::onDismissPlan,
+            onSave = viewModel::onSavePlan,
+            preselected = setOf(draft.friendId),
+            initialTitle = occasionLabel(draft.occasion),
+        )
+    }
     state.draft?.let { draft ->
         CheckInSheet(
             draft = draft,
@@ -196,6 +220,8 @@ data class HangoutsActions(
     val onSnoozeGroup: (String, SnoozeOption) -> Unit = { _, _ -> },
     val onDeleteGroup: (String) -> Unit = {},
     val onMessageShown: () -> Unit = {},
+    val onSelectOccasion: (Occasion) -> Unit = {},
+    val onPlanWith: (FriendId, Occasion) -> Unit = { _, _ -> },
 )
 
 /** Localised snackbar text for a [HangoutsMessage]. */
@@ -207,6 +233,7 @@ suspend fun HangoutsMessage.text(): String = when (this) {
     is HangoutsMessage.GroupSaved -> getString(Res.string.msg_group_saved, name)
     is HangoutsMessage.GroupDeleted -> getString(Res.string.msg_group_deleted, name)
     is HangoutsMessage.GroupSnoozed -> getString(Res.string.msg_group_snoozed, name, until.shortLabelText())
+    HangoutsMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
 }
 
 @Composable
@@ -270,6 +297,51 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                         overdue = false,
                         subtitle = stringResource(Res.string.meet_due, relativeDayPhrase(s.dueDate, state.today), everyNDays(goal)),
                         onClick = { actions.onOpenFriend(s.friend.id) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+
+            item(key = "free-h") { SectionHeader(stringResource(Res.string.free_title)) }
+            if (state.occasions.isEmpty()) {
+                item(key = "free-hint") {
+                    Text(
+                        stringResource(Res.string.free_hint),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                    )
+                }
+            } else {
+                item(key = "free-chips") {
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        state.occasions.keys.forEach { o ->
+                            FilterChip(o == state.selectedOccasion, { actions.onSelectOccasion(o) }, label = { Text(occasionLabel(o)) })
+                        }
+                    }
+                }
+                val occasion = state.selectedOccasion
+                val matches = occasion?.let { state.occasions[it] }.orEmpty().take(FREE_LIMIT)
+                items(matches, key = { "free-${occasion?.name}-${it.friend.id.value}" }) { m ->
+                    MeetupRow(
+                        name = m.friend.name,
+                        initials = m.friend.initials,
+                        progress = if (m.catchUpDue) 1f else 0f,
+                        overdue = false,
+                        subtitle = when {
+                            m.catchUpDue -> stringResource(Res.string.free_due)
+                            m.daysSinceLastSeen != null -> pluralStringResource(Res.plurals.free_days, m.daysSinceLastSeen!!, m.daysSinceLastSeen!!)
+                            else -> stringResource(Res.string.free_never)
+                        },
+                        onClick = { actions.onOpenFriend(m.friend.id) },
+                        trailing = {
+                            TextButton(onClick = { occasion?.let { actions.onPlanWith(m.friend.id, it) } }) {
+                                Text(stringResource(Res.string.free_plan))
+                            }
+                        },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -580,3 +652,5 @@ private fun MeetupRow(
         }
     }
 }
+
+private const val FREE_LIMIT = 5

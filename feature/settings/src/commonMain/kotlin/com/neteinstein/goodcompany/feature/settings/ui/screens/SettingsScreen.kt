@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
@@ -29,12 +30,14 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SettingsBrightness
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -73,15 +76,20 @@ import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
+import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.settings.resources.Res
@@ -91,9 +99,22 @@ import com.neteinstein.goodcompany.feature.settings.resources.allow_notification
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_show
+import com.neteinstein.goodcompany.feature.settings.resources.app_lock
+import com.neteinstein.goodcompany.feature.settings.resources.app_lock_hint
 import com.neteinstein.goodcompany.feature.settings.resources.appearance
+import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_body
+import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_title
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export_button
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
 import com.neteinstein.goodcompany.feature.settings.resources.circles
 import com.neteinstein.goodcompany.feature.settings.resources.circles_hint
+import com.neteinstein.goodcompany.feature.settings.resources.digest
+import com.neteinstein.goodcompany.feature.settings.resources.digest_day
+import com.neteinstein.goodcompany.feature.settings.resources.digest_hint
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color_hint
 import com.neteinstein.goodcompany.feature.settings.resources.eyebrow
@@ -104,8 +125,12 @@ import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_saved
+import com.neteinstein.goodcompany.feature.settings.resources.msg_lock_failed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_off
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_on
 import com.neteinstein.goodcompany.feature.settings.resources.msg_sample_added
@@ -118,12 +143,17 @@ import com.neteinstein.goodcompany.feature.settings.resources.privacy_base
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_call_log
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_contacts
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_end
+import com.neteinstein.goodcompany.feature.settings.resources.private_notifications
+import com.neteinstein.goodcompany.feature.settings.resources.private_notifications_hint
+import com.neteinstein.goodcompany.feature.settings.resources.quiet_note
 import com.neteinstein.goodcompany.feature.settings.resources.reminders
 import com.neteinstein.goodcompany.feature.settings.resources.replay_intro
 import com.neteinstein.goodcompany.feature.settings.resources.sample
 import com.neteinstein.goodcompany.feature.settings.resources.sample_add_hint
 import com.neteinstein.goodcompany.feature.settings.resources.sample_loaded
 import com.neteinstein.goodcompany.feature.settings.resources.sample_remove_hint
+import com.neteinstein.goodcompany.feature.settings.resources.show_warmth
+import com.neteinstein.goodcompany.feature.settings.resources.show_warmth_hint
 import com.neteinstein.goodcompany.feature.settings.resources.theme_auto
 import com.neteinstein.goodcompany.feature.settings.resources.theme_dark
 import com.neteinstein.goodcompany.feature.settings.resources.theme_light
@@ -132,6 +162,9 @@ import com.neteinstein.goodcompany.feature.settings.resources.web_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans_hint
 import com.neteinstein.goodcompany.feature.settings.resources.your_data
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.isoDayNumber
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -151,6 +184,10 @@ suspend fun SettingsMessage.text(): String = when (this) {
     } else {
         getString(Res.string.msg_vcf_result, result.added, result.updated, result.skipped)
     }
+    SettingsMessage.BackupSaved -> getString(Res.string.msg_backup_saved)
+    is SettingsMessage.BackupRestored -> getPluralString(Res.plurals.msg_backup_restored, friends, friends)
+    SettingsMessage.BackupInvalid -> getString(Res.string.msg_backup_invalid)
+    SettingsMessage.LockFailed -> getString(Res.string.msg_lock_failed)
 }
 
 @Composable
@@ -158,9 +195,15 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS, viewModel::onNotificationPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
+    val pickBackup = rememberTextFilePicker(FileKind.JSON, onPicked = viewModel::onBackupPicked)
+    val saveFile = rememberFileSaver("application/json", onDone = viewModel::onExportHandled)
+    val authenticator = rememberDeviceAuthenticator()
+    val lockReason = stringResource(CoreRes.string.lock_reason)
+    LaunchedEffect(state.export) { state.export?.let { saveFile.save(it.name, it.content) } }
     SettingsContent(
         state = state,
         capabilities = platformCapabilities,
+        canLock = authenticator.isAvailable || state.settings.appLock,
         appVersion = appVersion,
         actions = SettingsActions(
             onSaveApiKey = viewModel::onSaveApiKey,
@@ -177,6 +220,21 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
             onRemoveSampleData = viewModel::onRemoveSampleData,
             onReplayIntro = viewModel::onReplayIntro,
             onMessageShown = viewModel::onMessageShown,
+            onWeeklyDigestChange = viewModel::onWeeklyDigestChange,
+            onDigestDayChange = viewModel::onDigestDayChange,
+            onPrivateNotificationsChange = viewModel::onPrivateNotificationsChange,
+            onShowWarmthChange = viewModel::onShowWarmthChange,
+            onAppLockChange = { enabled ->
+                if (enabled) {
+                    authenticator.authenticate(lockReason) { ok -> viewModel.onAppLockChange(true, ok) }
+                } else {
+                    viewModel.onAppLockChange(false, verified = true)
+                }
+            },
+            onExportBackup = viewModel::onExportBackup,
+            onRestoreBackup = pickBackup,
+            onConfirmRestore = viewModel::onConfirmRestore,
+            onCancelRestore = viewModel::onCancelRestore,
         ),
     )
 }
@@ -196,11 +254,26 @@ data class SettingsActions(
     val onRemoveSampleData: () -> Unit = {},
     val onReplayIntro: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
+    val onWeeklyDigestChange: (Boolean) -> Unit = {},
+    val onDigestDayChange: (Int) -> Unit = {},
+    val onPrivateNotificationsChange: (Boolean) -> Unit = {},
+    val onShowWarmthChange: (Boolean) -> Unit = {},
+    val onAppLockChange: (Boolean) -> Unit = {},
+    val onExportBackup: () -> Unit = {},
+    val onRestoreBackup: () -> Unit = {},
+    val onConfirmRestore: () -> Unit = {},
+    val onCancelRestore: () -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, appVersion: String, actions: SettingsActions) {
+fun SettingsContent(
+    state: SettingsUiState,
+    capabilities: PlatformCapabilities,
+    appVersion: String,
+    actions: SettingsActions,
+    canLock: Boolean = false,
+) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -275,6 +348,12 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                         }
                     }
                 }
+                SwitchRow(
+                    stringResource(Res.string.show_warmth),
+                    stringResource(Res.string.show_warmth_hint),
+                    s.showWarmth,
+                    actions.onShowWarmthChange,
+                )
             }
 
             SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
@@ -329,6 +408,34 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                         }
                     }
                 }
+                if (capabilities.hasBackgroundNotifications) {
+                    SwitchRow(stringResource(Res.string.digest), stringResource(Res.string.digest_hint), s.weeklyDigest, actions.onWeeklyDigestChange)
+                    if (s.weeklyDigest) {
+                        Row(
+                            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(Res.string.digest_day), style = MaterialTheme.typography.labelLarge)
+                            DayOfWeek.entries.forEach { day ->
+                                val iso = day.isoDayNumber
+                                FilterChip(s.digestDay == iso, { actions.onDigestDayChange(iso) }, label = { Text(weekdayShort(day)) })
+                            }
+                        }
+                    }
+                    SwitchRow(
+                        stringResource(Res.string.private_notifications),
+                        stringResource(Res.string.private_notifications_hint),
+                        s.privateNotifications,
+                        actions.onPrivateNotificationsChange,
+                    )
+                    Text(
+                        stringResource(Res.string.quiet_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
             }
 
             SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {
@@ -363,6 +470,24 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
                 ListItem(
+                    leadingContent = { Icon(Icons.Rounded.Download, null) },
+                    headlineContent = { Text(stringResource(Res.string.backup_export), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.backup_export_hint)) },
+                    trailingContent = {
+                        FilledTonalButton(onClick = actions.onExportBackup) { Text(stringResource(Res.string.backup_export_button)) }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
+                    leadingContent = { Icon(Icons.Rounded.Restore, null) },
+                    headlineContent = { Text(stringResource(Res.string.backup_restore), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.backup_restore_hint)) },
+                    trailingContent = {
+                        OutlinedButton(onClick = actions.onRestoreBackup) { Text(stringResource(Res.string.backup_restore_button)) }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
                     modifier = Modifier.clickable(onClick = actions.onReplayIntro),
                     leadingContent = { Icon(Icons.Rounded.Replay, null) },
                     headlineContent = { Text(stringResource(Res.string.replay_intro), style = MaterialTheme.typography.titleSmall) },
@@ -381,6 +506,19 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                if (canLock) {
+                    SwitchRow(stringResource(Res.string.app_lock), stringResource(Res.string.app_lock_hint), s.appLock, actions.onAppLockChange)
+                }
+            }
+            if (state.pendingRestore != null) {
+                AlertDialog(
+                    onDismissRequest = actions.onCancelRestore,
+                    icon = { Icon(Icons.Rounded.Restore, null) },
+                    title = { Text(stringResource(Res.string.backup_confirm_title)) },
+                    text = { Text(stringResource(Res.string.backup_confirm_body)) },
+                    confirmButton = { TextButton(onClick = actions.onConfirmRestore) { Text(stringResource(Res.string.backup_restore_button)) } },
+                    dismissButton = { TextButton(onClick = actions.onCancelRestore) { Text(stringResource(CoreRes.string.cancel)) } },
                 )
             }
             Text(

@@ -63,7 +63,7 @@
     <string name="card_ping">Fala com %1$s</string>
     <string name="card_reminder">Lembrete</string>
     <string name="card_see">Ver %1$s</string>
-    <string name="card_overdue">Em atraso</string>
+    <string name="card_overdue">Vale um olá</string>
     <string name="card_group">%1$s %2$s</string>
     <plurals name="catch_up_days">
         <item quantity="one">%1$d dia desde o último encontro · objetivo %2$s</item>
@@ -126,7 +126,7 @@
     <string name="warmth_title">Calor %1$d</string>
     <string name="warmth_hint_warm">Estão num bom ritmo.</string>
     <string name="warmth_hint_cooling">Está a arrefecer um pouco — uma mensagem aquecia isto.</string>
-    <string name="warmth_hint_fading">Esta amizade está a desvanecer. Que tal dares notícias?</string>
+    <string name="warmth_hint_fading">Tem estado tudo calmo — um olá ia saber bem.</string>
     <string name="contact_met">Juntos %1$s</string>
     <string name="contact_call">Chamada %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
@@ -220,4 +220,22 @@
     <string name="event_1_day">1 dia antes</string>
     <string name="event_3_days">3 dias antes</string>
     <string name="event_week">Uma semana antes</string>
+    <string name="prefs_pause">Pausar lembretes para estar com</string>
+    <string name="prefs_pause_hint">Sem lembretes “hora de estar com” até retomares. O histórico e os aniversários ficam.</string>
+    <string name="prefs_contact_counts">Chamadas e conversas contam como estar em contacto</string>
+    <string name="prefs_contact_counts_hint">Para amigos longe: uma chamada ou conversa reinicia o ritmo, não só estarem juntos.</string>
+    <string name="touch_paused">Os lembretes estão em pausa.</string>
+    <string name="touch_resume">Retomar</string>
+    <string name="plans_add">Planear</string>
+    <string name="plans_empty">Nada planeado. Escolhe um dia e recebes um lembrete — e depois perguntamos se aconteceu.</string>
+    <string name="occasions_title">Boa companhia para</string>
+    <string name="occasions_hint">Usado no “Quem está livre para…?” no separador Juntos.</string>
+    <string name="topics_from_notes">Do que já sabes</string>
+    <string name="topics_ai">Das notícias (IA)</string>
+    <string name="action_pick_contacts">Escolher dos contactos</string>
+    <string name="welcome_pick_contacts">Ou escolhe só algumas pessoas</string>
+    <plurals name="msg_picked">
+        <item quantity="one">%1$d amigo adicionado</item>
+        <item quantity="other">%1$d amigos adicionados</item>
+    </plurals>
 </resources>

@@ -60,6 +60,8 @@ object Relationships {
     /**
      * Status of every friend with a cadence (own "meet every" or their circle's default).
      * Never-met friends are due immediately; a snooze pushes the due date to the day after it ends.
+     * Paused friends are left out. For friends whose calls and chats count ([Friend.contactCountsAsCatchUp]), the
+     * last contact of any kind from [interactions] resets the rhythm, not only meetups.
      */
     fun meetupStatuses(
         friends: List<Friend>,
@@ -67,11 +69,14 @@ object Relationships {
         today: LocalDate,
         zone: TimeZone,
         rules: CadenceRules = CadenceRules(),
+        interactions: List<Interaction> = emptyList(),
     ): List<MeetupStatus> {
         val seen = lastSeen(hangouts)
+        val contact = if (friends.any { it.contactCountsAsCatchUp }) lastContact(hangouts, interactions) else seen
         return friends.mapNotNull { friend ->
+            if (friend.catchUpPaused) return@mapNotNull null
             val every = rules.cadenceFor(friend) ?: return@mapNotNull null
-            val last = seen[friend.id]?.toLocalDate(zone)
+            val last = (if (friend.contactCountsAsCatchUp) contact else seen)[friend.id]?.toLocalDate(zone)
             val due = last?.plus(every, DateTimeUnit.DAY) ?: today
             val snooze = friend.snoozedUntil?.takeIf { it >= today && (last == null || it > last) }
             MeetupStatus(

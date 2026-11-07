@@ -20,10 +20,10 @@
     <string name="meet_met">Juntos</string>
     <string name="groups_title">Os teus grupos</string>
     <string name="groups_new">Novo grupo</string>
-    <string name="groups_hint">A malta dos jogos, os amigos do surf, a antiga equipa… Guarda um grupo para registar todos de uma vez e receber um lembrete quando já passou demasiado tempo.</string>
+    <string name="groups_hint">Malta dos jogos de tabuleiro, amigos do surf, a velha equipa… Guarda um grupo para registar todos de uma vez e receber um lembrete quando já passou algum tempo.</string>
     <string name="group_last_together">Todos juntos %1$s</string>
     <string name="group_never">Ainda não estiveram todos juntos</string>
-    <string name="group_overdue">Em atraso · %1$s</string>
+    <string name="group_overdue">Hora de se juntarem · %1$s</string>
     <string name="group_due">Previsto %1$s · %2$s</string>
     <string name="group_snoozed">Adiado até %1$s</string>
     <string name="group_met">Estivemos juntos</string>
@@ -73,4 +73,13 @@
     <string name="msg_group_saved">%1$s guardado</string>
     <string name="msg_group_deleted">%1$s apagado</string>
     <string name="msg_group_snoozed">%1$s adiado até %2$s</string>
+    <string name="free_title">Quem está livre para…?</string>
+    <string name="free_hint">Na página de um amigo, marca para que é boa companhia (um almoço, uma caminhada…) e aparece aqui.</string>
+    <string name="free_due">Já está na altura de estarem juntos</string>
+    <string name="free_never">Ainda não estiveram juntos</string>
+    <string name="free_plan">Planear</string>
+    <plurals name="free_days">
+        <item quantity="one">Visto há %1$d dia</item>
+        <item quantity="other">Visto há %1$d dias</item>
+    </plurals>
 </resources>

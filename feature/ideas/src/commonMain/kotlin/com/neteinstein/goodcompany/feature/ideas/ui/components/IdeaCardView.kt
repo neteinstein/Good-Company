@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Newspaper
 import androidx.compose.material.icons.rounded.Schedule
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.core.ui.resources.plan_new
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
 import com.neteinstein.goodcompany.feature.ideas.resources.dismiss
 import com.neteinstein.goodcompany.feature.ideas.resources.kind_event
@@ -53,6 +55,7 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 internal fun IdeaKind.accent(): Pair<Color, Color> = when (this) {
     IdeaKind.EVENT -> Color(0xFFFF8A80) to Color(0xFFE5574F)
@@ -68,6 +71,7 @@ fun IdeaCardView(
     onDismiss: () -> Unit,
     onPropose: () -> Unit,
     modifier: Modifier = Modifier,
+    onPlan: () -> Unit = {},
 ) {
     val uri = LocalUriHandler.current
     val idea = card.idea
@@ -130,6 +134,12 @@ fun IdeaCardView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
+                        }
+                        if (idea.kind == IdeaKind.EVENT) {
+                            Spacer(Modifier.width(4.dp))
+                            IconButton(onClick = onPlan) {
+                                Icon(Icons.Rounded.EventAvailable, stringResource(CoreRes.string.plan_new))
+                            }
                         }
                         idea.proposedAt?.let {
                             Spacer(Modifier.width(10.dp))

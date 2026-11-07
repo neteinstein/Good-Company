@@ -47,4 +47,29 @@
     <string name="msg_sample_removed">Amis d’exemple retirés — tes données restent intactes</string>
     <string name="msg_vcf_result">%1$d ajoutés · %2$d mis à jour · %3$d inchangés</string>
     <string name="msg_vcf_empty">Aucun contact dans ce fichier.</string>
+    <string name="digest">Récap hebdomadaire</string>
+    <string name="digest_hint">Une petite note par semaine avec les amis à revoir, au lieu d’une par ami. Désactivé : au plus un rappel par jour.</string>
+    <string name="digest_day">Le</string>
+    <string name="quiet_note">Les rappels s’espacent si vous n’ouvrez pas l’app pendant un moment, et s’arrêtent au bout de trois mois. Les anniversaires et vos rappels arrivent toujours.</string>
+    <string name="private_notifications">Discret sur l’écran verrouillé</string>
+    <string name="private_notifications_hint">Affiche « Vous avez un petit rappel » au lieu des noms et détails.</string>
+    <string name="show_warmth">Afficher la chaleur</string>
+    <string name="show_warmth_hint">Les pastilles, le score et « Vous vous éloignez ». Désactivez pour une vue sans chiffres.</string>
+    <string name="app_lock">Verrouillage de l’app</string>
+    <string name="app_lock_hint">Demande votre empreinte, votre visage ou le code de l’appareil à l’ouverture de Good Company.</string>
+    <string name="backup_export">Exporter une sauvegarde</string>
+    <string name="backup_export_hint">Tout dans un fichier que vous gardez — pour changer de téléphone, passer à l’iPhone ou au web. Votre clé d’API n’est jamais incluse.</string>
+    <string name="backup_export_button">Exporter</string>
+    <string name="backup_restore">Restaurer une sauvegarde</string>
+    <string name="backup_restore_hint">Remplace tout sur cet appareil par le contenu du fichier.</string>
+    <string name="backup_restore_button">Restaurer</string>
+    <string name="backup_confirm_title">Tout remplacer ?</string>
+    <string name="backup_confirm_body">Les amis, rencontres, rappels et projets de cet appareil seront remplacés par la sauvegarde. C’est irréversible.</string>
+    <string name="msg_backup_saved">Sauvegarde prête</string>
+    <string name="msg_backup_invalid">Ce fichier n’est pas une sauvegarde Good Company</string>
+    <string name="msg_lock_failed">Impossible de confirmer que c’est vous — le verrouillage reste désactivé</string>
+    <plurals name="msg_backup_restored">
+        <item quantity="one">%1$d ami restauré</item>
+        <item quantity="other">%1$d amis restaurés</item>
+    </plurals>
 </resources>

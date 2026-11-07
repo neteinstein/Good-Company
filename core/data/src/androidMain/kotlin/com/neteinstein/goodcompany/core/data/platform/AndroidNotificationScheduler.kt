@@ -46,6 +46,7 @@ internal class AndroidNotificationScheduler(private val context: Context) : Noti
                 .putString(KEY_ID, n.id)
                 .putString(KEY_TITLE, n.title)
                 .putString(KEY_BODY, n.body)
+                .putString(KEY_PUBLIC, n.publicText)
                 .putStringArray(KEY_ACTIONS, n.actions.map { it.action.encode() }.toTypedArray())
                 .putStringArray(KEY_ACTION_LABELS, n.actions.map { it.label }.toTypedArray())
                 .build()
@@ -63,6 +64,7 @@ internal class AndroidNotificationScheduler(private val context: Context) : Noti
         const val KEY_ID = "id"
         const val KEY_TITLE = "title"
         const val KEY_BODY = "body"
+        const val KEY_PUBLIC = "public"
         const val KEY_ACTIONS = "actions"
         const val KEY_ACTION_LABELS = "actionLabels"
         const val CHANNEL_ID = "reminders"
@@ -99,6 +101,16 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
             .setContentIntent(content)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+        // Private mode: the lock screen shows only a neutral line; details appear once unlocked.
+        inputData.getString(AndroidNotificationScheduler.KEY_PUBLIC)?.let { publicText ->
+            builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(
+                    NotificationCompat.Builder(ctx, AndroidNotificationScheduler.CHANNEL_ID)
+                        .setSmallIcon(R.drawable.ic_stat_good_company)
+                        .setContentTitle(publicText)
+                        .build(),
+                )
+        }
         val actions = inputData.getStringArray(AndroidNotificationScheduler.KEY_ACTIONS).orEmpty()
         val labels = inputData.getStringArray(AndroidNotificationScheduler.KEY_ACTION_LABELS).orEmpty()
         actions.zip(labels).take(3).forEachIndexed { i, (encoded, label) ->

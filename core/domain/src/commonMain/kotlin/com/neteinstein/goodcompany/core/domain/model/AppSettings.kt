@@ -23,6 +23,18 @@ data class AppSettings(
     val innerCircleDays: Int = 7,
     val closeCircleDays: Int = 30,
     val goodFriendsDays: Int = 90,
+    /** Gather catch-up nudges into one weekly note instead of one per friend. */
+    val weeklyDigest: Boolean = true,
+    /** Day of the weekly digest (ISO: 1 = Monday … 7 = Sunday). */
+    val digestDay: Int = 6,
+    /** Hide names and details from notifications on the lock screen. */
+    val privateNotifications: Boolean = false,
+    /** Ask for fingerprint / face / device PIN when the app opens. */
+    val appLock: Boolean = false,
+    /** Show the warmth number and "Drifting apart" (off = softer view without scores). */
+    val showWarmth: Boolean = true,
+    /** Last time the app was opened, so nudges can back off when it's ignored. */
+    val lastOpenedAt: Instant? = null,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }

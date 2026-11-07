@@ -1,4 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Good Company</string>
+    <string name="widget_label">Cine urmează</string>
+    <string name="widget_description">Următoarea zi de naștere sau plan și pe cine să revezi.</string>
+    <string name="widget_birthday">Ziua lui/ei %1$s</string>
+    <string name="widget_kid_birthday">Ziua lui/ei %1$s (copilul lui/ei %2$s)</string>
+    <string name="widget_event">%1$s: %2$s</string>
+    <string name="widget_today">Azi</string>
+    <string name="widget_tomorrow">Mâine</string>
+    <string name="widget_nothing">Nimic în curând</string>
+    <string name="widget_see">E timpul să-l/s-o vezi pe %1$s</string>
+    <string name="widget_caught_up">Totul la zi 💛</string>
+    <string name="widget_met">Ne-am văzut</string>
+    <string name="widget_private">Deschide Good Company ca să vezi ce urmează</string>
+    <plurals name="widget_in_days">
+        <item quantity="one">Peste %1$d zi</item>
+        <item quantity="few">Peste %1$d zile</item>
+        <item quantity="other">Peste %1$d de zile</item>
+    </plurals>
 </resources>

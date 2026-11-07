@@ -63,7 +63,7 @@
     <string name="card_ping">Escribe a %1$s</string>
     <string name="card_reminder">Recordatorio</string>
     <string name="card_see">Ver a %1$s</string>
-    <string name="card_overdue">Atrasado</string>
+    <string name="card_overdue">Merece un hola</string>
     <string name="card_group">%1$s %2$s</string>
     <plurals name="catch_up_days">
         <item quantity="one">%1$d día desde que os visteis · objetivo %2$s</item>
@@ -126,7 +126,7 @@
     <string name="warmth_title">Calidez %1$d</string>
     <string name="warmth_hint_warm">Lleváis un buen ritmo.</string>
     <string name="warmth_hint_cooling">Se está enfriando un poco — un mensaje lo calentaría.</string>
-    <string name="warmth_hint_fading">Esta amistad se está apagando. ¿Le escribes?</string>
+    <string name="warmth_hint_fading">Hace tiempo que no habláis: un hola sentaría bien.</string>
     <string name="contact_met">Os visteis %1$s</string>
     <string name="contact_call">Llamada %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
@@ -220,4 +220,22 @@
     <string name="event_1_day">1 día antes</string>
     <string name="event_3_days">3 días antes</string>
     <string name="event_week">Una semana antes</string>
+    <string name="prefs_pause">Pausar avisos para quedar</string>
+    <string name="prefs_pause_hint">Sin avisos de «toca quedar» hasta que lo reactives. El historial y los cumpleaños se quedan.</string>
+    <string name="prefs_contact_counts">Las llamadas y los chats cuentan como ponerse al día</string>
+    <string name="prefs_contact_counts_hint">Para amigos lejos: una llamada o un chat reinicia el ritmo, no solo quedar.</string>
+    <string name="touch_paused">Los avisos están en pausa.</string>
+    <string name="touch_resume">Reactivar</string>
+    <string name="plans_add">Planear</string>
+    <string name="plans_empty">Nada planeado. Elige un día y te lo recordará, y luego te preguntará si pasó.</string>
+    <string name="occasions_title">Buena compañía para</string>
+    <string name="occasions_hint">Se usa en «¿Quién se apunta a…?» en la pestaña Juntos.</string>
+    <string name="topics_from_notes">De lo que ya sabes</string>
+    <string name="topics_ai">De las noticias (IA)</string>
+    <string name="action_pick_contacts">Elegir de los contactos</string>
+    <string name="welcome_pick_contacts">O elige solo a algunas personas</string>
+    <plurals name="msg_picked">
+        <item quantity="one">%1$d amigo añadido</item>
+        <item quantity="other">%1$d amigos añadidos</item>
+    </plurals>
 </resources>

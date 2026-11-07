@@ -63,7 +63,7 @@
     <string name="card_ping">Écris à %1$s</string>
     <string name="card_reminder">Rappel</string>
     <string name="card_see">Voir %1$s</string>
-    <string name="card_overdue">En retard</string>
+    <string name="card_overdue">Un petit coucou ?</string>
     <string name="card_group">%1$s %2$s</string>
     <plurals name="catch_up_days">
         <item quantity="one">%1$d jour depuis votre dernière rencontre · objectif %2$s</item>
@@ -126,7 +126,7 @@
     <string name="warmth_title">Chaleur %1$d</string>
     <string name="warmth_hint_warm">Vous avez un bon rythme.</string>
     <string name="warmth_hint_cooling">Ça refroidit un peu — un message réchaufferait tout ça.</string>
-    <string name="warmth_hint_fading">Cette amitié s’éteint. Tu lui écris ?</string>
+    <string name="warmth_hint_fading">C’est calme depuis un moment — un petit mot ferait plaisir.</string>
     <string name="contact_met">Vus %1$s</string>
     <string name="contact_call">Appel %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
@@ -220,4 +220,22 @@
     <string name="event_1_day">1 jour avant</string>
     <string name="event_3_days">3 jours avant</string>
     <string name="event_week">Une semaine avant</string>
+    <string name="prefs_pause">Mettre en pause les rappels</string>
+    <string name="prefs_pause_hint">Plus de rappels « à revoir » jusqu’à la reprise. L’historique et les anniversaires restent.</string>
+    <string name="prefs_contact_counts">Les appels et messages comptent</string>
+    <string name="prefs_contact_counts_hint">Pour les amis loin : un appel ou un message relance le rythme, pas seulement se voir.</string>
+    <string name="touch_paused">Les rappels sont en pause.</string>
+    <string name="touch_resume">Reprendre</string>
+    <string name="plans_add">Prévoir</string>
+    <string name="plans_empty">Rien de prévu. Choisissez un jour : on vous le rappellera, puis on vous demandera si c’est fait.</string>
+    <string name="occasions_title">Bonne compagnie pour</string>
+    <string name="occasions_hint">Utilisé par « Qui est partant pour… ? » dans l’onglet Ensemble.</string>
+    <string name="topics_from_notes">D’après ce que vous savez</string>
+    <string name="topics_ai">D’après l’actualité (IA)</string>
+    <string name="action_pick_contacts">Choisir dans les contacts</string>
+    <string name="welcome_pick_contacts">Ou choisissez seulement quelques personnes</string>
+    <plurals name="msg_picked">
+        <item quantity="one">%1$d ami ajouté</item>
+        <item quantity="other">%1$d amis ajoutés</item>
+    </plurals>
 </resources>

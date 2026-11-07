@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
 import com.neteinstein.goodcompany.core.data.storage.Keys
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -13,12 +14,16 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
@@ -32,6 +37,10 @@ import kotlin.time.Instant
 class FriendRepositoryImpl(settings: Settings, private val contacts: ContactsSource) : FriendRepository {
     private val store = PersistentState(settings, Keys.FRIENDS, ListSerializer(Friend.serializer()), emptyList())
     override val friends: Flow<List<Friend>> = store.flow
+
+    internal suspend fun replaceAll(list: List<Friend>) = store.update { list }
+
+    internal val current: List<Friend> get() = store.value
 
     override suspend fun get(id: FriendId): Friend? = store.value.firstOrNull { it.id == id }
 
@@ -53,6 +62,10 @@ class HangoutRepositoryImpl(settings: Settings) : HangoutRepository {
     private val store = PersistentState(settings, Keys.HANGOUTS, ListSerializer(Hangout.serializer()), emptyList())
     override val hangouts: Flow<List<Hangout>> = store.flow
 
+    internal suspend fun replaceAll(list: List<Hangout>) = store.update { list }
+
+    internal val current: List<Hangout> get() = store.value
+
     override suspend fun add(hangout: Hangout) = store.update { it + hangout }
 
     override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
@@ -61,6 +74,10 @@ class HangoutRepositoryImpl(settings: Settings) : HangoutRepository {
 class ReminderRepositoryImpl(settings: Settings) : ReminderRepository {
     private val store = PersistentState(settings, Keys.REMINDERS, ListSerializer(Reminder.serializer()), emptyList())
     override val reminders: Flow<List<Reminder>> = store.flow
+
+    internal suspend fun replaceAll(list: List<Reminder>) = store.update { list }
+
+    internal val current: List<Reminder> get() = store.value
 
     override suspend fun upsert(reminder: Reminder) = store.update { list ->
         if (list.any { it.id == reminder.id }) list.map { if (it.id == reminder.id) reminder else it } else list + reminder
@@ -78,6 +95,14 @@ class InteractionRepositoryImpl(
     private val messageStore = PersistentState(settings, Keys.MESSAGES, ListSerializer(ConversationMessage.serializer()), emptyList())
     override val interactions: Flow<List<Interaction>> = store.flow
     override val messages: Flow<List<ConversationMessage>> = messageStore.flow
+
+    internal suspend fun replaceAll(list: List<Interaction>, messages: List<ConversationMessage>) {
+        store.update { list }
+        messageStore.update { messages }
+    }
+
+    internal val current: List<Interaction> get() = store.value
+    internal val currentMessages: List<ConversationMessage> get() = messageStore.value
 
     override suspend fun addAll(interactions: List<Interaction>) = store.update { current ->
         (current + interactions).distinct().sortedBy { it.at }.takeLast(MAX_INTERACTIONS)
@@ -112,6 +137,10 @@ class IdeaRepositoryImpl(settings: Settings) : IdeaRepository {
     private val store = PersistentState(settings, Keys.IDEAS, ListSerializer(Idea.serializer()), emptyList())
     override val ideas: Flow<List<Idea>> = store.flow
 
+    internal suspend fun replaceAll(list: List<Idea>) = store.update { list }
+
+    internal val current: List<Idea> get() = store.value
+
     override suspend fun addAll(ideas: List<Idea>) = store.update { (it + ideas).takeLast(MAX_IDEAS) }
 
     override suspend fun dismiss(id: String) = store.update { list ->
@@ -131,6 +160,8 @@ class SettingsRepositoryImpl(settings: Settings) : SettingsRepository {
     private val store = PersistentState(settings, Keys.SETTINGS, AppSettings.serializer(), AppSettings())
     override val settings: Flow<AppSettings> = store.flow
 
+    internal val current: AppSettings get() = store.value
+
     override suspend fun update(transform: (AppSettings) -> AppSettings) = store.update(transform)
 }
 
@@ -138,9 +169,70 @@ class GroupRepositoryImpl(settings: Settings) : GroupRepository {
     private val store = PersistentState(settings, Keys.GROUPS, ListSerializer(FriendGroup.serializer()), emptyList())
     override val groups: Flow<List<FriendGroup>> = store.flow
 
+    internal suspend fun replaceAll(list: List<FriendGroup>) = store.update { list }
+
+    internal val current: List<FriendGroup> get() = store.value
+
     override suspend fun upsert(group: FriendGroup) = store.update { list ->
         if (list.any { it.id == group.id }) list.map { if (it.id == group.id) group else it } else list + group
     }
 
     override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
+}
+
+class PlanRepositoryImpl(settings: Settings) : PlanRepository {
+    private val store = PersistentState(settings, Keys.PLANS, ListSerializer(Plan.serializer()), emptyList())
+    override val plans: Flow<List<Plan>> = store.flow
+
+    internal suspend fun replaceAll(list: List<Plan>) = store.update { list }
+
+    internal val current: List<Plan> get() = store.value
+
+    override suspend fun upsert(plan: Plan) = store.update { list ->
+        val next = if (list.any { it.id == plan.id }) list.map { if (it.id == plan.id) plan else it } else list + plan
+        // Keep open plans; trim old answered ones.
+        val (open, closed) = next.partition { it.status == PlanStatus.PLANNED }
+        open + closed.sortedBy { it.date }.takeLast(MAX_CLOSED_PLANS)
+    }
+
+    override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
+
+    private companion object {
+        const val MAX_CLOSED_PLANS = 200
+    }
+}
+
+/** Export / restore across every store. Writes go through each repository so their flows update at once. */
+class BackupRepositoryImpl(
+    private val friends: FriendRepositoryImpl,
+    private val hangouts: HangoutRepositoryImpl,
+    private val reminders: ReminderRepositoryImpl,
+    private val interactions: InteractionRepositoryImpl,
+    private val ideas: IdeaRepositoryImpl,
+    private val groups: GroupRepositoryImpl,
+    private val plans: PlanRepositoryImpl,
+    private val settings: SettingsRepositoryImpl,
+) : BackupRepository {
+    override suspend fun snapshot(): Backup = Backup(
+        friends = friends.current,
+        hangouts = hangouts.current,
+        reminders = reminders.current,
+        interactions = interactions.current,
+        messages = interactions.currentMessages,
+        ideas = ideas.current,
+        groups = groups.current,
+        plans = plans.current,
+        settings = settings.current,
+    )
+
+    override suspend fun restore(backup: Backup) {
+        friends.replaceAll(backup.friends)
+        hangouts.replaceAll(backup.hangouts)
+        reminders.replaceAll(backup.reminders)
+        interactions.replaceAll(backup.interactions, backup.messages)
+        ideas.replaceAll(backup.ideas)
+        groups.replaceAll(backup.groups)
+        plans.replaceAll(backup.plans)
+        settings.update { backup.settings }
+    }
 }

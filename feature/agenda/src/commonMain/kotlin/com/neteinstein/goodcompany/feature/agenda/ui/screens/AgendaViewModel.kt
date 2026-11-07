@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
@@ -40,6 +41,10 @@ sealed interface AgendaMessage {
     data class GroupMet(val name: String) : AgendaMessage
 
     data class AiError(val error: Throwable) : AgendaMessage
+
+    data object PlanLogged : AgendaMessage
+
+    data object PlanClosed : AgendaMessage
 }
 
 data class AgendaUiState(
@@ -83,6 +88,7 @@ class AgendaViewModel(
     private val setReminderDone: SetReminderDoneUseCase,
     private val deleteReminder: DeleteReminderUseCase,
     private val restoreReminder: RestoreReminderUseCase,
+    private val confirmPlan: ConfirmPlanUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
@@ -168,6 +174,14 @@ class AgendaViewModel(
         viewModelScope.launch {
             checkIn(item.group.memberIds)
             local.update { it.copy(message = AgendaMessage.GroupMet(item.group.name)) }
+        }
+    }
+
+    /** "Did you meet?" answered from the agenda. */
+    fun onConfirmPlan(id: String, happened: Boolean) {
+        viewModelScope.launch {
+            confirmPlan(id, happened)
+            local.update { it.copy(message = if (happened) AgendaMessage.PlanLogged else AgendaMessage.PlanClosed) }
         }
     }
 

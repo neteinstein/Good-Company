@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -81,8 +82,13 @@ class HandleNotificationActionUseCase(
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val groups: GroupRepository,
+    private val confirmPlan: ConfirmPlanUseCase,
 ) {
     suspend operator fun invoke(action: NotificationAction) {
+        if (action.isPlan) {
+            confirmPlan(action.targetId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED)
+            return
+        }
         if (action.isGroup) {
             when (action.kind) {
                 NotificationAction.Kind.MET -> groups.groups.first().firstOrNull { it.id == action.targetId }?.let { g ->
@@ -90,6 +96,7 @@ class HandleNotificationActionUseCase(
                 }
                 NotificationAction.Kind.SNOOZE_WEEK, NotificationAction.Kind.CALLED -> snooze.group(action.targetId, SnoozeOption.ONE_WEEK)
                 NotificationAction.Kind.SNOOZE_WEEKEND -> snooze.group(action.targetId, SnoozeOption.WEEKEND)
+                NotificationAction.Kind.PLAN_HAPPENED, NotificationAction.Kind.PLAN_SKIPPED -> Unit
             }
             return
         }
@@ -99,7 +106,67 @@ class HandleNotificationActionUseCase(
             NotificationAction.Kind.CALLED -> logCall(id)
             NotificationAction.Kind.SNOOZE_WEEK -> snooze.friend(id, SnoozeOption.ONE_WEEK)
             NotificationAction.Kind.SNOOZE_WEEKEND -> snooze.friend(id, SnoozeOption.WEEKEND)
+            NotificationAction.Kind.PLAN_HAPPENED, NotificationAction.Kind.PLAN_SKIPPED -> Unit
         }
+    }
+}
+
+/** Pauses (or resumes) catch-up nudges for a friend with no end date. History and birthdays are kept. */
+class SetCatchUpPausedUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(id: FriendId, paused: Boolean) {
+        val f = friends.get(id) ?: return
+        friends.upsert(f.copy(catchUpPaused = paused, snoozedUntil = if (paused) null else f.snoozedUntil))
+    }
+}
+
+/** Remembers that the app was opened, so catch-up nudges can back off when it's being ignored. */
+class RecordAppOpenedUseCase(private val settings: SettingsRepository, private val clock: AppClock) {
+    suspend operator fun invoke() = settings.update { it.copy(lastOpenedAt = clock.now()) }
+}
+
+data class PickedContactsResult(val added: Int, val updated: Int)
+
+/**
+ * Adds people chosen in the system contact picker (no address-book permission needed). They become real friends
+ * (Close circle) tied to their contact, so a later full sync merges instead of duplicating.
+ */
+class ImportPickedContactsUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(records: List<ContactRecord>): PickedContactsResult {
+        var added = 0
+        var updated = 0
+        records.filter { it.name.isNotBlank() }.distinctBy { it.contactId }.forEach { r ->
+            val current = friends.friends.first()
+            val match = current.firstOrNull { it.contactId == r.contactId }
+                ?: current.firstOrNull { it.name.equals(r.name.trim(), ignoreCase = true) }
+            if (match == null) {
+                friends.upsert(
+                    Friend(
+                        id = FriendId("contact-${r.contactId}"),
+                        name = r.name.trim(),
+                        contactId = r.contactId,
+                        phoneNumbers = r.phoneNumbers.distinct(),
+                        birthday = r.birthday,
+                        isCloseFriend = true,
+                        circle = Circle.CLOSE,
+                    ),
+                )
+                added++
+            } else {
+                val merged = match.copy(
+                    contactId = match.contactId ?: r.contactId,
+                    phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinct(),
+                    birthday = match.birthday ?: r.birthday,
+                    isCloseFriend = true,
+                    circle = match.circle ?: Circle.CLOSE,
+                    isOrphaned = false,
+                )
+                if (merged != match) {
+                    friends.upsert(merged)
+                    updated++
+                }
+            }
+        }
+        return PickedContactsResult(added, updated)
     }
 }
 

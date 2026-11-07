@@ -70,7 +70,7 @@
     <string name="card_ping">Ping %1$s</string>
     <string name="card_reminder">Reminder</string>
     <string name="card_see">See %1$s</string>
-    <string name="card_overdue">Overdue</string>
+    <string name="card_overdue">Worth a hello</string>
     <string name="card_group">%1$s %2$s</string>
     <plurals name="catch_up_days">
         <item quantity="one">%1$d day since you met · goal %2$s</item>
@@ -138,7 +138,7 @@
     <string name="warmth_title">Warmth %1$d</string>
     <string name="warmth_hint_warm">You’re in a good rhythm.</string>
     <string name="warmth_hint_cooling">Cooling a little — a message would warm it up.</string>
-    <string name="warmth_hint_fading">This friendship is fading. Reach out?</string>
+    <string name="warmth_hint_fading">It’s been quiet for a while — a hello would be nice.</string>
     <string name="contact_met">Met %1$s</string>
     <string name="contact_call">Call %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
@@ -244,4 +244,22 @@
     <string name="event_1_day">1 day before</string>
     <string name="event_3_days">3 days before</string>
     <string name="event_week">A week before</string>
+    <string name="prefs_pause">Pause catch-up nudges</string>
+    <string name="prefs_pause_hint">No “time to see” nudges until you resume. History and birthdays stay.</string>
+    <string name="prefs_contact_counts">Calls and chats count as catching up</string>
+    <string name="prefs_contact_counts_hint">For friends far away: a call or chat resets the rhythm, not only meeting up.</string>
+    <string name="touch_paused">Catch-up nudges are paused.</string>
+    <string name="touch_resume">Resume</string>
+    <string name="plans_add">Plan</string>
+    <string name="plans_empty">Nothing planned yet. Pick a day and it’ll remind you — and ask afterwards if it happened.</string>
+    <string name="occasions_title">Good company for</string>
+    <string name="occasions_hint">Used by “Who’s free for…?” on the Together tab.</string>
+    <string name="topics_from_notes">From what you know</string>
+    <string name="topics_ai">From the news (AI)</string>
+    <string name="action_pick_contacts">Pick from contacts</string>
+    <string name="welcome_pick_contacts">Or pick just a few people</string>
+    <plurals name="msg_picked">
+        <item quantity="one">%1$d friend added</item>
+        <item quantity="other">%1$d friends added</item>
+    </plurals>
 </resources>

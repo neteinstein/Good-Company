@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.MoreVert
@@ -60,6 +61,7 @@ import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
 import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
@@ -81,6 +83,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Gradient card for the "Coming up" carousel. */
 @Composable
@@ -125,6 +128,18 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             Icons.Rounded.Groups,
             "${item.group.emoji} ${item.group.name}",
             item.members.joinToString { it.name.substringBefore(' ') },
+        )
+        is AgendaItem.PlanUpcoming -> Spec(
+            item.friends.firstOrNull(),
+            Icons.Rounded.EventAvailable,
+            item.plan.title,
+            item.friends.joinToString { it.name.substringBefore(' ') },
+        )
+        is AgendaItem.PlanToConfirm -> Spec(
+            item.friends.firstOrNull(),
+            Icons.Rounded.EventAvailable,
+            item.plan.title,
+            stringResource(CoreRes.string.plan_did_you_meet),
         )
     }
     val (start, end) = spec.friend?.let { avatarColors(it.name) } ?: (MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.tertiary)

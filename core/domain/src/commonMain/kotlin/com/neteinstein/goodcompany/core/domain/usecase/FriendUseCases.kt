@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -8,11 +9,14 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -52,7 +56,7 @@ class ObserveFriendsUseCase(
         val rules = CadenceRules.from(s)
         val seen = Relationships.lastSeen(hs)
         val contact = Relationships.lastContact(hs, ints)
-        val overdue = Relationships.meetupStatuses(all, hs, today, clock.timeZone, rules)
+        val overdue = Relationships.meetupStatuses(all, hs, today, clock.timeZone, rules, ints)
             .filter { it.isOverdue(today) }.map { it.friend.id }.toSet()
         all.map { f ->
             val cadence = rules.cadenceFor(f)
@@ -82,6 +86,10 @@ data class FriendDetail(
     val cadenceDays: Int? = null,
     val cadenceSource: CadenceRules.Source? = null,
     val groups: List<FriendGroup> = emptyList(),
+    /** Things to bring up, from notes and dates you already have (works without an AI key). */
+    val topics: List<TopicHint> = emptyList(),
+    /** Planned meetups with this friend that haven't happened yet. */
+    val plans: List<Plan> = emptyList(),
 )
 
 class ObserveFriendDetailUseCase(
@@ -91,6 +99,7 @@ class ObserveFriendDetailUseCase(
     private val ideas: IdeaRepository,
     private val settings: SettingsRepository,
     private val groups: GroupRepository,
+    private val plans: PlanRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(id: FriendId): Flow<FriendDetail?> = combine(
@@ -98,8 +107,8 @@ class ObserveFriendDetailUseCase(
         hangouts.hangouts,
         interactions.interactions,
         interactions.messages,
-        combine(ideas.ideas, settings.settings, groups.groups) { i, s, g -> Triple(i, s, g) },
-    ) { all, hs, ints, msgs, (ideaList, s, gs) ->
+        combine(ideas.ideas, settings.settings, groups.groups, plans.plans) { i, s, g, p -> Extras(i, s, g, p) },
+    ) { all, hs, ints, msgs, (ideaList, s, gs, ps) ->
         val friend = all.firstOrNull { it.id == id } ?: return@combine null
         val byId = all.associateBy { it.id }
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
@@ -117,8 +126,12 @@ class ObserveFriendDetailUseCase(
             cadenceDays = CadenceRules.from(s).cadenceFor(friend),
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
+            topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone),
+            plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
         )
     }
+
+    private data class Extras(val ideas: List<Idea>, val settings: AppSettings, val groups: List<FriendGroup>, val plans: List<Plan>)
 }
 
 /** Applies an edit to one friend (toggles, likes, kids, rules…). No-op if the friend is gone. */

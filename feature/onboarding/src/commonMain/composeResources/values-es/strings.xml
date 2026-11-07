@@ -23,7 +23,7 @@
     <string name="notifications_title">Avisos de cumpleaños y quedadas</string>
     <string name="notifications_on">Todo listo — te avisaremos en el momento justo.</string>
     <string name="notifications_off">Los avisos están desactivados. Puedes activarlos en Ajustes.</string>
-    <string name="notifications_body">Un aviso en cumpleaños, días importantes y cuando haga demasiado tiempo.</string>
+    <string name="notifications_body">Un aviso en los cumpleaños, los días importantes y cuando haga tiempo.</string>
     <string name="allow">Permitir</string>
     <string name="looking_title">¿Solo echando un vistazo?</string>
     <string name="looking_body">Explora con un círculo de amigos de ejemplo — quítalo cuando quieras desde Ajustes.</string>

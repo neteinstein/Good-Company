@@ -57,6 +57,7 @@ fun FriendRow(
     zone: TimeZone,
     onClick: () -> Unit,
     onToggleClose: () -> Unit,
+    showWarmth: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val f = summary.friend
@@ -70,7 +71,7 @@ fun FriendRow(
     ) {
         Box {
             FriendAvatar(f.name, f.initials, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
-            if (f.isCloseFriend) {
+            if (f.isCloseFriend && showWarmth) {
                 val warmth = stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level))
                 WarmthDot(summary.warmth.level, Modifier.align(Alignment.BottomEnd).semantics { contentDescription = warmth }, size = 12.dp)
             }

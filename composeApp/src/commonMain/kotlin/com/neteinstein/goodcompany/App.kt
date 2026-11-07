@@ -34,11 +34,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -46,7 +52,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
+import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
+import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
+import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
@@ -58,6 +67,10 @@ import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Root composable shared by Android, iOS and Web. */
 @Composable
@@ -74,6 +87,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                 ) { done ->
                     if (done) AppScaffold(launch) else OnboardingScreen(onDone = {})
                 }
+                if (state.settings.appLock) AppLock()
             }
         }
     }
@@ -130,6 +144,28 @@ private fun AppScaffold(launch: LaunchOptions) {
         }
     }
 }
+
+/**
+ * Covers the app until the device lock (biometrics / PIN) confirms the user. Locks again when the app has been in the
+ * background for more than [RELOCK_AFTER] — short trips to a file picker or share sheet don't count.
+ */
+@Composable
+private fun AppLock() {
+    val authenticator = rememberDeviceAuthenticator()
+    if (!authenticator.isAvailable) return // Lock removed from the device: don't trap the user out of their data.
+    var unlocked by rememberSaveable { mutableStateOf(false) }
+    var stoppedAt by remember { mutableStateOf<TimeMark?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stoppedAt = TimeSource.Monotonic.markNow() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (stoppedAt?.let { it.elapsedNow() > RELOCK_AFTER } == true) unlocked = false
+        stoppedAt = null
+    }
+    if (unlocked) return
+    val reason = stringResource(CoreRes.string.lock_reason)
+    AppLockScreen(onUnlock = { authenticator.authenticate(reason) { ok -> if (ok) unlocked = true } })
+}
+
+private val RELOCK_AFTER = 60.seconds
 
 /** The two-hearts brand mark, drawn in Compose (no bitmap) for the navigation rail header. */
 @Composable

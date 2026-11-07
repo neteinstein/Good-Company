@@ -3,4 +3,7 @@
     <color name="brand_coral">#E5574F</color>
     <color name="splash_background">#FFF8F6</color>
     <color name="ic_launcher_background">#E5574F</color>
+    <color name="widget_background">#FFF8F6</color>
+    <color name="widget_text">#231917</color>
+    <color name="widget_text_secondary">#6E5A57</color>
 </resources>

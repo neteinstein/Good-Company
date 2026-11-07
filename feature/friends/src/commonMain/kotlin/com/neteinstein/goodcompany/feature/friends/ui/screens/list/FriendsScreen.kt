@@ -77,6 +77,7 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -85,6 +86,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.action_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.action_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.add_hint
@@ -102,6 +104,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged
 import com.neteinstein.goodcompany.feature.friends.resources.msg_contacts_denied
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
+import com.neteinstein.goodcompany.feature.friends.resources.msg_picked
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sample_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sync_failed
@@ -131,6 +134,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_cont
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_message_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_message_manual
+import com.neteinstein.goodcompany.feature.friends.resources.welcome_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_sample
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_title
 import com.neteinstein.goodcompany.feature.friends.ui.components.CatchUpCard
@@ -151,15 +155,18 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, viewModel: FriendsViewModel 
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
+    val pickContacts = rememberContactPicker(onPicked = viewModel::onContactsPicked)
     FriendsContent(
         state = state,
         canSyncContacts = platformCapabilities.hasAddressBook,
+        canPickContacts = platformCapabilities.hasContactPicker,
         actions = FriendsActions(
             onQueryChange = viewModel::onQueryChange,
             onFilterChange = viewModel::onFilterChange,
             onSortChange = viewModel::onSortChange,
             onSync = requestContacts,
             onImportFile = pickVcf,
+            onPickContacts = pickContacts,
             onOpenFriend = onOpenFriend,
             onToggleClose = viewModel::onToggleClose,
             onMetToday = viewModel::onMetToday,
@@ -178,6 +185,7 @@ data class FriendsActions(
     val onSortChange: (FriendSort) -> Unit = {},
     val onSync: () -> Unit = {},
     val onImportFile: () -> Unit = {},
+    val onPickContacts: () -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
     val onToggleClose: (FriendId) -> Unit = {},
     val onMetToday: (FriendId) -> Unit = {},
@@ -203,6 +211,7 @@ suspend fun FriendsMessage.text(): String = when (this) {
     } else {
         getString(Res.string.msg_vcf_result, result.added, result.updated, result.skipped)
     }
+    is FriendsMessage.ContactsPicked -> (result.added + result.updated).let { n -> getPluralString(Res.plurals.msg_picked, n, n) }
 }
 
 @Composable
@@ -218,7 +227,7 @@ private fun weekSummaryText(week: WeekSummary): String? {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: FriendsActions) {
+fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: FriendsActions, canPickContacts: Boolean = false) {
     val snackbar = remember { SnackbarHostState() }
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
@@ -279,6 +288,16 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                             Box {
                                 IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
                                 DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
+                                    if (canPickContacts) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(Res.string.action_pick_contacts)) },
+                                            leadingIcon = { Icon(Icons.Rounded.PersonAdd, null) },
+                                            onClick = {
+                                                menuOpen = false
+                                                actions.onPickContacts()
+                                            },
+                                        )
+                                    }
                                     DropdownMenuItem(
                                         text = { Text(stringResource(Res.string.action_import_vcf)) },
                                         leadingIcon = { Icon(Icons.Rounded.UploadFile, null) },
@@ -313,7 +332,11 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
             }
 
             if (isEmpty) {
-                item(key = "welcome") { Welcome(canSyncContacts, actions.onSync, actions.onImportFile, { showAdd = true }, actions.onExploreSample) }
+                item(key = "welcome") {
+                    Welcome(canSyncContacts, actions.onSync, actions.onImportFile, {
+                        showAdd = true
+                    }, actions.onExploreSample, actions.onPickContacts.takeIf { canPickContacts })
+                }
                 return@LazyColumn
             }
 
@@ -422,6 +445,7 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                         zone = state.zone,
                         onClick = { actions.onOpenFriend(summary.friend.id) },
                         onToggleClose = { actions.onToggleClose(summary.friend.id) },
+                        showWarmth = state.showWarmth,
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -464,7 +488,14 @@ private fun SortMenu(sort: FriendSort, onChange: (FriendSort) -> Unit) {
 }
 
 @Composable
-private fun Welcome(canSyncContacts: Boolean, onImport: () -> Unit, onImportFile: () -> Unit, onAdd: () -> Unit, onSample: () -> Unit) {
+private fun Welcome(
+    canSyncContacts: Boolean,
+    onImport: () -> Unit,
+    onImportFile: () -> Unit,
+    onAdd: () -> Unit,
+    onSample: () -> Unit,
+    onPickContacts: (() -> Unit)? = null,
+) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         EmptyState(
             icon = Icons.Rounded.Contacts,
@@ -477,6 +508,7 @@ private fun Welcome(canSyncContacts: Boolean, onImport: () -> Unit, onImportFile
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(Res.string.welcome_import_contacts))
             }
+            onPickContacts?.let { TextButton(onClick = it) { Text(stringResource(Res.string.welcome_pick_contacts)) } }
         } else {
             Button(onClick = onImportFile, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Rounded.UploadFile, null)

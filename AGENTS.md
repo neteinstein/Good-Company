@@ -34,7 +34,7 @@ canonical; the "Decisions" table records later owner decisions (e.g. *never read
 ## Module layout (and why)
 
 ```
-androidApp/           com.android.application — manifest, MainActivity, Application (Koin + Firebase init), icons, R8 rules
+androidApp/           com.android.application — manifest, MainActivity, Application (Koin + Firebase init), widget, icons, R8 rules
 composeApp/           KMP library — App(), navigation, di/AppModule.kt (the ONLY Koin module), di/InitKoin.kt,
                       iOS MainViewController, wasm main() + index.html. Produces ComposeApp.framework for iOS.
 core/domain/          Pure Kotlin: models, repository interfaces ("ports"), use cases. No Compose, no platform types. Ever.
@@ -42,11 +42,11 @@ core/data/            Repository implementations, JSON persistence, platform dat
 core/ui/              Design system: theme (light/dark/dynamic), shared components, formatters, UI platform hooks.
 core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by every module's commonTest.
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
-feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, AI)
-feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules
+feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI)
+feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules, "Who's free for…?"
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
-feature/settings/     Theme, circles, API key, notifications, .vcf import, privacy
+feature/settings/     Theme, circles, API key, notifications (digest, privacy), .vcf import, backup, app lock
 feature/review/       "Your year in friendship" (story cards + share)
 iosApp/               Hand-authored Xcode project (SwiftUI shell)
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
@@ -60,7 +60,8 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
 - **commonMain first.** Code goes in `commonMain/kotlin/<package>/` by default. Use `androidMain`/`iosMain`/`wasmJsMain`
   or `expect`/`actual` only for things a platform genuinely can't share. Today that's:
   - `core/data/.../platform/`: contacts, call log, location, local notifications (`create*()` factories)
-  - `core/ui/.../platform/`: permission prompts, text-file picker, dynamic colour, `platformCapabilities`
+  - `core/ui/.../platform/`: permission prompts, text-file picker, contact picker, file saver, add-to-calendar,
+    device lock (biometrics/PIN), dynamic colour, `platformCapabilities`
   - entry points (`MainViewController`, wasm `main`)
 - Packages: `com.neteinstein.goodcompany.<module path>` (e.g. `...feature.friends.ui.screens.detail`). Inside a module:
   `domain/` (models, use cases, repository interfaces), `data/` (repositories, data sources),
@@ -179,6 +180,7 @@ Seen in practice:
 8. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
    `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
    or changing types, needs a new key suffix (`.v2`) plus a migration. Corrupt data falls back to defaults instead of crashing.
+   A new store must also be added to `BackupRepositoryImpl` and the domain `Backup` (export / restore).
 9. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
    `anthropic-version: 2026-10-21`, the `web_search_20260209` server tool, `fallbacks: "default"`
    (beta `server-side-fallback-2026-07-01`) and `anthropic-dangerous-direct-browser-access: true` (needed for the
@@ -198,9 +200,15 @@ Seen in practice:
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
 14. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
     `capture-screenshots` skill and look at every image. Never hand-edit or fake them.
-15. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+15. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,
+    quieter when the app isn't opened). Don't schedule catch-up notifications anywhere else. Birthdays, events, reminders
+    and plans are never throttled.
+16. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
+    resources in `androidApp/src/main/res/values-*` (all five languages). What it shows comes from `ObserveHomeWidgetUseCase`.
+17. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
-    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md).
+    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). No iOS widget yet (WidgetKit
+    needs an app group and an extension target in the hand-authored Xcode project).
 
 ## Skills
 

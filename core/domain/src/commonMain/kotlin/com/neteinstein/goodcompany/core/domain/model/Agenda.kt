@@ -28,6 +28,17 @@ sealed interface AgendaItem {
         override val key get() = "overdue-${friend.id.value}"
     }
 
+    /** A planned meetup coming up. */
+    data class PlanUpcoming(val plan: Plan, val friends: List<Friend>) : AgendaItem {
+        override val date get() = plan.date
+        override val key get() = "plan-${plan.id}"
+    }
+
+    /** A plan whose day has passed: "Did you meet?" Pinned to today until answered. */
+    data class PlanToConfirm(val plan: Plan, val friends: List<Friend>, override val date: LocalDate) : AgendaItem {
+        override val key get() = "plan-confirm-${plan.id}"
+    }
+
     data class GroupOverdue(val group: FriendGroup, val members: List<Friend>, val daysSince: Int?, override val date: LocalDate) : AgendaItem {
         override val key get() = "group-overdue-${group.id}"
     }

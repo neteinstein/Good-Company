@@ -67,8 +67,10 @@ internal class IosNotificationScheduler : NotificationScheduler {
                 minute = local.minute.toLong()
             }
             val content = UNMutableNotificationContent().apply {
-                setTitle(n.title)
-                setBody(n.body)
+                // iOS has no separate lock-screen version: in private mode the notification itself stays neutral
+                // and the details are in the app.
+                setTitle(n.publicText ?: n.title)
+                setBody(if (n.publicText != null) "" else n.body)
                 setSound(UNNotificationSound.defaultSound())
                 n.actions.firstOrNull()?.let { first ->
                     setCategoryIdentifier(categoryId(n))

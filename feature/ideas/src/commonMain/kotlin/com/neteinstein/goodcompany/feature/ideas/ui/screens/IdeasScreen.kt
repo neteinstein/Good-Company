@@ -48,10 +48,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
@@ -90,6 +92,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Localised snackbar text for an [IdeasMessage]. */
 suspend fun IdeasMessage.text(): String = when (this) {
@@ -102,6 +105,7 @@ suspend fun IdeasMessage.text(): String = when (this) {
             WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
         },
     )
+    IdeasMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
 }
 
 @Composable
@@ -116,7 +120,18 @@ fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinView
         viewModel::onMessageShown,
         viewModel::onKindFilter,
         viewModel::onPropose,
+        viewModel::onPlan,
     )
+    state.planning?.let { card ->
+        PlanEditor(
+            friends = card.friends,
+            today = state.today,
+            onDismiss = viewModel::onDismissPlan,
+            onSave = viewModel::onSavePlan,
+            preselected = card.friends.map { it.id }.toSet(),
+            initialTitle = card.idea.title,
+        )
+    }
     state.proposing?.let { card ->
         val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
         SendMessageSheet(
@@ -163,6 +178,7 @@ fun IdeasContent(
     onMessageShown: () -> Unit,
     onKindFilter: (IdeaKind?) -> Unit = {},
     onPropose: (String) -> Unit = {},
+    onPlan: (String) -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
@@ -225,6 +241,7 @@ fun IdeasContent(
                     zone = state.zone,
                     onDismiss = { onDismiss(card.idea.id) },
                     onPropose = { onPropose(card.idea.id) },
+                    onPlan = { onPlan(card.idea.id) },
                     modifier = Modifier.animateItem(),
                 )
             }

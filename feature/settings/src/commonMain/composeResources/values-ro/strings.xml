@@ -47,4 +47,30 @@
     <string name="msg_sample_removed">Prieteni de exemplu eliminați — datele tale rămân neatinse</string>
     <string name="msg_vcf_result">%1$d adăugați · %2$d actualizați · %3$d neschimbați</string>
     <string name="msg_vcf_empty">Fișierul nu conține contacte.</string>
+    <string name="digest">Rezumat săptămânal</string>
+    <string name="digest_hint">O notă pe săptămână cu cei pe care să-i revezi, în loc de una pentru fiecare prieten. Oprit: cel mult un memento pe zi.</string>
+    <string name="digest_day">În ziua de</string>
+    <string name="quiet_note">Mementourile se răresc dacă nu deschizi aplicația o vreme și se opresc după trei luni. Zilele de naștere și mementourile tale ajung mereu.</string>
+    <string name="private_notifications">Privat pe ecranul de blocare</string>
+    <string name="private_notifications_hint">Arată „Ai un memento” în loc de nume și detalii.</string>
+    <string name="show_warmth">Arată căldura</string>
+    <string name="show_warmth_hint">Bulinele, scorul și „Vă îndepărtați”. Oprește pentru o vizualizare fără cifre.</string>
+    <string name="app_lock">Blocarea aplicației</string>
+    <string name="app_lock_hint">Cere amprenta, fața sau PIN-ul dispozitivului la deschiderea Good Company.</string>
+    <string name="backup_export">Exportă o copie de rezervă</string>
+    <string name="backup_export_hint">Totul într-un fișier pe care îl păstrezi — ca să treci pe alt telefon, pe iPhone sau pe web. Cheia ta API nu este niciodată inclusă.</string>
+    <string name="backup_export_button">Exportă</string>
+    <string name="backup_restore">Restaurează dintr-o copie</string>
+    <string name="backup_restore_hint">Înlocuiește tot de pe acest dispozitiv cu conținutul fișierului.</string>
+    <string name="backup_restore_button">Restaurează</string>
+    <string name="backup_confirm_title">Înlocuiești tot?</string>
+    <string name="backup_confirm_body">Prietenii, întâlnirile, mementourile și planurile de pe acest dispozitiv vor fi înlocuite cu copia. Nu se poate anula.</string>
+    <string name="msg_backup_saved">Copia e gata</string>
+    <string name="msg_backup_invalid">Fișierul nu este o copie Good Company</string>
+    <string name="msg_lock_failed">Nu am putut confirma că ești tu — blocarea rămâne oprită</string>
+    <plurals name="msg_backup_restored">
+        <item quantity="one">%1$d prieten restaurat</item>
+        <item quantity="few">%1$d prieteni restaurați</item>
+        <item quantity="other">%1$d de prieteni restaurați</item>
+    </plurals>
 </resources>

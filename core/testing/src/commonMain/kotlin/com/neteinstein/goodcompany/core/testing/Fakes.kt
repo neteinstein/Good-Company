@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -12,11 +13,13 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.RenderedAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
@@ -29,6 +32,7 @@ import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
@@ -153,6 +157,54 @@ class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepos
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
 }
 
+class FakePlanRepository(initial: List<Plan> = emptyList()) : PlanRepository {
+    private val state = MutableStateFlow(initial)
+    override val plans: StateFlow<List<Plan>> = state
+
+    override suspend fun upsert(plan: Plan) = state.update { list ->
+        if (list.any { it.id == plan.id }) list.map { if (it.id == plan.id) plan else it } else list + plan
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
+/** Backup over the other fakes, like the real one over the real stores. */
+class FakeBackupRepository(
+    private val friends: FakeFriendRepository,
+    private val hangouts: FakeHangoutRepository,
+    private val reminders: FakeReminderRepository,
+    private val interactions: FakeInteractionRepository,
+    private val ideas: FakeIdeaRepository,
+    private val groups: FakeGroupRepository,
+    private val plans: FakePlanRepository,
+    private val settings: FakeSettingsRepository,
+) : BackupRepository {
+    var restored: Backup? = null
+
+    override suspend fun snapshot() = Backup(
+        friends = friends.friends.value,
+        hangouts = hangouts.hangouts.value,
+        reminders = reminders.reminders.value,
+        interactions = interactions.interactions.value,
+        messages = interactions.messages.value,
+        ideas = ideas.ideas.value,
+        groups = groups.groups.value,
+        plans = plans.plans.value,
+        settings = settings.settings.value,
+    )
+
+    override suspend fun restore(backup: Backup) {
+        restored = backup
+        friends.friends.value.forEach { friends.delete(it.id) }
+        backup.friends.forEach { friends.upsert(it) }
+        hangouts.hangouts.value.forEach { hangouts.delete(it.id) }
+        backup.hangouts.forEach { hangouts.add(it) }
+        plans.plans.value.forEach { plans.delete(it.id) }
+        backup.plans.forEach { plans.upsert(it) }
+        settings.update { backup.settings }
+    }
+}
+
 class FakeSettingsRepository(initial: AppSettings = AppSettings()) : SettingsRepository {
     private val state = MutableStateFlow(initial)
     override val settings: StateFlow<AppSettings> = state
@@ -196,6 +248,8 @@ object FakeNotificationRenderer : NotificationRenderer {
         }
         return RenderedNotification(notification.id, notification.at, c::class.simpleName.orEmpty(), c.toString(), actions)
     }
+
+    override suspend fun privateText(): String = "PRIVATE"
 }
 
 class FakeAiAssistant(

@@ -10,7 +10,9 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SettingsViewModelTest {
     private val g = TestGraph()
@@ -23,6 +25,8 @@ class SettingsViewModelTest {
         g.loadSampleData,
         g.removeSampleData,
         g.importContactsFile,
+        g.exportBackup,
+        g.restoreBackup,
     )
 
     @Test
@@ -90,5 +94,54 @@ class SettingsViewModelTest {
         vm.onContactsFilePicked("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Marta Reis\r\nBDAY:--0504\r\nEND:VCARD\r\n")
         assertEquals(SettingsMessage.FileImported(ContactsFileImportResult(1, 0, 0)), state.value.message)
         assertEquals("Marta Reis", g.friendRepo.friends.value.single().name)
+    }
+
+    @Test
+    fun nudgePrivacyAndLockSettings() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onWeeklyDigestChange(false)
+        vm.onDigestDayChange(9)
+        vm.onPrivateNotificationsChange(true)
+        vm.onShowWarmthChange(false)
+        val s = state.value.settings
+        assertFalse(s.weeklyDigest)
+        assertEquals(7, s.digestDay)
+        assertTrue(s.privateNotifications)
+        assertFalse(s.showWarmth)
+
+        vm.onAppLockChange(enabled = true, verified = false)
+        assertFalse(state.value.settings.appLock)
+        assertEquals(SettingsMessage.LockFailed, state.value.message)
+        vm.onAppLockChange(enabled = true, verified = true)
+        assertTrue(state.value.settings.appLock)
+        vm.onAppLockChange(enabled = false, verified = true)
+        assertFalse(state.value.settings.appLock)
+    }
+
+    @Test
+    fun exportAndRestoreBackup() = runViewModelTest {
+        g.addFriend("Ana")
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onExportBackup()
+        val file = state.value.export!!
+        assertEquals("good-company-2026-03-10.json", file.name)
+        vm.onExportHandled(saved = true)
+        assertNull(state.value.export)
+        assertEquals(SettingsMessage.BackupSaved, state.value.message)
+
+        vm.onBackupPicked("nope")
+        assertEquals("nope", state.value.pendingRestore)
+        vm.onConfirmRestore()
+        assertNull(state.value.pendingRestore)
+        assertEquals(SettingsMessage.BackupInvalid, state.value.message)
+
+        vm.onBackupPicked(file.content)
+        vm.onCancelRestore()
+        assertNull(state.value.pendingRestore)
+        vm.onBackupPicked(file.content)
+        vm.onConfirmRestore()
+        assertEquals(SettingsMessage.BackupRestored(1), state.value.message)
     }
 }

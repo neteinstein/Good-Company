@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
@@ -32,6 +33,7 @@ import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -89,7 +91,13 @@ class FriendCareUseCasesTest {
     @Test
     fun notificationActionsDoTheRightThing() = runTest {
         val handle =
-            HandleNotificationActionUseCase(CheckInUseCase(hangouts, clock, ids), LogCallUseCase(interactions, snooze, clock), snooze, groups)
+            HandleNotificationActionUseCase(
+                CheckInUseCase(hangouts, clock, ids),
+                LogCallUseCase(interactions, snooze, clock),
+                snooze,
+                groups,
+                ConfirmPlanUseCase(FakePlanRepository(), friends, CheckInUseCase(hangouts, clock, ids), clock),
+            )
         handle(NotificationAction.decode(NotificationAction(NotificationAction.Kind.MET, "ana").encode())!!)
         assertEquals(listOf(ana), hangouts.hangouts.value.single().friendIds)
         handle(NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, "rui"))

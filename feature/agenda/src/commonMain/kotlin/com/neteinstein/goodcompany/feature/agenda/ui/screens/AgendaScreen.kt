@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
@@ -56,12 +57,16 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
@@ -97,11 +102,14 @@ suspend fun AgendaMessage.text(): String = when (this) {
     AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
     is AgendaMessage.GroupMet -> getString(Res.string.msg_group_met, name)
     is AgendaMessage.AiError -> aiErrorText(error)
+    AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
+    AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
 }
 
 @Composable
 fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val addToCalendar = rememberCalendarAdder()
     AgendaContent(
         state = state,
         onOpenFriend = onOpenFriend,
@@ -112,6 +120,8 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = viewModel::onGroupMet,
+        onConfirmPlan = viewModel::onConfirmPlan,
+        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends)) },
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
@@ -146,6 +156,8 @@ fun AgendaContent(
     onUndoDelete: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
+    onConfirmPlan: (String, Boolean) -> Unit = { _, _ -> },
+    onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -212,6 +224,8 @@ fun AgendaContent(
                         onOpenFriend,
                         onOpenWish = onOpenWish,
                         onGroupMet = onGroupMet,
+                        onConfirmPlan = onConfirmPlan,
+                        onAddPlanToCalendar = onAddPlanToCalendar,
                         modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
                     )
                 }

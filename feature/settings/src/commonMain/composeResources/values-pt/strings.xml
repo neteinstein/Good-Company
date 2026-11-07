@@ -47,4 +47,29 @@
     <string name="msg_sample_removed">Amigos de exemplo removidos — os teus dados ficam intactos</string>
     <string name="msg_vcf_result">%1$d adicionados · %2$d atualizados · %3$d sem alterações</string>
     <string name="msg_vcf_empty">Não há contactos nesse ficheiro.</string>
+    <string name="digest">Resumo semanal</string>
+    <string name="digest_hint">Uma nota por semana com quem rever, em vez de uma por amigo. Desligado: no máximo um lembrete por dia.</string>
+    <string name="digest_day">Ao/À</string>
+    <string name="quiet_note">Os lembretes ficam mais espaçados se não abrires a app durante algum tempo e param ao fim de três meses. Aniversários e os teus lembretes chegam sempre.</string>
+    <string name="private_notifications">Privado no ecrã de bloqueio</string>
+    <string name="private_notifications_hint">Mostra “Tens um lembrete” em vez de nomes e detalhes.</string>
+    <string name="show_warmth">Mostrar o “calor”</string>
+    <string name="show_warmth_hint">Os pontos, a pontuação e “A afastarem-se”. Desliga para uma vista sem números.</string>
+    <string name="app_lock">Bloqueio da app</string>
+    <string name="app_lock_hint">Pede a impressão digital, o rosto ou o PIN do dispositivo ao abrir o Good Company.</string>
+    <string name="backup_export">Exportar cópia de segurança</string>
+    <string name="backup_export_hint">Tudo num ficheiro que guardas — para mudar de telemóvel, para iPhone ou para a web. A tua chave de API nunca é incluída.</string>
+    <string name="backup_export_button">Exportar</string>
+    <string name="backup_restore">Restaurar uma cópia</string>
+    <string name="backup_restore_hint">Substitui tudo neste dispositivo pelo conteúdo do ficheiro.</string>
+    <string name="backup_restore_button">Restaurar</string>
+    <string name="backup_confirm_title">Substituir tudo?</string>
+    <string name="backup_confirm_body">Amigos, encontros, lembretes e planos neste dispositivo serão substituídos pela cópia. Não é possível anular.</string>
+    <string name="msg_backup_saved">Cópia pronta</string>
+    <string name="msg_backup_invalid">Esse ficheiro não é uma cópia do Good Company</string>
+    <string name="msg_lock_failed">Não foi possível confirmar que és tu — o bloqueio fica desligado</string>
+    <plurals name="msg_backup_restored">
+        <item quantity="one">%1$d amigo restaurado</item>
+        <item quantity="other">%1$d amigos restaurados</item>
+    </plurals>
 </resources>

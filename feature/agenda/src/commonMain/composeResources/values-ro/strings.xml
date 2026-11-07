@@ -47,4 +47,5 @@
     <string name="msg_reminder_saved">Memento salvat</string>
     <string name="msg_reminder_deleted">Memento șters</string>
     <string name="msg_group_met">Timp cu %1$s înregistrat ✨</string>
+    <string name="label_plan">Plan</string>
 </resources>

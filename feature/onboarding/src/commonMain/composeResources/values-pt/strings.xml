@@ -23,7 +23,7 @@
     <string name="notifications_title">Lembretes de aniversários e encontros</string>
     <string name="notifications_on">Está tudo pronto — vamos lembrar-te na hora certa.</string>
     <string name="notifications_off">Os lembretes estão desligados. Podes ligá-los nas Definições.</string>
-    <string name="notifications_body">Um lembrete nos aniversários, nos dias importantes e quando já passou demasiado tempo.</string>
+    <string name="notifications_body">Um lembrete nos aniversários, nos dias importantes e quando já passou algum tempo.</string>
     <string name="allow">Permitir</string>
     <string name="looking_title">Só a espreitar?</string>
     <string name="looking_body">Explora com um círculo de amigos de exemplo — remove-o quando quiseres nas Definições.</string>

@@ -4,6 +4,9 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.datetime.DateTimeUnit
@@ -13,8 +16,8 @@ import kotlinx.datetime.plus
 
 /**
  * Builds the "Coming up" agenda for the next [horizonDays] days:
- * birthdays (friend + kids) for friends you care about, important events, open reminders and overdue meetups.
- * Overdue reminders and meetups are pinned to [today] so they stay visible.
+ * birthdays (friend + kids) for friends you care about, important events, open reminders, planned meetups and
+ * overdue catch-ups. Overdue reminders, catch-ups and unconfirmed past plans are pinned to [today] so they stay visible.
  */
 object AgendaBuilder {
     const val DEFAULT_HORIZON_DAYS = 60
@@ -28,6 +31,8 @@ object AgendaBuilder {
         horizonDays: Int = DEFAULT_HORIZON_DAYS,
         rules: CadenceRules = CadenceRules(),
         groups: List<FriendGroup> = emptyList(),
+        plans: List<Plan> = emptyList(),
+        interactions: List<Interaction> = emptyList(),
     ): List<AgendaItem> {
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
         fun inWindow(d: LocalDate) = d in today..end
@@ -58,7 +63,15 @@ object AgendaBuilder {
             }
         }
 
-        Relationships.meetupStatuses(friends, hangouts, today, zone, rules)
+        plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
+            val with = p.friendIds.mapNotNull(byId::get)
+            when {
+                p.date < today -> items += AgendaItem.PlanToConfirm(p, with, today)
+                p.date <= end -> items += AgendaItem.PlanUpcoming(p, with)
+            }
+        }
+
+        Relationships.meetupStatuses(friends, hangouts, today, zone, rules, interactions)
             .filter { it.isOverdue(today) }
             .forEach { items += AgendaItem.MeetupOverdue(it.friend, it.daysSinceLastSeen, today) }
 
@@ -70,6 +83,8 @@ object AgendaBuilder {
     }
 
     private fun AgendaItem.sortRank() = when (this) {
+        is AgendaItem.PlanToConfirm -> 0
+        is AgendaItem.PlanUpcoming -> 1
         is AgendaItem.MeetupOverdue -> 0
         is AgendaItem.GroupOverdue -> 0
         is AgendaItem.FriendEvent -> 1

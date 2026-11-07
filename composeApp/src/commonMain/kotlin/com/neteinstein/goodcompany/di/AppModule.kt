@@ -10,17 +10,20 @@ import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
 import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
+import com.neteinstein.goodcompany.core.data.repository.BackupRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.FriendRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.GroupRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.HangoutRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.IdeaRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.InteractionRepositoryImpl
+import com.neteinstein.goodcompany.core.data.repository.PlanRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.ReminderRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -31,23 +34,28 @@ import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
@@ -57,17 +65,25 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
@@ -132,6 +148,8 @@ val appModule = module {
     singleOf(::IdeaRepositoryImpl) bind IdeaRepository::class
     singleOf(::SettingsRepositoryImpl) bind SettingsRepository::class
     singleOf(::GroupRepositoryImpl) bind GroupRepository::class
+    singleOf(::PlanRepositoryImpl) bind PlanRepository::class
+    single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -176,6 +194,18 @@ val appModule = module {
     factoryOf(::SaveGroupUseCase)
     factoryOf(::DeleteGroupUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
+    factoryOf(::ObservePlansUseCase)
+    factoryOf(::SavePlanUseCase)
+    factoryOf(::ConfirmPlanUseCase)
+    factoryOf(::CancelPlanUseCase)
+    factoryOf(::RestorePlanUseCase)
+    factoryOf(::SetCatchUpPausedUseCase)
+    factoryOf(::RecordAppOpenedUseCase)
+    factoryOf(::ImportPickedContactsUseCase)
+    factoryOf(::ObserveOccasionMatchesUseCase)
+    factoryOf(::ExportBackupUseCase)
+    factoryOf(::RestoreBackupUseCase)
+    factoryOf(::ObserveHomeWidgetUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
@@ -185,25 +215,30 @@ val appModule = module {
     viewModelOf(::FriendsViewModel)
     viewModel { (id: FriendId) ->
         FriendDetailViewModel(
-            id,
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
+            friendId = id,
+            observeDetail = get(),
+            observeSettings = get(),
+            updateFriend = get(),
+            deleteFriend = get(),
+            setRealFriend = get(),
+            setCircle = get(),
+            snooze = get(),
+            logCall = get(),
+            importChat = get(),
+            generateTalkingPoints = get(),
+            dismissIdea = get(),
+            draftBirthdayMessage = get(),
+            suggestGifts = get(),
+            checkIn = get(),
+            deleteHangout = get(),
+            addReminder = get(),
+            setCatchUpPaused = get(),
+            savePlan = get(),
+            confirmPlan = get(),
+            cancelPlan = get(),
+            restorePlan = get(),
+            clock = get(),
+            ids = get(),
         )
     }
     viewModelOf(::HangoutsViewModel)

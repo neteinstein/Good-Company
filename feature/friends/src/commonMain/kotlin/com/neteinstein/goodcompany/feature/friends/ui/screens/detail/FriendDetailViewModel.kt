@@ -10,8 +10,12 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -22,6 +26,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
@@ -63,7 +70,18 @@ sealed interface FriendDetailMessage {
     data class AiError(val error: Throwable) : FriendDetailMessage
 
     data object ReminderSaved : FriendDetailMessage
+
+    data object PlanSaved : FriendDetailMessage
+
+    /** Offered with "Undo". */
+    data object PlanCancelled : FriendDetailMessage
+
+    data object PlanLogged : FriendDetailMessage
+
+    data object PlanClosed : FriendDetailMessage
 }
+
+data class PlanEditing(val plan: Plan?)
 
 /** Who the AI gift suggestions are for: the friend (kidId = null) or one of their kids. */
 data class GiftSuggestions(val kidId: String?, val ideas: List<String>)
@@ -88,6 +106,12 @@ data class FriendDetailUiState(
     /** AI-personalised birthday message; null → the UI shows the default template. */
     val wishDraft: String? = null,
     val isDraftingWish: Boolean = false,
+    /** Plan editor open: [PlanEditing.plan] null = new plan. */
+    val planEditing: PlanEditing? = null,
+    /** Plan just cancelled, offered for undo. */
+    val undoPlan: Plan? = null,
+    /** Show the warmth score (off in Settings = softer view). */
+    val showWarmth: Boolean = true,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -111,6 +135,11 @@ class FriendDetailViewModel(
     private val checkIn: CheckInUseCase,
     private val deleteHangout: DeleteHangoutUseCase,
     private val addReminder: AddReminderUseCase,
+    private val setCatchUpPaused: SetCatchUpPausedUseCase,
+    private val savePlan: SavePlanUseCase,
+    private val confirmPlan: ConfirmPlanUseCase,
+    private val cancelPlan: CancelPlanUseCase,
+    private val restorePlan: RestorePlanUseCase,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -122,6 +151,7 @@ class FriendDetailViewModel(
             isLoading = false,
             notFound = detail == null,
             hasAiKey = settings.hasAiKey,
+            showWarmth = settings.showWarmth,
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,
@@ -334,5 +364,55 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null) }
+    // --- Rhythm extras ---------------------------------------------------------------------------------------------
+
+    fun onTogglePause() {
+        val paused = state.value.detail?.friend?.catchUpPaused ?: return
+        viewModelScope.launch { setCatchUpPaused(friendId, !paused) }
+    }
+
+    fun onToggleContactCounts() = edit { it.copy(contactCountsAsCatchUp = !it.contactCountsAsCatchUp) }
+
+    fun onToggleOccasion(occasion: Occasion) = edit { f ->
+        f.copy(occasions = if (occasion in f.occasions) f.occasions - occasion else (f.occasions + occasion).sortedBy { it.ordinal })
+    }
+
+    // --- Plans ---------------------------------------------------------------------------------------------------
+
+    fun onOpenPlanEditor(plan: Plan?) = local.update { it.copy(planEditing = PlanEditing(plan)) }
+
+    fun onDismissPlanEditor() = local.update { it.copy(planEditing = null) }
+
+    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
+        if (title.isBlank()) return
+        val editing = local.value.planEditing?.plan
+        viewModelScope.launch {
+            savePlan(editing?.id, title, friendIds.ifEmpty { listOf(friendId) }, date, place)
+            local.update { it.copy(planEditing = null, message = FriendDetailMessage.PlanSaved) }
+        }
+    }
+
+    fun onConfirmPlan(id: String, happened: Boolean) {
+        viewModelScope.launch {
+            confirmPlan(id, happened)
+            say(if (happened) FriendDetailMessage.PlanLogged else FriendDetailMessage.PlanClosed)
+        }
+    }
+
+    fun onCancelPlan(plan: Plan) {
+        viewModelScope.launch {
+            cancelPlan(plan.id)
+            local.update { it.copy(undoPlan = plan, message = FriendDetailMessage.PlanCancelled) }
+        }
+    }
+
+    fun onUndoCancelPlan() {
+        val plan = local.value.undoPlan ?: return
+        viewModelScope.launch {
+            restorePlan(plan)
+            local.update { it.copy(undoPlan = null) }
+        }
+    }
+
+    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null, undoPlan = null) }
 }

@@ -34,16 +34,19 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Sms
@@ -106,6 +109,8 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
@@ -114,6 +119,8 @@ import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
+import com.neteinstein.goodcompany.core.ui.components.PlanRow
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.QuickAction
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
@@ -123,6 +130,7 @@ import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
+import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
@@ -133,12 +141,19 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
+import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.close
+import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
+import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
+import com.neteinstein.goodcompany.core.ui.resources.plans_title
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.remove_item
 import com.neteinstein.goodcompany.core.ui.resources.undo
@@ -205,10 +220,18 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
+import com.neteinstein.goodcompany.feature.friends.resources.occasions_hint
+import com.neteinstein.goodcompany.feature.friends.resources.occasions_title
+import com.neteinstein.goodcompany.feature.friends.resources.plans_add
+import com.neteinstein.goodcompany.feature.friends.resources.plans_empty
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_contact_counts
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_contact_counts_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_events
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_real
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_real_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
@@ -229,6 +252,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.tastes_title
 import com.neteinstein.goodcompany.feature.friends.resources.together_hint
 import com.neteinstein.goodcompany.feature.friends.resources.together_hung_out
 import com.neteinstein.goodcompany.feature.friends.resources.together_title
+import com.neteinstein.goodcompany.feature.friends.resources.topics_ai
+import com.neteinstein.goodcompany.feature.friends.resources.topics_from_notes
 import com.neteinstein.goodcompany.feature.friends.resources.touch_called
 import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_circle_none
@@ -238,7 +263,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.touch_goal
 import com.neteinstein.goodcompany.feature.friends.resources.touch_last_together
 import com.neteinstein.goodcompany.feature.friends.resources.touch_never
 import com.neteinstein.goodcompany.feature.friends.resources.touch_overdue
+import com.neteinstein.goodcompany.feature.friends.resources.touch_paused
 import com.neteinstein.goodcompany.feature.friends.resources.touch_pick
+import com.neteinstein.goodcompany.feature.friends.resources.touch_resume
 import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.touch_title
 import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
@@ -273,6 +300,7 @@ fun FriendDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
+    val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
     FriendDetailContent(
         state = state,
@@ -316,6 +344,16 @@ fun FriendDetailScreen(
             onDismissReminderEditor = viewModel::onDismissReminderEditor,
             onSaveReminder = viewModel::onSaveReminder,
             onMessageShown = viewModel::onMessageShown,
+            onTogglePause = viewModel::onTogglePause,
+            onToggleContactCounts = viewModel::onToggleContactCounts,
+            onToggleOccasion = viewModel::onToggleOccasion,
+            onOpenPlanEditor = viewModel::onOpenPlanEditor,
+            onDismissPlanEditor = viewModel::onDismissPlanEditor,
+            onSavePlan = viewModel::onSavePlan,
+            onConfirmPlan = viewModel::onConfirmPlan,
+            onCancelPlan = viewModel::onCancelPlan,
+            onUndoCancelPlan = viewModel::onUndoCancelPlan,
+            onAddPlanToCalendar = { plan, friends -> addToCalendar(plan.calendarEntry(friends)) },
         ),
     )
 }
@@ -361,6 +399,16 @@ data class FriendDetailActions(
     val onDismissReminderEditor: () -> Unit = {},
     val onSaveReminder: (String, List<FriendId>, LocalDate?, Int) -> Unit = { _, _, _, _ -> },
     val onMessageShown: () -> Unit = {},
+    val onTogglePause: () -> Unit = {},
+    val onToggleContactCounts: () -> Unit = {},
+    val onToggleOccasion: (Occasion) -> Unit = {},
+    val onOpenPlanEditor: (Plan?) -> Unit = {},
+    val onDismissPlanEditor: () -> Unit = {},
+    val onSavePlan: (String, List<FriendId>, LocalDate, String?) -> Unit = { _, _, _, _ -> },
+    val onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    val onCancelPlan: (Plan) -> Unit = {},
+    val onUndoCancelPlan: () -> Unit = {},
+    val onAddPlanToCalendar: (Plan, List<Friend>) -> Unit = { _, _ -> },
 )
 
 private val RHYTHMS = listOf(7, 14, 30, 90)
@@ -384,6 +432,10 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.NoNewGifts -> getString(Res.string.gifts_none_found)
     is FriendDetailMessage.AiError -> aiErrorText(error)
     FriendDetailMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
+    FriendDetailMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
+    FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
+    FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
+    FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -400,8 +452,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message.text(), actionLabel = if (state.undoHangoutId != null) undoLabel else null)
-        if (result == SnackbarResult.ActionPerformed) actions.onUndoTogether()
+        val undoable = state.undoHangoutId != null || state.undoPlan != null
+        val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
+        if (result == SnackbarResult.ActionPerformed) {
+            if (state.undoPlan != null) actions.onUndoCancelPlan() else actions.onUndoTogether()
+        }
         actions.onMessageShown()
     }
 
@@ -425,6 +480,29 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "touch") { StayInTouch(f, state, actions) }
 
+            item(key = "plans") {
+                SectionCard(
+                    stringResource(CoreRes.string.plans_title),
+                    icon = Icons.Rounded.EventAvailable,
+                    action = { TextButton(onClick = { actions.onOpenPlanEditor(null) }) { Text(stringResource(Res.string.plans_add)) } },
+                ) {
+                    if (detail.plans.isEmpty()) Hint(stringResource(Res.string.plans_empty))
+                    val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
+                    detail.plans.forEach { plan ->
+                        val with = plan.friendIds.mapNotNull(people::get)
+                        PlanRow(
+                            plan = plan,
+                            friends = with.filterNot { it.id == f.id },
+                            today = state.today,
+                            onConfirm = { happened -> actions.onConfirmPlan(plan.id, happened) },
+                            onAddToCalendar = { actions.onAddPlanToCalendar(plan, with) },
+                            onChange = { actions.onOpenPlanEditor(plan) },
+                            onCancel = { actions.onCancelPlan(plan) },
+                        )
+                    }
+                }
+            }
+
             item(key = "tastes") {
                 SectionCard(stringResource(Res.string.tastes_title), icon = Icons.Rounded.ThumbUp) {
                     Label(stringResource(Res.string.tastes_loves), Icons.Rounded.ThumbUp)
@@ -437,6 +515,20 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         actions.onRemoveDislike,
                         chipColor = MaterialTheme.colorScheme.errorContainer,
                     )
+                }
+            }
+
+            item(key = "occasions") {
+                SectionCard(stringResource(Res.string.occasions_title), icon = Icons.Rounded.Celebration) {
+                    FlowRow(
+                        Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Occasion.entries.forEach { o ->
+                            FilterChip(o in f.occasions, { actions.onToggleOccasion(o) }, label = { Text(occasionLabel(o)) })
+                        }
+                    }
+                    Hint(stringResource(Res.string.occasions_hint))
                 }
             }
 
@@ -523,6 +615,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         }
                     },
                 ) {
+                    if (detail.topics.isNotEmpty()) {
+                        Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+                        detail.topics.forEach { TopicRow(topicText(it)) }
+                        if (detail.ideas.isNotEmpty()) Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome)
+                    }
                     if (detail.ideas.isEmpty()) {
                         Hint(
                             when {
@@ -623,6 +720,18 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         f.suggestEvents,
                         actions.onToggleSuggestEvents,
                     )
+                    ToggleRow(
+                        stringResource(Res.string.prefs_contact_counts),
+                        stringResource(Res.string.prefs_contact_counts_hint),
+                        f.contactCountsAsCatchUp,
+                        actions.onToggleContactCounts,
+                    )
+                    ToggleRow(
+                        stringResource(Res.string.prefs_pause),
+                        stringResource(Res.string.prefs_pause_hint),
+                        f.catchUpPaused,
+                        actions.onTogglePause,
+                    )
                 }
             }
         }
@@ -672,6 +781,17 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onDismiss = actions.onDismissReminderEditor,
                 onSave = actions.onSaveReminder,
                 preselected = setOf(f.id),
+            )
+        }
+        state.planEditing?.let { editing ->
+            val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).distinctBy { it.id }
+            PlanEditor(
+                friends = people,
+                today = state.today,
+                onDismiss = actions.onDismissPlanEditor,
+                onSave = actions.onSavePlan,
+                preselected = setOf(f.id),
+                initial = editing.plan,
             )
         }
         if (state.showWish) {
@@ -753,7 +873,7 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
                 goal != null -> 1f
                 else -> 0f
             }
-            val overdue = goal != null && progress >= 1f && snoozedUntil == null
+            val overdue = goal != null && progress >= 1f && snoozedUntil == null && !f.catchUpPaused
             ProgressRing(progress, size = 64.dp, color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) {
                 Text(days?.toString() ?: "–", style = MaterialTheme.typography.titleMedium)
             }
@@ -766,6 +886,7 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
                 )
                 Text(
                     when {
+                        f.catchUpPaused -> stringResource(Res.string.touch_paused)
                         snoozedUntil != null -> stringResource(Res.string.touch_snoozed, snoozedUntil.shortLabel())
                         goal == null -> stringResource(Res.string.touch_pick)
                         overdue -> stringResource(Res.string.touch_overdue, everyNDays(goal))
@@ -782,7 +903,9 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(Res.string.touch_called))
             }
-            if (snoozedUntil != null) {
+            if (f.catchUpPaused) {
+                TextButton(onClick = actions.onTogglePause) { Text(stringResource(Res.string.touch_resume)) }
+            } else if (snoozedUntil != null) {
                 TextButton(onClick = actions.onClearSnooze) { Text(stringResource(Res.string.touch_unsnooze)) }
             } else if (goal != null) {
                 var menu by remember { mutableStateOf(false) }
@@ -837,7 +960,7 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
         if (detail.cadenceSource == CadenceRules.Source.CIRCLE && goal != null) {
             Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
         }
-        if (f.isCloseFriend) {
+        if (f.isCloseFriend && state.showWarmth) {
             Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 WarmthDot(detail.warmth.level, size = 12.dp)
                 Spacer(Modifier.width(8.dp))
@@ -1121,6 +1244,15 @@ private fun LastContactRow(byType: Map<InteractionType, kotlin.time.Instant>, st
             }
             InfoPill(label, icon = icon)
         }
+    }
+}
+
+@Composable
+private fun TopicRow(text: String) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.Top) {
+        Box(Modifier.padding(top = 7.dp).size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

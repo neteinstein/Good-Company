@@ -66,7 +66,7 @@
     <string name="card_ping">Scrie-i lui/ei %1$s</string>
     <string name="card_reminder">Memento</string>
     <string name="card_see">Vezi-l/o pe %1$s</string>
-    <string name="card_overdue">Restant</string>
+    <string name="card_overdue">Merită un salut</string>
     <string name="card_group">%1$s %2$s</string>
     <plurals name="catch_up_days">
         <item quantity="one">%1$d zi de când v-ați văzut · obiectiv %2$s</item>
@@ -131,7 +131,7 @@
     <string name="warmth_title">Căldură %1$d</string>
     <string name="warmth_hint_warm">Aveți un ritm bun.</string>
     <string name="warmth_hint_cooling">Se răcește puțin — un mesaj ar încălzi lucrurile.</string>
-    <string name="warmth_hint_fading">Prietenia asta se stinge. Îi scrii?</string>
+    <string name="warmth_hint_fading">E liniște de o vreme — un salut ar prinde bine.</string>
     <string name="contact_met">Văzuți %1$s</string>
     <string name="contact_call">Apel %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
@@ -229,4 +229,23 @@
     <string name="event_1_day">Cu 1 zi înainte</string>
     <string name="event_3_days">Cu 3 zile înainte</string>
     <string name="event_week">Cu o săptămână înainte</string>
+    <string name="prefs_pause">Pune pe pauză mementourile</string>
+    <string name="prefs_pause_hint">Fără mementouri „e timpul să vă vedeți” până reiei. Istoricul și zilele de naștere rămân.</string>
+    <string name="prefs_contact_counts">Apelurile și mesajele contează ca revedere</string>
+    <string name="prefs_contact_counts_hint">Pentru prietenii departe: un apel sau un mesaj resetează ritmul, nu doar o întâlnire.</string>
+    <string name="touch_paused">Mementourile sunt pe pauză.</string>
+    <string name="touch_resume">Reia</string>
+    <string name="plans_add">Planifică</string>
+    <string name="plans_empty">Nimic planificat. Alege o zi și îți amintim — apoi te întrebăm dacă a avut loc.</string>
+    <string name="occasions_title">Companie bună pentru</string>
+    <string name="occasions_hint">Folosit de „Cine e liber pentru…?” în fila Împreună.</string>
+    <string name="topics_from_notes">Din ce știi deja</string>
+    <string name="topics_ai">Din știri (AI)</string>
+    <string name="action_pick_contacts">Alege din contacte</string>
+    <string name="welcome_pick_contacts">Sau alege doar câțiva oameni</string>
+    <plurals name="msg_picked">
+        <item quantity="one">%1$d prieten adăugat</item>
+        <item quantity="few">%1$d prieteni adăugați</item>
+        <item quantity="other">%1$d de prieteni adăugați</item>
+    </plurals>
 </resources>

@@ -42,6 +42,12 @@ data class Friend(
     val snoozedUntil: LocalDate? = null,
     /** Gift ideas (not yet given) and gift history (given), for them or their kids. */
     val gifts: List<Gift> = emptyList(),
+    /** Catch-up nudges paused with no end date ("on hold"). History and birthdays are kept. */
+    val catchUpPaused: Boolean = false,
+    /** Calls and chats also count as catching up (for friends who live far away), not only meetups. */
+    val contactCountsAsCatchUp: Boolean = false,
+    /** What they're good company for ("weekday lunch", "a hike"…), used by "Who's free for…?". */
+    val occasions: List<Occasion> = emptyList(),
 ) {
     val initials: String
         get() = name.split(' ', '-')
@@ -89,3 +95,6 @@ data class Gift(
 }
 
 enum class GiftOccasion { BIRTHDAY, CHRISTMAS, THANK_YOU, JUST_BECAUSE }
+
+/** Kinds of plans a friend is good company for. Rendered by `:core:ui`. */
+enum class Occasion { WEEKDAY_LUNCH, COFFEE, DINNER, DRINKS, OUTDOORS, SPORTS, CULTURE, FAMILY_TIME }

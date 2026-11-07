@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -8,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
 
@@ -68,6 +70,21 @@ interface GroupRepository {
     suspend fun upsert(group: FriendGroup)
 
     suspend fun delete(id: String)
+}
+
+interface PlanRepository {
+    val plans: Flow<List<Plan>>
+
+    suspend fun upsert(plan: Plan)
+
+    suspend fun delete(id: String)
+}
+
+/** Reads and replaces everything the app stores, for export / restore. The API key is never included. */
+interface BackupRepository {
+    suspend fun snapshot(): Backup
+
+    suspend fun restore(backup: Backup)
 }
 
 interface SettingsRepository {

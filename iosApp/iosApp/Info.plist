@@ -60,6 +60,8 @@
 	</array>
 	<key>NSContactsUsageDescription</key>
 	<string>Good Company reads your contacts to build your friends list and pick up their birthdays. Nothing leaves your device.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Used only if you turn on the app lock, so your notes about friends stay private.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used only when you tap “Use my location” to remember where you met, and to suggest events nearby.</string>
 </dict>
