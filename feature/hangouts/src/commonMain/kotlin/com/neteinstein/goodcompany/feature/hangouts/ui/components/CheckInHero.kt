@@ -1,12 +1,5 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.components
 
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta_description
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_friends
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_hint
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_meetups
-import com.neteinstein.goodcompany.feature.hangouts.resources.hero_spot
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -32,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.resources.stringResource
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +43,14 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
 import com.neteinstein.goodcompany.core.ui.components.HeartBurst
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta_description
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_friends
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_hint
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_meetups
+import com.neteinstein.goodcompany.feature.hangouts.resources.hero_spot
+import org.jetbrains.compose.resources.stringResource
 
 /** Gradient hero card: the big pulsing "I'm with…" button plus this month's numbers. */
 @Composable

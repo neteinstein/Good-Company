@@ -1,25 +1,5 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.screens
 
-import com.neteinstein.goodcompany.feature.agenda.resources.Res
-import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
-import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
-import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
-import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_group_met
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
-import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
-import com.neteinstein.goodcompany.feature.agenda.resources.reminder_delete
-import com.neteinstein.goodcompany.feature.agenda.resources.reminder_with
-import com.neteinstein.goodcompany.feature.agenda.resources.reminders_empty
-import com.neteinstein.goodcompany.feature.agenda.resources.reminders_header
-import com.neteinstein.goodcompany.feature.agenda.resources.things_ahead
-import com.neteinstein.goodcompany.feature.agenda.resources.title
-import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
-import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-import com.neteinstein.goodcompany.core.ui.resources.undo
-import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material3.Checkbox
@@ -69,28 +50,46 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
+import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
+import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
+import com.neteinstein.goodcompany.core.ui.format.weekdayLong
+import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.resources.undo
+import com.neteinstein.goodcompany.core.ui.resources.wish_default
+import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
+import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
+import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
+import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_group_met
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
+import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
+import com.neteinstein.goodcompany.feature.agenda.resources.reminder_delete
+import com.neteinstein.goodcompany.feature.agenda.resources.reminder_with
+import com.neteinstein.goodcompany.feature.agenda.resources.reminders_empty
+import com.neteinstein.goodcompany.feature.agenda.resources.reminders_header
+import com.neteinstein.goodcompany.feature.agenda.resources.things_ahead
+import com.neteinstein.goodcompany.feature.agenda.resources.title
+import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
+import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toLocalDateTime
-import org.koin.compose.viewmodel.koinViewModel
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.ui.format.shortLabel
-import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
-import com.neteinstein.goodcompany.core.ui.format.weekdayLong
-import com.neteinstein.goodcompany.core.ui.components.InfoPill
-import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
-import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
-import androidx.compose.material.icons.rounded.CardGiftcard
-
+import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Localised snackbar text for an [AgendaMessage]. */
 suspend fun AgendaMessage.text(): String = when (this) {
@@ -165,7 +164,9 @@ fun AgendaContent(
     }
     Scaffold(
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = onNewReminder, icon = { Icon(Icons.Rounded.AlarmAdd, null) }, text = { Text(stringResource(Res.string.fab_reminder)) })
+            ExtendedFloatingActionButton(onClick = onNewReminder, icon = {
+                Icon(Icons.Rounded.AlarmAdd, null)
+            }, text = { Text(stringResource(Res.string.fab_reminder)) })
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->

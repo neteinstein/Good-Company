@@ -1,8 +1,5 @@
 package com.neteinstein.goodcompany.ui.navigation
 
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -13,7 +10,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -29,6 +28,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetai
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
+import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 
 const val APP_VERSION = "1.0.0"

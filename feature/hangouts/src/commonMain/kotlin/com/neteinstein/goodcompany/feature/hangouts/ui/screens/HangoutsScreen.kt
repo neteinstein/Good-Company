@@ -1,53 +1,5 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.clear
-import com.neteinstein.goodcompany.feature.hangouts.resources.delete_memory
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_delete
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_due
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_edit
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_last_together
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_met
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_more
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_never
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_overdue
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_snooze_week
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_snooze_weekend
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_snoozed
-import com.neteinstein.goodcompany.feature.hangouts.resources.groups_hint
-import com.neteinstein.goodcompany.feature.hangouts.resources.groups_new
-import com.neteinstein.goodcompany.feature.hangouts.resources.groups_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.last_together
-import com.neteinstein.goodcompany.feature.hangouts.resources.last_together_place
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_days_since
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_due
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_met
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_never
-import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_body
-import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_deleted
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_saved
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_snoozed
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_denied
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_unavailable
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_logged_with
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_memory_deleted
-import com.neteinstein.goodcompany.feature.hangouts.resources.never_all
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_body
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_cta
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_catch_up
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_coming_due
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_last_time_with
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories_together
-import com.neteinstein.goodcompany.feature.hangouts.resources.someone
-import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_none
-import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_seen
-import com.neteinstein.goodcompany.feature.hangouts.resources.times_total
-import com.neteinstein.goodcompany.feature.hangouts.resources.title
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-import com.neteinstein.goodcompany.core.ui.resources.undo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -122,6 +74,53 @@ import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.resources.undo
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.clear
+import com.neteinstein.goodcompany.feature.hangouts.resources.delete_memory
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_delete
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_due
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_edit
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_last_together
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_met
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_more
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_never
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_overdue
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_snooze_week
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_snooze_weekend
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_snoozed
+import com.neteinstein.goodcompany.feature.hangouts.resources.groups_hint
+import com.neteinstein.goodcompany.feature.hangouts.resources.groups_new
+import com.neteinstein.goodcompany.feature.hangouts.resources.groups_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.last_together
+import com.neteinstein.goodcompany.feature.hangouts.resources.last_together_place
+import com.neteinstein.goodcompany.feature.hangouts.resources.meet_days_since
+import com.neteinstein.goodcompany.feature.hangouts.resources.meet_due
+import com.neteinstein.goodcompany.feature.hangouts.resources.meet_met
+import com.neteinstein.goodcompany.feature.hangouts.resources.meet_never
+import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_body
+import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_deleted
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_saved
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_snoozed
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_denied
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_unavailable
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_logged_with
+import com.neteinstein.goodcompany.feature.hangouts.resources.msg_memory_deleted
+import com.neteinstein.goodcompany.feature.hangouts.resources.never_all
+import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_body
+import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_cta
+import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.section_catch_up
+import com.neteinstein.goodcompany.feature.hangouts.resources.section_coming_due
+import com.neteinstein.goodcompany.feature.hangouts.resources.section_last_time_with
+import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories
+import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories_together
+import com.neteinstein.goodcompany.feature.hangouts.resources.someone
+import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_none
+import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_seen
+import com.neteinstein.goodcompany.feature.hangouts.resources.times_total
+import com.neteinstein.goodcompany.feature.hangouts.resources.title
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInHero
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInSheet
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.GroupEditorDialog
@@ -131,6 +130,7 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @Composable
 fun HangoutsScreen(onOpenFriend: (FriendId) -> Unit, onOpenYearReview: (Int) -> Unit, viewModel: HangoutsViewModel = koinViewModel()) {
@@ -252,7 +252,9 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                         subtitle = s.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.meet_days_since, it, it, everyNDays(s.cadenceDays)) }
                             ?: stringResource(Res.string.meet_never),
                         onClick = { actions.onOpenFriend(s.friend.id) },
-                        trailing = { FilledTonalButton(onClick = { actions.onStartCheckIn(s.friend.id) }) { Text(stringResource(Res.string.meet_met)) } },
+                        trailing = {
+                            FilledTonalButton(onClick = { actions.onStartCheckIn(s.friend.id) }) { Text(stringResource(Res.string.meet_met)) }
+                        },
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -377,7 +379,12 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     h.hangout.place?.label?.let {
-                                        Icon(Icons.Rounded.Place, null, Modifier.padding(end = 2.dp).height(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Icon(
+                                            Icons.Rounded.Place,
+                                            null,
+                                            Modifier.padding(end = 2.dp).height(14.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
                                         Text(
                                             it,
                                             style = MaterialTheme.typography.bodySmall,
@@ -387,10 +394,18 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                                         )
                                         Text(" · ", style = MaterialTheme.typography.bodySmall)
                                     }
-                                    Text(local.timeLabel(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        local.timeLabel(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                                 if (h.hangout.note.isNotBlank()) {
-                                    Text(h.hangout.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        h.hangout.note,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                             StackedAvatars(h.friends.map { it.name to it.initials }, size = 30.dp, max = 3)
@@ -457,7 +472,10 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                         overdue && g.meetEveryDays != null -> stringResource(Res.string.group_overdue, everyNDays(g.meetEveryDays!!))
                         status.dueDate != null && g.meetEveryDays != null ->
                             stringResource(Res.string.group_due, relativeDayPhrase(status.dueDate!!, state.today), everyNDays(g.meetEveryDays!!))
-                        status.lastTogether != null -> stringResource(Res.string.group_last_together, relativePast(status.lastTogether!!, state.now, state.zone))
+                        status.lastTogether != null -> stringResource(
+                            Res.string.group_last_together,
+                            relativePast(status.lastTogether!!, state.now, state.zone),
+                        )
                         else -> stringResource(Res.string.group_never)
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -532,7 +550,12 @@ private fun MeetupRow(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(progress, size = 52.dp, stroke = 4.dp, color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) {
+            ProgressRing(
+                progress,
+                size = 52.dp,
+                stroke = 4.dp,
+                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+            ) {
                 FriendAvatar(name, initials, size = 40.dp)
             }
             Spacer(Modifier.width(14.dp))

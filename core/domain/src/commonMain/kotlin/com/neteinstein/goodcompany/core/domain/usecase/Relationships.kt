@@ -97,7 +97,13 @@ object Relationships {
         fun isOverdue(today: LocalDate) = dueDate != null && dueDate <= today
     }
 
-    fun groupStatuses(groups: List<FriendGroup>, friends: List<Friend>, hangouts: List<Hangout>, today: LocalDate, zone: TimeZone): List<GroupStatus> {
+    fun groupStatuses(
+        groups: List<FriendGroup>,
+        friends: List<Friend>,
+        hangouts: List<Hangout>,
+        today: LocalDate,
+        zone: TimeZone,
+    ): List<GroupStatus> {
         val byId = friends.associateBy { it.id }
         return groups.map { g ->
             val members = g.memberIds.mapNotNull(byId::get)

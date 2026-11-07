@@ -1,119 +1,5 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 
-import com.neteinstein.goodcompany.feature.friends.resources.Res
-import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_soon
-import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_today
-import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_tomorrow
-import com.neteinstein.goodcompany.feature.friends.resources.birthday_send_wishes
-import com.neteinstein.goodcompany.feature.friends.resources.chat_count
-import com.neteinstein.goodcompany.feature.friends.resources.chat_how
-import com.neteinstein.goodcompany.feature.friends.resources.chat_import
-import com.neteinstein.goodcompany.feature.friends.resources.chat_title
-import com.neteinstein.goodcompany.feature.friends.resources.contact_call
-import com.neteinstein.goodcompany.feature.friends.resources.contact_met
-import com.neteinstein.goodcompany.feature.friends.resources.contact_whatsapp
-import com.neteinstein.goodcompany.feature.friends.resources.delete_body
-import com.neteinstein.goodcompany.feature.friends.resources.delete_body_contact
-import com.neteinstein.goodcompany.feature.friends.resources.delete_title
-import com.neteinstein.goodcompany.feature.friends.resources.detail_add_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.detail_back
-import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
-import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
-import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
-import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
-import com.neteinstein.goodcompany.feature.friends.resources.detail_remove_friend
-import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_kid
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_hint
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_ideas
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_none_found
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest_for
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggestions
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_title
-import com.neteinstein.goodcompany.feature.friends.resources.groups_member_of
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_dismiss
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_find
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_ai
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_ai_chats
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_no_ai
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_open
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_setup
-import com.neteinstein.goodcompany.feature.friends.resources.ideas_title
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday_turns
-import com.neteinstein.goodcompany.feature.friends.resources.kids_hint
-import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
-import com.neteinstein.goodcompany.feature.friends.resources.kids_remove
-import com.neteinstein.goodcompany.feature.friends.resources.kids_title
-import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
-import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
-import com.neteinstein.goodcompany.feature.friends.resources.moments_title
-import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
-import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
-import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_invalid
-import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
-import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
-import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
-import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
-import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
-import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
-import com.neteinstein.goodcompany.feature.friends.resources.notes_title
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday_hint
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_events
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_real
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_real_hint
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
-import com.neteinstein.goodcompany.feature.friends.resources.qa_call
-import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
-import com.neteinstein.goodcompany.feature.friends.resources.qa_text
-import com.neteinstein.goodcompany.feature.friends.resources.qa_together
-import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
-import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
-import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
-import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
-import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
-import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes
-import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
-import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
-import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves_placeholder
-import com.neteinstein.goodcompany.feature.friends.resources.tastes_title
-import com.neteinstein.goodcompany.feature.friends.resources.together_hint
-import com.neteinstein.goodcompany.feature.friends.resources.together_hung_out
-import com.neteinstein.goodcompany.feature.friends.resources.together_title
-import com.neteinstein.goodcompany.feature.friends.resources.touch_called
-import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
-import com.neteinstein.goodcompany.feature.friends.resources.touch_circle_none
-import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
-import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
-import com.neteinstein.goodcompany.feature.friends.resources.touch_goal
-import com.neteinstein.goodcompany.feature.friends.resources.touch_last_together
-import com.neteinstein.goodcompany.feature.friends.resources.touch_never
-import com.neteinstein.goodcompany.feature.friends.resources.touch_overdue
-import com.neteinstein.goodcompany.feature.friends.resources.touch_pick
-import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
-import com.neteinstein.goodcompany.feature.friends.resources.touch_title
-import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
-import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_cooling
-import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_fading
-import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_warm
-import com.neteinstein.goodcompany.feature.friends.resources.warmth_title
-import com.neteinstein.goodcompany.feature.friends.resources.wish_gift_hint
-import com.neteinstein.goodcompany.feature.friends.resources.wish_title
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-import com.neteinstein.goodcompany.core.ui.resources.add
-import com.neteinstein.goodcompany.core.ui.resources.cadence_off
-import com.neteinstein.goodcompany.core.ui.resources.cancel
-import com.neteinstein.goodcompany.core.ui.resources.close
-import com.neteinstein.goodcompany.core.ui.resources.remove
-import com.neteinstein.goodcompany.core.ui.resources.remove_item
-import com.neteinstein.goodcompany.core.ui.resources.undo
-import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -249,6 +135,119 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
+import com.neteinstein.goodcompany.core.ui.resources.add
+import com.neteinstein.goodcompany.core.ui.resources.cadence_off
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.close
+import com.neteinstein.goodcompany.core.ui.resources.remove
+import com.neteinstein.goodcompany.core.ui.resources.remove_item
+import com.neteinstein.goodcompany.core.ui.resources.undo
+import com.neteinstein.goodcompany.core.ui.resources.wish_default
+import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_soon
+import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_today
+import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_tomorrow
+import com.neteinstein.goodcompany.feature.friends.resources.birthday_send_wishes
+import com.neteinstein.goodcompany.feature.friends.resources.chat_count
+import com.neteinstein.goodcompany.feature.friends.resources.chat_how
+import com.neteinstein.goodcompany.feature.friends.resources.chat_import
+import com.neteinstein.goodcompany.feature.friends.resources.chat_title
+import com.neteinstein.goodcompany.feature.friends.resources.contact_call
+import com.neteinstein.goodcompany.feature.friends.resources.contact_met
+import com.neteinstein.goodcompany.feature.friends.resources.contact_whatsapp
+import com.neteinstein.goodcompany.feature.friends.resources.delete_body
+import com.neteinstein.goodcompany.feature.friends.resources.delete_body_contact
+import com.neteinstein.goodcompany.feature.friends.resources.delete_title
+import com.neteinstein.goodcompany.feature.friends.resources.detail_add_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.detail_back
+import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
+import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
+import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
+import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
+import com.neteinstein.goodcompany.feature.friends.resources.detail_remove_friend
+import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_kid
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_hint
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_ideas
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_none_found
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest_for
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggestions
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_title
+import com.neteinstein.goodcompany.feature.friends.resources.groups_member_of
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_dismiss
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_find
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_ai
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_ai_chats
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_no_ai
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_open
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_setup
+import com.neteinstein.goodcompany.feature.friends.resources.ideas_title
+import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday_turns
+import com.neteinstein.goodcompany.feature.friends.resources.kids_hint
+import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
+import com.neteinstein.goodcompany.feature.friends.resources.kids_remove
+import com.neteinstein.goodcompany.feature.friends.resources.kids_title
+import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
+import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
+import com.neteinstein.goodcompany.feature.friends.resources.moments_title
+import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_invalid
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
+import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
+import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
+import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
+import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.notes_title
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_events
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_real
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_real_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
+import com.neteinstein.goodcompany.feature.friends.resources.qa_call
+import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
+import com.neteinstein.goodcompany.feature.friends.resources.qa_text
+import com.neteinstein.goodcompany.feature.friends.resources.qa_together
+import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
+import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
+import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_title
+import com.neteinstein.goodcompany.feature.friends.resources.together_hint
+import com.neteinstein.goodcompany.feature.friends.resources.together_hung_out
+import com.neteinstein.goodcompany.feature.friends.resources.together_title
+import com.neteinstein.goodcompany.feature.friends.resources.touch_called
+import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
+import com.neteinstein.goodcompany.feature.friends.resources.touch_circle_none
+import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
+import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
+import com.neteinstein.goodcompany.feature.friends.resources.touch_goal
+import com.neteinstein.goodcompany.feature.friends.resources.touch_last_together
+import com.neteinstein.goodcompany.feature.friends.resources.touch_never
+import com.neteinstein.goodcompany.feature.friends.resources.touch_overdue
+import com.neteinstein.goodcompany.feature.friends.resources.touch_pick
+import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
+import com.neteinstein.goodcompany.feature.friends.resources.touch_title
+import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
+import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_cooling
+import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_fading
+import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_warm
+import com.neteinstein.goodcompany.feature.friends.resources.warmth_title
+import com.neteinstein.goodcompany.feature.friends.resources.wish_gift_hint
+import com.neteinstein.goodcompany.feature.friends.resources.wish_title
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
@@ -263,6 +262,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @Composable
 fun FriendDetailScreen(
@@ -374,7 +374,13 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
         sender?.let { getString(Res.string.msg_chat_matched, base, it) } ?: base
     }
     FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
-    is FriendDetailMessage.IdeasFound -> if (count == 0) getString(Res.string.msg_ideas_none) else getPluralString(Res.plurals.msg_ideas_found, count, count)
+    is FriendDetailMessage.IdeasFound -> if (count ==
+        0
+    ) {
+        getString(Res.string.msg_ideas_none)
+    } else {
+        getPluralString(Res.plurals.msg_ideas_found, count, count)
+    }
     FriendDetailMessage.NoNewGifts -> getString(Res.string.gifts_none_found)
     is FriendDetailMessage.AiError -> aiErrorText(error)
     FriendDetailMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
@@ -539,9 +545,17 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             DateBadge(h.hangout.at.toLocalDateTime(state.zone).date, state.today)
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(h.hangout.place?.label ?: stringResource(Res.string.together_hung_out), style = MaterialTheme.typography.titleSmall)
                                 Text(
-                                    listOfNotNull(relativePast(h.hangout.at, state.now, state.zone), h.hangout.note.ifBlank { null }).joinToString(" · "),
+                                    h.hangout.place?.label ?: stringResource(Res.string.together_hung_out),
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text(
+                                    listOfNotNull(
+                                        relativePast(h.hangout.at, state.now, state.zone),
+                                        h.hangout.note.ifBlank {
+                                            null
+                                        },
+                                    ).joinToString(" · "),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -591,7 +605,12 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "prefs") {
                 SectionCard(stringResource(Res.string.prefs_title), icon = Icons.Rounded.Tune) {
-                    ToggleRow(stringResource(Res.string.prefs_real), stringResource(Res.string.prefs_real_hint), f.isCloseFriend, actions.onToggleClose)
+                    ToggleRow(
+                        stringResource(Res.string.prefs_real),
+                        stringResource(Res.string.prefs_real_hint),
+                        f.isCloseFriend,
+                        actions.onToggleClose,
+                    )
                     ToggleRow(
                         stringResource(Res.string.prefs_birthday),
                         stringResource(Res.string.prefs_birthday_hint),
@@ -861,7 +880,10 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
         if (f.gifts.isEmpty()) Hint(stringResource(Res.string.gifts_hint))
         if (ideas.isNotEmpty()) Label(stringResource(Res.string.gifts_ideas), Icons.Rounded.AutoAwesome)
         ideas.forEach { gift ->
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
                     val sub = listOfNotNull(kidName(gift.forKidId)?.let { stringResource(Res.string.gifts_for_kid, it) }, gift.note.ifBlank { null })
@@ -872,12 +894,17 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                 IconButton(onClick = { onGive(gift) }) {
                     Icon(Icons.Rounded.CheckCircle, stringResource(Res.string.gifts_mark_given), tint = MaterialTheme.colorScheme.primary)
                 }
-                IconButton(onClick = { actions.onRemoveGift(gift.id) }) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title)) }
+                IconButton(onClick = {
+                    actions.onRemoveGift(gift.id)
+                }) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title)) }
             }
         }
         if (given.isNotEmpty()) Label(stringResource(Res.string.gifts_given), Icons.Rounded.CardGiftcard)
         given.forEach { gift ->
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
                     val date = gift.givenOn?.let { if (isFarDate(it, state.today)) it.shortLabel() else relativeDay(it, state.today) }.orEmpty()
@@ -887,7 +914,9 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                     )
                     Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                IconButton(onClick = { actions.onRemoveGift(gift.id) }) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title)) }
+                IconButton(onClick = {
+                    actions.onRemoveGift(gift.id)
+                }) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title)) }
             }
         }
         if (state.hasAiKey) {
@@ -902,7 +931,13 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                     enabled = busy == null,
                     label = { Text(stringResource(Res.string.gifts_suggest)) },
                     leadingIcon = {
-                        if (busy == "") CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
+                        if (busy ==
+                            ""
+                        ) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
+                        }
                     },
                 )
                 f.kids.forEach { kid ->
@@ -911,7 +946,13 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                         enabled = busy == null,
                         label = { Text(stringResource(Res.string.gifts_suggest_for, kid.name)) },
                         leadingIcon = {
-                            if (busy == kid.id) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp) else Icon(Icons.Rounded.ChildCare, null, Modifier.size(18.dp))
+                            if (busy ==
+                                kid.id
+                            ) {
+                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                            } else {
+                                Icon(Icons.Rounded.ChildCare, null, Modifier.size(18.dp))
+                            }
                         },
                     )
                 }
@@ -972,7 +1013,9 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                         stringResource(if (f.isCloseFriend) Res.string.row_unmark_real else Res.string.row_mark_real),
                     )
                 }
-                FilledTonalIconButton(onClick = onDelete, colors = glass) { Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend)) }
+                FilledTonalIconButton(onClick = onDelete, colors = glass) {
+                    Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
+                }
             }
             FriendAvatar(f.name, f.initials, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
             Spacer(Modifier.height(12.dp))
@@ -1001,7 +1044,9 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     InfoPill(birthdayText, icon = if (f.birthday != null) Icons.Rounded.Cake else Icons.Rounded.Edit, emphasized = f.birthday != null)
                 }
                 f.circle?.takeIf { f.isCloseFriend }?.let { InfoPill(circleLabel(it), icon = Icons.Rounded.Groups) }
-                state.detail?.lastSeen?.let { InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place) }
+                state.detail?.lastSeen?.let {
+                    InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
+                }
                 if (f.isOrphaned) InfoPill(stringResource(Res.string.detail_orphaned))
             }
             Spacer(Modifier.height(16.dp))
@@ -1026,7 +1071,12 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     enabled = digits != null,
                     modifier = Modifier.weight(1f),
                 )
-                QuickAction(Icons.Rounded.AlarmAdd, stringResource(Res.string.qa_remind), onClick = actions.onOpenReminderEditor, modifier = Modifier.weight(1f))
+                QuickAction(
+                    Icons.Rounded.AlarmAdd,
+                    stringResource(Res.string.qa_remind),
+                    onClick = actions.onOpenReminderEditor,
+                    modifier = Modifier.weight(1f),
+                )
             }
             Spacer(Modifier.height(12.dp))
         }

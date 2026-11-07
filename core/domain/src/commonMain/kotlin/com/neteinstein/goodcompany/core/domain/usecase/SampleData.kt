@@ -164,8 +164,12 @@ object SampleData {
                 gifts = listOf(Gift(PREFIX + "g-ceramics", t.giftCeramicsClass)),
             ),
             Friend(
-                id = id("pedro"), name = "Pedro Almeida", isCloseFriend = true, circle = Circle.INNER,
-                phoneNumbers = listOf("+351 915 777 888"), birthday = bday(88, 35),
+                id = id("pedro"),
+                name = "Pedro Almeida",
+                isCloseFriend = true,
+                circle = Circle.INNER,
+                phoneNumbers = listOf("+351 915 777 888"),
+                birthday = bday(88, 35),
                 likes = listOf(t.football, t.bbq, t.surfing),
             ),
             Friend(
@@ -174,8 +178,12 @@ object SampleData {
                 likes = listOf(t.photography, t.travel, t.specialtyCoffee), dislikes = listOf(t.spicyFood),
             ),
             Friend(
-                id = id("beatriz"), name = "Beatriz Rocha", isCloseFriend = true, circle = Circle.GOOD,
-                birthday = bday(57, 40), likes = listOf(t.theatre, t.cooking, t.wine),
+                id = id("beatriz"),
+                name = "Beatriz Rocha",
+                isCloseFriend = true,
+                circle = Circle.GOOD,
+                birthday = bday(57, 40),
+                likes = listOf(t.theatre, t.cooking, t.wine),
                 kids = listOf(Kid(PREFIX + "clara", "Clara", bday(12, 10), listOf("Harry Potter", t.ballet))),
             ),
             Friend(id = id("joao"), name = "João Pereira", contactId = PREFIX + "c-joao", phoneNumbers = listOf("+351 917 000 111")),
@@ -208,7 +216,16 @@ object SampleData {
         )
 
         val ideas = listOf(
-            Idea(PREFIX + "i1", listOf(id("ana"), id("rui")), IdeaKind.EVENT, t.ideaJazzTitle, t.ideaJazzBody, "https://example.com/jazz", t.ideaJazzWhen, now - 1.hours),
+            Idea(
+                PREFIX + "i1",
+                listOf(id("ana"), id("rui")),
+                IdeaKind.EVENT,
+                t.ideaJazzTitle,
+                t.ideaJazzBody,
+                "https://example.com/jazz",
+                t.ideaJazzWhen,
+                now - 1.hours,
+            ),
             Idea(PREFIX + "i2", listOf(id("sofia")), IdeaKind.EVENT, t.ideaPhotoTitle, t.ideaPhotoBody, null, t.ideaPhotoWhen, now - 1.hours),
             Idea(PREFIX + "i3", listOf(id("rui")), IdeaKind.NEWS, t.ideaF1Title, t.ideaF1Body, null, null, now - 2.hours),
             Idea(PREFIX + "i4", listOf(id("marta")), IdeaKind.TALKING_POINT, t.ideaCeramicsTitle, t.ideaCeramicsBody, null, null, now - 3.hours),

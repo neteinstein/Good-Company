@@ -1,9 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.components
 
-import com.neteinstein.goodcompany.core.ui.resources.Res
-import com.neteinstein.goodcompany.core.ui.resources.cancel
-import com.neteinstein.goodcompany.core.ui.resources.ok
-import org.jetbrains.compose.resources.stringResource
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -11,10 +7,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.ok
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
 
 /** Material date picker dialog speaking kotlinx-datetime [LocalDate]. */

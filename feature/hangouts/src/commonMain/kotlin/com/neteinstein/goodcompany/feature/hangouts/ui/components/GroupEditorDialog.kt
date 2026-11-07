@@ -1,17 +1,5 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.components
 
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_editor_edit
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_editor_new
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_emoji
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_members
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_name
-import com.neteinstein.goodcompany.feature.hangouts.resources.group_rhythm
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-import com.neteinstein.goodcompany.core.ui.resources.cadence_off
-import com.neteinstein.goodcompany.core.ui.resources.cancel
-import com.neteinstein.goodcompany.core.ui.resources.delete
-import com.neteinstein.goodcompany.core.ui.resources.save
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,8 +26,20 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
+import com.neteinstein.goodcompany.core.ui.resources.cadence_off
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.delete
+import com.neteinstein.goodcompany.core.ui.resources.save
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_editor_edit
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_editor_new
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_emoji
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_members
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_name
+import com.neteinstein.goodcompany.feature.hangouts.resources.group_rhythm
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.GroupDraft
 import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 private val RHYTHMS = listOf(7, 14, 30, 90)
 
@@ -93,7 +93,9 @@ fun GroupEditorDialog(
                 }
                 Text(stringResource(Res.string.group_rhythm), style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(draft.meetEveryDays == null, { onChange(draft.copy(meetEveryDays = null)) }, label = { Text(stringResource(CoreRes.string.cadence_off)) })
+                    FilterChip(draft.meetEveryDays == null, {
+                        onChange(draft.copy(meetEveryDays = null))
+                    }, label = { Text(stringResource(CoreRes.string.cadence_off)) })
                     RHYTHMS.forEach { d ->
                         FilterChip(draft.meetEveryDays == d, { onChange(draft.copy(meetEveryDays = d)) }, label = { Text(everyNDays(d)) })
                     }

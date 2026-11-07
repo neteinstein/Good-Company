@@ -1,12 +1,5 @@
 package com.neteinstein.goodcompany.ui.navigation
 
-import com.neteinstein.goodcompany.composeApp.resources.Res
-import com.neteinstein.goodcompany.composeApp.resources.nav_agenda
-import com.neteinstein.goodcompany.composeApp.resources.nav_friends
-import com.neteinstein.goodcompany.composeApp.resources.nav_ideas
-import com.neteinstein.goodcompany.composeApp.resources.nav_settings
-import com.neteinstein.goodcompany.composeApp.resources.nav_together
-import org.jetbrains.compose.resources.StringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Diversity3
@@ -19,7 +12,14 @@ import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.neteinstein.goodcompany.composeApp.resources.Res
+import com.neteinstein.goodcompany.composeApp.resources.nav_agenda
+import com.neteinstein.goodcompany.composeApp.resources.nav_friends
+import com.neteinstein.goodcompany.composeApp.resources.nav_ideas
+import com.neteinstein.goodcompany.composeApp.resources.nav_settings
+import com.neteinstein.goodcompany.composeApp.resources.nav_together
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.StringResource
 
 @Serializable data object FriendsRoute
 

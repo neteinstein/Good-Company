@@ -48,7 +48,9 @@ internal class IosNotificationScheduler : NotificationScheduler {
             .map { (id, n) ->
                 UNNotificationCategory.categoryWithIdentifier(
                     id,
-                    actions = n.actions.take(4).map { UNNotificationAction.actionWithIdentifier(it.action.kind.name, it.label, UNNotificationActionOptionNone) },
+                    actions = n.actions.take(4).map {
+                        UNNotificationAction.actionWithIdentifier(it.action.kind.name, it.label, UNNotificationActionOptionNone)
+                    },
                     intentIdentifiers = emptyList<String>(),
                     options = UNNotificationCategoryOptionNone,
                 )

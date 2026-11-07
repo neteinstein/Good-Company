@@ -35,19 +35,31 @@ class AnthropicAssistant(
         json["message"]?.jsonPrimitive?.content?.trim()?.takeIf { it.isNotEmpty() } ?: throw AiFailure(AiFailure.Reason.OTHER, "empty")
     }
 
-    override suspend fun giftIdeas(apiKey: String, friend: FriendProfile, kidName: String?, kidLikes: List<String>, languageTag: String): Result<List<String>> =
+    override suspend fun giftIdeas(
+        apiKey: String,
+        friend: FriendProfile,
+        kidName: String?,
+        kidLikes: List<String>,
+        languageTag: String,
+    ): Result<List<String>> =
         runCatching {
-            val who = kidName?.let { "$it, the child of ${friend.name}" + (kidLikes.takeIf { l -> l.isNotEmpty() }?.let { l -> " (likes ${l.joinToString()})" } ?: "") }
-                ?: friend.name
+            val who =
+                kidName?.let {
+                    "$it, the child of ${friend.name}" +
+                        (kidLikes.takeIf { l -> l.isNotEmpty() }?.let { l -> " (likes ${l.joinToString()})" } ?: "")
+                }
+                    ?: friend.name
             val json = ask(
                 apiKey,
                 system = "You suggest thoughtful, specific, affordable gift ideas (each 2–6 words, no prices, no brands unless iconic). " +
                     "Respect dislikes. Write in the language with BCP-47 tag \"$languageTag\".",
                 user = AssistantPrompts.profile(friend) + "\nSuggest 5 gift ideas for $who.",
-                schema = objectSchema("ideas" to buildJsonObject {
-                    put("type", "array")
-                    putJsonObject("items") { put("type", "string") }
-                }),
+                schema = objectSchema(
+                    "ideas" to buildJsonObject {
+                        put("type", "array")
+                        putJsonObject("items") { put("type", "string") }
+                    },
+                ),
             )
             json["ideas"]?.jsonArray?.mapNotNull { it.jsonPrimitive.content.trim().takeIf(String::isNotEmpty) }.orEmpty()
         }

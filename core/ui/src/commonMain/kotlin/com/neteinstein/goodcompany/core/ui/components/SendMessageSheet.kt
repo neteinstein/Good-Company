@@ -1,13 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.components
 
-import com.neteinstein.goodcompany.core.ui.resources.Res
-import com.neteinstein.goodcompany.core.ui.resources.copied_to_clipboard
-import com.neteinstein.goodcompany.core.ui.resources.send_ai_personalise
-import com.neteinstein.goodcompany.core.ui.resources.send_ai_writing
-import com.neteinstein.goodcompany.core.ui.resources.send_share
-import com.neteinstein.goodcompany.core.ui.resources.send_sms
-import com.neteinstein.goodcompany.core.ui.resources.send_title_message
-import com.neteinstein.goodcompany.core.ui.resources.send_whatsapp
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,6 +43,14 @@ import com.neteinstein.goodcompany.core.ui.format.urlEncode
 import com.neteinstein.goodcompany.core.ui.platform.ShareOutcome
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextSharer
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.copied_to_clipboard
+import com.neteinstein.goodcompany.core.ui.resources.send_ai_personalise
+import com.neteinstein.goodcompany.core.ui.resources.send_ai_writing
+import com.neteinstein.goodcompany.core.ui.resources.send_share
+import com.neteinstein.goodcompany.core.ui.resources.send_sms
+import com.neteinstein.goodcompany.core.ui.resources.send_title_message
+import com.neteinstein.goodcompany.core.ui.resources.send_whatsapp
 import org.jetbrains.compose.resources.stringResource
 
 /** WhatsApp deep link, straight into the chat when we know the number (otherwise WhatsApp asks who to send it to). */

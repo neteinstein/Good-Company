@@ -140,12 +140,22 @@ class UseCasesTest {
     fun friendDetail_combinesEverything() = runTest {
         hangouts.add(Hangout("1", listOf(FriendId("ana"), FriendId("bob")), at(2026, 3, 1)))
         interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 5))))
-        val detail = ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas, settings, FakeGroupRepository(), clock)(FriendId("ana")).first()!!
+        val detail = ObserveFriendDetailUseCase(
+            friends,
+            hangouts,
+            interactions,
+            ideas,
+            settings,
+            FakeGroupRepository(),
+            clock,
+        )(FriendId("ana")).first()!!
         assertEquals(at(2026, 3, 1), detail.lastSeen)
         assertEquals(at(2026, 3, 5), detail.lastContactByType[InteractionType.CALL])
         assertEquals(at(2026, 3, 1), detail.lastContactByType[InteractionType.MEETUP])
         assertEquals(listOf("Ana", "Bob"), detail.hangouts.single().friends.map { it.name })
-        assertNull(ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas, settings, FakeGroupRepository(), clock)(FriendId("nope")).first())
+        assertNull(
+            ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas, settings, FakeGroupRepository(), clock)(FriendId("nope")).first(),
+        )
     }
 
     @Test
@@ -220,7 +230,19 @@ class UseCasesTest {
     @Test
     fun keepNotificationsScheduled_replansOnChange() = runTest {
         val scheduler = FakeNotificationScheduler()
-        val job = launch { KeepNotificationsScheduledUseCase(friends, reminders, hangouts, settings, FakeGroupRepository(), scheduler, FakeNotificationRenderer, clock)() }
+        val job =
+            launch {
+                KeepNotificationsScheduledUseCase(
+                    friends,
+                    reminders,
+                    hangouts,
+                    settings,
+                    FakeGroupRepository(),
+                    scheduler,
+                    FakeNotificationRenderer,
+                    clock,
+                )()
+            }
         advanceUntilIdle()
         val first = scheduler.scheduled.last()
         assertTrue(first.any { it.id.startsWith("meet:ana") })

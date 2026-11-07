@@ -1,14 +1,5 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.components
 
-import com.neteinstein.goodcompany.feature.ideas.resources.Res
-import com.neteinstein.goodcompany.feature.ideas.resources.dismiss
-import com.neteinstein.goodcompany.feature.ideas.resources.kind_event
-import com.neteinstein.goodcompany.feature.ideas.resources.kind_news
-import com.neteinstein.goodcompany.feature.ideas.resources.kind_talk
-import com.neteinstein.goodcompany.feature.ideas.resources.open
-import com.neteinstein.goodcompany.feature.ideas.resources.propose_to
-import com.neteinstein.goodcompany.feature.ideas.resources.proposed
-import com.neteinstein.goodcompany.feature.ideas.resources.share_with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,11 +14,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Newspaper
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,24 +29,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.resources.stringResource
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material3.Button
-import androidx.compose.ui.text.style.TextOverflow
-import com.neteinstein.goodcompany.core.ui.format.relativePast
-import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
-import kotlinx.datetime.TimeZone
-import kotlin.time.Instant
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.dismiss
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_event
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_news
+import com.neteinstein.goodcompany.feature.ideas.resources.kind_talk
+import com.neteinstein.goodcompany.feature.ideas.resources.open
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_to
+import com.neteinstein.goodcompany.feature.ideas.resources.proposed
+import com.neteinstein.goodcompany.feature.ideas.resources.share_with
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeaCard
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
+import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 internal fun IdeaKind.accent(): Pair<Color, Color> = when (this) {
     IdeaKind.EVENT -> Color(0xFFFF8A80) to Color(0xFFE5574F)

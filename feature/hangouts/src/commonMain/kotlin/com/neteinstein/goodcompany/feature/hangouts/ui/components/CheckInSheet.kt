@@ -1,16 +1,7 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.components
 
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_clear_location
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_locating
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_log
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_note
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_pick
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_use_location
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_where
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -46,17 +37,26 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.domain.model.FriendGroup
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.feature.hangouts.resources.Res
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_clear_location
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_locating
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_log
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_note
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_pick
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_use_location
+import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_where
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInDraft
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -163,7 +163,13 @@ fun CheckInSheet(
                 shape = MaterialTheme.shapes.medium,
             )
             Button(onClick = onSave, enabled = draft.canSave, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text(if (draft.selected.isEmpty()) stringResource(Res.string.sheet_pick) else stringResource(Res.string.sheet_log, draft.selected.size))
+                Text(
+                    if (draft.selected.isEmpty()) {
+                        stringResource(Res.string.sheet_pick)
+                    } else {
+                        stringResource(Res.string.sheet_log, draft.selected.size)
+                    },
+                )
             }
             Spacer(Modifier.height(12.dp))
         }

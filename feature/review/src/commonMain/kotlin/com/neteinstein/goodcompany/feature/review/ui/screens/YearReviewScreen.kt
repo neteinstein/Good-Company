@@ -1,35 +1,5 @@
 package com.neteinstein.goodcompany.feature.review.ui.screens
 
-import com.neteinstein.goodcompany.feature.review.resources.Res
-import com.neteinstein.goodcompany.feature.review.resources.back
-import com.neteinstein.goodcompany.feature.review.resources.biggest_body
-import com.neteinstein.goodcompany.feature.review.resources.biggest_title
-import com.neteinstein.goodcompany.feature.review.resources.copied
-import com.neteinstein.goodcompany.feature.review.resources.empty_body
-import com.neteinstein.goodcompany.feature.review.resources.empty_title
-import com.neteinstein.goodcompany.feature.review.resources.hero_friends
-import com.neteinstein.goodcompany.feature.review.resources.hero_kicker
-import com.neteinstein.goodcompany.feature.review.resources.hero_meetups
-import com.neteinstein.goodcompany.feature.review.resources.hero_meetups_word
-import com.neteinstein.goodcompany.feature.review.resources.new_body
-import com.neteinstein.goodcompany.feature.review.resources.new_title
-import com.neteinstein.goodcompany.feature.review.resources.places_none
-import com.neteinstein.goodcompany.feature.review.resources.places_title
-import com.neteinstein.goodcompany.feature.review.resources.reminders_done
-import com.neteinstein.goodcompany.feature.review.resources.rhythm_month
-import com.neteinstein.goodcompany.feature.review.resources.rhythm_streak
-import com.neteinstein.goodcompany.feature.review.resources.rhythm_title
-import com.neteinstein.goodcompany.feature.review.resources.rhythm_weekday
-import com.neteinstein.goodcompany.feature.review.resources.share
-import com.neteinstein.goodcompany.feature.review.resources.share_footer
-import com.neteinstein.goodcompany.feature.review.resources.share_header
-import com.neteinstein.goodcompany.feature.review.resources.share_meetups
-import com.neteinstein.goodcompany.feature.review.resources.share_place
-import com.neteinstein.goodcompany.feature.review.resources.share_top
-import com.neteinstein.goodcompany.feature.review.resources.times
-import com.neteinstein.goodcompany.feature.review.resources.title
-import com.neteinstein.goodcompany.feature.review.resources.top_body
-import com.neteinstein.goodcompany.feature.review.resources.top_title
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -70,9 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -88,6 +58,36 @@ import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.platform.ShareOutcome
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextSharer
+import com.neteinstein.goodcompany.feature.review.resources.Res
+import com.neteinstein.goodcompany.feature.review.resources.back
+import com.neteinstein.goodcompany.feature.review.resources.biggest_body
+import com.neteinstein.goodcompany.feature.review.resources.biggest_title
+import com.neteinstein.goodcompany.feature.review.resources.copied
+import com.neteinstein.goodcompany.feature.review.resources.empty_body
+import com.neteinstein.goodcompany.feature.review.resources.empty_title
+import com.neteinstein.goodcompany.feature.review.resources.hero_friends
+import com.neteinstein.goodcompany.feature.review.resources.hero_kicker
+import com.neteinstein.goodcompany.feature.review.resources.hero_meetups
+import com.neteinstein.goodcompany.feature.review.resources.hero_meetups_word
+import com.neteinstein.goodcompany.feature.review.resources.new_body
+import com.neteinstein.goodcompany.feature.review.resources.new_title
+import com.neteinstein.goodcompany.feature.review.resources.places_none
+import com.neteinstein.goodcompany.feature.review.resources.places_title
+import com.neteinstein.goodcompany.feature.review.resources.reminders_done
+import com.neteinstein.goodcompany.feature.review.resources.rhythm_month
+import com.neteinstein.goodcompany.feature.review.resources.rhythm_streak
+import com.neteinstein.goodcompany.feature.review.resources.rhythm_title
+import com.neteinstein.goodcompany.feature.review.resources.rhythm_weekday
+import com.neteinstein.goodcompany.feature.review.resources.share
+import com.neteinstein.goodcompany.feature.review.resources.share_footer
+import com.neteinstein.goodcompany.feature.review.resources.share_header
+import com.neteinstein.goodcompany.feature.review.resources.share_meetups
+import com.neteinstein.goodcompany.feature.review.resources.share_place
+import com.neteinstein.goodcompany.feature.review.resources.share_top
+import com.neteinstein.goodcompany.feature.review.resources.times
+import com.neteinstein.goodcompany.feature.review.resources.title
+import com.neteinstein.goodcompany.feature.review.resources.top_body
+import com.neteinstein.goodcompany.feature.review.resources.top_title
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
@@ -171,13 +171,21 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
     LazyColumn(contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(key = "hero") {
             Story(listOf(scheme.primary, scheme.tertiary), index = 0) {
-                Text(stringResource(Res.string.hero_kicker).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.85f))
+                Text(
+                    stringResource(Res.string.hero_kicker).uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White.copy(alpha = 0.85f),
+                )
                 Text(r.year.toString(), style = MaterialTheme.typography.displayLarge, color = Color.White, fontWeight = FontWeight.ExtraBold)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     AnimatedNumber(r.meetups, style = MaterialTheme.typography.displayMedium.copy(color = Color.White, fontWeight = FontWeight.Bold))
                 }
-                Text(pluralStringResource(Res.plurals.hero_meetups_word, r.meetups), color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    pluralStringResource(Res.plurals.hero_meetups_word, r.meetups),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                )
                 Text(pluralStringResource(Res.plurals.hero_friends, r.friendsSeen, r.friendsSeen), color = Color.White.copy(alpha = 0.9f))
             }
         }

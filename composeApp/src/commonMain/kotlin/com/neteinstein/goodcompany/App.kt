@@ -1,9 +1,5 @@
 package com.neteinstein.goodcompany
 
-import com.neteinstein.goodcompany.composeApp.resources.Res
-import com.neteinstein.goodcompany.composeApp.resources.app_name
-import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -48,6 +44,8 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.neteinstein.goodcompany.composeApp.resources.Res
+import com.neteinstein.goodcompany.composeApp.resources.app_name
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
@@ -55,7 +53,9 @@ import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
+import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 

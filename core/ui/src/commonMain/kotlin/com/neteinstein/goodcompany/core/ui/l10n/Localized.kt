@@ -1,5 +1,19 @@
 package com.neteinstein.goodcompany.core.ui.l10n
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.intl.Locale
+import com.neteinstein.goodcompany.core.domain.model.AiFailure
+import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.NotificationAction
+import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
+import com.neteinstein.goodcompany.core.domain.model.RenderedAction
+import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
+import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_invalid_key
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_no_key
@@ -47,20 +61,6 @@ import com.neteinstein.goodcompany.core.ui.resources.occasion_thank_you
 import com.neteinstein.goodcompany.core.ui.resources.warmth_cooling
 import com.neteinstein.goodcompany.core.ui.resources.warmth_fading
 import com.neteinstein.goodcompany.core.ui.resources.warmth_warm
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.intl.Locale
-import com.neteinstein.goodcompany.core.domain.model.AiFailure
-import com.neteinstein.goodcompany.core.domain.model.Circle
-import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
-import com.neteinstein.goodcompany.core.domain.model.NotificationAction
-import com.neteinstein.goodcompany.core.domain.model.NotificationContent
-import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
-import com.neteinstein.goodcompany.core.domain.model.RenderedAction
-import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
-import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
-import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
-import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
-import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
@@ -100,18 +100,31 @@ object ResourceNotificationRenderer : NotificationRenderer {
             )
             is NotificationContent.ReminderDue -> Triple(
                 getString(Res.string.notif_reminder_title, c.title),
-                if (c.withNames.isEmpty()) getString(Res.string.notif_reminder_body) else getString(Res.string.notif_reminder_with, c.withNames.joinToString()),
+                if (c.withNames.isEmpty()) {
+                    getString(
+                        Res.string.notif_reminder_body,
+                    )
+                } else {
+                    getString(Res.string.notif_reminder_with, c.withNames.joinToString())
+                },
                 emptyList(),
             )
             is NotificationContent.MeetupDue -> {
                 val every = getPluralString(Res.plurals.every_n_days, c.everyDays, c.everyDays)
                 Triple(
                     getString(Res.string.notif_meet_title, c.friendName),
-                    c.daysSince?.let { getPluralString(Res.plurals.notif_meet_body, it, it, every) } ?: getString(Res.string.notif_meet_body_never, every),
+                    c.daysSince?.let { getPluralString(Res.plurals.notif_meet_body, it, it, every) }
+                        ?: getString(Res.string.notif_meet_body_never, every),
                     listOf(
                         RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.friendId.value), getString(Res.string.notif_action_met)),
-                        RenderedAction(NotificationAction(NotificationAction.Kind.CALLED, c.friendId.value), getString(Res.string.notif_action_called)),
-                        RenderedAction(NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, c.friendId.value), getString(Res.string.notif_action_snooze_week)),
+                        RenderedAction(
+                            NotificationAction(NotificationAction.Kind.CALLED, c.friendId.value),
+                            getString(Res.string.notif_action_called),
+                        ),
+                        RenderedAction(
+                            NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, c.friendId.value),
+                            getString(Res.string.notif_action_snooze_week),
+                        ),
                     ),
                 )
             }
@@ -119,9 +132,18 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 getString(Res.string.notif_group_title, c.groupName),
                 c.daysSince?.let { getPluralString(Res.plurals.notif_group_body, it, it) } ?: getString(Res.string.notif_group_body_never),
                 listOf(
-                    RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true), getString(Res.string.notif_action_met)),
-                    RenderedAction(NotificationAction(NotificationAction.Kind.SNOOZE_WEEKEND, c.groupId, isGroup = true), getString(Res.string.notif_action_snooze_weekend)),
-                    RenderedAction(NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, c.groupId, isGroup = true), getString(Res.string.notif_action_snooze_week)),
+                    RenderedAction(
+                        NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true),
+                        getString(Res.string.notif_action_met),
+                    ),
+                    RenderedAction(
+                        NotificationAction(NotificationAction.Kind.SNOOZE_WEEKEND, c.groupId, isGroup = true),
+                        getString(Res.string.notif_action_snooze_weekend),
+                    ),
+                    RenderedAction(
+                        NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, c.groupId, isGroup = true),
+                        getString(Res.string.notif_action_snooze_week),
+                    ),
                 ),
             )
         }

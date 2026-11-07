@@ -1,7 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.components
 
-import com.neteinstein.goodcompany.core.ui.format.monthShort
-import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -45,8 +43,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.usecase.Warmth
+import com.neteinstein.goodcompany.core.ui.format.monthShort
+import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import kotlinx.datetime.LocalDate
 
 /** Centers content and caps its width so tablets and desktop browsers don't get 2000-px-wide rows. */

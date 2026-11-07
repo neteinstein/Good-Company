@@ -1,23 +1,5 @@
 package com.neteinstein.goodcompany.feature.friends.ui.components
 
-import com.neteinstein.goodcompany.feature.friends.resources.Res
-import com.neteinstein.goodcompany.feature.friends.resources.action_more
-import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.card_loves
-import com.neteinstein.goodcompany.feature.friends.resources.card_overdue
-import com.neteinstein.goodcompany.feature.friends.resources.card_ping
-import com.neteinstein.goodcompany.feature.friends.resources.card_reminder
-import com.neteinstein.goodcompany.feature.friends.resources.card_say_hi
-import com.neteinstein.goodcompany.feature.friends.resources.card_see
-import com.neteinstein.goodcompany.feature.friends.resources.card_turns
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_called
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_days
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_met
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_never
-import com.neteinstein.goodcompany.feature.friends.resources.drifting_message
-import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
-import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
-import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -77,6 +59,24 @@ import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.card_loves
+import com.neteinstein.goodcompany.feature.friends.resources.card_overdue
+import com.neteinstein.goodcompany.feature.friends.resources.card_ping
+import com.neteinstein.goodcompany.feature.friends.resources.card_reminder
+import com.neteinstein.goodcompany.feature.friends.resources.card_say_hi
+import com.neteinstein.goodcompany.feature.friends.resources.card_see
+import com.neteinstein.goodcompany.feature.friends.resources.card_turns
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_called
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_days
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_met
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_never
+import com.neteinstein.goodcompany.feature.friends.resources.drifting_message
+import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -113,7 +113,12 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             item.reminder.title,
             item.friends.joinToString { it.name.substringBefore(' ') }.ifBlank { stringResource(Res.string.card_reminder) },
         )
-        is AgendaItem.MeetupOverdue -> Spec(item.friend, Icons.Rounded.Schedule, stringResource(Res.string.card_see, item.friend.name), stringResource(Res.string.card_overdue))
+        is AgendaItem.MeetupOverdue -> Spec(
+            item.friend,
+            Icons.Rounded.Schedule,
+            stringResource(Res.string.card_see, item.friend.name),
+            stringResource(Res.string.card_overdue),
+        )
         is AgendaItem.GroupOverdue -> Spec(
             item.members.firstOrNull(),
             Icons.Rounded.Groups,

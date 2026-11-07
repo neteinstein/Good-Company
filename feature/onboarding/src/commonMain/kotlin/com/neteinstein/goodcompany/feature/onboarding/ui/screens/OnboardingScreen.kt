@@ -1,34 +1,5 @@
 package com.neteinstein.goodcompany.feature.onboarding.ui.screens
 
-import com.neteinstein.goodcompany.feature.onboarding.resources.Res
-import com.neteinstein.goodcompany.feature.onboarding.resources.allow
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.done
-import com.neteinstein.goodcompany.feature.onboarding.resources.explore_sample
-import com.neteinstein.goodcompany.feature.onboarding.resources.import
-import com.neteinstein.goodcompany.feature.onboarding.resources.lets_go
-import com.neteinstein.goodcompany.feature.onboarding.resources.looking_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.looking_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.next
-import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_off
-import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_on
-import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.page1_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.page1_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.page2_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.page2_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.page3_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.page3_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.setup_title
-import com.neteinstein.goodcompany.feature.onboarding.resources.skip
-import com.neteinstein.goodcompany.feature.onboarding.resources.start_empty
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -92,12 +63,41 @@ import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.feature.onboarding.resources.Res
+import com.neteinstein.goodcompany.feature.onboarding.resources.allow
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.done
+import com.neteinstein.goodcompany.feature.onboarding.resources.explore_sample
+import com.neteinstein.goodcompany.feature.onboarding.resources.import
+import com.neteinstein.goodcompany.feature.onboarding.resources.lets_go
+import com.neteinstein.goodcompany.feature.onboarding.resources.looking_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.looking_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.next
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_off
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_on
+import com.neteinstein.goodcompany.feature.onboarding.resources.notifications_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page1_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page1_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page2_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page2_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.page3_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.page3_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.setup_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.skip
+import com.neteinstein.goodcompany.feature.onboarding.resources.start_empty
 import com.neteinstein.goodcompany.feature.onboarding.ui.components.OrbitIllustration
 import kotlinx.coroutines.launch
-import org.koin.compose.viewmodel.koinViewModel
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
 
 private data class Page(val title: StringResource, val body: StringResource, val main: ImageVector, val satellites: List<ImageVector>)
 
@@ -189,7 +189,15 @@ fun OnboardingContent(
 }
 
 @Composable
-private fun startLabel(state: OnboardingUiState) = stringResource(if ((state.contactsImported ?: 0) > 0) Res.string.lets_go else Res.string.start_empty)
+private fun startLabel(state: OnboardingUiState) = stringResource(
+    if ((state.contactsImported ?: 0) >
+        0
+    ) {
+        Res.string.lets_go
+    } else {
+        Res.string.start_empty
+    },
+)
 
 @Composable
 private fun IntroPage(page: Page) {
@@ -202,7 +210,12 @@ private fun IntroPage(page: Page) {
         Spacer(Modifier.height(28.dp))
         Text(stringResource(page.title), style = MaterialTheme.typography.displaySmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(14.dp))
-        Text(stringResource(page.body), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(
+            stringResource(page.body),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

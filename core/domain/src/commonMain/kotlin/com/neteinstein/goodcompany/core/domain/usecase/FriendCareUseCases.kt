@@ -171,7 +171,13 @@ class SuggestGiftsUseCase(
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
         val kid = friend.kids.firstOrNull { it.id == kidId }
         val alreadyHave = friend.gifts.filter { it.forKidId == kidId }.map { it.title.lowercase() }.toSet()
-        return assistant.giftIdeas(key, IdeaMapper.profile(friend, interactions.messages.first()), kid?.name, kid?.likes.orEmpty(), language.languageTag())
+        return assistant.giftIdeas(
+            key,
+            IdeaMapper.profile(friend, interactions.messages.first()),
+            kid?.name,
+            kid?.likes.orEmpty(),
+            language.languageTag(),
+        )
             .map { ideas -> ideas.map(String::trim).filter { it.isNotEmpty() && it.lowercase() !in alreadyHave }.distinct() }
     }
 }

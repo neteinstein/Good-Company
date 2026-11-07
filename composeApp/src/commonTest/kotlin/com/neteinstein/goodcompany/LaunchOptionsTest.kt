@@ -1,10 +1,10 @@
 package com.neteinstein.goodcompany
 
-import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
@@ -35,7 +35,14 @@ class LaunchOptionsTest {
         val settings = FakeSettingsRepository()
         val friends = FakeFriendRepository()
         ApplyLaunchOptions(
-            LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FakeGroupRepository(), FixedClock()),
+            LoadSampleDataUseCase(
+                friends,
+                FakeHangoutRepository(),
+                FakeReminderRepository(),
+                FakeIdeaRepository(),
+                FakeGroupRepository(),
+                FixedClock(),
+            ),
             UpdateSettingsUseCase(settings),
         )(LaunchOptions(loadSampleData = true, theme = ThemeMode.DARK))
         assertTrue(settings.settings.value.onboardingDone)

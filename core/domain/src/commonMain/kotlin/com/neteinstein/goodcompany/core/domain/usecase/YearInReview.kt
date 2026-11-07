@@ -53,8 +53,12 @@ object YearInReviewBuilder {
             .groupingBy { it }.eachCount().entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
             .take(3).map { it.key to it.value }
         val dates = inYear.map { it.at.toLocalDate(zone) }
-        val busiest = dates.groupingBy { it.month }.eachCount().maxWithOrNull(compareBy<Map.Entry<Month, Int>> { it.value }.thenByDescending { it.key.ordinal })
-        val weekday = dates.groupingBy { it.dayOfWeek }.eachCount().maxWithOrNull(compareBy<Map.Entry<DayOfWeek, Int>> { it.value }.thenByDescending { it.key.ordinal })?.key
+        val busiest = dates.groupingBy {
+            it.month
+        }.eachCount().maxWithOrNull(compareBy<Map.Entry<Month, Int>> { it.value }.thenByDescending { it.key.ordinal })
+        val weekday = dates.groupingBy {
+            it.dayOfWeek
+        }.eachCount().maxWithOrNull(compareBy<Map.Entry<DayOfWeek, Int>> { it.value }.thenByDescending { it.key.ordinal })?.key
         val biggest = inYear.maxWithOrNull(compareBy<Hangout> { it.friendIds.size }.thenBy { it.at })
         val firstMet = hangouts.flatMap { h -> h.friendIds.map { it to h.at } }
             .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.min().toLocalDate(zone) }

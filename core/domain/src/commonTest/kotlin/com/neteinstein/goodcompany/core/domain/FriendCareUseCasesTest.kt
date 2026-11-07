@@ -88,7 +88,8 @@ class FriendCareUseCasesTest {
 
     @Test
     fun notificationActionsDoTheRightThing() = runTest {
-        val handle = HandleNotificationActionUseCase(CheckInUseCase(hangouts, clock, ids), LogCallUseCase(interactions, snooze, clock), snooze, groups)
+        val handle =
+            HandleNotificationActionUseCase(CheckInUseCase(hangouts, clock, ids), LogCallUseCase(interactions, snooze, clock), snooze, groups)
         handle(NotificationAction.decode(NotificationAction(NotificationAction.Kind.MET, "ana").encode())!!)
         assertEquals(listOf(ana), hangouts.hangouts.value.single().friendIds)
         handle(NotificationAction(NotificationAction.Kind.SNOOZE_WEEK, "rui"))

@@ -106,7 +106,12 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
                 .setAction(NotificationActionReceiver.ACTION)
                 .putExtra(NotificationActionReceiver.EXTRA_ACTION, encoded)
                 .putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
-            val pending = PendingIntent.getBroadcast(ctx, notificationId * 10 + i, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            val pending = PendingIntent.getBroadcast(
+                ctx,
+                notificationId * 10 + i,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
             builder.addAction(0, label, pending)
         }
         NotificationManagerCompat.from(ctx).notify(notificationId, builder.build())

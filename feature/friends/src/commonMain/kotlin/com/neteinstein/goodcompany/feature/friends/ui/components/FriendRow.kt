@@ -1,14 +1,5 @@
 package com.neteinstein.goodcompany.feature.friends.ui.components
 
-import com.neteinstein.goodcompany.feature.friends.resources.Res
-import com.neteinstein.goodcompany.feature.friends.resources.row_added_in_app
-import com.neteinstein.goodcompany.feature.friends.resources.row_catch_up
-import com.neteinstein.goodcompany.feature.friends.resources.row_from_contacts
-import com.neteinstein.goodcompany.feature.friends.resources.row_last_in_touch
-import com.neteinstein.goodcompany.feature.friends.resources.row_likes
-import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
-import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
-import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +34,15 @@ import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.row_added_in_app
+import com.neteinstein.goodcompany.feature.friends.resources.row_catch_up
+import com.neteinstein.goodcompany.feature.friends.resources.row_from_contacts
+import com.neteinstein.goodcompany.feature.friends.resources.row_last_in_touch
+import com.neteinstein.goodcompany.feature.friends.resources.row_likes
+import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
+import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
+import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil

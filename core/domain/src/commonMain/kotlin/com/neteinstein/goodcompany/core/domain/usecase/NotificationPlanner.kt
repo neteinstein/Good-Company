@@ -93,7 +93,11 @@ object NotificationPlanner {
         Relationships.groupStatuses(groups, friends, hangouts, today, zone).forEach { s ->
             val due = s.dueDate ?: return@forEach
             val day = if (due <= today) today.plus(1, DateTimeUnit.DAY) else due
-            add("group:${s.group.id}:$day", day, NotificationContent.GroupMeetupDue(s.group.id, s.group.name, s.daysSince, s.group.meetEveryDays ?: 0))
+            add(
+                "group:${s.group.id}:$day",
+                day,
+                NotificationContent.GroupMeetupDue(s.group.id, s.group.name, s.daysSince, s.group.meetEveryDays ?: 0),
+            )
         }
 
         return out.sortedBy { it.at }

@@ -16,7 +16,9 @@ internal object IdeaPrompts {
 
     fun user(request: IdeaRequest): String = buildString {
         appendLine("Today is ${request.todayIso}.")
-        appendLine("Write every title, description and \"when\" in the language with BCP-47 tag \"${request.languageTag}\" (keep JSON keys and kind values in English).")
+        appendLine(
+            "Write every title, description and \"when\" in the language with BCP-47 tag \"${request.languageTag}\" (keep JSON keys and kind values in English).",
+        )
         when (request.mode) {
             IdeaRequest.Mode.WEEKLY_EVENTS -> {
                 appendLine(

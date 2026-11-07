@@ -1,37 +1,5 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.screens
 
-import com.neteinstein.goodcompany.feature.ideas.resources.Res
-import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
-import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
-import com.neteinstein.goodcompany.feature.ideas.resources.eyebrow
-import com.neteinstein.goodcompany.feature.ideas.resources.filter_all
-import com.neteinstein.goodcompany.feature.ideas.resources.filter_news
-import com.neteinstein.goodcompany.feature.ideas.resources.filter_plans
-import com.neteinstein.goodcompany.feature.ideas.resources.filter_talk
-import com.neteinstein.goodcompany.feature.ideas.resources.hero_last_run
-import com.neteinstein.goodcompany.feature.ideas.resources.hero_opted_in
-import com.neteinstein.goodcompany.feature.ideas.resources.hero_run
-import com.neteinstein.goodcompany.feature.ideas.resources.hero_searching
-import com.neteinstein.goodcompany.feature.ideas.resources.hero_title
-import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_body
-import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_title
-import com.neteinstein.goodcompany.feature.ideas.resources.msg_found
-import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_friends
-import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_key
-import com.neteinstein.goodcompany.feature.ideas.resources.msg_none
-import com.neteinstein.goodcompany.feature.ideas.resources.msg_nothing
-import com.neteinstein.goodcompany.feature.ideas.resources.names_and
-import com.neteinstein.goodcompany.feature.ideas.resources.news_message
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_action
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_body
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step1
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step2
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step3
-import com.neteinstein.goodcompany.feature.ideas.resources.no_key_title
-import com.neteinstein.goodcompany.feature.ideas.resources.propose_message
-import com.neteinstein.goodcompany.feature.ideas.resources.propose_title
-import com.neteinstein.goodcompany.feature.ideas.resources.subtitle
-import com.neteinstein.goodcompany.feature.ideas.resources.title
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -78,18 +46,50 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
+import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
+import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
+import com.neteinstein.goodcompany.feature.ideas.resources.eyebrow
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_all
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_news
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_plans
+import com.neteinstein.goodcompany.feature.ideas.resources.filter_talk
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_last_run
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_opted_in
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_run
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_searching
+import com.neteinstein.goodcompany.feature.ideas.resources.hero_title
+import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_body
+import com.neteinstein.goodcompany.feature.ideas.resources.key_banner_title
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_found
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_friends
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_no_key
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_none
+import com.neteinstein.goodcompany.feature.ideas.resources.msg_nothing
+import com.neteinstein.goodcompany.feature.ideas.resources.names_and
+import com.neteinstein.goodcompany.feature.ideas.resources.news_message
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_action
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_body
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step1
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step2
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_step3
+import com.neteinstein.goodcompany.feature.ideas.resources.no_key_title
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_message
+import com.neteinstein.goodcompany.feature.ideas.resources.propose_title
+import com.neteinstein.goodcompany.feature.ideas.resources.subtitle
+import com.neteinstein.goodcompany.feature.ideas.resources.title
 import com.neteinstein.goodcompany.feature.ideas.ui.components.IdeaCardView
-import org.koin.compose.viewmodel.koinViewModel
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
-import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
-import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import org.koin.compose.viewmodel.koinViewModel
 
 /** Localised snackbar text for an [IdeasMessage]. */
 suspend fun IdeasMessage.text(): String = when (this) {
@@ -143,7 +143,13 @@ fun proposalText(card: IdeaCard): String {
     val idea = card.idea
     val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
     val what = listOfNotNull(idea.title, idea.whenText?.let { "($it)" }).joinToString(" ")
-    val base = if (idea.kind == IdeaKind.EVENT) stringResource(Res.string.propose_message, names, what) else stringResource(Res.string.news_message, names, what)
+    val base = if (idea.kind ==
+        IdeaKind.EVENT
+    ) {
+        stringResource(Res.string.propose_message, names, what)
+    } else {
+        stringResource(Res.string.news_message, names, what)
+    }
     return listOfNotNull(base, idea.url).joinToString("\n")
 }
 

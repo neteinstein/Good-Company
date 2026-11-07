@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.NotificationPlanner
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
@@ -11,7 +12,6 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
-import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

@@ -1,5 +1,89 @@
 package com.neteinstein.goodcompany.feature.settings.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.Diversity3
+import androidx.compose.material.icons.rounded.Key
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.SettingsBrightness
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.UploadFile
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ThemeMode
+import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
+import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
+import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
+import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.FileKind
+import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
+import com.neteinstein.goodcompany.core.ui.resources.add
+import com.neteinstein.goodcompany.core.ui.resources.remove
+import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.settings.resources.Res
 import com.neteinstein.goodcompany.feature.settings.resources.ai
 import com.neteinstein.goodcompany.feature.settings.resources.ai_hint
@@ -48,94 +132,10 @@ import com.neteinstein.goodcompany.feature.settings.resources.web_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans_hint
 import com.neteinstein.goodcompany.feature.settings.resources.your_data
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-import com.neteinstein.goodcompany.core.ui.resources.add
-import com.neteinstein.goodcompany.core.ui.resources.remove
-import com.neteinstein.goodcompany.core.ui.resources.save
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.Key
-import androidx.compose.material.icons.rounded.LightMode
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Place
-import androidx.compose.material.icons.rounded.Replay
-import androidx.compose.material.icons.rounded.SettingsBrightness
-import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material.icons.rounded.Visibility
-import androidx.compose.material.icons.rounded.VisibilityOff
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.neteinstein.goodcompany.core.domain.model.ThemeMode
-import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
-import com.neteinstein.goodcompany.core.ui.components.SectionCard
-import com.neteinstein.goodcompany.core.ui.platform.AppPermission
-import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
-import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
-import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
-import org.koin.compose.viewmodel.koinViewModel
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.material.icons.rounded.Diversity3
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.UploadFile
-import com.neteinstein.goodcompany.core.domain.model.Circle
-import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
-import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
-import com.neteinstein.goodcompany.core.ui.platform.FileKind
-import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
+import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 private val CIRCLE_OPTIONS = listOf(7, 14, 30, 60, 90)
 
@@ -241,7 +241,11 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Language, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(Res.string.language_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(Res.string.language_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -252,7 +256,11 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
-                listOf(Circle.INNER to s.innerCircleDays, Circle.CLOSE to s.closeCircleDays, Circle.GOOD to s.goodFriendsDays).forEach { (circle, days) ->
+                listOf(
+                    Circle.INNER to s.innerCircleDays,
+                    Circle.CLOSE to s.closeCircleDays,
+                    Circle.GOOD to s.goodFriendsDays,
+                ).forEach { (circle, days) ->
                     Text(
                         circleLabel(circle),
                         style = MaterialTheme.typography.labelLarge,
@@ -326,7 +334,10 @@ fun SettingsContent(state: SettingsUiState, capabilities: PlatformCapabilities, 
             SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {
                 ListItem(
                     headlineContent = {
-                        Text(stringResource(if (state.hasSampleData) Res.string.sample_loaded else Res.string.sample), style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(if (state.hasSampleData) Res.string.sample_loaded else Res.string.sample),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
                     },
                     supportingContent = {
                         Text(
@@ -408,7 +419,10 @@ private fun ApiKeyField(maskedKey: String?, onSave: (String) -> Unit, onClear: (
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { visible = !visible }) {
-                            Icon(if (visible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, stringResource(if (visible) Res.string.api_key_hide else Res.string.api_key_show))
+                            Icon(
+                                if (visible) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                stringResource(if (visible) Res.string.api_key_hide else Res.string.api_key_show),
+                            )
                         }
                         TextButton(
                             onClick = {

@@ -1,20 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.components
 
-import com.neteinstein.goodcompany.core.ui.resources.Res
-import com.neteinstein.goodcompany.core.ui.resources.cancel
-import com.neteinstein.goodcompany.core.ui.resources.reminder_evening
-import com.neteinstein.goodcompany.core.ui.resources.reminder_label
-import com.neteinstein.goodcompany.core.ui.resources.reminder_lunch
-import com.neteinstein.goodcompany.core.ui.resources.reminder_morning
-import com.neteinstein.goodcompany.core.ui.resources.reminder_new
-import com.neteinstein.goodcompany.core.ui.resources.reminder_night
-import com.neteinstein.goodcompany.core.ui.resources.reminder_no_date
-import com.neteinstein.goodcompany.core.ui.resources.reminder_placeholder
-import com.neteinstein.goodcompany.core.ui.resources.reminder_slot
-import com.neteinstein.goodcompany.core.ui.resources.reminder_when
-import com.neteinstein.goodcompany.core.ui.resources.reminder_with
-import com.neteinstein.goodcompany.core.ui.resources.save
-import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,9 +28,29 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.format.longLabel
+import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.reminder_evening
+import com.neteinstein.goodcompany.core.ui.resources.reminder_label
+import com.neteinstein.goodcompany.core.ui.resources.reminder_lunch
+import com.neteinstein.goodcompany.core.ui.resources.reminder_morning
+import com.neteinstein.goodcompany.core.ui.resources.reminder_new
+import com.neteinstein.goodcompany.core.ui.resources.reminder_night
+import com.neteinstein.goodcompany.core.ui.resources.reminder_no_date
+import com.neteinstein.goodcompany.core.ui.resources.reminder_placeholder
+import com.neteinstein.goodcompany.core.ui.resources.reminder_slot
+import com.neteinstein.goodcompany.core.ui.resources.reminder_when
+import com.neteinstein.goodcompany.core.ui.resources.reminder_with
+import com.neteinstein.goodcompany.core.ui.resources.save
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.stringResource
 
-private val HOURS = listOf(9 to Res.string.reminder_morning, 13 to Res.string.reminder_lunch, 18 to Res.string.reminder_evening, 21 to Res.string.reminder_night)
+private val HOURS = listOf(
+    9 to Res.string.reminder_morning,
+    13 to Res.string.reminder_lunch,
+    18 to Res.string.reminder_evening,
+    21 to Res.string.reminder_night,
+)
 
 /** "Remind me to book tickets for X to go with Y." */
 @OptIn(ExperimentalLayoutApi::class)
@@ -97,12 +102,18 @@ fun ReminderEditor(
                 }
                 if (date != null) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        HOURS.forEach { (h, label) -> FilterChip(hour == h, { hour = h }, label = { Text(stringResource(Res.string.reminder_slot, stringResource(label), h)) }) }
+                        HOURS.forEach { (h, label) ->
+                            FilterChip(hour == h, { hour = h }, label = { Text(stringResource(Res.string.reminder_slot, stringResource(label), h)) })
+                        }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(title, selected.toList(), date, hour) }, enabled = title.isNotBlank()) { Text(stringResource(Res.string.save)) } },
+        confirmButton = {
+            TextButton(onClick = {
+                onSave(title, selected.toList(), date, hour)
+            }, enabled = title.isNotBlank()) { Text(stringResource(Res.string.save)) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date ?: today, onDismiss = { pickDate = false }, onPicked = { date = it })

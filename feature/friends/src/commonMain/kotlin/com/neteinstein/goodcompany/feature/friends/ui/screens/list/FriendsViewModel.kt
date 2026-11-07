@@ -130,7 +130,9 @@ class FriendsViewModel(
         ui.copy(
             friends = visible,
             sections = when (ui.sort) {
-                FriendSort.NAME -> visible.groupBy<FriendSummary, Char?> { it.friend.name.first().uppercaseChar().takeIf(Char::isLetter) ?: '#' }.toList()
+                FriendSort.NAME -> visible.groupBy<FriendSummary, Char?> {
+                    it.friend.name.first().uppercaseChar().takeIf(Char::isLetter) ?: '#'
+                }.toList()
                 FriendSort.WARMTH -> if (visible.isEmpty()) emptyList() else listOf(null to visible)
             },
             closeFriends = all.filter { it.friend.isCloseFriend }.map { it.friend },

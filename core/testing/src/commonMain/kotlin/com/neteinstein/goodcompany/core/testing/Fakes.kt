@@ -129,7 +129,17 @@ class FakeIdeaRepository : IdeaRepository {
 
     override suspend fun dismiss(id: String) = state.update { list -> list.map { if (it.id == id) it.copy(dismissed = true) else it } }
 
-    override suspend fun markProposed(id: String, at: Instant) = state.update { list -> list.map { if (it.id == id) it.copy(proposedAt = at) else it } }
+    override suspend fun markProposed(id: String, at: Instant) = state.update { list ->
+        list.map {
+            if (it.id ==
+                id
+            ) {
+                it.copy(proposedAt = at)
+            } else {
+                it
+            }
+        }
+    }
 }
 
 class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepository {
@@ -176,8 +186,12 @@ object FakeNotificationRenderer : NotificationRenderer {
     override suspend fun render(notification: PlannedNotification): RenderedNotification {
         val c = notification.content
         val actions = when (c) {
-            is NotificationContent.MeetupDue -> NotificationAction.Kind.entries.map { RenderedAction(NotificationAction(it, c.friendId.value), it.name) }
-            is NotificationContent.GroupMeetupDue -> listOf(RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true), "MET"))
+            is NotificationContent.MeetupDue -> NotificationAction.Kind.entries.map {
+                RenderedAction(NotificationAction(it, c.friendId.value), it.name)
+            }
+            is NotificationContent.GroupMeetupDue -> listOf(
+                RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true), "MET"),
+            )
             else -> emptyList()
         }
         return RenderedNotification(notification.id, notification.at, c::class.simpleName.orEmpty(), c.toString(), actions)
@@ -195,7 +209,13 @@ class FakeAiAssistant(
         return message
     }
 
-    override suspend fun giftIdeas(apiKey: String, friend: FriendProfile, kidName: String?, kidLikes: List<String>, languageTag: String): Result<List<String>> {
+    override suspend fun giftIdeas(
+        apiKey: String,
+        friend: FriendProfile,
+        kidName: String?,
+        kidLikes: List<String>,
+        languageTag: String,
+    ): Result<List<String>> {
         calls += "gifts:${friend.id}:${kidName ?: "-"}:$languageTag"
         return gifts
     }

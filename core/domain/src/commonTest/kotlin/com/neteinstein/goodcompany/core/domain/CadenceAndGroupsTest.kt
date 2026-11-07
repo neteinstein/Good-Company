@@ -85,7 +85,13 @@ class CadenceAndGroupsTest {
         assertNull(noCadence.dueDate)
         assertFalse(noCadence.isOverdue(today))
 
-        val snoozed = Relationships.groupStatuses(listOf(group.copy(snoozedUntil = LocalDate(2026, 3, 20))), friends, hangouts, today, TimeZone.UTC).single()
+        val snoozed = Relationships.groupStatuses(
+            listOf(group.copy(snoozedUntil = LocalDate(2026, 3, 20))),
+            friends,
+            hangouts,
+            today,
+            TimeZone.UTC,
+        ).single()
         assertFalse(snoozed.isOverdue(today))
     }
 

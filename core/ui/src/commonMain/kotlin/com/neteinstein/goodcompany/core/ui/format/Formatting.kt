@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.ui.format
 
+import androidx.compose.runtime.Composable
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.date_long
 import com.neteinstein.goodcompany.core.ui.resources.date_short
@@ -26,7 +27,6 @@ import com.neteinstein.goodcompany.core.ui.resources.phrase_yesterday
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_initial
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_long
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_short
-import androidx.compose.runtime.Composable
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -183,7 +183,13 @@ fun parseTags(raw: String): List<String> = raw.split(',', '\n').map { it.trim() 
 fun urlEncode(text: String): String = buildString {
     text.encodeToByteArray().forEach { b ->
         val c = (b.toInt() and 0xFF).toChar()
-        if (c.isLetterOrDigit() && c.code < 128 || c in "-._~") append(c) else append('%').append(HEX[(b.toInt() shr 4) and 0xF]).append(HEX[b.toInt() and 0xF])
+        if ((c.isLetterOrDigit() && c.code < 128) ||
+            c in "-._~"
+        ) {
+            append(c)
+        } else {
+            append('%').append(HEX[(b.toInt() shr 4) and 0xF]).append(HEX[b.toInt() and 0xF])
+        }
     }
 }
 

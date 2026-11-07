@@ -1,25 +1,5 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.components
 
-import com.neteinstein.goodcompany.feature.agenda.resources.Res
-import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
-import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
-import com.neteinstein.goodcompany.feature.agenda.resources.label_catch_up
-import com.neteinstein.goodcompany.feature.agenda.resources.label_group
-import com.neteinstein.goodcompany.feature.agenda.resources.label_kid_birthday
-import com.neteinstein.goodcompany.feature.agenda.resources.label_reminder
-import com.neteinstein.goodcompany.feature.agenda.resources.row_birthday
-import com.neteinstein.goodcompany.feature.agenda.resources.row_days_since
-import com.neteinstein.goodcompany.feature.agenda.resources.row_gift_idea
-import com.neteinstein.goodcompany.feature.agenda.resources.row_group_days
-import com.neteinstein.goodcompany.feature.agenda.resources.row_kid
-import com.neteinstein.goodcompany.feature.agenda.resources.row_loves
-import com.neteinstein.goodcompany.feature.agenda.resources.row_never
-import com.neteinstein.goodcompany.feature.agenda.resources.row_ping
-import com.neteinstein.goodcompany.feature.agenda.resources.row_see
-import com.neteinstein.goodcompany.feature.agenda.resources.row_send_wishes
-import com.neteinstein.goodcompany.feature.agenda.resources.row_turns
-import com.neteinstein.goodcompany.feature.agenda.resources.row_we_met
-import com.neteinstein.goodcompany.feature.agenda.resources.row_with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +38,26 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
+import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.label_catch_up
+import com.neteinstein.goodcompany.feature.agenda.resources.label_group
+import com.neteinstein.goodcompany.feature.agenda.resources.label_kid_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.label_reminder
+import com.neteinstein.goodcompany.feature.agenda.resources.row_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.row_days_since
+import com.neteinstein.goodcompany.feature.agenda.resources.row_gift_idea
+import com.neteinstein.goodcompany.feature.agenda.resources.row_group_days
+import com.neteinstein.goodcompany.feature.agenda.resources.row_kid
+import com.neteinstein.goodcompany.feature.agenda.resources.row_loves
+import com.neteinstein.goodcompany.feature.agenda.resources.row_never
+import com.neteinstein.goodcompany.feature.agenda.resources.row_ping
+import com.neteinstein.goodcompany.feature.agenda.resources.row_see
+import com.neteinstein.goodcompany.feature.agenda.resources.row_send_wishes
+import com.neteinstein.goodcompany.feature.agenda.resources.row_turns
+import com.neteinstein.goodcompany.feature.agenda.resources.row_we_met
+import com.neteinstein.goodcompany.feature.agenda.resources.row_with
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import org.jetbrains.compose.resources.pluralStringResource
@@ -116,7 +116,9 @@ fun AgendaRow(
             Color(0xFF7E57C2),
             stringResource(Res.string.label_reminder),
             item.reminder.title,
-            item.friends.takeIf { it.isNotEmpty() }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+            item.friends.takeIf {
+                it.isNotEmpty()
+            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
             item.friends.firstOrNull(),
         )
         is AgendaItem.MeetupOverdue -> Spec(
