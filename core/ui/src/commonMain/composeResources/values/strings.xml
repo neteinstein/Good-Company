@@ -125,15 +125,19 @@
     <string name="reminder_slot">%1$s · %2$d:00</string>
 
     <!-- Share / messaging -->
+    <string name="send_title_message">Your message</string>
+    <string name="send_ai_personalise">Personalise with AI</string>
+    <string name="send_ai_writing">Writing…</string>
+    <string name="wish_default">Happy birthday, %1$s! 🎉 Hope today is full of good company. Let’s celebrate soon!</string>
     <string name="send_whatsapp">WhatsApp</string>
     <string name="send_sms">Text message</string>
     <string name="send_share">Share…</string>
 
     <!-- Notifications -->
-    <string name="notif_bday_title">🎂 %1$s\'s birthday</string>
+    <string name="notif_bday_title">🎂 %1$s’s birthday</string>
     <string name="notif_bday_body_age">%1$s turns %2$d today — say hi!</string>
-    <string name="notif_bday_body">It\'s %1$s\'s birthday today — say hi!</string>
-    <string name="notif_kid_title">🎈 %1$s (%2$s\'s kid)</string>
+    <string name="notif_bday_body">It’s %1$s’s birthday today — say hi!</string>
+    <string name="notif_kid_title">🎈 %1$s (%2$s’s kid)</string>
     <string name="notif_kid_body_age">Turns %1$d today.</string>
     <string name="notif_kid_body">Birthday today.</string>
     <string name="notif_kid_likes">Likes: %1$s</string>
@@ -149,16 +153,16 @@
     <string name="notif_reminder_body">Reminder</string>
     <string name="notif_meet_title">👋 Time to see %1$s</string>
     <plurals name="notif_meet_body">
-        <item quantity="one">It\'s been %1$d day — you wanted to meet %2$s.</item>
-        <item quantity="other">It\'s been %1$d days — you wanted to meet %2$s.</item>
+        <item quantity="one">It’s been %1$d day — you wanted to meet %2$s.</item>
+        <item quantity="other">It’s been %1$d days — you wanted to meet %2$s.</item>
     </plurals>
-    <string name="notif_meet_body_never">You haven\'t logged a meetup yet — you wanted to meet %1$s.</string>
+    <string name="notif_meet_body_never">You haven’t logged a meetup yet — you wanted to meet %1$s.</string>
     <string name="notif_group_title">%1$s: get everyone together</string>
     <plurals name="notif_group_body">
         <item quantity="one">Last time all together was %1$d day ago.</item>
         <item quantity="other">Last time all together was %1$d days ago.</item>
     </plurals>
-    <string name="notif_group_body_never">You haven\'t all met up yet.</string>
+    <string name="notif_group_body_never">You haven’t all met up yet.</string>
     <string name="notif_action_met">We met</string>
     <string name="notif_action_called">Called</string>
     <string name="notif_action_snooze_week">Next week</string>
@@ -172,7 +176,7 @@
     <string name="ai_error_refused">The request was declined by the AI safety system.</string>
     <string name="ai_error_truncated">The answer was cut off. Try again.</string>
     <string name="ai_error_too_slow">The search took too long. Try again later.</string>
-    <string name="ai_error_other">Couldn\'t reach the AI service. Check your connection.</string>
+    <string name="ai_error_other">Couldn’t reach the AI service. Check your connection.</string>
 
     <!-- Sample data (demo circle) -->
     <string name="sample_ana_notes">Partner: Tiago. Allergic to peanuts.</string>
@@ -181,21 +185,21 @@
     <string name="sample_jazz_night">Jazz night 🎷</string>
     <string name="sample_board_games_note">Board games</string>
     <string name="sample_surf_morning">Surf morning</string>
-    <string name="sample_ruis_place">Rui\'s place</string>
-    <string name="sample_beatriz_dinner">Beatriz\'s dinner party</string>
+    <string name="sample_ruis_place">Rui’s place</string>
+    <string name="sample_beatriz_dinner">Beatriz’s dinner party</string>
     <string name="sample_reminder_tickets">Book tickets for the jazz festival</string>
-    <string name="sample_reminder_present">Buy Leo\'s birthday present</string>
+    <string name="sample_reminder_present">Buy Leo’s birthday present</string>
     <string name="sample_reminder_ask_marta">Ask Marta how the interview went</string>
     <string name="sample_reminder_surf">Plan the surf weekend</string>
     <string name="sample_reminder_photos">Send Sofia the trip photos</string>
     <string name="sample_idea_jazz_title">Lisbon Jazz Festival — late show</string>
-    <string name="sample_idea_jazz_body">Ana loves jazz and Rui\'s into anything live. The Friday late set is small and seated — no crowds.</string>
+    <string name="sample_idea_jazz_body">Ana loves jazz and Rui’s into anything live. The Friday late set is small and seated — no crowds.</string>
     <string name="sample_idea_jazz_when">Fri, 22:00</string>
     <string name="sample_idea_photo_title">Street photography walk in Alfama</string>
-    <string name="sample_idea_photo_body">A guided golden-hour walk — perfect for Sofia\'s new camera, and it ends at a specialty coffee bar.</string>
+    <string name="sample_idea_photo_body">A guided golden-hour walk — perfect for Sofia’s new camera, and it ends at a specialty coffee bar.</string>
     <string name="sample_idea_photo_when">Sat, 17:30</string>
     <string name="sample_idea_f1_title">New F1 street circuit announced</string>
-    <string name="sample_idea_f1_body">Big news for Rui — bring it up next time; he\'s been talking about going to a race abroad.</string>
+    <string name="sample_idea_f1_body">Big news for Rui — bring it up next time; he’s been talking about going to a race abroad.</string>
     <string name="sample_idea_ceramics_title">Ceramics studio she mentioned</string>
     <string name="sample_idea_ceramics_body">Marta said she wanted to try wheel throwing again — ask whether she found a studio.</string>
     <string name="sample_gift_vinyl">Kind of Blue on vinyl</string>

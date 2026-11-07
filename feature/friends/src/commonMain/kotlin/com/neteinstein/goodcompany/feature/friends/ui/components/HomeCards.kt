@@ -1,5 +1,23 @@
 package com.neteinstein.goodcompany.feature.friends.ui.components
 
+import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.card_loves
+import com.neteinstein.goodcompany.feature.friends.resources.card_overdue
+import com.neteinstein.goodcompany.feature.friends.resources.card_ping
+import com.neteinstein.goodcompany.feature.friends.resources.card_reminder
+import com.neteinstein.goodcompany.feature.friends.resources.card_say_hi
+import com.neteinstein.goodcompany.feature.friends.resources.card_see
+import com.neteinstein.goodcompany.feature.friends.resources.card_turns
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_called
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_days
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_met
+import com.neteinstein.goodcompany.feature.friends.resources.catch_up_never
+import com.neteinstein.goodcompany.feature.friends.resources.drifting_message
+import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,15 +34,28 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Cake
+import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Snooze
+import androidx.compose.material.icons.rounded.Weekend
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,12 +67,19 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
+import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
+import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Gradient card for the "Coming up" carousel. */
 @Composable
@@ -51,30 +89,37 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
         is AgendaItem.FriendBirthday -> Spec(
             item.friend,
             Icons.Rounded.Cake,
-            "${item.friend.name.substringBefore(' ')}'s birthday",
-            item.turning?.let { "Turns $it" } ?: "Say hi!",
+            stringResource(Res.string.card_birthday, item.friend.name.substringBefore(' ')),
+            item.turning?.let { stringResource(Res.string.card_turns, it) } ?: stringResource(Res.string.card_say_hi),
         )
         is AgendaItem.KidBirthday -> Spec(
             item.parent,
             Icons.Rounded.ChildCare,
-            "${item.kid.name}'s birthday",
+            stringResource(Res.string.card_birthday, item.kid.name),
             listOfNotNull(
-                item.turning?.let {
-                    "Turns $it"
-                },
-                item.kid.likes.firstOrNull()?.let { "loves $it" },
+                item.turning?.let { stringResource(Res.string.card_turns, it) },
+                item.kid.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
             ).joinToString(" · ").ifBlank { item.parent.name },
         )
-        is AgendaItem.FriendEvent -> Spec(item.friend, Icons.Rounded.Favorite, item.event.title, "Ping ${item.friend.name.substringBefore(' ')}")
+        is AgendaItem.FriendEvent -> Spec(
+            item.friend,
+            Icons.Rounded.Favorite,
+            item.event.title,
+            stringResource(Res.string.card_ping, item.friend.name.substringBefore(' ')),
+        )
         is AgendaItem.ReminderDue -> Spec(
             item.friends.firstOrNull(),
             Icons.Rounded.Alarm,
             item.reminder.title,
-            item.friends.joinToString {
-                it.name.substringBefore(' ')
-            }.ifBlank { "Reminder" },
+            item.friends.joinToString { it.name.substringBefore(' ') }.ifBlank { stringResource(Res.string.card_reminder) },
         )
-        is AgendaItem.MeetupOverdue -> Spec(item.friend, Icons.Rounded.Schedule, "See ${item.friend.name}", "Overdue")
+        is AgendaItem.MeetupOverdue -> Spec(item.friend, Icons.Rounded.Schedule, stringResource(Res.string.card_see, item.friend.name), stringResource(Res.string.card_overdue))
+        is AgendaItem.GroupOverdue -> Spec(
+            item.members.firstOrNull(),
+            Icons.Rounded.Groups,
+            "${item.group.emoji} ${item.group.name}",
+            item.members.joinToString { it.name.substringBefore(' ') },
+        )
     }
     val (start, end) = spec.friend?.let { avatarColors(it.name) } ?: (MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.tertiary)
     Box(
@@ -114,17 +159,25 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
     }
 }
 
-/** "Time to catch up" row: a full red ring means "you're past your goal". */
+/** "Time to catch up" row: a full red ring means "you're past your goal". The menu offers "called" and snoozes. */
 @Composable
-fun CatchUpCard(status: Relationships.MeetupStatus, onOpen: () -> Unit, onMet: () -> Unit, modifier: Modifier = Modifier) {
+fun CatchUpCard(
+    status: Relationships.MeetupStatus,
+    onOpen: () -> Unit,
+    onMet: () -> Unit,
+    onCalled: () -> Unit,
+    onSnooze: (SnoozeOption) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val f = status.friend
+    var menu by remember { mutableStateOf(false) }
     Surface(
         onClick = onOpen,
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ProgressRing(progress = 1f, size = 56.dp, stroke = 4.dp, color = MaterialTheme.colorScheme.error) {
                 FriendAvatar(f.name, f.initials, size = 44.dp)
             }
@@ -132,17 +185,77 @@ fun CatchUpCard(status: Relationships.MeetupStatus, onOpen: () -> Unit, onMet: (
             Column(Modifier.weight(1f)) {
                 Text(f.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    status.daysSinceLastSeen?.let { "$it days since you met · goal every ${f.meetEveryDays}" } ?: "No meetup logged yet",
+                    status.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.catch_up_days, it, it, everyNDays(status.cadenceDays)) }
+                        ?: stringResource(Res.string.catch_up_never),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            FilledTonalButton(onClick = onMet) { Text("We met") }
+            FilledTonalButton(onClick = onMet) { Text(stringResource(Res.string.catch_up_met)) }
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
+                DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.catch_up_called)) },
+                        leadingIcon = { Icon(Icons.Rounded.Call, null) },
+                        onClick = {
+                            menu = false
+                            onCalled()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.snooze_weekend)) },
+                        leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                        onClick = {
+                            menu = false
+                            onSnooze(SnoozeOption.WEEKEND)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.snooze_week)) },
+                        leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                        onClick = {
+                            menu = false
+                            onSnooze(SnoozeOption.ONE_WEEK)
+                        },
+                    )
+                }
+            }
         }
     }
 }
 
-/** Avatar + first name for the "Your people" strip. */
+/** A real friend whose warmth is fading: nudge to reach out, or snooze. */
+@Composable
+fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Unit, modifier: Modifier = Modifier) {
+    val f = summary.friend
+    val color = warmthColor(summary.warmth.level)
+    Surface(
+        onClick = onOpen,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(progress = summary.warmth.value / 100f, size = 56.dp, stroke = 4.dp, color = color) {
+                FriendAvatar(f.name, f.initials, size = 44.dp)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(f.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = onSnooze) { Icon(Icons.Rounded.Snooze, stringResource(Res.string.snooze_week)) }
+            TextButton(onClick = onOpen) { Text(stringResource(Res.string.drifting_message)) }
+        }
+    }
+}
+
+/** Avatar + first name for the "Real friends" strip. */
 @Composable
 fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(

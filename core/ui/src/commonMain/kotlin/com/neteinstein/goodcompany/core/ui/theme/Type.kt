@@ -1,16 +1,16 @@
 package com.neteinstein.goodcompany.core.ui.theme
 
-import androidx.compose.material3.Typography
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.plus_jakarta_sans_bold
 import com.neteinstein.goodcompany.core.ui.resources.plus_jakarta_sans_extrabold
 import com.neteinstein.goodcompany.core.ui.resources.plus_jakarta_sans_medium
 import com.neteinstein.goodcompany.core.ui.resources.plus_jakarta_sans_regular
 import com.neteinstein.goodcompany.core.ui.resources.plus_jakarta_sans_semibold
+import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.Font
 
 /** Plus Jakarta Sans (OFL, docs/licenses) — friendly geometric sans with great numerals for dates. */

@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.format
 
-import androidx.compose.runtime.Composable
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.date_long
 import com.neteinstein.goodcompany.core.ui.resources.date_short
@@ -27,6 +26,7 @@ import com.neteinstein.goodcompany.core.ui.resources.phrase_yesterday
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_initial
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_long
 import com.neteinstein.goodcompany.core.ui.resources.weekdays_short
+import androidx.compose.runtime.Composable
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -34,6 +34,8 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.getStringArray
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
@@ -127,6 +129,9 @@ fun weekdayInitial(day: DayOfWeek): String = stringArrayResource(Res.array.weekd
 /** "Mar 10" / "10 mar" depending on the language. */
 @Composable
 fun LocalDate.shortLabel(): String = stringResource(Res.string.date_short, monthShort(month), day)
+
+/** [shortLabel] outside composition (snackbars, shared text). */
+suspend fun LocalDate.shortLabelText(): String = getString(Res.string.date_short, getStringArray(Res.array.months_short)[month.ordinal], day)
 
 /** "Mar 10, 2026" / "10 mar 2026". */
 @Composable

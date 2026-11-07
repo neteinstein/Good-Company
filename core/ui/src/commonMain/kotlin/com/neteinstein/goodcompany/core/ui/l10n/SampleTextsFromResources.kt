@@ -1,7 +1,5 @@
 package com.neteinstein.goodcompany.core.ui.l10n
 
-import com.neteinstein.goodcompany.core.domain.usecase.SampleTexts
-import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.sample_ana_notes
 import com.neteinstein.goodcompany.core.ui.resources.sample_beatriz_dinner
@@ -61,6 +59,8 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_taste_theatre
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_travel
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_wine
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_yoga
+import com.neteinstein.goodcompany.core.domain.usecase.SampleTexts
+import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import org.jetbrains.compose.resources.getString
 
 /** The sample circle in the user's language (generated mapping: one resource per [SampleTexts] field). */

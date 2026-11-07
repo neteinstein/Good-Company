@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.LocalDate
 
@@ -220,4 +221,18 @@ fun ScreenHeader(
             trailing?.invoke()
         }
     }
+}
+
+/** Theme colour for a friendship's warmth: primary when warm, tertiary when cooling, outline when fading. */
+@Composable
+fun warmthColor(level: Warmth.Level): Color = when (level) {
+    Warmth.Level.WARM -> MaterialTheme.colorScheme.primary
+    Warmth.Level.COOLING -> MaterialTheme.colorScheme.tertiary
+    Warmth.Level.FADING -> MaterialTheme.colorScheme.outline
+}
+
+/** Small dot showing a friendship's warmth. */
+@Composable
+fun WarmthDot(level: Warmth.Level, modifier: Modifier = Modifier, size: Dp = 10.dp) {
+    Box(modifier.size(size).background(warmthColor(level), CircleShape))
 }
