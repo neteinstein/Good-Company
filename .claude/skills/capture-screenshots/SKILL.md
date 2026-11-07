@@ -38,6 +38,6 @@ from the wasmJs build. No bundler is needed, so this works where `wasmJsBrowserD
 
 - Sample data comes from `core/domain/.../usecase/SampleData.kt` and is dated relative to today, so there's always
   something coming up. Don't hand-edit screenshots or invent UI that isn't in the code.
-- Rendering uses SwiftShader (software WebGL), so allow about 10 s per scene. The default wait is 22 s (string resources load lazily and slowly under software rendering); raise `wait`
+- Rendering uses SwiftShader (software WebGL), so allow about 10 s per scene. The default wait is 9 s; raise `wait`
   on a scene if fonts haven't loaded yet.
 - Platform-only UI (Android dynamic colour, iOS sheets) can't be captured this way. Say so if it's asked for.

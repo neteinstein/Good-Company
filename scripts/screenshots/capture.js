@@ -27,7 +27,7 @@ const scenes = [
   { name: 'together-dark', query: '?demo&theme=dark&tab=together', viewport: phone },
   { name: 'agenda-dark', query: '?demo&theme=dark&tab=agenda', viewport: phone },
   { name: 'desktop', query: '?demo&theme=light', viewport: { width: 1280, height: 800 } },
-  { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 26000 },
+  { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 11000 },
   // Localised renders: the browser locale drives the app language.
   { name: 'home-pt', query: '?demo&theme=light', viewport: phone, locale: 'pt-PT' },
   { name: 'friend-es', query: '?demo&theme=light&friend=sample-rui', viewport: phone, locale: 'es-ES' },
@@ -59,7 +59,7 @@ const server = http.createServer((req, res) => {
     page.on('pageerror', (e) => console.log(`[${scene.name}] pageerror: ${e.message.slice(0, 200)}`));
     await page.goto(`http://localhost:${PORT}/index.html${scene.query}`);
     await page.waitForSelector('canvas', { timeout: 60000 });
-    await page.waitForTimeout(scene.wait || 22000); // fonts, sample data, every string resource and entry animations
+    await page.waitForTimeout(scene.wait || 9000); // fonts, sample data and entry animations
     for (const [x, y] of scene.clicks || []) {
       await page.mouse.click(x, y);
       await page.waitForTimeout(1800);
