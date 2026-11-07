@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
+import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
@@ -34,7 +36,16 @@ class AppStartupTest {
     private val settings = FakeSettingsRepository()
 
     private fun startup() = AppStartup(
-        KeepNotificationsScheduledUseCase(friends, FakeReminderRepository(), FakeHangoutRepository(), settings, scheduler, clock),
+        KeepNotificationsScheduledUseCase(
+            friends,
+            FakeReminderRepository(),
+            FakeHangoutRepository(),
+            settings,
+            FakeGroupRepository(),
+            scheduler,
+            FakeNotificationRenderer,
+            clock,
+        ),
         SyncContactsUseCase(friends, interactions),
         RunWeeklyIdeasUseCase(
             friends,

@@ -1,5 +1,30 @@
 package com.neteinstein.goodcompany.di
 
+import com.neteinstein.goodcompany.core.data.ai.AnthropicAssistant
+import com.neteinstein.goodcompany.core.data.ai.AnthropicClient
+import com.neteinstein.goodcompany.core.data.repository.GroupRepositoryImpl
+import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
+import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
+import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
+import com.neteinstein.goodcompany.core.ui.l10n.ComposeLanguageProvider
+import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
+import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
+import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.AppViewModel
 import com.neteinstein.goodcompany.ApplyLaunchOptions
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
@@ -90,7 +115,14 @@ val appModule = module {
     single<CommunicationLogSource> { createCommunicationLogSource() }
     single<LocationProvider> { createLocationProvider() }
     single<NotificationScheduler> { createNotificationScheduler() }
+    single { AnthropicClient(get()) }
     single<IdeaGenerator> { AnthropicIdeaGenerator(get()) }
+    single<AiAssistant> { AnthropicAssistant(get()) }
+
+    // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
+    single<NotificationRenderer> { ResourceNotificationRenderer }
+    single<LanguageProvider> { ComposeLanguageProvider }
+    single<SampleTextsProvider> { SampleTextsFromResources }
 
     // --- Repositories ---
     singleOf(::FriendRepositoryImpl) bind FriendRepository::class
@@ -99,6 +131,7 @@ val appModule = module {
     singleOf(::InteractionRepositoryImpl) bind InteractionRepository::class
     singleOf(::IdeaRepositoryImpl) bind IdeaRepository::class
     singleOf(::SettingsRepositoryImpl) bind SettingsRepository::class
+    singleOf(::GroupRepositoryImpl) bind GroupRepository::class
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -130,6 +163,19 @@ val appModule = module {
     factoryOf(::LoadSampleDataUseCase)
     factoryOf(::RemoveSampleDataUseCase)
     factoryOf(::HasSampleDataUseCase)
+    factoryOf(::SetRealFriendUseCase)
+    factoryOf(::SetCircleUseCase)
+    factoryOf(::SnoozeCatchUpUseCase)
+    factoryOf(::LogCallUseCase)
+    factoryOf(::HandleNotificationActionUseCase)
+    factoryOf(::ImportContactsFileUseCase)
+    factoryOf(::DraftBirthdayMessageUseCase)
+    factoryOf(::SuggestGiftsUseCase)
+    factoryOf(::MarkIdeaProposedUseCase)
+    factoryOf(::ObserveGroupsUseCase)
+    factoryOf(::SaveGroupUseCase)
+    factoryOf(::DeleteGroupUseCase)
+    factoryOf(::ObserveYearInReviewUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
@@ -138,10 +184,31 @@ val appModule = module {
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::FriendsViewModel)
     viewModel { (id: FriendId) ->
-        FriendDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        FriendDetailViewModel(
+            id,
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+        )
     }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::AgendaViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
 }

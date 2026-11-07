@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -26,6 +27,7 @@ class LaunchOptionsTest {
         assertEquals("sample-ana", o.openFriendId)
         assertEquals(LaunchOptions(), LaunchOptions.parse(""))
         assertEquals(null, LaunchOptions.parse("?tab=nope").startTab)
+        assertTrue(LaunchOptions.parse("?review").showReview)
     }
 
     @Test
@@ -33,7 +35,7 @@ class LaunchOptionsTest {
         val settings = FakeSettingsRepository()
         val friends = FakeFriendRepository()
         ApplyLaunchOptions(
-            LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FixedClock()),
+            LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FakeGroupRepository(), FixedClock()),
             UpdateSettingsUseCase(settings),
         )(LaunchOptions(loadSampleData = true, theme = ThemeMode.DARK))
         assertTrue(settings.settings.value.onboardingDone)

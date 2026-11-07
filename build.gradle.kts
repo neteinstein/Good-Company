@@ -37,6 +37,7 @@ dependencies {
     kover(projects.feature.agenda)
     kover(projects.feature.ideas)
     kover(projects.feature.settings)
+    kover(projects.feature.review)
     kover(projects.composeApp)
 }
 

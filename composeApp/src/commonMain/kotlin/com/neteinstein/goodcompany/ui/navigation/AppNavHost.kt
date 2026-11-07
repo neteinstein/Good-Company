@@ -1,5 +1,8 @@
 package com.neteinstein.goodcompany.ui.navigation
 
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -57,10 +60,18 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     )
                 }
             }
-            sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) { HangoutsScreen(onOpenFriend = openFriend) }
+            sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) {
+                HangoutsScreen(onOpenFriend = openFriend, onOpenYearReview = { navController.navigate(YearReviewRoute(it)) })
+            }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend) }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
             composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION) }
+            composable<YearReviewRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) { entry ->
+                YearReviewScreen(year = entry.toRoute<YearReviewRoute>().year, onBack = { navController.popBackStack() })
+            }
         }
     }
 }

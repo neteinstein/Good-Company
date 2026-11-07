@@ -1,5 +1,9 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.composeApp.resources.Res
+import com.neteinstein.goodcompany.composeApp.resources.app_name
+import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -84,6 +88,7 @@ private fun AppScaffold(launch: LaunchOptions) {
     val showChrome = selected != null
     val start = launch.startTab?.route ?: FriendsRoute
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
+    LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
 
     BoxWithConstraints {
         val wide = maxWidth >= 720.dp
@@ -97,7 +102,7 @@ private fun AppScaffold(launch: LaunchOptions) {
                             selected = d == selected,
                             onClick = { navController.navigateTopLevel(d) },
                             icon = { Icon(if (d == selected) d.selectedIcon else d.icon, null) },
-                            label = { Text(d.label) },
+                            label = { Text(stringResource(d.label)) },
                         )
                     }
                     Spacer(Modifier.weight(1f))
@@ -115,7 +120,7 @@ private fun AppScaffold(launch: LaunchOptions) {
                                     selected = d == selected,
                                     onClick = { navController.navigateTopLevel(d) },
                                     icon = { Icon(if (d == selected) d.selectedIcon else d.icon, null) },
-                                    label = { Text(d.label, maxLines = 1, style = MaterialTheme.typography.labelSmall) },
+                                    label = { Text(stringResource(d.label), maxLines = 1, style = MaterialTheme.typography.labelSmall) },
                                 )
                             }
                         }
@@ -135,5 +140,5 @@ private fun AppMark() {
             CircleShape,
         ),
         contentAlignment = Alignment.Center,
-    ) { Icon(Icons.Rounded.Favorite, contentDescription = "Good Company", tint = Color.White) }
+    ) { Icon(Icons.Rounded.Favorite, contentDescription = stringResource(Res.string.app_name), tint = Color.White) }
 }
