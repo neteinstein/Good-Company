@@ -163,6 +163,8 @@ friends by hand (browsers have no address book).
 
 ## 🚀 Getting started
 
+**Just want to try it on Android?** Every merge to `main` publishes installable test APKs on the [`test-build`](https://github.com/neteinstein/Good-Company/releases/tag/test-build) pre-release ([details](CI_CD.md#test-builds)).
+
 Requirements: JDK 21, Android SDK (API 37), and Xcode on macOS for iOS.
 
 ```bash

@@ -1,0 +1,156 @@
+# Test APKs for every merge to main — see CI_CD.md ("Test builds").
+#
+# Runs after the CI workflow succeeds on a push to main (a merged PR), so only green code is published.
+# Builds the Play (`release`) and `sideload` APKs, signs them, and publishes them as the rolling
+# "test-build" pre-release (stable download links) plus a workflow artifact.
+name: Test APK
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Only the newest merge matters: a newer run replaces an older one that is still building.
+concurrency:
+  group: test-apk
+  cancel-in-progress: true
+
+permissions:
+  contents: write # create/replace the "test-build" pre-release
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  JAVA_VERSION: "21"
+  RELEASE_TAG: test-build
+
+jobs:
+  test-apk:
+    name: Build and publish test APKs
+    # Only after a green CI run triggered by a push to main. A workflow_run from a pull request (even a fork's
+    # branch called "main") never gets here, so secrets are only used on code that is already on main.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      BUILD: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.SHA }}
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Provide google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > androidApp/google-services.json
+          else
+            cp androidApp/google-services.json.ci androidApp/google-services.json
+          fi
+
+      # With the keystore secrets, builds keep one signature, so each one installs over the last.
+      # Without them, the CI debug key is used: the APKs install, but testers must uninstall between builds.
+      - name: Signing
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+            {
+              echo "storeFile=$RUNNER_TEMP/release.jks"
+              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+              echo "keyAlias=$ANDROID_KEY_ALIAS"
+              echo "keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+            } > keystore.properties
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "key=release keystore" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No ANDROID_KEYSTORE_* secrets: test APKs are signed with the CI debug key (uninstall before updating)."
+            echo "flag=-Pgoodcompany.signWithDebugKey=true" >> "$GITHUB_OUTPUT"
+            echo "key=CI debug key (uninstall the previous test build first)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Assemble release (Play) + sideload
+        run: >-
+          ./gradlew :androidApp:assembleRelease :androidApp:assembleSideload
+          -Pgoodcompany.versionCode=${{ env.BUILD }}
+          -Pgoodcompany.versionSuffix=test.${{ env.BUILD }}
+          ${{ steps.signing.outputs.flag }}
+
+      - name: Verify signatures and Play permissions
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for apk in androidApp/build/outputs/apk/release/*.apk androidApp/build/outputs/apk/sideload/*.apk; do
+            "$BT/apksigner" verify "$apk" || { echo "::error::$apk is not signed"; exit 1; }
+          done
+          PERMS=$("$BT/aapt2" dump permissions androidApp/build/outputs/apk/release/*.apk)
+          if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|READ_CONTACTS|AD_ID"; then
+            echo "::error::Release (Play) APK declares a restricted permission"; exit 1
+          fi
+
+      # Stable names, so the download links on the "test-build" release never change.
+      - name: Collect APKs
+        run: |
+          mkdir dist
+          cp androidApp/build/outputs/apk/release/*.apk dist/good-company-play-test.apk
+          cp androidApp/build/outputs/apk/sideload/*.apk dist/good-company-sideload-test.apk
+          cp androidApp/build/outputs/mapping/release/mapping.txt dist/mapping-play.txt
+          ls -l dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: test-apks-${{ env.BUILD }}
+          path: dist/
+          retention-days: 30
+
+      - name: Publish the "test-build" pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SIGNED_WITH: ${{ steps.signing.outputs.key }}
+        run: |
+          SUBJECT=$(git log -1 --format=%s "$SHA")
+          cat > notes.md <<EOF
+          Test build **#$BUILD** (version \`1.0.0-test.$BUILD\`) from \`${SHA:0:7}\`: $SUBJECT
+
+          | File | What it is |
+          |---|---|
+          | \`good-company-play-test.apk\` | The Play build: contact picker only, no call log. |
+          | \`good-company-sideload-test.apk\` | Everything: full address-book sync and call matching. Installs next to the Play build (\`.sideload\` id). |
+
+          Signed with: $SIGNED_WITH.
+          Both are R8-optimized release builds. \`mapping-play.txt\` de-obfuscates Play-build crashes.
+          Built by ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}. Not for the Play Store.
+          EOF
+          gh release delete "$RELEASE_TAG" --cleanup-tag --yes || true
+          gh release create "$RELEASE_TAG" dist/* \
+            --prerelease \
+            --target "$SHA" \
+            --title "Test build #$BUILD" \
+            --notes-file notes.md
+
+      - name: Summary
+        env:
+          SIGNED_WITH: ${{ steps.signing.outputs.key }}
+        run: |
+          URL="${{ github.server_url }}/${{ github.repository }}/releases/download/$RELEASE_TAG"
+          {
+            echo "### Test build #$BUILD (\`${SHA:0:7}\`)"
+            echo ""
+            echo "- Play build: $URL/good-company-play-test.apk"
+            echo "- Sideload build: $URL/good-company-sideload-test.apk"
+            echo "- Signed with: $SIGNED_WITH"
+          } >> "$GITHUB_STEP_SUMMARY"

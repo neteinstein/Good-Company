@@ -15,6 +15,15 @@ if (file("google-services.json").exists()) {
     apply(plugin = libs.plugins.google.services.get().pluginId)
 }
 
+// CI test builds (.github/workflows/test-apk.yml) pass these so every build installs over the previous one
+// and testers can tell builds apart: -Pgoodcompany.versionCode=<run> -Pgoodcompany.versionSuffix=test.<run>
+val ciVersionCode = providers.gradleProperty("goodcompany.versionCode").orNull?.toIntOrNull()
+val ciVersionSuffix = providers.gradleProperty("goodcompany.versionSuffix").orNull?.takeIf { it.isNotBlank() }
+
+// Without a real keystore, -Pgoodcompany.signWithDebugKey=true signs release/sideload with the debug key so the
+// APKs still install on a test device (never for anything uploaded to Play).
+val signWithDebugKey = providers.gradleProperty("goodcompany.signWithDebugKey").orNull == "true"
+
 val signingProps = Properties().apply {
     rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
@@ -27,8 +36,8 @@ android {
         applicationId = "com.neteinstein.goodcompany"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = ciVersionCode ?: 1
+        versionName = "1.0.0" + (ciVersionSuffix?.let { "-$it" } ?: "")
     }
 
     // Per-app language picker (Android 13+): generates the locale list from the res/values-* folders.
@@ -54,6 +63,7 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug").takeIf { signWithDebugKey }
         }
         // Same as release, plus READ_CALL_LOG (src/sideload/AndroidManifest.xml).
         // Google Play restricts that permission to default dialer apps, so this build is for sideloading only.
