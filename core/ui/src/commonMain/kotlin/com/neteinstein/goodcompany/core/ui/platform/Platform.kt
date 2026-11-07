@@ -71,7 +71,8 @@ expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?
 
 /**
  * Returns a launcher for the system contact picker. The OS shows the address book and hands back only the people the
- * user picks, so no contacts permission is involved. Android picks one person at a time; iOS allows several.
+ * user picks, so no contacts permission is involved. iOS and Android 17+ (the system Contact Picker) allow several
+ * people at once; older Android versions pick one at a time.
  * Reports an empty list when cancelled.
  */
 @Composable

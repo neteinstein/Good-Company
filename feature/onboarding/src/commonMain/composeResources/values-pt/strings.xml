@@ -32,7 +32,7 @@
     <string name="private_body">Sem conta, sem servidor. As SMS nunca são lidas.</string>
     <string name="done">Feito</string>
     <string name="pick_title">Adiciona a tua gente</string>
-    <string name="pick_body">Escolhe amigos dos teus contactos, um de cada vez. A app só vê as pessoas que escolheres.</string>
+    <string name="pick_body">Escolhe amigos dos teus contactos. A app só vê as pessoas que escolheres.</string>
     <string name="pick">Escolher</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d amigo adicionado. Escolher outro?</item>

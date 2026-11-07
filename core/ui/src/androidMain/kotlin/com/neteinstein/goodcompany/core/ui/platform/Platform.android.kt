@@ -6,12 +6,15 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.hardware.biometrics.BiometricManager
 import android.hardware.biometrics.BiometricPrompt
 import android.net.Uri
+import android.os.Build
 import android.os.CancellationSignal
 import android.provider.CalendarContract
 import android.provider.ContactsContract
+import android.provider.ContactsPickerSessionContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -136,17 +139,64 @@ actual fun platformDynamicColorScheme(dark: Boolean): ColorScheme? {
 actual fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () -> Unit {
     val context = LocalContext.current
     val callback = rememberUpdatedState(onPicked)
-    // Picking a phone number grants temporary read access to that one row: no READ_CONTACTS needed.
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val uri = result.data?.data
+    // Both pickers grant temporary read access to the picked rows only: no READ_CONTACTS needed.
+    val sessionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data?.takeIf { result.resultCode == Activity.RESULT_OK }
+        callback.value(uri?.let { readPickerSession(context, it) }.orEmpty())
+    }
+    val legacyLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data?.takeIf { result.resultCode == Activity.RESULT_OK }
         callback.value(listOfNotNull(uri?.let { readPickedContact(context, it) }))
     }
-    return {
+    val launchLegacy = {
         runCatching {
-            launcher.launch(Intent(Intent.ACTION_PICK).setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE))
+            legacyLauncher.launch(Intent(Intent.ACTION_PICK).setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE))
         }.onFailure { callback.value(emptyList()) }
     }
+    return {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+            // Android 17's system Contact Picker: several people in one go, phone numbers only.
+            runCatching { sessionLauncher.launch(multiContactPickerIntent()) }.onFailure { launchLegacy() }
+        } else {
+            launchLegacy()
+        }
+    }
 }
+
+private fun multiContactPickerIntent(): Intent = Intent(ContactsPickerSessionContract.ACTION_PICK_CONTACTS)
+    .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+    .putStringArrayListExtra(
+        ContactsPickerSessionContract.EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS,
+        arrayListOf(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE),
+    )
+
+/**
+ * Reads the session URI the Android 17 picker returns: one `ContactsContract.Data` row per picked number. Keys people
+ * by `CONTACT_ID` (like the legacy picker and the address-book import, so re-picking someone updates them), falling
+ * back to `LOOKUP_KEY`. The session URI rejects `selection`, so rows are filtered by MIME type here.
+ */
+private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> = runCatching {
+    val rows = mutableListOf<PickedPhoneRow>()
+    context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+        val contactId = c.getColumnIndex(ContactsContract.Data.CONTACT_ID)
+        val lookupKey = c.getColumnIndex(ContactsContract.Data.LOOKUP_KEY)
+        val name = c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
+        val mimeType = c.getColumnIndex(ContactsContract.Data.MIMETYPE)
+        val number = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        while (c.moveToNext()) {
+            val mime = c.stringOrNull(mimeType)
+            if (mime != null && mime != ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) continue
+            rows += PickedPhoneRow(
+                contactKey = c.stringOrNull(contactId) ?: c.stringOrNull(lookupKey),
+                name = c.stringOrNull(name),
+                number = c.stringOrNull(number),
+            )
+        }
+    }
+    groupPickedPhoneRows(rows)
+}.getOrDefault(emptyList())
+
+private fun Cursor.stringOrNull(index: Int): String? = if (index >= 0 && !isNull(index)) getString(index) else null
 
 private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runCatching {
     context.contentResolver.query(
