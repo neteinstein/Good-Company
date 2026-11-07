@@ -85,6 +85,7 @@ actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> U
                 FileKind.TEXT -> arrayOf("text/plain")
                 // File managers label .vcf inconsistently; accept the common ones.
                 FileKind.VCARD -> arrayOf("text/x-vcard", "text/vcard", "text/directory", "text/plain", "application/octet-stream")
+                FileKind.JSON -> arrayOf("application/json", "text/plain", "application/octet-stream")
             },
         )
     }

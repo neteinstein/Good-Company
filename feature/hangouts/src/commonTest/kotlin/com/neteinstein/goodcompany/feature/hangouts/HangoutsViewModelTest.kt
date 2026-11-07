@@ -1,5 +1,8 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
+import kotlinx.datetime.LocalDate
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.PlanDraft
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -37,6 +40,8 @@ class HangoutsViewModelTest {
         g.observeMeetups,
         g.observeHistory,
         g.observeGroups,
+        g.observeOccasionMatches,
+        g.savePlan,
         g.saveGroup,
         g.deleteGroup,
         g.snooze,
@@ -153,5 +158,28 @@ class HangoutsViewModelTest {
         vm.onDeleteGroup(group.group.id)
         assertEquals(HangoutsMessage.GroupDeleted("Surf"), state.value.message)
         assertTrue(state.value.groups.isEmpty())
+    }
+
+    @Test
+    fun whosFreeForSuggestsTaggedFriendsAndPlans() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertTrue(state.value.occasions.isEmpty())
+        assertNull(state.value.selectedOccasion)
+        g.updateFriend(ana) { it.copy(occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.COFFEE)) }
+        assertEquals(Occasion.WEEKDAY_LUNCH, state.value.selectedOccasion)
+        vm.onSelectOccasion(Occasion.COFFEE)
+        assertEquals(Occasion.COFFEE, state.value.selectedOccasion)
+        assertEquals(listOf(ana), state.value.occasions.getValue(Occasion.COFFEE).map { it.friend.id })
+
+        vm.onPlanWith(ana, Occasion.COFFEE)
+        assertEquals(PlanDraft(ana, Occasion.COFFEE), state.value.planDraft)
+        vm.onSavePlan("Coffee", emptyList(), LocalDate(2026, 3, 12), null)
+        assertNull(state.value.planDraft)
+        assertEquals(HangoutsMessage.PlanSaved, state.value.message)
+        assertEquals(listOf(ana), g.planRepo.plans.value.single().friendIds)
+        vm.onPlanWith(ana, Occasion.COFFEE)
+        vm.onDismissPlan()
+        assertNull(state.value.planDraft)
     }
 }

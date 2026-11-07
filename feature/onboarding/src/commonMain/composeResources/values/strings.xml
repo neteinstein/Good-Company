@@ -23,7 +23,7 @@
     <string name="notifications_title">Birthday &amp; check-in reminders</string>
     <string name="notifications_on">You’re all set — we’ll nudge you at the right time.</string>
     <string name="notifications_off">Reminders are off. You can turn them on in Settings.</string>
-    <string name="notifications_body">A nudge on birthdays, important days and when it’s been too long.</string>
+    <string name="notifications_body">A nudge on birthdays, important days and when it’s been a while.</string>
     <string name="allow">Allow</string>
     <string name="looking_title">Just looking around?</string>
     <string name="looking_body">Explore with a sample circle of friends — remove it anytime from Settings.</string>

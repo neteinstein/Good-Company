@@ -1,5 +1,20 @@
 package com.neteinstein.goodcompany.di
 
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
+import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
+import com.neteinstein.goodcompany.core.data.repository.BackupRepositoryImpl
+import com.neteinstein.goodcompany.core.data.repository.PlanRepositoryImpl
 import com.neteinstein.goodcompany.AppViewModel
 import com.neteinstein.goodcompany.ApplyLaunchOptions
 import com.neteinstein.goodcompany.core.data.ai.AnthropicAssistant
@@ -132,6 +147,8 @@ val appModule = module {
     singleOf(::IdeaRepositoryImpl) bind IdeaRepository::class
     singleOf(::SettingsRepositoryImpl) bind SettingsRepository::class
     singleOf(::GroupRepositoryImpl) bind GroupRepository::class
+    singleOf(::PlanRepositoryImpl) bind PlanRepository::class
+    single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -176,6 +193,17 @@ val appModule = module {
     factoryOf(::SaveGroupUseCase)
     factoryOf(::DeleteGroupUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
+    factoryOf(::ObservePlansUseCase)
+    factoryOf(::SavePlanUseCase)
+    factoryOf(::ConfirmPlanUseCase)
+    factoryOf(::CancelPlanUseCase)
+    factoryOf(::RestorePlanUseCase)
+    factoryOf(::SetCatchUpPausedUseCase)
+    factoryOf(::RecordAppOpenedUseCase)
+    factoryOf(::ImportPickedContactsUseCase)
+    factoryOf(::ObserveOccasionMatchesUseCase)
+    factoryOf(::ExportBackupUseCase)
+    factoryOf(::RestoreBackupUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
@@ -185,25 +213,30 @@ val appModule = module {
     viewModelOf(::FriendsViewModel)
     viewModel { (id: FriendId) ->
         FriendDetailViewModel(
-            id,
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
+            friendId = id,
+            observeDetail = get(),
+            observeSettings = get(),
+            updateFriend = get(),
+            deleteFriend = get(),
+            setRealFriend = get(),
+            setCircle = get(),
+            snooze = get(),
+            logCall = get(),
+            importChat = get(),
+            generateTalkingPoints = get(),
+            dismissIdea = get(),
+            draftBirthdayMessage = get(),
+            suggestGifts = get(),
+            checkIn = get(),
+            deleteHangout = get(),
+            addReminder = get(),
+            setCatchUpPaused = get(),
+            savePlan = get(),
+            confirmPlan = get(),
+            cancelPlan = get(),
+            restorePlan = get(),
+            clock = get(),
+            ids = get(),
         )
     }
     viewModelOf(::HangoutsViewModel)

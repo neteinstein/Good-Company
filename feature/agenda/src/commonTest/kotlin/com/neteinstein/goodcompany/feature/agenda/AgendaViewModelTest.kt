@@ -39,6 +39,7 @@ class AgendaViewModelTest {
         g.setReminderDone,
         g.deleteReminder,
         g.restoreReminder,
+        g.confirmPlan,
         g.clock,
     )
 
@@ -108,6 +109,23 @@ class AgendaViewModelTest {
         vm.onGroupMet("g1")
         assertEquals(AgendaMessage.GroupMet("Surf"), state.value.message)
         assertTrue(state.value.agenda.none { it is AgendaItem.GroupOverdue })
+        assertEquals(1, g.hangoutRepo.hangouts.value.size)
+    }
+
+    @Test
+    fun pastPlansAskDidYouMeetAndAnswerLogsIt() = runViewModelTest {
+        g.savePlan(null, "Lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 9))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val ask = state.value.agenda.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        vm.onConfirmPlan(ask.plan.id, happened = true)
+        assertEquals(AgendaMessage.PlanLogged, state.value.message)
+        assertTrue(state.value.agenda.none { it is AgendaItem.PlanToConfirm })
+        assertEquals(1, g.hangoutRepo.hangouts.value.size)
+
+        val next = g.savePlan(null, "Hike", listOf(FriendId("ana")), LocalDate(2026, 3, 8))
+        vm.onConfirmPlan(next.id, happened = false)
+        assertEquals(AgendaMessage.PlanClosed, state.value.message)
         assertEquals(1, g.hangoutRepo.hangouts.value.size)
     }
 }

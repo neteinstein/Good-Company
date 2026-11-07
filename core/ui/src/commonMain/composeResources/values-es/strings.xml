@@ -124,7 +124,7 @@
     <string name="circle_good_short">Buen amigo</string>
     <string name="warmth_warm">Cálida</string>
     <string name="warmth_cooling">Enfriándose</string>
-    <string name="warmth_fading">Apagándose</string>
+    <string name="warmth_fading">Tranquila</string>
     <string name="occasion_birthday">Cumpleaños</string>
     <string name="occasion_christmas">Navidad</string>
     <string name="occasion_thank_you">Agradecimiento</string>
@@ -280,4 +280,24 @@
         <item quantity="one">%1$s y %2$d más</item>
         <item quantity="other">%1$s y %2$d más</item>
     </plurals>
+    <string name="plan_new">Planear una quedada</string>
+    <string name="plan_edit">Cambiar el plan</string>
+    <string name="plan_title_label">Qué</string>
+    <string name="plan_title_placeholder">Comida, una ruta, el festival de jazz…</string>
+    <string name="plan_with">Con</string>
+    <string name="plan_when">Cuándo</string>
+    <string name="plan_where">Dónde (opcional)</string>
+    <string name="plan_with_names">Con %1$s</string>
+    <string name="plan_add_calendar">Añadir al calendario</string>
+    <string name="plan_change">Cambiar</string>
+    <string name="plan_cancel">Cancelar plan</string>
+    <string name="plan_did_you_meet">¿Quedasteis?</string>
+    <string name="plan_yes">Sí, quedamos</string>
+    <string name="plan_no">No pasó</string>
+    <string name="plan_counts_hint">Un plan cuenta cuando confirmas que pasó.</string>
+    <string name="plans_title">Planes</string>
+    <string name="plan_saved">Plan guardado</string>
+    <string name="plan_cancelled">Plan cancelado</string>
+    <string name="plan_logged">Registrado como quedada</string>
+    <string name="plan_closed">Vale, a la próxima</string>
 </resources>

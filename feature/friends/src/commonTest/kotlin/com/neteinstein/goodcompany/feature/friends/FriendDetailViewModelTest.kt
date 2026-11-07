@@ -1,5 +1,8 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import kotlin.test.assertFalse
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
@@ -48,6 +51,11 @@ class FriendDetailViewModelTest {
         g.checkIn,
         g.deleteHangout,
         g.addReminder,
+        g.setCatchUpPaused,
+        g.savePlan,
+        g.confirmPlan,
+        g.cancelPlan,
+        g.restorePlan,
         g.clock,
         g.ids,
     )
@@ -210,5 +218,56 @@ class FriendDetailViewModelTest {
         assertIs<FriendDetailMessage.AiError>(state.value.message)
         vm.onSuggestGifts(null)
         assertIs<FriendDetailMessage.AiError>(state.value.message)
+    }
+
+    @Test
+    fun pauseChatsAndOccasions() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onTogglePause()
+        assertTrue(state.value.detail!!.friend.catchUpPaused)
+        vm.onTogglePause()
+        assertFalse(state.value.detail!!.friend.catchUpPaused)
+        vm.onToggleContactCounts()
+        assertTrue(state.value.detail!!.friend.contactCountsAsCatchUp)
+        vm.onToggleOccasion(Occasion.OUTDOORS)
+        vm.onToggleOccasion(Occasion.COFFEE)
+        assertEquals(listOf(Occasion.COFFEE, Occasion.OUTDOORS), state.value.detail!!.friend.occasions)
+        vm.onToggleOccasion(Occasion.COFFEE)
+        assertEquals(listOf(Occasion.OUTDOORS), state.value.detail!!.friend.occasions)
+        assertTrue(state.value.showWarmth)
+        g.settingsRepo.update { it.copy(showWarmth = false) }
+        assertFalse(state.value.showWarmth)
+    }
+
+    @Test
+    fun plansCanBeMadeChangedConfirmedAndCancelledWithUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onOpenPlanEditor(null)
+        assertEquals(PlanEditing(null), state.value.planEditing)
+        vm.onSavePlan("Lunch", emptyList(), LocalDate(2026, 3, 12), "Tasca")
+        assertNull(state.value.planEditing)
+        assertEquals(FriendDetailMessage.PlanSaved, state.value.message)
+        val plan = state.value.detail!!.plans.single()
+        assertEquals(listOf(FriendId("ana")), plan.friendIds)
+
+        vm.onOpenPlanEditor(plan)
+        vm.onSavePlan("Long lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 13), null)
+        assertEquals("Long lunch", state.value.detail!!.plans.single().title)
+        assertEquals(plan.id, state.value.detail!!.plans.single().id)
+
+        val current = state.value.detail!!.plans.single()
+        vm.onCancelPlan(current)
+        assertEquals(FriendDetailMessage.PlanCancelled, state.value.message)
+        assertTrue(state.value.detail!!.plans.isEmpty())
+        vm.onUndoCancelPlan()
+        assertEquals(current, state.value.detail!!.plans.single())
+
+        vm.onConfirmPlan(current.id, happened = true)
+        assertEquals(FriendDetailMessage.PlanLogged, state.value.message)
+        assertTrue(state.value.detail!!.plans.isEmpty())
+        vm.onMessageShown()
+        assertNull(state.value.undoPlan)
     }
 }

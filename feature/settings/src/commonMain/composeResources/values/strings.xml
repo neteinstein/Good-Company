@@ -53,4 +53,29 @@
     <string name="msg_sample_removed">Sample friends removed — your own data is untouched</string>
     <string name="msg_vcf_result">%1$d added · %2$d updated · %3$d unchanged</string>
     <string name="msg_vcf_empty">No contacts found in that file.</string>
+    <string name="digest">Weekly catch-up note</string>
+    <string name="digest_hint">One gentle note a week with who to catch up with, instead of one per friend. Off: at most one nudge a day.</string>
+    <string name="digest_day">On</string>
+    <string name="quiet_note">Nudges get quieter if you don’t open the app for a while, and stop after three months. Birthdays and your own reminders always arrive.</string>
+    <string name="private_notifications">Private on the lock screen</string>
+    <string name="private_notifications_hint">Show “You have a gentle reminder” instead of names and details.</string>
+    <string name="show_warmth">Show warmth</string>
+    <string name="show_warmth_hint">The warmth dots, score and “Drifting apart”. Turn off for a view without numbers.</string>
+    <string name="app_lock">App lock</string>
+    <string name="app_lock_hint">Ask for your fingerprint, face or device PIN when opening Good Company.</string>
+    <string name="backup_export">Export a backup</string>
+    <string name="backup_export_hint">Everything in one file you keep — to move to a new phone, iPhone or the web. Your API key is never included.</string>
+    <string name="backup_export_button">Export</string>
+    <string name="backup_restore">Restore from a backup</string>
+    <string name="backup_restore_hint">Replaces everything on this device with the file’s contents.</string>
+    <string name="backup_restore_button">Restore</string>
+    <string name="backup_confirm_title">Replace everything?</string>
+    <string name="backup_confirm_body">Friends, meetups, reminders and plans on this device will be replaced by the backup. This can’t be undone.</string>
+    <string name="msg_backup_saved">Backup ready</string>
+    <string name="msg_backup_invalid">That file isn’t a Good Company backup</string>
+    <string name="msg_lock_failed">Couldn’t confirm it’s you — app lock stays off</string>
+    <plurals name="msg_backup_restored">
+        <item quantity="one">Restored %1$d friend</item>
+        <item quantity="other">Restored %1$d friends</item>
+    </plurals>
 </resources>

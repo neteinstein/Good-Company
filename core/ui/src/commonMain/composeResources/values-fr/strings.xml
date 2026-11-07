@@ -124,7 +124,7 @@
     <string name="circle_good_short">Bon ami</string>
     <string name="warmth_warm">Chaleureuse</string>
     <string name="warmth_cooling">Refroidit</string>
-    <string name="warmth_fading">S’éteint</string>
+    <string name="warmth_fading">Calme</string>
     <string name="occasion_birthday">Anniversaire</string>
     <string name="occasion_christmas">Noël</string>
     <string name="occasion_thank_you">Remerciement</string>
@@ -280,4 +280,24 @@
         <item quantity="one">%1$s et %2$d autre</item>
         <item quantity="other">%1$s et %2$d autres</item>
     </plurals>
+    <string name="plan_new">Prévoir une sortie</string>
+    <string name="plan_edit">Modifier le projet</string>
+    <string name="plan_title_label">Quoi</string>
+    <string name="plan_title_placeholder">Un déjeuner, une rando, le festival de jazz…</string>
+    <string name="plan_with">Avec</string>
+    <string name="plan_when">Quand</string>
+    <string name="plan_where">Où (facultatif)</string>
+    <string name="plan_with_names">Avec %1$s</string>
+    <string name="plan_add_calendar">Ajouter au calendrier</string>
+    <string name="plan_change">Modifier</string>
+    <string name="plan_cancel">Annuler</string>
+    <string name="plan_did_you_meet">Vous êtes-vous vus ?</string>
+    <string name="plan_yes">Oui</string>
+    <string name="plan_no">Non, pas cette fois</string>
+    <string name="plan_counts_hint">Un projet compte une fois que vous confirmez qu’il a eu lieu.</string>
+    <string name="plans_title">Projets</string>
+    <string name="plan_saved">Projet enregistré</string>
+    <string name="plan_cancelled">Projet annulé</string>
+    <string name="plan_logged">Enregistré comme rencontre</string>
+    <string name="plan_closed">D’accord, une autre fois</string>
 </resources>

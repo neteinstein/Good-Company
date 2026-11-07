@@ -23,7 +23,7 @@
     <string name="notifications_title">Rappels d’anniversaires et de retrouvailles</string>
     <string name="notifications_on">Tout est prêt — on te préviendra au bon moment.</string>
     <string name="notifications_off">Les rappels sont désactivés. Tu peux les activer dans les Réglages.</string>
-    <string name="notifications_body">Un petit rappel pour les anniversaires, les grands jours et quand ça fait trop longtemps.</string>
+    <string name="notifications_body">Un petit rappel pour les anniversaires, les grands jours et quand ça fait un moment.</string>
     <string name="allow">Autoriser</string>
     <string name="looking_title">Juste pour voir ?</string>
     <string name="looking_body">Explore avec un cercle d’amis d’exemple — retire-le quand tu veux dans les Réglages.</string>

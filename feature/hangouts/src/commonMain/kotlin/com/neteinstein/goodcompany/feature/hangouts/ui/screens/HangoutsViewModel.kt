@@ -1,5 +1,9 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.OccasionMatch
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -75,7 +79,12 @@ sealed interface HangoutsMessage {
     data class GroupDeleted(val name: String) : HangoutsMessage
 
     data class GroupSnoozed(val name: String, val until: LocalDate) : HangoutsMessage
+
+    data object PlanSaved : HangoutsMessage
 }
+
+/** The plan editor opened from "Who's free for…?". */
+data class PlanDraft(val friendId: FriendId, val occasion: Occasion)
 
 data class HangoutsUiState(
     /** Close friends first — the check-in picker and the "with…" filter. */
@@ -95,6 +104,10 @@ data class HangoutsUiState(
     /** Increments on every check-in so the UI can celebrate. */
     val celebrate: Int = 0,
     val message: HangoutsMessage? = null,
+    /** "Who's free for…?": friends per occasion (only occasions someone is tagged with). */
+    val occasions: Map<Occasion, List<OccasionMatch>> = emptyMap(),
+    val selectedOccasion: Occasion? = null,
+    val planDraft: PlanDraft? = null,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -109,6 +122,8 @@ class HangoutsViewModel(
     observeMeetups: ObserveMeetupStatusUseCase,
     observeAllHangouts: ObserveHangoutHistoryUseCase,
     observeGroups: ObserveGroupsUseCase,
+    observeOccasions: ObserveOccasionMatchesUseCase,
+    private val savePlan: SavePlanUseCase,
     private val saveGroup: SaveGroupUseCase,
     private val deleteGroup: DeleteGroupUseCase,
     private val snooze: SnoozeCatchUpUseCase,
@@ -125,9 +140,9 @@ class HangoutsViewModel(
         observeFriends(),
         observeHistory(filter),
         observeMeetups(),
-        combine(observeAllHangouts(flowOf(emptySet())), observeGroups()) { all, groups -> all to groups },
+        combine(observeAllHangouts(flowOf(emptySet())), observeGroups(), observeOccasions()) { all, groups, occ -> Triple(all, groups, occ) },
         local,
-    ) { friends, history, meetups, (all, groups), ui ->
+    ) { friends, history, meetups, (all, groups, occasions), ui ->
         val today = clock.today()
         val hangouts = all.map { it.hangout }
         val reviewYear = YearInReviewBuilder.defaultYear(today, hangouts, clock.timeZone)
@@ -139,6 +154,8 @@ class HangoutsViewModel(
             history = history,
             overdue = meetups.filter { it.isOverdue(today) },
             upcoming = meetups.filterNot { it.isOverdue(today) }.take(UPCOMING_LIMIT),
+            occasions = occasions,
+            selectedOccasion = ui.selectedOccasion?.takeIf { it in occasions } ?: occasions.keys.firstOrNull(),
             now = clock.now(),
             today = today,
             zone = clock.timeZone,
@@ -252,6 +269,21 @@ class HangoutsViewModel(
         viewModelScope.launch {
             restoreHangout(hangout)
             local.update { it.copy(recentlyDeleted = null) }
+        }
+    }
+
+    fun onSelectOccasion(occasion: Occasion) = local.update { it.copy(selectedOccasion = occasion) }
+
+    fun onPlanWith(friendId: FriendId, occasion: Occasion) = local.update { it.copy(planDraft = PlanDraft(friendId, occasion)) }
+
+    fun onDismissPlan() = local.update { it.copy(planDraft = null) }
+
+    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
+        val draft = local.value.planDraft ?: return
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            savePlan(null, title, friendIds.ifEmpty { listOf(draft.friendId) }, date, place)
+            local.update { it.copy(planDraft = null, message = HangoutsMessage.PlanSaved) }
         }
     }
 

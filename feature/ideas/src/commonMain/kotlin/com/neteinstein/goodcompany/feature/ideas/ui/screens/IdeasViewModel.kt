@@ -1,5 +1,8 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.screens
 
+import kotlinx.datetime.LocalDate
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -33,6 +36,8 @@ sealed interface IdeasMessage {
     data class Failed(val error: Throwable) : IdeasMessage
 
     data class Skipped(val reason: WeeklyIdeasOutcome.Reason) : IdeasMessage
+
+    data object PlanSaved : IdeasMessage
 }
 
 data class IdeasUiState(
@@ -47,6 +52,9 @@ data class IdeasUiState(
     val message: IdeasMessage? = null,
     /** The idea whose "Propose to…" sheet is open. */
     val proposing: IdeaCard? = null,
+    /** The idea being turned into a plan. */
+    val planning: IdeaCard? = null,
+    val today: LocalDate = LocalDate(2000, 1, 1),
     val now: Instant = Instant.DISTANT_PAST,
     val zone: TimeZone = TimeZone.UTC,
 )
@@ -59,6 +67,7 @@ class IdeasViewModel(
     private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
     private val dismissIdea: DismissIdeaUseCase,
     private val markProposed: MarkIdeaProposedUseCase,
+    private val savePlan: SavePlanUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(IdeasUiState())
@@ -73,6 +82,7 @@ class IdeasViewModel(
             lastRunAt = settings.lastIdeasRunAt,
             isLoading = false,
             now = clock.now(),
+            today = clock.today(),
             zone = clock.timeZone,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IdeasUiState())
@@ -105,6 +115,20 @@ class IdeasViewModel(
     fun onProposed() {
         val id = local.value.proposing?.idea?.id ?: return
         viewModelScope.launch { markProposed(id) }
+    }
+
+    /** "Make it a plan": pick a day; it then reminds you and asks afterwards if it happened. */
+    fun onPlan(id: String) = local.update { s -> s.copy(planning = state.value.ideas.firstOrNull { it.idea.id == id }) }
+
+    fun onDismissPlan() = local.update { it.copy(planning = null) }
+
+    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
+        val card = local.value.planning ?: return
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            savePlan(null, title, friendIds.ifEmpty { card.idea.friendIds }, date, place, ideaId = card.idea.id)
+            local.update { it.copy(planning = null, message = IdeasMessage.PlanSaved) }
+        }
     }
 
     fun onMessageShown() = local.update { it.copy(message = null) }

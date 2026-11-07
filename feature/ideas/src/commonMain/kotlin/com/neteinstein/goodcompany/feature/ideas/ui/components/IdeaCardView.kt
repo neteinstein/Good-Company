@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.components
 
+import com.neteinstein.goodcompany.core.ui.resources.plan_new
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,6 +54,7 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeaCard
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 import kotlin.time.Instant
 
 internal fun IdeaKind.accent(): Pair<Color, Color> = when (this) {
@@ -68,6 +71,7 @@ fun IdeaCardView(
     onDismiss: () -> Unit,
     onPropose: () -> Unit,
     modifier: Modifier = Modifier,
+    onPlan: () -> Unit = {},
 ) {
     val uri = LocalUriHandler.current
     val idea = card.idea
@@ -130,6 +134,12 @@ fun IdeaCardView(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
+                        }
+                        if (idea.kind == IdeaKind.EVENT) {
+                            Spacer(Modifier.width(4.dp))
+                            IconButton(onClick = onPlan) {
+                                Icon(Icons.Rounded.EventAvailable, stringResource(CoreRes.string.plan_new))
+                            }
                         }
                         idea.proposedAt?.let {
                             Spacer(Modifier.width(10.dp))

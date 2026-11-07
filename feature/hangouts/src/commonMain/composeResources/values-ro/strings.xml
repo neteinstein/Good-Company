@@ -21,10 +21,10 @@
     <string name="meet_met">Văzuți</string>
     <string name="groups_title">Grupurile tale</string>
     <string name="groups_new">Grup nou</string>
-    <string name="groups_hint">Gașca de jocuri, prietenii de surf, vechea echipă… Salvează un grup ca să-i înregistrezi pe toți deodată și să primești un memento când a trecut prea mult.</string>
+    <string name="groups_hint">Gașca de jocuri, prietenii de surf, vechea echipă… Salvează un grup ca să-i înregistrezi pe toți deodată și să primești un memento când a trecut o vreme.</string>
     <string name="group_last_together">Toți împreună %1$s</string>
     <string name="group_never">Încă nu ați fost toți împreună</string>
-    <string name="group_overdue">Restant · %1$s</string>
+    <string name="group_overdue">E timpul să vă adunați · %1$s</string>
     <string name="group_due">Scadent %1$s · %2$s</string>
     <string name="group_snoozed">Amânat până pe %1$s</string>
     <string name="group_met">Ne-am văzut</string>
@@ -75,4 +75,14 @@
     <string name="msg_group_saved">%1$s salvat</string>
     <string name="msg_group_deleted">%1$s șters</string>
     <string name="msg_group_snoozed">%1$s amânat până pe %2$s</string>
+    <string name="free_title">Cine e liber pentru…?</string>
+    <string name="free_hint">Pe pagina unui prieten, marchează pentru ce e companie bună (un prânz, o drumeție…) și va apărea aici.</string>
+    <string name="free_due">E timpul să vă vedeți</string>
+    <string name="free_never">Nu v-ați văzut încă</string>
+    <string name="free_plan">Planifică</string>
+    <plurals name="free_days">
+        <item quantity="one">Văzut acum %1$d zi</item>
+        <item quantity="few">Văzut acum %1$d zile</item>
+        <item quantity="other">Văzut acum %1$d de zile</item>
+    </plurals>
 </resources>

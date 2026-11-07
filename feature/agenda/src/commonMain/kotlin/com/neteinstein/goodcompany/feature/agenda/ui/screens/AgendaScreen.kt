@@ -1,5 +1,10 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.screens
 
+import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.components.calendarEntry
+import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -97,11 +102,14 @@ suspend fun AgendaMessage.text(): String = when (this) {
     AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
     is AgendaMessage.GroupMet -> getString(Res.string.msg_group_met, name)
     is AgendaMessage.AiError -> aiErrorText(error)
+    AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
+    AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
 }
 
 @Composable
 fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val addToCalendar = rememberCalendarAdder()
     AgendaContent(
         state = state,
         onOpenFriend = onOpenFriend,
@@ -112,6 +120,8 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = viewModel::onGroupMet,
+        onConfirmPlan = viewModel::onConfirmPlan,
+        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends)) },
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
@@ -146,6 +156,8 @@ fun AgendaContent(
     onUndoDelete: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
+    onConfirmPlan: (String, Boolean) -> Unit = { _, _ -> },
+    onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -212,6 +224,8 @@ fun AgendaContent(
                         onOpenFriend,
                         onOpenWish = onOpenWish,
                         onGroupMet = onGroupMet,
+                        onConfirmPlan = onConfirmPlan,
+                        onAddPlanToCalendar = onAddPlanToCalendar,
                         modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
                     )
                 }

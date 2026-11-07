@@ -1,5 +1,8 @@
 package com.neteinstein.goodcompany.feature.settings.ui.screens
 
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
@@ -33,7 +36,18 @@ sealed interface SettingsMessage {
     data object SampleRemoved : SettingsMessage
 
     data class FileImported(val result: ContactsFileImportResult) : SettingsMessage
+
+    data object BackupSaved : SettingsMessage
+
+    data class BackupRestored(val friends: Int) : SettingsMessage
+
+    data object BackupInvalid : SettingsMessage
+
+    data object LockFailed : SettingsMessage
 }
+
+/** A backup ready to be handed to the platform "save file" UI. */
+data class ExportFile(val name: String, val content: String)
 
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
@@ -41,6 +55,9 @@ data class SettingsUiState(
     val maskedKey: String? = null,
     val hasSampleData: Boolean = false,
     val message: SettingsMessage? = null,
+    val export: ExportFile? = null,
+    /** A picked backup waiting for the "Replace everything?" confirmation. */
+    val pendingRestore: String? = null,
 )
 
 class SettingsViewModel(
@@ -50,6 +67,8 @@ class SettingsViewModel(
     private val loadSampleData: LoadSampleDataUseCase,
     private val removeSampleData: RemoveSampleDataUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
+    private val exportBackup: ExportBackupUseCase,
+    private val restoreBackup: RestoreBackupUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
 
@@ -121,6 +140,61 @@ class SettingsViewModel(
 
     /** Shows the intro again on next launch of the main screen. */
     fun onReplayIntro() = update { it.copy(onboardingDone = false) }
+
+    // --- Nudges & privacy ------------------------------------------------------------------------------------------
+
+    fun onWeeklyDigestChange(enabled: Boolean) = update { it.copy(weeklyDigest = enabled) }
+
+    /** ISO day of week, 1 = Monday … 7 = Sunday. */
+    fun onDigestDayChange(day: Int) = update { it.copy(digestDay = day.coerceIn(1, 7)) }
+
+    fun onPrivateNotificationsChange(enabled: Boolean) = update { it.copy(privateNotifications = enabled) }
+
+    fun onShowWarmthChange(enabled: Boolean) = update { it.copy(showWarmth = enabled) }
+
+    /** Called after the device lock confirmed (or refused) the user; turning the lock off needs no check. */
+    fun onAppLockChange(enabled: Boolean, verified: Boolean) {
+        if (enabled && !verified) {
+            local.update { it.copy(message = SettingsMessage.LockFailed) }
+            return
+        }
+        update { it.copy(appLock = enabled) }
+    }
+
+    // --- Backup --------------------------------------------------------------------------------------------------
+
+    fun onExportBackup() {
+        viewModelScope.launch {
+            val content = exportBackup()
+            local.update { it.copy(export = ExportFile(exportBackup.fileName(), content)) }
+        }
+    }
+
+    /** The platform save UI took the file (or the user cancelled). */
+    fun onExportHandled(saved: Boolean) = local.update { it.copy(export = null, message = if (saved) SettingsMessage.BackupSaved else it.message) }
+
+    fun onBackupPicked(text: String?) {
+        if (text.isNullOrBlank()) return
+        local.update { it.copy(pendingRestore = text) }
+    }
+
+    fun onCancelRestore() = local.update { it.copy(pendingRestore = null) }
+
+    fun onConfirmRestore() {
+        val raw = local.value.pendingRestore ?: return
+        viewModelScope.launch {
+            val result = restoreBackup(raw)
+            local.update {
+                it.copy(
+                    pendingRestore = null,
+                    message = when (result) {
+                        is RestoreResult.Restored -> SettingsMessage.BackupRestored(result.friends)
+                        RestoreResult.NotABackup -> SettingsMessage.BackupInvalid
+                    },
+                )
+            }
+        }
+    }
 
     fun onMessageShown() = local.update { it.copy(message = null) }
 

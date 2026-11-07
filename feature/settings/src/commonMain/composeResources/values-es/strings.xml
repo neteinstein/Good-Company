@@ -47,4 +47,29 @@
     <string name="msg_sample_removed">Amigos de ejemplo eliminados — tus datos no se tocan</string>
     <string name="msg_vcf_result">%1$d añadidos · %2$d actualizados · %3$d sin cambios</string>
     <string name="msg_vcf_empty">No hay contactos en ese archivo.</string>
+    <string name="digest">Resumen semanal</string>
+    <string name="digest_hint">Una nota a la semana con quién ponerte al día, en vez de una por amigo. Desactivado: como mucho un aviso al día.</string>
+    <string name="digest_day">El</string>
+    <string name="quiet_note">Los avisos se espacian si no abres la app durante un tiempo y se detienen a los tres meses. Los cumpleaños y tus recordatorios siempre llegan.</string>
+    <string name="private_notifications">Privado en la pantalla de bloqueo</string>
+    <string name="private_notifications_hint">Muestra «Tienes un recordatorio» en lugar de nombres y detalles.</string>
+    <string name="show_warmth">Mostrar la calidez</string>
+    <string name="show_warmth_hint">Los puntos, la puntuación y «Os estáis distanciando». Desactívalo para una vista sin números.</string>
+    <string name="app_lock">Bloqueo de la app</string>
+    <string name="app_lock_hint">Pide la huella, la cara o el PIN del dispositivo al abrir Good Company.</string>
+    <string name="backup_export">Exportar copia de seguridad</string>
+    <string name="backup_export_hint">Todo en un archivo que guardas tú: para cambiar de móvil, a iPhone o a la web. Tu clave de API nunca se incluye.</string>
+    <string name="backup_export_button">Exportar</string>
+    <string name="backup_restore">Restaurar una copia</string>
+    <string name="backup_restore_hint">Sustituye todo en este dispositivo por el contenido del archivo.</string>
+    <string name="backup_restore_button">Restaurar</string>
+    <string name="backup_confirm_title">¿Sustituirlo todo?</string>
+    <string name="backup_confirm_body">Los amigos, quedadas, recordatorios y planes de este dispositivo se sustituirán por la copia. No se puede deshacer.</string>
+    <string name="msg_backup_saved">Copia lista</string>
+    <string name="msg_backup_invalid">Ese archivo no es una copia de Good Company</string>
+    <string name="msg_lock_failed">No se pudo confirmar que eres tú: el bloqueo sigue desactivado</string>
+    <plurals name="msg_backup_restored">
+        <item quantity="one">%1$d amigo restaurado</item>
+        <item quantity="other">%1$d amigos restaurados</item>
+    </plurals>
 </resources>

@@ -131,7 +131,7 @@
     <string name="circle_good_short">Bun prieten</string>
     <string name="warmth_warm">Caldă</string>
     <string name="warmth_cooling">Se răcește</string>
-    <string name="warmth_fading">Se stinge</string>
+    <string name="warmth_fading">Liniștită</string>
     <string name="occasion_birthday">Zi de naștere</string>
     <string name="occasion_christmas">Crăciun</string>
     <string name="occasion_thank_you">Mulțumire</string>
@@ -291,4 +291,24 @@
         <item quantity="few">%1$s și încă %2$d</item>
         <item quantity="other">%1$s și încă %2$d</item>
     </plurals>
+    <string name="plan_new">Planifică o întâlnire</string>
+    <string name="plan_edit">Schimbă planul</string>
+    <string name="plan_title_label">Ce</string>
+    <string name="plan_title_placeholder">Prânz, o drumeție, festivalul de jazz…</string>
+    <string name="plan_with">Cu</string>
+    <string name="plan_when">Când</string>
+    <string name="plan_where">Unde (opțional)</string>
+    <string name="plan_with_names">Cu %1$s</string>
+    <string name="plan_add_calendar">Adaugă în calendar</string>
+    <string name="plan_change">Schimbă</string>
+    <string name="plan_cancel">Anulează planul</string>
+    <string name="plan_did_you_meet">V-ați văzut?</string>
+    <string name="plan_yes">Da, ne-am văzut</string>
+    <string name="plan_no">Nu s-a întâmplat</string>
+    <string name="plan_counts_hint">Un plan contează după ce confirmi că a avut loc.</string>
+    <string name="plans_title">Planuri</string>
+    <string name="plan_saved">Plan salvat</string>
+    <string name="plan_cancelled">Plan anulat</string>
+    <string name="plan_logged">Înregistrat ca întâlnire</string>
+    <string name="plan_closed">Bine, data viitoare</string>
 </resources>

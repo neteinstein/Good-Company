@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -30,6 +31,8 @@ class FriendsViewModelTest {
         g.observeFriends,
         g.observeAgenda,
         g.observeMeetups,
+        g.observeSettings,
+        g.importPickedContacts,
         g.syncContacts,
         g.importContactsFile,
         g.addFriend,
@@ -153,5 +156,27 @@ class FriendsViewModelTest {
         vm.onFilterChange(FriendFilter.CLOSE)
         vm.onQueryChange("jazz")
         assertEquals(listOf("Ana"), state.value.friends.map { it.friend.name })
+    }
+
+    @Test
+    fun pickedContactsAreAddedAsRealFriends() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onContactsPicked(emptyList())
+        assertNull(state.value.message)
+        vm.onContactsPicked(listOf(ContactRecord("9", "Zoe Lima", listOf("+351 1"), null)))
+        assertEquals(FriendsMessage.ContactsPicked(PickedContactsResult(added = 1, updated = 0)), state.value.message)
+        assertTrue(g.friendRepo.get(FriendId("contact-9"))!!.isCloseFriend)
+    }
+
+    @Test
+    fun hidingWarmthHidesDriftingApart() = runViewModelTest {
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(isCloseFriend = true))
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertTrue(state.value.showWarmth)
+        g.settingsRepo.update { it.copy(showWarmth = false) }
+        assertFalse(state.value.showWarmth)
+        assertTrue(state.value.drifting.isEmpty())
     }
 }

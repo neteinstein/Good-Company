@@ -140,7 +140,7 @@ class CalendarFileTest {
         assertTrue("DTSTART;VALUE=DATE:20261231" in lines)
         assertTrue("DTEND;VALUE=DATE:20270101" in lines)
         assertTrue("DTSTAMP:20260310T080500Z" in lines)
-        assertTrue("SUMMARY:Jazz\\, wine\; fun" in lines)
+        assertTrue("SUMMARY:Jazz\\, wine\\; fun" in lines)
         assertTrue("DESCRIPTION:Line 1\\nLine 2" in lines)
         assertTrue("LOCATION:Hot Clube" in lines)
         assertEquals("jazz-wine-fun.ics", com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.fileName("Jazz, wine; fun!"))

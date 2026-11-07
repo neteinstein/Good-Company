@@ -124,7 +124,7 @@
     <string name="circle_good_short">Bom amigo</string>
     <string name="warmth_warm">Calorosa</string>
     <string name="warmth_cooling">A arrefecer</string>
-    <string name="warmth_fading">A desvanecer</string>
+    <string name="warmth_fading">Calmo</string>
     <string name="occasion_birthday">Aniversário</string>
     <string name="occasion_christmas">Natal</string>
     <string name="occasion_thank_you">Agradecimento</string>
@@ -280,4 +280,24 @@
         <item quantity="one">%1$s e mais %2$d</item>
         <item quantity="other">%1$s e mais %2$d</item>
     </plurals>
+    <string name="plan_new">Planear um encontro</string>
+    <string name="plan_edit">Alterar o plano</string>
+    <string name="plan_title_label">O quê</string>
+    <string name="plan_title_placeholder">Almoço, uma caminhada, o festival de jazz…</string>
+    <string name="plan_with">Com</string>
+    <string name="plan_when">Quando</string>
+    <string name="plan_where">Onde (opcional)</string>
+    <string name="plan_with_names">Com %1$s</string>
+    <string name="plan_add_calendar">Adicionar ao calendário</string>
+    <string name="plan_change">Alterar</string>
+    <string name="plan_cancel">Cancelar plano</string>
+    <string name="plan_did_you_meet">Estiveram juntos?</string>
+    <string name="plan_yes">Sim, estivemos</string>
+    <string name="plan_no">Não aconteceu</string>
+    <string name="plan_counts_hint">Um plano conta quando confirmas que aconteceu.</string>
+    <string name="plans_title">Planos</string>
+    <string name="plan_saved">Plano guardado</string>
+    <string name="plan_cancelled">Plano cancelado</string>
+    <string name="plan_logged">Registado como encontro</string>
+    <string name="plan_closed">Ok, fica para a próxima</string>
 </resources>

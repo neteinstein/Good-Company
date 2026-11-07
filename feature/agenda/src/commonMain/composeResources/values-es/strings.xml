@@ -44,4 +44,5 @@
     <string name="msg_reminder_saved">Recordatorio guardado</string>
     <string name="msg_reminder_deleted">Recordatorio eliminado</string>
     <string name="msg_group_met">Tiempo con %1$s registrado ✨</string>
+    <string name="label_plan">Plan</string>
 </resources>

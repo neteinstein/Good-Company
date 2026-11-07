@@ -20,10 +20,10 @@
     <string name="meet_met">Vus</string>
     <string name="groups_title">Tes groupes</string>
     <string name="groups_new">Nouveau groupe</string>
-    <string name="groups_hint">La bande des jeux, les copains du surf, l’ancienne équipe… Enregistre un groupe pour pointer tout le monde d’un coup et recevoir un rappel quand ça fait trop longtemps.</string>
+    <string name="groups_hint">Les joueurs de société, les potes de surf, l’ancienne équipe… Enregistrez un groupe pour pointer tout le monde d’un coup et recevoir un rappel quand ça fait un moment.</string>
     <string name="group_last_together">Tous ensemble %1$s</string>
     <string name="group_never">Pas encore tous ensemble</string>
-    <string name="group_overdue">En retard · %1$s</string>
+    <string name="group_overdue">C’est le moment de se retrouver · %1$s</string>
     <string name="group_due">Prévu %1$s · %2$s</string>
     <string name="group_snoozed">Reporté jusqu’au %1$s</string>
     <string name="group_met">On s’est vus</string>
@@ -73,4 +73,13 @@
     <string name="msg_group_saved">%1$s enregistré</string>
     <string name="msg_group_deleted">%1$s supprimé</string>
     <string name="msg_group_snoozed">%1$s reporté jusqu’au %2$s</string>
+    <string name="free_title">Qui est partant pour… ?</string>
+    <string name="free_hint">Sur la page d’un ami, indiquez pour quoi il est de bonne compagnie (un déjeuner, une rando…) et il apparaîtra ici.</string>
+    <string name="free_due">C’est le moment de se revoir</string>
+    <string name="free_never">Pas encore vu</string>
+    <string name="free_plan">Prévoir</string>
+    <plurals name="free_days">
+        <item quantity="one">Vu il y a %1$d jour</item>
+        <item quantity="other">Vu il y a %1$d jours</item>
+    </plurals>
 </resources>

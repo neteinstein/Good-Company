@@ -45,6 +45,7 @@ import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
 import platform.UIKit.UIWindowScene
 import platform.UIKit.popoverPresentationController
+import platform.UniformTypeIdentifiers.UTTypeJSON
 import platform.UniformTypeIdentifiers.UTTypePlainText
 import platform.UniformTypeIdentifiers.UTTypeText
 import platform.UniformTypeIdentifiers.UTTypeVCard
@@ -97,6 +98,7 @@ actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> U
         val types = when (kind) {
             FileKind.TEXT -> listOf(UTTypePlainText, UTTypeText)
             FileKind.VCARD -> listOf(UTTypeVCard, UTTypeText)
+            FileKind.JSON -> listOf(UTTypeJSON, UTTypeText)
         }
         val picker = UIDocumentPickerViewController(forOpeningContentTypes = types)
         picker.delegate = delegate

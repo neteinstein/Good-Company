@@ -1,6 +1,10 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.list
 
 import androidx.lifecycle.ViewModel
+import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -66,6 +70,8 @@ sealed interface FriendsMessage {
     data object SampleAdded : FriendsMessage
 
     data class FileImported(val result: ContactsFileImportResult) : FriendsMessage
+
+    data class ContactsPicked(val result: PickedContactsResult) : FriendsMessage
 }
 
 data class FriendsUiState(
@@ -87,6 +93,8 @@ data class FriendsUiState(
     val greeting: Greeting = Greeting.MORNING,
     val week: WeekSummary = WeekSummary(0, 0, 0),
     val message: FriendsMessage? = null,
+    /** Warmth dots and "Drifting apart" (off in Settings = softer view). */
+    val showWarmth: Boolean = true,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -98,6 +106,8 @@ class FriendsViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeAgenda: ObserveAgendaUseCase,
     observeMeetups: ObserveMeetupStatusUseCase,
+    observeSettings: ObserveSettingsUseCase,
+    private val importPickedContacts: ImportPickedContactsUseCase,
     private val syncContacts: SyncContactsUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
     private val addFriend: AddFriendUseCase,
@@ -110,7 +120,13 @@ class FriendsViewModel(
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendsUiState())
 
-    val state: StateFlow<FriendsUiState> = combine(observeFriends(), observeAgenda(), observeMeetups(), local) { all, agenda, meetups, ui ->
+    val state: StateFlow<FriendsUiState> = combine(
+        observeFriends(),
+        observeAgenda(),
+        observeMeetups(),
+        observeSettings(),
+        local,
+    ) { all, agenda, meetups, settings, ui ->
         val today = clock.today()
         val q = ui.query.trim().lowercase()
         // First run: nobody marked as close yet → show everyone instead of an empty list.
@@ -139,11 +155,14 @@ class FriendsViewModel(
             upcoming = upcoming.take(8),
             catchUp = catchUp,
             drifting = all
-                .filter { it.friend.isCloseFriend && it.warmth.level == Warmth.Level.FADING && it.friend.id !in catchUpIds }
+                .filter { settings.showWarmth }
+                .filter { it.friend.isCloseFriend && !it.friend.catchUpPaused }
+                .filter { it.warmth.level == Warmth.Level.FADING && it.friend.id !in catchUpIds }
                 .filter { s -> s.friend.snoozedUntil?.let { it < today } ?: true }
                 .sortedBy { it.warmth.value }
                 .take(3),
             totalCount = all.size,
+            showWarmth = settings.showWarmth,
             isLoading = false,
             filter = filter,
             greeting = when (hour) {
@@ -223,6 +242,15 @@ class FriendsViewModel(
             local.update { it.copy(isSyncing = true) }
             val result = importContactsFile(text)
             local.update { it.copy(isSyncing = false, message = FriendsMessage.FileImported(result)) }
+        }
+    }
+
+    /** People chosen in the system contact picker (no contacts permission involved). */
+    fun onContactsPicked(records: List<ContactRecord>) {
+        if (records.isEmpty()) return
+        viewModelScope.launch {
+            val result = importPickedContacts(records)
+            local.update { it.copy(message = FriendsMessage.ContactsPicked(result)) }
         }
     }
 

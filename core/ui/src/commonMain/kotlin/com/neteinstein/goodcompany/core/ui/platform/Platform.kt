@@ -38,7 +38,7 @@ expect val platformCapabilities: PlatformCapabilities
 expect fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit
 
 /** What kind of file the picker should offer. */
-enum class FileKind { TEXT, VCARD }
+enum class FileKind { TEXT, VCARD, JSON }
 
 /** Returns a launcher for the system document picker that reads a text file (null if cancelled/unreadable). */
 @Composable

@@ -100,7 +100,7 @@
     <!-- Warmth -->
     <string name="warmth_warm">Warm</string>
     <string name="warmth_cooling">Cooling</string>
-    <string name="warmth_fading">Fading</string>
+    <string name="warmth_fading">Quiet</string>
 
     <!-- Gift occasions -->
     <string name="occasion_birthday">Birthday</string>
@@ -270,4 +270,24 @@
         <item quantity="one">%1$s and %2$d more</item>
         <item quantity="other">%1$s and %2$d more</item>
     </plurals>
+    <string name="plan_new">Plan a meetup</string>
+    <string name="plan_edit">Change the plan</string>
+    <string name="plan_title_label">What</string>
+    <string name="plan_title_placeholder">Lunch, a hike, the jazz festival…</string>
+    <string name="plan_with">With</string>
+    <string name="plan_when">When</string>
+    <string name="plan_where">Where (optional)</string>
+    <string name="plan_with_names">With %1$s</string>
+    <string name="plan_add_calendar">Add to calendar</string>
+    <string name="plan_change">Change</string>
+    <string name="plan_cancel">Cancel plan</string>
+    <string name="plan_did_you_meet">Did you meet?</string>
+    <string name="plan_yes">Yes, we met</string>
+    <string name="plan_no">Didn’t happen</string>
+    <string name="plan_counts_hint">A plan counts once you say it happened.</string>
+    <string name="plans_title">Plans</string>
+    <string name="plan_saved">Plan saved</string>
+    <string name="plan_cancelled">Plan cancelled</string>
+    <string name="plan_logged">Logged as a meetup</string>
+    <string name="plan_closed">Okay, maybe next time</string>
 </resources>

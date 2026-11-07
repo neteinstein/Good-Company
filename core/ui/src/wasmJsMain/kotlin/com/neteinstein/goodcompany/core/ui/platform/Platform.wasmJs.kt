@@ -29,6 +29,7 @@ actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> U
     val accept = when (kind) {
         FileKind.TEXT -> ".txt,text/plain"
         FileKind.VCARD -> ".vcf,.vcard,text/vcard,text/x-vcard"
+        FileKind.JSON -> ".json,application/json"
     }
     return { pickTextFile(accept, { callback.value(it) }, { callback.value(null) }) }
 }

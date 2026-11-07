@@ -1,5 +1,17 @@
 package com.neteinstein.goodcompany
 
+import kotlin.time.TimeSource
+import kotlin.time.TimeMark
+import kotlin.time.Duration.Companion.seconds
+import com.neteinstein.goodcompany.core.ui.resources.lock_reason
+import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
+import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.Lifecycle
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -58,6 +70,7 @@ import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Root composable shared by Android, iOS and Web. */
 @Composable
@@ -74,6 +87,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                 ) { done ->
                     if (done) AppScaffold(launch) else OnboardingScreen(onDone = {})
                 }
+                if (state.settings.appLock) AppLock()
             }
         }
     }
@@ -130,6 +144,28 @@ private fun AppScaffold(launch: LaunchOptions) {
         }
     }
 }
+
+/**
+ * Covers the app until the device lock (biometrics / PIN) confirms the user. Locks again when the app has been in the
+ * background for more than [RELOCK_AFTER] — short trips to a file picker or share sheet don't count.
+ */
+@Composable
+private fun AppLock() {
+    val authenticator = rememberDeviceAuthenticator()
+    if (!authenticator.isAvailable) return // Lock removed from the device: don't trap the user out of their data.
+    var unlocked by rememberSaveable { mutableStateOf(false) }
+    var stoppedAt by remember { mutableStateOf<TimeMark?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stoppedAt = TimeSource.Monotonic.markNow() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (stoppedAt?.let { it.elapsedNow() > RELOCK_AFTER } == true) unlocked = false
+        stoppedAt = null
+    }
+    if (unlocked) return
+    val reason = stringResource(CoreRes.string.lock_reason)
+    AppLockScreen(onUnlock = { authenticator.authenticate(reason) { ok -> if (ok) unlocked = true } })
+}
+
+private val RELOCK_AFTER = 60.seconds
 
 /** The two-hearts brand mark, drawn in Compose (no bitmap) for the navigation rail header. */
 @Composable

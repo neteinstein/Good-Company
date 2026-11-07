@@ -1,5 +1,15 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.components
 
+import com.neteinstein.goodcompany.core.ui.resources.plan_yes
+import com.neteinstein.goodcompany.core.ui.resources.plan_no
+import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
+import com.neteinstein.goodcompany.feature.agenda.resources.label_plan
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +72,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.daysUntil
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /**
  * A colour-coded agenda card: birthday (sunflower), kid (teal), big day (coral), reminder (violet), catch-up (red),
@@ -75,6 +86,8 @@ fun AgendaRow(
     modifier: Modifier = Modifier,
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
+    onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     data class Spec(val icon: ImageVector, val tint: Color, val label: String, val title: String, val subtitle: String?, val friend: Friend?)
@@ -139,6 +152,28 @@ fun AgendaRow(
             },
             null,
         )
+        is AgendaItem.PlanUpcoming -> Spec(
+            Icons.Rounded.EventAvailable,
+            PLAN_GREEN,
+            stringResource(Res.string.label_plan),
+            item.plan.title,
+            listOfNotNull(
+                item.friends.takeIf { it.isNotEmpty() }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                item.plan.place,
+            ).joinToString(" · "),
+            item.friends.singleOrNull(),
+        )
+        is AgendaItem.PlanToConfirm -> Spec(
+            Icons.Rounded.EventAvailable,
+            PLAN_GREEN,
+            stringResource(Res.string.label_plan),
+            item.plan.title,
+            listOfNotNull(
+                item.plan.date.shortLabel(),
+                item.friends.takeIf { it.isNotEmpty() }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+            ).joinToString(" · "),
+            item.friends.singleOrNull(),
+        )
     }
     Surface(
         onClick = { spec.friend?.let { onOpenFriend(it.id) } },
@@ -178,6 +213,34 @@ fun AgendaRow(
                         Text(stringResource(Res.string.row_send_wishes), style = MaterialTheme.typography.labelLarge)
                     }
                 }
+                if (item is AgendaItem.PlanToConfirm) {
+                    Text(
+                        stringResource(CoreRes.string.plan_did_you_meet),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilledTonalButton(
+                            onClick = { onConfirmPlan(item.plan.id, true) },
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp),
+                        ) { Text(stringResource(CoreRes.string.plan_yes), style = MaterialTheme.typography.labelLarge) }
+                        TextButton(onClick = { onConfirmPlan(item.plan.id, false) }, modifier = Modifier.height(34.dp)) {
+                            Text(stringResource(CoreRes.string.plan_no), style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+                if (item is AgendaItem.PlanUpcoming) {
+                    TextButton(
+                        onClick = { onAddPlanToCalendar(item) },
+                        contentPadding = PaddingValues(horizontal = 0.dp),
+                        modifier = Modifier.height(34.dp),
+                    ) {
+                        Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(CoreRes.string.plan_add_calendar), style = MaterialTheme.typography.labelLarge)
+                    }
+                }
                 if (item is AgendaItem.GroupOverdue && item.group.memberIds.isNotEmpty()) {
                     FilledTonalButton(
                         onClick = { onGroupMet(item.group.id) },
@@ -189,8 +252,14 @@ fun AgendaRow(
             when {
                 spec.friend != null -> FriendAvatar(spec.friend.name, spec.friend.initials, size = 36.dp)
                 item is AgendaItem.GroupOverdue -> StackedAvatars(item.members.map { it.name to it.initials }, size = 26.dp, max = 3)
+                item is AgendaItem.PlanUpcoming && item.friends.size > 1 ->
+                    StackedAvatars(item.friends.map { it.name to it.initials }, size = 26.dp, max = 3)
+                item is AgendaItem.PlanToConfirm && item.friends.size > 1 ->
+                    StackedAvatars(item.friends.map { it.name to it.initials }, size = 26.dp, max = 3)
             }
             Spacer(Modifier.width(12.dp))
         }
     }
 }
+
+private val PLAN_GREEN = Color(0xFF2E7D32)

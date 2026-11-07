@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
@@ -60,6 +61,7 @@ class AppStartupTest {
             clock,
             SequentialIds(),
         ),
+        RecordAppOpenedUseCase(settings, clock),
     )
 
     @Test
@@ -73,6 +75,7 @@ class AppStartupTest {
         advanceUntilIdle()
         assertTrue(scheduler.scheduled.isNotEmpty())
         assertTrue(friends.friends.value.any { it.name == "Nina" })
+        assertEquals(clock.now(), settings.settings.value.lastOpenedAt)
         val runs = scheduler.scheduled.size
 
         // Activity destroyed → root ViewModel scope cancelled → a new UI must start the work again.
