@@ -4,7 +4,9 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
+import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -59,11 +61,13 @@ class ObserveAgendaUseCase(
     private val friends: FriendRepository,
     private val reminders: ReminderRepository,
     private val hangouts: HangoutRepository,
+    private val settings: SettingsRepository,
+    private val groups: GroupRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(): Flow<List<AgendaItem>> =
-        combine(friends.friends, reminders.reminders, hangouts.hangouts) { fs, rs, hs ->
-            AgendaBuilder.build(fs, rs, hs, clock.today(), clock.timeZone)
+        combine(friends.friends, reminders.reminders, hangouts.hangouts, settings.settings, groups.groups) { fs, rs, hs, s, gs ->
+            AgendaBuilder.build(fs, rs, hs, clock.today(), clock.timeZone, rules = CadenceRules.from(s), groups = gs)
         }
 }
 
@@ -76,17 +80,19 @@ class KeepNotificationsScheduledUseCase(
     private val reminders: ReminderRepository,
     private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
+    private val groups: GroupRepository,
     private val scheduler: NotificationScheduler,
+    private val renderer: NotificationRenderer,
     private val clock: AppClock,
 ) {
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     suspend operator fun invoke() {
-        combine(friends.friends, reminders.reminders, hangouts.hangouts, settings.settings) { fs, rs, hs, s ->
-            NotificationPlanner.plan(fs, rs, hs, clock.now(), clock.timeZone, s.reminderHour)
+        combine(friends.friends, reminders.reminders, hangouts.hangouts, settings.settings, groups.groups) { fs, rs, hs, s, gs ->
+            NotificationPlanner.plan(fs, rs, hs, clock.now(), clock.timeZone, s.reminderHour, rules = CadenceRules.from(s), groups = gs)
         }
             .debounce(DEBOUNCE_MS)
             .distinctUntilChanged()
-            .collect { scheduler.replaceAll(it) }
+            .collect { planned -> scheduler.replaceAll(planned.map { renderer.render(it) }) }
     }
 
     private companion object {

@@ -4,21 +4,30 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.NotificationAction
+import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.RenderedAction
+import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaGenerator
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRequest
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
+import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -119,6 +128,19 @@ class FakeIdeaRepository : IdeaRepository {
     override suspend fun addAll(ideas: List<Idea>) = state.update { it + ideas }
 
     override suspend fun dismiss(id: String) = state.update { list -> list.map { if (it.id == id) it.copy(dismissed = true) else it } }
+
+    override suspend fun markProposed(id: String, at: Instant) = state.update { list -> list.map { if (it.id == id) it.copy(proposedAt = at) else it } }
+}
+
+class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepository {
+    private val state = MutableStateFlow(initial)
+    override val groups: StateFlow<List<FriendGroup>> = state
+
+    override suspend fun upsert(group: FriendGroup) = state.update { list ->
+        if (list.any { it.id == group.id }) list.map { if (it.id == group.id) group else it } else list + group
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
 }
 
 class FakeSettingsRepository(initial: AppSettings = AppSettings()) : SettingsRepository {
@@ -142,10 +164,40 @@ class FakeLocationProvider(var point: GeoPoint? = null) : LocationProvider {
 }
 
 class FakeNotificationScheduler : NotificationScheduler {
-    val scheduled = mutableListOf<List<PlannedNotification>>()
+    val scheduled = mutableListOf<List<RenderedNotification>>()
 
-    override suspend fun replaceAll(notifications: List<PlannedNotification>) {
+    override suspend fun replaceAll(notifications: List<RenderedNotification>) {
         scheduled += notifications
+    }
+}
+
+/** Renders the content's class name as the title and its toString() as the body; meetups get the four actions. */
+object FakeNotificationRenderer : NotificationRenderer {
+    override suspend fun render(notification: PlannedNotification): RenderedNotification {
+        val c = notification.content
+        val actions = when (c) {
+            is NotificationContent.MeetupDue -> NotificationAction.Kind.entries.map { RenderedAction(NotificationAction(it, c.friendId.value), it.name) }
+            is NotificationContent.GroupMeetupDue -> listOf(RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true), "MET"))
+            else -> emptyList()
+        }
+        return RenderedNotification(notification.id, notification.at, c::class.simpleName.orEmpty(), c.toString(), actions)
+    }
+}
+
+class FakeAiAssistant(
+    var message: Result<String> = Result.success("Happy birthday!"),
+    var gifts: Result<List<String>> = Result.success(listOf("Vinyl", "Concert tickets")),
+) : AiAssistant {
+    val calls = mutableListOf<String>()
+
+    override suspend fun birthdayMessage(apiKey: String, friend: FriendProfile, languageTag: String): Result<String> {
+        calls += "message:${friend.id}:$languageTag"
+        return message
+    }
+
+    override suspend fun giftIdeas(apiKey: String, friend: FriendProfile, kidName: String?, kidLikes: List<String>, languageTag: String): Result<List<String>> {
+        calls += "gifts:${friend.id}:${kidName ?: "-"}:$languageTag"
+        return gifts
     }
 }
 

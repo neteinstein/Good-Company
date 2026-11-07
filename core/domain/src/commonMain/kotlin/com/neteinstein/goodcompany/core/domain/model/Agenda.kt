@@ -27,15 +27,11 @@ sealed interface AgendaItem {
     data class MeetupOverdue(val friend: Friend, val daysSince: Int?, override val date: LocalDate) : AgendaItem {
         override val key get() = "overdue-${friend.id.value}"
     }
-}
 
-/** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */
-data class PlannedNotification(
-    val id: String,
-    val at: kotlin.time.Instant,
-    val title: String,
-    val body: String,
-)
+    data class GroupOverdue(val group: FriendGroup, val members: List<Friend>, val daysSince: Int?, override val date: LocalDate) : AgendaItem {
+        override val key get() = "group-overdue-${group.id}"
+    }
+}
 
 /** A raw entry from the device address book. */
 data class ContactRecord(

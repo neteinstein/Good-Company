@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
@@ -35,6 +36,12 @@ data class Friend(
     val suggestEvents: Boolean = false,
     /** Contact disappeared from the address book; kept because it has app data. */
     val isOrphaned: Boolean = false,
+    /** Which circle a real friend belongs to — gives a default "meet every" cadence without per-friend setup. */
+    val circle: Circle? = null,
+    /** Catch-up nudges are paused until this date (inclusive). */
+    val snoozedUntil: LocalDate? = null,
+    /** Gift ideas (not yet given) and gift history (given), for them or their kids. */
+    val gifts: List<Gift> = emptyList(),
 ) {
     val initials: String
         get() = name.split(' ', '-')
@@ -57,7 +64,28 @@ data class Kid(
 data class ImportantEvent(
     val id: String,
     val title: String,
-    val date: kotlinx.datetime.LocalDate,
+    val date: LocalDate,
     /** Also remind this many days before (0 = only on the day). */
     val remindDaysBefore: Int = 0,
 )
+
+/**
+ * Dunbar-style tiers for real friends. Each has a default cadence (configurable in Settings) so reminders work
+ * the moment someone is marked as a real friend. A per-friend "meet every" value still overrides it.
+ */
+enum class Circle { INNER, CLOSE, GOOD }
+
+/** A gift idea ([givenOn] null) or a gift already given. [forKidId] targets one of the friend's kids. */
+@Serializable
+data class Gift(
+    val id: String,
+    val title: String,
+    val note: String = "",
+    val forKidId: String? = null,
+    val givenOn: LocalDate? = null,
+    val occasion: GiftOccasion? = null,
+) {
+    val isIdea: Boolean get() = givenOn == null
+}
+
+enum class GiftOccasion { BIRTHDAY, CHRISTMAS, THANK_YOU, JUST_BECAUSE }

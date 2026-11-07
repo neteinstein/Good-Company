@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
+import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.Flow
@@ -67,9 +68,10 @@ class ObserveHangoutHistoryUseCase(
 class ObserveMeetupStatusUseCase(
     private val friends: FriendRepository,
     private val hangouts: HangoutRepository,
+    private val settings: SettingsRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<List<Relationships.MeetupStatus>> = combine(friends.friends, hangouts.hangouts) { fs, hs ->
-        Relationships.meetupStatuses(fs, hs, clock.today(), clock.timeZone)
+    operator fun invoke(): Flow<List<Relationships.MeetupStatus>> = combine(friends.friends, hangouts.hangouts, settings.settings) { fs, hs, s ->
+        Relationships.meetupStatuses(fs, hs, clock.today(), clock.timeZone, CadenceRules.from(s))
     }
 }

@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.repository
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
@@ -57,6 +58,16 @@ interface IdeaRepository {
     suspend fun addAll(ideas: List<Idea>)
 
     suspend fun dismiss(id: String)
+
+    suspend fun markProposed(id: String, at: kotlin.time.Instant)
+}
+
+interface GroupRepository {
+    val groups: Flow<List<FriendGroup>>
+
+    suspend fun upsert(group: FriendGroup)
+
+    suspend fun delete(id: String)
 }
 
 interface SettingsRepository {

@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleData
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
+import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
@@ -26,23 +27,26 @@ class SampleDataTest {
     private val hangouts = FakeHangoutRepository()
     private val reminders = FakeReminderRepository()
     private val ideas = FakeIdeaRepository()
+    private val groups = FakeGroupRepository()
 
     @Test
     fun loadIsIdempotentAndRemoveKeepsUserData() = runTest {
-        val load = LoadSampleDataUseCase(friends, hangouts, reminders, ideas, clock)
+        val load = LoadSampleDataUseCase(friends, hangouts, reminders, ideas, groups, clock)
         load()
         load()
         val bundle = SampleData.build(clock)
         assertEquals(bundle.friends.size + 1, friends.friends.value.size)
         assertEquals(bundle.hangouts.size, hangouts.hangouts.value.size)
         assertEquals(bundle.ideas.size, ideas.ideas.value.size)
+        assertEquals(bundle.groups.size, groups.groups.value.size)
         assertTrue(HasSampleDataUseCase(friends)().first())
 
-        RemoveSampleDataUseCase(friends, hangouts, reminders, ideas)()
+        RemoveSampleDataUseCase(friends, hangouts, reminders, ideas, groups)()
         assertEquals(listOf(mine), friends.friends.value)
         assertTrue(hangouts.hangouts.value.isEmpty())
         assertTrue(reminders.reminders.value.isEmpty())
         assertTrue(ideas.ideas.value.all { it.dismissed })
+        assertTrue(groups.groups.value.isEmpty())
         assertFalse(HasSampleDataUseCase(friends)().first())
     }
 

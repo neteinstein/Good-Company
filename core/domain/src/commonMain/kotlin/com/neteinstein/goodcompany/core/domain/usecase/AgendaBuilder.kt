@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
@@ -25,6 +26,8 @@ object AgendaBuilder {
         today: LocalDate,
         zone: TimeZone,
         horizonDays: Int = DEFAULT_HORIZON_DAYS,
+        rules: CadenceRules = CadenceRules(),
+        groups: List<FriendGroup> = emptyList(),
     ): List<AgendaItem> {
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
         fun inWindow(d: LocalDate) = d in today..end
@@ -55,15 +58,20 @@ object AgendaBuilder {
             }
         }
 
-        Relationships.meetupStatuses(friends, hangouts, today, zone)
+        Relationships.meetupStatuses(friends, hangouts, today, zone, rules)
             .filter { it.isOverdue(today) }
             .forEach { items += AgendaItem.MeetupOverdue(it.friend, it.daysSinceLastSeen, today) }
+
+        Relationships.groupStatuses(groups, friends, hangouts, today, zone)
+            .filter { it.isOverdue(today) }
+            .forEach { items += AgendaItem.GroupOverdue(it.group, it.members, it.daysSince, today) }
 
         return items.sortedWith(compareBy<AgendaItem> { it.date }.thenBy { it.sortRank() })
     }
 
     private fun AgendaItem.sortRank() = when (this) {
         is AgendaItem.MeetupOverdue -> 0
+        is AgendaItem.GroupOverdue -> 0
         is AgendaItem.FriendEvent -> 1
         is AgendaItem.FriendBirthday -> 2
         is AgendaItem.KidBirthday -> 3
