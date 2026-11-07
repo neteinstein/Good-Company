@@ -137,7 +137,9 @@ fun FriendsContent(
             item(key = "filters") {
                 Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(state.filter == FriendFilter.CLOSE, { onFilterChange(FriendFilter.CLOSE) }, label = { Text("Real friends") })
-                    FilterChip(state.filter == FriendFilter.ALL, { onFilterChange(FriendFilter.ALL) }, label = { Text("Everyone · ${state.totalCount}") })
+                    FilterChip(state.filter == FriendFilter.ALL, {
+                        onFilterChange(FriendFilter.ALL)
+                    }, label = { Text("Everyone · ${state.totalCount}") })
                 }
             }
             if (!state.isLoading && state.friends.isEmpty()) {
@@ -170,7 +172,12 @@ fun FriendsContent(
         }
     }
 
-    if (showAdd) AddFriendDialog(onDismiss = { showAdd = false }, onAdd = { onAddFriend(it); showAdd = false })
+    if (showAdd) {
+        AddFriendDialog(onDismiss = { showAdd = false }, onAdd = {
+            onAddFriend(it)
+            showAdd = false
+        })
+    }
 }
 
 @Composable

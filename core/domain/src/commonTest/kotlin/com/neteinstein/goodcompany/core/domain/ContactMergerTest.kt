@@ -51,7 +51,11 @@ class ContactMergerTest {
     fun duplicateAndBlankContactsAreIgnored() {
         val merged = ContactMerger.merge(
             emptyList(),
-            listOf(ContactRecord("1", "Ana", emptyList(), null), ContactRecord("1", "Ana", emptyList(), null), ContactRecord("2", " ", emptyList(), null)),
+            listOf(
+                ContactRecord("1", "Ana", emptyList(), null),
+                ContactRecord("1", "Ana", emptyList(), null),
+                ContactRecord("2", " ", emptyList(), null),
+            ),
         )
         assertEquals(1, merged.size)
     }

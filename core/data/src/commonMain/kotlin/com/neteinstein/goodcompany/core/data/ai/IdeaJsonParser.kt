@@ -14,7 +14,10 @@ import kotlinx.serialization.json.contentOrNull
  * and missing optional fields; returns an empty list rather than throwing on malformed output.
  */
 internal object IdeaJsonParser {
-    private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
     private val fence = Regex("```(?:json)?\\s*([\\s\\S]*?)```")
 
     fun parse(text: String): List<GeneratedIdea> {

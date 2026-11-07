@@ -6,7 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import kotlin.time.Instant
 
 /** The device address book. Returns an empty list when unavailable (web) or not permitted. */
-interface ContactsSource {
+fun interface ContactsSource {
     suspend fun readContacts(): List<ContactRecord>
 }
 

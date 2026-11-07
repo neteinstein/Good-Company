@@ -20,7 +20,9 @@ class NotificationPlannerTest {
     @Test
     fun birthdayNotificationsOnlyWhenOptedIn() {
         val friends = listOf(
-            friend("ana") { copy(notifyBirthday = true, birthday = Birthday(3, 20, 1990), kids = listOf(Kid("k", "Leo", Birthday(3, 25), listOf("lego")))) },
+            friend("ana") {
+                copy(notifyBirthday = true, birthday = Birthday(3, 20, 1990), kids = listOf(Kid("k", "Leo", Birthday(3, 25), listOf("lego"))))
+            },
             friend("bob") { copy(isCloseFriend = true, birthday = Birthday(3, 21)) },
         )
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
@@ -39,7 +41,8 @@ class NotificationPlannerTest {
 
     @Test
     fun importantEventPingsOnTheDayAndBefore() {
-        val friends = listOf(friend("ana") { copy(importantEvents = listOf(ImportantEvent("e", "Surgery", LocalDate(2026, 3, 20), remindDaysBefore = 2))) })
+        val friends =
+            listOf(friend("ana") { copy(importantEvents = listOf(ImportantEvent("e", "Surgery", LocalDate(2026, 3, 20), remindDaysBefore = 2))) })
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
         assertEquals(listOf("event:e:before", "event:e:day"), planned.map { it.id })
         assertEquals(at(2026, 3, 18, 9), planned[0].at)
@@ -48,7 +51,13 @@ class NotificationPlannerTest {
     @Test
     fun remindersFireAtTheirDueTimeAndSkipDoneOrPast() {
         val reminders = listOf(
-            Reminder("a", "Book tickets", listOf(com.neteinstein.goodcompany.core.domain.model.FriendId("ana")), at(2026, 3, 11, 18), createdAt = now),
+            Reminder(
+                "a",
+                "Book tickets",
+                listOf(com.neteinstein.goodcompany.core.domain.model.FriendId("ana")),
+                at(2026, 3, 11, 18),
+                createdAt = now,
+            ),
             Reminder("b", "Done", emptyList(), at(2026, 3, 11, 18), done = true, createdAt = now),
             Reminder("c", "Past", emptyList(), at(2026, 3, 9), createdAt = now),
         )

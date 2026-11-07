@@ -45,10 +45,14 @@ kotlin {
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             implementation(libs.jetbrains.navigation.compose)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
+            implementation(libs.ktor.client.core)
         }
         commonTest.dependencies {
             implementation(projects.core.testing)
             implementation(libs.koin.test)
+            implementation(libs.multiplatform.settings.test)
         }
     }
 }

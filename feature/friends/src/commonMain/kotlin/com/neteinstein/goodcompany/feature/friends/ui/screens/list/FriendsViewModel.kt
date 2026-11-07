@@ -46,15 +46,16 @@ class FriendsViewModel(
 
     val state: StateFlow<FriendsUiState> = combine(observeFriends(), local) { all, ui ->
         val q = ui.query.trim().lowercase()
+        // First run: nobody marked as close yet → show everyone instead of an empty list.
+        val filter = if (ui.filter == FriendFilter.CLOSE && all.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
         val visible = all
-            .filter { ui.filter == FriendFilter.ALL || it.friend.isCloseFriend }
+            .filter { filter == FriendFilter.ALL || it.friend.isCloseFriend }
             .filter { q.isEmpty() || it.friend.name.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
         ui.copy(
             friends = visible,
             totalCount = all.size,
             isLoading = false,
-            // First run: nobody marked as close yet → show everyone instead of an empty list.
-            filter = if (ui.filter == FriendFilter.CLOSE && all.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter,
+            filter = filter,
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,

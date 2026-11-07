@@ -66,6 +66,5 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
             description = "Runs commonTest + androidHostTest on the JVM (alias of testAndroidHostTest)."
             dependsOn("testAndroidHostTest")
         }
-
     }
 }

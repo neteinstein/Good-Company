@@ -1,0 +1,89 @@
+package com.neteinstein.goodcompany.feature.agenda.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.format.longLabel
+import kotlinx.datetime.LocalDate
+
+private val HOURS = listOf(9 to "Morning", 13 to "Lunch", 18 to "Evening", 21 to "Night")
+
+/** "Remind me to book tickets for X to go with Y." */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ReminderEditor(
+    friends: List<Friend>,
+    today: LocalDate,
+    onDismiss: () -> Unit,
+    onSave: (title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf(emptySet<FriendId>()) }
+    var date by remember { mutableStateOf<LocalDate?>(today) }
+    var hour by remember { mutableStateOf(18) }
+    var pickDate by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.AlarmAdd, null) },
+        title = { Text("New reminder") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    title,
+                    { title = it },
+                    label = { Text("Remind me to…") },
+                    placeholder = { Text("Book tickets for the concert") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text("With", style = MaterialTheme.typography.labelLarge)
+                FlowRow(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    friends.sortedByDescending { it.isCloseFriend }.take(40).forEach { f ->
+                        FilterChip(
+                            f.id in selected,
+                            { selected = if (f.id in selected) selected - f.id else selected + f.id },
+                            label = { Text(f.name.substringBefore(' ')) },
+                        )
+                    }
+                }
+                Text("When", style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { pickDate = true }) { Text(date?.longLabel() ?: "No date") }
+                    if (date != null) TextButton(onClick = { date = null }) { Text("No date") }
+                }
+                if (date != null) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        HOURS.forEach { (h, label) -> FilterChip(hour == h, { hour = h }, label = { Text("$label · $h:00") }) }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(title, selected.toList(), date, hour) }, enabled = title.isNotBlank()) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+    if (pickDate) LocalDatePickerDialog(date ?: today, onDismiss = { pickDate = false }, onPicked = { date = it })
+}

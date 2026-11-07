@@ -17,9 +17,11 @@ object Relationships {
     /** Last time you were physically together, per friend. */
     fun lastSeen(hangouts: List<Hangout>): Map<FriendId, Instant> {
         val result = HashMap<FriendId, Instant>()
-        for (h in hangouts) for (id in h.friendIds) {
-            val prev = result[id]
-            if (prev == null || h.at > prev) result[id] = h.at
+        for (h in hangouts) {
+            for (id in h.friendIds) {
+                val prev = result[id]
+                if (prev == null || h.at > prev) result[id] = h.at
+            }
         }
         return result
     }

@@ -5,6 +5,8 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactBirthdayKey
@@ -17,8 +19,6 @@ import platform.Contacts.CNEntityType
 import platform.Contacts.CNLabeledValue
 import platform.Contacts.CNPhoneNumber
 import platform.Foundation.NSDateComponentUndefined
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 internal class IosContactsSource : ContactsSource {
     @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)

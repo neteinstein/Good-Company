@@ -45,7 +45,10 @@ class AnthropicIdeaGeneratorTest {
             assertEquals(AnthropicIdeaGenerator.FALLBACK_BETA, req.headers["anthropic-beta"])
             bodies += (req.body as TextContent).text
             respond(
-                reply("end_turn", "Here you go:\n```json\n{\"ideas\":[{\"friendIds\":[\"ana\"],\"kind\":\"event\",\"title\":\"Jazz night\",\"description\":\"d\",\"url\":null,\"when\":\"Fri\"}]}\n```"),
+                reply(
+                    "end_turn",
+                    "Here you go:\n```json\n{\"ideas\":[{\"friendIds\":[\"ana\"],\"kind\":\"event\",\"title\":\"Jazz night\",\"description\":\"d\",\"url\":null,\"when\":\"Fri\"}]}\n```",
+                ),
                 HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )

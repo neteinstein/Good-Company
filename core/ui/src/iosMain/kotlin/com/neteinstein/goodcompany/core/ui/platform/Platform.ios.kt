@@ -42,6 +42,7 @@ actual val platformCapabilities = PlatformCapabilities(
 actual fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit {
     val scope = rememberCoroutineScope()
     val callback = rememberUpdatedState(onResult)
+
     // iOS calls back on a background queue; hop to Main before touching Compose state.
     fun report(granted: Boolean) {
         scope.launch(Dispatchers.Main) { callback.value(granted) }
