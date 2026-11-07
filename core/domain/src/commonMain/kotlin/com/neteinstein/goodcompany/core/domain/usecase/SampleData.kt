@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -140,6 +141,7 @@ object SampleData {
                 kids = listOf(Kid(PREFIX + "leo", "Leo", bday(9, 6), listOf(t.dinosaurs, "LEGO", t.pancakes))),
                 importantEvents = listOf(ImportantEvent(PREFIX + "ana-knee", t.kneeSurgery, day(2), remindDaysBefore = 1)),
                 notes = t.anaNotes,
+                occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.CULTURE),
                 gifts = listOf(
                     Gift(PREFIX + "g-vinyl", t.giftVinyl),
                     Gift(PREFIX + "g-dino", t.giftDinoLego, forKidId = PREFIX + "leo"),
@@ -150,6 +152,7 @@ object SampleData {
                 id = id("rui"), name = "Rui Costa", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
+                occasions = listOf(Occasion.DRINKS, Occasion.SPORTS),
                 gifts = listOf(Gift(PREFIX + "g-wingspan", t.giftBoardGame, givenOn = day(-320), occasion = GiftOccasion.CHRISTMAS)),
             ),
             Friend(
@@ -171,11 +174,13 @@ object SampleData {
                 phoneNumbers = listOf("+351 915 777 888"),
                 birthday = bday(88, 35),
                 likes = listOf(t.football, t.bbq, t.surfing),
+                occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.SPORTS),
             ),
             Friend(
                 id = id("sofia"), name = "Sofia Martins", isCloseFriend = true, circle = Circle.INNER, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 916 123 456"), birthday = bday(0, 29), meetEveryDays = 21,
                 likes = listOf(t.photography, t.travel, t.specialtyCoffee), dislikes = listOf(t.spicyFood),
+                occasions = listOf(Occasion.COFFEE, Occasion.WEEKDAY_LUNCH),
             ),
             Friend(
                 id = id("beatriz"),
