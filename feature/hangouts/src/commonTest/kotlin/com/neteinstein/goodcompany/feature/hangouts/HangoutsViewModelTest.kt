@@ -1,11 +1,9 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
-import kotlinx.datetime.LocalDate
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.PlanDraft
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -15,6 +13,8 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.GroupDraft
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsMessage
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.PlanDraft
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

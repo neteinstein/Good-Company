@@ -28,7 +28,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
-import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaGenerator
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
@@ -36,6 +35,7 @@ import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
@@ -156,7 +156,16 @@ class UseCasesTest {
         assertEquals(at(2026, 3, 1), detail.lastContactByType[InteractionType.MEETUP])
         assertEquals(listOf("Ana", "Bob"), detail.hangouts.single().friends.map { it.name })
         assertNull(
-            ObserveFriendDetailUseCase(friends, hangouts, interactions, ideas, settings, FakeGroupRepository(), FakePlanRepository(), clock)(FriendId("nope")).first(),
+            ObserveFriendDetailUseCase(
+                friends,
+                hangouts,
+                interactions,
+                ideas,
+                settings,
+                FakeGroupRepository(),
+                FakePlanRepository(),
+                clock,
+            )(FriendId("nope")).first(),
         )
     }
 

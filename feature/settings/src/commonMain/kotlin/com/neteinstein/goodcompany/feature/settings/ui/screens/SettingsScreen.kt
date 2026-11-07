@@ -1,38 +1,5 @@
 package com.neteinstein.goodcompany.feature.settings.ui.screens
 
-import org.jetbrains.compose.resources.getPluralString
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material.icons.rounded.Restore
-import androidx.compose.material.icons.rounded.Download
-import kotlinx.datetime.isoDayNumber
-import kotlinx.datetime.DayOfWeek
-import com.neteinstein.goodcompany.core.ui.format.weekdayShort
-import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
-import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
-import com.neteinstein.goodcompany.core.ui.resources.cancel
-import com.neteinstein.goodcompany.core.ui.resources.lock_reason
-import com.neteinstein.goodcompany.feature.settings.resources.show_warmth_hint
-import com.neteinstein.goodcompany.feature.settings.resources.show_warmth
-import com.neteinstein.goodcompany.feature.settings.resources.quiet_note
-import com.neteinstein.goodcompany.feature.settings.resources.private_notifications_hint
-import com.neteinstein.goodcompany.feature.settings.resources.private_notifications
-import com.neteinstein.goodcompany.feature.settings.resources.msg_lock_failed
-import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
-import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
-import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
-import com.neteinstein.goodcompany.feature.settings.resources.digest_hint
-import com.neteinstein.goodcompany.feature.settings.resources.digest_day
-import com.neteinstein.goodcompany.feature.settings.resources.digest
-import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
-import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
-import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
-import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
-import com.neteinstein.goodcompany.feature.settings.resources.backup_export_button
-import com.neteinstein.goodcompany.feature.settings.resources.backup_export
-import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_title
-import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_body
-import com.neteinstein.goodcompany.feature.settings.resources.app_lock_hint
-import com.neteinstein.goodcompany.feature.settings.resources.app_lock
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -55,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
@@ -62,12 +30,14 @@ import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SettingsBrightness
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -106,15 +76,20 @@ import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
+import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
+import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.settings.resources.Res
@@ -124,9 +99,22 @@ import com.neteinstein.goodcompany.feature.settings.resources.allow_notification
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_show
+import com.neteinstein.goodcompany.feature.settings.resources.app_lock
+import com.neteinstein.goodcompany.feature.settings.resources.app_lock_hint
 import com.neteinstein.goodcompany.feature.settings.resources.appearance
+import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_body
+import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_title
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export_button
+import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
+import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
 import com.neteinstein.goodcompany.feature.settings.resources.circles
 import com.neteinstein.goodcompany.feature.settings.resources.circles_hint
+import com.neteinstein.goodcompany.feature.settings.resources.digest
+import com.neteinstein.goodcompany.feature.settings.resources.digest_day
+import com.neteinstein.goodcompany.feature.settings.resources.digest_hint
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color_hint
 import com.neteinstein.goodcompany.feature.settings.resources.eyebrow
@@ -137,8 +125,12 @@ import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_saved
+import com.neteinstein.goodcompany.feature.settings.resources.msg_lock_failed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_off
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_on
 import com.neteinstein.goodcompany.feature.settings.resources.msg_sample_added
@@ -151,12 +143,17 @@ import com.neteinstein.goodcompany.feature.settings.resources.privacy_base
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_call_log
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_contacts
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_end
+import com.neteinstein.goodcompany.feature.settings.resources.private_notifications
+import com.neteinstein.goodcompany.feature.settings.resources.private_notifications_hint
+import com.neteinstein.goodcompany.feature.settings.resources.quiet_note
 import com.neteinstein.goodcompany.feature.settings.resources.reminders
 import com.neteinstein.goodcompany.feature.settings.resources.replay_intro
 import com.neteinstein.goodcompany.feature.settings.resources.sample
 import com.neteinstein.goodcompany.feature.settings.resources.sample_add_hint
 import com.neteinstein.goodcompany.feature.settings.resources.sample_loaded
 import com.neteinstein.goodcompany.feature.settings.resources.sample_remove_hint
+import com.neteinstein.goodcompany.feature.settings.resources.show_warmth
+import com.neteinstein.goodcompany.feature.settings.resources.show_warmth_hint
 import com.neteinstein.goodcompany.feature.settings.resources.theme_auto
 import com.neteinstein.goodcompany.feature.settings.resources.theme_dark
 import com.neteinstein.goodcompany.feature.settings.resources.theme_light
@@ -165,6 +162,9 @@ import com.neteinstein.goodcompany.feature.settings.resources.web_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans_hint
 import com.neteinstein.goodcompany.feature.settings.resources.your_data
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.isoDayNumber
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -473,14 +473,18 @@ fun SettingsContent(
                     leadingContent = { Icon(Icons.Rounded.Download, null) },
                     headlineContent = { Text(stringResource(Res.string.backup_export), style = MaterialTheme.typography.titleSmall) },
                     supportingContent = { Text(stringResource(Res.string.backup_export_hint)) },
-                    trailingContent = { FilledTonalButton(onClick = actions.onExportBackup) { Text(stringResource(Res.string.backup_export_button)) } },
+                    trailingContent = {
+                        FilledTonalButton(onClick = actions.onExportBackup) { Text(stringResource(Res.string.backup_export_button)) }
+                    },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
                 ListItem(
                     leadingContent = { Icon(Icons.Rounded.Restore, null) },
                     headlineContent = { Text(stringResource(Res.string.backup_restore), style = MaterialTheme.typography.titleSmall) },
                     supportingContent = { Text(stringResource(Res.string.backup_restore_hint)) },
-                    trailingContent = { OutlinedButton(onClick = actions.onRestoreBackup) { Text(stringResource(Res.string.backup_restore_button)) } },
+                    trailingContent = {
+                        OutlinedButton(onClick = actions.onRestoreBackup) { Text(stringResource(Res.string.backup_restore_button)) }
+                    },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
                 ListItem(

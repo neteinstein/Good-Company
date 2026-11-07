@@ -16,5 +16,6 @@
     <plurals name="widget_in_days">
         <item quantity="one">Dans %1$d jour</item>
         <item quantity="other">Dans %1$d jours</item>
+        <item quantity="many">Dans %1$d jours</item>
     </plurals>
 </resources>

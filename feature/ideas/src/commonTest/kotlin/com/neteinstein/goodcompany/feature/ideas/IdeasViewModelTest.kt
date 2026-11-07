@@ -1,8 +1,7 @@
 package com.neteinstein.goodcompany.feature.ideas
 
-import kotlinx.datetime.LocalDate
-import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
@@ -12,6 +11,7 @@ import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasMessage
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

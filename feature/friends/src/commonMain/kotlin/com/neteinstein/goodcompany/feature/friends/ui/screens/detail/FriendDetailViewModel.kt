@@ -1,13 +1,6 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 
 import androidx.lifecycle.ViewModel
-import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
-import com.neteinstein.goodcompany.core.domain.model.Plan
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
@@ -17,8 +10,12 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -29,6 +26,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase

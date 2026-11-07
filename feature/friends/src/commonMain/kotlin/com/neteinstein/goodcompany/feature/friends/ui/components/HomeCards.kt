@@ -61,6 +61,7 @@ import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
 import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
@@ -79,7 +80,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.drifting_message
 import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
-import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource

@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -33,7 +34,7 @@ class NudgesAndPlansTest {
         friend("cat") { copy(meetEveryDays = 7) },
     )
 
-    private fun plan(policy: NudgePolicy, friends: List<com.neteinstein.goodcompany.core.domain.model.Friend> = overdue, plans: List<Plan> = emptyList()) =
+    private fun plan(policy: NudgePolicy, friends: List<Friend> = overdue, plans: List<Plan> = emptyList()) =
         NotificationPlanner.plan(friends, emptyList(), emptyList(), now, zone, 9, horizonDays = 20, plans = plans, policy = policy)
 
     @Test
@@ -67,7 +68,16 @@ class NudgesAndPlansTest {
     @Test
     fun digestDayRollsToNextWeekOnceItsHourHasPassed() {
         // Saturday 14 March at 10:00: today's 09:00 digest has gone, next is the 21st.
-        val planned = NotificationPlanner.plan(overdue, emptyList(), emptyList(), at(2026, 3, 14, 10), zone, 9, horizonDays = 10, policy = NudgePolicy())
+        val planned = NotificationPlanner.plan(
+            overdue,
+            emptyList(),
+            emptyList(),
+            at(2026, 3, 14, 10),
+            zone,
+            9,
+            horizonDays = 10,
+            policy = NudgePolicy(),
+        )
         assertEquals("digest:2026-03-21", planned.first().id)
         assertEquals(LocalDate(2026, 3, 16), NudgePolicy(digestDay = 1).nextDigestDay(today))
     }

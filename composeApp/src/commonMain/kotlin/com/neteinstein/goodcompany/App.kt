@@ -1,17 +1,5 @@
 package com.neteinstein.goodcompany
 
-import kotlin.time.TimeSource
-import kotlin.time.TimeMark
-import kotlin.time.Duration.Companion.seconds
-import com.neteinstein.goodcompany.core.ui.resources.lock_reason
-import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
-import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.Lifecycle
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -46,11 +34,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -58,7 +52,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
+import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
+import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
+import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
@@ -70,6 +67,9 @@ import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Root composable shared by Android, iOS and Web. */

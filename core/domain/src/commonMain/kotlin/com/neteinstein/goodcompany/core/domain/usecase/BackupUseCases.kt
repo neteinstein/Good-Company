@@ -9,7 +9,12 @@ import kotlinx.serialization.json.Json
 class ExportBackupUseCase(private val backups: BackupRepository, private val clock: AppClock) {
     suspend operator fun invoke(): String {
         val snapshot = backups.snapshot()
-        val clean = snapshot.copy(format = Backup.FORMAT, version = Backup.VERSION, exportedAt = clock.now(), settings = snapshot.settings.copy(aiApiKey = null))
+        val clean = snapshot.copy(
+            format = Backup.FORMAT,
+            version = Backup.VERSION,
+            exportedAt = clock.now(),
+            settings = snapshot.settings.copy(aiApiKey = null),
+        )
         return BackupJson.encodeToString(Backup.serializer(), clean)
     }
 

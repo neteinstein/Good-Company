@@ -1,10 +1,5 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.screens
 
-import com.neteinstein.goodcompany.core.ui.resources.plan_closed
-import com.neteinstein.goodcompany.core.ui.resources.plan_logged
-import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
-import com.neteinstein.goodcompany.core.ui.components.calendarEntry
-import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
@@ -61,12 +57,16 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res

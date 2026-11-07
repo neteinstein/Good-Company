@@ -1,11 +1,9 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.screens
 
-import kotlinx.datetime.LocalDate
-import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
-import com.neteinstein.goodcompany.core.domain.model.FriendId
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -14,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -24,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.time.Instant
 

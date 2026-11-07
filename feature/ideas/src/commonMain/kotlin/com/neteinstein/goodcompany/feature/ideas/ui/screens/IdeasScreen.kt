@@ -1,7 +1,5 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.screens
 
-import com.neteinstein.goodcompany.core.ui.resources.plan_saved
-import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -50,10 +48,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
@@ -91,8 +91,8 @@ import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Localised snackbar text for an [IdeasMessage]. */
 suspend fun IdeasMessage.text(): String = when (this) {

@@ -1,9 +1,5 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.list
 
-import com.neteinstein.goodcompany.feature.friends.resources.msg_picked
-import com.neteinstein.goodcompany.feature.friends.resources.welcome_pick_contacts
-import com.neteinstein.goodcompany.feature.friends.resources.action_pick_contacts
-import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -81,6 +77,7 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -89,6 +86,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.action_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.action_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.add_hint
@@ -106,6 +104,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged
 import com.neteinstein.goodcompany.feature.friends.resources.msg_contacts_denied
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
+import com.neteinstein.goodcompany.feature.friends.resources.msg_picked
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sample_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sync_failed
@@ -135,6 +134,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_cont
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_message_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_message_manual
+import com.neteinstein.goodcompany.feature.friends.resources.welcome_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_sample
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_title
 import com.neteinstein.goodcompany.feature.friends.ui.components.CatchUpCard
@@ -332,7 +332,11 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
             }
 
             if (isEmpty) {
-                item(key = "welcome") { Welcome(canSyncContacts, actions.onSync, actions.onImportFile, { showAdd = true }, actions.onExploreSample, actions.onPickContacts.takeIf { canPickContacts }) }
+                item(key = "welcome") {
+                    Welcome(canSyncContacts, actions.onSync, actions.onImportFile, {
+                        showAdd = true
+                    }, actions.onExploreSample, actions.onPickContacts.takeIf { canPickContacts })
+                }
                 return@LazyColumn
             }
 

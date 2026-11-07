@@ -1,12 +1,9 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.list
 
 import androidx.lifecycle.ViewModel
-import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
-import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
@@ -14,11 +11,14 @@ import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase

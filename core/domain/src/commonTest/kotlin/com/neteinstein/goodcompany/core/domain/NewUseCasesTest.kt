@@ -249,7 +249,12 @@ class HomeWidgetTest {
                 friend("bob") { copy(notifyBirthday = true, birthday = Birthday(3, 12)) },
             ),
         )
-        val widget = com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase(g.observeAgenda, g.observeMeetups, g.settingsRepo, g.clock)
+        val widget = com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase(
+            g.observeAgenda,
+            g.observeMeetups,
+            g.settingsRepo,
+            g.clock,
+        )
         val summary = widget().first()
         assertIs<com.neteinstein.goodcompany.core.domain.model.AgendaItem.FriendBirthday>(summary.next)
         assertEquals("ana", summary.catchUp?.friend?.id?.value)

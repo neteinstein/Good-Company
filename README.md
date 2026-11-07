@@ -34,6 +34,8 @@
         <li><b>Real friends in circles</b>: Inner (weekly), Close (monthly) or Good friends (quarterly) — every circle has its own default rhythm.</li>
         <li>Pull in your address book — or import a <b>.vcf</b> file from Google Contacts / iCloud (handy on the web).</li>
         <li>Search by name <i>or taste</i> — “jazz”, “F1”, “sushi”.</li>
+        <li><b>Pick from contacts</b> without giving the app your whole address book.</li>
+        <li>A <b>“Who’s next” widget</b> on your Android home screen.</li>
       </ul>
     </td>
   </tr>
@@ -48,6 +50,9 @@
         <li><b>Gifts</b>: jot ideas (for them or their kids), get AI suggestions, mark what you gave and for which occasion — never repeat a present.</li>
         <li><b>Loves / not a fan of</b>, <b>kids</b> (names, birthdays, what each one likes — perfect before a party), <b>important moments</b> (“knee surgery on Friday”) and notes.</li>
         <li><b>Things to talk about</b>: AI-matched news and conversation starters from their tastes and recent chats.</li>
+        <li><b>Plans</b>: pick a day and it reminds you — then asks <i>“Did you meet?”</i> so only real meetups count. Add any plan to your calendar.</li>
+        <li><b>Good company for</b> a weekday lunch, a hike, drinks… and <b>talking points from your own notes</b>, no AI key needed.</li>
+        <li><b>Pause</b> catch-ups for someone (history kept), or let calls and chats count for friends who live far away.</li>
         <li>Import a WhatsApp chat export to keep last-contact dates and context.</li>
       </ul>
     </td>
@@ -61,6 +66,7 @@
         <li><b>Saved groups</b> (“Board game night”, “Surf crew”) with their own rhythm: get a nudge when you haven't all been together in a while.</li>
         <li>See <b>the last time you were with any group</b> — “Ana & Rui: last together 2 days ago at Hot Clube, 3× in total”.</li>
         <li>A monthly view of meetups, friends seen and your favourite spot.</li>
+        <li><b>Who’s free for…?</b> Pick an occasion and see who’d be great company — those you haven’t seen in a while first — then plan it.</li>
       </ul>
     </td>
   </tr>
@@ -72,6 +78,7 @@
         <li>A week strip and timeline of birthdays, kids' birthdays, big days, overdue catch-ups and your reminders.</li>
         <li>Reminders like <i>“Book tickets for the jazz festival with Ana & Rui”</i>, with undo on delete.</li>
         <li>Local notifications on Android and iOS at the hour you choose — nothing scheduled on a server. Catch-up nudges have quick actions: <i>We met</i>, <i>Called</i>, <i>Next week</i>.</li>
+        <li><b>Calm by default</b>: one weekly note with who to catch up with (or at most one nudge a day), and nudges get quieter if you’re not opening the app.</li>
         <li><i>Send wishes</i> right from a birthday in the agenda.</li>
       </ul>
     </td>
@@ -82,7 +89,7 @@
       <h3>Ideas, powered by Claude</h3>
       <ul>
         <li><b>Weekly plans</b>: once a week, real events near you that match the tastes of friends you opt in — grouped by who'd enjoy them together.</li>
-        <li><b>Turn an idea into a plan</b>: “Propose to Ana & Rui” drafts the invite and opens WhatsApp, a text or the share sheet.</li>
+        <li><b>Turn an idea into a plan</b>: “Propose to Ana & Rui” drafts the invite and opens WhatsApp, a text or the share sheet — or save it as a dated plan.</li>
         <li><b>News & talking points</b> per friend, grounded with web search and linked to the source.</li>
         <li>Bring your own Anthropic API key — stored only on your device.</li>
       </ul>
@@ -150,6 +157,9 @@ friends by hand (browsers have no address book).
 - Contacts are read only to build your list. **SMS are never read.** The call log is only matched in the separate *sideload* Android build (Play restricts that permission).
 - WhatsApp and Messenger can't be read by any app; you can import a WhatsApp chat **export** per friend.
 - The only network traffic is the AI requests you trigger, sent with **your** key to `api.anthropic.com`.
+- Optional **app lock** (fingerprint, face or device PIN) and **private lock-screen notifications**.
+- **Export / restore** everything as one file you keep — no cloud account. Your API key is never in it.
+- Prefer fewer numbers? Turn off **Show warmth** in Settings.
 
 ## 🚀 Getting started
 

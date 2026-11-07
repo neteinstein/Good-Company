@@ -1,14 +1,12 @@
 package com.neteinstein.goodcompany.feature.friends
 
-import kotlin.test.assertFalse
-import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -17,9 +15,11 @@ import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue

@@ -6,16 +6,17 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactStore
+import platform.Contacts.CNEntityType
 import platform.Contacts.CNLabeledValue
 import platform.Contacts.CNPhoneNumber
 import platform.ContactsUI.CNContactPickerDelegateProtocol
@@ -27,16 +28,15 @@ import platform.EventKitUI.EKEventEditViewController
 import platform.EventKitUI.EKEventEditViewDelegateProtocol
 import platform.Foundation.NSDate
 import platform.Foundation.NSDateComponentUndefined
+import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
+import platform.Foundation.NSURL
+import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.dateWithTimeIntervalSince1970
+import platform.Foundation.stringWithContentsOfURL
 import platform.Foundation.writeToFile
 import platform.LocalAuthentication.LAContext
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
-import platform.Contacts.CNEntityType
-import platform.Foundation.NSString
-import platform.Foundation.NSURL
-import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.stringWithContentsOfURL
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerDelegateProtocol
@@ -221,6 +221,7 @@ actual fun rememberFileSaver(mimeType: String, onDone: (saved: Boolean) -> Unit)
     return remember {
         FileSaver { fileName, content ->
             val path = NSTemporaryDirectory() + fileName
+
             @Suppress("CAST_NEVER_SUCCEEDS")
             val written = (content as NSString).writeToFile(path, atomically = true, encoding = NSUTF8StringEncoding, error = null)
             if (!written) {

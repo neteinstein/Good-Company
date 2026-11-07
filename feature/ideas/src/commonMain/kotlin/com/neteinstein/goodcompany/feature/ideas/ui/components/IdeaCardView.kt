@@ -1,7 +1,5 @@
 package com.neteinstein.goodcompany.feature.ideas.ui.components
 
-import com.neteinstein.goodcompany.core.ui.resources.plan_new
-import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Newspaper
 import androidx.compose.material.icons.rounded.Schedule
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.core.ui.resources.plan_new
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
 import com.neteinstein.goodcompany.feature.ideas.resources.dismiss
 import com.neteinstein.goodcompany.feature.ideas.resources.kind_event
@@ -54,8 +54,8 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeaCard
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.friendNames
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 import kotlin.time.Instant
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 internal fun IdeaKind.accent(): Pair<Color, Color> = when (this) {
     IdeaKind.EVENT -> Color(0xFFFF8A80) to Color(0xFFE5574F)

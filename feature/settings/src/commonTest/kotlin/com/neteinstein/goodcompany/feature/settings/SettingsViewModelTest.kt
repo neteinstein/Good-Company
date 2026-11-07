@@ -1,7 +1,5 @@
 package com.neteinstein.goodcompany.feature.settings
 
-import kotlin.test.assertTrue
-import kotlin.test.assertFalse
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -12,7 +10,9 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class SettingsViewModelTest {
     private val g = TestGraph()

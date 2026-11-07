@@ -1,16 +1,7 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.components
 
-import com.neteinstein.goodcompany.core.ui.resources.plan_yes
-import com.neteinstein.goodcompany.core.ui.resources.plan_no
-import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
-import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
-import com.neteinstein.goodcompany.feature.agenda.resources.label_plan
-import com.neteinstein.goodcompany.core.ui.format.shortLabel
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.TextButton
-import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -27,7 +18,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Cake
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.ChildCare
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
@@ -36,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,12 +42,18 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
+import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.resources.plan_no
+import com.neteinstein.goodcompany.core.ui.resources.plan_yes
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
 import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
 import com.neteinstein.goodcompany.feature.agenda.resources.label_catch_up
 import com.neteinstein.goodcompany.feature.agenda.resources.label_group
 import com.neteinstein.goodcompany.feature.agenda.resources.label_kid_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.label_plan
 import com.neteinstein.goodcompany.feature.agenda.resources.label_reminder
 import com.neteinstein.goodcompany.feature.agenda.resources.row_birthday
 import com.neteinstein.goodcompany.feature.agenda.resources.row_days_since
@@ -158,7 +158,9 @@ fun AgendaRow(
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
-                item.friends.takeIf { it.isNotEmpty() }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                item.friends.takeIf {
+                    it.isNotEmpty()
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
                 item.plan.place,
             ).joinToString(" · "),
             item.friends.singleOrNull(),
@@ -170,7 +172,9 @@ fun AgendaRow(
             item.plan.title,
             listOfNotNull(
                 item.plan.date.shortLabel(),
-                item.friends.takeIf { it.isNotEmpty() }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                item.friends.takeIf {
+                    it.isNotEmpty()
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
             ).joinToString(" · "),
             item.friends.singleOrNull(),
         )
