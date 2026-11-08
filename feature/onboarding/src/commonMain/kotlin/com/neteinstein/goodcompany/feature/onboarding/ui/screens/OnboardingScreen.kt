@@ -198,15 +198,7 @@ fun OnboardingContent(
 }
 
 @Composable
-private fun startLabel(state: OnboardingUiState) = stringResource(
-    if ((state.contactsImported ?: 0) >
-        0
-    ) {
-        Res.string.lets_go
-    } else {
-        Res.string.start_empty
-    },
-)
+private fun startLabel(state: OnboardingUiState) = stringResource(if (state.hasPeople) Res.string.lets_go else Res.string.start_empty)
 
 @Composable
 private fun IntroPage(page: Page) {
