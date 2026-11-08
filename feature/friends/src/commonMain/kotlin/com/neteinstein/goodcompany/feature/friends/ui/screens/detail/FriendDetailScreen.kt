@@ -1114,7 +1114,7 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
     Box(Modifier.fillMaxWidth()) {
         Box(
             Modifier.matchParentSize().background(
-                Brush.verticalGradient(listOf(start.copy(alpha = 0.55f), end.copy(alpha = 0.22f), MaterialTheme.colorScheme.background)),
+                Brush.verticalGradient(listOf(start.copy(alpha = 0.4f), end.copy(alpha = 0.16f), MaterialTheme.colorScheme.background)),
             ),
         )
         Column(Modifier.fillMaxWidth().statusBarsPadding().animateContentSize(), horizontalAlignment = Alignment.CenterHorizontally) {

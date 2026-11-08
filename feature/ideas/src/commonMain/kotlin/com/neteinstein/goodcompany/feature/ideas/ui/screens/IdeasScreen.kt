@@ -54,6 +54,7 @@ import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_body
 import com.neteinstein.goodcompany.feature.ideas.resources.empty_title
@@ -253,7 +254,7 @@ fun IdeasContent(
 private fun Hero(state: IdeasUiState, onRunNow: () -> Unit, onWeeklyToggle: (Boolean) -> Unit) {
     Box(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clip(MaterialTheme.shapes.extraLarge)
-            .background(Brush.linearGradient(listOf(Color(0xFF6A3DE8), Color(0xFFB4372F), Color(0xFFFF8A65)))),
+            .background(Brush.linearGradient(OnColorGradients.Ideas)),
     ) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

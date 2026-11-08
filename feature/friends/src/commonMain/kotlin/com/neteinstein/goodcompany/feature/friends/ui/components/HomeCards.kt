@@ -62,6 +62,7 @@ import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
 import com.neteinstein.goodcompany.feature.friends.resources.card_birthday
@@ -142,7 +143,7 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             stringResource(CoreRes.string.plan_did_you_meet),
         )
     }
-    val (start, end) = spec.friend?.let { avatarColors(it.name) } ?: (MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.tertiary)
+    val (start, end) = spec.friend?.let { avatarColors(it.name) } ?: (OnColorGradients.BrandRed to OnColorGradients.Violet)
     Box(
         modifier
             .width(196.dp)
