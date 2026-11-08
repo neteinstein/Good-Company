@@ -7,6 +7,20 @@
 	<!-- Google Drive backup: the iOS OAuth client ID (Config.xcconfig). Empty = feature hidden. -->
 	<key>GoogleDriveClientId</key>
 	<string>$(GOOGLE_DRIVE_IOS_CLIENT_ID)</string>
+	<!-- Shared with the Share Extension and the widget (Config.xcconfig → APP_GROUP). -->
+	<key>AppGroupId</key>
+	<string>$(APP_GROUP)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>goodcompany</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>

@@ -25,6 +25,12 @@ import org.jetbrains.compose.resources.StringResource
 
 @Serializable data class FriendDetailRoute(val id: String)
 
+/** "Save to a friend" for something shared into the app (see ShareInbox). */
+@Serializable data object ShareRoute
+
+/** A friend's catch-up story; [fromFriend] = opened from their page (so no "Open profile" button). */
+@Serializable data class CatchUpStoryRoute(val id: String, val fromFriend: Boolean = false)
+
 @Serializable data object HangoutsRoute
 
 @Serializable data object AgendaRoute

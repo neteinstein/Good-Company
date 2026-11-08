@@ -262,4 +262,87 @@
         <item quantity="one">%1$d friend added</item>
         <item quantity="other">%1$d friends added</item>
     </plurals>
+    <!-- Catch-up story -->
+    <string name="section_before_you_meet">Before you meet</string>
+    <string name="story_cta">Catch up on %1$s</string>
+    <string name="story_cta_hint">A quick story of their life, newest first</string>
+    <string name="story_meeting_today">Seeing %1$s today</string>
+    <string name="story_meeting_tomorrow">Seeing %1$s tomorrow</string>
+    <string name="story_meeting_hint">Catch up on their life before you go</string>
+    <string name="news_title">What’s new</string>
+    <string name="news_hint">New job, a move, a new hobby… Jot it down and it leads their catch-up story, so you remember to ask.</string>
+    <string name="news_dialog_title">What’s new with %1$s?</string>
+    <string name="news_placeholder">e.g. Started a new job at…</string>
+    <string name="news_added">Added %1$s</string>
+    <string name="story_kicker">Catching up with</string>
+    <string name="story_seen">Last time you met: %1$s</string>
+    <string name="story_seen_at">at %1$s</string>
+    <string name="story_never_met">No meetups logged yet</string>
+    <string name="story_plan">Next: %1$s · %2$s</string>
+    <string name="story_nothing_new">Nothing new logged since then</string>
+    <string name="story_new_badge">New</string>
+    <string name="story_fresh_update">What’s new</string>
+    <string name="story_fresh_kid">New in the family</string>
+    <string name="story_fresh_event">Big day, just added</string>
+    <string name="story_fresh_like">New passion</string>
+    <string name="story_added">Added %1$s</string>
+    <string name="story_fresh_ask">Ask how it’s going</string>
+    <string name="story_bigday_past">How did it go?</string>
+    <string name="story_bigday_today">It’s today: send some love</string>
+    <string name="story_bigday_soon">Wish them luck</string>
+    <string name="story_birthday_soon">Birthday %1$s</string>
+    <string name="story_birthday_past">Birthday was %1$s</string>
+    <string name="story_birthday_turns">Turning %1$d</string>
+    <string name="story_birthday_turned">Just turned %1$d</string>
+    <string name="story_kids_title">Ask about the kids</string>
+    <string name="story_kid_birthday">🎂 Birthday %1$s</string>
+    <string name="story_last_title">Last time together</string>
+    <string name="story_last_with">With %1$s</string>
+    <string name="story_tastes_title">What they love</string>
+    <string name="story_tastes_avoid">Not a fan of</string>
+    <string name="story_notes_title">Your notes</string>
+    <string name="story_todo_title">Don’t forget</string>
+    <string name="story_ideas_title">Things to bring up</string>
+    <string name="story_outro_title">Ready to see %1$s</string>
+    <string name="story_outro_ask">Ask about</string>
+    <string name="story_outro_empty">Nothing new written down. Ask what’s new and add it afterwards.</string>
+    <string name="story_done">Done</string>
+    <string name="story_open_profile">Open profile</string>
+    <plurals name="story_fresh_count">
+        <item quantity="one">%1$d new thing since then</item>
+        <item quantity="other">%1$d new things since then</item>
+    </plurals>
+    <plurals name="story_kid_age">
+        <item quantity="one">%1$d year old</item>
+        <item quantity="other">%1$d years old</item>
+    </plurals>
+    <plurals name="story_cta_fresh">
+        <item quantity="one">%1$d new thing since you last met</item>
+        <item quantity="other">%1$d new things since you last met</item>
+    </plurals>
+    <!-- Share into the app, blogs & feeds -->
+    <string name="share_title">Save to a friend</string>
+    <string name="share_who">Who is this about?</string>
+    <string name="share_search">Search friends</string>
+    <string name="share_mentioned">Mentioned</string>
+    <string name="share_change">Change</string>
+    <string name="share_whats_new">What’s new with %1$s</string>
+    <string name="share_suggest">Read it with AI</string>
+    <string name="share_ai_hint">Add your AI key in Settings and Claude can read screenshots for you.</string>
+    <string name="share_nothing_found">No news about %1$s found in it. Write it yourself.</string>
+    <string name="share_save">Save</string>
+    <string name="share_no_friends">Add a friend first, then share again.</string>
+    <string name="share_image">Screenshot</string>
+    <string name="feeds_title">Blogs &amp; feeds</string>
+    <string name="feeds_hint">Add their blog, Substack or Letterboxd. New posts show up here and lead their catch-up story.</string>
+    <string name="feeds_add_title">Follow their blog</string>
+    <string name="feeds_url">Link, e.g. ana.substack.com</string>
+    <string name="feeds_follow">Follow</string>
+    <string name="msg_feed_added">Following %1$s</string>
+    <string name="msg_feed_not_found">Couldn’t find a feed at that link</string>
+    <string name="msg_feed_error">Couldn’t read that link right now</string>
+    <string name="feeds_to_news">Add to What’s new</string>
+    <string name="feeds_no_posts">No posts yet</string>
+    <string name="msg_added_to_news">Added to What’s new</string>
+    <string name="story_fresh_post">New post</string>
 </resources>

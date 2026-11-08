@@ -4,7 +4,9 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -30,6 +32,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
@@ -40,8 +43,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUse
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
@@ -54,8 +59,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -89,6 +96,13 @@ class TestGraph(
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeFriendDetail = ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, groupRepo, planRepo, clock)
     val updateFriend = UpdateFriendUseCase(friendRepo)
+    val observeCatchUpStory = ObserveCatchUpStoryUseCase(observeFriendDetail, reminderRepo, clock)
+    val feedFetcher = FakeFeedFetcher()
+    val addFeed = AddFeedUseCase(friendRepo, feedFetcher, clock)
+    val refreshFeeds = RefreshFeedsUseCase(friendRepo, feedFetcher, clock)
+    val shareInbox = ShareInbox()
+    val addLifeUpdate = AddLifeUpdateUseCase(friendRepo, clock, ids)
+    val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, clock)
     val addFriend = AddFriendUseCase(friendRepo, ids)
     val deleteFriend = DeleteFriendUseCase(friendRepo)
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
@@ -130,6 +144,7 @@ class TestGraph(
     val runWeeklyIdeas = RunWeeklyIdeasUseCase(friendRepo, interactionRepo, settingsRepo, ideaRepo, generator, location, clock, ids, language)
     val draftBirthdayMessage = DraftBirthdayMessageUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
     val suggestGifts = SuggestGiftsUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
+    val suggestUpdateFromShared = SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
     val observeReminders = ObserveRemindersUseCase(reminderRepo)
     val addReminder = AddReminderUseCase(reminderRepo, clock, ids)
     val setReminderDone = SetReminderDoneUseCase(reminderRepo)
@@ -148,8 +163,8 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, clock)
-    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo)
+    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, clock)
+    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)

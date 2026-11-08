@@ -56,6 +56,7 @@ class FriendDetailViewModelTest {
         g.confirmPlan,
         g.cancelPlan,
         g.restorePlan,
+        g.addFeed,
         g.clock,
         g.ids,
     )
@@ -79,6 +80,60 @@ class FriendDetailViewModelTest {
         assertEquals(listOf("jazz"), f.likes)
         assertEquals(listOf("crowds"), f.dislikes)
         assertEquals(Birthday(5, 4, 1990), f.birthday)
+    }
+
+    @Test
+    fun lifeUpdatesAndNewThingsAreTimestampedForTheStory() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        val now = g.clock.now()
+        assertEquals(0, state.value.freshCount)
+
+        vm.onAddLifeUpdate("  New job at a studio ")
+        vm.onAddLifeUpdate(" ")
+        vm.onAddLikes(listOf("jazz", "climbing"))
+        vm.onSaveKid(null, "Mia", null, emptyList())
+        vm.onAddEvent("Moving day", LocalDate(2026, 4, 1), 0)
+        val f = state.value.detail!!.friend
+        assertEquals(listOf("New job at a studio"), f.lifeUpdates.map { it.text })
+        assertEquals(now, f.lifeUpdates.single().addedAt)
+        // "jazz" was already there, so only the new like gets a date.
+        assertEquals(mapOf("climbing" to now), f.likesAddedAt)
+        assertEquals(now, f.kids.single().addedAt)
+        assertEquals(now, f.importantEvents.single().addedAt)
+        assertEquals(4, state.value.freshCount)
+
+        // Editing a kid keeps when it was added.
+        g.clock.advanceBy(kotlin.time.Duration.parse("1d"))
+        vm.onSaveKid(f.kids.single().id, "Mia", null, listOf("ducks"))
+        assertEquals(now, state.value.detail!!.friend.kids.single().addedAt)
+
+        vm.onRemoveLike("climbing")
+        vm.onRemoveLifeUpdate(f.lifeUpdates.single().id)
+        val after = state.value.detail!!.friend
+        assertTrue(after.lifeUpdates.isEmpty())
+        assertTrue(after.likesAddedAt.isEmpty())
+    }
+
+    @Test
+    fun followsABlogAndTurnsPostsIntoNews() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.feedFetcher.pages["https://ana.blog"] =
+            "<rss><channel><title>Ana writes</title><item><title>Moved to Porto</title><guid>1</guid></item></channel></rss>"
+        vm.onAddFeed("ana.blog")
+        assertEquals(FriendDetailMessage.FeedAdded("Ana writes"), state.value.message)
+        assertEquals(1, state.value.feedAdded)
+        assertEquals(listOf("Moved to Porto"), state.value.detail!!.friend.feeds.single().items.map { it.title })
+
+        vm.onFeedPostToNews("Moved to Porto")
+        assertEquals(FriendDetailMessage.AddedToNews, state.value.message)
+        assertEquals(listOf("Moved to Porto"), state.value.detail!!.friend.lifeUpdates.map { it.text })
+
+        vm.onAddFeed("nothing.here")
+        assertEquals(FriendDetailMessage.FeedNotFound, state.value.message)
+        vm.onRemoveFeed("https://ana.blog")
+        assertTrue(state.value.detail!!.friend.feeds.isEmpty())
     }
 
     @Test

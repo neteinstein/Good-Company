@@ -18,4 +18,5 @@
         <item quantity="other">En %1$d días</item>
         <item quantity="many">En %1$d días</item>
     </plurals>
+    <string name="share_target_label">Guardar en un amigo</string>
 </resources>

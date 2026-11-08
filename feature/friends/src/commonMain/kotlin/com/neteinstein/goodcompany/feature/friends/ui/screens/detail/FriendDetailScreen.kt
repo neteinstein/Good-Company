@@ -29,8 +29,10 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
@@ -47,7 +49,9 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.RssFeed
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Sms
 import androidx.compose.material.icons.rounded.Snooze
@@ -99,6 +103,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Circle
@@ -181,6 +186,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_remove_friend
 import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
+import com.neteinstein.goodcompany.feature.friends.resources.feeds_hint
+import com.neteinstein.goodcompany.feature.friends.resources.feeds_no_posts
+import com.neteinstein.goodcompany.feature.friends.resources.feeds_title
+import com.neteinstein.goodcompany.feature.friends.resources.feeds_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_kid
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
@@ -210,14 +219,21 @@ import com.neteinstein.goodcompany.feature.friends.resources.kids_title
 import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
 import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.moments_title
+import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_invalid
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
+import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_added
+import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_error
+import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.friends.resources.news_added
+import com.neteinstein.goodcompany.feature.friends.resources.news_hint
+import com.neteinstein.goodcompany.feature.friends.resources.news_title
 import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_hint
@@ -244,6 +260,12 @@ import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta_fresh
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta_hint
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_hint
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_today
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_tomorrow
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
@@ -275,10 +297,12 @@ import com.neteinstein.goodcompany.feature.friends.resources.warmth_hint_warm
 import com.neteinstein.goodcompany.feature.friends.resources.warmth_title
 import com.neteinstein.goodcompany.feature.friends.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.friends.resources.wish_title
+import com.neteinstein.goodcompany.feature.friends.ui.components.AddFeedDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.KidDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.daysUntil
@@ -296,6 +320,7 @@ fun FriendDetailScreen(
     friendId: FriendId,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenStory: () -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -307,6 +332,12 @@ fun FriendDetailScreen(
         actions = FriendDetailActions(
             onBack = onBack,
             onOpenSettings = onOpenSettings,
+            onOpenStory = onOpenStory,
+            onAddLifeUpdate = viewModel::onAddLifeUpdate,
+            onRemoveLifeUpdate = viewModel::onRemoveLifeUpdate,
+            onAddFeed = viewModel::onAddFeed,
+            onRemoveFeed = viewModel::onRemoveFeed,
+            onFeedPostToNews = viewModel::onFeedPostToNews,
             onToggleClose = viewModel::onToggleClose,
             onCircleChange = viewModel::onCircleChange,
             onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
@@ -362,6 +393,12 @@ fun FriendDetailScreen(
 data class FriendDetailActions(
     val onBack: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
+    val onOpenStory: () -> Unit = {},
+    val onAddLifeUpdate: (String) -> Unit = {},
+    val onRemoveLifeUpdate: (String) -> Unit = {},
+    val onAddFeed: (String) -> Unit = {},
+    val onRemoveFeed: (String) -> Unit = {},
+    val onFeedPostToNews: (String) -> Unit = {},
     val onToggleClose: () -> Unit = {},
     val onCircleChange: (Circle?) -> Unit = {},
     val onToggleBirthdayNotifications: () -> Unit = {},
@@ -436,6 +473,10 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
     FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    is FriendDetailMessage.FeedAdded -> getString(Res.string.msg_feed_added, title)
+    FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
+    FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
+    FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -446,6 +487,9 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var addingKid by rememberSaveable { mutableStateOf(false) }
     var addingEvent by rememberSaveable { mutableStateOf(false) }
     var addingGift by rememberSaveable { mutableStateOf(false) }
+    var addingNews by rememberSaveable { mutableStateOf(false) }
+    var addingFeed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.feedAdded) { addingFeed = false }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -473,12 +517,41 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
             item(key = "hero") { Hero(f, state, actions, onEditBirthday = { pickBirthday = true }, onDelete = { confirmDelete = true }) }
 
+            item(key = "story") {
+                val meeting = detail.plans.firstOrNull { it.date >= state.today && state.today.daysUntil(it.date) <= 1 }?.date
+                StoryCta(f.name, meeting, state.today, state.freshCount, actions.onOpenStory)
+            }
+
             val nextBirthday = f.birthday?.nextOccurrence(state.today)
             if (nextBirthday != null && state.today.daysUntil(nextBirthday) in 0..7) {
                 item(key = "bday") { BirthdayBanner(firstName, nextBirthday, state.today, actions.onOpenWish) }
             }
 
             item(key = "touch") { StayInTouch(f, state, actions) }
+
+            item(key = "news") {
+                SectionCard(
+                    stringResource(Res.string.news_title),
+                    icon = Icons.Rounded.NewReleases,
+                    action = { TextButton(onClick = { addingNews = true }) { Text(stringResource(CoreRes.string.add)) } },
+                ) {
+                    if (f.lifeUpdates.isEmpty()) Hint(stringResource(Res.string.news_hint))
+                    f.lifeUpdates.sortedByDescending { it.addedAt }.forEach { update ->
+                        ListItem(
+                            headlineContent = { Text(update.text, style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.news_added, relativePast(update.addedAt, state.now, state.zone))) },
+                            trailingContent = {
+                                IconButton(onClick = { actions.onRemoveLifeUpdate(update.id) }) {
+                                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, update.text))
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                    }
+                }
+            }
+
+            item(key = "feeds") { Feeds(f, state, actions, onAdd = { addingFeed = true }) }
 
             item(key = "plans") {
                 SectionCard(
@@ -757,6 +830,15 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 addingEvent = false
             }
         }
+        if (addingFeed) {
+            AddFeedDialog(busy = state.isAddingFeed, onDismiss = { addingFeed = false }, onAdd = actions.onAddFeed)
+        }
+        if (addingNews) {
+            LifeUpdateDialog(firstName, onDismiss = { addingNews = false }) { text ->
+                actions.onAddLifeUpdate(text)
+                addingNews = false
+            }
+        }
         if (addingGift) {
             GiftDialog(f, onDismiss = { addingGift = false }) { title, note, kidId ->
                 actions.onSaveGift(title, note, kidId)
@@ -829,6 +911,96 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 },
                 dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(CoreRes.string.cancel)) } },
             )
+        }
+    }
+}
+
+/** Blogs / Substack / Letterboxd you follow for them, with their latest posts. */
+@Composable
+private fun Feeds(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onAdd: () -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.feeds_title),
+        icon = Icons.Rounded.RssFeed,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.feeds.isEmpty()) Hint(stringResource(Res.string.feeds_hint))
+        f.feeds.forEach { feed ->
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    feed.title.ifBlank { feed.url },
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).clickable { (feed.siteUrl ?: feed.url).let(uri::openUri) },
+                )
+                IconButton(onClick = { actions.onRemoveFeed(feed.url) }) {
+                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, feed.title.ifBlank { feed.url }))
+                }
+            }
+            if (feed.items.isEmpty()) Hint(stringResource(Res.string.feeds_no_posts))
+            feed.items.take(3).forEach { item ->
+                ListItem(
+                    modifier = Modifier.clickable(enabled = item.link != null) { item.link?.let(uri::openUri) },
+                    headlineContent = { Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    supportingContent = item.publishedAt?.let { at -> { Text(relativePast(at, state.now, state.zone)) } },
+                    trailingContent = {
+                        IconButton(onClick = { actions.onFeedPostToNews(item.title) }) {
+                            Icon(Icons.Rounded.AddCircleOutline, stringResource(Res.string.feeds_to_news))
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
+        }
+    }
+}
+
+/** Opens the catch-up story; stands out when you're seeing them today or tomorrow. */
+@Composable
+private fun StoryCta(name: String, meetingOn: LocalDate?, today: LocalDate, freshCount: Int, onOpen: () -> Unit) {
+    val meeting = meetingOn != null
+    val firstName = name.substringBefore(' ')
+    val (start, end) = avatarColors(name)
+    Surface(
+        onClick = onOpen,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = MaterialTheme.shapes.large,
+        color = if (meeting) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(Brush.linearGradient(listOf(start, end))),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Rounded.AutoStories, null, tint = Color.White) }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    when {
+                        meetingOn == today -> stringResource(Res.string.story_meeting_today, firstName)
+                        meeting -> stringResource(Res.string.story_meeting_tomorrow, firstName)
+                        else -> stringResource(Res.string.story_cta, firstName)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    if (freshCount > 0) {
+                        pluralStringResource(Res.plurals.story_cta_fresh, freshCount, freshCount)
+                    } else {
+                        stringResource(if (meeting) Res.string.story_meeting_hint else Res.string.story_cta_hint)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (freshCount > 0) {
+                Text(
+                    freshCount.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
         }
     }
 }

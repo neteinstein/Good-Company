@@ -34,6 +34,23 @@ interface AiAssistant {
 
     /** 3–6 gift ideas for the friend (or for [kidName], one of their kids), in [languageTag]. */
     suspend fun giftIdeas(apiKey: String, friend: FriendProfile, kidName: String?, kidLikes: List<String>, languageTag: String): Result<List<String>>
+
+    /**
+     * One short "what's new" line about the friend, read from something shared into the app (a post's text, a link,
+     * a screenshot), in [languageTag]. Null when there's nothing about their life in it.
+     */
+    suspend fun lifeUpdateFromShared(
+        apiKey: String,
+        friend: FriendProfile,
+        text: String?,
+        image: com.neteinstein.goodcompany.core.domain.model.SharedImage?,
+        languageTag: String,
+    ): Result<String?>
+}
+
+/** Fetches a URL's body as text (feeds and the pages they're discovered on). Throws on network / HTTP errors. */
+fun interface FeedFetcher {
+    suspend fun fetch(url: String): String
 }
 
 /** Generates ideas with an LLM. Implementations must never be called without an API key. */
@@ -66,6 +83,8 @@ data class FriendProfile(
     val dislikes: List<String>,
     val kids: List<String>,
     val recentMessages: List<String>,
+    /** What's new in their life, newest first (from "What's new"). */
+    val news: List<String> = emptyList(),
 )
 
 data class GeneratedIdea(

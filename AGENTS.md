@@ -48,7 +48,7 @@ feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + r
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, circles, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
 feature/review/       "Your year in friendship" (story cards + share)
-iosApp/               Hand-authored Xcode project (SwiftUI shell)
+iosApp/               Hand-authored Xcode project: SwiftUI shell + Share Extension + "Who's next" WidgetKit widget
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
 ```
 
@@ -165,11 +165,15 @@ Seen in practice:
    - Prefer stable releases; no `-alpha`/`-beta`/`-rc` without a written reason.
 3. **No `iosX64`.** It was removed upstream; only `iosArm64` + `iosSimulatorArm64`.
 4. **Hand-authored Xcode project.** `iosApp/iosApp.xcodeproj/project.pbxproj` is written by hand, not exported from
-   Xcode, and there's no CocoaPods or xcodegen. One app target; the "Compile Kotlin Framework" Run Script phase runs
+   Xcode, and there's no CocoaPods or xcodegen. Three targets: the app, `ShareExtension` and `NextUpWidget` (both pure
+   Swift, embedded by the app's "Embed Foundation Extensions" phase). In the app target the "Compile Kotlin Framework" Run Script phase runs
    `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode` *before* Compile Sources. `ENABLE_USER_SCRIPT_SANDBOXING = NO`
    is required for that. When adding a Swift file, add a `PBXFileReference`, a `PBXBuildFile`, the group child and the
    Sources entry, all with new unique 24-hex IDs. Settings (team, bundle id, version) live in
    `iosApp/Configuration/Config.xcconfig`; put a personal `TEAM_ID` in the gitignored `Signing.xcconfig`.
+   The three targets share the app group `APP_GROUP` (xcconfig → each `Info.plist` `AppGroupId` + `.entitlements`);
+   register it in the Apple Developer account. Extensions can't run Kotlin: they talk to the app only through the group
+   (see `composeApp/src/iosMain/.../IosBridge.kt`). Their strings are `Localizable.strings` variant groups (five languages).
 5. **Compose resources on Android.** AGP 9's KMP library plugin has Android resources **off** by default, and Compose
    Multiplatform only packages `composeResources` (strings, fonts) into the APK's `assets/` when they're on. The
    `goodcompany.kmp.compose` convention sets `androidResources { enable = true }`; never drop it. Without it the web
@@ -215,12 +219,22 @@ Seen in practice:
     (see `docs/GOOGLE_DRIVE.md`): Android needs none in code; iOS reads `GOOGLE_DRIVE_IOS_CLIENT_ID` (xcconfig →
     Info.plist `GoogleDriveClientId`); web reads `<meta name="google-drive-client-id">`. Empty → the row is hidden.
     Obj-C helper classes (e.g. the `ASWebAuthenticationSession` anchor) must be `class`, never `object`.
-18. **Android widget.** `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
-    resources in `androidApp/src/main/res/values-*` (all five languages). What it shows comes from `ObserveHomeWidgetUseCase`.
-19. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+18. **Widgets.** Android: `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
+    resources in `androidApp/src/main/res/values-*` (all five languages). iOS: `iosApp/NextUpWidget` (WidgetKit) reads the
+    `WidgetSnapshot` JSON the app writes to the app group (`startWidgetSync`); "We met" opens `goodcompany://met/<id>`.
+    Both show what `ObserveHomeWidgetUseCase` returns; keep the two in step (owner: iOS keeps pace with Android and web).
+19. **Share into the app.** "Share → Good Company" lands in `ShareInbox` (domain), which opens the "Save to a friend"
+    screen. Android: `ACTION_SEND` in `MainActivity` (`ShareIntents`, images downscaled to 1568 px JPEG). iOS: the Share
+    Extension writes `ShareInbox/*.json` (+ `.jpg`) into the app group; the app reads it when it becomes active. Web: the
+    manifest's `share_target` (installed PWA only) → `?share_title&share_text&share_url` → `LaunchOptions.shared`.
+    Shared content is never stored as-is: only the "What's new" line the user saves.
+20. **Blogs & feeds.** `FeedParser` (domain) is a tiny RSS/Atom reader; `KtorFeedFetcher` fetches straight from the
+    device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
+    browser many feeds fail because of CORS; that's expected.
+21. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
-    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). No iOS widget yet (WidgetKit
-    needs an app group and an extension target in the hand-authored Xcode project).
+    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
+    site installed as an app and can't receive images (no service worker yet).
 
 ## Skills
 

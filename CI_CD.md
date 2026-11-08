@@ -15,7 +15,7 @@ Two workflows:
 | **Build (Android)** | ubuntu-latest | `assembleDebug`, `assembleRelease` (R8 minify + resource shrink), `assembleSideload`; dumps the release APK's permissions with `aapt2` | compile/R8 error; Play release APK declares SMS, `READ_CALL_LOG`, `READ_CONTACTS` or `AD_ID` permissions |
 | **Unit tests + coverage** | ubuntu-latest | `testDebugUnitTest` (every module's `commonTest` on the JVM), `koverXmlReport`, `koverHtmlReport`, `koverVerify`; writes a coverage table to the job summary | any test fails; aggregated line coverage below the `koverVerify` minimum (root `build.gradle.kts`) |
 | **Lint** | ubuntu-latest | `spotlessCheck` (ktlint), then `:androidApp:lintDebug` (`checkDependencies = true`, so library modules are linted too) | formatting or ktlint violation; Android Lint error |
-| **Build (iOS)** | macos-latest | `xcodebuild` on the hand-authored `iosApp.xcodeproj`, scheme `iosApp`, iOS Simulator, `CODE_SIGNING_ALLOWED=NO`. The Run Script phase compiles and embeds `ComposeApp.framework` through Gradle | Kotlin/Native compile/link error; Swift compile error; broken pbxproj |
+| **Build (iOS)** | macos-latest | `xcodebuild` on the hand-authored `iosApp.xcodeproj`, scheme `iosApp` (app + Share Extension + widget), iOS Simulator, `CODE_SIGNING_ALLOWED=NO`. The Run Script phase compiles and embeds `ComposeApp.framework` through Gradle. JDK: Temurin, falling back to Zulu, then the runner's preinstalled JDK, because GitHub release downloads sometimes return 504 | Kotlin/Native compile/link error; Swift compile error; broken pbxproj |
 | **Build (Web)** | ubuntu-latest | `:composeApp:wasmJsBrowserDistribution` | Wasm compile or webpack error |
 
 ## Test builds

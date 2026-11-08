@@ -1,9 +1,11 @@
 package com.neteinstein.goodcompany.core.data.ai
 
 import com.neteinstein.goodcompany.core.domain.model.AiFailure
+import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
@@ -14,6 +16,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import kotlin.io.encoding.Base64
 
 /**
  * Short single-shot helpers (no tools) using structured outputs (`output_config.format` with a JSON schema),
@@ -64,7 +67,55 @@ class AnthropicAssistant(
             json["ideas"]?.jsonArray?.mapNotNull { it.jsonPrimitive.content.trim().takeIf(String::isNotEmpty) }.orEmpty()
         }
 
-    private suspend fun ask(apiKey: String, system: String, user: String, schema: JsonObject): JsonObject {
+    override suspend fun lifeUpdateFromShared(
+        apiKey: String,
+        friend: FriendProfile,
+        text: String?,
+        image: SharedImage?,
+        languageTag: String,
+    ): Result<String?> = runCatching {
+        val first = friend.name.substringBefore(' ')
+        val content = buildJsonArray {
+            image?.let { img ->
+                addJsonObject {
+                    put("type", "image")
+                    putJsonObject("source") {
+                        put("type", "base64")
+                        put("media_type", img.mediaType)
+                        put("data", Base64.encode(img.bytes))
+                    }
+                }
+            }
+            addJsonObject {
+                put("type", "text")
+                put(
+                    "text",
+                    AssistantPrompts.profile(friend) +
+                        "\nThe user shared this from another app (a social post, a link or a screenshot) to remember " +
+                        "something about $first." +
+                        (text?.let { "\nShared text:\n$it" } ?: "") +
+                        "\nWrite ONE short line (max 12 words) for their \"what's new\" list: the life news in it " +
+                        "(new job, a move, a baby, a trip, an injury, an exam, a new hobby…), so the user remembers to ask. " +
+                        "Third person without the name, e.g. \"Started a new job at Studio X\". If there's no news about " +
+                        "$first's life in it, set found to false.",
+                )
+            }
+        }
+        val json = ask(
+            apiKey,
+            system = "You turn shared social posts into short, factual notes about a friend's life. Never invent facts. " +
+                "Write in the language with BCP-47 tag \"$languageTag\".",
+            user = content,
+            schema = objectSchema("found" to buildJsonObject { put("type", "boolean") }, "update" to stringSchema()),
+        )
+        val found = json["found"]?.jsonPrimitive?.content == "true"
+        json["update"]?.jsonPrimitive?.content?.trim()?.takeIf { found && it.isNotEmpty() }
+    }
+
+    private suspend fun ask(apiKey: String, system: String, user: String, schema: JsonObject): JsonObject =
+        ask(apiKey, system, kotlinx.serialization.json.JsonPrimitive(user), schema)
+
+    private suspend fun ask(apiKey: String, system: String, user: JsonElement, schema: JsonObject): JsonObject {
         val body = buildJsonObject {
             put("model", model)
             put("max_tokens", MAX_TOKENS)
@@ -116,6 +167,7 @@ internal object AssistantPrompts {
         if (f.likes.isNotEmpty()) appendLine("Loves: ${f.likes.joinToString()}")
         if (f.dislikes.isNotEmpty()) appendLine("Dislikes: ${f.dislikes.joinToString()}")
         if (f.kids.isNotEmpty()) appendLine("Kids: ${f.kids.joinToString()}")
+        if (f.news.isNotEmpty()) appendLine("What's new in their life (newest first): ${f.news.joinToString("; ")}")
         if (f.recentMessages.isNotEmpty()) {
             appendLine("Recent chat (oldest first):")
             f.recentMessages.takeLast(10).forEach { appendLine("  $it") }

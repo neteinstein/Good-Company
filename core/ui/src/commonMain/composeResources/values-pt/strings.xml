@@ -300,4 +300,8 @@
     <string name="plan_cancelled">Plano cancelado</string>
     <string name="plan_logged">Registado como encontro</string>
     <string name="plan_closed">Ok, fica para a próxima</string>
+    <string name="sample_news_leo_school">O Leo acabou de entrar para o 1.º ano</string>
+    <string name="sample_news_rui_move">Mudou-se para um apartamento novo em Alvalade</string>
+    <string name="sample_news_marta_job">À procura de emprego novo, farta da vida de agência</string>
+    <string name="sample_plan_lunch">Almoço no Time Out Market</string>
 </resources>

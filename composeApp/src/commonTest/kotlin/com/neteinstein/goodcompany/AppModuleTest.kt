@@ -14,6 +14,8 @@ import com.neteinstein.goodcompany.di.appModule
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -68,6 +70,8 @@ class AppModuleTest {
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
         assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
         assertNotNull(koin.get<ApplyLaunchOptions>())
+        assertNotNull(koin.get<CatchUpStoryViewModel> { parametersOf(FriendId("x")) })
+        assertNotNull(koin.get<ShareToFriendViewModel>())
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(null) })
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(2025) })
         assertNotNull(koin.get<HandleNotificationActionUseCase>())

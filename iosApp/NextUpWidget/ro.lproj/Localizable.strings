@@ -1,0 +1,14 @@
+/* "Who’s next" widget. Keep in sync with the widget_* strings in androidApp/src/main/res (all five languages). */
+"widget.title" = "Cine urmează";
+"widget.description" = "Următoarea zi de naștere sau plan și pe cine să revezi.";
+"widget.birthday %@" = "Ziua lui/ei %@";
+"widget.kid_birthday %@ %@" = "Ziua lui/ei %1$@ (copilul lui/ei %2$@)";
+"widget.event %@ %@" = "%1$@: %2$@";
+"widget.today" = "Azi";
+"widget.tomorrow" = "Mâine";
+"widget.in_days %lld" = "Peste %lld zile";
+"widget.nothing" = "Nimic în curând";
+"widget.see %@" = "E timpul să-l/s-o vezi pe %@";
+"widget.caught_up" = "Totul la zi 💛";
+"widget.met" = "Ne-am văzut";
+"widget.private" = "Deschide Good Company ca să vezi ce urmează";

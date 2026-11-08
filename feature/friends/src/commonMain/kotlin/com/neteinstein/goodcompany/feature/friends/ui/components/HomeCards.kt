@@ -54,6 +54,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
@@ -292,5 +293,36 @@ fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifie
     ) {
         FriendAvatar(friend.name, friend.initials, size = 60.dp, highlighted = true)
         Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** "Before you meet": an Instagram-style story bubble with a gradient ring; tap for their catch-up story. */
+@Composable
+fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val friend = bubble.friend
+    val ring = if (bubble.freshCount > 0) {
+        listOf(Color(0xFFF2A100), Color(0xFFE5574F), Color(0xFFD81B60))
+    } else {
+        avatarColors(friend.name).let { (a, b) -> listOf(a, b) }
+    }
+    Column(
+        modifier.width(80.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(
+            Modifier.size(68.dp).clip(CircleShape).background(Brush.sweepGradient(ring + ring.first())).padding(3.dp)
+                .clip(CircleShape).background(MaterialTheme.colorScheme.background).padding(2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            FriendAvatar(friend.name, friend.initials, size = 58.dp)
+        }
+        Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            relativeDay(bubble.meetingOn, today),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+        )
     }
 }

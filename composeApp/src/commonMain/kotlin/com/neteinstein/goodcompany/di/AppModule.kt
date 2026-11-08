@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.data.ai.AnthropicAssistant
 import com.neteinstein.goodcompany.core.data.ai.AnthropicClient
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
 import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
+import com.neteinstein.goodcompany.core.data.feeds.KtorFeedFetcher
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
@@ -26,6 +27,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -39,7 +41,9 @@ import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
+import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -65,6 +69,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
@@ -76,8 +81,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUse
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
@@ -91,8 +98,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -104,6 +113,8 @@ import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
@@ -139,6 +150,8 @@ val appModule = module {
     single<IdeaGenerator> { AnthropicIdeaGenerator(get()) }
     single<AiAssistant> { AnthropicAssistant(get()) }
     single<CloudBackupStore> { GoogleDriveBackupStore(get()) }
+    single<FeedFetcher> { KtorFeedFetcher(get()) }
+    single { ShareInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
@@ -213,6 +226,12 @@ val appModule = module {
     factoryOf(::ExportBackupUseCase)
     factoryOf(::RestoreBackupUseCase)
     factoryOf(::ObserveHomeWidgetUseCase)
+    factoryOf(::ObserveCatchUpStoryUseCase)
+    factoryOf(::ObserveStoryBubblesUseCase)
+    factoryOf(::AddFeedUseCase)
+    factoryOf(::RefreshFeedsUseCase)
+    factoryOf(::AddLifeUpdateUseCase)
+    factoryOf(::SuggestUpdateFromSharedUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
@@ -244,6 +263,7 @@ val appModule = module {
             confirmPlan = get(),
             cancelPlan = get(),
             restorePlan = get(),
+            addFeed = get(),
             clock = get(),
             ids = get(),
         )
@@ -253,4 +273,6 @@ val appModule = module {
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
+    viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
+    viewModelOf(::ShareToFriendViewModel)
 }

@@ -52,6 +52,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
+import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
@@ -60,8 +61,10 @@ import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
+import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
+import com.neteinstein.goodcompany.ui.navigation.ShareRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
 import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
@@ -103,7 +106,12 @@ private fun AppScaffold(launch: LaunchOptions) {
     val showChrome = selected != null
     val start = launch.startTab?.route ?: FriendsRoute
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
+    LaunchedEffect(launch.openStoryFriendId) { launch.openStoryFriendId?.let { navController.navigate(CatchUpStoryRoute(it)) } }
     LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
+    // Something shared from another app (Android intent, iOS share extension, web share target).
+    val shareInbox: ShareInbox = koinInject()
+    val pendingShare by shareInbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingShare) { if (pendingShare != null) navController.navigate(ShareRoute) { launchSingleTop = true } }
 
     BoxWithConstraints {
         val wide = maxWidth >= 720.dp

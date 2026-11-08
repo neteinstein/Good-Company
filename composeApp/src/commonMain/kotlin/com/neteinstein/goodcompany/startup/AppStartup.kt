@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.startup
 
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ class AppStartup(
     private val syncContacts: SyncContactsUseCase,
     private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
     private val recordAppOpened: RecordAppOpenedUseCase,
+    private val refreshFeeds: RefreshFeedsUseCase,
 ) {
     private var job: Job? = null
 
@@ -37,6 +39,8 @@ class AppStartup(
                 runCatching { syncContacts() }
                 runCatching { runWeeklyIdeas() }
             }
+            // Friends' blogs: at most once every ~day per feed.
+            launch { runCatching { refreshFeeds() } }
         }
     }
 }

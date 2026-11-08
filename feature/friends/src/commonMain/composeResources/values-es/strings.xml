@@ -238,4 +238,87 @@
         <item quantity="one">%1$d amigo añadido</item>
         <item quantity="other">%1$d amigos añadidos</item>
     </plurals>
+    <!-- Catch-up story -->
+    <string name="section_before_you_meet">Antes de veros</string>
+    <string name="story_cta">Ponte al día con %1$s</string>
+    <string name="story_cta_hint">Una historia rápida de su vida, lo más nuevo primero</string>
+    <string name="story_meeting_today">Hoy ves a %1$s</string>
+    <string name="story_meeting_tomorrow">Mañana ves a %1$s</string>
+    <string name="story_meeting_hint">Ponte al día con su vida antes de ir</string>
+    <string name="news_title">Novedades</string>
+    <string name="news_hint">Trabajo nuevo, una mudanza, una afición nueva… Apúntalo y encabezará su historia, para que te acuerdes de preguntar.</string>
+    <string name="news_dialog_title">¿Qué hay de nuevo con %1$s?</string>
+    <string name="news_placeholder">p. ej., Empezó un trabajo nuevo en…</string>
+    <string name="news_added">Añadido %1$s</string>
+    <string name="story_kicker">Poniéndote al día con</string>
+    <string name="story_seen">La última vez que os visteis: %1$s</string>
+    <string name="story_seen_at">en %1$s</string>
+    <string name="story_never_met">Aún no hay quedadas registradas</string>
+    <string name="story_plan">Próximo: %1$s · %2$s</string>
+    <string name="story_nothing_new">Nada nuevo registrado desde entonces</string>
+    <string name="story_new_badge">Nuevo</string>
+    <string name="story_fresh_update">Novedad</string>
+    <string name="story_fresh_kid">Nuevo en la familia</string>
+    <string name="story_fresh_event">Día importante, recién añadido</string>
+    <string name="story_fresh_like">Nueva pasión</string>
+    <string name="story_added">Añadido %1$s</string>
+    <string name="story_fresh_ask">Pregúntale qué tal va</string>
+    <string name="story_bigday_past">¿Qué tal fue?</string>
+    <string name="story_bigday_today">Es hoy: mándale cariño</string>
+    <string name="story_bigday_soon">Deséale suerte</string>
+    <string name="story_birthday_soon">Cumpleaños %1$s</string>
+    <string name="story_birthday_past">El cumpleaños fue %1$s</string>
+    <string name="story_birthday_turns">Cumple %1$d</string>
+    <string name="story_birthday_turned">Acaba de cumplir %1$d</string>
+    <string name="story_kids_title">Pregunta por los niños</string>
+    <string name="story_kid_birthday">🎂 Cumpleaños %1$s</string>
+    <string name="story_last_title">La última vez</string>
+    <string name="story_last_with">Con %1$s</string>
+    <string name="story_tastes_title">Lo que le encanta</string>
+    <string name="story_tastes_avoid">No le va</string>
+    <string name="story_notes_title">Tus notas</string>
+    <string name="story_todo_title">No te olvides</string>
+    <string name="story_ideas_title">Temas para sacar</string>
+    <string name="story_outro_title">Listo para ver a %1$s</string>
+    <string name="story_outro_ask">Pregunta por</string>
+    <string name="story_outro_empty">Nada nuevo apuntado. Pregunta qué hay de nuevo y añádelo después.</string>
+    <string name="story_done">Hecho</string>
+    <string name="story_open_profile">Abrir perfil</string>
+    <plurals name="story_fresh_count">
+        <item quantity="one">%1$d novedad desde entonces</item>
+        <item quantity="other">%1$d novedades desde entonces</item>
+    </plurals>
+    <plurals name="story_kid_age">
+        <item quantity="one">%1$d año</item>
+        <item quantity="other">%1$d años</item>
+    </plurals>
+    <plurals name="story_cta_fresh">
+        <item quantity="one">%1$d novedad desde la última vez</item>
+        <item quantity="other">%1$d novedades desde la última vez</item>
+    </plurals>
+    <!-- Share into the app, blogs & feeds -->
+    <string name="share_title">Guardar en un amigo</string>
+    <string name="share_who">¿De quién se trata?</string>
+    <string name="share_search">Buscar amigos</string>
+    <string name="share_mentioned">Mencionado</string>
+    <string name="share_change">Cambiar</string>
+    <string name="share_whats_new">Novedades de %1$s</string>
+    <string name="share_suggest">Leer con IA</string>
+    <string name="share_ai_hint">Añade tu clave de IA en Ajustes y Claude leerá las capturas por ti.</string>
+    <string name="share_nothing_found">No hay novedades sobre %1$s. Escríbelo tú.</string>
+    <string name="share_save">Guardar</string>
+    <string name="share_no_friends">Añade primero un amigo y vuelve a compartir.</string>
+    <string name="share_image">Captura de pantalla</string>
+    <string name="feeds_title">Blogs y feeds</string>
+    <string name="feeds_hint">Añade su blog, Substack o Letterboxd. Las publicaciones nuevas aparecen aquí y abren su historia.</string>
+    <string name="feeds_add_title">Seguir su blog</string>
+    <string name="feeds_url">Enlace, p. ej. ana.substack.com</string>
+    <string name="feeds_follow">Seguir</string>
+    <string name="msg_feed_added">Siguiendo %1$s</string>
+    <string name="msg_feed_not_found">No hay ningún feed en ese enlace</string>
+    <string name="msg_feed_error">No se pudo leer ese enlace ahora</string>
+    <string name="feeds_to_news">Añadir a novedades</string>
+    <string name="feeds_no_posts">Aún no hay publicaciones</string>
+    <string name="msg_added_to_news">Añadido a novedades</string>
+    <string name="story_fresh_post">Nueva publicación</string>
 </resources>

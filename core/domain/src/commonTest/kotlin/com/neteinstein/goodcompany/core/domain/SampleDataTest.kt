@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -28,10 +29,11 @@ class SampleDataTest {
     private val reminders = FakeReminderRepository()
     private val ideas = FakeIdeaRepository()
     private val groups = FakeGroupRepository()
+    private val plans = FakePlanRepository()
 
     @Test
     fun loadIsIdempotentAndRemoveKeepsUserData() = runTest {
-        val load = LoadSampleDataUseCase(friends, hangouts, reminders, ideas, groups, clock)
+        val load = LoadSampleDataUseCase(friends, hangouts, reminders, ideas, groups, plans, clock)
         load()
         load()
         val bundle = SampleData.build(clock)
@@ -39,14 +41,16 @@ class SampleDataTest {
         assertEquals(bundle.hangouts.size, hangouts.hangouts.value.size)
         assertEquals(bundle.ideas.size, ideas.ideas.value.size)
         assertEquals(bundle.groups.size, groups.groups.value.size)
+        assertEquals(bundle.plans.size, plans.plans.value.size)
         assertTrue(HasSampleDataUseCase(friends)().first())
 
-        RemoveSampleDataUseCase(friends, hangouts, reminders, ideas, groups)()
+        RemoveSampleDataUseCase(friends, hangouts, reminders, ideas, groups, plans)()
         assertEquals(listOf(mine), friends.friends.value)
         assertTrue(hangouts.hangouts.value.isEmpty())
         assertTrue(reminders.reminders.value.isEmpty())
         assertTrue(ideas.ideas.value.all { it.dismissed })
         assertTrue(groups.groups.value.isEmpty())
+        assertTrue(plans.plans.value.isEmpty())
         assertFalse(HasSampleDataUseCase(friends)().first())
     }
 

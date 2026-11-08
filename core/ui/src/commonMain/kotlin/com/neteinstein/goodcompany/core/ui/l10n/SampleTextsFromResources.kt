@@ -26,6 +26,10 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_idea_photo_when
 import com.neteinstein.goodcompany.core.ui.resources.sample_jazz_night
 import com.neteinstein.goodcompany.core.ui.resources.sample_job_interview
 import com.neteinstein.goodcompany.core.ui.resources.sample_knee_surgery
+import com.neteinstein.goodcompany.core.ui.resources.sample_news_leo_school
+import com.neteinstein.goodcompany.core.ui.resources.sample_news_marta_job
+import com.neteinstein.goodcompany.core.ui.resources.sample_news_rui_move
+import com.neteinstein.goodcompany.core.ui.resources.sample_plan_lunch
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_ask_marta
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_photos
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_present
@@ -124,5 +128,9 @@ object SampleTextsFromResources : SampleTextsProvider {
         wine = getString(Res.string.sample_taste_wine),
         ballet = getString(Res.string.sample_taste_ballet),
         running = getString(Res.string.sample_taste_running),
+        newsLeoSchool = getString(Res.string.sample_news_leo_school),
+        newsRuiMove = getString(Res.string.sample_news_rui_move),
+        newsMartaJob = getString(Res.string.sample_news_marta_job),
+        planLunch = getString(Res.string.sample_plan_lunch),
     )
 }

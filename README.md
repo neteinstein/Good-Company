@@ -35,7 +35,7 @@
         <li>Pull in your address book — or import a <b>.vcf</b> file from Google Contacts / iCloud (handy on the web).</li>
         <li>Search by name <i>or taste</i> — “jazz”, “F1”, “sushi”.</li>
         <li><b>Pick from contacts</b> without giving the app your whole address book.</li>
-        <li>A <b>“Who’s next” widget</b> on your Android home screen.</li>
+        <li>A <b>“Who’s next” widget</b> on your Android and iOS home screen.</li>
       </ul>
     </td>
   </tr>
@@ -49,6 +49,8 @@
         <li><b>Birthday wishes</b>: a banner when it's their day, with a ready message for WhatsApp, text or share — personalised by AI if you like.</li>
         <li><b>Gifts</b>: jot ideas (for them or their kids), get AI suggestions, mark what you gave and for which occasion — never repeat a present.</li>
         <li><b>Loves / not a fan of</b>, <b>kids</b> (names, birthdays, what each one likes — perfect before a party), <b>important moments</b> (“knee surgery on Friday”) and notes.</li>
+        <li><b>Catch-up story</b>: before you meet (or whenever), tap through an Instagram-style story of their life, <b>newest first</b>: the new job, the new baby, the surgery next week, the kids, last time together — and an “Ask about…” list. Log news in <b>What’s new</b>; friends you’re seeing today or tomorrow show up under <b>Before you meet</b> on Home.</li>
+        <li><b>Share into the app</b>: from Instagram, LinkedIn or a screenshot, “Share → Good Company”, pick the friend, and it lands in their <b>What’s new</b> (Claude can read the post or screenshot for you). Follow their <b>blog / Substack / Letterboxd</b> and new posts show up too.</li>
         <li><b>Things to talk about</b>: AI-matched news and conversation starters from their tastes and recent chats.</li>
         <li><b>Plans</b>: pick a day and it reminds you — then asks <i>“Did you meet?”</i> so only real meetups count. Add any plan to your calendar.</li>
         <li><b>Good company for</b> a weekday lunch, a hike, drinks… and <b>talking points from your own notes</b>, no AI key needed.</li>

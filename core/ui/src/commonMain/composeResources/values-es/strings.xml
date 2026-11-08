@@ -300,4 +300,8 @@
     <string name="plan_cancelled">Plan cancelado</string>
     <string name="plan_logged">Registrado como quedada</string>
     <string name="plan_closed">Vale, a la próxima</string>
+    <string name="sample_news_leo_school">Leo acaba de empezar primero de primaria</string>
+    <string name="sample_news_rui_move">Se ha mudado a un piso nuevo en Alvalade</string>
+    <string name="sample_news_marta_job">Buscando trabajo nuevo, harta de la vida de agencia</string>
+    <string name="sample_plan_lunch">Comida en el Time Out Market</string>
 </resources>
