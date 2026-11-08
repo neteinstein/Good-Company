@@ -55,13 +55,14 @@ class ContactWriteBackTest {
     }
 
     @Test
-    fun clearingEverything_removesTheCopy() = runTest {
-        val withKid = contactFriend { copy(kids = listOf(Kid("k1", "Maria"))) }
+    fun clearingDetails_neverTakesAnythingOffTheContact() = runTest {
+        val withKid = contactFriend { copy(kids = listOf(Kid("k1", "Maria")), notes = "Met at uni") }
         repo.upsert(withKid)
-        repo.upsert(withKid.copy(kids = emptyList()))
+        repo.upsert(withKid.copy(kids = emptyList(), notes = ""))
 
-        assertEquals(listOf(FriendId("ana")), writer.removed)
-        assertNull(writer.written[FriendId("ana")])
+        // Nothing is written for an empty card, and the earlier write is left exactly as it was.
+        assertEquals(1, writer.writes)
+        assertEquals(listOf("Maria"), writer.written.getValue(FriendId("ana")).kids.map { it.name })
     }
 
     @Test
@@ -69,7 +70,6 @@ class ContactWriteBackTest {
         repo.upsert(contactFriend())
         repo.upsert(contactFriend { copy(isCloseFriend = true) })
         assertEquals(0, writer.writes)
-        assertTrue(writer.removed.isEmpty())
     }
 
     @Test
@@ -91,7 +91,7 @@ class ContactWriteBackTest {
         repo.delete(f.id)
 
         assertTrue(repo.friends.first().isEmpty())
-        assertTrue(writer.removed.isEmpty())
+        assertEquals(1, writer.writes)
         assertEquals(listOf("Maria"), writer.written.getValue(f.id).kids.map { it.name })
     }
 
@@ -99,7 +99,7 @@ class ContactWriteBackTest {
     fun deletingAManualFriend_doesNotTouchContacts() = runTest {
         repo.upsert(friend("manual"))
         repo.delete(FriendId("manual"))
-        assertTrue(writer.removed.isEmpty())
+        assertEquals(0, writer.writes)
     }
 
     @Test
@@ -134,8 +134,6 @@ class ContactWriteBackTest {
     fun aFailingContactStore_neverBlocksSaving() = runTest {
         val failing = object : ContactsWriter {
             override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) = error("provider crashed")
-
-            override suspend fun remove(friendId: FriendId) = error("provider crashed")
         }
         val r = FriendRepositoryImpl(MapSettings(), { emptyList() }, failing)
         val f = contactFriend { copy(notes = "keep me") }
@@ -153,8 +151,6 @@ class ContactWriteBackTest {
                 friendId: FriendId,
                 card: ContactCard,
             ) = throw kotlinx.coroutines.CancellationException("stop")
-
-            override suspend fun remove(friendId: FriendId) = Unit
         }
         val r = FriendRepositoryImpl(MapSettings(), { emptyList() }, cancelling)
         assertFailsWith<kotlinx.coroutines.CancellationException> { r.upsert(contactFriend { copy(notes = "x") }) }

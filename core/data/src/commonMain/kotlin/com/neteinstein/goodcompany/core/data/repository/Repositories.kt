@@ -40,8 +40,8 @@ import kotlin.time.Instant
 /**
  * Friends, persisted as JSON. Friends that came from the address book are also mirrored onto their contact through
  * [writer] (a no-op except in the Android sideload build): whenever data the contact can hold changes, the contact is
- * updated in the same call, so it never lags behind the app. Removing a friend from the app leaves their contact as
- * it is. A failing or unavailable address book never blocks saving.
+ * updated in the same call, so it never lags behind the app. The mirror is append-only: clearing details or removing a
+ * friend from the app never takes anything off their contact. A failing or unavailable address book never blocks saving.
  */
 class FriendRepositoryImpl(
     settings: Settings,
@@ -85,10 +85,7 @@ class FriendRepositoryImpl(
         val card = ContactCard.from(friend)
         val before = previous?.takeIf { it.contactId == contactId }?.let(ContactCard::from)
         if (card == before) return
-        when {
-            !card.isEmpty -> safely { writer.write(contactId, friend.id, card) }
-            before != null && !before.isEmpty -> safely { writer.remove(friend.id) }
-        }
+        if (!card.isEmpty) safely { writer.write(contactId, friend.id, card) }
     }
 
     /**

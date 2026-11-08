@@ -29,21 +29,19 @@ interface FriendRepository {
 
 /**
  * Mirrors app data onto the friend's address-book entry (Android sideload build only: it alone declares
- * WRITE_CONTACTS). Everything it writes is app-owned and replaceable, so it never alters what the user typed into
- * the contact. Every other build uses [None]. Implementations must be idempotent and must not throw for
- * "no permission" / "contact gone": they just do nothing.
+ * WRITE_CONTACTS). Every other build uses [None].
+ *
+ * **Append-only: this port can add, never delete or overwrite.** Whatever is already on the contact stays, whether the
+ * user typed it or an earlier write put it there, so the contact only ever gains information. Implementations must be
+ * idempotent (writing the same card again adds nothing) and must not throw for "no permission" / "contact gone": they
+ * just do nothing.
  */
 interface ContactsWriter {
-    /** Makes the contact [contactId] show [card]'s details for [friendId], replacing what was written before. */
+    /** Adds the details in [card] that the contact [contactId] doesn't already show for [friendId]. */
     suspend fun write(contactId: String, friendId: FriendId, card: ContactCard)
-
-    /** Removes whatever [write] put on the contact for [friendId]. Used when a friend's details are all cleared, never when the friend is deleted. */
-    suspend fun remove(friendId: FriendId)
 
     object None : ContactsWriter {
         override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) = Unit
-
-        override suspend fun remove(friendId: FriendId) = Unit
     }
 }
 

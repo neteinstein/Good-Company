@@ -97,7 +97,6 @@ class FakeFriendRepository(
 class FakeContactsWriter : ContactsWriter {
     val written = mutableMapOf<FriendId, ContactCard>()
     val contactIds = mutableMapOf<FriendId, String>()
-    val removed = mutableListOf<FriendId>()
     var writes = 0
         private set
 
@@ -105,11 +104,6 @@ class FakeContactsWriter : ContactsWriter {
         writes++
         written[friendId] = card
         contactIds[friendId] = contactId
-    }
-
-    override suspend fun remove(friendId: FriendId) {
-        removed += friendId
-        written.remove(friendId)
     }
 }
 

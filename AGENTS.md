@@ -241,8 +241,9 @@ Seen in practice:
     their contact through the `ContactsWriter` port (`ContactCard.from(friend)` is the projection; a write happens only when
     the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
     contact the app owns (`SOURCE_ID` = `goodcompany:<friendId>`, no account, so it never syncs to Google) joined to the real
-    contact with an aggregation exception. Never edit the user's own contact rows. Editing a friend's details rewrites that
-    raw contact; **deleting a friend never touches it** (owner decision: data stays on the contact).
+    contact with an aggregation exception. Never edit the user's own contact rows. The mirror is
+    **append-only** (owner decision): it only inserts rows that aren't already there, never deletes, updates or overwrites
+    anything, and deleting a friend or clearing details never touches the contact. `ContactsWriter` has no remove.
     `AndroidContactsSource` skips contacts made only of our raw contacts. New data that fits on a contact goes into
     `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
     `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
