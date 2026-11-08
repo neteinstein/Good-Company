@@ -1,4 +1,4 @@
-/* "Who's next" widget. Keep in sync with androidApp/src/main/res/values*/strings.xml (widget_*). */
+/* "Who’s next" widget. Keep in sync with the widget_* strings in androidApp/src/main/res (all five languages). */
 "widget.title" = "À venir";
 "widget.description" = "Le prochain anniversaire ou projet, et qui revoir.";
 "widget.birthday %@" = "Anniversaire de %@";
