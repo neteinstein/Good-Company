@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -84,14 +85,14 @@ class ContactWriteBackTest {
     }
 
     @Test
-    fun deletingAFriend_removesTheirCopy_andUndoWritesItAgain() = runTest {
+    fun deletingAFriend_leavesTheirDataOnTheContact() = runTest {
         val f = contactFriend { copy(kids = listOf(Kid("k1", "Maria"))) }
         repo.upsert(f)
         repo.delete(f.id)
-        assertEquals(listOf(f.id), writer.removed)
 
-        repo.upsert(f) // the Undo snackbar
-        assertEquals(2, writer.writes)
+        assertTrue(repo.friends.first().isEmpty())
+        assertTrue(writer.removed.isEmpty())
+        assertEquals(listOf("Maria"), writer.written.getValue(f.id).kids.map { it.name })
     }
 
     @Test

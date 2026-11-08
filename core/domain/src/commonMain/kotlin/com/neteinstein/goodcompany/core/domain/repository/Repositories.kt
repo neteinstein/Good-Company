@@ -37,7 +37,7 @@ interface ContactsWriter {
     /** Makes the contact [contactId] show [card]'s details for [friendId], replacing what was written before. */
     suspend fun write(contactId: String, friendId: FriendId, card: ContactCard)
 
-    /** Removes whatever [write] put on the contact for [friendId]. */
+    /** Removes whatever [write] put on the contact for [friendId]. Used when a friend's details are all cleared, never when the friend is deleted. */
     suspend fun remove(friendId: FriendId)
 
     object None : ContactsWriter {
