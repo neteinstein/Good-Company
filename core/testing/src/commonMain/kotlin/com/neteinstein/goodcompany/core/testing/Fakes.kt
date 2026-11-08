@@ -18,11 +18,13 @@ import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.RenderedAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
@@ -258,6 +260,7 @@ object FakeNotificationRenderer : NotificationRenderer {
 class FakeAiAssistant(
     var message: Result<String> = Result.success("Happy birthday!"),
     var gifts: Result<List<String>> = Result.success(listOf("Vinyl", "Concert tickets")),
+    var lifeUpdate: Result<String?> = Result.success("Started a new job"),
 ) : AiAssistant {
     val calls = mutableListOf<String>()
 
@@ -276,6 +279,17 @@ class FakeAiAssistant(
         calls += "gifts:${friend.id}:${kidName ?: "-"}:$languageTag"
         return gifts
     }
+
+    override suspend fun lifeUpdateFromShared(
+        apiKey: String,
+        friend: FriendProfile,
+        text: String?,
+        image: SharedImage?,
+        languageTag: String,
+    ): Result<String?> {
+        calls += "update:${friend.id}:${text ?: "-"}:${image?.mediaType ?: "-"}:$languageTag"
+        return lifeUpdate
+    }
 }
 
 /** Terse builders for tests. */
@@ -284,6 +298,16 @@ object Fixtures {
         Friend(id = FriendId(id), name = name).block()
 
     fun at(y: Int, m: Int, d: Int, h: Int = 12, min: Int = 0): Instant = LocalDateTime(y, m, d, h, min).toInstant(TimeZone.UTC)
+}
+
+/** Serves canned bodies by URL; anything else fails like a 404. Records every request. */
+class FakeFeedFetcher(val pages: MutableMap<String, String> = mutableMapOf()) : FeedFetcher {
+    val requests = mutableListOf<String>()
+
+    override suspend fun fetch(url: String): String {
+        requests += url
+        return pages[url] ?: error("HTTP 404")
+    }
 }
 
 /** In-memory Google Drive: one map of files; [failure] makes every call throw. */

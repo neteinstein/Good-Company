@@ -309,4 +309,29 @@
         <item quantity="few">%1$d noutăți de la ultima întâlnire</item>
         <item quantity="other">%1$d de noutăți de la ultima întâlnire</item>
     </plurals>
+    <!-- Share into the app, blogs & feeds -->
+    <string name="share_title">Salvează la un prieten</string>
+    <string name="share_who">Despre cine e vorba?</string>
+    <string name="share_search">Caută prieteni</string>
+    <string name="share_mentioned">Menționat</string>
+    <string name="share_change">Schimbă</string>
+    <string name="share_whats_new">Noutăți despre %1$s</string>
+    <string name="share_suggest">Citește cu AI</string>
+    <string name="share_ai_hint">Adaugă cheia AI în Setări și Claude va citi capturile de ecran pentru tine.</string>
+    <string name="share_nothing_found">Nu am găsit noutăți despre %1$s. Scrie tu.</string>
+    <string name="share_save">Salvează</string>
+    <string name="share_no_friends">Adaugă mai întâi un prieten, apoi distribuie din nou.</string>
+    <string name="share_image">Captură de ecran</string>
+    <string name="feeds_title">Bloguri și fluxuri</string>
+    <string name="feeds_hint">Adaugă blogul, Substack-ul sau Letterboxd-ul. Articolele noi apar aici și deschid povestea.</string>
+    <string name="feeds_add_title">Urmărește blogul</string>
+    <string name="feeds_url">Link, ex.: ana.substack.com</string>
+    <string name="feeds_follow">Urmărește</string>
+    <string name="msg_feed_added">Urmărești %1$s</string>
+    <string name="msg_feed_not_found">N-am găsit niciun flux la acel link</string>
+    <string name="msg_feed_error">Nu am putut citi linkul acum</string>
+    <string name="feeds_to_news">Adaugă la Noutăți</string>
+    <string name="feeds_no_posts">Încă nu sunt articole</string>
+    <string name="msg_added_to_news">Adăugat la Noutăți</string>
+    <string name="story_fresh_post">Articol nou</string>
 </resources>

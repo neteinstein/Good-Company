@@ -296,4 +296,29 @@
         <item quantity="one">%1$d novedad desde la última vez</item>
         <item quantity="other">%1$d novedades desde la última vez</item>
     </plurals>
+    <!-- Share into the app, blogs & feeds -->
+    <string name="share_title">Guardar en un amigo</string>
+    <string name="share_who">¿De quién se trata?</string>
+    <string name="share_search">Buscar amigos</string>
+    <string name="share_mentioned">Mencionado</string>
+    <string name="share_change">Cambiar</string>
+    <string name="share_whats_new">Novedades de %1$s</string>
+    <string name="share_suggest">Leer con IA</string>
+    <string name="share_ai_hint">Añade tu clave de IA en Ajustes y Claude leerá las capturas por ti.</string>
+    <string name="share_nothing_found">No hay novedades sobre %1$s. Escríbelo tú.</string>
+    <string name="share_save">Guardar</string>
+    <string name="share_no_friends">Añade primero un amigo y vuelve a compartir.</string>
+    <string name="share_image">Captura de pantalla</string>
+    <string name="feeds_title">Blogs y feeds</string>
+    <string name="feeds_hint">Añade su blog, Substack o Letterboxd. Las publicaciones nuevas aparecen aquí y abren su historia.</string>
+    <string name="feeds_add_title">Seguir su blog</string>
+    <string name="feeds_url">Enlace, p. ej. ana.substack.com</string>
+    <string name="feeds_follow">Seguir</string>
+    <string name="msg_feed_added">Siguiendo %1$s</string>
+    <string name="msg_feed_not_found">No hay ningún feed en ese enlace</string>
+    <string name="msg_feed_error">No se pudo leer ese enlace ahora</string>
+    <string name="feeds_to_news">Añadir a novedades</string>
+    <string name="feeds_no_posts">Aún no hay publicaciones</string>
+    <string name="msg_added_to_news">Añadido a novedades</string>
+    <string name="story_fresh_post">Nueva publicación</string>
 </resources>

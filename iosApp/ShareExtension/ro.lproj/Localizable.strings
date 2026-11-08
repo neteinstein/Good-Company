@@ -1,0 +1,6 @@
+/* Share Extension confirmation. */
+"share.saved.title" = "Salvat pentru mai târziu";
+"share.saved.body" = "Deschide Good Company ca să alegi despre ce prieten e vorba.";
+"share.failed.title" = "Nu s-a putut salva";
+"share.failed.body" = "Încearcă să distribui din nou sau adaugă în aplicație.";
+"share.done" = "Gata";

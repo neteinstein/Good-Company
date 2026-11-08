@@ -56,6 +56,7 @@ class FriendDetailViewModelTest {
         g.confirmPlan,
         g.cancelPlan,
         g.restorePlan,
+        g.addFeed,
         g.clock,
         g.ids,
     )
@@ -112,6 +113,27 @@ class FriendDetailViewModelTest {
         val after = state.value.detail!!.friend
         assertTrue(after.lifeUpdates.isEmpty())
         assertTrue(after.likesAddedAt.isEmpty())
+    }
+
+    @Test
+    fun followsABlogAndTurnsPostsIntoNews() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.feedFetcher.pages["https://ana.blog"] =
+            "<rss><channel><title>Ana writes</title><item><title>Moved to Porto</title><guid>1</guid></item></channel></rss>"
+        vm.onAddFeed("ana.blog")
+        assertEquals(FriendDetailMessage.FeedAdded("Ana writes"), state.value.message)
+        assertEquals(1, state.value.feedAdded)
+        assertEquals(listOf("Moved to Porto"), state.value.detail!!.friend.feeds.single().items.map { it.title })
+
+        vm.onFeedPostToNews("Moved to Porto")
+        assertEquals(FriendDetailMessage.AddedToNews, state.value.message)
+        assertEquals(listOf("Moved to Porto"), state.value.detail!!.friend.lifeUpdates.map { it.text })
+
+        vm.onAddFeed("nothing.here")
+        assertEquals(FriendDetailMessage.FeedNotFound, state.value.message)
+        vm.onRemoveFeed("https://ana.blog")
+        assertTrue(state.value.detail!!.friend.feeds.isEmpty())
     }
 
     @Test

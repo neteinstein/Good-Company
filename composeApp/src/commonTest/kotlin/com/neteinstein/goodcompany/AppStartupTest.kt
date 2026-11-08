@@ -3,8 +3,10 @@ package com.neteinstein.goodcompany
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.testing.FakeFeedFetcher
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
@@ -62,6 +64,7 @@ class AppStartupTest {
             SequentialIds(),
         ),
         RecordAppOpenedUseCase(settings, clock),
+        RefreshFeedsUseCase(friends, FakeFeedFetcher(), clock),
     )
 
     @Test

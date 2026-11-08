@@ -1,0 +1,6 @@
+/* Share Extension confirmation. */
+"share.saved.title" = "Guardado para depois";
+"share.saved.body" = "Abre o Good Company para escolher de que amigo se trata.";
+"share.failed.title" = "Não foi possível guardar";
+"share.failed.body" = "Tenta partilhar outra vez, ou adiciona na app.";
+"share.done" = "Feito";

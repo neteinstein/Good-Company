@@ -13,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
@@ -22,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
@@ -82,6 +84,14 @@ sealed interface FriendDetailMessage {
     data object PlanLogged : FriendDetailMessage
 
     data object PlanClosed : FriendDetailMessage
+
+    data class FeedAdded(val title: String) : FriendDetailMessage
+
+    data object FeedNotFound : FriendDetailMessage
+
+    data object FeedError : FriendDetailMessage
+
+    data object AddedToNews : FriendDetailMessage
 }
 
 data class PlanEditing(val plan: Plan?)
@@ -117,6 +127,10 @@ data class FriendDetailUiState(
     val showWarmth: Boolean = true,
     /** Things added since you last met — the catch-up story leads with them. */
     val freshCount: Int = 0,
+    /** Looking for a blog's feed (the add dialog stays open meanwhile). */
+    val isAddingFeed: Boolean = false,
+    /** Closes the "Follow their blog" dialog after a successful add. */
+    val feedAdded: Int = 0,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -145,6 +159,7 @@ class FriendDetailViewModel(
     private val confirmPlan: ConfirmPlanUseCase,
     private val cancelPlan: CancelPlanUseCase,
     private val restorePlan: RestorePlanUseCase,
+    private val addFeed: AddFeedUseCase,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -267,6 +282,35 @@ class FriendDetailViewModel(
     }
 
     fun onRemoveLifeUpdate(id: String) = edit { f -> f.copy(lifeUpdates = f.lifeUpdates.filterNot { it.id == id }) }
+
+    // --- Blogs & feeds -----------------------------------------------------------------------------------------------
+
+    fun onAddFeed(url: String) {
+        if (url.isBlank() || local.value.isAddingFeed) return
+        viewModelScope.launch {
+            local.update { it.copy(isAddingFeed = true) }
+            val result = addFeed(friendId, url)
+            local.update {
+                result.fold(
+                    { feed -> it.copy(isAddingFeed = false, feedAdded = it.feedAdded + 1, message = FriendDetailMessage.FeedAdded(feed.title)) },
+                    { e ->
+                        it.copy(
+                            isAddingFeed = false,
+                            message = if (e is FeedNotFoundException) FriendDetailMessage.FeedNotFound else FriendDetailMessage.FeedError,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    fun onRemoveFeed(url: String) = edit { f -> f.copy(feeds = f.feeds.filterNot { it.url == url }) }
+
+    /** A post on their blog becomes a "What's new" line. */
+    fun onFeedPostToNews(title: String) {
+        onAddLifeUpdate(title)
+        say(FriendDetailMessage.AddedToNews)
+    }
 
     // --- Gifts ---------------------------------------------------------------------------------------------------
 

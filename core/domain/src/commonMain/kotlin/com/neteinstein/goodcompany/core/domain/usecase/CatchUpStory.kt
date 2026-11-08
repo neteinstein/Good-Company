@@ -38,6 +38,9 @@ sealed interface FreshItem {
     data class NewEvent(val title: String, val date: LocalDate, override val addedAt: Instant) : FreshItem
 
     data class NewLike(val like: String, override val addedAt: Instant) : FreshItem
+
+    /** A new post on a blog / feed you follow for them ([addedAt] = when it was published). */
+    data class NewPost(val title: String, val feedTitle: String, val link: String?, override val addedAt: Instant) : FreshItem
 }
 
 /** One kid line on the "Ask about the kids" slide. */
@@ -105,6 +108,9 @@ object CatchUpStoryBuilder {
         friend.kids.forEach { kid -> kid.addedAt?.let { add(FreshItem.NewKid(kid.name, it)) } }
         friend.importantEvents.forEach { e -> e.addedAt?.let { add(FreshItem.NewEvent(e.title, e.date, it)) } }
         friend.likes.forEach { like -> friend.likesAddedAt[like]?.let { add(FreshItem.NewLike(like, it)) } }
+        friend.feeds.forEach { feed ->
+            feed.items.forEach { item -> item.publishedAt?.let { add(FreshItem.NewPost(item.title, feed.title, item.link, it)) } }
+        }
     }.sortedByDescending { it.addedAt }
 
     fun build(detail: FriendDetail, reminders: List<Reminder>, now: Instant, zone: TimeZone): CatchUpStory {
@@ -124,6 +130,7 @@ object CatchUpStoryBuilder {
                 is FreshItem.NewEvent -> ask += item.title
                 is FreshItem.NewKid -> ask += item.name
                 is FreshItem.NewLike -> ask += item.like
+                is FreshItem.NewPost -> ask += item.title
             }
         }
 

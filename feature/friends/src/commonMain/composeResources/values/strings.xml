@@ -320,4 +320,29 @@
         <item quantity="one">%1$d new thing since you last met</item>
         <item quantity="other">%1$d new things since you last met</item>
     </plurals>
+    <!-- Share into the app, blogs & feeds -->
+    <string name="share_title">Save to a friend</string>
+    <string name="share_who">Who is this about?</string>
+    <string name="share_search">Search friends</string>
+    <string name="share_mentioned">Mentioned</string>
+    <string name="share_change">Change</string>
+    <string name="share_whats_new">What’s new with %1$s</string>
+    <string name="share_suggest">Read it with AI</string>
+    <string name="share_ai_hint">Add your AI key in Settings and Claude can read screenshots for you.</string>
+    <string name="share_nothing_found">No news about %1$s found in it. Write it yourself.</string>
+    <string name="share_save">Save</string>
+    <string name="share_no_friends">Add a friend first, then share again.</string>
+    <string name="share_image">Screenshot</string>
+    <string name="feeds_title">Blogs &amp; feeds</string>
+    <string name="feeds_hint">Add their blog, Substack or Letterboxd. New posts show up here and lead their catch-up story.</string>
+    <string name="feeds_add_title">Follow their blog</string>
+    <string name="feeds_url">Link, e.g. ana.substack.com</string>
+    <string name="feeds_follow">Follow</string>
+    <string name="msg_feed_added">Following %1$s</string>
+    <string name="msg_feed_not_found">Couldn’t find a feed at that link</string>
+    <string name="msg_feed_error">Couldn’t read that link right now</string>
+    <string name="feeds_to_news">Add to What’s new</string>
+    <string name="feeds_no_posts">No posts yet</string>
+    <string name="msg_added_to_news">Added to What’s new</string>
+    <string name="story_fresh_post">New post</string>
 </resources>

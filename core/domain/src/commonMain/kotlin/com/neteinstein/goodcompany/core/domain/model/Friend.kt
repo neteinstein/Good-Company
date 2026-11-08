@@ -53,6 +53,8 @@ data class Friend(
     val lifeUpdates: List<LifeUpdate> = emptyList(),
     /** When each of [likes] was added (likes added before this existed have no entry). */
     val likesAddedAt: Map<String, Instant> = emptyMap(),
+    /** Blogs / Substack / Letterboxd feeds you follow for them (RSS or Atom), with their latest posts. */
+    val feeds: List<FriendFeed> = emptyList(),
 ) {
     val initials: String
         get() = name.split(' ', '-')
@@ -78,6 +80,26 @@ data class LifeUpdate(
     val id: String,
     val text: String,
     val addedAt: Instant,
+)
+
+/** A friend's blog or feed (RSS/Atom) and the few latest posts we fetched from it. */
+@Serializable
+data class FriendFeed(
+    /** The feed's own URL (not the page it was discovered on). */
+    val url: String,
+    val title: String = "",
+    val siteUrl: String? = null,
+    val checkedAt: Instant? = null,
+    /** Newest first, at most a handful. */
+    val items: List<FeedItem> = emptyList(),
+)
+
+@Serializable
+data class FeedItem(
+    val id: String,
+    val title: String,
+    val link: String? = null,
+    val publishedAt: Instant? = null,
 )
 
 /** Something big in a friend's life (surgery, exam, interview…) worth a ping. */

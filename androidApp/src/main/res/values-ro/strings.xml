@@ -18,4 +18,5 @@
         <item quantity="few">Peste %1$d zile</item>
         <item quantity="other">Peste %1$d de zile</item>
     </plurals>
+    <string name="share_target_label">Salvează la un prieten</string>
 </resources>

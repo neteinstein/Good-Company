@@ -2,7 +2,9 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
@@ -164,6 +166,19 @@ object SampleData {
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-rui", t.newsRuiMove, now - 3.days)),
+                // Film titles are proper nouns; checkedAt = now so the demo never fetches.
+                feeds = listOf(
+                    FriendFeed(
+                        url = "https://letterboxd.com/sample-rui/rss/",
+                        title = "Rui on Letterboxd",
+                        siteUrl = "https://letterboxd.com/sample-rui/",
+                        checkedAt = now,
+                        items = listOf(
+                            FeedItem(PREFIX + "lb-2", "Perfect Days, 2023 ★★★★½", null, now - 1.days),
+                            FeedItem(PREFIX + "lb-1", "Past Lives, 2023 ★★★★", null, now - 6.days),
+                        ),
+                    ),
+                ),
                 occasions = listOf(Occasion.DRINKS, Occasion.SPORTS),
                 gifts = listOf(Gift(PREFIX + "g-wingspan", t.giftBoardGame, givenOn = day(-320), occasion = GiftOccasion.CHRISTMAS)),
             ),

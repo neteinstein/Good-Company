@@ -1,0 +1,14 @@
+/* "Who's next" widget. Keep in sync with androidApp/src/main/res/values*/strings.xml (widget_*). */
+"widget.title" = "Quem se segue";
+"widget.description" = "O próximo aniversário ou plano e com quem pôr a conversa em dia.";
+"widget.birthday %@" = "Aniversário de %@";
+"widget.kid_birthday %@ %@" = "Aniversário de %1$@ (filho/a de %2$@)";
+"widget.event %@ %@" = "%1$@: %2$@";
+"widget.today" = "Hoje";
+"widget.tomorrow" = "Amanhã";
+"widget.in_days %lld" = "Daqui a %lld dias";
+"widget.nothing" = "Nada para breve";
+"widget.see %@" = "Hora de estar com %@";
+"widget.caught_up" = "Tudo em dia 💛";
+"widget.met" = "Estivemos";
+"widget.private" = "Abre o Good Company para ver o que se segue";

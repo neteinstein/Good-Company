@@ -83,6 +83,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_count
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_event
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_kid
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_like
+import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_post
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_update
 import com.neteinstein.goodcompany.feature.friends.resources.story_ideas_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_kicker
@@ -304,6 +305,7 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
                         is FreshItem.NewKid -> Res.string.story_fresh_kid
                         is FreshItem.NewEvent -> Res.string.story_fresh_event
                         is FreshItem.NewLike -> Res.string.story_fresh_like
+                        is FreshItem.NewPost -> Res.string.story_fresh_post
                     },
                 ),
             )
@@ -313,10 +315,18 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
                     is FreshItem.NewKid -> item.name
                     is FreshItem.NewEvent -> item.title
                     is FreshItem.NewLike -> item.like
+                    is FreshItem.NewPost -> item.title
                 },
             )
+            if (item is FreshItem.NewPost && item.feedTitle.isNotBlank()) Body(item.feedTitle)
             if (item is FreshItem.NewEvent) Body(relativeDay(item.date, state.today))
-            Body(stringResource(Res.string.story_added, relativePast(item.addedAt, state.now, state.zone)))
+            Body(
+                if (item is FreshItem.NewPost) {
+                    relativePast(item.addedAt, state.now, state.zone)
+                } else {
+                    stringResource(Res.string.story_added, relativePast(item.addedAt, state.now, state.zone))
+                },
+            )
             if (item is FreshItem.Update) Fact("💬", stringResource(Res.string.story_fresh_ask))
         }
         is StorySlide.BigDay -> {

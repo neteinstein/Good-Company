@@ -26,6 +26,7 @@ import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
@@ -63,6 +64,17 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenStory = { navController.navigate(CatchUpStoryRoute(id, fromFriend = true)) },
                     )
                 }
+            }
+            composable<ShareRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                ShareToFriendScreen(
+                    onClose = { navController.popBackStack(ShareRoute, inclusive = true) },
+                    onSaved = { id ->
+                        navController.navigate(FriendDetailRoute(id.value)) { popUpTo<ShareRoute> { inclusive = true } }
+                    },
+                )
             }
             composable<CatchUpStoryRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },

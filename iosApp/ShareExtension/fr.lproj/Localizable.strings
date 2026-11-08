@@ -1,0 +1,6 @@
+/* Share Extension confirmation. */
+"share.saved.title" = "Enregistré pour plus tard";
+"share.saved.body" = "Ouvrez Good Company pour choisir de quel ami il s’agit.";
+"share.failed.title" = "Impossible d’enregistrer";
+"share.failed.body" = "Réessayez de partager, ou ajoutez-le dans l’app.";
+"share.done" = "Terminé";

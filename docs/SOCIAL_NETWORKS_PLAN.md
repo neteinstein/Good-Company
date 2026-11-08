@@ -1,6 +1,6 @@
 # Matching friends on social networks: viability plan
 
-**Status:** direction agreed 2026-11-08 (see §0), nothing built yet. Written 2026-11-08 alongside the catch-up story, which is the natural consumer
+**Status:** direction agreed 2026-11-08 (see §0). Phases 1–3 and 5 (minus profile links) shipped the same day; see §4. Written 2026-11-08 alongside the catch-up story, which is the natural consumer
 of anything we could pull from social networks: a friend's new job, a move or a new baby would show up as a
 "What's new" item and lead their story.
 
@@ -103,14 +103,14 @@ Kept for reference; not on the roadmap.
 
 ## 4. Proposed phases and rough size
 
-| Phase | What | Size | Depends on |
+| Phase | What | Size | Status |
 |---|---|---|---|
-| 1 | Social profiles on a friend (+ vCard fields) | S | — |
-| 2 | Share target on **Android, iOS (Share Extension + app group) and web** → "What's new" (text/link), friend picker | M–L | 1 optional |
-| 3 | AI extraction from shared text/screenshot (vision) with confirm sheet | M | 2, AI key |
+| 1 | Social profiles on a friend (+ vCard fields) | S | Not built: blogs are added as feed links instead |
+| 2 | Share target on **Android, iOS (Share Extension + app group) and web** → "What's new" (text/link), friend picker | M–L | ✅ Shipped (web: installed app, text/links only) |
+| 3 | AI extraction from shared text/screenshot (vision) with confirm sheet | M | ✅ Shipped ("Read it with AI") |
 | ~~4~~ | ~~iOS Share Extension later~~ — folded into phase 2 (owner, 2026-11-08) | — | — |
 | ~~5~~ | ~~Bluesky + Mastodon fetch~~ — dropped for now (owner, 2026-11-08) | — | — |
-| 5 | RSS/Atom feeds on a friend → "From their blog" + AI suggestions (on open + weekly job) | S–M | 1, AI key for suggestions |
+| 5 | RSS/Atom feeds on a friend → latest posts + "Add to What's new" (on app open) | S–M | ✅ Shipped (AI suggestions for posts: not yet) |
 
 Phases 2 + 3 deliver most of the user's ask ("don't forget the new job / the kids") for every network, including the
 closed ones, because the user is already looking at those stories. Phase 5 (RSS) is the one automatic fetch.
