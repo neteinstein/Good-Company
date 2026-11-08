@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notification_channel_reminders">Rappels et anniversaires</string>
+    <!-- Written onto the contact by the sideload build (see AndroidContactsWriter). -->
+    <string name="contact_kid_birthday">Anniversaire de %1$s</string>
+    <string name="contact_likes">Adore</string>
+    <string name="contact_dislikes">N’aime pas</string>
 </resources>

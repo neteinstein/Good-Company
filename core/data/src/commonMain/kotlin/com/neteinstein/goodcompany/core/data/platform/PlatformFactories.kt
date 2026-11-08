@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.platform
 
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import io.ktor.client.HttpClient
@@ -10,7 +11,7 @@ import org.koin.core.scope.Scope
 
 /*
  * The only things a platform genuinely can't share: OS address book, call log, location and
- * local notifications. These factories are *called* from the single shared Koin module
+ * local notifications (and, on the Android sideload build, writing back to contacts). These factories are *called* from the single shared Koin module
  * (composeApp/di/AppModule.kt) — they don't register anything themselves.
  * They're Scope extensions so the Android actuals can reach `androidContext()`.
  */
@@ -18,6 +19,9 @@ import org.koin.core.scope.Scope
 expect fun Scope.createContactsSource(): ContactsSource
 
 expect fun Scope.createCommunicationLogSource(): CommunicationLogSource
+
+/** Mirrors app data onto contacts. Real only in the Android sideload build (WRITE_CONTACTS); [ContactsWriter.None] elsewhere. */
+expect fun Scope.createContactsWriter(): ContactsWriter
 
 expect fun Scope.createLocationProvider(): LocationProvider
 

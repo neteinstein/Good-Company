@@ -3,11 +3,13 @@ package com.neteinstein.goodcompany
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
+import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
 import com.neteinstein.goodcompany.di.appModule
@@ -40,6 +42,7 @@ class AppModuleTest {
     private val platformFakes = module {
         single<Settings> { MapSettings() }
         single<ContactsSource> { ContactsSource { emptyList() } }
+        single<ContactsWriter> { FakeContactsWriter() }
         single<CommunicationLogSource> { CommunicationLogSource.None }
         single<LocationProvider> { FakeLocationProvider() }
         single<NotificationScheduler> { FakeNotificationScheduler() }

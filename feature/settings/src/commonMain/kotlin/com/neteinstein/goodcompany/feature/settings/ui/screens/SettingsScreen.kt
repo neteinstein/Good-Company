@@ -161,6 +161,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.privacy
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_base
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_call_log
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_contacts
+import com.neteinstein.goodcompany.feature.settings.resources.privacy_contacts_write
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_end
 import com.neteinstein.goodcompany.feature.settings.resources.private_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.private_notifications_hint
@@ -568,7 +569,11 @@ fun SettingsContent(
                 Text(
                     listOfNotNull(
                         stringResource(Res.string.privacy_base),
-                        if (capabilities.hasAddressBook) stringResource(Res.string.privacy_contacts) else null,
+                        when {
+                            capabilities.hasContactWriteBack -> stringResource(Res.string.privacy_contacts_write)
+                            capabilities.hasAddressBook -> stringResource(Res.string.privacy_contacts)
+                            else -> null
+                        },
                         if (capabilities.hasCallLog) stringResource(Res.string.privacy_call_log) else null,
                         stringResource(Res.string.privacy_end),
                     ).joinToString(" "),

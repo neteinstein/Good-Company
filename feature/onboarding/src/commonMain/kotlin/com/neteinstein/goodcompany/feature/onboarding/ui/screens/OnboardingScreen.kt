@@ -67,6 +67,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.feature.onboarding.resources.Res
 import com.neteinstein.goodcompany.feature.onboarding.resources.allow
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body_write
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_picked
@@ -255,6 +256,7 @@ private fun SetupPage(
                 body = when {
                     state.contactsImported != null -> state.contactsImported.let { pluralStringResource(Res.plurals.contacts_imported, it, it) }
                     state.contactsDenied -> stringResource(Res.string.contacts_denied)
+                    capabilities.hasContactWriteBack -> stringResource(Res.string.contacts_body_write)
                     else -> stringResource(Res.string.contacts_body)
                 },
                 done = state.contactsImported != null,

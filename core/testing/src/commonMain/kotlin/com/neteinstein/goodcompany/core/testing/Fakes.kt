@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -24,6 +25,7 @@ import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -88,6 +90,26 @@ class FakeFriendRepository(
     override suspend fun syncContacts(): Int {
         state.update { ContactMerger.merge(it, contacts) }
         return contacts.size
+    }
+}
+
+/** Records what would have been mirrored onto contacts. [written] is the latest card per friend. */
+class FakeContactsWriter : ContactsWriter {
+    val written = mutableMapOf<FriendId, ContactCard>()
+    val contactIds = mutableMapOf<FriendId, String>()
+    val removed = mutableListOf<FriendId>()
+    var writes = 0
+        private set
+
+    override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) {
+        writes++
+        written[friendId] = card
+        contactIds[friendId] = contactId
+    }
+
+    override suspend fun remove(friendId: FriendId) {
+        removed += friendId
+        written.remove(friendId)
     }
 }
 

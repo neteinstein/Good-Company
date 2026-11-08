@@ -19,6 +19,7 @@
     </plurals>
     <string name="contacts_denied">Sem problema — podes adicionar amigos à mão.</string>
     <string name="contacts_body">Lemos nomes, números e aniversários. Nada sai do teu dispositivo.</string>
+    <string name="contacts_body_write">Lemos nomes, números e aniversários, e guardamos no contacto os aniversários, filhos, eventos e notas que acrescentares aqui. Nada sai do teu dispositivo.</string>
     <string name="import">Importar</string>
     <string name="notifications_title">Lembretes de aniversários e encontros</string>
     <string name="notifications_on">Está tudo pronto — vamos lembrar-te na hora certa.</string>

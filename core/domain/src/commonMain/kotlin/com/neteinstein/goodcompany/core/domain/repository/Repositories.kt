@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -24,6 +25,26 @@ interface FriendRepository {
 
     /** Pulls the device address book and merges it into the friend list. Returns the number of contacts seen. */
     suspend fun syncContacts(): Int
+}
+
+/**
+ * Mirrors app data onto the friend's address-book entry (Android sideload build only: it alone declares
+ * WRITE_CONTACTS). Everything it writes is app-owned and replaceable, so it never alters what the user typed into
+ * the contact. Every other build uses [None]. Implementations must be idempotent and must not throw for
+ * "no permission" / "contact gone": they just do nothing.
+ */
+interface ContactsWriter {
+    /** Makes the contact [contactId] show [card]'s details for [friendId], replacing what was written before. */
+    suspend fun write(contactId: String, friendId: FriendId, card: ContactCard)
+
+    /** Removes whatever [write] put on the contact for [friendId]. */
+    suspend fun remove(friendId: FriendId)
+
+    object None : ContactsWriter {
+        override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) = Unit
+
+        override suspend fun remove(friendId: FriendId) = Unit
+    }
 }
 
 interface HangoutRepository {

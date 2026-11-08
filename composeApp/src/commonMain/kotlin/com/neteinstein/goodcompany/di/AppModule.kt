@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
 import com.neteinstein.goodcompany.core.data.feeds.KtorFeedFetcher
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
+import com.neteinstein.goodcompany.core.data.platform.createContactsWriter
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
 import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
@@ -27,6 +28,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -143,6 +145,7 @@ val appModule = module {
 
     // --- Platform data sources ---
     single<ContactsSource> { createContactsSource() }
+    single<ContactsWriter> { createContactsWriter() }
     single<CommunicationLogSource> { createCommunicationLogSource() }
     single<LocationProvider> { createLocationProvider() }
     single<NotificationScheduler> { createNotificationScheduler() }

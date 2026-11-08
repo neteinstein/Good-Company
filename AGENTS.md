@@ -186,6 +186,7 @@ Seen in practice:
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
 8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
    `androidApp/src/sideload/AndroidManifest.xml`: the Play build adds people through the system contact picker.
+   `WRITE_CONTACTS` follows the same rule (see gotcha 22).
    CI fails if the Play `release` APK declares SMS, call-log, contacts or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
 9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
@@ -235,6 +236,15 @@ Seen in practice:
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
+
+22. **Contact write-back (Android sideload only).** `FriendRepositoryImpl` mirrors every friend that has a `contactId` onto
+    their contact through the `ContactsWriter` port (`ContactCard.from(friend)` is the projection; a write happens only when
+    the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
+    contact the app owns (`SOURCE_ID` = `goodcompany:<friendId>`, no account, so it never syncs to Google) joined to the real
+    contact with an aggregation exception. Never edit the user's own contact rows; replace or delete only that raw contact.
+    `AndroidContactsSource` skips contacts made only of our raw contacts. New data that fits on a contact goes into
+    `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
+    `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
 
 ## Skills
 

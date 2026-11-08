@@ -41,6 +41,7 @@
     <string name="privacy">Privacy</string>
     <string name="privacy_base">Friends, tastes, kids, gifts, meetups and reminders are stored only on this device.</string>
     <string name="privacy_contacts">Contacts are read only to build your list.</string>
+    <string name="privacy_contacts_write">Contacts are read to build your list. Birthdays, kids, events and notes you add here are also saved on the contact (on this device only).</string>
     <string name="privacy_call_log">The call log is only read in the sideload build.</string>
     <string name="privacy_end">Nothing is uploaded except the AI requests and Google Drive backups you start. SMS are never read.</string>
     <string name="footer">Good Company %1$s · %2$s · made with 💛</string>
