@@ -52,8 +52,13 @@ import platform.UniformTypeIdentifiers.UTTypeVCard
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
+import platform.UserNotifications.UNAuthorizationStatusAuthorized
+import platform.UserNotifications.UNAuthorizationStatusEphemeral
+import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
 import platform.darwin.NSObject
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 actual val platformCapabilities = PlatformCapabilities(
     name = "iOS",
@@ -86,6 +91,22 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
             // CLLocationManager prompts on first use inside the location provider itself.
             AppPermission.LOCATION -> report(true)
             AppPermission.CALL_LOG -> report(false)
+        }
+    }
+}
+
+@Composable
+actual fun rememberNotificationsAllowedCheck(): suspend () -> Boolean = remember<suspend () -> Boolean> {
+    {
+        suspendCoroutine { cont ->
+            UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { settings ->
+                val status = settings?.authorizationStatus
+                cont.resume(
+                    status == UNAuthorizationStatusAuthorized ||
+                        status == UNAuthorizationStatusProvisional ||
+                        status == UNAuthorizationStatusEphemeral,
+                )
+            }
         }
     }
 }

@@ -25,6 +25,9 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
 }
 
 @Composable
+actual fun rememberNotificationsAllowedCheck(): suspend () -> Boolean = remember<suspend () -> Boolean> { { false } }
+
+@Composable
 actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> Unit): () -> Unit {
     val callback = rememberUpdatedState(onPicked)
     val accept = when (kind) {

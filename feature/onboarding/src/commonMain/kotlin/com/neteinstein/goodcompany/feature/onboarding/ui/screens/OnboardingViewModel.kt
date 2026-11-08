@@ -21,7 +21,10 @@ data class OnboardingUiState(
     val notificationsGranted: Boolean? = null,
     val isWorking: Boolean = false,
     val finished: Boolean = false,
-)
+) {
+    /** Someone came in from the address book or the contact picker, so the app won't start empty. */
+    val hasPeople: Boolean get() = (contactsImported ?: 0) > 0 || contactsPicked > 0
+}
 
 class OnboardingViewModel(
     private val updateSettings: UpdateSettingsUseCase,

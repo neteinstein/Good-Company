@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class OnboardingViewModelTest {
@@ -46,6 +47,7 @@ class OnboardingViewModelTest {
         assertTrue(vm.state.value.contactsDenied)
         vm.onContactsPermissionResult(true)
         assertEquals(1, vm.state.value.contactsImported)
+        assertTrue(vm.state.value.hasPeople)
         vm.onNotificationsPermissionResult(true)
         vm.onFinish()
         assertTrue(vm.state.value.finished)
@@ -65,9 +67,11 @@ class OnboardingViewModelTest {
         val vm = vm()
         vm.onContactsPicked(emptyList())
         assertEquals(0, vm.state.value.contactsPicked)
+        assertFalse(vm.state.value.hasPeople)
         vm.onContactsPicked(listOf(ContactRecord("7", "Rui", listOf("+351 912"), null)))
         vm.onContactsPicked(listOf(ContactRecord("8", "Bea", emptyList(), null)))
         assertEquals(2, vm.state.value.contactsPicked)
+        assertTrue(vm.state.value.hasPeople)
         assertTrue(friends.friends.value.any { it.name == "Rui" })
     }
 }

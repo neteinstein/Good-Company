@@ -61,6 +61,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -90,6 +91,7 @@ import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberGoogleDriveAuthorizer
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -225,7 +227,12 @@ suspend fun SettingsMessage.text(): String = when (this) {
 @Composable
 fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS, viewModel::onNotificationPermissionResult)
+    var notificationsAsked by remember { mutableIntStateOf(0) }
+    val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
+        notificationsAsked++
+        viewModel.onNotificationPermissionResult(granted)
+    }
+    val notificationsAllowed = rememberNotificationsAllowed(refreshKey = notificationsAsked)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickBackup = rememberTextFilePicker(FileKind.JSON, onPicked = viewModel::onBackupPicked)
     val capabilities = currentPlatformCapabilities()
@@ -238,6 +245,7 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
         state = state,
         capabilities = capabilities,
         canLock = authenticator.isAvailable || state.settings.appLock,
+        notificationsAllowed = notificationsAllowed,
         appVersion = appVersion,
         actions = SettingsActions(
             onSaveApiKey = viewModel::onSaveApiKey,
@@ -317,6 +325,8 @@ fun SettingsContent(
     appVersion: String,
     actions: SettingsActions,
     canLock: Boolean = false,
+    /** Null while unknown; the "Allow notifications" button only shows once it's known to be false. */
+    notificationsAllowed: Boolean? = false,
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
@@ -434,10 +444,12 @@ fun SettingsContent(
             SectionCard(stringResource(Res.string.reminders), icon = Icons.Rounded.Notifications) {
                 Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (capabilities.hasBackgroundNotifications) {
-                        FilledTonalButton(onClick = actions.onEnableNotifications) {
-                            Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(Res.string.allow_notifications))
+                        if (notificationsAllowed == false) {
+                            FilledTonalButton(onClick = actions.onEnableNotifications) {
+                                Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(Res.string.allow_notifications))
+                            }
                         }
                     } else {
                         Text(
