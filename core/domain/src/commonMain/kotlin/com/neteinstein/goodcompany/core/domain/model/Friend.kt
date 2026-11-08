@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.model
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
+import kotlin.time.Instant
 
 @Serializable
 @JvmInline
@@ -48,6 +49,10 @@ data class Friend(
     val contactCountsAsCatchUp: Boolean = false,
     /** What they're good company for ("weekday lunch", "a hike"…), used by "Who's free for…?". */
     val occasions: List<Occasion> = emptyList(),
+    /** What's new in their life (new job, a move, a new hobby…), newest last. Leads their catch-up story. */
+    val lifeUpdates: List<LifeUpdate> = emptyList(),
+    /** When each of [likes] was added (likes added before this existed have no entry). */
+    val likesAddedAt: Map<String, Instant> = emptyMap(),
 ) {
     val initials: String
         get() = name.split(' ', '-')
@@ -63,6 +68,16 @@ data class Kid(
     val name: String,
     val birthday: Birthday? = null,
     val likes: List<String> = emptyList(),
+    /** When the kid was added to the app (null for older data). */
+    val addedAt: Instant? = null,
+)
+
+/** Something new in a friend's life ("Started a new job", "Moved to Porto") worth asking about next time. */
+@Serializable
+data class LifeUpdate(
+    val id: String,
+    val text: String,
+    val addedAt: Instant,
 )
 
 /** Something big in a friend's life (surgery, exam, interview…) worth a ping. */
@@ -73,6 +88,8 @@ data class ImportantEvent(
     val date: LocalDate,
     /** Also remind this many days before (0 = only on the day). */
     val remindDaysBefore: Int = 0,
+    /** When it was added to the app (null for older data). */
+    val addedAt: Instant? = null,
 )
 
 /**

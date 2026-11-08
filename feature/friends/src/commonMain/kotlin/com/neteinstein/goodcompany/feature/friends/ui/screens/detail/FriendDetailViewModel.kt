@@ -10,10 +10,12 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
@@ -49,6 +51,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
@@ -112,6 +115,8 @@ data class FriendDetailUiState(
     val undoPlan: Plan? = null,
     /** Show the warmth score (off in Settings = softer view). */
     val showWarmth: Boolean = true,
+    /** Things added since you last met — the catch-up story leads with them. */
+    val freshCount: Int = 0,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
@@ -152,6 +157,10 @@ class FriendDetailViewModel(
             notFound = detail == null,
             hasAiKey = settings.hasAiKey,
             showWarmth = settings.showWarmth,
+            freshCount = detail?.let { d ->
+                val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
+                CatchUpStoryBuilder.freshItems(d.friend).count { it.addedAt > since }
+            } ?: 0,
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,
@@ -201,9 +210,15 @@ class FriendDetailViewModel(
         f.copy(birthday = date?.let { Birthday(it.month.ordinal + 1, it.day, it.year) })
     }
 
-    fun onAddLikes(values: List<String>) = edit { it.copy(likes = (it.likes + values).distinct()) }
+    fun onAddLikes(values: List<String>) {
+        val now = clock.now()
+        edit { f ->
+            val added = values.filterNot { it in f.likes }
+            f.copy(likes = (f.likes + values).distinct(), likesAddedAt = f.likesAddedAt + added.associateWith { now })
+        }
+    }
 
-    fun onRemoveLike(value: String) = edit { it.copy(likes = it.likes - value) }
+    fun onRemoveLike(value: String) = edit { it.copy(likes = it.likes - value, likesAddedAt = it.likesAddedAt - value) }
 
     fun onAddDislikes(values: List<String>) = edit { it.copy(dislikes = (it.dislikes + values).distinct()) }
 
@@ -213,24 +228,45 @@ class FriendDetailViewModel(
 
     fun onSaveKid(id: String?, name: String, birthday: LocalDate?, likes: List<String>) {
         if (name.isBlank()) return
+        val now = clock.now()
         val kid = Kid(
             id = id ?: ids.next(),
             name = name.trim(),
             birthday = birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
             likes = likes,
         )
-        edit { f -> f.copy(kids = if (f.kids.any { it.id == kid.id }) f.kids.map { if (it.id == kid.id) kid else it } else f.kids + kid) }
+        edit { f ->
+            val existing = f.kids.firstOrNull { it.id == kid.id }
+            f.copy(
+                kids = if (existing != null) {
+                    f.kids.map { if (it.id == kid.id) kid.copy(addedAt = existing.addedAt) else it }
+                } else {
+                    f.kids + kid.copy(addedAt = now)
+                },
+            )
+        }
     }
 
     fun onRemoveKid(id: String) = edit { f -> f.copy(kids = f.kids.filterNot { it.id == id }) }
 
     fun onAddEvent(title: String, date: LocalDate, remindDaysBefore: Int) {
         if (title.isBlank()) return
-        val event = ImportantEvent(ids.next(), title.trim(), date, remindDaysBefore.coerceAtLeast(0))
+        val event = ImportantEvent(ids.next(), title.trim(), date, remindDaysBefore.coerceAtLeast(0), addedAt = clock.now())
         edit { f -> f.copy(importantEvents = (f.importantEvents + event).sortedBy { it.date }) }
     }
 
     fun onRemoveEvent(id: String) = edit { f -> f.copy(importantEvents = f.importantEvents.filterNot { it.id == id }) }
+
+    // --- What's new (life updates) ----------------------------------------------------------------------------------
+
+    /** "New job", "moved to Porto"… Leads their catch-up story until you meet. */
+    fun onAddLifeUpdate(text: String) {
+        if (text.isBlank()) return
+        val update = LifeUpdate(ids.next(), text.trim(), clock.now())
+        edit { f -> f.copy(lifeUpdates = f.lifeUpdates + update) }
+    }
+
+    fun onRemoveLifeUpdate(id: String) = edit { f -> f.copy(lifeUpdates = f.lifeUpdates.filterNot { it.id == id }) }
 
     // --- Gifts ---------------------------------------------------------------------------------------------------
 

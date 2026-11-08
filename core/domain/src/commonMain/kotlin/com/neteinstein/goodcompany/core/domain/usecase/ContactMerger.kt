@@ -42,5 +42,5 @@ object ContactMerger {
     private fun Friend.hasAppData(): Boolean = isCloseFriend || notifyBirthday || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
         meetEveryDays != null || suggestEvents || circle != null || gifts.isNotEmpty() || catchUpPaused ||
-        contactCountsAsCatchUp || occasions.isNotEmpty()
+        contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty()
 }

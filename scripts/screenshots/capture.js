@@ -28,6 +28,7 @@ const scenes = [
   { name: 'agenda-dark', query: '?demo&theme=dark&tab=agenda', viewport: phone },
   { name: 'desktop', query: '?demo&theme=light', viewport: { width: 1280, height: 800 } },
   { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 11000 },
+  { name: 'story', query: '?demo&theme=light&story=sample-ana', viewport: phone },
   // Localised renders: the browser locale drives the app language.
   { name: 'home-pt', query: '?demo&theme=light', viewport: phone, locale: 'pt-PT' },
   { name: 'friend-es', query: '?demo&theme=light&friend=sample-rui', viewport: phone, locale: 'es-ES' },

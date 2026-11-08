@@ -44,6 +44,7 @@ internal object IdeaPrompts {
             if (f.likes.isNotEmpty()) appendLine("  likes: ${f.likes.joinToString()}")
             if (f.dislikes.isNotEmpty()) appendLine("  dislikes: ${f.dislikes.joinToString()}")
             if (f.kids.isNotEmpty()) appendLine("  kids: ${f.kids.joinToString()}")
+            if (f.news.isNotEmpty()) appendLine("  what's new in their life (newest first): ${f.news.joinToString("; ")}")
             if (f.recentMessages.isNotEmpty()) {
                 appendLine("  recent chat (oldest first):")
                 f.recentMessages.forEach { appendLine("    $it") }

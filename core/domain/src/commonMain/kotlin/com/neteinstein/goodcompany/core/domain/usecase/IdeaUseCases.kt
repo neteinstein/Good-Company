@@ -68,9 +68,11 @@ internal object IdeaMapper {
         kids = friend.kids.map { k -> if (k.likes.isEmpty()) k.name else "${k.name} (likes ${k.likes.joinToString()})" },
         recentMessages = messages.filter { it.friendId == friend.id }.sortedBy { it.at }.takeLast(RECENT_MESSAGES)
             .map { (if (it.fromMe) "Me: " else "${friend.name}: ") + it.text },
+        news = friend.lifeUpdates.sortedByDescending { it.addedAt }.take(RECENT_NEWS).map { it.text },
     )
 
     private const val RECENT_MESSAGES = 25
+    private const val RECENT_NEWS = 5
 }
 
 /** News + conversation starters matched to one friend's tastes and recent chats. Requires an API key. */

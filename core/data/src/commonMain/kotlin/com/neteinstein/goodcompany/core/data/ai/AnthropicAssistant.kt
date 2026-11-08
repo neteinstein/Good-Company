@@ -116,6 +116,7 @@ internal object AssistantPrompts {
         if (f.likes.isNotEmpty()) appendLine("Loves: ${f.likes.joinToString()}")
         if (f.dislikes.isNotEmpty()) appendLine("Dislikes: ${f.dislikes.joinToString()}")
         if (f.kids.isNotEmpty()) appendLine("Kids: ${f.kids.joinToString()}")
+        if (f.news.isNotEmpty()) appendLine("What's new in their life (newest first): ${f.news.joinToString("; ")}")
         if (f.recentMessages.isNotEmpty()) {
             appendLine("Recent chat (oldest first):")
             f.recentMessages.takeLast(10).forEach { appendLine("  $it") }

@@ -82,6 +82,39 @@ class FriendDetailViewModelTest {
     }
 
     @Test
+    fun lifeUpdatesAndNewThingsAreTimestampedForTheStory() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        val now = g.clock.now()
+        assertEquals(0, state.value.freshCount)
+
+        vm.onAddLifeUpdate("  New job at a studio ")
+        vm.onAddLifeUpdate(" ")
+        vm.onAddLikes(listOf("jazz", "climbing"))
+        vm.onSaveKid(null, "Mia", null, emptyList())
+        vm.onAddEvent("Moving day", LocalDate(2026, 4, 1), 0)
+        val f = state.value.detail!!.friend
+        assertEquals(listOf("New job at a studio"), f.lifeUpdates.map { it.text })
+        assertEquals(now, f.lifeUpdates.single().addedAt)
+        // "jazz" was already there, so only the new like gets a date.
+        assertEquals(mapOf("climbing" to now), f.likesAddedAt)
+        assertEquals(now, f.kids.single().addedAt)
+        assertEquals(now, f.importantEvents.single().addedAt)
+        assertEquals(4, state.value.freshCount)
+
+        // Editing a kid keeps when it was added.
+        g.clock.advanceBy(kotlin.time.Duration.parse("1d"))
+        vm.onSaveKid(f.kids.single().id, "Mia", null, listOf("ducks"))
+        assertEquals(now, state.value.detail!!.friend.kids.single().addedAt)
+
+        vm.onRemoveLike("climbing")
+        vm.onRemoveLifeUpdate(f.lifeUpdates.single().id)
+        val after = state.value.detail!!.friend
+        assertTrue(after.lifeUpdates.isEmpty())
+        assertTrue(after.likesAddedAt.isEmpty())
+    }
+
+    @Test
     fun kidsAndEventsCanBeAddedEditedAndRemoved() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)

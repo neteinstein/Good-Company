@@ -30,6 +30,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
@@ -40,6 +41,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUse
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
@@ -89,6 +91,8 @@ class TestGraph(
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeFriendDetail = ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, groupRepo, planRepo, clock)
     val updateFriend = UpdateFriendUseCase(friendRepo)
+    val observeCatchUpStory = ObserveCatchUpStoryUseCase(observeFriendDetail, reminderRepo, clock)
+    val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, clock)
     val addFriend = AddFriendUseCase(friendRepo, ids)
     val deleteFriend = DeleteFriendUseCase(friendRepo)
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
@@ -148,8 +152,8 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, clock)
-    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo)
+    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, clock)
+    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)

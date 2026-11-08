@@ -17,9 +17,11 @@ data class LaunchOptions(
     val showOnboarding: Boolean = false,
     /** Opens "Your year in friendship" on top of the start tab. */
     val showReview: Boolean = false,
+    /** Opens this friend's catch-up story on top of the start tab. */
+    val openStoryFriendId: String? = null,
 ) {
     companion object {
-        /** Parses `demo`, `tab=<friends|together|agenda|ideas|settings>`, `friend=<id>`, `theme=<light|dark>`, `onboarding`, `review`. */
+        /** Parses `demo`, `tab=<friends|together|agenda|ideas|settings>`, `friend=<id>`, `theme=<light|dark>`, `onboarding`, `review`, `story=<id>`. */
         fun parse(query: String): LaunchOptions {
             val params = query.removePrefix("?").split('&').filter { it.isNotBlank() }.associate {
                 val (k, v) = (it.split('=', limit = 2) + "").take(2)
@@ -32,6 +34,7 @@ data class LaunchOptions(
                 theme = params["theme"]?.let { t -> ThemeMode.entries.firstOrNull { it.name.equals(t, ignoreCase = true) } },
                 showOnboarding = "onboarding" in params,
                 showReview = "review" in params,
+                openStoryFriendId = params["story"]?.takeIf { it.isNotBlank() },
             )
         }
     }

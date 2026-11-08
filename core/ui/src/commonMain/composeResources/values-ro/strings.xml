@@ -311,4 +311,8 @@
     <string name="plan_cancelled">Plan anulat</string>
     <string name="plan_logged">Înregistrat ca întâlnire</string>
     <string name="plan_closed">Bine, data viitoare</string>
+    <string name="sample_news_leo_school">Leo tocmai a început clasa întâi</string>
+    <string name="sample_news_rui_move">S-a mutat într-un apartament nou în Alvalade</string>
+    <string name="sample_news_marta_job">Își caută un job nou, s-a săturat de viața de agenție</string>
+    <string name="sample_plan_lunch">Prânz la Time Out Market</string>
 </resources>

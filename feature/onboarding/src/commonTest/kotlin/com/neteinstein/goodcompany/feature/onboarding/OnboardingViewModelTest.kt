@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
@@ -27,7 +28,15 @@ class OnboardingViewModelTest {
         UpdateSettingsUseCase(settings),
         SyncContactsUseCase(friends, FakeInteractionRepository()),
         ImportPickedContactsUseCase(friends),
-        LoadSampleDataUseCase(friends, FakeHangoutRepository(), FakeReminderRepository(), FakeIdeaRepository(), FakeGroupRepository(), FixedClock()),
+        LoadSampleDataUseCase(
+            friends,
+            FakeHangoutRepository(),
+            FakeReminderRepository(),
+            FakeIdeaRepository(),
+            FakeGroupRepository(),
+            FakePlanRepository(),
+            FixedClock(),
+        ),
     )
 
     @Test

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Sms
@@ -218,6 +220,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.friends.resources.news_added
+import com.neteinstein.goodcompany.feature.friends.resources.news_hint
+import com.neteinstein.goodcompany.feature.friends.resources.news_title
 import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_hint
@@ -244,6 +249,12 @@ import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta_fresh
+import com.neteinstein.goodcompany.feature.friends.resources.story_cta_hint
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_hint
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_today
+import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_tomorrow
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
@@ -279,6 +290,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.KidDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.daysUntil
@@ -296,6 +308,7 @@ fun FriendDetailScreen(
     friendId: FriendId,
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenStory: () -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -307,6 +320,9 @@ fun FriendDetailScreen(
         actions = FriendDetailActions(
             onBack = onBack,
             onOpenSettings = onOpenSettings,
+            onOpenStory = onOpenStory,
+            onAddLifeUpdate = viewModel::onAddLifeUpdate,
+            onRemoveLifeUpdate = viewModel::onRemoveLifeUpdate,
             onToggleClose = viewModel::onToggleClose,
             onCircleChange = viewModel::onCircleChange,
             onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
@@ -362,6 +378,9 @@ fun FriendDetailScreen(
 data class FriendDetailActions(
     val onBack: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
+    val onOpenStory: () -> Unit = {},
+    val onAddLifeUpdate: (String) -> Unit = {},
+    val onRemoveLifeUpdate: (String) -> Unit = {},
     val onToggleClose: () -> Unit = {},
     val onCircleChange: (Circle?) -> Unit = {},
     val onToggleBirthdayNotifications: () -> Unit = {},
@@ -446,6 +465,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var addingKid by rememberSaveable { mutableStateOf(false) }
     var addingEvent by rememberSaveable { mutableStateOf(false) }
     var addingGift by rememberSaveable { mutableStateOf(false) }
+    var addingNews by rememberSaveable { mutableStateOf(false) }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
@@ -473,12 +493,39 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
             item(key = "hero") { Hero(f, state, actions, onEditBirthday = { pickBirthday = true }, onDelete = { confirmDelete = true }) }
 
+            item(key = "story") {
+                val meeting = detail.plans.firstOrNull { it.date >= state.today && state.today.daysUntil(it.date) <= 1 }?.date
+                StoryCta(f.name, meeting, state.today, state.freshCount, actions.onOpenStory)
+            }
+
             val nextBirthday = f.birthday?.nextOccurrence(state.today)
             if (nextBirthday != null && state.today.daysUntil(nextBirthday) in 0..7) {
                 item(key = "bday") { BirthdayBanner(firstName, nextBirthday, state.today, actions.onOpenWish) }
             }
 
             item(key = "touch") { StayInTouch(f, state, actions) }
+
+            item(key = "news") {
+                SectionCard(
+                    stringResource(Res.string.news_title),
+                    icon = Icons.Rounded.NewReleases,
+                    action = { TextButton(onClick = { addingNews = true }) { Text(stringResource(CoreRes.string.add)) } },
+                ) {
+                    if (f.lifeUpdates.isEmpty()) Hint(stringResource(Res.string.news_hint))
+                    f.lifeUpdates.sortedByDescending { it.addedAt }.forEach { update ->
+                        ListItem(
+                            headlineContent = { Text(update.text, style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.news_added, relativePast(update.addedAt, state.now, state.zone))) },
+                            trailingContent = {
+                                IconButton(onClick = { actions.onRemoveLifeUpdate(update.id) }) {
+                                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, update.text))
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                    }
+                }
+            }
 
             item(key = "plans") {
                 SectionCard(
@@ -757,6 +804,12 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 addingEvent = false
             }
         }
+        if (addingNews) {
+            LifeUpdateDialog(firstName, onDismiss = { addingNews = false }) { text ->
+                actions.onAddLifeUpdate(text)
+                addingNews = false
+            }
+        }
         if (addingGift) {
             GiftDialog(f, onDismiss = { addingGift = false }) { title, note, kidId ->
                 actions.onSaveGift(title, note, kidId)
@@ -829,6 +882,55 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 },
                 dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(CoreRes.string.cancel)) } },
             )
+        }
+    }
+}
+
+/** Opens the catch-up story; stands out when you're seeing them today or tomorrow. */
+@Composable
+private fun StoryCta(name: String, meetingOn: LocalDate?, today: LocalDate, freshCount: Int, onOpen: () -> Unit) {
+    val meeting = meetingOn != null
+    val firstName = name.substringBefore(' ')
+    val (start, end) = avatarColors(name)
+    Surface(
+        onClick = onOpen,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = MaterialTheme.shapes.large,
+        color = if (meeting) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(Brush.linearGradient(listOf(start, end))),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Rounded.AutoStories, null, tint = Color.White) }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    when {
+                        meetingOn == today -> stringResource(Res.string.story_meeting_today, firstName)
+                        meeting -> stringResource(Res.string.story_meeting_tomorrow, firstName)
+                        else -> stringResource(Res.string.story_cta, firstName)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    if (freshCount > 0) {
+                        pluralStringResource(Res.plurals.story_cta_fresh, freshCount, freshCount)
+                    } else {
+                        stringResource(if (meeting) Res.string.story_meeting_hint else Res.string.story_cta_hint)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (freshCount > 0) {
+                Text(
+                    freshCount.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            }
         }
     }
 }

@@ -59,6 +59,7 @@ import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
+import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
@@ -102,6 +103,7 @@ private fun AppScaffold(launch: LaunchOptions) {
     val showChrome = selected != null
     val start = launch.startTab?.route ?: FriendsRoute
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
+    LaunchedEffect(launch.openStoryFriendId) { launch.openStoryFriendId?.let { navController.navigate(CatchUpStoryRoute(it)) } }
     LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
 
     BoxWithConstraints {

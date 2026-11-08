@@ -18,11 +18,13 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -81,6 +83,8 @@ data class FriendsUiState(
     val closeFriends: List<Friend> = emptyList(),
     /** Agenda items in the next two weeks — the home "Coming up" carousel. */
     val upcoming: List<AgendaItem> = emptyList(),
+    /** "Before you meet": friends you're seeing today or tomorrow, each with a catch-up story. */
+    val stories: List<StoryBubble> = emptyList(),
     val catchUp: List<Relationships.MeetupStatus> = emptyList(),
     /** Real friends whose warmth is fading and who aren't already in [catchUp]. */
     val drifting: List<FriendSummary> = emptyList(),
@@ -107,6 +111,7 @@ class FriendsViewModel(
     observeAgenda: ObserveAgendaUseCase,
     observeMeetups: ObserveMeetupStatusUseCase,
     observeSettings: ObserveSettingsUseCase,
+    observeStories: ObserveStoryBubblesUseCase,
     private val importPickedContacts: ImportPickedContactsUseCase,
     private val syncContacts: SyncContactsUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
@@ -124,9 +129,9 @@ class FriendsViewModel(
         observeFriends(),
         observeAgenda(),
         observeMeetups(),
-        observeSettings(),
+        combine(observeSettings(), observeStories()) { settings, stories -> settings to stories },
         local,
-    ) { all, agenda, meetups, settings, ui ->
+    ) { all, agenda, meetups, (settings, stories), ui ->
         val today = clock.today()
         val q = ui.query.trim().lowercase()
         // First run: nobody marked as close yet → show everyone instead of an empty list.
@@ -153,6 +158,7 @@ class FriendsViewModel(
             },
             closeFriends = all.filter { it.friend.isCloseFriend }.map { it.friend },
             upcoming = upcoming.take(8),
+            stories = stories,
             catchUp = catchUp,
             drifting = all
                 .filter { settings.showWarmth }

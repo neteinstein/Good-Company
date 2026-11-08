@@ -290,4 +290,8 @@
     <string name="plan_cancelled">Plan cancelled</string>
     <string name="plan_logged">Logged as a meetup</string>
     <string name="plan_closed">Okay, maybe next time</string>
+    <string name="sample_news_leo_school">Leo just started first grade</string>
+    <string name="sample_news_rui_move">Moved to a new flat in Alvalade</string>
+    <string name="sample_news_marta_job">Looking for a new job, tired of agency life</string>
+    <string name="sample_plan_lunch">Lunch at Time Out Market</string>
 </resources>

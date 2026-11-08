@@ -12,13 +12,16 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.Flow
@@ -98,6 +101,11 @@ data class SampleTexts(
     val wine: String = "Wine",
     val ballet: String = "Ballet",
     val running: String = "Running",
+    // What's new (life updates) and a planned meetup, for the catch-up story
+    val newsLeoSchool: String = "Leo just started first grade",
+    val newsRuiMove: String = "Moved to a new flat in Alvalade",
+    val newsMartaJob: String = "Looking for a new job, tired of agency life",
+    val planLunch: String = "Lunch at Time Out Market",
 )
 
 /** Supplies [SampleTexts] in the user's language (implemented with UI string resources). */
@@ -119,6 +127,7 @@ object SampleData {
         val reminders: List<Reminder>,
         val ideas: List<Idea>,
         val groups: List<FriendGroup> = emptyList(),
+        val plans: List<Plan> = emptyList(),
     )
 
     fun build(clock: AppClock, t: SampleTexts = SampleTexts()): Bundle {
@@ -138,8 +147,10 @@ object SampleData {
                 id = id("ana"), name = "Ana Silva", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 912 345 678"), birthday = bday(3, 34), meetEveryDays = 14,
                 likes = listOf(t.jazz, t.sushi, t.hiking, "Murakami"), dislikes = listOf(t.crowds, t.cilantro),
+                likesAddedAt = mapOf(t.hiking to now - 1.days),
                 kids = listOf(Kid(PREFIX + "leo", "Leo", bday(9, 6), listOf(t.dinosaurs, "LEGO", t.pancakes))),
-                importantEvents = listOf(ImportantEvent(PREFIX + "ana-knee", t.kneeSurgery, day(2), remindDaysBefore = 1)),
+                importantEvents = listOf(ImportantEvent(PREFIX + "ana-knee", t.kneeSurgery, day(2), remindDaysBefore = 1, addedAt = now - 1.days)),
+                lifeUpdates = listOf(LifeUpdate(PREFIX + "news-leo", t.newsLeoSchool, now - 1.days)),
                 notes = t.anaNotes,
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.CULTURE),
                 gifts = listOf(
@@ -152,6 +163,7 @@ object SampleData {
                 id = id("rui"), name = "Rui Costa", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
+                lifeUpdates = listOf(LifeUpdate(PREFIX + "news-rui", t.newsRuiMove, now - 3.days)),
                 occasions = listOf(Occasion.DRINKS, Occasion.SPORTS),
                 gifts = listOf(Gift(PREFIX + "g-wingspan", t.giftBoardGame, givenOn = day(-320), occasion = GiftOccasion.CHRISTMAS)),
             ),
@@ -164,6 +176,7 @@ object SampleData {
                     Kid(PREFIX + "tomas", "Tomás", bday(130, 8), listOf(t.football, "Minecraft")),
                 ),
                 importantEvents = listOf(ImportantEvent(PREFIX + "marta-job", t.jobInterview, day(1))),
+                lifeUpdates = listOf(LifeUpdate(PREFIX + "news-marta", t.newsMartaJob, now - 20.days)),
                 gifts = listOf(Gift(PREFIX + "g-ceramics", t.giftCeramicsClass)),
             ),
             Friend(
@@ -240,7 +253,10 @@ object SampleData {
             FriendGroup(PREFIX + "grp-games", t.groupBoardGames, "🎲", listOf(id("rui"), id("pedro"), id("beatriz")), meetEveryDays = 30),
             FriendGroup(PREFIX + "grp-surf", t.groupSurf, "🏄", listOf(id("pedro"), id("rui")), meetEveryDays = 21),
         )
-        return Bundle(friends, hangouts, reminders, ideas, groups)
+        val plans = listOf(
+            Plan(PREFIX + "plan-lunch", listOf(id("ana")), t.planLunch, day(0), place = "Time Out Market", createdAt = now - 2.days),
+        )
+        return Bundle(friends, hangouts, reminders, ideas, groups, plans)
     }
 
     fun isSample(id: String) = id.startsWith(PREFIX)
@@ -253,6 +269,7 @@ class LoadSampleDataUseCase(
     private val reminders: ReminderRepository,
     private val ideas: IdeaRepository,
     private val groups: GroupRepository,
+    private val plans: PlanRepository,
     private val clock: AppClock,
     private val texts: SampleTextsProvider = SampleTextsProvider { SampleTexts() },
 ) {
@@ -265,6 +282,8 @@ class LoadSampleDataUseCase(
         val existingIdeas = ideas.ideas.first().map { it.id }.toSet()
         ideas.addAll(bundle.ideas.filterNot { it.id in existingIdeas })
         bundle.groups.forEach { groups.upsert(it) }
+        val existingPlans = plans.plans.first().map { it.id }.toSet()
+        bundle.plans.filterNot { it.id in existingPlans }.forEach { plans.upsert(it) }
     }
 }
 
@@ -275,6 +294,7 @@ class RemoveSampleDataUseCase(
     private val reminders: ReminderRepository,
     private val ideas: IdeaRepository,
     private val groups: GroupRepository,
+    private val plans: PlanRepository,
 ) {
     suspend operator fun invoke() {
         friends.friends.first().filter { SampleData.isSample(it.id.value) }.forEach { friends.delete(it.id) }
@@ -282,6 +302,7 @@ class RemoveSampleDataUseCase(
         reminders.reminders.first().filter { SampleData.isSample(it.id) }.forEach { reminders.delete(it.id) }
         ideas.ideas.first().filter { SampleData.isSample(it.id) && !it.dismissed }.forEach { ideas.dismiss(it.id) }
         groups.groups.first().filter { SampleData.isSample(it.id) }.forEach { groups.delete(it.id) }
+        plans.plans.first().filter { SampleData.isSample(it.id) }.forEach { plans.delete(it.id) }
     }
 }
 

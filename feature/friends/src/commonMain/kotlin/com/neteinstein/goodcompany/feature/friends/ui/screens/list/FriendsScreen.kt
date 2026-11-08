@@ -117,6 +117,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.no_matches_close
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_search
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_title
 import com.neteinstein.goodcompany.feature.friends.resources.search_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.section_before_you_meet
 import com.neteinstein.goodcompany.feature.friends.resources.section_catch_up
 import com.neteinstein.goodcompany.feature.friends.resources.section_coming_up
 import com.neteinstein.goodcompany.feature.friends.resources.section_drifting
@@ -141,6 +142,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.CatchUpCard
 import com.neteinstein.goodcompany.feature.friends.ui.components.DriftingCard
 import com.neteinstein.goodcompany.feature.friends.ui.components.FriendRow
 import com.neteinstein.goodcompany.feature.friends.ui.components.PersonChip
+import com.neteinstein.goodcompany.feature.friends.ui.components.StoryBubbleChip
 import com.neteinstein.goodcompany.feature.friends.ui.components.UpcomingCard
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
@@ -151,7 +153,7 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Route: pulls state from [FriendsViewModel] and handles the platform permission prompt and file picker. */
 @Composable
-fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, viewModel: FriendsViewModel = koinViewModel()) {
+fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, onOpenStory: (FriendId) -> Unit = {}, viewModel: FriendsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
@@ -169,6 +171,7 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, viewModel: FriendsViewModel 
             onImportFile = pickVcf,
             onPickContacts = pickContacts,
             onOpenFriend = onOpenFriend,
+            onOpenStory = onOpenStory,
             onToggleClose = viewModel::onToggleClose,
             onMetToday = viewModel::onMetToday,
             onCalled = viewModel::onCalled,
@@ -188,6 +191,7 @@ data class FriendsActions(
     val onImportFile: () -> Unit = {},
     val onPickContacts: () -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
+    val onOpenStory: (FriendId) -> Unit = {},
     val onToggleClose: (FriendId) -> Unit = {},
     val onMetToday: (FriendId) -> Unit = {},
     val onCalled: (FriendId) -> Unit = {},
@@ -341,6 +345,16 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                 return@LazyColumn
             }
 
+            if (!state.isSearching && state.stories.isNotEmpty()) {
+                item(key = "stories-h") { SectionHeader(stringResource(Res.string.section_before_you_meet)) }
+                item(key = "stories") {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(state.stories, key = { "s-${it.friend.id.value}" }) { b ->
+                            StoryBubbleChip(b, state.today, { actions.onOpenStory(b.friend.id) }, Modifier.animateItem())
+                        }
+                    }
+                }
+            }
             if (!state.isSearching && state.upcoming.isNotEmpty()) {
                 item(key = "upcoming-h") { SectionHeader(stringResource(Res.string.section_coming_up)) }
                 item(key = "upcoming") {

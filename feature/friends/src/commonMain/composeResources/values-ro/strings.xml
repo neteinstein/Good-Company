@@ -248,4 +248,65 @@
         <item quantity="few">%1$d prieteni adăugați</item>
         <item quantity="other">%1$d de prieteni adăugați</item>
     </plurals>
+    <!-- Catch-up story -->
+    <string name="section_before_you_meet">Înainte să vă vedeți</string>
+    <string name="story_cta">Pune-te la curent cu %1$s</string>
+    <string name="story_cta_hint">O poveste scurtă despre viața sa, cele mai noi întâi</string>
+    <string name="story_meeting_today">Te vezi cu %1$s azi</string>
+    <string name="story_meeting_tomorrow">Te vezi cu %1$s mâine</string>
+    <string name="story_meeting_hint">Pune-te la curent înainte să pleci</string>
+    <string name="news_title">Noutăți</string>
+    <string name="news_hint">Un job nou, o mutare, un hobby nou… Notează aici și va deschide povestea, ca să nu uiți să întrebi.</string>
+    <string name="news_dialog_title">Ce e nou cu %1$s?</string>
+    <string name="news_placeholder">ex.: A început un job nou la…</string>
+    <string name="news_added">Adăugat %1$s</string>
+    <string name="story_kicker">La curent cu</string>
+    <string name="story_seen">Ultima întâlnire: %1$s</string>
+    <string name="story_seen_at">la %1$s</string>
+    <string name="story_never_met">Încă nicio întâlnire notată</string>
+    <string name="story_plan">Următorul: %1$s · %2$s</string>
+    <string name="story_nothing_new">Nimic nou notat de atunci</string>
+    <string name="story_new_badge">Nou</string>
+    <string name="story_fresh_update">Noutate</string>
+    <string name="story_fresh_kid">Nou în familie</string>
+    <string name="story_fresh_event">Zi importantă, abia adăugată</string>
+    <string name="story_fresh_like">Pasiune nouă</string>
+    <string name="story_added">Adăugat %1$s</string>
+    <string name="story_fresh_ask">Întreabă cum merge</string>
+    <string name="story_bigday_past">Cum a fost?</string>
+    <string name="story_bigday_today">E azi: trimite-i un gând bun</string>
+    <string name="story_bigday_soon">Urează-i succes</string>
+    <string name="story_birthday_soon">Ziua de naștere %1$s</string>
+    <string name="story_birthday_past">Ziua de naștere a fost %1$s</string>
+    <string name="story_birthday_turns">Împlinește %1$d ani</string>
+    <string name="story_birthday_turned">Tocmai a împlinit %1$d ani</string>
+    <string name="story_kids_title">Întreabă de copii</string>
+    <string name="story_kid_birthday">🎂 Ziua de naștere %1$s</string>
+    <string name="story_last_title">Ultima dată împreună</string>
+    <string name="story_last_with">Cu %1$s</string>
+    <string name="story_tastes_title">Ce iubește</string>
+    <string name="story_tastes_avoid">Nu prea îi place</string>
+    <string name="story_notes_title">Notițele tale</string>
+    <string name="story_todo_title">Nu uita</string>
+    <string name="story_ideas_title">Subiecte de discuție</string>
+    <string name="story_outro_title">Gata să te vezi cu %1$s</string>
+    <string name="story_outro_ask">Întreabă despre</string>
+    <string name="story_outro_empty">Nimic nou notat. Întreabă ce e nou și adaugă după.</string>
+    <string name="story_done">Gata</string>
+    <string name="story_open_profile">Deschide profilul</string>
+    <plurals name="story_fresh_count">
+        <item quantity="one">%1$d noutate de atunci</item>
+        <item quantity="few">%1$d noutăți de atunci</item>
+        <item quantity="other">%1$d de noutăți de atunci</item>
+    </plurals>
+    <plurals name="story_kid_age">
+        <item quantity="one">%1$d an</item>
+        <item quantity="few">%1$d ani</item>
+        <item quantity="other">%1$d de ani</item>
+    </plurals>
+    <plurals name="story_cta_fresh">
+        <item quantity="one">%1$d noutate de la ultima întâlnire</item>
+        <item quantity="few">%1$d noutăți de la ultima întâlnire</item>
+        <item quantity="other">%1$d de noutăți de la ultima întâlnire</item>
+    </plurals>
 </resources>

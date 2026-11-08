@@ -26,6 +26,7 @@ import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
@@ -37,6 +38,7 @@ const val APP_VERSION = "1.0.0"
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, startDestination: Any = FriendsRoute) {
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
+    val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
     SharedTransitionLayout(modifier) {
         NavHost(
@@ -47,18 +49,38 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = { fadeOut(tween(160)) + scaleOut(targetScale = 0.98f) },
         ) {
-            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) { FriendsScreen(onOpenFriend = openFriend) }
+            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) { FriendsScreen(onOpenFriend = openFriend, onOpenStory = openStory) }
             composable<FriendDetailRoute>(
                 enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
                 popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
             ) { entry ->
                 ProvideSharedElements(this@SharedTransitionLayout, this) {
+                    val id = entry.toRoute<FriendDetailRoute>().id
                     FriendDetailScreen(
-                        friendId = FriendId(entry.toRoute<FriendDetailRoute>().id),
+                        friendId = FriendId(id),
                         onBack = { navController.popBackStack() },
                         onOpenSettings = openSettings,
+                        onOpenStory = { navController.navigate(CatchUpStoryRoute(id, fromFriend = true)) },
                     )
                 }
+            }
+            composable<CatchUpStoryRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) { entry ->
+                val route = entry.toRoute<CatchUpStoryRoute>()
+                CatchUpStoryScreen(
+                    friendId = FriendId(route.id),
+                    onClose = { navController.popBackStack() },
+                    onOpenFriend = if (route.fromFriend) {
+                        null
+                    } else {
+                        {
+                            navController.popBackStack()
+                            navController.navigate(FriendDetailRoute(route.id))
+                        }
+                    },
+                )
             }
             sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) {
                 HangoutsScreen(onOpenFriend = openFriend, onOpenYearReview = { navController.navigate(YearReviewRoute(it)) })

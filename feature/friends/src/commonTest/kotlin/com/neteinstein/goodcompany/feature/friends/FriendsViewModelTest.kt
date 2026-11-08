@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -32,6 +33,7 @@ class FriendsViewModelTest {
         g.observeAgenda,
         g.observeMeetups,
         g.observeSettings,
+        g.observeStoryBubbles,
         g.importPickedContacts,
         g.syncContacts,
         g.importContactsFile,
@@ -43,6 +45,15 @@ class FriendsViewModelTest {
         g.loadSampleData,
         g.clock,
     )
+
+    @Test
+    fun showsWhoYouAreSeeingSoonAsStories() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertTrue(state.value.stories.isEmpty())
+        g.planRepo.upsert(Plan("p1", listOf(FriendId("ana")), "Lunch", g.clock.today(), createdAt = g.clock.now()))
+        assertEquals(listOf("ana"), state.value.stories.map { it.friend.id.value })
+    }
 
     @Test
     fun showsEveryoneUntilSomeoneIsMarkedClose() = runViewModelTest {

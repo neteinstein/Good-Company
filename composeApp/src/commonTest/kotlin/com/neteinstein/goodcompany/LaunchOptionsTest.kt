@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
+import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
@@ -28,6 +29,7 @@ class LaunchOptionsTest {
         assertEquals(LaunchOptions(), LaunchOptions.parse(""))
         assertEquals(null, LaunchOptions.parse("?tab=nope").startTab)
         assertTrue(LaunchOptions.parse("?review").showReview)
+        assertEquals("sample-ana", LaunchOptions.parse("?demo&story=sample-ana").openStoryFriendId)
     }
 
     @Test
@@ -41,6 +43,7 @@ class LaunchOptionsTest {
                 FakeReminderRepository(),
                 FakeIdeaRepository(),
                 FakeGroupRepository(),
+                FakePlanRepository(),
                 FixedClock(),
             ),
             UpdateSettingsUseCase(settings),

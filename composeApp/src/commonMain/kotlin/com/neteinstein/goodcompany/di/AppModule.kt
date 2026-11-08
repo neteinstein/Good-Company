@@ -65,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
@@ -76,6 +77,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUse
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
@@ -104,6 +106,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
@@ -213,6 +216,8 @@ val appModule = module {
     factoryOf(::ExportBackupUseCase)
     factoryOf(::RestoreBackupUseCase)
     factoryOf(::ObserveHomeWidgetUseCase)
+    factoryOf(::ObserveCatchUpStoryUseCase)
+    factoryOf(::ObserveStoryBubblesUseCase)
     singleOf(::AppStartup)
     factoryOf(::ApplyLaunchOptions)
 
@@ -253,4 +258,5 @@ val appModule = module {
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
+    viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
 }

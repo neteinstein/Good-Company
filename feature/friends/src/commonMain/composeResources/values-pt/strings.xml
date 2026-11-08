@@ -238,4 +238,62 @@
         <item quantity="one">%1$d amigo adicionado</item>
         <item quantity="other">%1$d amigos adicionados</item>
     </plurals>
+    <!-- Catch-up story -->
+    <string name="section_before_you_meet">Antes de se encontrarem</string>
+    <string name="story_cta">Pôr a conversa em dia com %1$s</string>
+    <string name="story_cta_hint">Um resumo rápido da sua vida, novidades primeiro</string>
+    <string name="story_meeting_today">Vais estar com %1$s hoje</string>
+    <string name="story_meeting_tomorrow">Vais estar com %1$s amanhã</string>
+    <string name="story_meeting_hint">Revê as novidades antes de saíres</string>
+    <string name="news_title">Novidades</string>
+    <string name="news_hint">Emprego novo, uma mudança de casa, um novo passatempo… Aponta aqui e passa a abrir a história, para não te esqueceres de perguntar.</string>
+    <string name="news_dialog_title">Que novidades há com %1$s?</string>
+    <string name="news_placeholder">ex.: Começou um emprego novo na…</string>
+    <string name="news_added">Adicionado %1$s</string>
+    <string name="story_kicker">A pôr a conversa em dia com</string>
+    <string name="story_seen">Última vez que estiveram juntos: %1$s</string>
+    <string name="story_seen_at">em %1$s</string>
+    <string name="story_never_met">Ainda sem encontros registados</string>
+    <string name="story_plan">Próximo: %1$s · %2$s</string>
+    <string name="story_nothing_new">Nada de novo registado desde então</string>
+    <string name="story_new_badge">Novo</string>
+    <string name="story_fresh_update">Novidade</string>
+    <string name="story_fresh_kid">Novo na família</string>
+    <string name="story_fresh_event">Dia importante, acabado de adicionar</string>
+    <string name="story_fresh_like">Nova paixão</string>
+    <string name="story_added">Adicionado %1$s</string>
+    <string name="story_fresh_ask">Pergunta como está a correr</string>
+    <string name="story_bigday_past">Como correu?</string>
+    <string name="story_bigday_today">É hoje: manda carinho</string>
+    <string name="story_bigday_soon">Deseja-lhe boa sorte</string>
+    <string name="story_birthday_soon">Aniversário %1$s</string>
+    <string name="story_birthday_past">O aniversário foi %1$s</string>
+    <string name="story_birthday_turns">Faz %1$d anos</string>
+    <string name="story_birthday_turned">Acabou de fazer %1$d anos</string>
+    <string name="story_kids_title">Pergunta pelos miúdos</string>
+    <string name="story_kid_birthday">🎂 Aniversário %1$s</string>
+    <string name="story_last_title">Da última vez</string>
+    <string name="story_last_with">Com %1$s</string>
+    <string name="story_tastes_title">O que adora</string>
+    <string name="story_tastes_avoid">Não é fã de</string>
+    <string name="story_notes_title">As tuas notas</string>
+    <string name="story_todo_title">Não te esqueças</string>
+    <string name="story_ideas_title">Assuntos para puxar</string>
+    <string name="story_outro_title">Pronto para ver %1$s</string>
+    <string name="story_outro_ask">Pergunta por</string>
+    <string name="story_outro_empty">Nada de novo apontado. Pergunta o que há de novo e acrescenta depois.</string>
+    <string name="story_done">Feito</string>
+    <string name="story_open_profile">Abrir perfil</string>
+    <plurals name="story_fresh_count">
+        <item quantity="one">%1$d novidade desde então</item>
+        <item quantity="other">%1$d novidades desde então</item>
+    </plurals>
+    <plurals name="story_kid_age">
+        <item quantity="one">%1$d ano</item>
+        <item quantity="other">%1$d anos</item>
+    </plurals>
+    <plurals name="story_cta_fresh">
+        <item quantity="one">%1$d novidade desde o último encontro</item>
+        <item quantity="other">%1$d novidades desde o último encontro</item>
+    </plurals>
 </resources>

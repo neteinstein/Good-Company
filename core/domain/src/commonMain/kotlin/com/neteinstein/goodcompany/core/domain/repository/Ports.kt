@@ -66,6 +66,8 @@ data class FriendProfile(
     val dislikes: List<String>,
     val kids: List<String>,
     val recentMessages: List<String>,
+    /** What's new in their life, newest first (from "What's new"). */
+    val news: List<String> = emptyList(),
 )
 
 data class GeneratedIdea(

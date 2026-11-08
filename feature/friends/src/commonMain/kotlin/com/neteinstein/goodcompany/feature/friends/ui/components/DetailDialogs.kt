@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -55,6 +56,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.kid_edit
 import com.neteinstein.goodcompany.feature.friends.resources.kid_likes
 import com.neteinstein.goodcompany.feature.friends.resources.kid_name
 import com.neteinstein.goodcompany.feature.friends.resources.kid_set_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.news_dialog_title
+import com.neteinstein.goodcompany.feature.friends.resources.news_placeholder
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.stringResource
@@ -213,6 +216,28 @@ fun GiftGivenDialog(gift: Gift, onDismiss: () -> Unit, onConfirm: (GiftOccasion?
             }
         },
         confirmButton = { TextButton(onClick = { onConfirm(occasion) }) { Text(stringResource(Res.string.gifts_mark_given)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
+    )
+}
+
+/** "What's new with Ana?" — one line about their life (new job, a move…). */
+@Composable
+fun LifeUpdateDialog(firstName: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.NewReleases, null) },
+        title = { Text(stringResource(Res.string.news_dialog_title, firstName)) },
+        text = {
+            OutlinedTextField(
+                text,
+                { text = it },
+                placeholder = { Text(stringResource(Res.string.news_placeholder)) },
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onSave(text) }, enabled = text.isNotBlank()) { Text(stringResource(CoreRes.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )
 }
