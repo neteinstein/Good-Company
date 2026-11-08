@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
 import com.neteinstein.goodcompany.core.ui.components.HeartBurst
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta
 import com.neteinstein.goodcompany.feature.hangouts.resources.hero_cta_description
@@ -58,14 +59,13 @@ fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> 
     val pulse = rememberInfiniteTransition(label = "pulse")
     val cta = stringResource(Res.string.hero_cta_description)
     val halo by pulse.animateFloat(0.9f, 1.18f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "halo")
-    val c = MaterialTheme.colorScheme
     val haptics = LocalHapticFeedback.current
     Box(
         modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(MaterialTheme.shapes.extraLarge)
-            .background(Brush.linearGradient(listOf(Color(0xFFFF8A80), c.primary, Color(0xFF8E2DE2).copy(alpha = 0.85f)))),
+            .background(Brush.linearGradient(OnColorGradients.Hero)),
     ) {
         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(contentAlignment = Alignment.Center) {
@@ -81,7 +81,7 @@ fun CheckInHero(stats: Relationships.MonthStats, celebrate: Int, onClick: () -> 
                         }
                         .semantics { contentDescription = cta },
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Rounded.Diversity3, null, tint = c.primary, modifier = Modifier.size(52.dp)) }
+                ) { Icon(Icons.Rounded.Diversity3, null, tint = OnColorGradients.BrandRed, modifier = Modifier.size(52.dp)) }
                 HeartBurst(celebrate, Modifier.size(132.dp))
             }
             Spacer(Modifier.height(14.dp))

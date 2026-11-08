@@ -81,6 +81,7 @@ import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.clear
 import com.neteinstein.goodcompany.feature.hangouts.resources.delete_memory
@@ -495,8 +496,6 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
 
 @Composable
 private fun YearReviewCard(year: Int, onClick: () -> Unit) {
-    val primary = MaterialTheme.colorScheme.primary
-    val tertiary = MaterialTheme.colorScheme.tertiary
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -504,7 +503,7 @@ private fun YearReviewCard(year: Int, onClick: () -> Unit) {
         color = Color.Transparent,
     ) {
         Row(
-            Modifier.background(Brush.linearGradient(listOf(tertiary, primary))).padding(16.dp),
+            Modifier.background(Brush.linearGradient(OnColorGradients.Indigo)).padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("✨", style = MaterialTheme.typography.headlineMedium)

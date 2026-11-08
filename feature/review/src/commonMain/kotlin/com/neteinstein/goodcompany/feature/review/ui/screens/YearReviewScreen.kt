@@ -58,6 +58,7 @@ import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.platform.ShareOutcome
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextSharer
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.review.resources.Res
 import com.neteinstein.goodcompany.feature.review.resources.back
 import com.neteinstein.goodcompany.feature.review.resources.biggest_body
@@ -167,10 +168,9 @@ fun YearReviewContent(state: YearReviewUiState, onBack: () -> Unit, onShare: (()
 
 @Composable
 private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: PaddingValues) {
-    val scheme = MaterialTheme.colorScheme
     LazyColumn(contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(key = "hero") {
-            Story(listOf(scheme.primary, scheme.tertiary), index = 0) {
+            Story(OnColorGradients.Hero, index = 0) {
                 Text(
                     stringResource(Res.string.hero_kicker).uppercase(),
                     style = MaterialTheme.typography.labelLarge,
@@ -209,7 +209,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
             }
         }
         item(key = "places") {
-            Story(listOf(Color(0xFF00897B), Color(0xFF4DB6AC)), index = 2) {
+            Story(OnColorGradients.Teal, index = 2) {
                 Text(stringResource(Res.string.places_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                 if (r.topPlaces.isEmpty()) {
                     Text(stringResource(Res.string.places_none), color = Color.White.copy(alpha = 0.9f))
@@ -225,7 +225,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
             }
         }
         item(key = "rhythm") {
-            Story(listOf(Color(0xFF6A3DE8), Color(0xFF3949AB)), index = 3) {
+            Story(OnColorGradients.Indigo, index = 3) {
                 Text(stringResource(Res.string.rhythm_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                 r.busiestMonth?.let { (month, n) -> Fact("📅", stringResource(Res.string.rhythm_month, monthLong(month), n)) }
                 r.favouriteWeekday?.let { Fact("💛", stringResource(Res.string.rhythm_weekday, weekdayLong(it))) }
@@ -236,7 +236,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
         }
         r.biggestHangout?.let { h ->
             item(key = "biggest") {
-                Story(listOf(Color(0xFFE5574F), Color(0xFFFF8A65)), index = 4) {
+                Story(OnColorGradients.Sunset, index = 4) {
                     Text(stringResource(Res.string.biggest_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                     val n = r.biggestHangoutFriends.size
                     Text(
@@ -251,7 +251,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
         }
         if (r.newFaces.isNotEmpty() || r.remindersDone > 0) {
             item(key = "new") {
-                Story(listOf(Color(0xFFF2A100), Color(0xFFFF7043)), index = 5) {
+                Story(OnColorGradients.Amber, index = 5) {
                     if (r.newFaces.isNotEmpty()) {
                         Text(stringResource(Res.string.new_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                         Text(pluralStringResource(Res.plurals.new_body, r.newFaces.size, r.newFaces.size), color = Color.White.copy(alpha = 0.9f))

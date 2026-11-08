@@ -81,14 +81,41 @@ val DarkColors: ColorScheme = darkColorScheme(
     inversePrimary = Color(0xFFB4372F),
 )
 
-/** Pleasant, stable avatar gradients picked by name hash. */
+/**
+ * Pleasant, stable avatar gradients picked by name hash. White initials and white card text sit on them,
+ * so every stop must keep WCAG AA contrast with white (see [OnColorGradients]).
+ */
 internal val AvatarGradients: List<Pair<Color, Color>> = listOf(
-    Color(0xFFFF8A80) to Color(0xFFE5574F),
-    Color(0xFF80CBC4) to Color(0xFF00897B),
-    Color(0xFFFFD54F) to Color(0xFFFF8F00),
-    Color(0xFFB39DDB) to Color(0xFF5E35B1),
-    Color(0xFF90CAF9) to Color(0xFF1E88E5),
-    Color(0xFFA5D6A7) to Color(0xFF43A047),
-    Color(0xFFF48FB1) to Color(0xFFD81B60),
-    Color(0xFFFFAB91) to Color(0xFFF4511E),
+    Color(0xFFB23A2F) to Color(0xFF9A2A22),
+    Color(0xFF00695C) to Color(0xFF004D40),
+    Color(0xFFA04500) to Color(0xFF8A4B00),
+    Color(0xFF6A3DE8) to Color(0xFF4527A0),
+    Color(0xFF1565C0) to Color(0xFF0D47A1),
+    Color(0xFF2E7032) to Color(0xFF1B5E20),
+    Color(0xFFAD1457) to Color(0xFF880E4F),
+    Color(0xFFB23C17) to Color(0xFFA33A12),
 )
+
+/**
+ * Fixed gradients for cards that carry **white** text or icons. They never come from `MaterialTheme.colorScheme`:
+ * dark and dynamic schemes make `primary`/`tertiary` pale, which turns white text invisible.
+ * Every stop keeps at least 4.5:1 contrast with white at 85 % opacity (guarded by `ColorContrastTest`).
+ */
+object OnColorGradients {
+    /** Brand red, the only foreground colour that must read on a white chip inside these cards. */
+    val BrandRed = Color(0xFFB4372F)
+    val Violet = Color(0xFF6A3DE8)
+    val Raspberry = Color(0xFFAD1457)
+
+    /** Coral → raspberry → violet: the "I'm with…" hero and the year-in-review opener. */
+    val Hero: List<Color> = listOf(BrandRed, Raspberry, Violet)
+
+    /** Violet → raspberry → red: AI ideas. */
+    val Ideas: List<Color> = listOf(Violet, Raspberry, BrandRed)
+    val Teal: List<Color> = listOf(Color(0xFF00695C), Color(0xFF006064))
+    val Indigo: List<Color> = listOf(Violet, Color(0xFF3949AB))
+    val Sunset: List<Color> = listOf(Color(0xFFB23C17), Color(0xFFA0410D))
+    val Amber: List<Color> = listOf(Color(0xFFA04500), Color(0xFF8D3A00))
+
+    val all: List<List<Color>> = listOf(Hero, Ideas, Teal, Indigo, Sunset, Amber)
+}
