@@ -12,7 +12,7 @@ Two workflows:
 
 | Job | Runner | What it does | Fails when |
 |---|---|---|---|
-| **Build (Android)** | ubuntu-latest | `assembleDebug`, `assembleRelease` (R8 minify + resource shrink), `assembleSideload`; dumps the release APK's permissions with `aapt2` | compile/R8 error; Play release APK declares SMS, `READ_CALL_LOG`, `READ_CONTACTS` or `AD_ID` permissions |
+| **Build (Android)** | ubuntu-latest | `assembleDebug`, `assembleRelease` (R8 minify + resource shrink), `assembleSideload`; dumps the release APK's permissions with `aapt2` | compile/R8 error; Play release APK declares SMS, `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` or `AD_ID` permissions |
 | **Unit tests + coverage** | ubuntu-latest | `testDebugUnitTest` (every module's `commonTest` on the JVM), `koverXmlReport`, `koverHtmlReport`, `koverVerify`; writes a coverage table to the job summary | any test fails; aggregated line coverage below the `koverVerify` minimum (root `build.gradle.kts`) |
 | **Lint** | ubuntu-latest | `spotlessCheck` (ktlint), then `:androidApp:lintDebug` (`checkDependencies = true`, so library modules are linted too) | formatting or ktlint violation; Android Lint error |
 | **Build (iOS)** | macos-latest | `xcodebuild` on the hand-authored `iosApp.xcodeproj`, scheme `iosApp` (app + Share Extension + widget), iOS Simulator, `CODE_SIGNING_ALLOWED=NO`. The Run Script phase compiles and embeds `ComposeApp.framework` through Gradle. JDK: Temurin, falling back to Zulu, then the runner's preinstalled JDK, because GitHub release downloads sometimes return 504 | Kotlin/Native compile/link error; Swift compile error; broken pbxproj |
@@ -25,7 +25,7 @@ Every merge to `main` produces two installable, R8-optimized test APKs, once CI 
 | File | Build type | Use it to test |
 |---|---|---|
 | `good-company-play-test.apk` | `release` | exactly what goes to Play: contact picker only, no call log |
-| `good-company-sideload-test.apk` | `sideload` (`.sideload` app id, installs next to the Play build) | everything, incl. full address-book sync and call matching |
+| `good-company-sideload-test.apk` | `sideload` (`.sideload` app id, installs next to the Play build) | everything, incl. full address-book sync, call matching and writing kids/events/notes back to contacts |
 
 **Where to get them:** the rolling pre-release
 [`test-build`](../../releases/tag/test-build) is replaced on every merge, so the download links stay the same:
@@ -77,7 +77,7 @@ Nothing else is secret. The Anthropic API key is supplied by each user in the ap
 | Platform | Debug | Release | Distribution |
 |---|---|---|---|
 | Android (Play `release`) | debug keystore (AGP default) | **unsigned** in PR CI. **Signed** test APK on every merge (keystore secrets, else debug key). Locally, signed if `keystore.properties` exists | test APK on the `test-build` pre-release. Play: upload a signed AAB manually (`./gradlew :androidApp:bundleRelease` with a keystore) |
-| Android (`sideload`) | n/a | **unsigned** in PR CI. **Signed** test APK on every merge; same `keystore.properties` mechanism | test APK on the `test-build` pre-release. Never upload this build to Play (it declares `READ_CALL_LOG` and `READ_CONTACTS`) |
+| Android (`sideload`) | n/a | **unsigned** in PR CI. **Signed** test APK on every merge; same `keystore.properties` mechanism | test APK on the `test-build` pre-release. Never upload this build to Play (it declares `READ_CALL_LOG`, `READ_CONTACTS` and `WRITE_CONTACTS`) |
 | iOS | CI builds the simulator app **without signing** | not built in CI | manual: set `TEAM_ID` in `iosApp/Configuration/Signing.xcconfig` (gitignored), Archive in Xcode |
 | Web | n/a | unsigned static bundle (`web-dist` artifact) | not deployed automatically. Any static host works (needs `application/wasm` MIME type) |
 

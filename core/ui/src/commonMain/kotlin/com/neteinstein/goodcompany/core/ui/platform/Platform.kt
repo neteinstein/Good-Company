@@ -35,6 +35,8 @@ data class PlatformCapabilities(
     val hasGoogleDrive: Boolean = false,
     /** A home-screen widget exists for this platform. */
     val hasHomeWidget: Boolean = false,
+    /** Birthday, kids, events and notes are also written onto the friend's contact (Android sideload build only). */
+    val hasContactWriteBack: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities

@@ -19,6 +19,7 @@
     </plurals>
     <string name="contacts_denied">No problem — you can add friends by hand.</string>
     <string name="contacts_body">We read names, phone numbers and birthdays. Nothing leaves your device.</string>
+    <string name="contacts_body_write">We read names, phone numbers and birthdays, and save the birthdays, kids, events and notes you add here onto each contact. Nothing leaves your device.</string>
     <string name="import">Import</string>
     <string name="notifications_title">Birthday &amp; check-in reminders</string>
     <string name="notifications_on">You’re all set — we’ll nudge you at the right time.</string>

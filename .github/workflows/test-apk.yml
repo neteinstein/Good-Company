@@ -98,7 +98,7 @@ jobs:
             "$BT/apksigner" verify "$apk" || { echo "::error::$apk is not signed"; exit 1; }
           done
           PERMS=$("$BT/aapt2" dump permissions androidApp/build/outputs/apk/release/*.apk)
-          if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|READ_CONTACTS|AD_ID"; then
+          if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|READ_CONTACTS|WRITE_CONTACTS|AD_ID"; then
             echo "::error::Release (Play) APK declares a restricted permission"; exit 1
           fi
 

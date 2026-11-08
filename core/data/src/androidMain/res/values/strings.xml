@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="notification_channel_reminders">Reminders &amp; birthdays</string>
+    <!-- Written onto the contact by the sideload build (see AndroidContactsWriter). -->
+    <string name="contact_kid_birthday">%1$s’s birthday</string>
+    <string name="contact_likes">Loves</string>
+    <string name="contact_dislikes">Not a fan of</string>
 </resources>

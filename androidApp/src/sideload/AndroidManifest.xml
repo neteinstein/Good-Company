@@ -5,8 +5,11 @@
       with friends' phone numbers.
     - READ_CONTACTS (full address-book sync). The Play build adds people with the system contact picker,
       which needs no permission (owner decision 2026-11-07).
+    - WRITE_CONTACTS: mirrors what the app knows about a friend (birthday, kids, events, notes) onto their contact, so
+      it can be read in the Contacts app (owner decision 2026-11-08). Never in the Play build.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
 </manifest>

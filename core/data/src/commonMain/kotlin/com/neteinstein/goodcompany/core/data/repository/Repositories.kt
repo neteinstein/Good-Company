@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.data.storage.Keys
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -29,12 +31,23 @@ import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
-class FriendRepositoryImpl(settings: Settings, private val contacts: ContactsSource) : FriendRepository {
+/**
+ * Friends, persisted as JSON. Friends that came from the address book are also mirrored onto their contact through
+ * [writer] (a no-op except in the Android sideload build): whenever data the contact can hold changes, the contact is
+ * updated in the same call, so it never lags behind the app. The mirror never deletes: clearing details or removing a
+ * friend from the app never takes anything off their contact, and a changed detail updates its row instead of duplicating it. A failing or unavailable address book never blocks saving.
+ */
+class FriendRepositoryImpl(
+    settings: Settings,
+    private val contacts: ContactsSource,
+    private val writer: ContactsWriter = ContactsWriter.None,
+) : FriendRepository {
     private val store = PersistentState(settings, Keys.FRIENDS, ListSerializer(Friend.serializer()), emptyList())
     override val friends: Flow<List<Friend>> = store.flow
 
@@ -44,17 +57,58 @@ class FriendRepositoryImpl(settings: Settings, private val contacts: ContactsSou
 
     override suspend fun get(id: FriendId): Friend? = store.value.firstOrNull { it.id == id }
 
-    override suspend fun upsert(friend: Friend) = store.update { list ->
-        if (list.any { it.id == friend.id }) list.map { if (it.id == friend.id) friend else it } else list + friend
+    override suspend fun upsert(friend: Friend) {
+        var previous: Friend? = null
+        store.update { list ->
+            previous = list.firstOrNull { it.id == friend.id }
+            if (previous != null) list.map { if (it.id == friend.id) friend else it } else list + friend
+        }
+        mirrorToContact(previous, friend)
     }
 
+    // Deliberately leaves the copy on the contact alone: removing a friend from the app must never take data off
+    // their contact (owner decision 2026-11-08).
     override suspend fun delete(id: FriendId) = store.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun syncContacts(): Int {
         val records = contacts.readContacts()
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
-        if (records.isNotEmpty()) store.update { ContactMerger.merge(it, records) }
+        if (records.isNotEmpty()) {
+            store.update { ContactMerger.merge(it, records) }
+            backfillContacts()
+        }
         return records.size
+    }
+
+    private suspend fun mirrorToContact(previous: Friend?, friend: Friend) {
+        val contactId = friend.contactId ?: return
+        val card = ContactCard.from(friend)
+        val before = previous?.takeIf { it.contactId == contactId }?.let(ContactCard::from)
+        if (card == before) return
+        if (!card.isEmpty) safely { writer.write(contactId, friend.id, card) }
+    }
+
+    /**
+     * Data saved before the contact was writable (or before the permission was granted) still needs to reach it.
+     * Only friends with details the contact can hold are visited, so a big address book costs nothing; the writer
+     * skips contacts that already match.
+     */
+    private suspend fun backfillContacts() {
+        store.value.forEach { friend ->
+            val contactId = friend.contactId ?: return@forEach
+            val card = ContactCard.from(friend)
+            if (!friend.isOrphaned && card.hasExtras) safely { writer.write(contactId, friend.id, card) }
+        }
+    }
+
+    private suspend fun safely(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Mirroring is best effort: the app's own copy is already saved.
+        }
     }
 }
 
