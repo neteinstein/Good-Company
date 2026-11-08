@@ -2,6 +2,13 @@ package com.neteinstein.goodcompany.core.ui.platform
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.datetime.LocalDate
 
@@ -47,6 +54,30 @@ expect fun currentPlatformCapabilities(): PlatformCapabilities
 @Composable
 expect fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit
 
+/**
+ * Returns a check of whether the app may post notifications right now (the user can change it in system settings at
+ * any time). Always false on the web, which has no background notifications.
+ */
+@Composable
+expect fun rememberNotificationsAllowedCheck(): suspend () -> Boolean
+
+/**
+ * Whether the app may post notifications: null until the first check, then re-checked each time the screen resumes
+ * and whenever [refreshKey] changes (bump it after asking for the permission).
+ */
+@Composable
+fun rememberNotificationsAllowed(refreshKey: Any? = null): Boolean? {
+    val check = rememberNotificationsAllowedCheck()
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    var resumes by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) {
+        resumes++
+        onPauseOrDispose { }
+    }
+    LaunchedEffect(resumes, refreshKey) { allowed = check() }
+    return allowed
+}
+
 /** What kind of file the picker should offer. */
 enum class FileKind { TEXT, VCARD, JSON }
 
@@ -72,7 +103,7 @@ expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?
 /**
  * Returns a launcher for the system contact picker. The OS shows the address book and hands back only the people the
  * user picks, so no contacts permission is involved. iOS and Android 17+ (the system Contact Picker) allow several
- * people at once; older Android versions pick one at a time.
+ * people at once; older Android versions pick one at a time. It picks people, never a specific phone number.
  * Reports an empty list when cancelled.
  */
 @Composable

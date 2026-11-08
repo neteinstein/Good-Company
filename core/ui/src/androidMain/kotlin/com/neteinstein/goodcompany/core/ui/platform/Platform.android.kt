@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.AuthorizationResult
@@ -96,6 +97,13 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
 }
 
 @Composable
+actual fun rememberNotificationsAllowedCheck(): suspend () -> Boolean {
+    val context = LocalContext.current
+    // Covers both the Android 13+ runtime permission and the app's notification toggle in system settings.
+    return remember<suspend () -> Boolean>(context) { { NotificationManagerCompat.from(context).areNotificationsEnabled() } }
+}
+
+@Composable
 actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> Unit): () -> Unit {
     val context = LocalContext.current
     val callback = rememberUpdatedState(onPicked)
@@ -149,13 +157,13 @@ actual fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () ->
         callback.value(listOfNotNull(uri?.let { readPickedContact(context, it) }))
     }
     val launchLegacy = {
-        runCatching {
-            legacyLauncher.launch(Intent(Intent.ACTION_PICK).setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE))
-        }.onFailure { callback.value(emptyList()) }
+        // Pick a person (Contacts), not a phone number (Phone would make the user choose one of their numbers).
+        runCatching { legacyLauncher.launch(Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)) }
+            .onFailure { callback.value(emptyList()) }
     }
     return {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-            // Android 17's system Contact Picker: several people in one go, phone numbers only.
+            // Android 17's system Contact Picker: several people in one go.
             runCatching { sessionLauncher.launch(multiContactPickerIntent()) }.onFailure { launchLegacy() }
         } else {
             launchLegacy()
@@ -163,20 +171,25 @@ actual fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () ->
     }
 }
 
+/**
+ * Asks only for each person's name. The picker lets the user choose which of the requested fields to share, so asking
+ * for phone numbers turns "pick people" into "pick one of their numbers".
+ */
 private fun multiContactPickerIntent(): Intent = Intent(ContactsPickerSessionContract.ACTION_PICK_CONTACTS)
     .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
     .putStringArrayListExtra(
         ContactsPickerSessionContract.EXTRA_PICK_CONTACTS_REQUESTED_DATA_FIELDS,
-        arrayListOf(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE),
+        arrayListOf(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE),
     )
 
 /**
- * Reads the session URI the Android 17 picker returns: one `ContactsContract.Data` row per picked number. Keys people
+ * Reads the session URI the Android 17 picker returns: `ContactsContract.Data` rows for the picked people. Keys people
  * by `CONTACT_ID` (like the legacy picker and the address-book import, so re-picking someone updates them), falling
- * back to `LOOKUP_KEY`. The session URI rejects `selection`, so rows are filtered by MIME type here.
+ * back to `LOOKUP_KEY`. The session URI rejects `selection`, so phone numbers (if any come back) are told apart by
+ * MIME type here.
  */
 private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> = runCatching {
-    val rows = mutableListOf<PickedPhoneRow>()
+    val rows = mutableListOf<PickedContactRow>()
     context.contentResolver.query(uri, null, null, null, null)?.use { c ->
         val contactId = c.getColumnIndex(ContactsContract.Data.CONTACT_ID)
         val lookupKey = c.getColumnIndex(ContactsContract.Data.LOOKUP_KEY)
@@ -184,41 +197,59 @@ private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> =
         val mimeType = c.getColumnIndex(ContactsContract.Data.MIMETYPE)
         val number = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
         while (c.moveToNext()) {
-            val mime = c.stringOrNull(mimeType)
-            if (mime != null && mime != ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) continue
-            rows += PickedPhoneRow(
+            val isPhone = c.stringOrNull(mimeType) == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+            rows += PickedContactRow(
                 contactKey = c.stringOrNull(contactId) ?: c.stringOrNull(lookupKey),
                 name = c.stringOrNull(name),
-                number = c.stringOrNull(number),
+                number = if (isPhone) c.stringOrNull(number) else null,
             )
         }
     }
-    groupPickedPhoneRows(rows)
+    groupPickedContactRows(rows)
 }.getOrDefault(emptyList())
 
 private fun Cursor.stringOrNull(index: Int): String? = if (index >= 0 && !isNull(index)) getString(index) else null
 
+/** Reads the contact URI the legacy picker returns: the person's id and name, plus their numbers when readable. */
 private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runCatching {
     context.contentResolver.query(
         uri,
-        arrayOf(
-            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-            ContactsContract.CommonDataKinds.Phone.NUMBER,
-        ),
+        arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
         null,
         null,
         null,
     )?.use { c ->
         if (!c.moveToFirst()) return@use null
+        val name = c.stringOrNull(1)?.trim()?.takeIf { it.isNotEmpty() } ?: return@use null
         ContactRecord(
             contactId = c.getLong(0).toString(),
-            name = c.getString(1).orEmpty(),
-            phoneNumbers = listOfNotNull(c.getString(2)?.takeIf { it.isNotBlank() }),
+            name = name,
+            phoneNumbers = readPickedNumbers(context, uri),
             birthday = null,
         )
     }
 }.getOrNull()
+
+/**
+ * Best effort: the grant covers the picked contact, and some contacts apps extend it to the contact's data rows. When
+ * they don’t, the person is still added, just without numbers.
+ */
+private fun readPickedNumbers(context: Context, contactUri: Uri): List<String> = runCatching {
+    val numbers = mutableListOf<String>()
+    context.contentResolver.query(
+        Uri.withAppendedPath(contactUri, ContactsContract.Contacts.Data.CONTENT_DIRECTORY),
+        arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.NUMBER),
+        null,
+        null,
+        null,
+    )?.use { c ->
+        while (c.moveToNext()) {
+            if (c.stringOrNull(0) != ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) continue
+            c.stringOrNull(1)?.trim()?.takeIf { it.isNotEmpty() && it !in numbers }?.let(numbers::add)
+        }
+    }
+    numbers.toList()
+}.getOrDefault(emptyList())
 
 @Composable
 actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {
