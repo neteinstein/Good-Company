@@ -17,6 +17,8 @@ three cover most of the value with no ToS risk and no server.
 - ✅ **Share into the app** is the way to get updates from Instagram, LinkedIn and other closed networks, instead of
   complex integrations.
 - ❌ **Bluesky and Mastodon: not integrating for now.** They're not where these friends post, so the phase is dropped.
+- ✅ **iOS ships together with Android and web** (owner: "keep iOS up to date with the 2 other platforms"). The iOS
+  Share Extension is part of the share-into-app phase, not a later follow-up.
 - ✅ **RSS for blogs, Substack, Letterboxd and similar** is worth doing. It now has its own small fetch pipeline
   (it used to build on the Bluesky/Mastodon one).
 
@@ -104,9 +106,9 @@ Kept for reference; not on the roadmap.
 | Phase | What | Size | Depends on |
 |---|---|---|---|
 | 1 | Social profiles on a friend (+ vCard fields) | S | — |
-| 2 | Android + web share target → "What's new" (text/link), friend picker | M | 1 optional |
+| 2 | Share target on **Android, iOS (Share Extension + app group) and web** → "What's new" (text/link), friend picker | M–L | 1 optional |
 | 3 | AI extraction from shared text/screenshot (vision) with confirm sheet | M | 2, AI key |
-| 4 | iOS Share Extension (new target + app group in the hand-authored project) | M–L | 2 |
+| ~~4~~ | ~~iOS Share Extension later~~ — folded into phase 2 (owner, 2026-11-08) | — | — |
 | ~~5~~ | ~~Bluesky + Mastodon fetch~~ — dropped for now (owner, 2026-11-08) | — | — |
 | 5 | RSS/Atom feeds on a friend → "From their blog" + AI suggestions (on open + weekly job) | S–M | 1, AI key for suggestions |
 
@@ -117,7 +119,7 @@ closed ones, because the user is already looking at those stories. Phase 5 (RSS)
 1. ~~Share into the app as the Instagram/LinkedIn path?~~ Yes (2026-11-08).
 2. ~~Bluesky/Mastodon suggestions?~~ Not integrating (2026-11-08). For RSS and shared content, AI suggestions wait
    for a confirm tap (recommended; same rule).
-3. iOS share extension: worth the app-group work now, or Android/web first (as with the widget)?
+3. ~~iOS share extension now or later?~~ Now, together with Android and web (2026-11-08).
 
 ## Sources (checked 2026-11-08; mostly third-party summaries, re-verify against the official docs)
 - Instagram Basic Display shutdown and personal-account limits: <https://www.getphyllo.com/post/instagram-api-guide>,
