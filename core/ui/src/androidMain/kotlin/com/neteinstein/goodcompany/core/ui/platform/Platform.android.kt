@@ -70,11 +70,13 @@ actual fun currentPlatformCapabilities(): PlatformCapabilities {
         platformCapabilities.copy(
             hasAddressBook = context.declares(Manifest.permission.READ_CONTACTS),
             hasCallLog = context.declares(Manifest.permission.READ_CALL_LOG),
+            // Only the sideload manifest asks to install packages (Google Play restricts that permission).
+            hasSelfUpdate = context.declares(Manifest.permission.REQUEST_INSTALL_PACKAGES),
         )
     }
 }
 
-/** True when the merged manifest declares [permission] (READ_CONTACTS and READ_CALL_LOG: sideload build only). */
+/** True when the merged manifest declares [permission] (READ_CALL_LOG and REQUEST_INSTALL_PACKAGES: sideload build only). */
 private fun Context.declares(permission: String): Boolean = runCatching {
     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty().contains(permission)
 }.getOrDefault(false)

@@ -33,6 +33,17 @@
     <string name="import_vcf_hint">Un export .vcf din Google Contacts, iCloud, Outlook sau telefon.</string>
     <string name="import">Importă</string>
     <string name="replay_intro">Revezi introducerea</string>
+    <string name="update_title">Actualizări aplicație</string>
+    <string name="update_checking">Se caută actualizări…</string>
+    <string name="update_up_to_date">Ai cea mai recentă versiune.</string>
+    <string name="update_check_failed">Nu am putut căuta actualizări. Ești online?</string>
+    <string name="update_available">Versiune nouă disponibilă: %1$s</string>
+    <string name="update_available_hint">O descarcă și deschide programul de instalare Android. Datele tale rămân pe acest dispozitiv.</string>
+    <string name="update_downloading">Se descarcă actualizarea…</string>
+    <string name="update_button">Actualizează</string>
+    <string name="update_check_button">Verifică din nou</string>
+    <string name="msg_update_permission">Permite instalările din Good Company în setările tocmai deschise, apoi atinge Actualizează din nou.</string>
+    <string name="msg_update_failed">Nu am putut descărca actualizarea. Încearcă din nou.</string>
     <string name="privacy">Confidențialitate</string>
     <string name="privacy_base">Prietenii, pasiunile, copiii, cadourile, întâlnirile și mementourile sunt stocate doar pe acest dispozitiv.</string>
     <string name="privacy_contacts">Contactele sunt citite doar ca să-ți construim lista.</string>

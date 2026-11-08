@@ -33,6 +33,17 @@
     <string name="import_vcf_hint">Una exportación .vcf de Google Contacts, iCloud, Outlook o tu móvil.</string>
     <string name="import">Importar</string>
     <string name="replay_intro">Ver la introducción otra vez</string>
+    <string name="update_title">Actualizaciones de la app</string>
+    <string name="update_checking">Buscando actualizaciones…</string>
+    <string name="update_up_to_date">Tienes la última versión.</string>
+    <string name="update_check_failed">No se pudo buscar actualizaciones. ¿Estás conectado?</string>
+    <string name="update_available">Nueva versión disponible: %1$s</string>
+    <string name="update_available_hint">La descarga y abre el instalador de Android. Tus datos se quedan en este dispositivo.</string>
+    <string name="update_downloading">Descargando la actualización…</string>
+    <string name="update_button">Actualizar</string>
+    <string name="update_check_button">Buscar de nuevo</string>
+    <string name="msg_update_permission">Permite las instalaciones desde Good Company en los ajustes que se acaban de abrir y toca Actualizar otra vez.</string>
+    <string name="msg_update_failed">No se pudo descargar la actualización. Inténtalo de nuevo.</string>
     <string name="privacy">Privacidad</string>
     <string name="privacy_base">Amigos, gustos, hijos, regalos, quedadas y recordatorios se guardan solo en este dispositivo.</string>
     <string name="privacy_contacts">Los contactos solo se leen para crear tu lista.</string>

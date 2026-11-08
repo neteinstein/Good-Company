@@ -284,3 +284,6 @@ private class IosDeviceAuthenticator(private val onMain: (() -> Unit) -> Unit) :
 
 @Composable
 actual fun currentPlatformCapabilities(): PlatformCapabilities = platformCapabilities
+
+@Composable
+actual fun rememberAppUpdater(): AppUpdater = NoAppUpdater

@@ -3,10 +3,12 @@ package com.neteinstein.goodcompany.feature.settings.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
@@ -20,6 +22,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
+import com.neteinstein.goodcompany.core.ui.platform.UpdateInstallResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +62,29 @@ sealed interface SettingsMessage {
     data object DriveNotConfigured : SettingsMessage
 
     data class DriveFailed(val reason: CloudBackupFailure.Reason) : SettingsMessage
+
+    /** Android sent the user to the "install unknown apps" switch for this app. */
+    data object UpdateNeedsPermission : SettingsMessage
+
+    data object UpdateFailed : SettingsMessage
+}
+
+/** Where the sideload build's "App updates" row stands. */
+sealed interface UpdateState {
+    /** Not checked yet (or this build doesn't update itself). */
+    data object Idle : UpdateState
+
+    data object Checking : UpdateState
+
+    data object UpToDate : UpdateState
+
+    /** The check itself failed (offline, GitHub unreachable). */
+    data object CheckFailed : UpdateState
+
+    data class Available(val update: AppUpdate) : UpdateState
+
+    /** [progress] is 0..1, or null while the size is unknown. */
+    data class Downloading(val update: AppUpdate, val progress: Float? = null) : UpdateState
 }
 
 /** What to do once Google hands back an access token. */
@@ -81,6 +107,7 @@ data class SettingsUiState(
     /** Waiting for Google, or uploading/downloading. */
     val driveBusy: Boolean = false,
     val driveAction: DriveAction? = null,
+    val update: UpdateState = UpdateState.Idle,
     val now: Instant = Instant.DISTANT_PAST,
     val zone: TimeZone = TimeZone.UTC,
 )
@@ -96,6 +123,7 @@ class SettingsViewModel(
     private val restoreBackup: RestoreBackupUseCase,
     private val backupToDrive: BackupToDriveUseCase,
     private val fetchDriveBackup: FetchDriveBackupUseCase,
+    private val checkForUpdate: CheckForUpdateUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
@@ -279,6 +307,51 @@ class SettingsViewModel(
                 )
             }
         }
+    }
+
+    // --- App updates (sideload build) ----------------------------------------------------------------------------
+
+    /** Asks whether a build newer than [installedVersionCode] is published. Ignored while one is being checked or downloaded. */
+    fun onCheckForUpdate(installedVersionCode: Long) {
+        if (local.value.update is UpdateState.Checking || local.value.update is UpdateState.Downloading) return
+        local.update { it.copy(update = UpdateState.Checking) }
+        viewModelScope.launch {
+            val outcome = checkForUpdate(installedVersionCode)
+            local.update { s ->
+                // The user may have started the download meanwhile; don't clobber that.
+                if (s.update !is UpdateState.Checking) {
+                    s
+                } else {
+                    s.copy(
+                        update = outcome.fold(
+                            { found -> found?.let(UpdateState::Available) ?: UpdateState.UpToDate },
+                            { UpdateState.CheckFailed },
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    /** The screen is about to download [update] and open the installer. */
+    fun onUpdateStarted(update: AppUpdate) = local.update { it.copy(update = UpdateState.Downloading(update)) }
+
+    fun onUpdateProgress(progress: Float) = local.update { s ->
+        val current = s.update as? UpdateState.Downloading ?: return@update s
+        s.copy(update = current.copy(progress = progress.coerceIn(0f, 1f)))
+    }
+
+    /** Download and hand-over finished; the installer (or the permission switch) is on screen now. */
+    fun onUpdateResult(result: UpdateInstallResult) = local.update { s ->
+        val current = s.update as? UpdateState.Downloading ?: return@update s
+        s.copy(
+            update = UpdateState.Available(current.update),
+            message = when (result) {
+                UpdateInstallResult.HANDED_OVER -> s.message
+                UpdateInstallResult.NEEDS_INSTALL_PERMISSION -> SettingsMessage.UpdateNeedsPermission
+                UpdateInstallResult.FAILED -> SettingsMessage.UpdateFailed
+            },
+        )
     }
 
     fun onMessageShown() = local.update { it.copy(message = null) }

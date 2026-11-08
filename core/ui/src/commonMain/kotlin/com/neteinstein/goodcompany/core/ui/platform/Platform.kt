@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.datetime.LocalDate
 
@@ -35,6 +36,8 @@ data class PlatformCapabilities(
     val hasGoogleDrive: Boolean = false,
     /** A home-screen widget exists for this platform. */
     val hasHomeWidget: Boolean = false,
+    /** The app can download and install a newer build of itself (Android sideload build only; see [AppUpdater]). */
+    val hasSelfUpdate: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities
@@ -159,3 +162,32 @@ sealed interface DriveAuthResult {
  */
 @Composable
 expect fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): () -> Unit
+
+/** What happened to an update handed to [AppUpdater.downloadAndInstall]. */
+enum class UpdateInstallResult {
+    /** The APK was downloaded and the system installer is showing its prompt (the user may still cancel there). */
+    HANDED_OVER,
+
+    /** Android needs the user to allow installs from this app first; its settings page was opened. */
+    NEEDS_INSTALL_PERMISSION,
+    FAILED,
+}
+
+/** Downloads a newer build and hands it to the system installer. Only meaningful when `hasSelfUpdate` is true. */
+interface AppUpdater {
+    /** `versionCode` of the installed build, to compare with the published one. */
+    val installedVersionCode: Long
+
+    /** [onProgress] reports 0..1 while downloading (not called when the size is unknown). */
+    suspend fun downloadAndInstall(update: AppUpdate, onProgress: (Float) -> Unit): UpdateInstallResult
+}
+
+@Composable
+expect fun rememberAppUpdater(): AppUpdater
+
+/** For platforms that update through a store (iOS, web): never offered, never installs. */
+object NoAppUpdater : AppUpdater {
+    override val installedVersionCode: Long = 0
+
+    override suspend fun downloadAndInstall(update: AppUpdate, onProgress: (Float) -> Unit): UpdateInstallResult = UpdateInstallResult.FAILED
+}

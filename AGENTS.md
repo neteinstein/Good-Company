@@ -184,9 +184,10 @@ Seen in practice:
 7. **Secrets are gitignored.** `androidApp/google-services.json` is never committed. CI copies
    `androidApp/google-services.json.ci` (a placeholder) for build validation; real builds use the `GOOGLE_SERVICES_JSON`
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
-8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
-   `androidApp/src/sideload/AndroidManifest.xml`: the Play build adds people through the system contact picker.
-   CI fails if the Play `release` APK declares SMS, call-log, contacts or AD_ID permissions. iOS needs usage strings in
+8. **Store policy.** Never add SMS permissions, and no Android build declares `READ_CONTACTS`: people are added through
+   the system contact picker in both the Play and the sideload build. `READ_CALL_LOG` **and `REQUEST_INSTALL_PACKAGES`**
+   (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`.
+   CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
 9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
    `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
@@ -231,7 +232,14 @@ Seen in practice:
 20. **Blogs & feeds.** `FeedParser` (domain) is a tiny RSS/Atom reader; `KtorFeedFetcher` fetches straight from the
     device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
     browser many feeds fail because of CORS; that's expected.
-21. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+21. **Sideload self-update.** Settings → "App updates" exists only where the manifest declares `REQUEST_INSTALL_PACKAGES`
+    (`PlatformCapabilities.hasSelfUpdate`, so only the sideload build). `GitHubReleaseUpdateSource` reads the rolling
+    `test-build` release (title `Test build #<run>`, run number = `versionCode`, asset `good-company-sideload-test.apk`);
+    `CheckForUpdateUseCase` compares it with the installed `versionCode`; `AppUpdater` (Android) downloads the APK to
+    `cache/updates/` and opens the system installer through the sideload-only FileProvider. Keep the release title and
+    asset name in `.github/workflows/test-apk.yml` in step with the source. Android only installs over a build signed with
+    the same key (see CI_CD.md "Signing").
+22. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
