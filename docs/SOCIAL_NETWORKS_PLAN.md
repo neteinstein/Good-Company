@@ -1,6 +1,6 @@
 # Matching friends on social networks: viability plan
 
-**Status:** proposal, nothing built. Written 2026-11-08 alongside the catch-up story, which is the natural consumer
+**Status:** direction agreed 2026-11-08 (see §0), nothing built yet. Written 2026-11-08 alongside the catch-up story, which is the natural consumer
 of anything we could pull from social networks: a friend's new job, a move or a new baby would show up as a
 "What's new" item and lead their story.
 
@@ -12,6 +12,13 @@ status). Their APIs either were shut down for this use or only return the signed
 viable is (1) open networks with public read APIs (Bluesky, Mastodon), (2) the user sharing posts *into* the app
 from the share sheet, and (3) the user pasting a screenshot or text that Claude turns into "What's new" items. Those
 three cover most of the value with no ToS risk and no server.
+
+## 0. Owner decisions (2026-11-08)
+- ✅ **Share into the app** is the way to get updates from Instagram, LinkedIn and other closed networks, instead of
+  complex integrations.
+- ❌ **Bluesky and Mastodon: not integrating for now.** They're not where these friends post, so the phase is dropped.
+- ✅ **RSS for blogs, Substack, Letterboxd and similar** is worth doing. It now has its own small fetch pipeline
+  (it used to build on the Bluesky/Mastodon one).
 
 ---
 
@@ -53,7 +60,10 @@ pick from a short list of suggestions we search for by name (Bluesky/Mastodon se
   Xcode project (with an app group, the same blocker as the widget, see AGENTS.md gotcha 19); on the web, a
   manifest `share_target`.
 
-### 2.3 Bluesky and Mastodon "what's new" fetch (open networks)
+### 2.3 Bluesky and Mastodon "what's new" fetch (open networks) — *dropped for now (owner, 2026-11-08)*
+
+Kept for reference; not on the roadmap.
+
 - For friends with a Bluesky or Mastodon handle, fetch recent public posts on open (and in the weekly job), straight
   from the device: no key and no server.
 - Don't dump posts into the story. Send the last ~20 posts to Claude with the friend's profile and ask for **life
@@ -62,8 +72,15 @@ pick from a short list of suggestions we search for by name (Bluesky/Mastodon se
 - Without an AI key: show the 3 latest posts on the friend page, with no extraction.
 - Respect `noindex` / opt-out labels and only read public posts. Cache by post id and keep only the extracted line.
 
-### 2.4 RSS for blogs, Letterboxd, Substack, Goodreads (cheap)
-- Same pipeline as 2.3 for any profile URL that exposes a feed. Good for tastes ("loved *Past Lives*").
+### 2.4 RSS for blogs, Letterboxd, Substack, Goodreads (cheap) — *agreed*
+- A friend gets one or more **feed links** (from 2.1's profiles, or a pasted blog URL; the app finds the feed through
+  `<link rel="alternate" type="application/rss+xml">` or common paths such as `/feed`, `/rss`).
+- Fetch RSS/Atom on app open (at most daily per feed) and in the weekly job, straight from the device. Parse only
+  title, link, date and a short summary; remember the last seen item per feed.
+- New items show on the friend page as "From their blog: …". With an AI key, Claude picks the ones that are life
+  updates or tastes and suggests a one-line "What's new" item or a like, for the user to confirm.
+- Web build: many feeds don't send CORS headers, so the browser can't read them. The web build either skips feeds
+  or only supports CORS-friendly ones (Substack, most WordPress sites). Mobile has no such limit.
 
 ### 2.5 Explicitly not doing
 - Scraping Instagram, Facebook or LinkedIn, or "unofficial API" services that log in with the user's cookies: this
@@ -90,17 +107,16 @@ pick from a short list of suggestions we search for by name (Bluesky/Mastodon se
 | 2 | Android + web share target → "What's new" (text/link), friend picker | M | 1 optional |
 | 3 | AI extraction from shared text/screenshot (vision) with confirm sheet | M | 2, AI key |
 | 4 | iOS Share Extension (new target + app group in the hand-authored project) | M–L | 2 |
-| 5 | Bluesky + Mastodon fetch → AI life-update suggestions (on open + weekly job) | M | 1, AI key for extraction |
-| 6 | RSS profiles (Letterboxd, blogs, Substack) | S | 5's pipeline |
+| ~~5~~ | ~~Bluesky + Mastodon fetch~~ — dropped for now (owner, 2026-11-08) | — | — |
+| 5 | RSS/Atom feeds on a friend → "From their blog" + AI suggestions (on open + weekly job) | S–M | 1, AI key for suggestions |
 
-Phase 2 + 3 deliver most of the user's ask ("don't forget the new job / the kids") for every network, including the
-closed ones, because the user is already looking at those stories. Phase 5 is the only real automatic fetch the
-platforms allow today.
+Phases 2 + 3 deliver most of the user's ask ("don't forget the new job / the kids") for every network, including the
+closed ones, because the user is already looking at those stories. Phase 5 (RSS) is the one automatic fetch.
 
 ## 5. Open questions for the owner
-1. Is "share into the app" acceptable as *the* Instagram/LinkedIn path, given automatic fetching isn't possible?
-2. Should suggestions from Bluesky/Mastodon land silently in "What's new", or always wait for a confirm tap?
-   (Recommended: confirm.)
+1. ~~Share into the app as the Instagram/LinkedIn path?~~ Yes (2026-11-08).
+2. ~~Bluesky/Mastodon suggestions?~~ Not integrating (2026-11-08). For RSS and shared content, AI suggestions wait
+   for a confirm tap (recommended; same rule).
 3. iOS share extension: worth the app-group work now, or Android/web first (as with the widget)?
 
 ## Sources (checked 2026-11-08; mostly third-party summaries, re-verify against the official docs)
