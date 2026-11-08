@@ -66,6 +66,7 @@ import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
 import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
@@ -256,17 +257,18 @@ private fun Segments(count: Int, index: Int, progress: Float) {
     }
 }
 
+/** Fixed, white-text-safe gradients (WCAG AA, see `ColorContrastTest`); never theme colours, which go pale in dark mode. */
 private fun slideColors(slide: StorySlide, friend: Friend): List<Color> = when (slide) {
     is StorySlide.Intro, is StorySlide.Outro -> avatarColors(friend.name).let { (a, b) -> listOf(a, b) }
-    is StorySlide.Fresh -> listOf(Color(0xFFE5574F), Color(0xFFF2A100))
-    is StorySlide.BigDay -> listOf(Color(0xFF6A3DE8), Color(0xFFD81B60))
-    is StorySlide.Birthday -> listOf(Color(0xFFFF7043), Color(0xFFEC407A))
-    is StorySlide.Kids -> listOf(Color(0xFF00897B), Color(0xFF43A047))
-    is StorySlide.LastTime -> listOf(Color(0xFF3949AB), Color(0xFF1E88E5))
-    is StorySlide.Tastes -> listOf(Color(0xFFD81B60), Color(0xFF8E24AA))
-    is StorySlide.Notes -> listOf(Color(0xFF455A64), Color(0xFF26A69A))
-    is StorySlide.ToDo -> listOf(Color(0xFFF57C00), Color(0xFFE53935))
-    is StorySlide.Ideas -> listOf(Color(0xFF5E35B1), Color(0xFF00ACC1))
+    is StorySlide.Fresh -> OnColorGradients.Hero
+    is StorySlide.BigDay -> OnColorGradients.Ideas
+    is StorySlide.Birthday -> OnColorGradients.Sunset
+    is StorySlide.Kids -> OnColorGradients.Teal
+    is StorySlide.LastTime -> OnColorGradients.Indigo
+    is StorySlide.Tastes -> listOf(OnColorGradients.Raspberry, OnColorGradients.Violet)
+    is StorySlide.Notes -> OnColorGradients.Teal.reversed()
+    is StorySlide.ToDo -> OnColorGradients.Amber
+    is StorySlide.Ideas -> OnColorGradients.Indigo.reversed()
 }
 
 @OptIn(ExperimentalLayoutApi::class)

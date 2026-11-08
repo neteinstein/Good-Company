@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -67,7 +68,7 @@ fun OrbitIllustration(main: ImageVector, satellites: List<ImageVector>, modifier
                 .graphicsLayer { translationY = bob.dp.toPx() }
                 .size(128.dp)
                 .shadow(16.dp, CircleShape, ambientColor = c.primary, spotColor = c.primary)
-                .background(Brush.linearGradient(listOf(Color(0xFFFF8A80), c.primary, c.tertiary)), CircleShape),
+                .background(Brush.linearGradient(OnColorGradients.Hero), CircleShape),
             contentAlignment = Alignment.Center,
         ) { Icon(main, null, tint = Color.White, modifier = Modifier.size(60.dp)) }
     }

@@ -58,6 +58,7 @@ import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
+import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
@@ -180,7 +181,7 @@ private val RELOCK_AFTER = 60.seconds
 private fun AppMark() {
     Box(
         Modifier.padding(top = 12.dp).size(48.dp).background(
-            Brush.linearGradient(listOf(Color(0xFFFF8A80), MaterialTheme.colorScheme.primary)),
+            Brush.linearGradient(OnColorGradients.Hero),
             CircleShape,
         ),
         contentAlignment = Alignment.Center,
