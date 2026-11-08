@@ -12,6 +12,7 @@ import android.provider.ContactsContract.CommonDataKinds.Note
 import android.provider.ContactsContract.CommonDataKinds.Relation
 import androidx.core.content.ContextCompat
 import com.neteinstein.goodcompany.core.data.R
+import com.neteinstein.goodcompany.core.data.source.ContactRowPlanner
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -26,18 +27,26 @@ internal object OwnRawContacts {
     fun sourceId(friendId: FriendId): String = PREFIX + friendId.value
 }
 
+/** Which rows are interchangeable: all notes, all children, birthdays, other dated events. */
+private fun kindOf(mime: String, data2: String?): String =
+    if (mime == Event.CONTENT_ITEM_TYPE) "$mime/$data2" else mime
+
+/** Only events carry identity in DATA3 (their label); for the rest DATA1 (name / note text) says it all. */
+private fun keyOf(mime: String, data1: String?, data3: String?): String =
+    listOf(mime, data1, if (mime == Event.CONTENT_ITEM_TYPE) data3 else null).joinToString("\u0000")
+
 /**
  * Mirrors a friend's kids, events, birthday and notes onto their address-book entry, so the contact itself shows them.
  * Only the Android **sideload** build declares WRITE_CONTACTS; elsewhere [write] does nothing.
  *
- * **Append-only, by design: nothing is ever deleted, updated or overwritten here.** New details are added as extra
- * rows; rows already on the contact stay, even when the app's own data later changes or goes away (an edited event
- * title therefore appears next to the old one). There is deliberately no call here that deletes or edits a data row (the
- * one `update` is the aggregation exception that links our raw contact to the real one), so a bug can add noise but
- * can never take data off a contact. The user's own contact (their Notes, birthday, phones…)
- * is only ever read.
+ * **Never deletes.** The app keeps one row per item (one note, one birthday, one row per kid or event): a changed
+ * detail updates the row the app wrote earlier instead of adding a second one next to it (see [ContactRowPlanner]), and
+ * a detail that disappears from the app is simply left on the contact. There is deliberately no delete call in this
+ * class, so a bug can leave stale rows behind but can never take data off a contact. Updates only ever touch rows of
+ * the app's own entry (each update is scoped to its raw contact); the user's own contact (their Notes, birthday,
+ * phones…) is only ever read.
  *
- * The rows go into one extra *raw contact* that this app owns (no account, so it never syncs to Google; its
+ * The rows live in one extra *raw contact* that this app owns (no account, so it never syncs to Google; its
  * `SOURCE_ID` is `goodcompany:<friendId>`), kept together with the person's real contact by an aggregation
  * exception. Contacts apps show the combined result.
  */
@@ -47,15 +56,17 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
             if (!canWrite()) return@withContext
             val resolver = context.contentResolver
             val own = findOwnRawContact(resolver, friendId)
-            // A birthday the contact already has (ours or the user's own) always wins: never add a second one.
-            val includeBirthday = card.birthday != null && !birthdayExists(resolver, contactId)
+            // A birthday the user's own contact already has always wins: never add a second one next to it.
+            val includeBirthday = card.birthday != null && !otherBirthdayExists(resolver, contactId, own)
             val wanted = rowsFor(card, includeBirthday)
             if (own == null) {
                 if (wanted.isNotEmpty()) create(resolver, contactId, friendId, wanted)
             } else {
-                val stored = readRows(resolver, own).map(Row::key).toSet()
-                val missing = wanted.distinctBy(Row::key).filter { it.key !in stored }
-                if (missing.isNotEmpty()) append(resolver, own, missing)
+                val steps = ContactRowPlanner.plan(
+                    stored = readStored(resolver, own),
+                    wanted = wanted.map { ContactRowPlanner.Wanted(it.kind, it.key, it) },
+                )
+                if (steps.isNotEmpty()) apply(resolver, own, steps)
             }
         }
     }
@@ -68,15 +79,15 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
 
     /** A `ContactsContract.Data` row: its MIME type plus the columns we set. */
     private class Row(val values: ContentValues) {
-        val mime: String get() = values.getAsString(ContactsContract.Data.MIMETYPE)
+        private val mime: String get() = values.getAsString(ContactsContract.Data.MIMETYPE)
 
-        /** What identifies the row when comparing with what's stored (providers normalise the other columns). */
+        /** Which rows are interchangeable (all notes, all children, birthdays, other dated events). */
+        val kind: String
+            get() = kindOf(mime, values.getAsString(ContactsContract.Data.DATA2))
+
+        /** What makes two rows "the same" (providers normalise the other columns). */
         val key: String
-            get() = listOf(
-                mime,
-                values.getAsString(ContactsContract.Data.DATA1),
-                if (mime == Event.CONTENT_ITEM_TYPE) values.getAsString(ContactsContract.Data.DATA3) else null,
-            ).joinToString("\u0000")
+            get() = keyOf(mime, values.getAsString(ContactsContract.Data.DATA1), values.getAsString(ContactsContract.Data.DATA3))
     }
 
     private fun rowsFor(card: ContactCard, includeBirthday: Boolean): List<Row> = buildList {
@@ -146,33 +157,42 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
         null,
     )?.use { if (it.moveToFirst()) it.getLong(0) else null }
 
-    /** True when the contact already shows a birthday, whoever wrote it. */
-    private fun birthdayExists(resolver: ContentResolver, contactId: String): Boolean = resolver.query(
-        ContactsContract.Data.CONTENT_URI,
-        arrayOf(ContactsContract.Data._ID),
-        "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ? AND ${Event.TYPE} = ?",
-        arrayOf(contactId, Event.CONTENT_ITEM_TYPE, Event.TYPE_BIRTHDAY.toString()),
-        null,
-    )?.use { it.moveToFirst() } ?: false
+    /** True when the person's own contact (not our raw contact [own]) already has a birthday. */
+    private fun otherBirthdayExists(resolver: ContentResolver, contactId: String, own: Long?): Boolean {
+        val selection = StringBuilder(
+            "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ? AND ${Event.TYPE} = ?",
+        )
+        val args = mutableListOf(contactId, Event.CONTENT_ITEM_TYPE, Event.TYPE_BIRTHDAY.toString())
+        if (own != null) {
+            selection.append(" AND ${ContactsContract.Data.RAW_CONTACT_ID} != ?")
+            args += own.toString()
+        }
+        return resolver.query(
+            ContactsContract.Data.CONTENT_URI,
+            arrayOf(ContactsContract.Data._ID),
+            selection.toString(),
+            args.toTypedArray(),
+            null,
+        )?.use { it.moveToFirst() } ?: false
+    }
 
-    private fun readRows(resolver: ContentResolver, rawContactId: Long): List<Row> = buildList {
+    private fun readStored(resolver: ContentResolver, rawContactId: Long): List<ContactRowPlanner.Stored> = buildList {
         resolver.query(
             ContactsContract.Data.CONTENT_URI,
-            arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1, ContactsContract.Data.DATA3),
+            arrayOf(
+                ContactsContract.Data._ID,
+                ContactsContract.Data.MIMETYPE,
+                ContactsContract.Data.DATA1,
+                ContactsContract.Data.DATA2,
+                ContactsContract.Data.DATA3,
+            ),
             "${ContactsContract.Data.RAW_CONTACT_ID} = ?",
             arrayOf(rawContactId.toString()),
             null,
         )?.use { c ->
             while (c.moveToNext()) {
-                add(
-                    Row(
-                        ContentValues().apply {
-                            put(ContactsContract.Data.MIMETYPE, c.getString(0))
-                            put(ContactsContract.Data.DATA1, c.getString(1))
-                            put(ContactsContract.Data.DATA3, c.getString(2))
-                        },
-                    ),
-                )
+                val mime = c.getString(1) ?: continue
+                add(ContactRowPlanner.Stored(c.getLong(0), kindOf(mime, c.getString(3)), keyOf(mime, c.getString(2), c.getString(4))))
             }
         }
     }
@@ -200,14 +220,26 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
         resolver.applyBatch(ContactsContract.AUTHORITY, ops)
     }
 
-    /** Adds rows to the app's own raw contact. Insert only: existing rows are never touched. */
-    private fun append(resolver: ContentResolver, rawContactId: Long, rows: List<Row>) {
+    /** Inserts new rows and updates the app's own earlier ones in place. There is no delete here, by design. */
+    private fun apply(resolver: ContentResolver, rawContactId: Long, steps: List<ContactRowPlanner.Step<Row>>) {
         val ops = ArrayList<ContentProviderOperation>()
-        rows.forEach { row ->
-            ops += ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                .withValues(row.values)
-                .build()
+        steps.forEach { step ->
+            when (step) {
+                is ContactRowPlanner.Step.Insert -> ops += ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                    .withValues(step.row.payload.values)
+                    .build()
+
+                is ContactRowPlanner.Step.Update -> ops += ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
+                    // Scoped to our own raw contact: a row of the user's own contact can never match.
+                    .withSelection(
+                        "${ContactsContract.Data._ID} = ? AND ${ContactsContract.Data.RAW_CONTACT_ID} = ?",
+                        arrayOf(step.storedId.toString(), rawContactId.toString()),
+                    )
+                    // The MIME type of an existing row is never changed.
+                    .withValues(ContentValues(step.row.payload.values).apply { remove(ContactsContract.Data.MIMETYPE) })
+                    .build()
+            }
         }
         resolver.applyBatch(ContactsContract.AUTHORITY, ops)
     }
