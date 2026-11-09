@@ -34,6 +34,7 @@
     <string name="done">Feito</string>
     <string name="pick_title">Adiciona a tua gente</string>
     <string name="pick_body">Escolhe amigos dos teus contactos. A app só vê as pessoas que escolheres.</string>
+    <string name="pick_body_write">Escolhe amigos dos teus contactos. A app só vê as pessoas que escolheres e guarda no contacto delas os aniversários, filhos, eventos e notas que acrescentares aqui.</string>
     <string name="pick">Escolher</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d amigo adicionado. Escolher outro?</item>

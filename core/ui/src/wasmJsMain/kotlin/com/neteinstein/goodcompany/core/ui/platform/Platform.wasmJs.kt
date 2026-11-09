@@ -138,3 +138,6 @@ private fun downloadText(fileName: String, mimeType: String, content: String): U
 
 @Composable
 actual fun currentPlatformCapabilities(): PlatformCapabilities = platformCapabilities
+
+@Composable
+actual fun rememberAppUpdater(): AppUpdater = NoAppUpdater

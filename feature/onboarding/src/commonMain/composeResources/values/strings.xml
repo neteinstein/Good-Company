@@ -34,6 +34,7 @@
     <string name="done">Done</string>
     <string name="pick_title">Add your people</string>
     <string name="pick_body">Pick friends from your contacts. The app only sees the people you choose.</string>
+    <string name="pick_body_write">Pick friends from your contacts. The app only sees the people you choose, and saves the birthdays, kids, events and notes you add here onto their contact.</string>
     <string name="pick">Pick</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d friend added. Pick another?</item>

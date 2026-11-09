@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.settings
 
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
@@ -10,9 +11,11 @@ import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
+import com.neteinstein.goodcompany.core.ui.platform.UpdateInstallResult
 import com.neteinstein.goodcompany.feature.settings.ui.screens.DriveAction
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.UpdateState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,6 +37,7 @@ class SettingsViewModelTest {
         g.restoreBackup,
         g.backupToDrive,
         g.fetchDriveBackup,
+        g.checkForUpdate,
         g.clock,
     )
 
@@ -196,5 +200,79 @@ class SettingsViewModelTest {
         vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
         assertEquals(SettingsMessage.DriveFailed(CloudBackupFailure.Reason.STORAGE_FULL), state.value.message)
         assertNull(state.value.settings.lastDriveBackupAt)
+    }
+
+    private val newBuild = AppUpdate(42, "1.0.0-test.42", "https://example.com/good-company.apk", sizeBytes = 1000)
+
+    @Test
+    fun updateCheckFindsANewerBuildOrSaysYoureCurrent() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(UpdateState.Idle, state.value.update)
+
+        g.updateSource.newest = newBuild
+        vm.onCheckForUpdate(installedVersionCode = 41)
+        assertEquals(UpdateState.Available(newBuild), state.value.update)
+
+        vm.onCheckForUpdate(installedVersionCode = 42)
+        assertEquals(UpdateState.UpToDate, state.value.update)
+        assertEquals(2, g.updateSource.calls)
+    }
+
+    @Test
+    fun updateCheckFailureIsShownAndCanBeRetried() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.updateSource.failure = IllegalStateException("HTTP 503")
+        vm.onCheckForUpdate(1)
+        assertEquals(UpdateState.CheckFailed, state.value.update)
+
+        g.updateSource.failure = null
+        g.updateSource.newest = newBuild
+        vm.onCheckForUpdate(1)
+        assertEquals(UpdateState.Available(newBuild), state.value.update)
+    }
+
+    @Test
+    fun downloadingTracksProgressAndIgnoresRepeatChecks() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.updateSource.newest = newBuild
+        vm.onCheckForUpdate(1)
+
+        vm.onUpdateStarted(newBuild)
+        vm.onUpdateProgress(0.5f)
+        assertEquals(UpdateState.Downloading(newBuild, 0.5f), state.value.update)
+        vm.onUpdateProgress(7f)
+        assertEquals(UpdateState.Downloading(newBuild, 1f), state.value.update)
+
+        vm.onCheckForUpdate(1) // a download is running: no new check
+        assertEquals(1, g.updateSource.calls)
+        assertEquals(UpdateState.Downloading(newBuild, 1f), state.value.update)
+    }
+
+    @Test
+    fun updateResultsGoBackToAvailableWithTheRightMessage() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+
+        vm.onUpdateStarted(newBuild)
+        vm.onUpdateResult(UpdateInstallResult.HANDED_OVER)
+        assertEquals(UpdateState.Available(newBuild), state.value.update)
+        assertNull(state.value.message)
+
+        vm.onUpdateStarted(newBuild)
+        vm.onUpdateResult(UpdateInstallResult.NEEDS_INSTALL_PERMISSION)
+        assertEquals(SettingsMessage.UpdateNeedsPermission, state.value.message)
+        vm.onMessageShown()
+
+        vm.onUpdateStarted(newBuild)
+        vm.onUpdateResult(UpdateInstallResult.FAILED)
+        assertEquals(SettingsMessage.UpdateFailed, state.value.message)
+        assertEquals(UpdateState.Available(newBuild), state.value.update)
+
+        // A stray result when nothing is downloading changes nothing.
+        vm.onUpdateResult(UpdateInstallResult.FAILED)
+        assertEquals(UpdateState.Available(newBuild), state.value.update)
     }
 }

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
@@ -127,4 +128,10 @@ interface CloudBackupStore {
     suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo?
 
     suspend fun download(accessToken: String, id: String): String
+}
+
+/** Where the sideload build learns about newer builds of itself (the `test-build` GitHub release). */
+fun interface AppUpdateSource {
+    /** The newest published build, or null when none is published. Throws when it can't be reached. */
+    suspend fun latest(): AppUpdate?
 }

@@ -35,15 +35,18 @@ import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SettingsBrightness
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,6 +79,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
@@ -87,7 +92,9 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.PlatformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.UpdateInstallResult
 import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
+import com.neteinstein.goodcompany.core.ui.platform.rememberAppUpdater
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberGoogleDriveAuthorizer
@@ -156,6 +163,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_on
 import com.neteinstein.goodcompany.feature.settings.resources.msg_sample_added
 import com.neteinstein.goodcompany.feature.settings.resources.msg_sample_removed
+import com.neteinstein.goodcompany.feature.settings.resources.msg_update_failed
+import com.neteinstein.goodcompany.feature.settings.resources.msg_update_permission
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_result
 import com.neteinstein.goodcompany.feature.settings.resources.pings_at
@@ -180,10 +189,21 @@ import com.neteinstein.goodcompany.feature.settings.resources.theme_auto
 import com.neteinstein.goodcompany.feature.settings.resources.theme_dark
 import com.neteinstein.goodcompany.feature.settings.resources.theme_light
 import com.neteinstein.goodcompany.feature.settings.resources.title
+import com.neteinstein.goodcompany.feature.settings.resources.update_available
+import com.neteinstein.goodcompany.feature.settings.resources.update_available_hint
+import com.neteinstein.goodcompany.feature.settings.resources.update_button
+import com.neteinstein.goodcompany.feature.settings.resources.update_check_button
+import com.neteinstein.goodcompany.feature.settings.resources.update_check_failed
+import com.neteinstein.goodcompany.feature.settings.resources.update_checking
+import com.neteinstein.goodcompany.feature.settings.resources.update_downloading
+import com.neteinstein.goodcompany.feature.settings.resources.update_title
+import com.neteinstein.goodcompany.feature.settings.resources.update_up_to_date
 import com.neteinstein.goodcompany.feature.settings.resources.web_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans
 import com.neteinstein.goodcompany.feature.settings.resources.weekly_plans_hint
 import com.neteinstein.goodcompany.feature.settings.resources.your_data
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.isoDayNumber
 import org.jetbrains.compose.resources.getPluralString
@@ -222,6 +242,8 @@ suspend fun SettingsMessage.text(): String = when (this) {
         },
     )
     SettingsMessage.LockFailed -> getString(Res.string.msg_lock_failed)
+    SettingsMessage.UpdateNeedsPermission -> getString(Res.string.msg_update_permission)
+    SettingsMessage.UpdateFailed -> getString(Res.string.msg_update_failed)
 }
 
 @Composable
@@ -240,6 +262,12 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
     val authenticator = rememberDeviceAuthenticator()
     val authorizeDrive = rememberGoogleDriveAuthorizer(viewModel::onDriveAuthResult)
     val lockReason = stringResource(CoreRes.string.lock_reason)
+    val updater = rememberAppUpdater()
+    val scope = rememberCoroutineScope()
+    // The sideload build looks for a newer build whenever Settings opens.
+    LaunchedEffect(capabilities.hasSelfUpdate) {
+        if (capabilities.hasSelfUpdate) viewModel.onCheckForUpdate(updater.installedVersionCode)
+    }
     LaunchedEffect(state.export) { state.export?.let { saveFile.save(it.name, it.content) } }
     SettingsContent(
         state = state,
@@ -285,6 +313,20 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
                 viewModel.onDriveRequested(DriveAction.RESTORE)
                 authorizeDrive()
             },
+            onCheckForUpdate = { viewModel.onCheckForUpdate(updater.installedVersionCode) },
+            onInstallUpdate = { update ->
+                viewModel.onUpdateStarted(update)
+                scope.launch {
+                    val result = try {
+                        updater.downloadAndInstall(update, viewModel::onUpdateProgress)
+                    } catch (e: CancellationException) {
+                        // Left Settings mid-download: the next visit checks again.
+                        viewModel.onUpdateResult(UpdateInstallResult.HANDED_OVER)
+                        throw e
+                    }
+                    viewModel.onUpdateResult(result)
+                }
+            },
         ),
     )
 }
@@ -315,6 +357,8 @@ data class SettingsActions(
     val onCancelRestore: () -> Unit = {},
     val onDriveBackup: () -> Unit = {},
     val onDriveRestore: () -> Unit = {},
+    val onCheckForUpdate: () -> Unit = {},
+    val onInstallUpdate: (AppUpdate) -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -577,6 +621,12 @@ fun SettingsContent(
                 )
             }
 
+            if (capabilities.hasSelfUpdate) {
+                SectionCard(stringResource(Res.string.update_title), icon = Icons.Rounded.SystemUpdate) {
+                    UpdateRow(state.update, actions.onCheckForUpdate, actions.onInstallUpdate)
+                }
+            }
+
             SectionCard(stringResource(Res.string.privacy), icon = Icons.Rounded.Shield) {
                 Text(
                     listOfNotNull(
@@ -622,6 +672,46 @@ fun SettingsContent(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/** Sideload build only: what the update check found, with the button that fits. */
+@Composable
+private fun UpdateRow(state: UpdateState, onCheck: () -> Unit, onInstall: (AppUpdate) -> Unit) {
+    val busy = state is UpdateState.Checking || state is UpdateState.Downloading
+    ListItem(
+        headlineContent = {
+            Text(
+                when (state) {
+                    UpdateState.Idle, UpdateState.Checking -> stringResource(Res.string.update_checking)
+                    UpdateState.UpToDate -> stringResource(Res.string.update_up_to_date)
+                    UpdateState.CheckFailed -> stringResource(Res.string.update_check_failed)
+                    is UpdateState.Available -> stringResource(Res.string.update_available, state.update.versionName)
+                    is UpdateState.Downloading -> stringResource(Res.string.update_downloading)
+                },
+                style = MaterialTheme.typography.titleSmall,
+            )
+        },
+        supportingContent = {
+            when (state) {
+                is UpdateState.Available -> Text(stringResource(Res.string.update_available_hint))
+                is UpdateState.Downloading ->
+                    state.progress
+                        ?.let { LinearProgressIndicator(progress = { it }, Modifier.fillMaxWidth().padding(top = 8.dp)) }
+                        ?: LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
+                else -> Unit
+            }
+        },
+        trailingContent = {
+            when (state) {
+                is UpdateState.Available -> Button(onClick = { onInstall(state.update) }) { Text(stringResource(Res.string.update_button)) }
+                UpdateState.Idle, UpdateState.UpToDate, UpdateState.CheckFailed ->
+                    OutlinedButton(onClick = onCheck, enabled = !busy) { Text(stringResource(Res.string.update_check_button)) }
+                UpdateState.Checking -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                is UpdateState.Downloading -> Unit
+            }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
 }
 
 @Composable

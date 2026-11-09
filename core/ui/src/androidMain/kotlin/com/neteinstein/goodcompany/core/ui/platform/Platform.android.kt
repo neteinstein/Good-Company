@@ -45,7 +45,10 @@ import kotlinx.datetime.plus
 
 actual val platformCapabilities = PlatformCapabilities(
     name = "Android",
-    hasAddressBook = true,
+    // People are always added with the system contact picker, never by importing the whole address book, so the
+    // "import address book" UI is off in every Android build. The sideload build's READ/WRITE_CONTACTS are only for
+    // the write-back (hasContactWriteBack).
+    hasAddressBook = false,
     hasCallLog = true,
     hasBackgroundNotifications = true,
     hasDynamicColor = true,
@@ -69,15 +72,16 @@ actual fun currentPlatformCapabilities(): PlatformCapabilities {
     val context = LocalContext.current
     return remember(context) {
         platformCapabilities.copy(
-            hasAddressBook = context.declares(Manifest.permission.READ_CONTACTS),
             hasCallLog = context.declares(Manifest.permission.READ_CALL_LOG),
+            // Only the sideload manifest asks to install packages (Google Play restricts that permission).
+            hasSelfUpdate = context.declares(Manifest.permission.REQUEST_INSTALL_PACKAGES),
             hasContactWriteBack = context.declares(Manifest.permission.READ_CONTACTS) &&
                 context.declares(Manifest.permission.WRITE_CONTACTS),
         )
     }
 }
 
-/** True when the merged manifest declares [permission] (READ_CONTACTS, WRITE_CONTACTS and READ_CALL_LOG: sideload build only). */
+/** True when the merged manifest declares [permission] (READ_CONTACTS, WRITE_CONTACTS, READ_CALL_LOG and REQUEST_INSTALL_PACKAGES: sideload build only). */
 private fun Context.declares(permission: String): Boolean = runCatching {
     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty().contains(permission)
 }.getOrDefault(false)

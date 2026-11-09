@@ -184,10 +184,11 @@ Seen in practice:
 7. **Secrets are gitignored.** `androidApp/google-services.json` is never committed. CI copies
    `androidApp/google-services.json.ci` (a placeholder) for build validation; real builds use the `GOOGLE_SERVICES_JSON`
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
-8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG` **and `READ_CONTACTS`** belong only in
-   `androidApp/src/sideload/AndroidManifest.xml`: the Play build adds people through the system contact picker.
-   `WRITE_CONTACTS` follows the same rule (see gotcha 22).
-   CI fails if the Play `release` APK declares SMS, call-log, contacts or AD_ID permissions. iOS needs usage strings in
+8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` **and
+   `REQUEST_INSTALL_PACKAGES`** (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`:
+   people are added through the system contact picker in both Android builds, and the sideload build's contacts
+   permissions exist only for the write-back (see gotcha 22).
+   CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
 9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
    `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
@@ -232,11 +233,13 @@ Seen in practice:
 20. **Blogs & feeds.** `FeedParser` (domain) is a tiny RSS/Atom reader; `KtorFeedFetcher` fetches straight from the
     device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
     browser many feeds fail because of CORS; that's expected.
-21. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
-    (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
-    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
-    site installed as an app and can't receive images (no service worker yet).
-
+21. **Sideload self-update.** Settings → "App updates" exists only where the manifest declares `REQUEST_INSTALL_PACKAGES`
+    (`PlatformCapabilities.hasSelfUpdate`, so only the sideload build). `GitHubReleaseUpdateSource` reads the rolling
+    `test-build` release (title `Test build #<run>`, run number = `versionCode`, asset `good-company-sideload-test.apk`);
+    `CheckForUpdateUseCase` compares it with the installed `versionCode`; `AppUpdater` (Android) downloads the APK to
+    `cache/updates/` and opens the system installer through the sideload-only FileProvider. Keep the release title and
+    asset name in `.github/workflows/test-apk.yml` in step with the source. Android only installs over a build signed with
+    the same key (see CI_CD.md "Signing").
 22. **Contact write-back (Android sideload only).** `FriendRepositoryImpl` mirrors every friend that has a `contactId` onto
     their contact through the `ContactsWriter` port (`ContactCard.from(friend)` is the projection; a write happens only when
     the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
@@ -245,9 +248,15 @@ Seen in practice:
     **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid/event), a changed detail
     updates the app's own earlier row in place (`ContactRowPlanner`, pure and tested; its `Step` has no delete), and a detail
     removed in the app, a cleared friend or a deleted friend leaves the contact as it is. The user's own contact rows are only read.
-    `AndroidContactsSource` skips contacts made only of our raw contacts. New data that fits on a contact goes into
+    `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false`: people are added with
+    the system contact picker (UI asks for READ/WRITE_CONTACTS right before opening it, `hasContactWriteBack`), and a sync only
+    refreshes friends that already have a `contactId`, never importing the whole address book. New data that fits on a contact goes into
     `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
     `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
+23. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
+    (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
+    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
+    site installed as an app and can't receive images (no service worker yet).
 
 ## Skills
 

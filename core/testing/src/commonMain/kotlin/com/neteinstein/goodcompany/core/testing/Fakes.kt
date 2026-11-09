@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
@@ -21,6 +22,7 @@ import com.neteinstein.goodcompany.core.domain.model.RenderedAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
@@ -354,5 +356,17 @@ class FakeCloudBackupStore : CloudBackupStore {
         tokens += accessToken
         failure?.let { throw it }
         return files.first { it.id == id }.content
+    }
+}
+
+/** The update source: [newest] is what it reports; [failure] makes it throw. */
+class FakeAppUpdateSource(var newest: AppUpdate? = null) : AppUpdateSource {
+    var failure: Exception? = null
+    var calls = 0
+
+    override suspend fun latest(): AppUpdate? {
+        calls++
+        failure?.let { throw it }
+        return newest
     }
 }

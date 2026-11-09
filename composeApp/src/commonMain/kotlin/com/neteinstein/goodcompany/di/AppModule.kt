@@ -24,8 +24,10 @@ import com.neteinstein.goodcompany.core.data.repository.ReminderRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.data.update.GitHubReleaseUpdateSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -49,6 +51,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
@@ -154,6 +157,7 @@ val appModule = module {
     single<AiAssistant> { AnthropicAssistant(get()) }
     single<CloudBackupStore> { GoogleDriveBackupStore(get()) }
     single<FeedFetcher> { KtorFeedFetcher(get()) }
+    single<AppUpdateSource> { GitHubReleaseUpdateSource(get()) }
     single { ShareInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
@@ -199,6 +203,7 @@ val appModule = module {
     factoryOf(::RunWeeklyIdeasUseCase)
     factoryOf(::ObserveSettingsUseCase)
     factoryOf(::UpdateSettingsUseCase)
+    factoryOf(::CheckForUpdateUseCase)
     factoryOf(::LoadSampleDataUseCase)
     factoryOf(::RemoveSampleDataUseCase)
     factoryOf(::HasSampleDataUseCase)

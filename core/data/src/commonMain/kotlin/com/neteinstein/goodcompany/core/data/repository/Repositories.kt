@@ -74,7 +74,7 @@ class FriendRepositoryImpl(
         val records = contacts.readContacts()
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
         if (records.isNotEmpty()) {
-            store.update { ContactMerger.merge(it, records) }
+            store.update { ContactMerger.merge(it, records, addNew = contacts.importsNewContacts) }
             backfillContacts()
         }
         return records.size

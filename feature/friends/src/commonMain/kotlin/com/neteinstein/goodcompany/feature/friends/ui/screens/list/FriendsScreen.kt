@@ -159,6 +159,8 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, onOpenStory: (FriendId) -> U
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickContacts = rememberContactPicker(onPicked = viewModel::onContactsPicked)
     val capabilities = currentPlatformCapabilities()
+    // Sideload build: ask for the contacts permission the write-back needs, then open the picker whatever the answer.
+    val requestThenPick = rememberPermissionRequester(AppPermission.CONTACTS) { pickContacts() }
     FriendsContent(
         state = state,
         canSyncContacts = capabilities.hasAddressBook,
@@ -169,7 +171,7 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, onOpenStory: (FriendId) -> U
             onSortChange = viewModel::onSortChange,
             onSync = requestContacts,
             onImportFile = pickVcf,
-            onPickContacts = pickContacts,
+            onPickContacts = if (capabilities.hasContactWriteBack) requestThenPick else pickContacts,
             onOpenFriend = onOpenFriend,
             onOpenStory = onOpenStory,
             onToggleClose = viewModel::onToggleClose,

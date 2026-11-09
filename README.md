@@ -156,7 +156,7 @@ friends by hand (browsers have no address book).
 ## 🔒 Privacy
 
 - No account, no server. Everything lives on your device.
-- On Android (Play) you **pick** people with the system contact picker, so the app never sees your whole address book. Full address-book sync and call matching exist only in the separate *sideload* build (Play restricts those permissions). In that sideload build, birthdays, kids, events and notes you add are also written onto each person's contact (a device-only entry, never synced), so you can read them in the Contacts app. **SMS are never read.**
+- On Android (Play) you **pick** people with the system contact picker, so the app never sees your whole address book. Call matching and in-app updates (Settings → *App updates*) exist only in the separate *sideload* build, which adds people with the same picker (Play restricts those permissions). In that sideload build, birthdays, kids, events and notes you add are also written onto each person's contact (a device-only entry, never synced), so you can read them in the Contacts app. **SMS are never read.**
 - WhatsApp and Messenger can't be read by any app; you can import a WhatsApp chat **export** per friend.
 - The only network traffic is what you start: AI requests with **your** key to `api.anthropic.com`, and Google Drive backups.
 - Optional **app lock** (fingerprint, face or device PIN) and **private lock-screen notifications**.

@@ -14,6 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal class AndroidContactsSource(private val context: Context) : ContactsSource {
+    // READ_CONTACTS exists only in the sideload build, for the contact write-back. People are still added with the
+    // system contact picker, so a sync must never turn the whole address book into friends.
+    override val importsNewContacts: Boolean = false
+
     override suspend fun readContacts(): List<ContactRecord> = withContext(Dispatchers.IO) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return@withContext emptyList()

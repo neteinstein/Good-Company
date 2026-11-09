@@ -31,6 +31,18 @@ class ContactMergerTest {
     }
 
     @Test
+    fun withoutAddNewOnlyKnownFriendsAreRefreshed() {
+        val ana = friend("contact-1", "Old") { copy(contactId = "1", likes = listOf("jazz")) }
+        val merged = ContactMerger.merge(
+            listOf(ana),
+            listOf(ContactRecord("1", "Ana", listOf("+1"), null), ContactRecord("2", "Bruno", emptyList(), null)),
+            addNew = false,
+        )
+        assertEquals(listOf("Ana"), merged.map { it.name })
+        assertEquals(listOf("jazz"), merged.single().likes)
+    }
+
+    @Test
     fun contactWithoutBirthdayDoesNotEraseAppBirthday() {
         val existing = friend("contact-1") { copy(contactId = "1", birthday = Birthday(4, 4)) }
         val merged = ContactMerger.merge(listOf(existing), listOf(ContactRecord("1", "Ana", emptyList(), null)))
