@@ -47,6 +47,7 @@
     <string name="privacy">Confidentialité</string>
     <string name="privacy_base">Amis, goûts, enfants, cadeaux, rencontres et rappels sont stockés uniquement sur cet appareil.</string>
     <string name="privacy_contacts">Les contacts ne sont lus que pour créer ta liste.</string>
+    <string name="privacy_contacts_write">Les contacts sont lus pour créer ta liste. Les anniversaires, enfants, événements et notes que tu ajoutes ici sont aussi enregistrés sur le contact (uniquement sur cet appareil).</string>
     <string name="privacy_call_log">Le journal d’appels n’est lu que dans la version sideload.</string>
     <string name="privacy_end">Rien n’est envoyé, sauf les requêtes à l’IA et les sauvegardes Google Drive que tu lances. Les SMS ne sont jamais lus.</string>
     <string name="footer">Good Company %1$s · %2$s · fait avec 💛</string>

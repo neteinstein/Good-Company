@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.data.platform
 
 import android.Manifest
+import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
@@ -13,6 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal class AndroidContactsSource(private val context: Context) : ContactsSource {
+    // READ_CONTACTS exists only in the sideload build, for the contact write-back. People are still added with the
+    // system contact picker, so a sync must never turn the whole address book into friends.
+    override val importsNewContacts: Boolean = false
+
     override suspend fun readContacts(): List<ContactRecord> = withContext(Dispatchers.IO) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return@withContext emptyList()
@@ -62,6 +67,28 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
             }
         }
 
-        names.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id]) }
+        // The sideload build mirrors app data onto contacts through a raw contact of its own (AndroidContactsWriter).
+        // It is joined to the person's real contact, but should that ever fail it must not show up as a new friend.
+        val mirrorOnly = mirrorOnlyContactIds(resolver)
+        names.filterKeys { it !in mirrorOnly }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id]) }
+    }
+
+    /** Contacts made up solely of raw contacts this app created. */
+    private fun mirrorOnlyContactIds(resolver: ContentResolver): Set<String> {
+        val ours = HashSet<String>()
+        val others = HashSet<String>()
+        resolver.query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(ContactsContract.RawContacts.CONTACT_ID, ContactsContract.RawContacts.SOURCE_ID),
+            "${ContactsContract.RawContacts.DELETED} = 0",
+            null,
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val contactId = c.getString(0) ?: continue
+                if (c.getString(1)?.startsWith(OwnRawContacts.PREFIX) == true) ours += contactId else others += contactId
+            }
+        }
+        return ours - others
     }
 }

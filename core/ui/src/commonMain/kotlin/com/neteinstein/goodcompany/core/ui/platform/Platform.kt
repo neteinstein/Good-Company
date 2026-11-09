@@ -38,6 +38,8 @@ data class PlatformCapabilities(
     val hasHomeWidget: Boolean = false,
     /** The app can download and install a newer build of itself (Android sideload build only; see [AppUpdater]). */
     val hasSelfUpdate: Boolean = false,
+    /** Birthday, kids, events and notes are also written onto the friend's contact (Android sideload build only). */
+    val hasContactWriteBack: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities

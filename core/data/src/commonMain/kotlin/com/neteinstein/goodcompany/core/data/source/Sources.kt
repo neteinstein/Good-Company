@@ -8,6 +8,12 @@ import kotlin.time.Instant
 /** The device address book. Returns an empty list when unavailable (web) or not permitted. */
 fun interface ContactsSource {
     suspend fun readContacts(): List<ContactRecord>
+
+    /**
+     * Whether a sync may add every contact it reads as a friend. False where people are added one by one with the
+     * system contact picker (Android): the sync then only refreshes friends that already have a contact.
+     */
+    val importsNewContacts: Boolean get() = true
 }
 
 /** A call from the OS call log. Only Android exposes it, and only with a restricted permission. */

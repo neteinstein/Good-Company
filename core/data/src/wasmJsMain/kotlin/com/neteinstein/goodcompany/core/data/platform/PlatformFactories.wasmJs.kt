@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -15,6 +16,8 @@ import kotlin.coroutines.resume
 actual fun Scope.createContactsSource(): ContactsSource = object : ContactsSource {
     override suspend fun readContacts() = emptyList<com.neteinstein.goodcompany.core.domain.model.ContactRecord>()
 }
+
+actual fun Scope.createContactsWriter(): ContactsWriter = ContactsWriter.None
 
 actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = CommunicationLogSource.None
 

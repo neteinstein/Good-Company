@@ -47,6 +47,7 @@
     <string name="privacy">Confidențialitate</string>
     <string name="privacy_base">Prietenii, pasiunile, copiii, cadourile, întâlnirile și mementourile sunt stocate doar pe acest dispozitiv.</string>
     <string name="privacy_contacts">Contactele sunt citite doar ca să-ți construim lista.</string>
+    <string name="privacy_contacts_write">Contactele sunt citite ca să-ți construim lista. Zilele de naștere, copiii, evenimentele și notele pe care le adaugi aici sunt salvate și pe contact (doar pe acest dispozitiv).</string>
     <string name="privacy_call_log">Jurnalul de apeluri e citit doar în versiunea sideload.</string>
     <string name="privacy_end">Nu se trimite nimic în afara cererilor către AI și a copiilor în Google Drive pe care le faci tu. SMS-urile nu sunt citite niciodată.</string>
     <string name="footer">Good Company %1$s · %2$s · făcut cu 💛</string>

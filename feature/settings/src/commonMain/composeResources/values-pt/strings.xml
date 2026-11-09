@@ -47,6 +47,7 @@
     <string name="privacy">Privacidade</string>
     <string name="privacy_base">Amigos, gostos, filhos, prendas, encontros e lembretes ficam guardados só neste dispositivo.</string>
     <string name="privacy_contacts">Os contactos só são lidos para criar a tua lista.</string>
+    <string name="privacy_contacts_write">Os contactos são lidos para criar a tua lista. Os aniversários, filhos, eventos e notas que acrescentares aqui também ficam guardados no contacto (só neste dispositivo).</string>
     <string name="privacy_call_log">O registo de chamadas só é lido na versão sideload.</string>
     <string name="privacy_end">Nada é enviado exceto os pedidos à IA e as cópias para o Google Drive que fizeres. As SMS nunca são lidas.</string>
     <string name="footer">Good Company %1$s · %2$s · feito com 💛</string>

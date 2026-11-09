@@ -67,6 +67,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.feature.onboarding.resources.Res
 import com.neteinstein.goodcompany.feature.onboarding.resources.allow
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body_write
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_picked
@@ -90,6 +91,7 @@ import com.neteinstein.goodcompany.feature.onboarding.resources.page3_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.page3_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.pick_body_write
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
@@ -135,11 +137,13 @@ fun OnboardingScreen(onDone: () -> Unit, viewModel: OnboardingViewModel = koinVi
     LaunchedEffect(state.finished) { if (state.finished) onDone() }
     val capabilities = currentPlatformCapabilities()
     val pickContact = rememberContactPicker(onPicked = viewModel::onContactsPicked)
+    // Sideload build: ask for the contacts permission the write-back needs, then open the picker whatever the answer.
+    val requestThenPick = rememberPermissionRequester(AppPermission.CONTACTS) { pickContact() }
     OnboardingContent(
         state = state,
         capabilities = capabilities,
         onImportContacts = requestContacts,
-        onPickContacts = pickContact,
+        onPickContacts = if (capabilities.hasContactWriteBack) requestThenPick else pickContact,
         onAllowNotifications = requestNotifications,
         onExploreSample = viewModel::onExploreWithSample,
         onFinish = viewModel::onFinish,
@@ -247,6 +251,7 @@ private fun SetupPage(
                 body = when {
                     state.contactsImported != null -> state.contactsImported.let { pluralStringResource(Res.plurals.contacts_imported, it, it) }
                     state.contactsDenied -> stringResource(Res.string.contacts_denied)
+                    capabilities.hasContactWriteBack -> stringResource(Res.string.contacts_body_write)
                     else -> stringResource(Res.string.contacts_body)
                 },
                 done = state.contactsImported != null,
@@ -262,7 +267,7 @@ private fun SetupPage(
                 body = if (state.contactsPicked > 0) {
                     pluralStringResource(Res.plurals.contacts_picked, state.contactsPicked, state.contactsPicked)
                 } else {
-                    stringResource(Res.string.pick_body)
+                    stringResource(if (capabilities.hasContactWriteBack) Res.string.pick_body_write else Res.string.pick_body)
                 },
                 done = false,
                 action = stringResource(Res.string.pick),

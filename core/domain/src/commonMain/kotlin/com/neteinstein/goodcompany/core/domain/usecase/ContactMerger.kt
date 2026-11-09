@@ -12,14 +12,16 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
  * - A contact birthday never erases one the user entered in-app.
  * - Friends whose contact vanished are dropped unless they carry app data — then they're kept and flagged orphaned.
  * - Manual friends (no contactId) are left alone.
+ * - With `addNew = false`, contacts that aren't friends yet are ignored (people are added one by one with the picker).
  */
 object ContactMerger {
-    fun merge(existing: List<Friend>, contacts: List<ContactRecord>): List<Friend> {
+    fun merge(existing: List<Friend>, contacts: List<ContactRecord>, addNew: Boolean = true): List<Friend> {
         val byContactId = existing.filter { it.contactId != null }.associateBy { it.contactId!! }
         val seen = HashSet<String>()
         val merged = contacts.mapNotNull { contact ->
             if (!seen.add(contact.contactId) || contact.name.isBlank()) return@mapNotNull null
             val current = byContactId[contact.contactId]
+            if (current == null && !addNew) return@mapNotNull null
             current?.copy(
                 name = contact.name.trim(),
                 phoneNumbers = contact.phoneNumbers.distinct(),

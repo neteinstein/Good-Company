@@ -19,6 +19,7 @@
     </plurals>
     <string name="contacts_denied">Sem problema — podes adicionar amigos à mão.</string>
     <string name="contacts_body">Lemos nomes, números e aniversários. Nada sai do teu dispositivo.</string>
+    <string name="contacts_body_write">Lemos nomes, números e aniversários, e guardamos no contacto os aniversários, filhos, eventos e notas que acrescentares aqui. Nada sai do teu dispositivo.</string>
     <string name="import">Importar</string>
     <string name="notifications_title">Lembretes de aniversários e encontros</string>
     <string name="notifications_on">Está tudo pronto — vamos lembrar-te na hora certa.</string>
@@ -33,6 +34,7 @@
     <string name="done">Feito</string>
     <string name="pick_title">Adiciona a tua gente</string>
     <string name="pick_body">Escolhe amigos dos teus contactos. A app só vê as pessoas que escolheres.</string>
+    <string name="pick_body_write">Escolhe amigos dos teus contactos. A app só vê as pessoas que escolheres e guarda no contacto delas os aniversários, filhos, eventos e notas que acrescentares aqui.</string>
     <string name="pick">Escolher</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d amigo adicionado. Escolher outro?</item>

@@ -20,6 +20,7 @@
     </plurals>
     <string name="contacts_denied">Nicio problemă — poți adăuga prieteni manual.</string>
     <string name="contacts_body">Citim nume, numere de telefon și zile de naștere. Nimic nu pleacă de pe dispozitiv.</string>
+    <string name="contacts_body_write">Citim nume, numere de telefon și zile de naștere și salvăm pe fiecare contact zilele de naștere, copiii, evenimentele și notele pe care le adaugi aici. Nimic nu pleacă de pe dispozitiv.</string>
     <string name="import">Importă</string>
     <string name="notifications_title">Mementouri pentru zile de naștere și întâlniri</string>
     <string name="notifications_on">Totul e gata — îți vom aminti la momentul potrivit.</string>
@@ -34,6 +35,7 @@
     <string name="done">Gata</string>
     <string name="pick_title">Adaugă-ți oamenii</string>
     <string name="pick_body">Alege prieteni din contacte. Aplicația vede doar persoanele pe care le alegi.</string>
+    <string name="pick_body_write">Alege prieteni din contacte. Aplicația vede doar persoanele pe care le alegi și salvează pe contactul lor zilele de naștere, copiii, evenimentele și notițele pe care le adaugi aici.</string>
     <string name="pick">Alege</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d prieten adăugat. Alegi altul?</item>

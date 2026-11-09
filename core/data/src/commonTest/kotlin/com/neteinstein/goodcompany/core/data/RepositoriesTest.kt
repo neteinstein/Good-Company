@@ -33,7 +33,7 @@ import kotlin.time.Instant
 class RepositoriesTest {
     private val settings = MapSettings()
 
-    private class StubContacts(var records: List<ContactRecord>) : ContactsSource {
+    private class StubContacts(var records: List<ContactRecord>, override val importsNewContacts: Boolean = true) : ContactsSource {
         override suspend fun readContacts() = records
     }
 
@@ -67,6 +67,21 @@ class RepositoriesTest {
         contacts.records = emptyList()
         assertEquals(0, repo.syncContacts())
         assertEquals(1, repo.friends.first().size)
+    }
+
+    @Test
+    fun friendRepository_pickerOnlySourceNeverImportsTheWholeAddressBook() = runTest {
+        val contacts = StubContacts(
+            listOf(ContactRecord("1", "Ana", emptyList(), null), ContactRecord("2", "Bruno", emptyList(), null)),
+            importsNewContacts = false,
+        )
+        val repo = FriendRepositoryImpl(settings, contacts)
+        repo.syncContacts()
+        assertTrue(repo.friends.first().isEmpty())
+
+        repo.upsert(friend("contact-1") { copy(contactId = "1", name = "Old") })
+        repo.syncContacts()
+        assertEquals(listOf("Ana"), repo.friends.first().map { it.name })
     }
 
     @Test

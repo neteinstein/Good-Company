@@ -19,6 +19,7 @@
     </plurals>
     <string name="contacts_denied">No problem — you can add friends by hand.</string>
     <string name="contacts_body">We read names, phone numbers and birthdays. Nothing leaves your device.</string>
+    <string name="contacts_body_write">We read names, phone numbers and birthdays, and save the birthdays, kids, events and notes you add here onto each contact. Nothing leaves your device.</string>
     <string name="import">Import</string>
     <string name="notifications_title">Birthday &amp; check-in reminders</string>
     <string name="notifications_on">You’re all set — we’ll nudge you at the right time.</string>
@@ -33,6 +34,7 @@
     <string name="done">Done</string>
     <string name="pick_title">Add your people</string>
     <string name="pick_body">Pick friends from your contacts. The app only sees the people you choose.</string>
+    <string name="pick_body_write">Pick friends from your contacts. The app only sees the people you choose, and saves the birthdays, kids, events and notes you add here onto their contact.</string>
     <string name="pick">Pick</string>
     <plurals name="contacts_picked">
         <item quantity="one">%1$d friend added. Pick another?</item>

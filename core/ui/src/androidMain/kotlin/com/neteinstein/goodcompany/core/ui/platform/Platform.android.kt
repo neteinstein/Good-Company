@@ -45,7 +45,10 @@ import kotlinx.datetime.plus
 
 actual val platformCapabilities = PlatformCapabilities(
     name = "Android",
-    hasAddressBook = true,
+    // People are always added with the system contact picker, never by importing the whole address book, so the
+    // "import address book" UI is off in every Android build. The sideload build's READ/WRITE_CONTACTS are only for
+    // the write-back (hasContactWriteBack).
+    hasAddressBook = false,
     hasCallLog = true,
     hasBackgroundNotifications = true,
     hasDynamicColor = true,
@@ -57,7 +60,8 @@ actual val platformCapabilities = PlatformCapabilities(
 )
 
 private fun AppPermission.manifestPermissions(): Array<String> = when (this) {
-    AppPermission.CONTACTS -> arrayOf(Manifest.permission.READ_CONTACTS)
+    // WRITE_CONTACTS exists only in the sideload build (it is filtered out where the manifest lacks it).
+    AppPermission.CONTACTS -> arrayOf(Manifest.permission.READ_CONTACTS, Manifest.permission.WRITE_CONTACTS)
     AppPermission.LOCATION -> arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
     AppPermission.NOTIFICATIONS -> arrayOf(Manifest.permission.POST_NOTIFICATIONS)
     AppPermission.CALL_LOG -> arrayOf(Manifest.permission.READ_CALL_LOG)
@@ -68,15 +72,16 @@ actual fun currentPlatformCapabilities(): PlatformCapabilities {
     val context = LocalContext.current
     return remember(context) {
         platformCapabilities.copy(
-            hasAddressBook = context.declares(Manifest.permission.READ_CONTACTS),
             hasCallLog = context.declares(Manifest.permission.READ_CALL_LOG),
             // Only the sideload manifest asks to install packages (Google Play restricts that permission).
             hasSelfUpdate = context.declares(Manifest.permission.REQUEST_INSTALL_PACKAGES),
+            hasContactWriteBack = context.declares(Manifest.permission.READ_CONTACTS) &&
+                context.declares(Manifest.permission.WRITE_CONTACTS),
         )
     }
 }
 
-/** True when the merged manifest declares [permission] (READ_CALL_LOG and REQUEST_INSTALL_PACKAGES: sideload build only). */
+/** True when the merged manifest declares [permission] (READ_CONTACTS, WRITE_CONTACTS, READ_CALL_LOG and REQUEST_INSTALL_PACKAGES: sideload build only). */
 private fun Context.declares(permission: String): Boolean = runCatching {
     packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions.orEmpty().contains(permission)
 }.getOrDefault(false)
@@ -85,14 +90,19 @@ private fun Context.declares(permission: String): Boolean = runCatching {
 actual fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit {
     val context = LocalContext.current
     val callback = rememberUpdatedState(onResult)
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-        callback.value(results.values.any { it })
+    fun isGranted(name: String) = ContextCompat.checkSelfPermission(context, name) == PackageManager.PERMISSION_GRANTED
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        // Re-check instead of trusting the result map: it only lists what was asked just now.
+        callback.value(permission.manifestPermissions().filter(context::declares).any(::isGranted))
     }
     return {
         val wanted = permission.manifestPermissions().filter(context::declares)
+        // Contacts need everything the build declares (sideload: read *and* write); the others need any one.
+        val missing = if (permission == AppPermission.CONTACTS) wanted.filterNot(::isGranted) else emptyList()
         when {
             wanted.isEmpty() -> callback.value(false)
-            wanted.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED } -> callback.value(true)
+            permission == AppPermission.CONTACTS && missing.isNotEmpty() -> launcher.launch(missing.toTypedArray())
+            wanted.any(::isGranted) -> callback.value(true)
             else -> launcher.launch(wanted.toTypedArray())
         }
     }
