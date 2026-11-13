@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
@@ -273,8 +274,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                 item(key = "overdue-h") { SectionHeader(stringResource(Res.string.section_catch_up)) }
                 items(state.overdue, key = { "o-${it.friend.id.value}" }) { s ->
                     MeetupRow(
-                        name = s.friend.name,
-                        initials = s.friend.initials,
+                        friend = s.friend,
                         progress = 1f,
                         overdue = true,
                         subtitle = s.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.meet_days_since, it, it, everyNDays(s.cadenceDays)) }
@@ -292,8 +292,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                 items(state.upcoming, key = { "u-${it.friend.id.value}" }) { s ->
                     val goal = s.cadenceDays.coerceAtLeast(1)
                     MeetupRow(
-                        name = s.friend.name,
-                        initials = s.friend.initials,
+                        friend = s.friend,
                         progress = (s.daysSinceLastSeen ?: 0).toFloat() / goal,
                         overdue = false,
                         subtitle = stringResource(Res.string.meet_due, relativeDayPhrase(s.dueDate, state.today), everyNDays(goal)),
@@ -328,8 +327,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                 val matches = occasion?.let { state.occasions[it] }.orEmpty().take(FREE_LIMIT)
                 items(matches, key = { "free-${occasion?.name}-${it.friend.id.value}" }) { m ->
                     MeetupRow(
-                        name = m.friend.name,
-                        initials = m.friend.initials,
+                        friend = m.friend,
                         progress = if (m.catchUpDue) 1f else 0f,
                         overdue = false,
                         subtitle = when {
@@ -380,7 +378,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                             selected = f.id in state.filter,
                             onClick = { actions.onToggleFilter(f.id) },
                             label = { Text(f.name.substringBefore(' ')) },
-                            leadingIcon = { FriendAvatar(f.name, f.initials, size = 22.dp) },
+                            leadingIcon = { FriendAvatar(f, size = 22.dp) },
                         )
                     }
                 }
@@ -392,7 +390,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                     ) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             val selected = state.friends.filter { it.id in state.filter }
-                            StackedAvatars(selected.map { it.name to it.initials }, size = 40.dp)
+                            StackedAvatars(selected, size = 40.dp)
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(selected.joinToString(" & ") { it.name.substringBefore(' ') }, style = MaterialTheme.typography.titleMedium)
@@ -481,7 +479,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                                     )
                                 }
                             }
-                            StackedAvatars(h.friends.map { it.name to it.initials }, size = 30.dp, max = 3)
+                            StackedAvatars(h.friends, size = 30.dp, max = 3)
                             IconButton(onClick = { actions.onDeleteHangout(h.hangout.id) }) {
                                 Icon(Icons.Rounded.Delete, stringResource(Res.string.delete_memory))
                             }
@@ -554,7 +552,7 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    StackedAvatars(status.members.map { it.name to it.initials }, size = 24.dp, max = 6)
+                    StackedAvatars(status.members, size = 24.dp, max = 6)
                     Spacer(Modifier.width(10.dp))
                     val pad = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                     val label: @Composable () -> Unit = {
@@ -614,8 +612,7 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
 
 @Composable
 private fun MeetupRow(
-    name: String,
-    initials: String,
+    friend: Friend,
     progress: Float,
     overdue: Boolean,
     subtitle: String,
@@ -636,11 +633,11 @@ private fun MeetupRow(
                 stroke = 4.dp,
                 color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
             ) {
-                FriendAvatar(name, initials, size = 40.dp)
+                FriendAvatar(friend, size = 40.dp)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(name, style = MaterialTheme.typography.titleSmall)
+                Text(friend.name, style = MaterialTheme.typography.titleSmall)
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,

@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -18,7 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid as DomainKid
 /** Tables that make up a friend. Observers of friends listen to all of them. */
 internal val FRIEND_TABLES = arrayOf(
     "friend", "friend_phone", "friend_taste", "friend_occasion", "kid", "kid_like", "important_event", "gift",
-    "life_update", "feed", "feed_item",
+    "life_update", "feed", "feed_item", "friend_photo",
 )
 
 private const val LIKE = "LIKE"
@@ -37,6 +38,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
     val updates = q.allLifeUpdates().awaitAsList().groupBy { it.friend_id }
     val feedItems = q.allFeedItems().awaitAsList().groupBy { it.friend_id to it.feed_url }
     val feeds = q.allFeeds().awaitAsList().groupBy { it.friend_id }
+    val photos = q.allPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
 
     return q.allFriends().awaitAsList().map { row ->
         val id = row.id
@@ -89,6 +91,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
                     },
                 )
             },
+            photo = photos[id],
         )
     }
 }
@@ -169,4 +172,5 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             q.insertFeedItem(Feed_item(id, feed.url, item.id, j.toLong(), item.title, item.link, item.publishedAt?.toColumn()))
         }
     }
+    friend.photo?.let { q.insertPhoto(Friend_photo(id, it.base64)) }
 }

@@ -207,7 +207,7 @@ private fun FriendPicker(state: ShareUiState, actions: ShareActions, modifier: M
             items(state.friends, key = { it.id.value }) { friend ->
                 ListItem(
                     modifier = Modifier.clickable { actions.onSelect(friend) },
-                    leadingContent = { FriendAvatar(friend.name, friend.initials, size = 44.dp, highlighted = friend.isCloseFriend) },
+                    leadingContent = { FriendAvatar(friend, size = 44.dp, highlighted = friend.isCloseFriend) },
                     headlineContent = { Text(friend.name) },
                     supportingContent = if (friend.id in state.mentioned) {
                         { Text(stringResource(Res.string.share_mentioned), color = MaterialTheme.colorScheme.primary) }
@@ -227,7 +227,7 @@ private fun Composer(friend: Friend, state: ShareUiState, actions: ShareActions,
     Column(modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FriendAvatar(friend.name, friend.initials, size = 44.dp)
+            FriendAvatar(friend, size = 44.dp)
             Spacer(Modifier.width(12.dp))
             Text(friend.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             TextButton(onClick = actions.onChangeFriend) { Text(stringResource(Res.string.share_change)) }

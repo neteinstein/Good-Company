@@ -196,7 +196,7 @@ fun CatchUpStoryContent(
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
             Segments(state.slideCount, state.index, if (holds) 1f else progress.value)
             Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                FriendAvatar(friend.name, friend.initials, size = 36.dp)
+                FriendAvatar(friend, size = 36.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     friend.name,
@@ -277,7 +277,7 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
     val firstName = friend.name.substringBefore(' ')
     when (slide) {
         is StorySlide.Intro -> {
-            Box(Modifier.align(Alignment.CenterHorizontally)) { FriendAvatar(friend.name, friend.initials, size = 128.dp, highlighted = true) }
+            Box(Modifier.align(Alignment.CenterHorizontally)) { FriendAvatar(friend, size = 128.dp, highlighted = true) }
             Spacer(Modifier.height(8.dp))
             Kicker(stringResource(Res.string.story_kicker))
             Headline(friend.name)
@@ -412,7 +412,7 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
             }
         }
         is StorySlide.Outro -> {
-            Box(Modifier.align(Alignment.CenterHorizontally)) { FriendAvatar(friend.name, friend.initials, size = 96.dp, highlighted = true) }
+            Box(Modifier.align(Alignment.CenterHorizontally)) { FriendAvatar(friend, size = 96.dp, highlighted = true) }
             Headline(stringResource(Res.string.story_outro_title, firstName))
             if (slide.askAbout.isEmpty()) {
                 Body(stringResource(Res.string.story_outro_empty))

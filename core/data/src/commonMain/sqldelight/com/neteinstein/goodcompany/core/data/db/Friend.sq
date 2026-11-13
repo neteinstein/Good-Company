@@ -135,6 +135,13 @@ CREATE TABLE feed_item (
     FOREIGN KEY (friend_id, feed_url) REFERENCES feed(friend_id, url) ON DELETE CASCADE
 );
 
+-- The contact photo (issue #15): one small thumbnail per friend, base64 TEXT (not a BLOB, which the web worker would
+-- hand back as a typed array). Its own table so the friend row stays small.
+CREATE TABLE friend_photo (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);
+
 -- Reads: every row of every table, ordered; FriendMapper assembles the domain aggregates.
 
 allFriends:
@@ -169,6 +176,9 @@ SELECT * FROM feed ORDER BY friend_id, position;
 
 allFeedItems:
 SELECT * FROM feed_item ORDER BY friend_id, feed_url, position;
+
+allPhotos:
+SELECT * FROM friend_photo;
 
 ids:
 SELECT id FROM friend;
@@ -220,6 +230,7 @@ deleteChildren {
     DELETE FROM life_update WHERE friend_id = :friendId;
     DELETE FROM feed_item WHERE friend_id = :friendId;
     DELETE FROM feed WHERE friend_id = :friendId;
+    DELETE FROM friend_photo WHERE friend_id = :friendId;
 }
 
 insertPhone:
@@ -251,3 +262,6 @@ INSERT OR REPLACE INTO feed VALUES ?;
 
 insertFeedItem:
 INSERT OR REPLACE INTO feed_item VALUES ?;
+
+insertPhoto:
+INSERT OR REPLACE INTO friend_photo VALUES ?;

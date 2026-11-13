@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
@@ -146,6 +147,7 @@ abstract class RepositoryContract {
                 items = listOf(FeedItem("i1", "Hello", "https://ana.example/hello", at(2026, 2, 28)), FeedItem("i2", "Draft")),
             ),
         ),
+        photo = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 1, 2, 3)),
     )
 
     // --- Friends ---
@@ -199,6 +201,29 @@ abstract class RepositoryContract {
         assertEquals("Ana", synced.name)
         assertEquals(listOf("912345678"), synced.phoneNumbers)
         assertEquals(listOf("jazz"), synced.likes)
+    }
+
+    @Test
+    fun contactPhotos_followTheContact_butAContactWithoutOneNeverClearsIt() = runTest {
+        val first = ContactPhoto.of(byteArrayOf(1, 2, 3))
+        val second = ContactPhoto.of(byteArrayOf(4, 5, 6))
+        val contacts = StubContacts(listOf(ContactRecord("1", "Ana", emptyList(), null, first)), importsNewContacts = false)
+        val repo = open(contacts).friends
+        repo.upsert(friend("contact-1") { copy(contactId = "1") })
+
+        repo.syncContacts()
+        assertEquals(first, open(contacts).friends.friends.first().single().photo)
+
+        contacts.records = listOf(ContactRecord("1", "Ana", emptyList(), null, second))
+        repo.syncContacts()
+        assertEquals(second, open(contacts).friends.friends.first().single().photo)
+
+        contacts.records = listOf(ContactRecord("1", "Ana", emptyList(), null, photo = null))
+        repo.syncContacts()
+        assertEquals(second, open(contacts).friends.friends.first().single().photo)
+
+        repo.upsert(repo.friends.first().single().copy(photo = null))
+        assertNull(open(contacts).friends.friends.first().single().photo)
     }
 
     // --- Contact write-back ---

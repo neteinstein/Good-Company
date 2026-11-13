@@ -13,7 +13,9 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
+import com.neteinstein.goodcompany.core.domain.repository.photoOf
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.first
@@ -146,6 +148,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                         contactId = r.contactId,
                         phoneNumbers = r.phoneNumbers.distinct(),
                         birthday = r.birthday,
+                        photo = r.photo,
                         isCloseFriend = true,
                         circle = Circle.CLOSE,
                     ),
@@ -156,6 +159,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     contactId = match.contactId ?: r.contactId,
                     phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinct(),
                     birthday = match.birthday ?: r.birthday,
+                    photo = r.photo ?: match.photo,
                     isCloseFriend = true,
                     circle = match.circle ?: Circle.CLOSE,
                     isOrphaned = false,
@@ -174,10 +178,14 @@ data class ContactsFileImportResult(val added: Int, val updated: Int, val skippe
 
 /**
  * Imports a .vcf export (Google Contacts, iCloud, Android, Outlook). Matches existing friends by name or phone
- * and only fills gaps (phones, birthday); new people become manual friends (not tied to the device address
+ * and only fills gaps (phones, birthday, photo); new people become manual friends (not tied to the device address
  * book, so a later contacts sync never removes them). This is the address-book path for the web build.
  */
-class ImportContactsFileUseCase(private val friends: FriendRepository, private val ids: IdGenerator) {
+class ImportContactsFileUseCase(
+    private val friends: FriendRepository,
+    private val ids: IdGenerator,
+    private val photos: PhotoShrinker = PhotoShrinker.None,
+) {
     suspend operator fun invoke(raw: String): ContactsFileImportResult {
         val records = VCardParser.parse(raw)
         var added = 0
@@ -188,13 +196,15 @@ class ImportContactsFileUseCase(private val friends: FriendRepository, private v
             val phoneKeys = r.phoneNumbers.mapNotNull(::phoneKey).toSet()
             val match = current.firstOrNull { it.name.equals(r.name, ignoreCase = true) }
                 ?: current.firstOrNull { f -> f.phoneNumbers.mapNotNull(::phoneKey).any { it in phoneKeys } }
+            val photo = if (match?.photo == null) photos.photoOf(r.photo) else null
             if (match == null) {
-                friends.upsert(Friend(FriendId("vcf-${ids.next()}"), r.name, phoneNumbers = r.phoneNumbers, birthday = r.birthday))
+                friends.upsert(Friend(FriendId("vcf-${ids.next()}"), r.name, phoneNumbers = r.phoneNumbers, birthday = r.birthday, photo = photo))
                 added++
             } else {
                 val merged = match.copy(
                     phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinctBy { phoneKey(it) ?: it },
                     birthday = match.birthday ?: r.birthday,
+                    photo = match.photo ?: photo,
                 )
                 if (merged != match) {
                     friends.upsert(merged)

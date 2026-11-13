@@ -280,6 +280,16 @@ Seen in practice:
     persistence smoke test to the console (open count must go up across reloads). Booleans: SQLite stores them as
     0/1 and the worker returns numbers, while the web driver's `getBoolean` expects a JS boolean, so store flags as
     `INTEGER` and convert in the mappers (or prove a `Boolean` column works on the web before relying on it).
+25. **Contact photos (issue #15).** `Friend.photo` is a `ContactPhoto` (base64 thumbnail, at most `ContactPhoto.MAX_BYTES`),
+    stored in its own `friend_photo` table and carried in backups. It is contact-owned like the birthday: a sync or a re-pick
+    replaces it, a contact without one never clears it (`ContactMerger`), and `.vcf` imports only fill a missing one.
+    Sources: Android `AndroidContactsSource` (the `Photo.PHOTO` thumbnail of `Contacts.PHOTO_ID`) and both Android pickers
+    (best effort through the picker's grant; the Android 17 picker isn't asked for the photo field, so it never turns into
+    a field chooser); iOS `CNContactThumbnailImageDataKey` (check `isKeyAvailable` first: an unfetched key is an Obj-C
+    exception); `VCardParser` reads inline `PHOTO`, never links. Larger pictures go through the `PhotoShrinker` port
+    (`createPhotoShrinker()` in `:core:ui`: Android graphics, Skia on iOS/web) to `MAX_SIDE_PX`. Render with
+    `FriendAvatar(friend)` / `StackedAvatars(friends)`. Widgets show the catch-up friend's photo (`WidgetSnapshot.CatchUp.photo`
+    on iOS) only when not private. The contact write-back never writes photos.
 
 ## Skills
 

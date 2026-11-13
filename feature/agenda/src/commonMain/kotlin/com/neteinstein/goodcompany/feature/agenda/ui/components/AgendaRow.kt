@@ -254,12 +254,12 @@ fun AgendaRow(
                 }
             }
             when {
-                spec.friend != null -> FriendAvatar(spec.friend.name, spec.friend.initials, size = 36.dp)
-                item is AgendaItem.GroupOverdue -> StackedAvatars(item.members.map { it.name to it.initials }, size = 26.dp, max = 3)
+                spec.friend != null -> FriendAvatar(spec.friend, size = 36.dp)
+                item is AgendaItem.GroupOverdue -> StackedAvatars(item.members, size = 26.dp, max = 3)
                 item is AgendaItem.PlanUpcoming && item.friends.size > 1 ->
-                    StackedAvatars(item.friends.map { it.name to it.initials }, size = 26.dp, max = 3)
+                    StackedAvatars(item.friends, size = 26.dp, max = 3)
                 item is AgendaItem.PlanToConfirm && item.friends.size > 1 ->
-                    StackedAvatars(item.friends.map { it.name to it.initials }, size = 26.dp, max = 3)
+                    StackedAvatars(item.friends, size = 26.dp, max = 3)
             }
             Spacer(Modifier.width(12.dp))
         }

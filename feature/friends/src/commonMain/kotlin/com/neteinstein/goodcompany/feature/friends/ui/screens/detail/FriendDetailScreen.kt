@@ -730,7 +730,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            if (others.isNotEmpty()) StackedAvatars(others.map { it.name to it.initials }, size = 28.dp, max = 3)
+                            if (others.isNotEmpty()) StackedAvatars(others, size = 28.dp, max = 3)
                         }
                     }
                 }
@@ -1312,7 +1312,7 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
                 }
             }
-            FriendAvatar(f.name, f.initials, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+            FriendAvatar(f, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
             Spacer(Modifier.height(12.dp))
             Text(
                 f.name,

@@ -13,7 +13,7 @@ value class FriendId(val value: String)
  * A person in your circle. Seeded from the device address book ([contactId] set) or created
  * manually in the app ([contactId] null — the only option on the web).
  *
- * Contact-owned fields (name, phones, birthday) are refreshed on every contacts sync; everything
+ * Contact-owned fields (name, phones, birthday, photo) are refreshed on every contacts sync; everything
  * else is app-owned and never overwritten by a sync.
  */
 @Serializable
@@ -55,6 +55,8 @@ data class Friend(
     val likesAddedAt: Map<String, Instant> = emptyMap(),
     /** Blogs / Substack / Letterboxd feeds you follow for them (RSS or Atom), with their latest posts. */
     val feeds: List<FriendFeed> = emptyList(),
+    /** Their contact photo (a thumbnail). A contact without one never clears it. */
+    val photo: ContactPhoto? = null,
 ) {
     val initials: String
         get() = name.split(' ', '-')

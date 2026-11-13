@@ -70,7 +70,7 @@ fun FriendRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box {
-            FriendAvatar(f.name, f.initials, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+            FriendAvatar(f, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
             if (f.isCloseFriend && showWarmth) {
                 val warmth = stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level))
                 WarmthDot(summary.warmth.level, Modifier.align(Alignment.BottomEnd).semantics { contentDescription = warmth }, size = 12.dp)

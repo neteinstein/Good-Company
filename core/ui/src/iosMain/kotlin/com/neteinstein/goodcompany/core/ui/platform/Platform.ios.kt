@@ -7,15 +7,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactStore
+import platform.Contacts.CNContactThumbnailImageDataKey
 import platform.Contacts.CNEntityType
 import platform.Contacts.CNLabeledValue
 import platform.Contacts.CNPhoneNumber
@@ -57,6 +61,7 @@ import platform.UserNotifications.UNAuthorizationStatusEphemeral
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
 import platform.darwin.NSObject
+import platform.posix.memcpy
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -208,8 +213,21 @@ private fun CNContact.toRecord(): ContactRecord? = runCatching {
     } else {
         null
     }
-    ContactRecord(identifier, name, phones, birthday)
+    ContactRecord(identifier, name, phones, birthday, thumbnail())
 }.getOrNull()
+
+/** The picked contact's thumbnail. The picker hands over what it showed, so check the key before reading it. */
+@OptIn(ExperimentalForeignApi::class)
+private fun CNContact.thumbnail(): ContactPhoto? {
+    // Reading a key that wasn't fetched raises an Objective-C exception, which runCatching can't catch.
+    if (!isKeyAvailable(CNContactThumbnailImageDataKey)) return null
+    val data = thumbnailImageData ?: return null
+    val size = data.length.toInt()
+    if (size == 0 || size > ContactPhoto.MAX_BYTES) return null
+    val bytes = ByteArray(size)
+    bytes.usePinned { memcpy(it.addressOf(0), data.bytes, data.length) }
+    return ContactPhoto.of(bytes)
+}
 
 @Composable
 actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {

@@ -1,0 +1,6 @@
+-- Version 2 → 3 (issue #15): friends' contact photos.
+
+CREATE TABLE friend_photo (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);

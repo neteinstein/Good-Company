@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.ui.platform
 import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -36,6 +37,7 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
 import kotlinx.datetime.DateTimeUnit
@@ -208,16 +210,26 @@ private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> =
         val name = c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
         val mimeType = c.getColumnIndex(ContactsContract.Data.MIMETYPE)
         val number = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val photo = c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO)
         while (c.moveToNext()) {
-            val isPhone = c.stringOrNull(mimeType) == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+            val type = c.stringOrNull(mimeType)
+            val isPhoto = type == ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE && photo >= 0 && !c.isNull(photo)
             rows += PickedContactRow(
                 contactKey = c.stringOrNull(contactId) ?: c.stringOrNull(lookupKey),
                 name = c.stringOrNull(name),
-                number = if (isPhone) c.stringOrNull(number) else null,
+                number = if (type == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) c.stringOrNull(number) else null,
+                photo = if (isPhoto) runCatching { ContactPhoto.of(c.getBlob(photo)) }.getOrNull() else null,
             )
         }
     }
-    groupPickedContactRows(rows)
+    groupPickedContactRows(rows).map { record ->
+        val id = record.contactId.toLongOrNull()
+        if (record.photo != null || id == null) {
+            record
+        } else {
+            record.copy(photo = readPickedPhoto(context, ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id)))
+        }
+    }
 }.getOrDefault(emptyList())
 
 private fun Cursor.stringOrNull(index: Int): String? = if (index >= 0 && !isNull(index)) getString(index) else null
@@ -238,7 +250,26 @@ private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runC
             name = name,
             phoneNumbers = readPickedNumbers(context, uri),
             birthday = null,
+            photo = readPickedPhoto(context, uri),
         )
+    }
+}.getOrNull()
+
+/**
+ * Best effort, like the numbers: the contact's thumbnail when the picker's grant (or, in the sideload build,
+ * READ_CONTACTS) lets us read it. Otherwise the person is added without one, and the sideload sync fills it in later.
+ */
+private fun readPickedPhoto(context: Context, contactUri: Uri): ContactPhoto? = runCatching {
+    ContactsContract.Contacts.openContactPhotoInputStream(context.contentResolver, contactUri, false)?.use { input ->
+        // Thumbnails are a few KB; stop reading past the limit instead of loading something huge.
+        val buffer = ByteArray(ContactPhoto.MAX_BYTES + 1)
+        var read = 0
+        while (read < buffer.size) {
+            val n = input.read(buffer, read, buffer.size - read)
+            if (n < 0) break
+            read += n
+        }
+        ContactPhoto.of(buffer.copyOf(read))
     }
 }.getOrNull()
 
