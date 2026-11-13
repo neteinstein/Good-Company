@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
@@ -58,6 +59,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
@@ -109,6 +111,9 @@ class TestGraph(
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
     val importChat = ImportChatUseCase(friendRepo, interactionRepo, clock)
     val importContactsFile = ImportContactsFileUseCase(friendRepo, ids)
+
+    /** Keeps small pictures as they are and can't shrink large ones, like the real one with an unreadable image. */
+    val setFriendPhoto = SetFriendPhotoUseCase(friendRepo, PhotoShrinker.None)
     val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCircle = SetCircleUseCase(friendRepo)
     val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)

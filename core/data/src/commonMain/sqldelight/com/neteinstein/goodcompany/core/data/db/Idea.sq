@@ -1,0 +1,65 @@
+-- AI suggestions and the friends each is for. Only the newest ideas are kept (see IdeaRepository's limit).
+
+CREATE TABLE idea (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('EVENT', 'NEWS', 'TALKING_POINT')),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    url TEXT,
+    when_text TEXT,
+    created_at INTEGER NOT NULL,
+    dismissed INTEGER NOT NULL CHECK (dismissed IN (0, 1)),
+    proposed_at INTEGER
+);
+
+CREATE TABLE idea_friend (
+    idea_id TEXT NOT NULL REFERENCES idea(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (idea_id, friend_id)
+);
+
+CREATE INDEX idea_friend_friend_id ON idea_friend(friend_id);
+
+allIdeas:
+SELECT * FROM idea ORDER BY position;
+
+allIdeaFriends:
+SELECT * FROM idea_friend ORDER BY idea_id, position;
+
+nextPosition:
+SELECT coalesce(max(position), -1) + 1 FROM idea;
+
+-- A re-added idea keeps its place in the list (the old JSON store appended a duplicate instead).
+upsert:
+INSERT INTO idea (id, position, kind, title, description, url, when_text, created_at, dismissed, proposed_at) VALUES ?
+ON CONFLICT (id) DO UPDATE SET
+    kind = excluded.kind,
+    title = excluded.title,
+    description = excluded.description,
+    url = excluded.url,
+    when_text = excluded.when_text,
+    created_at = excluded.created_at,
+    dismissed = excluded.dismissed,
+    proposed_at = excluded.proposed_at;
+
+deleteFriends:
+DELETE FROM idea_friend WHERE idea_id = ?;
+
+insertFriend:
+INSERT OR IGNORE INTO idea_friend (idea_id, friend_id, position)
+SELECT :ideaId, :friendId, :position WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+dismiss:
+UPDATE idea SET dismissed = 1 WHERE id = ?;
+
+markProposed:
+UPDATE idea SET proposed_at = :at WHERE id = :id;
+
+-- Keeps the :keep most recently added ideas.
+trim:
+DELETE FROM idea WHERE id IN (SELECT id FROM idea ORDER BY position DESC LIMIT -1 OFFSET :keep);
+
+deleteAll:
+DELETE FROM idea;

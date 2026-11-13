@@ -92,6 +92,7 @@
     <string name="detail_back">Retour</string>
     <string name="detail_remove_friend">Retirer l’ami</string>
     <string name="detail_add_birthday">Ajouter l’anniversaire</string>
+    <string name="detail_add_photo">Ajouter une photo</string>
     <string name="detail_birthday_turns">%1$s · fête ses %2$d ans</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Vu %1$s</string>
@@ -320,5 +321,6 @@
     <string name="feeds_to_news">Ajouter à Quoi de neuf</string>
     <string name="feeds_no_posts">Aucun article pour l’instant</string>
     <string name="msg_added_to_news">Ajouté à Quoi de neuf</string>
+    <string name="msg_photo_unreadable">Impossible de lire cette image. Essayez un JPEG ou un PNG.</string>
     <string name="story_fresh_post">Nouvel article</string>
 </resources>

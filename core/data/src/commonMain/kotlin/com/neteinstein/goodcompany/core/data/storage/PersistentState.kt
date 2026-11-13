@@ -13,10 +13,8 @@ import kotlinx.serialization.json.Json
  * A JSON document persisted in a key-value [Settings] store (SharedPreferences / NSUserDefaults /
  * localStorage) and exposed as a hot [StateFlow].
  *
- * Why not Room/SQLDelight: the app must also run on wasmJs, where Room 2.x has no target and
- * SQLDelight needs an async web-worker driver. The data set (hundreds of friends) is small, so
- * whole-document JSON is simple, fast enough, and identical on every platform. Swap the
- * implementation behind the repositories if that ever stops being true.
+ * App data moved to SQLite (issue #14). This now holds only [DeviceSettings][com.neteinstein.goodcompany.core.data.repository.DeviceSettings]
+ * (needed before the database opens) and backs the JSON reference repositories that the SQLite ones are tested against.
  *
  * Corrupt or schema-incompatible data falls back to [default] rather than crashing the app.
  */
@@ -56,7 +54,7 @@ class PersistentState<T>(
     }
 }
 
-/** Storage keys. Bump the suffix when making an incompatible schema change. */
+/** The JSON keys app data used to live under. Read only by `LegacyJsonImport` (and the reference repositories). */
 internal object Keys {
     const val FRIENDS = "friends.v1"
     const val HANGOUTS = "hangouts.v1"

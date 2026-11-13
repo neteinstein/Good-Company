@@ -199,7 +199,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                     r.topFriends.forEachIndexed { i, (friend, count) ->
                         Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text("${i + 1}", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.width(28.dp))
-                            FriendAvatar(friend.name, friend.initials, size = if (i == 0) 52.dp else 40.dp)
+                            FriendAvatar(friend, size = if (i == 0) 52.dp else 40.dp)
                             Spacer(Modifier.width(12.dp))
                             Text(friend.name, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
                             Text(pluralStringResource(Res.plurals.times, count, count), color = Color.White.copy(alpha = 0.9f))
@@ -245,7 +245,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                     )
                     h.place?.label?.let { Fact("📍", it) }
                     Spacer(Modifier.height(8.dp))
-                    StackedAvatars(r.biggestHangoutFriends.map { it.name to it.initials }, size = 40.dp, max = 8)
+                    StackedAvatars(r.biggestHangoutFriends, size = 40.dp, max = 8)
                 }
             }
         }
@@ -256,7 +256,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                         Text(stringResource(Res.string.new_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                         Text(pluralStringResource(Res.plurals.new_body, r.newFaces.size, r.newFaces.size), color = Color.White.copy(alpha = 0.9f))
                         Spacer(Modifier.height(8.dp))
-                        StackedAvatars(r.newFaces.map { it.name to it.initials }, size = 40.dp, max = 8)
+                        StackedAvatars(r.newFaces, size = 40.dp, max = 8)
                     }
                     if (r.remindersDone > 0) {
                         Spacer(Modifier.height(8.dp))

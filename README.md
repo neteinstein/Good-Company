@@ -217,7 +217,7 @@ Tests live in `commonTest` and run on the JVM. See **[AGENTS.md](AGENTS.md)** fo
 | UI | Compose Multiplatform 1.12 · Material 3 · Navigation (type-safe) |
 | Logic | Kotlin 2.4 · Coroutines/StateFlow · kotlinx-datetime/serialization |
 | DI / Net | Koin 4.2 · Ktor 3.6 |
-| Storage | JSON documents in multiplatform-settings (SharedPreferences · NSUserDefaults · localStorage) |
+| Storage | SQLite via SQLDelight 2 (Android · iOS · OPFS on the web); device settings in multiplatform-settings |
 | AI | Claude Messages API with web search (user-supplied key) |
 | Quality | kotlin.test · Kover · ktlint (Spotless) · Android Lint · R8 |
 

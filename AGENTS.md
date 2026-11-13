@@ -26,7 +26,7 @@ canonical; the "Decisions" table records later owner decisions (e.g. *never read
 | Architecture | Clean architecture (domain / data / ui) · MVVM · Coroutines + `StateFlow` |
 | DI | Koin 4.2 (`koin-compose-viewmodel`) |
 | Navigation | JetBrains `navigation-compose` 2.10, type-safe `@Serializable` routes, shared-element transitions |
-| Persistence | JSON documents (kotlinx.serialization) in `multiplatform-settings` (SharedPreferences / NSUserDefaults / localStorage) |
+| Persistence | SQLite through SQLDelight 2 (async drivers; OPFS worker on the web); device settings as JSON in `multiplatform-settings` |
 | Networking / AI | Ktor 3 → Claude Messages API (raw HTTP; the official SDK is JVM-only), user-supplied API key |
 | Tests | `kotlin.test` + `kotlinx-coroutines-test` in `commonTest`, run on the JVM; Kover for coverage |
 | Quality | Spotless + ktlint, Android Lint, R8 (release) |
@@ -190,10 +190,13 @@ Seen in practice:
    permissions exist only for the write-back (see gotcha 22).
    CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
-9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
-   `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
-   or changing types, needs a new key suffix (`.v2`) plus a migration. Corrupt data falls back to defaults instead of crashing.
-   A new store must also be added to `BackupRepositoryImpl` and the domain `Backup` (export / restore).
+9. **Persisted data.** App data lives in SQLite (gotcha 24); the `.sq` files are the schema. Adding a nullable column
+   or one with a default is a new numbered `.sqm` migration. A new table also needs its read/write in `db/*Tables.kt`,
+   its name in the matching `*_TABLES` list (observers), and a place in `SqlBackupRepository` / `replaceAllData` and the
+   domain `Backup` (export / restore). Device settings that must be readable before the database opens (theme, app lock,
+   onboarding, API key) are `DeviceSettings`, JSON under `device_settings.v1`; the rest of `AppSettings` is the
+   `user_preferences` row. The old `*.v1` JSON keys in `storage/PersistentState.kt` (`Keys`) are only read by the
+   one-off `LegacyJsonImport`.
 10. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
    `anthropic-version: 2026-10-21`, the `web_search_20260209` server tool, `fallbacks: "default"`
    (beta `server-side-fallback-2026-07-01`) and `anthropic-dangerous-direct-browser-access: true` (needed for the
@@ -257,6 +260,38 @@ Seen in practice:
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
+24. **SQLite (SQLDelight 2, issue #14).** `:core:data` has `GoodCompanyDatabase`
+    (`src/commonMain/sqldelight/`, `generateAsync = true`, so every query is `suspend`), opened lazily through
+    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. The repositories are
+    `repository/SqlRepositories.kt` (mappers in `db/*Tables.kt`). On first open `LegacyJsonImport` moves the old JSON
+    documents in, in one transaction with a `db_meta` mark, then deletes the JSON (owner decision 2026-11-13), but only
+    when the database is persistent; unreadable keys and a failed import keep the JSON. The JSON `*RepositoryImpl`
+    classes remain only as the reference the SQL ones are checked against: both must pass `RepositoryContract`
+    (commonTest; the SQL subclass is in androidHostTest).
+    Go through `AppDatabase.access`/`transaction`/`observe`, never `get()` directly: the web driver can't run two
+    statements at once. Schema changes go in numbered `.sqm` migrations; after one, run
+    `generate<SourceSet>GoodCompanyDatabaseSchema` and commit the new `databases/<n>.db` (`verifySqlDelightMigration`
+    checks them). iOS: `ComposeApp.framework` is static, so the app target links `-lsqlite3` itself (`OTHER_LDFLAGS`).
+    Web: our own worker (`core/data/src/wasmJsMain/sqlite-worker`, official `@sqlite.org/sqlite-wasm`, OPFS
+    "SAH pool" VFS, no COOP/COEP needed) replaces SQLDelight's in-memory one. It's an npm `file:` package, so the
+    build uses a copy taken at install time: after editing it, bump `version` in its `package.json` (or rerun
+    `kotlinNpmInstall`), or the bundle keeps the old worker; the database works in one tab at a time,
+    and a second tab falls back to memory (`AppDatabase.isPersistent()` is false; the app shows a "won’t be saved" banner). `index.html?dbcheck` prints a
+    persistence smoke test to the console (open count must go up across reloads). Booleans: SQLite stores them as
+    0/1 and the worker returns numbers, while the web driver's `getBoolean` expects a JS boolean, so store flags as
+    `INTEGER` and convert in the mappers (or prove a `Boolean` column works on the web before relying on it).
+25. **Contact photos (issue #15).** `Friend.photo` is a `ContactPhoto` (base64 thumbnail, at most `ContactPhoto.MAX_BYTES`),
+    stored in its own `friend_photo` table and carried in backups. It is contact-owned like the birthday: a sync or a re-pick
+    replaces it, a contact without one never clears it (`ContactMerger`), and `.vcf` imports only fill a missing one.
+    Sources: Android `AndroidContactsSource` (the `Photo.PHOTO` thumbnail of `Contacts.PHOTO_ID`) and both Android pickers
+    (best effort through the picker's grant; the Android 17 picker isn't asked for the photo field, so it never turns into
+    a field chooser); iOS `CNContactThumbnailImageDataKey` (check `isKeyAvailable` first: an unfetched key is an Obj-C
+    exception); `VCardParser` reads inline `PHOTO`, never links. Larger pictures go through the `PhotoShrinker` port
+    (`createPhotoShrinker()` in `:core:ui`: Android graphics, Skia on iOS/web) to `MAX_SIDE_PX`. Render with
+    `FriendAvatar(friend)` / `StackedAvatars(friends)`. Widgets show the catch-up friend's photo (`WidgetSnapshot.CatchUp.photo`
+    on iOS) only when not private. The contact write-back never writes photos. A friend without a photo can get one from the
+    gallery (`rememberImagePicker` → `SetFriendPhotoUseCase`): each picker returns an upright JPEG of at most 512 px (UIKit
+    redraw on iOS, EXIF rotation on Android, `createImageBitmap` on the web), since the Skia decoder ignores EXIF.
 
 ## Skills
 

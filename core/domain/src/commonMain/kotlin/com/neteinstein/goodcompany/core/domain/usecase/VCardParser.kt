@@ -1,16 +1,27 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import kotlin.io.encoding.Base64
 
 /**
  * Minimal, forgiving vCard 2.1 / 3.0 / 4.0 reader for contact exports (Google Contacts, iCloud, Android,
- * Outlook). Extracts only what the app uses: name, phone numbers and birthday.
+ * Outlook). Extracts only what the app uses: name, phone numbers, birthday and an inline photo.
  *
  * Handles line folding, `item1.` group prefixes, `QUOTED-PRINTABLE` + `CHARSET=UTF-8` (Android 2.1 exports),
  * backslash escapes, and BDAY as `19900504`, `1990-05-04`, `--0504`, `--05-04` or with a time part.
+ * PHOTO is read when it's inline: `ENCODING=BASE64` / `ENCODING=b` (2.1 / 3.0) or a `data:` URI (4.0). Photos that
+ * are only a link are skipped (the app never fetches them).
  */
 object VCardParser {
-    data class Card(val name: String, val phoneNumbers: List<String>, val birthday: Birthday?)
+    class Card(val name: String, val phoneNumbers: List<String>, val birthday: Birthday?, val photo: ByteArray? = null) {
+        override fun equals(other: Any?): Boolean = other is Card && name == other.name && phoneNumbers == other.phoneNumbers &&
+            birthday == other.birthday && (photo?.contentEquals(other.photo) ?: (other.photo == null))
+
+        override fun hashCode(): Int =
+            ((name.hashCode() * 31 + phoneNumbers.hashCode()) * 31 + birthday.hashCode()) * 31 + (photo?.contentHashCode() ?: 0)
+
+        override fun toString(): String = "Card(name=$name, phoneNumbers=$phoneNumbers, birthday=$birthday, photo=${photo?.size} bytes)"
+    }
 
     fun parse(raw: String): List<Card> {
         val lines = unfold(raw.replace("\r\n", "\n").replace('\r', '\n'))
@@ -20,6 +31,7 @@ object VCardParser {
         var n: String? = null
         var phones = mutableListOf<String>()
         var bday: Birthday? = null
+        var photo: ByteArray? = null
         for (line in lines) {
             val colon = line.indexOf(':')
             if (colon <= 0) continue
@@ -35,16 +47,18 @@ object VCardParser {
                     n = null
                     phones = mutableListOf()
                     bday = null
+                    photo = null
                 }
                 "END" -> if (inCard && value.trim().equals("VCARD", ignoreCase = true)) {
                     inCard = false
                     val name = fn?.takeIf { it.isNotBlank() } ?: n?.let(::nameFromN)
-                    if (!name.isNullOrBlank()) cards += Card(name.trim(), phones.distinct(), bday)
+                    if (!name.isNullOrBlank()) cards += Card(name.trim(), phones.distinct(), bday, photo)
                 }
                 "FN" -> if (inCard) fn = unescape(decoded)
                 "N" -> if (inCard) n = decoded
                 "TEL" -> if (inCard) unescape(decoded).removePrefix("tel:").trim().takeIf { it.any(Char::isDigit) }?.let(phones::add)
                 "BDAY" -> if (inCard) bday = parseBirthday(decoded.trim())
+                "PHOTO" -> if (inCard && photo == null) photo = parsePhoto(value, params.drop(1))
             }
         }
         return cards
@@ -98,6 +112,25 @@ object VCardParser {
         val given = parts.getOrNull(1).orEmpty()
         val family = parts.getOrNull(0).orEmpty()
         return listOf(given, family).filter { it.isNotBlank() }.joinToString(" ").ifBlank { null }
+    }
+
+    private val base64 = Base64.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
+
+    /** The inline image of a PHOTO line, or null for a link or anything that isn't valid base64. */
+    private fun parsePhoto(value: String, params: List<String>): ByteArray? {
+        val inline = params.any {
+            val p = it.uppercase()
+            p == "ENCODING=BASE64" || p == "ENCODING=B" || p == "BASE64"
+        }
+        val data = when {
+            value.trimStart().startsWith("data:", ignoreCase = true) ->
+                value.substringAfter(',', "").takeIf { value.substringBefore(',').contains(";base64", ignoreCase = true) }
+            inline -> value
+            else -> null
+        } ?: return null
+        val clean = data.filterNot(Char::isWhitespace)
+        if (clean.isEmpty()) return null
+        return runCatching { base64.decode(clean) }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
 
     private val full = Regex("""^(\d{4})-?(\d{2})-?(\d{2})""")

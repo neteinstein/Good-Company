@@ -274,7 +274,7 @@ fun AgendaContent(
                                 )
                             }
                         }
-                        if (people.isNotEmpty()) StackedAvatars(people.map { it.name to it.initials }, size = 28.dp, max = 3)
+                        if (people.isNotEmpty()) StackedAvatars(people, size = 28.dp, max = 3)
                         IconButton(onClick = { onDeleteReminder(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.reminder_delete)) }
                     }
                 }

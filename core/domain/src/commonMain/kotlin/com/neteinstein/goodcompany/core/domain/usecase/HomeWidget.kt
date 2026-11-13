@@ -10,7 +10,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * What the home-screen widget shows: the next thing coming up (birthday, big day, plan, reminder) and the friend
- * most due a catch-up. [isPrivate] hides names when the user asked for privacy (app lock or private notifications).
+ * most due a catch-up. [isPrivate] hides names and photos when the user asked for privacy (app lock or private
+ * notifications).
  */
 data class HomeWidgetSummary(
     val next: AgendaItem?,
@@ -76,8 +77,9 @@ data class WidgetSnapshot(
     @Serializable
     enum class Kind { BIRTHDAY, KID_BIRTHDAY, EVENT, PLAN, REMINDER }
 
+    /** [photo] is the friend's contact photo (base64), when they have one. */
     @Serializable
-    data class CatchUp(val friendId: String, val firstName: String)
+    data class CatchUp(val friendId: String, val firstName: String, val photo: String? = null)
 
     companion object {
         fun from(summary: HomeWidgetSummary): WidgetSnapshot {
@@ -93,7 +95,7 @@ data class WidgetSnapshot(
             }
             return WidgetSnapshot(
                 next = next,
-                catchUp = summary.catchUp?.let { CatchUp(it.friend.id.value, first(it.friend.name)) },
+                catchUp = summary.catchUp?.let { CatchUp(it.friend.id.value, first(it.friend.name), it.friend.photo?.base64) },
             )
         }
     }

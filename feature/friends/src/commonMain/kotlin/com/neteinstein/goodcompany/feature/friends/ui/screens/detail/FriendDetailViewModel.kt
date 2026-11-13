@@ -34,6 +34,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -92,6 +93,9 @@ sealed interface FriendDetailMessage {
     data object FeedError : FriendDetailMessage
 
     data object AddedToNews : FriendDetailMessage
+
+    /** The picked picture couldn't be read (or no picture came back). */
+    data object PhotoUnreadable : FriendDetailMessage
 }
 
 data class PlanEditing(val plan: Plan?)
@@ -160,6 +164,7 @@ class FriendDetailViewModel(
     private val cancelPlan: CancelPlanUseCase,
     private val restorePlan: RestorePlanUseCase,
     private val addFeed: AddFeedUseCase,
+    private val setPhoto: SetFriendPhotoUseCase,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -376,6 +381,16 @@ class FriendDetailViewModel(
                     { e -> it.copy(isDraftingWish = false, message = FriendDetailMessage.AiError(e)) },
                 )
             }
+        }
+    }
+
+    // --- Photo ------------------------------------------------------------------------------------------------------
+
+    /** A picture picked from the gallery for someone without a contact photo; null when the picker was cancelled. */
+    fun onPhotoPicked(image: ByteArray?) {
+        if (image == null) return
+        viewModelScope.launch {
+            if (!setPhoto(friendId, image)) say(FriendDetailMessage.PhotoUnreadable)
         }
     }
 

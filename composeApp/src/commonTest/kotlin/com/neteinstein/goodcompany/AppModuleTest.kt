@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.data.db.AppDatabase
+import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -46,6 +48,7 @@ class AppModuleTest {
         single<CommunicationLogSource> { CommunicationLogSource.None }
         single<LocationProvider> { FakeLocationProvider() }
         single<NotificationScheduler> { FakeNotificationScheduler() }
+        single<DatabaseDriverFactory> { DatabaseDriverFactory { error("The database isn't opened in this test") } }
     }
 
     @BeforeTest
@@ -64,6 +67,7 @@ class AppModuleTest {
             modules(appModule, platformFakes)
         }.koin
         assertNotNull(koin.get<AppViewModel>())
+        assertNotNull(koin.get<AppDatabase>())
         assertNotNull(koin.get<FriendsViewModel>())
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<HangoutsViewModel>())

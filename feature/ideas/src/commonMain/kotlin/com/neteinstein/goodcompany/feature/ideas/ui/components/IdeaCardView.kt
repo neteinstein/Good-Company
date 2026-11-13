@@ -103,7 +103,7 @@ fun IdeaCardView(
                     Text(idea.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    StackedAvatars(card.friends.map { it.name to it.initials }, size = 30.dp)
+                    StackedAvatars(card.friends, size = 30.dp)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(card.friends.joinToString { it.name.substringBefore(' ') }, style = MaterialTheme.typography.labelLarge)

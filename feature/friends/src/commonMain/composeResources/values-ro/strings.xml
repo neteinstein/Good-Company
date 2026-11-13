@@ -96,6 +96,7 @@
     <string name="detail_back">Înapoi</string>
     <string name="detail_remove_friend">Elimină prietenul</string>
     <string name="detail_add_birthday">Adaugă ziua de naștere</string>
+    <string name="detail_add_photo">Adaugă o fotografie</string>
     <string name="detail_birthday_turns">%1$s · împlinește %2$d ani</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Văzut %1$s</string>
@@ -333,5 +334,6 @@
     <string name="feeds_to_news">Adaugă la Noutăți</string>
     <string name="feeds_no_posts">Încă nu sunt articole</string>
     <string name="msg_added_to_news">Adăugat la Noutăți</string>
+    <string name="msg_photo_unreadable">Imaginea nu a putut fi citită. Încearcă un JPEG sau PNG.</string>
     <string name="story_fresh_post">Articol nou</string>
 </resources>

@@ -1,0 +1,8 @@
+{
+  "name": "good-company-sqlite-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SQLDelight web worker that keeps Good Company's SQLite database in OPFS (see sqlite.worker.js).",
+  "type": "module",
+  "license": "UNLICENSED"
+}

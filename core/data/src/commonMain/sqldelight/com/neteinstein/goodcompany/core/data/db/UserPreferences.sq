@@ -1,0 +1,23 @@
+-- The user's preferences that travel with their data (backup, restore). One row at most (id = 1); no row means the
+-- defaults in AppSettings. Device-only settings (theme, app lock, onboarding, timestamps, the API key) are not here:
+-- they stay in key-value storage so they're available before the first screen.
+
+CREATE TABLE user_preferences (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    inner_circle_days INTEGER NOT NULL,
+    close_circle_days INTEGER NOT NULL,
+    good_friends_days INTEGER NOT NULL,
+    weekly_digest INTEGER NOT NULL CHECK (weekly_digest IN (0, 1)),
+    digest_day INTEGER NOT NULL CHECK (digest_day BETWEEN 1 AND 7),
+    reminder_hour INTEGER NOT NULL CHECK (reminder_hour BETWEEN 0 AND 23),
+    weekly_ideas_enabled INTEGER NOT NULL CHECK (weekly_ideas_enabled IN (0, 1)),
+    home_area TEXT NOT NULL,
+    show_warmth INTEGER NOT NULL CHECK (show_warmth IN (0, 1)),
+    private_notifications INTEGER NOT NULL CHECK (private_notifications IN (0, 1))
+);
+
+get:
+SELECT * FROM user_preferences WHERE id = 1;
+
+put:
+INSERT OR REPLACE INTO user_preferences VALUES ?;

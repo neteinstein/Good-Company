@@ -26,6 +26,7 @@ object ContactMerger {
                 name = contact.name.trim(),
                 phoneNumbers = contact.phoneNumbers.distinct(),
                 birthday = contact.birthday ?: current.birthday,
+                photo = contact.photo ?: current.photo,
                 isOrphaned = false,
             ) ?: Friend(
                 id = FriendId("contact-${contact.contactId}"),
@@ -33,6 +34,7 @@ object ContactMerger {
                 name = contact.name.trim(),
                 phoneNumbers = contact.phoneNumbers.distinct(),
                 birthday = contact.birthday,
+                photo = contact.photo,
             )
         }
         val vanished = existing.filter { it.contactId != null && it.contactId !in seen && it.hasAppData() }

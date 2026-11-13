@@ -103,6 +103,8 @@ data class HangoutsUiState(
     val recentlyDeleted: Hangout? = null,
     /** Increments on every check-in so the UI can celebrate. */
     val celebrate: Int = 0,
+    /** True until the stored data has been read once (so "no memories yet" isn't shown while loading). */
+    val isLoading: Boolean = true,
     val message: HangoutsMessage? = null,
     /** "Who's free for…?": friends per occasion (only occasions someone is tagged with). */
     val occasions: Map<Occasion, List<OccasionMatch>> = emptyMap(),
@@ -147,6 +149,7 @@ class HangoutsViewModel(
         val hangouts = all.map { it.hangout }
         val reviewYear = YearInReviewBuilder.defaultYear(today, hangouts, clock.timeZone)
         ui.copy(
+            isLoading = false,
             groups = groups,
             reviewYear = reviewYear.takeIf { y -> hangouts.any { it.at.toLocalDateTime(clock.timeZone).year == y } },
             stats = Relationships.monthStats(all.map { it.hangout }, today, clock.timeZone),

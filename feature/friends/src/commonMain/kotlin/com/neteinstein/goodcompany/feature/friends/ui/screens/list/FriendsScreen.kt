@@ -427,7 +427,8 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                     SortMenu(state.sort, actions.onSortChange)
                 }
             }
-            if (state.friends.isEmpty()) {
+            // Not while the first load is still running: the database answers after the first frame.
+            if (!state.isLoading && state.friends.isEmpty()) {
                 item(key = "nomatch") {
                     EmptyState(
                         icon = Icons.Rounded.Search,
