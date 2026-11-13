@@ -257,6 +257,18 @@ Seen in practice:
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
+24. **SQLite (SQLDelight 2, migration in progress, issue #14).** `:core:data` has `GoodCompanyDatabase`
+    (`src/commonMain/sqldelight/`, `generateAsync = true`, so every query is `suspend`), opened lazily through
+    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. App data still lives in `PersistentState`
+    until the repositories move over. Schema changes go in numbered `.sqm` migrations; after one, run
+    `generate<SourceSet>GoodCompanyDatabaseSchema` and commit the new `databases/<n>.db` (`verifySqlDelightMigration`
+    checks them). iOS: `ComposeApp.framework` is static, so the app target links `-lsqlite3` itself (`OTHER_LDFLAGS`).
+    Web: our own worker (`core/data/src/wasmJsMain/sqlite-worker`, official `@sqlite.org/sqlite-wasm`, OPFS
+    "SAH pool" VFS, no COOP/COEP needed) replaces SQLDelight's in-memory one; the database works in one tab at a time,
+    and a second tab falls back to memory (`AppDatabase.isPersistent()` is false). `index.html?dbcheck` prints a
+    persistence smoke test to the console (open count must go up across reloads). Booleans: SQLite stores them as
+    0/1 and the worker returns numbers, while the web driver's `getBoolean` expects a JS boolean, so store flags as
+    `INTEGER` and convert in the mappers (or prove a `Boolean` column works on the web before relying on it).
 
 ## Skills
 
