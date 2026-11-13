@@ -1,0 +1,55 @@
+-- Evidence of contact (check-ins, calls, WhatsApp) and imported chat lines kept as AI context. Both are deduplicated
+-- by their whole content (UNIQUE + INSERT OR IGNORE, like the old `distinct()`), trimmed by age, and go with the friend.
+
+CREATE TABLE interaction (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('CALL', 'WHATSAPP', 'MEETUP')),
+    at INTEGER NOT NULL,
+    UNIQUE (friend_id, type, at)
+);
+
+CREATE INDEX interaction_friend_at ON interaction(friend_id, at);
+
+CREATE INDEX interaction_at ON interaction(at);
+
+CREATE TABLE conversation_message (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    at INTEGER NOT NULL,
+    from_me INTEGER NOT NULL CHECK (from_me IN (0, 1)),
+    text TEXT NOT NULL,
+    UNIQUE (friend_id, at, from_me, text)
+);
+
+CREATE INDEX conversation_message_friend_at ON conversation_message(friend_id, at);
+
+allInteractions:
+SELECT * FROM interaction ORDER BY at, rowid;
+
+allMessages:
+SELECT * FROM conversation_message ORDER BY friend_id, at, rowid;
+
+insertInteraction:
+INSERT OR IGNORE INTO interaction (friend_id, type, at)
+SELECT :friendId, :type, :at WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+-- Keeps the newest :keep interactions.
+trimInteractions:
+DELETE FROM interaction WHERE rowid IN (
+    SELECT rowid FROM interaction ORDER BY at DESC, rowid DESC LIMIT -1 OFFSET :keep
+);
+
+insertMessage:
+INSERT OR IGNORE INTO conversation_message (friend_id, at, from_me, text)
+SELECT :friendId, :at, :fromMe, :text WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+-- Keeps the newest :keep chat lines of one friend.
+trimMessages:
+DELETE FROM conversation_message WHERE friend_id = :friendId AND rowid NOT IN (
+    SELECT rowid FROM conversation_message WHERE friend_id = :friendId ORDER BY at DESC, rowid DESC LIMIT :keep
+);
+
+deleteAllInteractions:
+DELETE FROM interaction;
+
+deleteAllMessages:
+DELETE FROM conversation_message;

@@ -259,8 +259,12 @@ Seen in practice:
     site installed as an app and can't receive images (no service worker yet).
 24. **SQLite (SQLDelight 2, migration in progress, issue #14).** `:core:data` has `GoodCompanyDatabase`
     (`src/commonMain/sqldelight/`, `generateAsync = true`, so every query is `suspend`), opened lazily through
-    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. App data still lives in `PersistentState`
-    until the repositories move over. Schema changes go in numbered `.sqm` migrations; after one, run
+    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. App data still lives in `PersistentState`:
+    the SQLite repositories (`repository/SqlRepositories.kt`, mappers in `db/*Tables.kt`) exist but aren't wired into
+    Koin until the one-off JSON → SQLite import lands. Both implementations must pass `RepositoryContract`
+    (commonTest; the SQL subclass is in androidHostTest), so a behaviour change goes into both, or into neither.
+    Go through `AppDatabase.access`/`transaction`/`observe`, never `get()` directly: the web driver can't run two
+    statements at once. Schema changes go in numbered `.sqm` migrations; after one, run
     `generate<SourceSet>GoodCompanyDatabaseSchema` and commit the new `databases/<n>.db` (`verifySqlDelightMigration`
     checks them). iOS: `ComposeApp.framework` is static, so the app target links `-lsqlite3` itself (`OTHER_LDFLAGS`).
     Web: our own worker (`core/data/src/wasmJsMain/sqlite-worker`, official `@sqlite.org/sqlite-wasm`, OPFS

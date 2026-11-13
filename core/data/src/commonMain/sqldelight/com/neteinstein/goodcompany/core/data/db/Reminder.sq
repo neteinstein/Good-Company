@@ -1,0 +1,49 @@
+-- "Remind me to book tickets for X to go with Y", and the friends each reminder is about.
+
+CREATE TABLE reminder (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    due_at INTEGER,
+    done INTEGER NOT NULL CHECK (done IN (0, 1)),
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE reminder_friend (
+    reminder_id TEXT NOT NULL REFERENCES reminder(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (reminder_id, friend_id)
+);
+
+CREATE INDEX reminder_friend_friend_id ON reminder_friend(friend_id);
+
+allReminders:
+SELECT * FROM reminder ORDER BY position;
+
+allReminderFriends:
+SELECT * FROM reminder_friend ORDER BY reminder_id, position;
+
+nextPosition:
+SELECT coalesce(max(position), -1) + 1 FROM reminder;
+
+upsert:
+INSERT INTO reminder (id, position, title, due_at, done, created_at) VALUES ?
+ON CONFLICT (id) DO UPDATE SET
+    title = excluded.title,
+    due_at = excluded.due_at,
+    done = excluded.done,
+    created_at = excluded.created_at;
+
+deleteFriends:
+DELETE FROM reminder_friend WHERE reminder_id = ?;
+
+insertFriend:
+INSERT OR IGNORE INTO reminder_friend (reminder_id, friend_id, position)
+SELECT :reminderId, :friendId, :position WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+delete:
+DELETE FROM reminder WHERE id = ?;
+
+deleteAll:
+DELETE FROM reminder;

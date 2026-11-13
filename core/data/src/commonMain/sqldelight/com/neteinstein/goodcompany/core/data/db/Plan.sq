@@ -1,0 +1,66 @@
+-- Planned meetups and who's in them. idea_id points at the AI idea a plan came from; it becomes null when that idea
+-- is trimmed away.
+
+CREATE TABLE plan (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    place TEXT,
+    idea_id TEXT REFERENCES idea(id) ON DELETE SET NULL,
+    status TEXT NOT NULL CHECK (status IN ('PLANNED', 'HAPPENED', 'SKIPPED')),
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX plan_status_date ON plan(status, date);
+
+CREATE TABLE plan_friend (
+    plan_id TEXT NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (plan_id, friend_id)
+);
+
+CREATE INDEX plan_friend_friend_id ON plan_friend(friend_id);
+
+-- Open plans first in the order they were made, then answered ones by date (the order the old store kept).
+allPlans:
+SELECT * FROM plan
+ORDER BY status = 'PLANNED' DESC, CASE WHEN status = 'PLANNED' THEN position END, date, position;
+
+allPlanFriends:
+SELECT * FROM plan_friend ORDER BY plan_id, position;
+
+nextPosition:
+SELECT coalesce(max(position), -1) + 1 FROM plan;
+
+-- idea_id is kept only if that idea still exists.
+upsert:
+INSERT INTO plan (id, position, title, date, place, idea_id, status, created_at)
+VALUES (:id, :position, :title, :date, :place, (SELECT id FROM idea WHERE id IS :ideaId), :status, :createdAt)
+ON CONFLICT (id) DO UPDATE SET
+    title = excluded.title,
+    date = excluded.date,
+    place = excluded.place,
+    idea_id = excluded.idea_id,
+    status = excluded.status,
+    created_at = excluded.created_at;
+
+deleteFriends:
+DELETE FROM plan_friend WHERE plan_id = ?;
+
+insertFriend:
+INSERT OR IGNORE INTO plan_friend (plan_id, friend_id, position)
+SELECT :planId, :friendId, :position WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+-- Keeps the :keep answered plans with the latest dates; open plans are never trimmed.
+trimClosed:
+DELETE FROM plan WHERE id IN (
+    SELECT id FROM plan WHERE status != 'PLANNED' ORDER BY date DESC, position DESC LIMIT -1 OFFSET :keep
+);
+
+delete:
+DELETE FROM plan WHERE id = ?;
+
+deleteAll:
+DELETE FROM plan;

@@ -1,0 +1,53 @@
+-- "I'm with…" check-ins and who was there. A friend's rows in hangout_friend go with the friend.
+
+CREATE TABLE hangout (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    at INTEGER NOT NULL,
+    place_name TEXT,
+    place_latitude REAL,
+    place_longitude REAL,
+    note TEXT NOT NULL
+);
+
+CREATE TABLE hangout_friend (
+    hangout_id TEXT NOT NULL REFERENCES hangout(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (hangout_id, friend_id)
+);
+
+-- "When did I last see X", "everyone at this check-in".
+CREATE INDEX hangout_friend_friend_id ON hangout_friend(friend_id);
+
+allHangouts:
+SELECT * FROM hangout ORDER BY position;
+
+allHangoutFriends:
+SELECT * FROM hangout_friend ORDER BY hangout_id, position;
+
+nextPosition:
+SELECT coalesce(max(position), -1) + 1 FROM hangout;
+
+upsert:
+INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note) VALUES ?
+ON CONFLICT (id) DO UPDATE SET
+    at = excluded.at,
+    place_name = excluded.place_name,
+    place_latitude = excluded.place_latitude,
+    place_longitude = excluded.place_longitude,
+    note = excluded.note;
+
+deleteFriends:
+DELETE FROM hangout_friend WHERE hangout_id = ?;
+
+-- Skips friends that don't exist (any more), instead of failing on the foreign key.
+insertFriend:
+INSERT OR IGNORE INTO hangout_friend (hangout_id, friend_id, position)
+SELECT :hangoutId, :friendId, :position WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+delete:
+DELETE FROM hangout WHERE id = ?;
+
+deleteAll:
+DELETE FROM hangout;

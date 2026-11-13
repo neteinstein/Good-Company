@@ -113,6 +113,8 @@ sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", ver
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-web-worker-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "sqldelight" }
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+# SQL dialect the compiler checks against: 3.30 (ON CONFLICT … DO UPDATE). Android 12 (minSdk 32) ships SQLite 3.32.
+sqldelight-dialect-sqlite330 = { module = "app.cash.sqldelight:sqlite-3-30-dialect", version.ref = "sqldelight" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }

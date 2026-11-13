@@ -1,0 +1,274 @@
+-- Version 1 → 2 (issue #14, step 2): the normalised tables for every app store. Generated from the CREATE
+-- statements in the .sq files; verifySqlDelightMigration checks that both describe the same schema.
+
+-- Friend
+CREATE TABLE friend (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    contact_id TEXT,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    is_close_friend INTEGER NOT NULL CHECK (is_close_friend IN (0, 1)),
+    notify_birthday INTEGER NOT NULL CHECK (notify_birthday IN (0, 1)),
+    notes TEXT NOT NULL,
+    meet_every_days INTEGER,
+    suggest_events INTEGER NOT NULL CHECK (suggest_events IN (0, 1)),
+    is_orphaned INTEGER NOT NULL CHECK (is_orphaned IN (0, 1)),
+    circle TEXT CHECK (circle IN ('INNER', 'CLOSE', 'GOOD')),
+    snoozed_until TEXT,
+    catch_up_paused INTEGER NOT NULL CHECK (catch_up_paused IN (0, 1)),
+    contact_counts_as_catch_up INTEGER NOT NULL CHECK (contact_counts_as_catch_up IN (0, 1)),
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE INDEX friend_contact_id ON friend(contact_id);
+
+CREATE TABLE friend_phone (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    number TEXT NOT NULL,
+    normalized TEXT,
+    PRIMARY KEY (friend_id, position)
+);
+
+CREATE INDEX friend_phone_normalized ON friend_phone(normalized);
+
+CREATE TABLE friend_taste (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('LIKE', 'DISLIKE')),
+    position INTEGER NOT NULL,
+    taste TEXT NOT NULL,
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, kind, position)
+);
+
+CREATE INDEX friend_taste_kind_taste ON friend_taste(kind, taste);
+
+CREATE TABLE friend_occasion (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    occasion TEXT NOT NULL CHECK (occasion IN ('WEEKDAY_LUNCH', 'COFFEE', 'DINNER', 'DRINKS', 'OUTDOORS', 'SPORTS', 'CULTURE', 'FAMILY_TIME')),
+    position INTEGER NOT NULL,
+    PRIMARY KEY (friend_id, occasion)
+);
+
+CREATE TABLE kid (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, id),
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE TABLE kid_like (
+    friend_id TEXT NOT NULL,
+    kid_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    liked TEXT NOT NULL,
+    PRIMARY KEY (friend_id, kid_id, position),
+    FOREIGN KEY (friend_id, kid_id) REFERENCES kid(friend_id, id) ON DELETE CASCADE
+);
+
+CREATE TABLE important_event (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    remind_days_before INTEGER NOT NULL,
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, id)
+);
+
+CREATE INDEX important_event_date ON important_event(date);
+
+CREATE TABLE gift (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    note TEXT NOT NULL,
+    for_kid_id TEXT,
+    given_on TEXT,
+    occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    PRIMARY KEY (friend_id, id),
+    FOREIGN KEY (friend_id, for_kid_id) REFERENCES kid(friend_id, id)
+);
+
+CREATE TABLE life_update (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    added_at INTEGER NOT NULL,
+    PRIMARY KEY (friend_id, id)
+);
+
+CREATE TABLE feed (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    site_url TEXT,
+    checked_at INTEGER,
+    PRIMARY KEY (friend_id, url)
+);
+
+CREATE TABLE feed_item (
+    friend_id TEXT NOT NULL,
+    feed_url TEXT NOT NULL,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    link TEXT,
+    published_at INTEGER,
+    PRIMARY KEY (friend_id, feed_url, id),
+    FOREIGN KEY (friend_id, feed_url) REFERENCES feed(friend_id, url) ON DELETE CASCADE
+);
+
+-- Hangout
+CREATE TABLE hangout (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    at INTEGER NOT NULL,
+    place_name TEXT,
+    place_latitude REAL,
+    place_longitude REAL,
+    note TEXT NOT NULL
+);
+
+CREATE TABLE hangout_friend (
+    hangout_id TEXT NOT NULL REFERENCES hangout(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (hangout_id, friend_id)
+);
+
+CREATE INDEX hangout_friend_friend_id ON hangout_friend(friend_id);
+
+-- Interaction
+CREATE TABLE interaction (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('CALL', 'WHATSAPP', 'MEETUP')),
+    at INTEGER NOT NULL,
+    UNIQUE (friend_id, type, at)
+);
+
+CREATE INDEX interaction_friend_at ON interaction(friend_id, at);
+
+CREATE INDEX interaction_at ON interaction(at);
+
+CREATE TABLE conversation_message (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    at INTEGER NOT NULL,
+    from_me INTEGER NOT NULL CHECK (from_me IN (0, 1)),
+    text TEXT NOT NULL,
+    UNIQUE (friend_id, at, from_me, text)
+);
+
+CREATE INDEX conversation_message_friend_at ON conversation_message(friend_id, at);
+
+-- Reminder
+CREATE TABLE reminder (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    due_at INTEGER,
+    done INTEGER NOT NULL CHECK (done IN (0, 1)),
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE reminder_friend (
+    reminder_id TEXT NOT NULL REFERENCES reminder(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (reminder_id, friend_id)
+);
+
+CREATE INDEX reminder_friend_friend_id ON reminder_friend(friend_id);
+
+-- Idea
+CREATE TABLE idea (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('EVENT', 'NEWS', 'TALKING_POINT')),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    url TEXT,
+    when_text TEXT,
+    created_at INTEGER NOT NULL,
+    dismissed INTEGER NOT NULL CHECK (dismissed IN (0, 1)),
+    proposed_at INTEGER
+);
+
+CREATE TABLE idea_friend (
+    idea_id TEXT NOT NULL REFERENCES idea(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (idea_id, friend_id)
+);
+
+CREATE INDEX idea_friend_friend_id ON idea_friend(friend_id);
+
+-- Plan
+CREATE TABLE plan (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    place TEXT,
+    idea_id TEXT REFERENCES idea(id) ON DELETE SET NULL,
+    status TEXT NOT NULL CHECK (status IN ('PLANNED', 'HAPPENED', 'SKIPPED')),
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX plan_status_date ON plan(status, date);
+
+CREATE TABLE plan_friend (
+    plan_id TEXT NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (plan_id, friend_id)
+);
+
+CREATE INDEX plan_friend_friend_id ON plan_friend(friend_id);
+
+-- FriendGroup
+CREATE TABLE friend_group (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    meet_every_days INTEGER,
+    snoozed_until TEXT
+);
+
+CREATE TABLE group_member (
+    group_id TEXT NOT NULL REFERENCES friend_group(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (group_id, friend_id)
+);
+
+CREATE INDEX group_member_friend_id ON group_member(friend_id);
+
+-- UserPreferences
+CREATE TABLE user_preferences (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    inner_circle_days INTEGER NOT NULL,
+    close_circle_days INTEGER NOT NULL,
+    good_friends_days INTEGER NOT NULL,
+    weekly_digest INTEGER NOT NULL CHECK (weekly_digest IN (0, 1)),
+    digest_day INTEGER NOT NULL CHECK (digest_day BETWEEN 1 AND 7),
+    reminder_hour INTEGER NOT NULL CHECK (reminder_hour BETWEEN 0 AND 23),
+    weekly_ideas_enabled INTEGER NOT NULL CHECK (weekly_ideas_enabled IN (0, 1)),
+    home_area TEXT NOT NULL,
+    show_warmth INTEGER NOT NULL CHECK (show_warmth IN (0, 1)),
+    private_notifications INTEGER NOT NULL CHECK (private_notifications IN (0, 1))
+);
