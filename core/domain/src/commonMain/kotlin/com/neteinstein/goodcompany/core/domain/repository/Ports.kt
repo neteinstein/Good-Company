@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
@@ -134,4 +135,24 @@ interface CloudBackupStore {
 fun interface AppUpdateSource {
     /** The newest published build, or null when none is published. Throws when it can't be reached. */
     suspend fun latest(): AppUpdate?
+}
+
+/**
+ * Makes a picture small enough for a [ContactPhoto]: at most [ContactPhoto.MAX_SIDE_PX] on its longest side, as JPEG.
+ * Implemented in `:core:ui` (it needs an image codec); [None] keeps pictures that are already small enough.
+ */
+fun interface PhotoShrinker {
+    /** The shrunk image, or null when [image] can't be decoded. */
+    suspend fun shrink(image: ByteArray): ByteArray?
+
+    companion object {
+        val None = PhotoShrinker { it }
+    }
+}
+
+/** A [ContactPhoto] from [image], shrunk first when it's too large to keep as it is. */
+suspend fun PhotoShrinker.photoOf(image: ByteArray?): ContactPhoto? {
+    if (image == null || image.isEmpty()) return null
+    if (image.size <= ContactPhoto.MAX_BYTES) return ContactPhoto.of(image)
+    return ContactPhoto.of(runCatching { shrink(image) }.getOrNull())
 }

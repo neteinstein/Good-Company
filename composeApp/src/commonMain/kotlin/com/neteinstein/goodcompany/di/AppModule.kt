@@ -46,6 +46,7 @@ import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -107,6 +108,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
@@ -121,6 +123,7 @@ import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import com.neteinstein.goodcompany.core.ui.l10n.ComposeLanguageProvider
 import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
 import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
+import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
@@ -163,6 +166,7 @@ val appModule = module {
     single<ContactsSource> { createContactsSource() }
     single<ContactsWriter> { createContactsWriter() }
     single<CommunicationLogSource> { createCommunicationLogSource() }
+    single<PhotoShrinker> { createPhotoShrinker() }
     single<LocationProvider> { createLocationProvider() }
     single<NotificationScheduler> { createNotificationScheduler() }
     single { AnthropicClient(get()) }
@@ -227,6 +231,7 @@ val appModule = module {
     factoryOf(::LogCallUseCase)
     factoryOf(::HandleNotificationActionUseCase)
     factoryOf(::ImportContactsFileUseCase)
+    factoryOf(::SetFriendPhotoUseCase)
     factoryOf(::DraftBirthdayMessageUseCase)
     factoryOf(::SuggestGiftsUseCase)
     factoryOf(::MarkIdeaProposedUseCase)
@@ -286,6 +291,7 @@ val appModule = module {
             cancelPlan = get(),
             restorePlan = get(),
             addFeed = get(),
+            setPhoto = get(),
             clock = get(),
             ids = get(),
         )

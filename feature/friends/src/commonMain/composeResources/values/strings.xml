@@ -103,6 +103,7 @@
     <string name="detail_back">Back</string>
     <string name="detail_remove_friend">Remove friend</string>
     <string name="detail_add_birthday">Add birthday</string>
+    <string name="detail_add_photo">Add photo</string>
     <string name="detail_birthday_turns">%1$s · turns %2$d</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Seen %1$s</string>
@@ -344,5 +345,6 @@
     <string name="feeds_to_news">Add to What’s new</string>
     <string name="feeds_no_posts">No posts yet</string>
     <string name="msg_added_to_news">Added to What’s new</string>
+    <string name="msg_photo_unreadable">Couldn’t read that picture. Try a JPEG or PNG.</string>
     <string name="story_fresh_post">New post</string>
 </resources>

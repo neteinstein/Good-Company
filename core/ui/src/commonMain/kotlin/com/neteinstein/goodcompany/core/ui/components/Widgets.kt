@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.format.monthShort
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
@@ -165,24 +166,24 @@ fun DateBadge(date: LocalDate, today: LocalDate, modifier: Modifier = Modifier) 
     }
 }
 
-/** Overlapping avatars ("Ana, Rui and 2 more"). */
+/** Overlapping avatars ("Ana, Rui and 2 more"), with their contact photos. */
 @Composable
 fun StackedAvatars(
-    people: List<Pair<String, String>>,
+    friends: List<Friend>,
     modifier: Modifier = Modifier,
     size: Dp = 32.dp,
     max: Int = 4,
 ) {
     val ring = MaterialTheme.colorScheme.surface
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(-(size / 3))) {
-        people.take(max).forEach { (name, initials) ->
-            FriendAvatar(name, initials, size = size, modifier = Modifier.border(2.dp, ring, CircleShape))
+        friends.take(max).forEach { friend ->
+            FriendAvatar(friend, size = size, modifier = Modifier.border(2.dp, ring, CircleShape))
         }
-        if (people.size > max) {
+        if (friends.size > max) {
             Box(
                 Modifier.size(size).border(2.dp, ring, CircleShape).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
                 contentAlignment = Alignment.Center,
-            ) { Text("+${people.size - max}", style = MaterialTheme.typography.labelSmall) }
+            ) { Text("+${friends.size - max}", style = MaterialTheme.typography.labelSmall) }
         }
     }
 }

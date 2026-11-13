@@ -44,6 +44,16 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
+        <!-- The friend's contact photo (made round in code); hidden when they have none. -->
+        <ImageView
+            android:id="@+id/widget_catch_up_photo"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginEnd="8dp"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/widget_catch_up"
             android:layout_width="0dp"

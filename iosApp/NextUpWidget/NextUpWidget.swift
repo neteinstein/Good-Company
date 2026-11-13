@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 /// "Who's next" home-screen widget: the next birthday / big day / plan / reminder, and the friend most due a
-/// catch-up, with "We met". Mirrors the Android widget.
+/// catch-up (with their contact photo), with "We met". Mirrors the Android widget.
 ///
 /// Widgets can't run the shared Kotlin code, so the app writes a small JSON snapshot (`WidgetSnapshot` in
 /// :core:domain) into the app group's UserDefaults (`IosBridgeKt.startWidgetSync`) and reloads the timelines.
@@ -34,6 +34,13 @@ struct Snapshot: Decodable {
     struct CatchUp: Decodable {
         let friendId: String
         let firstName: String
+        /// The friend's contact photo (base64 JPEG/PNG); never written while the widget is private.
+        let photo: String?
+
+        var image: UIImage? {
+            guard let photo, let data = Data(base64Encoded: photo) else { return nil }
+            return UIImage(data: data)
+        }
     }
 
     let isPrivate: Bool?
@@ -109,6 +116,14 @@ struct NextUpView: View {
     @ViewBuilder private var catchUpView: some View {
         if let catchUp = entry.snapshot?.catchUp {
             HStack {
+                if let image = catchUp.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 28, height: 28)
+                        .clipShape(Circle())
+                        .accessibilityHidden(true)
+                }
                 Text(String(localized: "widget.see \(catchUp.firstName)"))
                     .font(.subheadline)
                     .lineLimit(2)

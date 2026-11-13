@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat
 import com.neteinstein.goodcompany.core.data.source.ContactBirthdayParser
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,18 +25,22 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
         }
         val resolver = context.contentResolver
         val names = LinkedHashMap<String, String>()
+        val photoIds = HashMap<String, Long>()
         resolver.query(
             ContactsContract.Contacts.CONTENT_URI,
-            arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+            arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY, ContactsContract.Contacts.PHOTO_ID),
             null,
             null,
             "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC",
         )?.use { c ->
             while (c.moveToNext()) {
                 val name = c.getString(1) ?: continue
-                names[c.getString(0)] = name
+                val id = c.getString(0)
+                names[id] = name
+                if (!c.isNull(2)) photoIds[id] = c.getLong(2)
             }
         }
+        val photos = readThumbnails(resolver, photoIds)
 
         val phones = HashMap<String, MutableList<String>>()
         resolver.query(
@@ -70,7 +75,39 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
         // The sideload build mirrors app data onto contacts through a raw contact of its own (AndroidContactsWriter).
         // It is joined to the person's real contact, but should that ever fail it must not show up as a new friend.
         val mirrorOnly = mirrorOnlyContactIds(resolver)
-        names.filterKeys { it !in mirrorOnly }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id]) }
+        names.filterKeys { it !in mirrorOnly }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id]) }
+    }
+
+    /**
+     * Each contact's primary photo as the thumbnail the provider keeps in the data row (about 96 px), read in a few
+     * batched queries. A contact photo changed in the Contacts app gets a new row, so the next sync picks it up.
+     */
+    private fun readThumbnails(resolver: ContentResolver, photoIds: Map<String, Long>): Map<String, ContactPhoto> {
+        if (photoIds.isEmpty()) return emptyMap()
+        val contactByPhoto = photoIds.entries.associate { (contact, photo) -> photo to contact }
+        val out = HashMap<String, ContactPhoto>()
+        contactByPhoto.keys.chunked(MAX_QUERY_ARGS).forEach { chunk ->
+            runCatching {
+                resolver.query(
+                    ContactsContract.Data.CONTENT_URI,
+                    arrayOf(ContactsContract.Data._ID, ContactsContract.CommonDataKinds.Photo.PHOTO),
+                    "${ContactsContract.Data._ID} IN (${chunk.joinToString(",") { "?" }})",
+                    chunk.map(Long::toString).toTypedArray(),
+                    null,
+                )?.use { c ->
+                    while (c.moveToNext()) {
+                        val contact = contactByPhoto[c.getLong(0)] ?: continue
+                        ContactPhoto.of(if (c.isNull(1)) null else c.getBlob(1))?.let { out[contact] = it }
+                    }
+                }
+            }
+        }
+        return out
+    }
+
+    private companion object {
+        /** SQLite's default limit on `?` arguments is 999. */
+        const val MAX_QUERY_ARGS = 500
     }
 
     /** Contacts made up solely of raw contacts this app created. */

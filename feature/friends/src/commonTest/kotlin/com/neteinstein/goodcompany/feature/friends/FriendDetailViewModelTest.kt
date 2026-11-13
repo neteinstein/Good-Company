@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.friends
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Kid
@@ -57,6 +58,7 @@ class FriendDetailViewModelTest {
         g.cancelPlan,
         g.restorePlan,
         g.addFeed,
+        g.setFriendPhoto,
         g.clock,
         g.ids,
     )
@@ -80,6 +82,28 @@ class FriendDetailViewModelTest {
         assertEquals(listOf("jazz"), f.likes)
         assertEquals(listOf("crowds"), f.dislikes)
         assertEquals(Birthday(5, 4, 1990), f.birthday)
+    }
+
+    @Test
+    fun aPickedPicture_becomesTheirPhoto_andAnUnreadableOneSaysSo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onPhotoPicked(null)
+        assertNull(state.value.message)
+        assertNull(state.value.detail!!.friend.photo)
+
+        vm.onPhotoPicked(ByteArray(ContactPhoto.MAX_BYTES * 2)) // the test graph can't shrink this
+        assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
+        assertNull(state.value.detail!!.friend.photo)
+
+        vm.onMessageShown()
+        vm.onPhotoPicked(ByteArray(0)) // what the pickers hand back for a picture they couldn't read
+        assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
+
+        vm.onMessageShown()
+        vm.onPhotoPicked(byteArrayOf(1, 2, 3))
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.detail!!.friend.photo)
+        assertNull(state.value.message)
     }
 
     @Test

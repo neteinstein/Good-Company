@@ -117,7 +117,7 @@ fun CheckInSheet(
                                 if (on) {
                                     Icon(Icons.Rounded.Check, null, Modifier.size(FilterChipDefaults.IconSize))
                                 } else {
-                                    FriendAvatar(f.name, f.initials, size = 20.dp)
+                                    FriendAvatar(f, size = 20.dp)
                                 }
                             }
                         },

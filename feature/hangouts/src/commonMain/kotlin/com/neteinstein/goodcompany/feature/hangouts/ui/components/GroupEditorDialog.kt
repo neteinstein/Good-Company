@@ -87,7 +87,7 @@ fun GroupEditorDialog(
                             selected = on,
                             onClick = { onChange(draft.copy(members = if (on) draft.members - f.id else draft.members + f.id)) },
                             label = { Text(f.name) },
-                            leadingIcon = { FriendAvatar(f.name, f.initials, size = 20.dp) },
+                            leadingIcon = { FriendAvatar(f, size = 20.dp) },
                         )
                     }
                 }

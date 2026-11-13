@@ -202,7 +202,7 @@ fun CatchUpCard(
     ) {
         Row(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             ProgressRing(progress = 1f, size = 56.dp, stroke = 4.dp, color = MaterialTheme.colorScheme.error) {
-                FriendAvatar(f.name, f.initials, size = 44.dp)
+                FriendAvatar(f, size = 44.dp)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -266,7 +266,7 @@ fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Uni
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             ProgressRing(progress = summary.warmth.value / 100f, size = 56.dp, stroke = 4.dp, color = color) {
-                FriendAvatar(f.name, f.initials, size = 44.dp)
+                FriendAvatar(f, size = 44.dp)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -291,7 +291,7 @@ fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifie
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        FriendAvatar(friend.name, friend.initials, size = 60.dp, highlighted = true)
+        FriendAvatar(friend, size = 60.dp, highlighted = true)
         Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
@@ -315,7 +315,7 @@ fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, 
                 .clip(CircleShape).background(MaterialTheme.colorScheme.background).padding(2.dp),
             contentAlignment = Alignment.Center,
         ) {
-            FriendAvatar(friend.name, friend.initials, size = 58.dp)
+            FriendAvatar(friend, size = 58.dp)
         }
         Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(

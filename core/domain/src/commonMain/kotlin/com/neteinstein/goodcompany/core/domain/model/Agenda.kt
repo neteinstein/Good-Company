@@ -50,4 +50,6 @@ data class ContactRecord(
     val name: String,
     val phoneNumbers: List<String>,
     val birthday: Birthday?,
+    /** The contact's thumbnail, when the platform hands one over. */
+    val photo: ContactPhoto? = null,
 )

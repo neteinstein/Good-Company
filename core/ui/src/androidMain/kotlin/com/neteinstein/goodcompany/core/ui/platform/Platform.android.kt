@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.ui.platform
 import android.Manifest
 import android.app.Activity
 import android.content.ActivityNotFoundException
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -17,6 +18,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsPickerSessionContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -25,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -36,8 +39,12 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -138,6 +145,29 @@ actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> U
 }
 
 @Composable
+actual fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val callback = rememberUpdatedState(onPicked)
+    val scope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) {
+            callback.value(null)
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                // Upright and at most twice the stored size, like on iOS, so small pictures aren't kept sideways.
+                runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+                    ?.let { uprightJpeg(it, PICKED_MAX_SIDE) }
+            }
+            // Empty (not null, which means cancelled) when the picture couldn't be read, so the app can say so.
+            callback.value(bytes ?: ByteArray(0))
+        }
+    }
+    return { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+}
+
+@Composable
 actual fun rememberTextSharer(): TextSharer {
     val context = LocalContext.current
     return remember(context) {
@@ -208,16 +238,26 @@ private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> =
         val name = c.getColumnIndex(ContactsContract.Data.DISPLAY_NAME_PRIMARY)
         val mimeType = c.getColumnIndex(ContactsContract.Data.MIMETYPE)
         val number = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val photo = c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO)
         while (c.moveToNext()) {
-            val isPhone = c.stringOrNull(mimeType) == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+            val type = c.stringOrNull(mimeType)
+            val isPhoto = type == ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE && photo >= 0 && !c.isNull(photo)
             rows += PickedContactRow(
                 contactKey = c.stringOrNull(contactId) ?: c.stringOrNull(lookupKey),
                 name = c.stringOrNull(name),
-                number = if (isPhone) c.stringOrNull(number) else null,
+                number = if (type == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) c.stringOrNull(number) else null,
+                photo = if (isPhoto) runCatching { ContactPhoto.of(c.getBlob(photo)) }.getOrNull() else null,
             )
         }
     }
-    groupPickedContactRows(rows)
+    groupPickedContactRows(rows).map { record ->
+        val id = record.contactId.toLongOrNull()
+        if (record.photo != null || id == null) {
+            record
+        } else {
+            record.copy(photo = readPickedPhoto(context, ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id)))
+        }
+    }
 }.getOrDefault(emptyList())
 
 private fun Cursor.stringOrNull(index: Int): String? = if (index >= 0 && !isNull(index)) getString(index) else null
@@ -238,7 +278,26 @@ private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runC
             name = name,
             phoneNumbers = readPickedNumbers(context, uri),
             birthday = null,
+            photo = readPickedPhoto(context, uri),
         )
+    }
+}.getOrNull()
+
+/**
+ * Best effort, like the numbers: the contact's thumbnail when the picker's grant (or, in the sideload build,
+ * READ_CONTACTS) lets us read it. Otherwise the person is added without one, and the sideload sync fills it in later.
+ */
+private fun readPickedPhoto(context: Context, contactUri: Uri): ContactPhoto? = runCatching {
+    ContactsContract.Contacts.openContactPhotoInputStream(context.contentResolver, contactUri, false)?.use { input ->
+        // Thumbnails are a few KB; stop reading past the limit instead of loading something huge.
+        val buffer = ByteArray(ContactPhoto.MAX_BYTES + 1)
+        var read = 0
+        while (read < buffer.size) {
+            val n = input.read(buffer, read, buffer.size - read)
+            if (n < 0) break
+            read += n
+        }
+        ContactPhoto.of(buffer.copyOf(read))
     }
 }.getOrNull()
 
@@ -379,3 +438,6 @@ private fun Throwable.toDriveFailure(): DriveAuthResult = when {
     this is ApiException && statusCode == CommonStatusCodes.CANCELED -> DriveAuthResult.Cancelled
     else -> DriveAuthResult.Failed(message)
 }
+
+/** Twice the stored photo size, so the shrinker still has detail to work with. */
+private const val PICKED_MAX_SIDE = 512
