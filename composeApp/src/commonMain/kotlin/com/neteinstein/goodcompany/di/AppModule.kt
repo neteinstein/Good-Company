@@ -16,15 +16,16 @@ import com.neteinstein.goodcompany.core.data.platform.createDatabaseDriverFactor
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
 import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
-import com.neteinstein.goodcompany.core.data.repository.BackupRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.FriendRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.GroupRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.HangoutRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.IdeaRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.InteractionRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.PlanRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.ReminderRepositoryImpl
-import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
+import com.neteinstein.goodcompany.core.data.repository.LegacyJsonImport
+import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlSettingsRepository
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.update.GitHubReleaseUpdateSource
@@ -48,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
+import com.neteinstein.goodcompany.core.domain.repository.StorageStatus
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
@@ -72,6 +74,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
@@ -147,9 +150,13 @@ val appModule = module {
     single<AppClock> { AppClock.System }
     single<IdGenerator> { IdGenerator.Random }
     single<Settings> { Settings() }
-    // SQLite (SQLDelight). Opened lazily on first use; repositories move onto it in the next steps of issue #14.
+    // SQLite (SQLDelight), opened lazily on first use. The first open moves the old JSON documents in (issue #14).
     single<DatabaseDriverFactory> { createDatabaseDriverFactory() }
-    single { AppDatabase(get(), get()) }
+    single { LegacyJsonImport(get()) }
+    single {
+        val legacy: LegacyJsonImport = get()
+        AppDatabase(get(), get(), prepare = legacy::run)
+    } bind StorageStatus::class
     single { createHttpClient() }
 
     // --- Platform data sources ---
@@ -172,15 +179,15 @@ val appModule = module {
     single<SampleTextsProvider> { SampleTextsFromResources }
 
     // --- Repositories ---
-    singleOf(::FriendRepositoryImpl) bind FriendRepository::class
-    singleOf(::HangoutRepositoryImpl) bind HangoutRepository::class
-    singleOf(::ReminderRepositoryImpl) bind ReminderRepository::class
-    singleOf(::InteractionRepositoryImpl) bind InteractionRepository::class
-    singleOf(::IdeaRepositoryImpl) bind IdeaRepository::class
-    singleOf(::SettingsRepositoryImpl) bind SettingsRepository::class
-    singleOf(::GroupRepositoryImpl) bind GroupRepository::class
-    singleOf(::PlanRepositoryImpl) bind PlanRepository::class
-    single<BackupRepository> { BackupRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get()) }
+    singleOf(::SqlFriendRepository) bind FriendRepository::class
+    singleOf(::SqlHangoutRepository) bind HangoutRepository::class
+    singleOf(::SqlReminderRepository) bind ReminderRepository::class
+    singleOf(::SqlInteractionRepository) bind InteractionRepository::class
+    singleOf(::SqlIdeaRepository) bind IdeaRepository::class
+    singleOf(::SqlSettingsRepository) bind SettingsRepository::class
+    singleOf(::SqlGroupRepository) bind GroupRepository::class
+    singleOf(::SqlPlanRepository) bind PlanRepository::class
+    singleOf(::SqlBackupRepository) bind BackupRepository::class
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -209,6 +216,7 @@ val appModule = module {
     factoryOf(::RunWeeklyIdeasUseCase)
     factoryOf(::ObserveSettingsUseCase)
     factoryOf(::UpdateSettingsUseCase)
+    factoryOf(::IsStorageTemporaryUseCase)
     factoryOf(::CheckForUpdateUseCase)
     factoryOf(::LoadSampleDataUseCase)
     factoryOf(::RemoveSampleDataUseCase)

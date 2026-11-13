@@ -6,4 +6,5 @@
     <string name="nav_agenda">A seguir</string>
     <string name="nav_ideas">Ideias</string>
     <string name="nav_settings">Definições</string>
+    <string name="storage_temporary">As alterações neste separador não vão ser guardadas. O Good Company deve estar aberto noutro separador, continue lá.</string>
 </resources>

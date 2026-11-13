@@ -26,7 +26,7 @@ canonical; the "Decisions" table records later owner decisions (e.g. *never read
 | Architecture | Clean architecture (domain / data / ui) · MVVM · Coroutines + `StateFlow` |
 | DI | Koin 4.2 (`koin-compose-viewmodel`) |
 | Navigation | JetBrains `navigation-compose` 2.10, type-safe `@Serializable` routes, shared-element transitions |
-| Persistence | JSON documents (kotlinx.serialization) in `multiplatform-settings` (SharedPreferences / NSUserDefaults / localStorage) |
+| Persistence | SQLite through SQLDelight 2 (async drivers; OPFS worker on the web); device settings as JSON in `multiplatform-settings` |
 | Networking / AI | Ktor 3 → Claude Messages API (raw HTTP; the official SDK is JVM-only), user-supplied API key |
 | Tests | `kotlin.test` + `kotlinx-coroutines-test` in `commonTest`, run on the JVM; Kover for coverage |
 | Quality | Spotless + ktlint, Android Lint, R8 (release) |
@@ -190,10 +190,13 @@ Seen in practice:
    permissions exist only for the write-back (see gotcha 22).
    CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
-9. **Persisted JSON.** Domain models are `@Serializable` and stored as JSON under the keys in
-   `core/data/.../storage/PersistentState.kt` (`Keys`). Adding fields with defaults is safe. Renaming or removing fields,
-   or changing types, needs a new key suffix (`.v2`) plus a migration. Corrupt data falls back to defaults instead of crashing.
-   A new store must also be added to `BackupRepositoryImpl` and the domain `Backup` (export / restore).
+9. **Persisted data.** App data lives in SQLite (gotcha 24); the `.sq` files are the schema. Adding a nullable column
+   or one with a default is a new numbered `.sqm` migration. A new table also needs its read/write in `db/*Tables.kt`,
+   its name in the matching `*_TABLES` list (observers), and a place in `SqlBackupRepository` / `replaceAllData` and the
+   domain `Backup` (export / restore). Device settings that must be readable before the database opens (theme, app lock,
+   onboarding, API key) are `DeviceSettings`, JSON under `device_settings.v1`; the rest of `AppSettings` is the
+   `user_preferences` row. The old `*.v1` JSON keys in `storage/PersistentState.kt` (`Keys`) are only read by the
+   one-off `LegacyJsonImport`.
 10. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
    `anthropic-version: 2026-10-21`, the `web_search_20260209` server tool, `fallbacks: "default"`
    (beta `server-side-fallback-2026-07-01`) and `anthropic-dangerous-direct-browser-access: true` (needed for the
@@ -257,19 +260,23 @@ Seen in practice:
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
-24. **SQLite (SQLDelight 2, migration in progress, issue #14).** `:core:data` has `GoodCompanyDatabase`
+24. **SQLite (SQLDelight 2, issue #14).** `:core:data` has `GoodCompanyDatabase`
     (`src/commonMain/sqldelight/`, `generateAsync = true`, so every query is `suspend`), opened lazily through
-    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. App data still lives in `PersistentState`:
-    the SQLite repositories (`repository/SqlRepositories.kt`, mappers in `db/*Tables.kt`) exist but aren't wired into
-    Koin until the one-off JSON → SQLite import lands. Both implementations must pass `RepositoryContract`
-    (commonTest; the SQL subclass is in androidHostTest), so a behaviour change goes into both, or into neither.
+    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. The repositories are
+    `repository/SqlRepositories.kt` (mappers in `db/*Tables.kt`). On first open `LegacyJsonImport` moves the old JSON
+    documents in, in one transaction with a `db_meta` mark, then deletes the JSON (owner decision 2026-11-13), but only
+    when the database is persistent; unreadable keys and a failed import keep the JSON. The JSON `*RepositoryImpl`
+    classes remain only as the reference the SQL ones are checked against: both must pass `RepositoryContract`
+    (commonTest; the SQL subclass is in androidHostTest).
     Go through `AppDatabase.access`/`transaction`/`observe`, never `get()` directly: the web driver can't run two
     statements at once. Schema changes go in numbered `.sqm` migrations; after one, run
     `generate<SourceSet>GoodCompanyDatabaseSchema` and commit the new `databases/<n>.db` (`verifySqlDelightMigration`
     checks them). iOS: `ComposeApp.framework` is static, so the app target links `-lsqlite3` itself (`OTHER_LDFLAGS`).
     Web: our own worker (`core/data/src/wasmJsMain/sqlite-worker`, official `@sqlite.org/sqlite-wasm`, OPFS
-    "SAH pool" VFS, no COOP/COEP needed) replaces SQLDelight's in-memory one; the database works in one tab at a time,
-    and a second tab falls back to memory (`AppDatabase.isPersistent()` is false). `index.html?dbcheck` prints a
+    "SAH pool" VFS, no COOP/COEP needed) replaces SQLDelight's in-memory one. It's an npm `file:` package, so the
+    build uses a copy taken at install time: after editing it, bump `version` in its `package.json` (or rerun
+    `kotlinNpmInstall`), or the bundle keeps the old worker; the database works in one tab at a time,
+    and a second tab falls back to memory (`AppDatabase.isPersistent()` is false; the app shows a "won’t be saved" banner). `index.html?dbcheck` prints a
     persistence smoke test to the console (open count must go up across reloads). Booleans: SQLite stores them as
     0/1 and the worker returns numbers, while the web driver's `getBoolean` expects a JS boolean, so store flags as
     `INTEGER` and convert in the mappers (or prove a `Boolean` column works on the web before relying on it).

@@ -6,4 +6,5 @@
     <string name="nav_agenda">Urmează</string>
     <string name="nav_ideas">Idei</string>
     <string name="nav_settings">Setări</string>
+    <string name="storage_temporary">Modificările din această filă nu vor fi salvate. Good Company este probabil deschis în altă filă, continuați acolo.</string>
 </resources>
