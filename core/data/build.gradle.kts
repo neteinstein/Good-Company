@@ -62,6 +62,7 @@ sqldelight {
     databases {
         create("GoodCompanyDatabase") {
             packageName.set("com.neteinstein.goodcompany.core.data.db")
+            dialect(libs.sqldelight.dialect.sqlite330)
             // The web worker driver is asynchronous, so every query is generated as a suspend call on all platforms.
             generateAsync.set(true)
             // Numbered .sqm migrations are checked against the committed schema snapshots in src/commonMain/sqldelight/databases.

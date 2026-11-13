@@ -7,9 +7,11 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
  * it. Loading the page twice must show the count going up, with the same `created` time, when the browser keeps the data.
  */
 suspend fun AppDatabase.smokeCheck(): String {
-    val queries = get().dbMetaQueries
-    val opens = (queries.get(KEY_OPENS).awaitAsOneOrNull()?.toLongOrNull() ?: 0L) + 1
-    queries.put(KEY_OPENS, opens.toString())
+    val opens = transaction { db ->
+        val next = (db.dbMetaQueries.get(KEY_OPENS).awaitAsOneOrNull()?.toLongOrNull() ?: 0L) + 1
+        db.dbMetaQueries.put(KEY_OPENS, next.toString())
+        next
+    }
     return "persistent=${isPersistent()} created=${createdAt()} opens=$opens"
 }
 

@@ -1,0 +1,49 @@
+-- Saved groups ("Football crew") and their members. A friend can be in several groups.
+
+CREATE TABLE friend_group (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    emoji TEXT NOT NULL,
+    meet_every_days INTEGER,
+    snoozed_until TEXT
+);
+
+CREATE TABLE group_member (
+    group_id TEXT NOT NULL REFERENCES friend_group(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (group_id, friend_id)
+);
+
+CREATE INDEX group_member_friend_id ON group_member(friend_id);
+
+allGroups:
+SELECT * FROM friend_group ORDER BY position;
+
+allMembers:
+SELECT * FROM group_member ORDER BY group_id, position;
+
+nextPosition:
+SELECT coalesce(max(position), -1) + 1 FROM friend_group;
+
+upsert:
+INSERT INTO friend_group (id, position, name, emoji, meet_every_days, snoozed_until) VALUES ?
+ON CONFLICT (id) DO UPDATE SET
+    name = excluded.name,
+    emoji = excluded.emoji,
+    meet_every_days = excluded.meet_every_days,
+    snoozed_until = excluded.snoozed_until;
+
+deleteMembers:
+DELETE FROM group_member WHERE group_id = ?;
+
+insertMember:
+INSERT OR IGNORE INTO group_member (group_id, friend_id, position)
+SELECT :groupId, :friendId, :position WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+delete:
+DELETE FROM friend_group WHERE id = ?;
+
+deleteAll:
+DELETE FROM friend_group;
