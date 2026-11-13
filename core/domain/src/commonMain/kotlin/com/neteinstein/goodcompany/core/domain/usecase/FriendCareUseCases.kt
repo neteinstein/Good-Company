@@ -262,3 +262,17 @@ class SuggestGiftsUseCase(
 class MarkIdeaProposedUseCase(private val ideas: IdeaRepository, private val clock: AppClock) {
     suspend operator fun invoke(id: String) = ideas.markProposed(id, clock.now())
 }
+
+/**
+ * Sets a photo the user picked from their gallery as a friend's avatar (for someone whose contact has none), shrunk
+ * to thumbnail size. Returns false when the picture can't be read; the friend is then left as they were. A later
+ * contacts sync only replaces it if the contact gets a photo of its own.
+ */
+class SetFriendPhotoUseCase(private val friends: FriendRepository, private val photos: PhotoShrinker) {
+    suspend operator fun invoke(id: FriendId, image: ByteArray?): Boolean {
+        val friend = friends.get(id) ?: return false
+        val photo = photos.photoOf(image) ?: return false
+        friends.upsert(friend.copy(photo = photo))
+        return true
+    }
+}

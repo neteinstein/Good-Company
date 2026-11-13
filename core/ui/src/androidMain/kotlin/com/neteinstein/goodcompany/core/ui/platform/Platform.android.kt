@@ -18,6 +18,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsPickerSessionContract
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -26,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +42,9 @@ import com.google.android.gms.common.api.Scope
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -137,6 +142,29 @@ actual fun rememberTextFilePicker(kind: FileKind, onPicked: (text: String?) -> U
             },
         )
     }
+}
+
+@Composable
+actual fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val callback = rememberUpdatedState(onPicked)
+    val scope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) {
+            callback.value(null)
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val bytes = withContext(Dispatchers.IO) {
+                // Upright and at most twice the stored size, like on iOS, so small pictures aren't kept sideways.
+                runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+                    ?.let { uprightJpeg(it, PICKED_MAX_SIDE) }
+            }
+            // Empty (not null, which means cancelled) when the picture couldn't be read, so the app can say so.
+            callback.value(bytes ?: ByteArray(0))
+        }
+    }
+    return { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
 }
 
 @Composable
@@ -410,3 +438,6 @@ private fun Throwable.toDriveFailure(): DriveAuthResult = when {
     this is ApiException && statusCode == CommonStatusCodes.CANCELED -> DriveAuthResult.Cancelled
     else -> DriveAuthResult.Failed(message)
 }
+
+/** Twice the stored photo size, so the shrinker still has detail to work with. */
+private const val PICKED_MAX_SIDE = 512

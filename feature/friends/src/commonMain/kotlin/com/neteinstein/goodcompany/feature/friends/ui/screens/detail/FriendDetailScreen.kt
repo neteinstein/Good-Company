@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -149,6 +151,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
@@ -179,6 +182,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.delete_body
 import com.neteinstein.goodcompany.feature.friends.resources.delete_body_contact
 import com.neteinstein.goodcompany.feature.friends.resources.delete_title
 import com.neteinstein.goodcompany.feature.friends.resources.detail_add_birthday
+import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.detail_back
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
@@ -230,6 +234,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
+import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
 import com.neteinstein.goodcompany.feature.friends.resources.news_hint
@@ -325,6 +330,7 @@ fun FriendDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
+    val pickPhoto = rememberImagePicker(onPicked = viewModel::onPhotoPicked)
     val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
     FriendDetailContent(
@@ -366,6 +372,7 @@ fun FriendDetailScreen(
             onDismissWish = viewModel::onDismissWish,
             onPersonaliseWish = viewModel::onPersonaliseWish,
             onImportChat = pickChat,
+            onAddPhoto = pickPhoto,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
@@ -427,6 +434,8 @@ data class FriendDetailActions(
     val onDismissWish: () -> Unit = {},
     val onPersonaliseWish: () -> Unit = {},
     val onImportChat: () -> Unit = {},
+    /** Offered only while the friend has no photo. */
+    val onAddPhoto: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
@@ -477,6 +486,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
     FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
     FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
+    FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -1312,7 +1322,31 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
                 }
             }
-            FriendAvatar(f, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+            if (f.photo == null) {
+                // No contact photo: the avatar (and its badge) lets you pick one from the gallery.
+                val addPhoto = stringResource(Res.string.detail_add_photo)
+                Box {
+                    FriendAvatar(
+                        f,
+                        size = 112.dp,
+                        highlighted = f.isCloseFriend,
+                        sharedKey = "avatar-${f.id.value}",
+                        modifier = Modifier.clip(CircleShape).clickable(onClickLabel = addPhoto, onClick = actions.onAddPhoto),
+                    )
+                    Surface(
+                        onClick = actions.onAddPhoto,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
+                        modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
+                    ) {
+                        Icon(Icons.Rounded.AddAPhoto, contentDescription = addPhoto, modifier = Modifier.padding(7.dp))
+                    }
+                }
+            } else {
+                FriendAvatar(f, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+            }
             Spacer(Modifier.height(12.dp))
             Text(
                 f.name,

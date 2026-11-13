@@ -108,6 +108,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
@@ -230,6 +231,7 @@ val appModule = module {
     factoryOf(::LogCallUseCase)
     factoryOf(::HandleNotificationActionUseCase)
     factoryOf(::ImportContactsFileUseCase)
+    factoryOf(::SetFriendPhotoUseCase)
     factoryOf(::DraftBirthdayMessageUseCase)
     factoryOf(::SuggestGiftsUseCase)
     factoryOf(::MarkIdeaProposedUseCase)
@@ -289,6 +291,7 @@ val appModule = module {
             cancelPlan = get(),
             restorePlan = get(),
             addFeed = get(),
+            setPhoto = get(),
             clock = get(),
             ids = get(),
         )

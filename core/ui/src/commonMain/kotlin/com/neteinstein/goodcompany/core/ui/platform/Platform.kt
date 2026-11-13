@@ -90,6 +90,13 @@ enum class FileKind { TEXT, VCARD, JSON }
 @Composable
 expect fun rememberTextFilePicker(kind: FileKind = FileKind.TEXT, onPicked: (text: String?) -> Unit): () -> Unit
 
+/**
+ * Returns a launcher for the system photo picker (no gallery permission needed). Hands back the picked picture as an
+ * upright JPEG of at most 512 px, null if cancelled, or empty bytes if the picture couldn't be read.
+ */
+@Composable
+expect fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit
+
 /** Result of [TextSharer.share]. */
 enum class ShareOutcome { SHARE_SHEET, COPIED }
 

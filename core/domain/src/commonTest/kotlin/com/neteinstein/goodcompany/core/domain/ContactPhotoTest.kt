@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.usecase.HomeWidgetSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.VCardParser
 import com.neteinstein.goodcompany.core.domain.usecase.WidgetSnapshot
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -21,6 +22,7 @@ import kotlin.io.encoding.Base64
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -154,6 +156,29 @@ class ContactPhotoTest {
         assertEquals(thumb, all.getValue("Ana Silva").photo)
         assertEquals(otherThumb, all.getValue("Rui Costa").photo, "an existing photo is kept")
         assertEquals(thumb, all.getValue("Eva Lima").photo)
+    }
+
+    // --- Picked from the gallery ---
+
+    @Test
+    fun aPickedPicture_isShrunkAndSaved_andAContactPhotoLaterReplacesIt() = runTest {
+        val g = TestGraph(friends = listOf(friend("contact-1", "Ana") { copy(contactId = "1") }))
+        val ana = FriendId("contact-1")
+        val pick = SetFriendPhotoUseCase(g.friendRepo) { thumb.bytes() }
+
+        assertFalse(pick(ana, null))
+        assertFalse(pick(FriendId("nobody"), jpeg))
+        assertFalse(SetFriendPhotoUseCase(g.friendRepo) { null }(ana, ByteArray(ContactPhoto.MAX_BYTES * 2)))
+        assertNull(g.friendRepo.get(ana)!!.photo)
+
+        assertTrue(pick(ana, ByteArray(ContactPhoto.MAX_BYTES * 2)))
+        assertEquals(thumb, g.friendRepo.get(ana)!!.photo)
+
+        // A sync where the contact still has no photo keeps it; once the contact gets one, that one wins.
+        val kept = ContactMerger.merge(g.friendRepo.friends.value, listOf(ContactRecord("1", "Ana", emptyList(), null)), addNew = false)
+        assertEquals(thumb, kept.single().photo)
+        val replaced = ContactMerger.merge(kept, listOf(ContactRecord("1", "Ana", emptyList(), null, otherThumb)), addNew = false)
+        assertEquals(otherThumb, replaced.single().photo)
     }
 
     // --- Widget ---

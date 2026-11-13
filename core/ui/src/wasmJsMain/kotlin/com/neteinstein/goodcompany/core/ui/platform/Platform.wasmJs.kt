@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarFile
+import kotlin.io.encoding.Base64
 import kotlin.time.Clock
 
 actual val platformCapabilities = PlatformCapabilities(
@@ -70,6 +71,50 @@ private fun pickTextFile(accept: String, onText: (String) -> Unit, onCancel: () 
             const file = input.files && input.files[0];
             if (!file) { onCancel(); return; }
             file.text().then(t => onText(t), () => onCancel());
+        };
+        input.click();
+    }""",
+)
+
+@Composable
+actual fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit {
+    val callback = rememberUpdatedState(onPicked)
+    return {
+        pickImageAsBase64(
+            // Empty bytes (not null) for a picture the browser couldn't read, so the app can say so.
+            onBase64 = { b64 -> callback.value(runCatching { Base64.decode(b64) }.getOrDefault(ByteArray(0))) },
+            onCancel = { callback.value(null) },
+        )
+    }
+}
+
+/**
+ * Draws the picked picture upright (createImageBitmap applies the camera's rotation) at most 512 px on a canvas and
+ * hands it back as base64 JPEG: a JS string crosses into Kotlin easily, raw bytes don't. Formats the browser can't
+ * decode (HEIC in most browsers) come back as an empty string, which the app reports as unreadable.
+ */
+@OptIn(ExperimentalWasmJsInterop::class)
+private fun pickImageAsBase64(onBase64: (String) -> Unit, onCancel: () -> Unit): Unit = js(
+    """{
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = () => {
+            const file = input.files && input.files[0];
+            if (!file) { onCancel(); return; }
+            createImageBitmap(file, { imageOrientation: 'from-image' }).then(bitmap => {
+                const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+                canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                const url = canvas.toDataURL('image/jpeg', 0.9);
+                const comma = url.indexOf(',');
+                if (comma < 0) onCancel(); else onBase64(url.substring(comma + 1));
+            }, () => onBase64(''));
         };
         input.click();
     }""",

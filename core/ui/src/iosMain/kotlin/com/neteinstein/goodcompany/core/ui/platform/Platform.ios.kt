@@ -157,7 +157,7 @@ internal fun keyWindow(): UIWindow? = UIApplication.sharedApplication.connectedS
     .flatMap { scene -> scene.windows.filterIsInstance<UIWindow>() }
     .firstOrNull { it.isKeyWindow() }
 
-private fun topViewController(): UIViewController? {
+internal fun topViewController(): UIViewController? {
     val window = UIApplication.sharedApplication.connectedScenes
         .filterIsInstance<UIWindowScene>()
         .flatMap { scene -> scene.windows.filterIsInstance<UIWindow>() }

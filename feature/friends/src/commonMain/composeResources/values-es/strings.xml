@@ -92,6 +92,7 @@
     <string name="detail_back">Atrás</string>
     <string name="detail_remove_friend">Quitar amigo</string>
     <string name="detail_add_birthday">Añadir cumpleaños</string>
+    <string name="detail_add_photo">Añadir foto</string>
     <string name="detail_birthday_turns">%1$s · cumple %2$d</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Visto %1$s</string>
@@ -320,5 +321,6 @@
     <string name="feeds_to_news">Añadir a novedades</string>
     <string name="feeds_no_posts">Aún no hay publicaciones</string>
     <string name="msg_added_to_news">Añadido a novedades</string>
+    <string name="msg_photo_unreadable">No se ha podido leer esa imagen. Prueba con un JPEG o PNG.</string>
     <string name="story_fresh_post">Nueva publicación</string>
 </resources>
