@@ -13,6 +13,8 @@ fun main() {
     initKoin()
     // e.g. index.html?demo&tab=together&theme=dark — see LaunchOptions.
     val launch = LaunchOptions.parse(window.location.search)
+    // index.html?dbcheck — prints the SQLite/OPFS smoke test to the console (see DatabaseCheck.kt).
+    if (window.location.search.contains("dbcheck")) MainScope().launch { runDatabaseCheck() }
     MainScope().launch {
         // Fill the resource cache first so no label renders blank (see preloadStringResources).
         runCatching { preloadStringResources() }

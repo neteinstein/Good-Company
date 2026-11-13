@@ -6,10 +6,13 @@ import com.neteinstein.goodcompany.core.data.ai.AnthropicAssistant
 import com.neteinstein.goodcompany.core.data.ai.AnthropicClient
 import com.neteinstein.goodcompany.core.data.ai.AnthropicIdeaGenerator
 import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
+import com.neteinstein.goodcompany.core.data.db.AppDatabase
+import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.feeds.KtorFeedFetcher
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsWriter
+import com.neteinstein.goodcompany.core.data.platform.createDatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
 import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
@@ -144,6 +147,9 @@ val appModule = module {
     single<AppClock> { AppClock.System }
     single<IdGenerator> { IdGenerator.Random }
     single<Settings> { Settings() }
+    // SQLite (SQLDelight). Opened lazily on first use; repositories move onto it in the next steps of issue #14.
+    single<DatabaseDriverFactory> { createDatabaseDriverFactory() }
+    single { AppDatabase(get(), get()) }
     single { createHttpClient() }
 
     // --- Platform data sources ---

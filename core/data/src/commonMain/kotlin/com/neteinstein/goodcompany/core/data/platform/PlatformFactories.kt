@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.data.platform
 
+import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -26,6 +27,12 @@ expect fun Scope.createContactsWriter(): ContactsWriter
 expect fun Scope.createLocationProvider(): LocationProvider
 
 expect fun Scope.createNotificationScheduler(): NotificationScheduler
+
+/**
+ * SQLite driver per platform: Android `AndroidSqliteDriver`, iOS `NativeSqliteDriver`, web `WebWorkerDriver` over our
+ * OPFS worker (`src/wasmJsMain/sqlite-worker`). Every driver turns foreign keys on.
+ */
+expect fun Scope.createDatabaseDriverFactory(): DatabaseDriverFactory
 
 /**
  * Hooks notification quick actions up to the app (iOS: installs the UNUserNotificationCenter delegate; Android:

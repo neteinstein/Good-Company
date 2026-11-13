@@ -36,6 +36,11 @@ androidx-work = "2.12.0"
 koin = "4.2.2"
 ktor = "3.6.1"
 multiplatform-settings = "1.3.0"
+sqldelight = "2.4.1"
+# Web only (org.w3c.dom types); the same version Compose Multiplatform already resolves.
+kotlinx-browser = "0.5.0"
+# npm, web only: the official SQLite WebAssembly build behind our OPFS worker (core/data/src/wasmJsMain/sqlite-worker).
+sqlite-wasm = "3.54.1-build1"
 
 # --- Firebase ---
 firebase-bom = "35.1.0"
@@ -56,6 +61,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-browser = { module = "org.jetbrains.kotlinx:kotlinx-browser", version.ref = "kotlinx-browser" }
 
 # Compose Multiplatform (direct coordinates — the `compose.*` accessors are deprecated)
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -100,6 +106,13 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }
 multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "multiplatform-settings" }
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-async = { module = "app.cash.sqldelight:async-extensions", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+sqldelight-web-worker-driver = { module = "app.cash.sqldelight:web-worker-driver", version.ref = "sqldelight" }
+sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 
 # Firebase
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
@@ -123,6 +136,7 @@ compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 
 # Convention plugins (build-logic/convention) — no version, they live in this repo
 goodcompany-kmp-library = { id = "goodcompany.kmp.library" }

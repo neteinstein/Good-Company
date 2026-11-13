@@ -1,0 +1,15 @@
+-- Facts about the database itself, not about the user's data: when it was created, one-off migration flags
+-- (e.g. the JSON → SQLite import in a later step). Keys are constants in AppDatabase.
+CREATE TABLE db_meta (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+get:
+SELECT value FROM db_meta WHERE key = ?;
+
+put:
+INSERT OR REPLACE INTO db_meta(key, value) VALUES (?, ?);
+
+putIfAbsent:
+INSERT OR IGNORE INTO db_meta(key, value) VALUES (?, ?);
