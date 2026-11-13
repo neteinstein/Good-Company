@@ -239,8 +239,8 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             close_circle_days = settings.closeCircleDays.toColumn(),
             good_friends_days = settings.goodFriendsDays.toColumn(),
             weekly_digest = settings.weeklyDigest.toColumn(),
-            digest_day = settings.digestDay.toColumn(),
-            reminder_hour = settings.reminderHour.toColumn(),
+            digest_day = settings.digestDay.coerceIn(1, 7).toColumn(), // the schema's CHECKs; old JSON was never range-checked
+            reminder_hour = settings.reminderHour.coerceIn(0, 23).toColumn(),
             weekly_ideas_enabled = settings.weeklyIdeasEnabled.toColumn(),
             home_area = settings.homeArea,
             show_warmth = settings.showWarmth.toColumn(),

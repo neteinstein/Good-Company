@@ -34,7 +34,9 @@ import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import java.util.Properties
@@ -43,7 +45,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** The SQLite repositories, on an in-memory database that stays open for the whole test (so [open] = restart). */
+/**
+ * The SQLite repositories, on an in-memory database that stays open for the whole test, so [open] (new repositories
+ * over the same data) is a restart. One [AppDatabase] for all of them, as in the app.
+ */
 class SqlRepositoryContractTest : RepositoryContract() {
     private val settings = MapSettings()
     private val factory = SharedInMemoryFactory()
@@ -61,8 +66,9 @@ class SqlRepositoryContractTest : RepositoryContract() {
         }
     }
 
+    private val db by lazy { AppDatabase(factory, clock) }
+
     override fun open(contacts: ContactsSource, writer: ContactsWriter, logs: CommunicationLogSource): Stores {
-        val db = AppDatabase(factory, clock)
         val appSettings = SqlSettingsRepository(db, settings)
         return Stores(
             friends = SqlFriendRepository(db, contacts, writer),
@@ -138,5 +144,20 @@ class SqlRepositoryContractTest : RepositoryContract() {
         assertEquals(listOf(ana), other.friends.friends.first().map { it.id })
         s.backup.restore(Backup(friends = listOf(friend("rui"))))
         assertEquals(listOf(rui), other.friends.friends.first().map { it.id })
+    }
+
+    @Test
+    fun aReadRightAfterAWrite_seesIt_evenWhileTheQueryIsShared() = runTest {
+        val s = open()
+        val watching = backgroundScope.launch(Dispatchers.Default) { s.friends.friends.collect { } }
+        repeat(50) { i ->
+            s.friends.upsert(friend("f$i"))
+            assertEquals(i + 1, s.friends.friends.first().size)
+            s.hangouts.add(Hangout("h$i", listOf(FriendId("f$i")), at(2026, 3, 1)))
+            assertEquals(i + 1, s.hangouts.hangouts.first().size)
+        }
+        s.friends.delete(FriendId("f0"))
+        assertTrue(s.hangouts.hangouts.first().first().friendIds.isEmpty())
+        watching.cancel()
     }
 }

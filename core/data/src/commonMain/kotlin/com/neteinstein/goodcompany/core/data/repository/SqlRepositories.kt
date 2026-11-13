@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.core.data.repository
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
@@ -318,6 +317,10 @@ internal data class DeviceSettings(
 
 /** One [AppSettings] made of two stores: user preferences in the database, device settings in key-value storage. */
 class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : SettingsRepository {
+    init {
+        LegacyJsonImport.takeOverDeviceSettings(settings)
+    }
+
     private val device = PersistentState(settings, DeviceSettings.KEY, DeviceSettings.serializer(), DeviceSettings())
     private val lock = Mutex()
 
@@ -334,9 +337,6 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
             device.update { DeviceSettings.of(next) }
         }
     }
-
-    /** For restore: writes the database part inside the caller's transaction. */
-    internal suspend fun writePreferences(database: GoodCompanyDatabase, settings: AppSettings) = database.writePreferences(settings)
 
     internal suspend fun writeDevice(settings: AppSettings) = device.update { DeviceSettings.of(settings) }
 
@@ -365,30 +365,33 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
     }
 
     override suspend fun restore(backup: Backup) {
-        db.transaction { database ->
-            // Friends first: deleting them clears every join table, and everything else refers to them.
-            database.friendQueries.deleteAll()
-            database.hangoutQueries.deleteAll()
-            database.reminderQueries.deleteAll()
-            database.planQueries.deleteAll()
-            database.ideaQueries.deleteAll()
-            database.friendGroupQueries.deleteAll()
-            database.interactionQueries.deleteAllInteractions()
-            database.interactionQueries.deleteAllMessages()
-
-            backup.friends.forEachIndexed { i, friend -> database.writeFriend(friend, i.toLong()) }
-            backup.ideas.forEach { database.writeIdea(it) } // before plans, which may point at an idea
-            backup.hangouts.forEach { database.writeHangout(it) }
-            backup.reminders.forEach { database.writeReminder(it) }
-            backup.plans.forEach { database.writePlan(it) }
-            backup.groups.forEach { database.writeGroup(it) }
-            backup.interactions.forEach { database.writeInteraction(it) }
-            backup.messages.forEach { database.writeMessage(it) }
-            settings.writePreferences(database, backup.settings)
-        }
+        db.transaction { it.replaceAllData(backup) }
         settings.writeDevice(backup.settings)
     }
 }
 
-/** Friend ids currently stored (for tests and the JSON import's sanity checks). */
-internal suspend fun GoodCompanyDatabase.friendIds(): List<String> = friendQueries.ids().awaitAsList()
+/**
+ * Replaces every table with [backup], including the user preferences from its settings (device settings are the
+ * caller's job). Call inside a transaction, so a failure leaves the old data in place.
+ */
+internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
+    // Friends first: deleting them clears every join table, and everything else refers to them.
+    friendQueries.deleteAll()
+    hangoutQueries.deleteAll()
+    reminderQueries.deleteAll()
+    planQueries.deleteAll()
+    ideaQueries.deleteAll()
+    friendGroupQueries.deleteAll()
+    interactionQueries.deleteAllInteractions()
+    interactionQueries.deleteAllMessages()
+
+    backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
+    backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
+    backup.hangouts.forEach { writeHangout(it) }
+    backup.reminders.forEach { writeReminder(it) }
+    backup.plans.forEach { writePlan(it) }
+    backup.groups.forEach { writeGroup(it) }
+    backup.interactions.forEach { writeInteraction(it) }
+    backup.messages.forEach { writeMessage(it) }
+    writePreferences(backup.settings)
+}

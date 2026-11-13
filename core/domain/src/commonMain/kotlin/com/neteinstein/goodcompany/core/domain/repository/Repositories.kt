@@ -111,3 +111,8 @@ interface SettingsRepository {
 
     suspend fun update(transform: (AppSettings) -> AppSettings)
 }
+
+/** Whether what the app writes now survives a restart (false only in a web tab that got temporary storage). */
+interface StorageStatus {
+    suspend fun isPersistent(): Boolean
+}

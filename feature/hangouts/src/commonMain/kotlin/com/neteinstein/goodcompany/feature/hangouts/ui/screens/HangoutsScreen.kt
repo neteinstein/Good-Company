@@ -414,7 +414,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
             item(key = "history-h") {
                 SectionHeader(stringResource(if (state.filter.isEmpty()) Res.string.section_memories else Res.string.section_memories_together))
             }
-            if (state.history.isEmpty()) {
+            if (!state.isLoading && state.history.isEmpty()) {
                 item(key = "history-empty") {
                     EmptyState(
                         icon = Icons.Rounded.History,

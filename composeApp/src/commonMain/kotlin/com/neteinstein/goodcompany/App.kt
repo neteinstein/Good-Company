@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Favorite
@@ -43,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +55,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
+import com.neteinstein.goodcompany.composeApp.resources.storage_temporary
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
@@ -85,6 +89,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
     GoodCompanyTheme(themeMode = state.settings.themeMode, dynamicColor = state.settings.dynamicColor) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             if (state.isReady) {
+                if (state.storageIsTemporary) TemporaryStorageBanner()
                 AnimatedContent(
                     targetState = state.settings.onboardingDone,
                     transitionSpec = { (fadeIn(tween(400)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(250)) },
@@ -93,6 +98,22 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                 }
                 if (state.settings.appLock) AppLock()
             }
+        }
+    }
+}
+
+/** Shown over everything when this web tab only got temporary storage (see AGENTS.md gotcha 24). */
+@Composable
+private fun TemporaryStorageBanner() {
+    Box(Modifier.fillMaxSize().zIndex(1f), contentAlignment = Alignment.TopCenter) {
+        Surface(
+            modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing).padding(16.dp),
+            color = MaterialTheme.colorScheme.errorContainer,
+            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+            shape = MaterialTheme.shapes.large,
+            shadowElevation = 6.dp,
+        ) {
+            Text(stringResource(Res.string.storage_temporary), Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
