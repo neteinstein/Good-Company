@@ -5,7 +5,7 @@ Owner review of the Circles tab after the four-tab layout (#65–#72) shipped. M
 [`PRODUCT_BRIEF.md`](../PRODUCT_BRIEF.md) ("Circles tab · only the circles" and "Circles · a page for each circle").
 Base: `origin/main` @ `584bc1b` (#86 merged, last migration `19.sqm`). One issue.
 
-**Not created as an issue yet.**
+**Created as issue (2026-11-14):** P1 #88. The issue is the live copy.
 
 ## Owner notes (2026-11-14)
 
@@ -29,7 +29,7 @@ Base: `origin/main` @ `584bc1b` (#86 merged, last migration `19.sqm`). One issue
 
 ---
 
-## P1 · Circles: a page for each circle
+## P1 (#88) · Circles: a page for each circle
 
 ![Today](../mockups/v1-circles/now.png)
 
