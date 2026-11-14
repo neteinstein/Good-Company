@@ -148,6 +148,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
@@ -224,11 +225,13 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStory
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapViewModel
@@ -406,6 +409,7 @@ val appModule = module {
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
+    factoryOf(::ObserveYearReviewCardUseCase)
     factoryOf(::BackupToDriveUseCase)
     factoryOf(::FetchDriveBackupUseCase)
     factoryOf(::ObservePlansUseCase)
@@ -495,6 +499,7 @@ val appModule = module {
     viewModelOf(::GiftListsViewModel)
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
+    viewModelOf(::WhosFreeViewModel)
     viewModel { (ids: List<FriendId>, circleId: String?, plan: PlanOccurrence?) ->
         WeMetViewModel(ids, circleId, plan, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
@@ -504,6 +509,7 @@ val appModule = module {
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)
     viewModelOf(::IdeasViewModel)
+    viewModelOf(::PlansViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PlacesViewModel)
     viewModelOf(::TagsViewModel)

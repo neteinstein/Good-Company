@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -111,8 +112,9 @@ suspend fun IdeasMessage.text(): String = when (this) {
     IdeasMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
 }
 
+/** The weekly ideas in full, pushed from the Plans tab's "Ideas for this week" card (issue #67). */
 @Composable
-fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinViewModel()) {
+fun IdeasScreen(onOpenSettings: () -> Unit, onBack: (() -> Unit)? = null, viewModel: IdeasViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     IdeasContent(
         state,
@@ -124,6 +126,7 @@ fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinView
         viewModel::onKindFilter,
         viewModel::onPropose,
         viewModel::onPlan,
+        onBack,
     )
     state.planning?.let { card ->
         PlanEditor(
@@ -184,6 +187,7 @@ fun IdeasContent(
     onKindFilter: (IdeaKind?) -> Unit = {},
     onPropose: (String) -> Unit = {},
     onPlan: (String) -> Unit = {},
+    onBack: (() -> Unit)? = null,
 ) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
@@ -207,6 +211,7 @@ fun IdeasContent(
                     title = stringResource(Res.string.title),
                     subtitle = stringResource(Res.string.subtitle),
                     trailing = { HeaderSettingsButton(onOpenSettings) },
+                    navigation = onBack?.let { back -> { HeaderBackButton(back) } },
                 )
             }
             if (!state.isLoading && !state.hasAiKey && state.ideas.isEmpty() && state.kindFilter == null) {

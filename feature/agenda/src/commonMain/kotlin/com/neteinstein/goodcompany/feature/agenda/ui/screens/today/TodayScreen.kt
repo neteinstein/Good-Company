@@ -61,6 +61,7 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StoryBubbleChip
+import com.neteinstein.goodcompany.core.ui.components.YearReviewCard
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
@@ -134,6 +135,8 @@ fun TodayScreen(
     /** No people yet: the People tab, where they're added. */
     onOpenPeople: () -> Unit,
     checkInSheet: @Composable (onSaved: (List<String>) -> Unit, onDismiss: () -> Unit) -> Unit,
+    /** The December "Your year in friendship" card (issue #67). */
+    onOpenYearReview: (Int) -> Unit = {},
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -156,6 +159,7 @@ fun TodayScreen(
             onOpenAgenda = onOpenAgenda,
             onOpenSettings = onOpenSettings,
             onOpenPeople = onOpenPeople,
+            onOpenYearReview = onOpenYearReview,
             onNewReminder = viewModel::onNewReminder,
             onMessageShown = viewModel::onMessageShown,
         ),
@@ -208,6 +212,7 @@ data class TodayActions(
     val onOpenAgenda: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onOpenPeople: () -> Unit = {},
+    val onOpenYearReview: (Int) -> Unit = {},
     val onNewReminder: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
 )
@@ -257,6 +262,9 @@ fun TodayContent(state: TodayUiState, actions: TodayActions, modifier: Modifier 
                 return@LazyColumn
             }
             if (state.showCheckIn) item(key = "check-in") { CheckInCard(actions.onCheckIn) }
+            state.reviewYear?.let { year ->
+                item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
+            }
 
             item(key = "week-h") { SectionHeader(stringResource(Res.string.today_this_week)) }
             if (!state.isLoading && state.week.isEmpty()) {

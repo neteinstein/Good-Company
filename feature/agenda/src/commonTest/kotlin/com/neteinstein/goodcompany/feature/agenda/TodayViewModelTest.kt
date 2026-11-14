@@ -28,6 +28,7 @@ class TodayViewModelTest {
         g.observeStoryBubbles,
         g.observeFriends,
         g.observeSettings,
+        g.observeYearReviewCard,
         g.addReminder,
         g.confirmPlan,
         g.logCall,

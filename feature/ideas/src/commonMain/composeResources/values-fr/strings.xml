@@ -45,4 +45,16 @@
     <string name="msg_no_key">Ajoute d’abord ta clé d’API dans les Réglages.</string>
     <string name="msg_no_friends">Active « Idées de sorties chaque semaine » pour au moins un ami.</string>
     <string name="msg_nothing">Rien à faire pour le moment.</string>
+    <!-- The Plans tab (issue #67) -->
+    <string name="plans_title">Projets</string>
+    <string name="plans_coming_up">À venir</string>
+    <string name="plans_empty">Pas encore de projets. Touche + pour en faire un.</string>
+    <string name="plans_gift_lists_title">Listes de cadeaux</string>
+    <string name="plans_gift_lists_hint">Noël, Secret Santa, anniversaires</string>
+    <string name="plans_gift_lists_progress">%1$s · %2$d sur %3$d achetés</string>
+    <string name="plans_free_title">Qui est partant pour… ?</string>
+    <string name="plans_free_body">Trouve des gens pour une activité</string>
+    <string name="plans_ideas_title">Idées pour cette semaine</string>
+    <string name="plans_ideas_all">Toutes (%1$d)</string>
+    <string name="plans_ideas_empty">Pas encore d’idées. Ouvre-les pour en chercher.</string>
 </resources>

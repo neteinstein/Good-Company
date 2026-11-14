@@ -62,6 +62,7 @@ import org.jetbrains.compose.resources.StringResource
 /** A friend's catch-up story; [fromFriend] = opened from their page (so no "Open profile" button). */
 @Serializable data class CatchUpStoryRoute(val id: String, val fromFriend: Boolean = false)
 
+/** The Circles tab (issue #67): the circles, "Last time with…" and the memories (was Together). */
 @Serializable data object HangoutsRoute
 
 /** The Today tab (issue #65): what needs you this week. */
@@ -70,7 +71,14 @@ import org.jetbrains.compose.resources.StringResource
 /** "Everything coming up": the full agenda, pushed from Today (issue #65). */
 @Serializable data object AgendaRoute
 
+/** The Plans tab (issue #67): plans, gift lists, "Who's free for…?" and, with AI on, the weekly ideas (was Ideas). */
 @Serializable data object IdeasRoute
+
+/** The weekly AI ideas in full, pushed from the Plans tab (issue #67); only reachable while AI is on (F1). */
+@Serializable data object WeeklyIdeasRoute
+
+/** "Who's free for…?", pushed from the Plans tab (issue #67). */
+@Serializable data object WhosFreeRoute
 
 /** Settings, opened from the top right of every tab header (issue #65); no longer a tab. */
 @Serializable data object SettingsRoute
@@ -84,7 +92,7 @@ import org.jetbrains.compose.resources.StringResource
 /** "Suggested family": kinship worked out from the links, confirmed with one tap (issue #41). */
 @Serializable data object SuggestedFamilyRoute
 
-/** Gift lists per occasion (F8): from the Together tab and from a friend's gift card. */
+/** Gift lists per occasion (F8): from the Plans tab (issue #67) and from a friend's gift card. */
 @Serializable data object GiftListsRoute
 
 @Serializable data class GiftListRoute(val id: String)
@@ -109,8 +117,8 @@ import org.jetbrains.compose.resources.StringResource
 
 /**
  * The bottom bar (issue #65): Today · People · Circles · Plans, the same on every platform whatever the AI switch.
- * Settings left the bar: every tab header opens it ([SettingsRoute]). Until issues #66 and #67, People, Circles and
- * Plans host the existing Friends, Together and Ideas screens.
+ * Settings left the bar: every tab header opens it ([SettingsRoute]). The route objects kept their old names
+ * ([HangoutsRoute] is Circles, [IdeasRoute] is Plans).
  */
 enum class TopLevelDestination(val route: Any, val label: StringResource, val icon: ImageVector, val selectedIcon: ImageVector) {
     TODAY(TodayRoute, Res.string.nav_today, Icons.Outlined.WbSunny, Icons.Rounded.WbSunny),

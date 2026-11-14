@@ -5,7 +5,6 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -40,10 +39,7 @@ class HangoutsViewModelTest {
     private fun vm() = HangoutsViewModel(
         g.observeFriends,
         g.observeHistory,
-        g.observeMeetups,
-        g.observeHistory,
         g.observeGroups,
-        g.observeOccasionMatches,
         g.observePlaceBook,
         g.observePlans,
         g.savePlan,
@@ -89,14 +85,11 @@ class HangoutsViewModelTest {
     }
 
     @Test
-    fun splitsOverdueAndUpcomingAndFiltersHistory() = runViewModelTest {
+    fun filtersHistoryForLastTimeWith() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        assertEquals(listOf("ana"), state.value.overdue.map { it.friend.id.value })
-        assertEquals(listOf("rui"), state.value.upcoming.map { it.friend.id.value })
         assertEquals(2, state.value.history.size)
         assertNull(state.value.lastTogether)
-        assertEquals(2026, state.value.reviewYear)
 
         vm.onToggleFilter(ana)
         vm.onToggleFilter(rui)
@@ -121,7 +114,6 @@ class HangoutsViewModelTest {
         val newest = g.hangoutRepo.hangouts.value.last()
         assertEquals(setOf(ana, rui), newest.friendIds.toSet())
         assertEquals("Café", newest.place?.name)
-        assertTrue(state.value.overdue.isEmpty())
     }
 
     @Test
@@ -141,15 +133,9 @@ class HangoutsViewModelTest {
     }
 
     @Test
-    fun statsCelebrationAndUndoDelete() = runViewModelTest {
+    fun deleteAMemoryWithUndo() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        assertEquals(1, state.value.stats.meetups) // only the Mar 1 hangout is this month
-        vm.onStartCheckIn(ana)
-        vm.onSaveCheckIn()
-        assertEquals(1, state.value.celebrate)
-        assertEquals(2, state.value.stats.meetups)
-
         vm.onDeleteHangout("1")
         assertEquals(HangoutsMessage.MemoryDeleted, state.value.message)
         assertTrue(g.hangoutRepo.hangouts.value.none { it.id == "1" })
@@ -195,24 +181,22 @@ class HangoutsViewModelTest {
     }
 
     @Test
-    fun whosFreeForSuggestsTaggedFriendsAndPlans() = runViewModelTest {
+    fun circlesAreOrderedByLastMeetup_neverMetLast_andPlanWithACircle() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        assertTrue(state.value.occasions.isEmpty())
-        assertNull(state.value.selectedOccasion)
-        g.updateFriend(ana) { it.copy(occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.COFFEE)) }
-        assertEquals(Occasion.WEEKDAY_LUNCH, state.value.selectedOccasion)
-        vm.onSelectOccasion(Occasion.COFFEE)
-        assertEquals(Occasion.COFFEE, state.value.selectedOccasion)
-        assertEquals(listOf(ana), state.value.occasions.getValue(Occasion.COFFEE).map { it.friend.id })
+        val never = g.saveGroup(null, "Book club", "📚", CircleColor.AMBER, listOf(FriendId("zoe")), null)
+        g.saveGroup(null, "Lunch", "🥪", CircleColor.BLUE, listOf(ana, rui), null) // last together Feb 1
+        val recent = g.saveGroup(null, "Rui", "🎸", CircleColor.TEAL, listOf(rui), null) // last together Mar 1
+        assertEquals(listOf("Rui", "Lunch", "Book club"), state.value.groups.map { it.group.name })
 
-        vm.onPlanWith(ana, Occasion.COFFEE)
-        assertEquals(PlanDraft(ana, Occasion.COFFEE), state.value.planDraft)
-        vm.onSavePlan(PlanInput("Coffee", emptyList(), LocalDate(2026, 3, 12)))
+        vm.onPlanWithCircle(recent.id)
+        assertEquals(PlanDraft(recent.id), state.value.planDraft)
+        vm.onSavePlan(PlanInput("Jam", emptyList(), LocalDate(2026, 3, 12), circleId = recent.id))
         assertNull(state.value.planDraft)
         assertEquals(HangoutsMessage.PlanSaved, state.value.message)
-        assertEquals(listOf(ana), g.planRepo.plans.value.single().friendIds)
-        vm.onPlanWith(ana, Occasion.COFFEE)
+        assertEquals(recent.id, g.planRepo.plans.value.single().circleId)
+        assertEquals("Jam", state.value.circlePlans.getValue(recent.id).title)
+        vm.onPlanWithCircle(never.id)
         vm.onDismissPlan()
         assertNull(state.value.planDraft)
     }

@@ -91,6 +91,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
@@ -290,6 +291,7 @@ class TestGraph(
     val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
+    val observeYearReviewCard = ObserveYearReviewCardUseCase(hangoutRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)
     val dismissIdea = DismissIdeaUseCase(ideaRepo)
     val markIdeaProposed = MarkIdeaProposedUseCase(ideaRepo, clock)
