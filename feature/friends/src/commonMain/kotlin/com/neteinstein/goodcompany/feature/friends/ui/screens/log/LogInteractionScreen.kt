@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.ui.components.LogInteractionSheet
 import com.neteinstein.goodcompany.core.ui.components.LogSheetActions
 import org.koin.compose.viewmodel.koinViewModel
@@ -17,8 +18,10 @@ fun LogInteractionScreen(
     type: String?,
     onClose: () -> Unit,
     circleId: String? = null,
-    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId") {
-        parametersOf(friendIds, type, circleId)
+    /** Answering a plan's "Did you meet?" (`<planId>@<date>`, see [PlanOccurrence]). */
+    plan: String? = null,
+    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId-$plan") {
+        parametersOf(friendIds, type, circleId, plan?.let(PlanOccurrence::decode))
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

@@ -491,4 +491,39 @@
     <string name="crop_hint">Afaste os dedos para ampliar · arraste para mover</string>
     <string name="crop_use">Usar foto</string>
     <string name="kid_of">%2$s de %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Um círculo</string>
+    <string name="plan_with_people">Pessoas</string>
+    <string name="plan_activity">Atividade</string>
+    <string name="plan_repeat">Repetir</string>
+    <string name="plan_repeat_never">Nunca</string>
+    <string name="plan_repeat_custom">Personalizar</string>
+    <string name="plan_repeat_unit_days">Dias</string>
+    <string name="plan_repeat_unit_weeks">Semanas</string>
+    <string name="plan_repeat_unit_months">Meses</string>
+    <string name="plan_repeat_every_label">A cada</string>
+    <string name="plan_repeat_forever">Até o parares. Cada data pode ser saltada à parte.</string>
+    <string name="plan_repeat_until">Até %1$s</string>
+    <string name="plan_repeat_add_end">Adicionar data de fim</string>
+    <string name="plan_repeat_remove_end">Sem data de fim</string>
+    <string name="plan_skip_one">Saltar esta</string>
+    <string name="plan_next_after">A seguir a esta: %1$s</string>
+    <string name="plan_repeats">repete</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Saltada. A série continua.</string>
+    <string name="plan_make">Planear</string>
+    <string name="circle_next_plan">Próximo: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">todas as semanas</item>
+        <item quantity="other">a cada %1$d semanas</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">todos os meses</item>
+        <item quantity="other">a cada %1$d meses</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d pessoa</item>
+        <item quantity="other">%1$d pessoas</item>
+    </plurals>
 </resources>

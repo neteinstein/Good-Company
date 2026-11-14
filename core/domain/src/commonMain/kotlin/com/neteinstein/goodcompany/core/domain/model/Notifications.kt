@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
 /** What a notification is about. Text is rendered (and localised) later by a [NotificationRenderer]. */
@@ -27,11 +28,28 @@ sealed interface NotificationContent {
     /** The weekly catch-up note: a few names worth reaching out to (instead of one notification per friend). */
     data class CatchUpDigest(val names: List<String>, val total: Int) : NotificationContent
 
-    /** A planned meetup is today. */
-    data class PlanToday(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
+    /** A planned meetup is today. [occurrence] is set for a recurring plan (the day of this occurrence). */
+    data class PlanToday(
+        val planId: String,
+        val title: String,
+        val withNames: List<String>,
+        val occurrence: LocalDate? = null,
+    ) : NotificationContent
 
-    /** The day after a plan: "Did you meet?" — answered with quick actions. */
-    data class PlanFollowUp(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
+    /**
+     * The day after a plan: "Did you meet?" — answered with quick actions. A circle plan ([isCircle]) can't be logged
+     * from the notification (you tick who came in the app), so it only offers "We didn't go".
+     */
+    data class PlanFollowUp(
+        val planId: String,
+        val title: String,
+        val withNames: List<String>,
+        val occurrence: LocalDate? = null,
+        val isCircle: Boolean = false,
+    ) : NotificationContent {
+        /** The notification actions' target: this occurrence. */
+        val target: String get() = PlanOccurrence(planId, occurrence).encode()
+    }
 }
 
 /** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */

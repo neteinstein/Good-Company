@@ -505,4 +505,42 @@
     <string name="crop_hint">Ciupește pentru zoom · trage pentru a muta</string>
     <string name="crop_use">Folosește fotografia</string>
     <string name="kid_of">%2$s lui %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Un cerc</string>
+    <string name="plan_with_people">Persoane</string>
+    <string name="plan_activity">Activitate</string>
+    <string name="plan_repeat">Repetă</string>
+    <string name="plan_repeat_never">Niciodată</string>
+    <string name="plan_repeat_custom">Personalizat</string>
+    <string name="plan_repeat_unit_days">Zile</string>
+    <string name="plan_repeat_unit_weeks">Săptămâni</string>
+    <string name="plan_repeat_unit_months">Luni</string>
+    <string name="plan_repeat_every_label">La fiecare</string>
+    <string name="plan_repeat_forever">Până o oprești. Fiecare dată poate fi sărită separat.</string>
+    <string name="plan_repeat_until">Până pe %1$s</string>
+    <string name="plan_repeat_add_end">Adaugă o dată de final</string>
+    <string name="plan_repeat_remove_end">Fără dată de final</string>
+    <string name="plan_skip_one">Sari peste aceasta</string>
+    <string name="plan_next_after">Următoarea: %1$s</string>
+    <string name="plan_repeats">se repetă</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Sărită. Seria continuă.</string>
+    <string name="plan_make">Planifică</string>
+    <string name="circle_next_plan">Următorul: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">în fiecare săptămână</item>
+        <item quantity="few">la fiecare %1$d săptămâni</item>
+        <item quantity="other">la fiecare %1$d de săptămâni</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">în fiecare lună</item>
+        <item quantity="few">la fiecare %1$d luni</item>
+        <item quantity="other">la fiecare %1$d de luni</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d persoană</item>
+        <item quantity="few">%1$d persoane</item>
+        <item quantity="other">%1$d de persoane</item>
+    </plurals>
 </resources>

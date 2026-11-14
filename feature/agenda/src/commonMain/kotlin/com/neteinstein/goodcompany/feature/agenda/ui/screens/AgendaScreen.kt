@@ -67,6 +67,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
@@ -104,10 +105,15 @@ suspend fun AgendaMessage.text(): String = when (this) {
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    AgendaMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
 }
 
 @Composable
-fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = koinViewModel()) {
+fun AgendaScreen(
+    onOpenFriend: (FriendId) -> Unit,
+    onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    viewModel: AgendaViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val addToCalendar = rememberCalendarAdder()
     AgendaContent(
@@ -120,8 +126,16 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = viewModel::onGroupMet,
-        onConfirmPlan = viewModel::onConfirmPlan,
-        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends)) },
+        // A circle plan asks who came: the Log sheet with its members unticked (F20).
+        onConfirmPlan = { item, happened ->
+            if (happened && item.circle != null) {
+                onLogPlan(item.plan.id, item.occurrence)
+            } else {
+                viewModel.onConfirmPlan(item.plan.id, happened, item.occurrence)
+            }
+        },
+        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
+        onSkipPlan = viewModel::onSkipPlan,
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
@@ -158,8 +172,9 @@ fun AgendaContent(
     onUndoDelete: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
-    onConfirmPlan: (String, Boolean) -> Unit = { _, _ -> },
+    onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -228,6 +243,7 @@ fun AgendaContent(
                         onGroupMet = onGroupMet,
                         onConfirmPlan = onConfirmPlan,
                         onAddPlanToCalendar = onAddPlanToCalendar,
+                        onSkipPlan = onSkipPlan,
                         modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
                     )
                 }

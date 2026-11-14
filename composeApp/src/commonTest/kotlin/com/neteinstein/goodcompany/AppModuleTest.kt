@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
@@ -79,8 +80,11 @@ class AppModuleTest {
         assertNotNull(koin.get<FriendsViewModel>())
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<FriendTimelineViewModel> { parametersOf(FriendId("x")) })
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL", null) })
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), null, "circle-1") })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL", null, null) })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), null, "circle-1", null) })
+        assertNotNull(
+            koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), "MEETUP", null, PlanOccurrence("p1", null)) },
+        )
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null) })
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1") })
         assertNotNull(koin.get<HangoutsViewModel>())

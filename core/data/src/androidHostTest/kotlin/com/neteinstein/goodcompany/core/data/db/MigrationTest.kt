@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.await
+import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
@@ -18,7 +19,10 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import java.io.File
@@ -358,6 +362,47 @@ class MigrationTest {
         // The gift for Mia moved to her page; Rui keeps his own.
         assertEquals(listOf(Gift("g1", "Lego", price = "€35")), mia.gifts)
         assertEquals(listOf("Book"), people.getValue("rui").gifts.map { it.title })
+        driver.close()
+    }
+
+    @Test
+    fun version11to12_keepsPlans_andTheyCanTakeACircleAnActivityAndARepeat() = runTest {
+        val driver = driverAt(11)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO plan VALUES ('p1', 0, 'Lunch', '2026-12-01', NULL, NULL, 'PLANNED', 1000)", 0).await()
+        driver.execute(null, "INSERT INTO plan_friend VALUES ('p1', 'ana', 0)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 11, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val old = database.readPlans().single()
+        assertEquals(listOf(FriendId("ana")), old.friendIds)
+        assertNull(old.circleId)
+        assertNull(old.repeat)
+        assertNull(old.activity)
+
+        val climbing = Plan(
+            id = "p2",
+            friendIds = emptyList(),
+            title = "Climbing",
+            date = LocalDate(2026, 12, 16),
+            createdAt = Instant.fromEpochSeconds(2),
+            circleId = "crew",
+            activity = HangoutActivity.SPORTS,
+            repeat = Repeat(15, RepeatUnit.DAY, LocalDate(2026, 12, 1), until = LocalDate(2027, 6, 1)),
+            skippedDates = listOf(LocalDate(2026, 12, 31)),
+        )
+        database.writePlan(climbing)
+        assertEquals(climbing, database.readPlans().single { it.id == "p2" })
+        database.planQueries.delete("p2")
+        assertTrue(database.planQueries.allPlanSkips().awaitAsList().isEmpty())
         driver.close()
     }
 }

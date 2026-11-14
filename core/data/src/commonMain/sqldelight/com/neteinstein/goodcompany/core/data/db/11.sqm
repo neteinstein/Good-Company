@@ -1,0 +1,22 @@
+-- Version 11 → 12 (issue #43, F20): a plan can be with a circle, have an activity and repeat (every N days, weeks or
+-- months from repeat_start, until repeat_until when set). plan.date stays the open occurrence; plan_skip holds the
+-- later occurrences taken out one by one. circle_id has no foreign key on purpose: a deleted circle reads as none,
+-- and undoing the delete links the plan again.
+
+ALTER TABLE plan ADD COLUMN circle_id TEXT;
+
+ALTER TABLE plan ADD COLUMN activity TEXT;
+
+ALTER TABLE plan ADD COLUMN repeat_every INTEGER;
+
+ALTER TABLE plan ADD COLUMN repeat_unit TEXT;
+
+ALTER TABLE plan ADD COLUMN repeat_start TEXT;
+
+ALTER TABLE plan ADD COLUMN repeat_until TEXT;
+
+CREATE TABLE plan_skip (
+    plan_id TEXT NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    PRIMARY KEY (plan_id, date)
+);

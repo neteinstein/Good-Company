@@ -45,6 +45,9 @@ sealed interface AgendaMessage {
     data object PlanLogged : AgendaMessage
 
     data object PlanClosed : AgendaMessage
+
+    /** One occurrence of a recurring plan skipped; the series goes on. */
+    data object PlanSkipped : AgendaMessage
 }
 
 data class AgendaUiState(
@@ -177,11 +180,19 @@ class AgendaViewModel(
         }
     }
 
-    /** "Did you meet?" answered from the agenda. */
-    fun onConfirmPlan(id: String, happened: Boolean) {
+    /** "Did you meet?" answered from the agenda, for one occurrence ([day]; the open one when null). */
+    fun onConfirmPlan(id: String, happened: Boolean, day: LocalDate? = null) {
         viewModelScope.launch {
-            confirmPlan(id, happened)
+            confirmPlan(id, happened, day)
             local.update { it.copy(message = if (happened) AgendaMessage.PlanLogged else AgendaMessage.PlanClosed) }
+        }
+    }
+
+    /** "Skip this one": takes one date out of a recurring plan; the series goes on. */
+    fun onSkipPlan(item: AgendaItem.PlanUpcoming) {
+        viewModelScope.launch {
+            confirmPlan(item.plan.id, happened = false, day = item.occurrence)
+            local.update { it.copy(message = AgendaMessage.PlanSkipped) }
         }
     }
 

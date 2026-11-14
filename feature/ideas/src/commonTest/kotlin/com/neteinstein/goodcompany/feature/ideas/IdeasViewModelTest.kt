@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -88,7 +89,7 @@ class IdeasViewModelTest {
         val state = collecting(vm.state)
         vm.onPlan("i1")
         assertEquals("i1", state.value.planning?.idea?.id)
-        vm.onSavePlan("Jazz night", emptyList(), LocalDate(2026, 3, 13), "Hot Clube")
+        vm.onSavePlan(PlanInput("Jazz night", emptyList(), LocalDate(2026, 3, 13), "Hot Clube"))
         assertNull(state.value.planning)
         assertEquals(IdeasMessage.PlanSaved, state.value.message)
         val plan = g.planRepo.plans.value.single()

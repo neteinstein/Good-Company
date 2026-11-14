@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -96,7 +97,8 @@ class HandleNotificationActionUseCase(
 ) {
     suspend operator fun invoke(action: NotificationAction) {
         if (action.isPlan) {
-            confirmPlan(action.targetId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED)
+            val occurrence = PlanOccurrence.decode(action.targetId)
+            confirmPlan(occurrence.planId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED, day = occurrence.date)
             return
         }
         if (action.isGroup) {

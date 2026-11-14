@@ -209,13 +209,14 @@ object ResourceNotificationRenderer : NotificationRenderer {
             is NotificationContent.PlanFollowUp -> Triple(
                 getString(Res.string.notif_plan_ask_title, namesText(c.withNames, c.withNames.size)),
                 getString(Res.string.notif_plan_ask_body, c.title),
-                listOf(
+                // A circle plan asks who came in the app (tap the notification); only "No" works from here.
+                listOfNotNull(
                     RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.planId),
+                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.target),
                         getString(Res.string.notif_action_plan_yes),
-                    ),
+                    ).takeUnless { c.isCircle },
                     RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.planId),
+                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.target),
                         getString(Res.string.notif_action_plan_no),
                     ),
                 ),

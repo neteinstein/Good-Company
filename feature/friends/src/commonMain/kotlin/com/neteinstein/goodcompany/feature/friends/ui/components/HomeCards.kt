@@ -154,7 +154,7 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             item.friends.firstOrNull(),
             Icons.Rounded.EventAvailable,
             item.plan.title,
-            item.friends.joinToString { it.displayName.substringBefore(' ') },
+            item.circle?.let { "${it.emoji} ${it.name}" } ?: item.friends.joinToString { it.displayName.substringBefore(' ') },
         )
         is AgendaItem.PlanToConfirm -> Spec(
             item.friends.firstOrNull(),

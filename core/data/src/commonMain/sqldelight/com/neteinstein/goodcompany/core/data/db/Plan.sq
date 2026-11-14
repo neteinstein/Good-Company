@@ -1,5 +1,7 @@
 -- Planned meetups and who's in them. idea_id points at the AI idea a plan came from; it becomes null when that idea
--- is trimmed away.
+-- is trimmed away. A plan can be with a circle (circle_id, no foreign key: a deleted circle reads as none) and can
+-- repeat every repeat_every repeat_unit (DAY, WEEK, MONTH; checked in the mapper) from repeat_start, until repeat_until.
+-- date is then the open occurrence; plan_skip holds later occurrences taken out one by one.
 
 CREATE TABLE plan (
     id TEXT NOT NULL PRIMARY KEY,
@@ -9,7 +11,13 @@ CREATE TABLE plan (
     place TEXT,
     idea_id TEXT REFERENCES idea(id) ON DELETE SET NULL,
     status TEXT NOT NULL CHECK (status IN ('PLANNED', 'HAPPENED', 'SKIPPED')),
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    circle_id TEXT,
+    activity TEXT,
+    repeat_every INTEGER,
+    repeat_unit TEXT,
+    repeat_start TEXT,
+    repeat_until TEXT
 );
 
 CREATE INDEX plan_status_date ON plan(status, date);
@@ -23,6 +31,12 @@ CREATE TABLE plan_friend (
 
 CREATE INDEX plan_friend_friend_id ON plan_friend(friend_id);
 
+CREATE TABLE plan_skip (
+    plan_id TEXT NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    PRIMARY KEY (plan_id, date)
+);
+
 -- Open plans first in the order they were made, then answered ones by date (the order the old store kept).
 allPlans:
 SELECT * FROM plan
@@ -31,23 +45,44 @@ ORDER BY status = 'PLANNED' DESC, CASE WHEN status = 'PLANNED' THEN position END
 allPlanFriends:
 SELECT * FROM plan_friend ORDER BY plan_id, position;
 
+allPlanSkips:
+SELECT * FROM plan_skip ORDER BY plan_id, date;
+
 nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM plan;
 
 -- idea_id is kept only if that idea still exists.
 upsert:
-INSERT INTO plan (id, position, title, date, place, idea_id, status, created_at)
-VALUES (:id, :position, :title, :date, :place, (SELECT id FROM idea WHERE id IS :ideaId), :status, :createdAt)
+INSERT INTO plan (
+    id, position, title, date, place, idea_id, status, created_at,
+    circle_id, activity, repeat_every, repeat_unit, repeat_start, repeat_until
+)
+VALUES (
+    :id, :position, :title, :date, :place, (SELECT id FROM idea WHERE id IS :ideaId), :status, :createdAt,
+    :circleId, :activity, :repeatEvery, :repeatUnit, :repeatStart, :repeatUntil
+)
 ON CONFLICT (id) DO UPDATE SET
     title = excluded.title,
     date = excluded.date,
     place = excluded.place,
     idea_id = excluded.idea_id,
     status = excluded.status,
-    created_at = excluded.created_at;
+    created_at = excluded.created_at,
+    circle_id = excluded.circle_id,
+    activity = excluded.activity,
+    repeat_every = excluded.repeat_every,
+    repeat_unit = excluded.repeat_unit,
+    repeat_start = excluded.repeat_start,
+    repeat_until = excluded.repeat_until;
 
 deleteFriends:
 DELETE FROM plan_friend WHERE plan_id = ?;
+
+deleteSkips:
+DELETE FROM plan_skip WHERE plan_id = ?;
+
+insertSkip:
+INSERT OR IGNORE INTO plan_skip (plan_id, date) VALUES (?, ?);
 
 insertFriend:
 INSERT OR IGNORE INTO plan_friend (plan_id, friend_id, position)

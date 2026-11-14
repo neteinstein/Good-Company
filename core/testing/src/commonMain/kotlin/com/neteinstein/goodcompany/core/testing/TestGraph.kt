@@ -201,7 +201,7 @@ class TestGraph(
     val savePlan = SavePlanUseCase(planRepo, ideaRepo, clock, ids)
     val cancelPlan = CancelPlanUseCase(planRepo)
     val restorePlan = RestorePlanUseCase(planRepo)
-    val observePlans = ObservePlansUseCase(planRepo)
+    val observePlans = ObservePlansUseCase(planRepo, circles)
     val handleNotificationAction = HandleNotificationActionUseCase(checkIn, logCall, snooze, circles, confirmPlan)
     val setCatchUpPaused = SetCatchUpPausedUseCase(friendRepo)
     val recordAppOpened = RecordAppOpenedUseCase(settingsRepo, clock)

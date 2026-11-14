@@ -15,6 +15,8 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage as DomainMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup as DomainGroup
@@ -34,7 +36,7 @@ internal val HANGOUT_TABLES = arrayOf("hangout", "hangout_friend", "friend")
 internal val PLACE_TABLES = arrayOf("named_place")
 internal val REMINDER_TABLES = arrayOf("reminder", "reminder_friend", "friend")
 internal val IDEA_TABLES = arrayOf("idea", "idea_friend", "friend")
-internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "idea", "friend")
+internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "plan_skip", "idea", "friend")
 internal val GROUP_TABLES = arrayOf("friend_group", "group_member", "friend")
 internal val INTERACTION_TABLES = arrayOf("interaction", "friend")
 internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
@@ -171,7 +173,14 @@ internal suspend fun GoodCompanyDatabase.writeIdea(idea: DomainIdea) {
 
 internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
     val friends = planQueries.allPlanFriends().awaitAsList().friendIdsBy({ it.plan_id }, { it.friend_id })
+    val skips = planQueries.allPlanSkips().awaitAsList().groupBy({ it.plan_id }, { it.date.toLocalDate() })
     return planQueries.allPlans().awaitAsList().map { row ->
+        val unit = row.repeat_unit?.let { u -> RepeatUnit.entries.firstOrNull { it.name == u } }
+        val repeat = if (row.repeat_every != null && row.repeat_every > 0 && unit != null && row.repeat_start != null) {
+            Repeat(row.repeat_every.toInt(), unit, row.repeat_start.toLocalDate(), row.repeat_until?.toLocalDate())
+        } else {
+            null
+        }
         DomainPlan(
             id = row.id,
             friendIds = friends[row.id].orEmpty(),
@@ -181,6 +190,10 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             ideaId = row.idea_id,
             status = PlanStatus.valueOf(row.status),
             createdAt = row.created_at.toInstant(),
+            circleId = row.circle_id,
+            activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } },
+            repeat = repeat,
+            skippedDates = if (repeat == null) emptyList() else skips[row.id].orEmpty(),
         )
     }
 }
@@ -197,9 +210,17 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
         ideaId = plan.ideaId,
         status = plan.status.name,
         createdAt = plan.createdAt.toColumn(),
+        circleId = plan.circleId,
+        activity = plan.activity?.name,
+        repeatEvery = plan.repeat?.every?.toColumn(),
+        repeatUnit = plan.repeat?.unit?.name,
+        repeatStart = plan.repeat?.start?.toColumn(),
+        repeatUntil = plan.repeat?.until?.toColumn(),
     )
     q.deleteFriends(plan.id)
     plan.friendIds.forEachIndexed { i, f -> q.insertFriend(plan.id, f.value, i.toLong()) }
+    q.deleteSkips(plan.id)
+    plan.skippedDates.forEach { q.insertSkip(plan.id, it.toColumn()) }
 }
 
 // --- Groups ---

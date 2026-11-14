@@ -5,13 +5,18 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,18 +29,22 @@ class LogInteractionViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null, circleId: String? = null) = LogInteractionViewModel(
-        ids,
-        type,
-        circleId,
-        g.observeFriends,
-        g.observeActivities,
-        g.observeGroups,
-        g.observePlaceBook,
-        g.logInteraction,
-        g.currentLocation,
-        g.clock,
-    )
+    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null, circleId: String? = null, plan: PlanOccurrence? = null) =
+        LogInteractionViewModel(
+            ids,
+            type,
+            circleId,
+            g.observeFriends,
+            g.observeActivities,
+            g.observeGroups,
+            g.observePlaceBook,
+            g.logInteraction,
+            g.currentLocation,
+            g.clock,
+            plan,
+            g.observePlans,
+            g.confirmPlan,
+        )
 
     @Test
     fun typeFromTheRoutePreselectsTheKind() = runViewModelTest {
@@ -180,5 +189,41 @@ class LogInteractionViewModelTest {
         assertNull(state.value.sheet.circle)
         vm.onTogglePerson(rui)
         assertTrue(state.value.sheet.people.isEmpty())
+    }
+
+    @Test
+    fun didYouMeetOnACirclePlan_opensAGroupCheckIn_withNobodyTicked_andMovesTheSeriesOn() = runViewModelTest {
+        val circle = g.saveGroup(null, "Climbing crowd", "🧗", CircleColor.TEAL, listOf(ana, rui), null)
+        val start = LocalDate(2026, 3, 1)
+        val plan = g.savePlan.save(
+            null,
+            PlanInput(
+                "Climbing at Fábrica",
+                emptyList(),
+                start,
+                place = "Fábrica",
+                circleId = circle.id,
+                activity = HangoutActivity.SPORTS,
+                repeat = Repeat(15, RepeatUnit.DAY, start),
+            ),
+        )
+        val vm = vm(ids = emptyList(), type = "MEETUP", plan = PlanOccurrence(plan.id, start))
+        val state = collecting(vm.state)
+        val sheet = state.value.sheet
+        assertEquals("Climbing crowd", sheet.circle?.name)
+        assertEquals(listOf(ana, rui), sheet.circleMembers.map { it.id })
+        assertTrue(sheet.people.isEmpty(), "nobody is ticked to start with")
+        assertEquals(HangoutActivity.SPORTS, sheet.activity)
+        assertEquals(start, sheet.date)
+        assertEquals("Fábrica", sheet.place.name)
+        assertFalse(sheet.canSave)
+
+        vm.onTogglePerson(rui)
+        vm.onSave()
+        assertTrue(state.value.done)
+        val h = g.hangoutRepo.hangouts.value.single()
+        assertEquals(listOf(rui), h.friendIds)
+        assertEquals(HangoutActivity.SPORTS, h.activity)
+        assertEquals(LocalDate(2026, 3, 16), g.planRepo.plans.value.single().date, "the series moves on")
     }
 }
