@@ -66,4 +66,46 @@
         <item quantity="one">%1$d message ou e-mail</item>
         <item quantity="other">%1$d messages et e-mails</item>
     </plurals>
+    <string name="network_title">Ton réseau</string>
+    <string name="network_you">Toi</string>
+    <string name="network_empty_title">Personne sur ta carte pour l’instant</string>
+    <string name="network_empty_body">Marque tes vrais amis, crée des cercles ou relie des personnes entre elles, et elles apparaîtront autour de toi.</string>
+    <string name="network_legend_family">Famille</string>
+    <string name="network_legend_partner">Couple</string>
+    <string name="network_legend_friend">Amitié</string>
+    <string name="network_legend_introduced">Présenté</string>
+    <string name="people_title">Tes proches</string>
+    <string name="people_avg_warmth">chaleur moyenne</string>
+    <string name="people_by_circle">Chaleur par cercle</string>
+    <string name="people_circles">Tes cercles</string>
+    <string name="people_by_closeness">Par proximité</string>
+    <string name="people_trend">90 derniers jours</string>
+    <string name="people_trend_caption">Chaleur moyenne, semaine par semaine</string>
+    <string name="people_trend_up">+%1$d par rapport à il y a 90 jours</string>
+    <string name="people_trend_down">−%1$d par rapport à il y a 90 jours</string>
+    <string name="people_trend_flat">Comme il y a 90 jours</string>
+    <string name="people_cooling">Qui refroidit</string>
+    <string name="people_cooling_row">Chaleur %1$d → %2$d</string>
+    <string name="people_circle_cooling">Refroidit : −%1$d en un mois</string>
+    <string name="people_per_month">Rencontres par mois</string>
+    <string name="people_never">Jamais enregistré</string>
+    <string name="people_never_hint">Ajoutés, mais encore aucune rencontre, aucun appel ni message</string>
+    <string name="people_warmth_off">Avec « Afficher la chaleur » désactivé, les chiffres de chaleur et la carte « Qui refroidit » sont masqués ; les décomptes restent.</string>
+    <string name="people_empty">Marque tes vrais amis ou crée des cercles pour voir tes proches ici.</string>
+    <plurals name="network_description">
+        <item quantity="one">Carte de %1$d personne autour de toi</item>
+        <item quantity="other">Carte de %1$d personnes autour de toi</item>
+    </plurals>
+    <plurals name="people_meetups_90">
+        <item quantity="one">rencontre ces 90 derniers jours</item>
+        <item quantity="other">rencontres ces 90 derniers jours</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">personne</item>
+        <item quantity="other">personnes</item>
+    </plurals>
+    <plurals name="people_members">
+        <item quantity="one">%1$d personne</item>
+        <item quantity="other">%1$d personnes</item>
+    </plurals>
 </resources>

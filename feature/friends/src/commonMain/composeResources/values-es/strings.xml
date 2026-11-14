@@ -509,4 +509,6 @@
     <string name="kid_show_hint_friend">Desactivado por defecto para los hijos de amigos: siguen en la página de %1$s y en los cumpleaños.</string>
     <string name="show_in_my_list_hint">Desactivado: sigue en la página de %1$s y en los cumpleaños.</string>
     <string name="show_in_my_list_hint_any">Desactivado: sigue en las páginas a las que está vinculado y en los cumpleaños.</string>
+    <string name="action_network">Tu red</string>
+    <string name="action_people">Tu gente</string>
 </resources>

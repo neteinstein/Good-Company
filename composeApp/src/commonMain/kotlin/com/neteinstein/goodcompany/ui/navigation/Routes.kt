@@ -64,6 +64,12 @@ import org.jetbrains.compose.resources.StringResource
 
 @Serializable data object SettingsRoute
 
+/** "Your network": the map of your people (issue #46). */
+@Serializable data object NetworkMapRoute
+
+/** "Your people": the dashboard (issue #46). */
+@Serializable data object PeopleDashboardRoute
+
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
 

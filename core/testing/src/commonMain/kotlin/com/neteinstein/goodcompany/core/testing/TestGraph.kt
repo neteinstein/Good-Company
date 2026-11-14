@@ -62,7 +62,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePersonLinksUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlacesUseCase
@@ -305,6 +307,8 @@ class TestGraph(
     val updateSource = FakeAppUpdateSource()
     val checkForUpdate = CheckForUpdateUseCase(updateSource)
     val observePersonLinks = ObservePersonLinksUseCase(linkRepo, friendRepo)
+    val observeNetworkMap = ObserveNetworkMapUseCase(friendRepo, linkRepo, circles, hangoutRepo, interactionRepo, settingsRepo, clock)
+    val observePeopleDashboard = ObservePeopleDashboardUseCase(friendRepo, circles, hangoutRepo, interactionRepo, settingsRepo, clock)
     val saveLink = SaveLinkUseCase(linkRepo, clock, ids)
     val deleteLink = DeleteLinkUseCase(linkRepo)
     val restoreLink = RestoreLinkUseCase(linkRepo)

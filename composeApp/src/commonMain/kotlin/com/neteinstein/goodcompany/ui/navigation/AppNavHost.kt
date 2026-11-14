@@ -47,6 +47,8 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapScreen
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashboardScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
@@ -92,6 +94,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
+                    onOpenNetwork = { navController.navigate(NetworkMapRoute) },
+                    onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
                 )
             }
             composable<ChooseContactsRoute>(
@@ -257,7 +261,31 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
             ) { entry ->
-                YearReviewScreen(year = entry.toRoute<YearReviewRoute>().year, onBack = { navController.popBackStack() })
+                YearReviewScreen(
+                    year = entry.toRoute<YearReviewRoute>().year,
+                    onBack = { navController.popBackStack() },
+                    onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
+                )
+            }
+            composable<NetworkMapRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                NetworkMapScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    onOpenDashboard = { navController.navigate(PeopleDashboardRoute) { launchSingleTop = true } },
+                )
+            }
+            composable<PeopleDashboardRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                PeopleDashboardScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    onOpenMap = { navController.navigate(NetworkMapRoute) { launchSingleTop = true } },
+                )
             }
         }
     }
