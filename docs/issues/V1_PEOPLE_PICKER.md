@@ -6,7 +6,7 @@ closeness. Mockups: [`docs/mockups/v1-people-picker/`](../mockups/v1-people-pick
 2026-11-14 in [`PRODUCT_BRIEF.md`](../PRODUCT_BRIEF.md) ("Choosing people · one picker" and "People tab · closeness in
 the All menu"). Base: `origin/main` @ `584bc1b` (the People tab, #86, merged: `AllChip` and the circle filter row). One issue.
 
-**Not created as an issue yet.**
+**Created as issue (2026-11-14):** P1 #89. The issue is the live copy.
 
 ## Owner answers (2026-11-14)
 
@@ -25,7 +25,7 @@ the All menu"). Base: `origin/main` @ `584bc1b` (the People tab, #86, merged: `A
 
 ---
 
-## P1 · Choosing people: one picker everywhere
+## P1 (#89) · Choosing people: one picker everywhere
 
 ![Today](../mockups/v1-people-picker/now.png)
 
