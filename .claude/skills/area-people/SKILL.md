@@ -15,7 +15,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   pronouns (`linkWord`, `:core:ui`); types stay gender-neutral.
 - Kinship is proposed, never set: only a tap (`ConfirmKinshipUseCase`) writes `relationToMe`.
 - Anything that picks "my nieces…" reuses `ParseKinshipQueryUseCase`.
-- A new `LinkType` widens the `person_link` `CHECK`: rebuild the table in a migration (`persistence-change`).
+- A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
+  doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; unknown reads as not set).
 - Circle colours come only from `circlePalette` (`:core:ui`).
 - Pickers save on choice, form sheets on close (#64): on a person's page the birthday, family and link sheets put Save
   in `SaveSheetHeader` (above the scroll) and save when dismissed if valid and changed; a relation-to-me chip or a gift
@@ -72,7 +73,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     plain sibling. A proposal only changes anything when the user taps it (`ConfirmKinshipUseCase` → `relationToMe`);
     "Not right" / "Not family" adds the offered relations to `Friend.dismissedKinship` (`friend.dismissed_kinship`,
     comma-separated `LinkType` names), which are never offered again. `STEP_PARENT` / `STEP_CHILD` / `HALF_SIBLING` /
-    `STEP_SIBLING` are family `LinkType`s; migration `14.sqm` rebuilds `person_link` for the wider `CHECK`. Proposals show on
+    `STEP_SIBLING` are family `LinkType`s; migration `14.sqm` rebuilt `person_link` for the wider `CHECK` (gone since `16.sqm`). Proposals show on
     the person's page and in `SuggestedFamilyRoute` (Home menu, plus a row on Home). Home search understands "my nieces and
     nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
     `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed

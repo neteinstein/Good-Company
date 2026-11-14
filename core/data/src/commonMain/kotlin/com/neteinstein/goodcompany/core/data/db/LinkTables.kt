@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.PersonLink
 internal val LINK_TABLES = arrayOf("person_link", "friend")
 
 internal suspend fun GoodCompanyDatabase.readLinks(): List<PersonLink> =
+    // A link of an unknown type is skipped (and kept in the table).
     personLinkQueries.allLinks().awaitAsList().mapNotNull { row ->
         PersonLink(
             id = row.id,

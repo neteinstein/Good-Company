@@ -1,6 +1,8 @@
 -- A friend and everything that belongs only to them. Every list on the domain `Friend` is a child table keyed by
 -- (friend_id, …) with a `position` that keeps the list's order; child rows go when the friend goes (ON DELETE CASCADE).
--- Flags are INTEGER 0/1, enums TEXT with a CHECK, dates ISO TEXT (yyyy-mm-dd), instants epoch milliseconds.
+-- Flags are INTEGER 0/1, enums TEXT (their names) with no CHECK, dates ISO TEXT (yyyy-mm-dd), instants epoch milliseconds.
+-- Enums have no CHECK since issue #72 (16.sqm): a new value needs no migration, and each mapper in db/*Tables.kt reads an
+-- unknown name as a fallback written next to it (or skips the row), so a newer backup degrades in an older build.
 
 CREATE TABLE friend (
     id TEXT NOT NULL PRIMARY KEY,
@@ -16,7 +18,7 @@ CREATE TABLE friend (
     meet_every_days INTEGER,
     suggest_events INTEGER NOT NULL CHECK (suggest_events IN (0, 1)),
     is_orphaned INTEGER NOT NULL CHECK (is_orphaned IN (0, 1)),
-    circle TEXT CHECK (circle IN ('INNER', 'CLOSE', 'GOOD')),
+    circle TEXT,
     snoozed_until TEXT,
     catch_up_paused INTEGER NOT NULL CHECK (catch_up_paused IN (0, 1)),
     contact_counts_as_catch_up INTEGER NOT NULL CHECK (contact_counts_as_catch_up IN (0, 1)),
@@ -60,7 +62,7 @@ CREATE INDEX friend_phone_normalized ON friend_phone(normalized);
 -- added (Friend.likesAddedAt / foodAddedAt…); null for dislikes and older entries.
 CREATE TABLE friend_taste (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL CHECK (kind IN ('LIKE', 'DISLIKE', 'FOOD', 'DRINK', 'INTEREST')),
+    kind TEXT NOT NULL,
     position INTEGER NOT NULL,
     taste TEXT NOT NULL,
     added_at INTEGER,
@@ -71,7 +73,7 @@ CREATE INDEX friend_taste_kind_taste ON friend_taste(kind, taste);
 
 CREATE TABLE friend_occasion (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
-    occasion TEXT NOT NULL CHECK (occasion IN ('WEEKDAY_LUNCH', 'COFFEE', 'DINNER', 'DRINKS', 'OUTDOORS', 'SPORTS', 'CULTURE', 'FAMILY_TIME')),
+    occasion TEXT NOT NULL,
     position INTEGER NOT NULL,
     PRIMARY KEY (friend_id, occasion)
 );
@@ -98,7 +100,7 @@ CREATE TABLE gift (
     title TEXT NOT NULL,
     note TEXT NOT NULL,
     given_on TEXT,
-    occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    occasion TEXT,
     url TEXT,
     price TEXT,
     PRIMARY KEY (friend_id, id)
@@ -163,7 +165,7 @@ CREATE TABLE relative (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     id TEXT NOT NULL,
     position INTEGER NOT NULL,
-    relation TEXT NOT NULL CHECK (relation IN ('PARTNER', 'PARENT', 'SIBLING', 'PET', 'OTHER')),
+    relation TEXT NOT NULL,
     name TEXT NOT NULL,
     birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
     birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),

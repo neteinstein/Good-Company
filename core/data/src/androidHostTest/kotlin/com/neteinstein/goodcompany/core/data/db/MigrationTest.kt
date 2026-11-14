@@ -273,12 +273,9 @@ class MigrationTest {
         val link = PersonLink("l1", FriendId("rui"), FriendId("ana"), LinkType.SPOUSE, LocalDate(2015, 7, 4), remindAnniversary = true)
         database.writeLink(link)
         assertEquals(listOf(link), database.readLinks())
-        // An unknown type is refused by the schema.
-        assertTrue(
-            runCatching {
-                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
-            }.isFailure,
-        )
+        // An unknown type can be stored since 16.sqm (issue #72) and is skipped when read.
+        driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
+        assertEquals(listOf(link), database.readLinks())
         database.friendQueries.delete("ana")
         assertTrue(database.readLinks().isEmpty())
         driver.close()
@@ -470,15 +467,11 @@ class MigrationTest {
         assertEquals(listOf(spouse), database.readLinks())
         assertTrue(database.readFriends().all { it.dismissedKinship.isEmpty() })
 
-        // The new family types are accepted; anything unknown still isn't.
+        // The new family types are accepted. Since 16.sqm (issue #72) an unknown type is too, and reads are skipped.
         val half = PersonLink("l2", FriendId("ana"), FriendId("duarte"), LinkType.HALF_SIBLING)
         database.writeLink(half)
+        driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
         assertEquals(listOf(spouse, half), database.readLinks())
-        assertTrue(
-            runCatching {
-                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
-            }.isFailure,
-        )
         val duarte = database.readFriends().first { it.id.value == "duarte" }
         database.writeFriend(duarte.copy(relationToMe = LinkType.STEP_SIBLING, dismissedKinship = setOf(LinkType.SIBLING, LinkType.HALF_SIBLING)), 2)
         val saved = database.readFriends().first { it.id.value == "duarte" }
@@ -516,11 +509,10 @@ class MigrationTest {
         )
         database.writeGiftList(list)
         assertEquals(listOf(list), database.readGiftLists())
-        assertTrue(
-            runCatching {
-                driver.execute(null, "UPDATE gift_list_item SET status = 'LOST'", 0).await()
-            }.isFailure,
-        )
+        // Since 16.sqm (issue #72) an unknown status can be stored; it reads as "to buy".
+        driver.execute(null, "UPDATE gift_list_item SET status = 'LOST'", 0).await()
+        val toBuy = GiftListEntry(FriendId("ana"), 30.0, listOf(GiftListItem("g1", GiftStatus.TO_BUY)))
+        assertEquals(listOf(list.copy(entries = listOf(toBuy))), database.readGiftLists())
         database.friendQueries.delete("ana")
         assertEquals(listOf(list.copy(entries = emptyList())), database.readGiftLists())
         driver.close()

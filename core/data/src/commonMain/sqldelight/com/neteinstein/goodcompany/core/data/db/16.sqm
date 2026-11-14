@@ -1,0 +1,469 @@
+-- Version 16 → 17 (issue #72, N0): enum columns lose their CHECK, so a new enum value (a closeness level, a link type…)
+-- needs no migration any more; the mappers read an unknown value as a fallback or skip the row. 0/1 flags and ranges
+-- keep their CHECKs. SQLite can't drop a CHECK in place, so every table with one is rebuilt; columns, defaults,
+-- indexes, foreign keys and data stay the same.
+--
+-- Foreign keys are on while migrations run (the Android and iOS helpers and the web worker all migrate inside a
+-- transaction, where PRAGMA foreign_keys is a no-op), so dropping friend, idea, plan or gift_list would cascade into
+-- (or SET NULL in) the tables that reference them. Every table that could lose a row is therefore copied into a
+-- constraint-free keep_* table first and refilled from it after the rebuild. This works the same with foreign keys off.
+-- SQLite also refuses to drop a table while a table that references it references another dropped table, so the
+-- three link tables with two rebuilt parents (gift_list_entry, idea_friend, plan_friend) are dropped and recreated too.
+
+-- 1. Copies of every table that is rebuilt or that a cascade reaches.
+
+CREATE TABLE keep_friend AS SELECT * FROM friend;
+CREATE TABLE keep_friend_taste AS SELECT * FROM friend_taste;
+CREATE TABLE keep_friend_occasion AS SELECT * FROM friend_occasion;
+CREATE TABLE keep_gift AS SELECT * FROM gift;
+CREATE TABLE keep_relative AS SELECT * FROM relative;
+CREATE TABLE keep_interaction AS SELECT * FROM interaction;
+CREATE TABLE keep_idea AS SELECT * FROM idea;
+CREATE TABLE keep_plan AS SELECT * FROM plan;
+CREATE TABLE keep_attachment AS SELECT * FROM attachment;
+CREATE TABLE keep_person_link AS SELECT * FROM person_link;
+CREATE TABLE keep_gift_list AS SELECT * FROM gift_list;
+CREATE TABLE keep_gift_list_item AS SELECT * FROM gift_list_item;
+CREATE TABLE keep_calendar_decision AS SELECT * FROM calendar_decision;
+
+CREATE TABLE keep_friend_phone AS SELECT * FROM friend_phone;
+CREATE TABLE keep_important_event AS SELECT * FROM important_event;
+CREATE TABLE keep_life_update AS SELECT * FROM life_update;
+CREATE TABLE keep_feed AS SELECT * FROM feed;
+CREATE TABLE keep_feed_item AS SELECT * FROM feed_item;
+CREATE TABLE keep_friend_photo AS SELECT * FROM friend_photo;
+CREATE TABLE keep_friend_custom_photo AS SELECT * FROM friend_custom_photo;
+CREATE TABLE keep_friend_email AS SELECT * FROM friend_email;
+CREATE TABLE keep_relative_like AS SELECT * FROM relative_like;
+CREATE TABLE keep_custom_field AS SELECT * FROM custom_field;
+CREATE TABLE keep_group_member AS SELECT * FROM group_member;
+CREATE TABLE keep_gift_list_entry AS SELECT * FROM gift_list_entry;
+CREATE TABLE keep_hangout_friend AS SELECT * FROM hangout_friend;
+CREATE TABLE keep_idea_friend AS SELECT * FROM idea_friend;
+CREATE TABLE keep_conversation_message AS SELECT * FROM conversation_message;
+CREATE TABLE keep_journal_entry AS SELECT * FROM journal_entry;
+CREATE TABLE keep_plan_friend AS SELECT * FROM plan_friend;
+CREATE TABLE keep_plan_skip AS SELECT * FROM plan_skip;
+CREATE TABLE keep_reminder_friend AS SELECT * FROM reminder_friend;
+
+-- 2. Drop the tables with enum CHECKs (and the three link tables), children first.
+
+DROP INDEX gift_list_entry_friend;
+DROP INDEX idea_friend_friend_id;
+DROP INDEX plan_friend_friend_id;
+DROP INDEX person_link_from;
+DROP INDEX person_link_to;
+DROP INDEX attachment_friend_at;
+DROP INDEX attachment_circle_at;
+DROP INDEX interaction_friend_at;
+DROP INDEX interaction_at;
+DROP INDEX interaction_automatic;
+DROP INDEX interaction_batch;
+DROP INDEX plan_status_date;
+DROP INDEX friend_taste_kind_taste;
+DROP INDEX friend_contact_id;
+
+DROP TABLE gift_list_item;
+DROP TABLE gift_list_entry;
+DROP TABLE idea_friend;
+DROP TABLE plan_friend;
+DROP TABLE person_link;
+DROP TABLE attachment;
+DROP TABLE interaction;
+DROP TABLE relative;
+DROP TABLE gift;
+DROP TABLE friend_occasion;
+DROP TABLE friend_taste;
+DROP TABLE plan;
+DROP TABLE idea;
+DROP TABLE gift_list;
+DROP TABLE calendar_decision;
+DROP TABLE friend;
+
+-- 3. The same tables without the enum CHECKs, parents first.
+
+CREATE TABLE friend (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    contact_id TEXT,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    is_close_friend INTEGER NOT NULL CHECK (is_close_friend IN (0, 1)),
+    notify_birthday INTEGER NOT NULL CHECK (notify_birthday IN (0, 1)),
+    notes TEXT NOT NULL,
+    meet_every_days INTEGER,
+    suggest_events INTEGER NOT NULL CHECK (suggest_events IN (0, 1)),
+    is_orphaned INTEGER NOT NULL CHECK (is_orphaned IN (0, 1)),
+    circle TEXT,
+    snoozed_until TEXT,
+    catch_up_paused INTEGER NOT NULL CHECK (catch_up_paused IN (0, 1)),
+    contact_counts_as_catch_up INTEGER NOT NULL CHECK (contact_counts_as_catch_up IN (0, 1)),
+    job TEXT NOT NULL DEFAULT '',
+    lives_in TEXT NOT NULL DEFAULT '',
+    met_place TEXT,
+    met_on TEXT,
+    introduced_by_friend_id TEXT,
+    introduced_by_name TEXT,
+    preferred_channel TEXT,
+    relation_to_me TEXT,
+    pronouns TEXT,
+    custom_name TEXT,
+    show_in_my_list INTEGER NOT NULL DEFAULT 1,
+    dismissed_kinship TEXT NOT NULL DEFAULT '',
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE INDEX friend_contact_id ON friend(contact_id);
+
+CREATE TABLE friend_taste (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    taste TEXT NOT NULL,
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, kind, position)
+);
+
+CREATE INDEX friend_taste_kind_taste ON friend_taste(kind, taste);
+
+CREATE TABLE friend_occasion (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    occasion TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (friend_id, occasion)
+);
+
+CREATE TABLE gift (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    note TEXT NOT NULL,
+    given_on TEXT,
+    occasion TEXT,
+    url TEXT,
+    price TEXT,
+    PRIMARY KEY (friend_id, id)
+);
+
+CREATE TABLE relative (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    relation TEXT NOT NULL,
+    name TEXT NOT NULL,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    note TEXT NOT NULL,
+    notify_birthday INTEGER NOT NULL CHECK (notify_birthday IN (0, 1)),
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, id),
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE TABLE interaction (
+    id TEXT NOT NULL PRIMARY KEY,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    at INTEGER NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL,
+    duration_seconds INTEGER,
+    batch_id TEXT,
+    message_count INTEGER
+);
+
+CREATE INDEX interaction_friend_at ON interaction(friend_id, at);
+
+CREATE INDEX interaction_at ON interaction(at);
+
+CREATE UNIQUE INDEX interaction_automatic ON interaction(friend_id, type, at) WHERE source IN ('CALL_LOG', 'CHAT_IMPORT');
+
+CREATE INDEX interaction_batch ON interaction(batch_id);
+
+CREATE TABLE idea (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    url TEXT,
+    when_text TEXT,
+    created_at INTEGER NOT NULL,
+    dismissed INTEGER NOT NULL CHECK (dismissed IN (0, 1)),
+    proposed_at INTEGER
+);
+
+CREATE TABLE idea_friend (
+    idea_id TEXT NOT NULL REFERENCES idea(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (idea_id, friend_id)
+);
+
+CREATE INDEX idea_friend_friend_id ON idea_friend(friend_id);
+
+CREATE TABLE plan (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    place TEXT,
+    idea_id TEXT REFERENCES idea(id) ON DELETE SET NULL,
+    status TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    circle_id TEXT,
+    activity TEXT,
+    repeat_every INTEGER,
+    repeat_unit TEXT,
+    repeat_start TEXT,
+    repeat_until TEXT
+);
+
+CREATE INDEX plan_status_date ON plan(status, date);
+
+CREATE TABLE plan_friend (
+    plan_id TEXT NOT NULL REFERENCES plan(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (plan_id, friend_id)
+);
+
+CREATE INDEX plan_friend_friend_id ON plan_friend(friend_id);
+
+CREATE TABLE attachment (
+    id TEXT NOT NULL PRIMARY KEY,
+    friend_id TEXT REFERENCES friend(id) ON DELETE CASCADE,
+    circle_id TEXT REFERENCES friend_group(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    text TEXT,
+    url TEXT,
+    title TEXT,
+    photo_platform TEXT,
+    photo_ref TEXT,
+    thumbnail TEXT,
+    caption TEXT NOT NULL DEFAULT '',
+    at INTEGER NOT NULL,
+    counts_as_interaction INTEGER NOT NULL DEFAULT 0 CHECK (counts_as_interaction IN (0, 1)),
+    interaction_type TEXT,
+    log_id TEXT,
+    created_at INTEGER NOT NULL,
+    CHECK ((friend_id IS NULL) <> (circle_id IS NULL)),
+    CHECK ((photo_platform IS NULL) = (photo_ref IS NULL))
+);
+
+CREATE INDEX attachment_friend_at ON attachment(friend_id, at);
+
+CREATE INDEX attachment_circle_at ON attachment(circle_id, at);
+
+CREATE TABLE person_link (
+    id TEXT NOT NULL PRIMARY KEY,
+    from_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    to_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    started_on TEXT,
+    ended_on TEXT,
+    note TEXT NOT NULL DEFAULT '',
+    remind_anniversary INTEGER NOT NULL DEFAULT 0 CHECK (remind_anniversary IN (0, 1)),
+    added_at INTEGER,
+    CHECK (from_friend_id <> to_friend_id)
+);
+
+CREATE INDEX person_link_from ON person_link(from_friend_id);
+
+CREATE INDEX person_link_to ON person_link(to_friend_id);
+
+CREATE TABLE gift_list (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    occasion TEXT,
+    occasion_date TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE gift_list_entry (
+    list_id TEXT NOT NULL REFERENCES gift_list(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    budget REAL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (list_id, friend_id)
+);
+
+CREATE INDEX gift_list_entry_friend ON gift_list_entry(friend_id);
+
+CREATE TABLE gift_list_item (
+    list_id TEXT NOT NULL,
+    friend_id TEXT NOT NULL,
+    gift_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'TO_BUY',
+    position INTEGER NOT NULL,
+    PRIMARY KEY (list_id, friend_id, gift_id),
+    FOREIGN KEY (list_id, friend_id) REFERENCES gift_list_entry(list_id, friend_id) ON DELETE CASCADE
+);
+
+CREATE TABLE calendar_decision (
+    key TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    decided_at INTEGER NOT NULL
+);
+
+-- 4. Refill, parents before children (a plain scan of a keep_* table returns rows in the order they were copied).
+-- Tables that weren't rebuilt are emptied first: with foreign keys on the drops above already emptied them by cascade,
+-- with them off they still hold their rows.
+
+INSERT INTO friend (
+    id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday, notes,
+    meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up, job,
+    lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel, relation_to_me, pronouns,
+    custom_name, show_in_my_list, dismissed_kinship
+)
+SELECT
+    id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday, notes,
+    meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up, job,
+    lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel, relation_to_me, pronouns,
+    custom_name, show_in_my_list, dismissed_kinship
+FROM keep_friend;
+
+INSERT INTO friend_taste (friend_id, kind, position, taste, added_at)
+SELECT friend_id, kind, position, taste, added_at FROM keep_friend_taste;
+
+INSERT INTO friend_occasion (friend_id, occasion, position)
+SELECT friend_id, occasion, position FROM keep_friend_occasion;
+
+INSERT INTO gift (friend_id, id, position, title, note, given_on, occasion, url, price)
+SELECT friend_id, id, position, title, note, given_on, occasion, url, price FROM keep_gift;
+
+INSERT INTO relative (
+    friend_id, id, position, relation, name, birthday_month, birthday_day, birthday_year, note, notify_birthday, added_at
+)
+SELECT friend_id, id, position, relation, name, birthday_month, birthday_day, birthday_year, note, notify_birthday, added_at
+FROM keep_relative;
+
+INSERT INTO interaction (id, friend_id, type, at, note, source, duration_seconds, batch_id, message_count)
+SELECT id, friend_id, type, at, note, source, duration_seconds, batch_id, message_count FROM keep_interaction;
+
+INSERT INTO idea (id, position, kind, title, description, url, when_text, created_at, dismissed, proposed_at)
+SELECT id, position, kind, title, description, url, when_text, created_at, dismissed, proposed_at FROM keep_idea;
+
+INSERT INTO plan (
+    id, position, title, date, place, idea_id, status, created_at, circle_id, activity, repeat_every, repeat_unit,
+    repeat_start, repeat_until
+)
+SELECT
+    id, position, title, date, place, idea_id, status, created_at, circle_id, activity, repeat_every, repeat_unit,
+    repeat_start, repeat_until
+FROM keep_plan;
+
+INSERT INTO attachment (
+    id, friend_id, circle_id, kind, text, url, title, photo_platform, photo_ref, thumbnail, caption, at,
+    counts_as_interaction, interaction_type, log_id, created_at
+)
+SELECT
+    id, friend_id, circle_id, kind, text, url, title, photo_platform, photo_ref, thumbnail, caption, at,
+    counts_as_interaction, interaction_type, log_id, created_at
+FROM keep_attachment;
+
+INSERT INTO person_link (id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at)
+SELECT id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at
+FROM keep_person_link;
+
+INSERT INTO gift_list (id, title, occasion, occasion_date, created_at)
+SELECT id, title, occasion, occasion_date, created_at FROM keep_gift_list;
+
+INSERT INTO calendar_decision (key, kind, decided_at)
+SELECT key, kind, decided_at FROM keep_calendar_decision;
+
+DELETE FROM friend_phone;
+INSERT INTO friend_phone SELECT * FROM keep_friend_phone;
+
+DELETE FROM important_event;
+INSERT INTO important_event SELECT * FROM keep_important_event;
+
+DELETE FROM life_update;
+INSERT INTO life_update SELECT * FROM keep_life_update;
+
+DELETE FROM feed;
+INSERT INTO feed SELECT * FROM keep_feed;
+
+DELETE FROM feed_item;
+INSERT INTO feed_item SELECT * FROM keep_feed_item;
+
+DELETE FROM friend_photo;
+INSERT INTO friend_photo SELECT * FROM keep_friend_photo;
+
+DELETE FROM friend_custom_photo;
+INSERT INTO friend_custom_photo SELECT * FROM keep_friend_custom_photo;
+
+DELETE FROM friend_email;
+INSERT INTO friend_email SELECT * FROM keep_friend_email;
+
+DELETE FROM relative_like;
+INSERT INTO relative_like SELECT * FROM keep_relative_like;
+
+DELETE FROM custom_field;
+INSERT INTO custom_field SELECT * FROM keep_custom_field;
+
+DELETE FROM group_member;
+INSERT INTO group_member SELECT * FROM keep_group_member;
+
+INSERT INTO gift_list_entry (list_id, friend_id, budget, position) SELECT list_id, friend_id, budget, position FROM keep_gift_list_entry;
+
+INSERT INTO gift_list_item (list_id, friend_id, gift_id, status, position)
+SELECT list_id, friend_id, gift_id, status, position FROM keep_gift_list_item;
+
+DELETE FROM hangout_friend;
+INSERT INTO hangout_friend SELECT * FROM keep_hangout_friend;
+
+INSERT INTO idea_friend (idea_id, friend_id, position) SELECT idea_id, friend_id, position FROM keep_idea_friend;
+
+DELETE FROM conversation_message;
+INSERT INTO conversation_message SELECT * FROM keep_conversation_message;
+
+DELETE FROM journal_entry;
+INSERT INTO journal_entry SELECT * FROM keep_journal_entry;
+
+INSERT INTO plan_friend (plan_id, friend_id, position) SELECT plan_id, friend_id, position FROM keep_plan_friend;
+
+DELETE FROM plan_skip;
+INSERT INTO plan_skip SELECT * FROM keep_plan_skip;
+
+DELETE FROM reminder_friend;
+INSERT INTO reminder_friend SELECT * FROM keep_reminder_friend;
+
+-- 5. The copies go.
+
+DROP TABLE keep_friend;
+DROP TABLE keep_friend_taste;
+DROP TABLE keep_friend_occasion;
+DROP TABLE keep_gift;
+DROP TABLE keep_relative;
+DROP TABLE keep_interaction;
+DROP TABLE keep_idea;
+DROP TABLE keep_plan;
+DROP TABLE keep_attachment;
+DROP TABLE keep_person_link;
+DROP TABLE keep_gift_list;
+DROP TABLE keep_gift_list_item;
+DROP TABLE keep_calendar_decision;
+DROP TABLE keep_friend_phone;
+DROP TABLE keep_important_event;
+DROP TABLE keep_life_update;
+DROP TABLE keep_feed;
+DROP TABLE keep_feed_item;
+DROP TABLE keep_friend_photo;
+DROP TABLE keep_friend_custom_photo;
+DROP TABLE keep_friend_email;
+DROP TABLE keep_relative_like;
+DROP TABLE keep_custom_field;
+DROP TABLE keep_group_member;
+DROP TABLE keep_gift_list_entry;
+DROP TABLE keep_hangout_friend;
+DROP TABLE keep_idea_friend;
+DROP TABLE keep_conversation_message;
+DROP TABLE keep_journal_entry;
+DROP TABLE keep_plan_friend;
+DROP TABLE keep_plan_skip;
+DROP TABLE keep_reminder_friend;
