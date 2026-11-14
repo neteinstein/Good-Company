@@ -122,14 +122,17 @@ class LogInteractionViewModel(
 
     fun onSave() {
         val d = draft.value
-        if (!state.value.sheet.canSave) return
+        val sheet = state.value.sheet
+        if (!sheet.canSave) return
+        // Only people who exist: an app-icon shortcut can name someone deleted since (goodcompany://log/<id>).
+        val people = sheet.people.map { it.id }
         draft.update { it.copy(saving = true) }
         viewModelScope.launch {
             val meetup = d.kind == LogKind.MEETUP
             val ok = runCatching {
                 logInteraction(
                     LogRequest(
-                        friendIds = d.people,
+                        friendIds = people,
                         kind = d.kind,
                         date = d.date,
                         note = d.note,

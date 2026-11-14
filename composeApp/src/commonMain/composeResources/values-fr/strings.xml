@@ -7,4 +7,6 @@
     <string name="nav_ideas">Idées</string>
     <string name="nav_settings">Réglages</string>
     <string name="storage_temporary">Les modifications dans cet onglet ne seront pas enregistrées. Good Company est sans doute ouvert dans un autre onglet, continuez-y.</string>
+    <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
+    <string name="shortcut_log_meetup">Noter une sortie</string>
 </resources>

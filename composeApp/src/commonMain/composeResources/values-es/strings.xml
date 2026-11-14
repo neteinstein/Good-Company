@@ -7,4 +7,6 @@
     <string name="nav_ideas">Ideas</string>
     <string name="nav_settings">Ajustes</string>
     <string name="storage_temporary">Los cambios en esta pestaña no se guardarán. Good Company probablemente está abierto en otra pestaña, continúa allí.</string>
+    <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
+    <string name="shortcut_log_meetup">Registrar una quedada</string>
 </resources>

@@ -2,13 +2,18 @@
 
 package com.neteinstein.goodcompany
 
-import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.composeApp.resources.Res
+import com.neteinstein.goodcompany.composeApp.resources.shortcut_log_meetup
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
+import com.neteinstein.goodcompany.core.domain.usecase.AppLink
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.WidgetSnapshot
+import com.neteinstein.goodcompany.core.domain.usecase.toQuickEntry
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -20,6 +25,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.getString
 import org.koin.mp.KoinPlatform
 import platform.Foundation.NSBundle
 import platform.Foundation.NSData
@@ -36,6 +42,7 @@ import platform.posix.memcpy
  * The extensions can't run Kotlin, so they talk to the app through the app group (AppGroupId in Info.plist):
  *  - Share Extension → `ShareInbox/<id>.json` (+ `<id>.jpg`) files, picked up by [receivePendingShares].
  *  - Widget ← the `widget.snapshot` JSON in the group's UserDefaults, written by [startWidgetSync].
+ * App-icon quick actions don't need the group: Swift reads [shortcutItems] and routes a picked one to [handleAppUrl].
  */
 
 private const val INBOX_DIR = "ShareInbox"
@@ -90,13 +97,49 @@ fun startWidgetSync(reload: () -> Unit) {
     }
 }
 
-/** `goodcompany://met/<friendId>` (the widget's "We met"). Returns true when handled. */
-fun handleAppUrl(url: String): Boolean {
-    val friendId = url.removePrefix("goodcompany://").takeIf { it.startsWith("met/") }?.removePrefix("met/")?.takeIf { it.isNotBlank() }
-        ?: return false
-    MainScope().launch { runCatching { KoinPlatform.getKoin().get<CheckInUseCase>()(listOf(FriendId(friendId))) } }
-    return true
+/**
+ * The app's own links (see [AppLink]): `goodcompany://met/<friendId>` (the widget's "We met": logs straight away) and
+ * `goodcompany://log[/<friendId>]` (app-icon quick actions: opens the Log sheet, behind the app lock). Returns true
+ * when handled.
+ */
+fun handleAppUrl(url: String): Boolean = when (val link = AppLink.parse(url)) {
+    is AppLink.Met -> {
+        MainScope().launch { runCatching { KoinPlatform.getKoin().get<CheckInUseCase>()(listOf(link.friendId)) } }
+        true
+    }
+    is AppLink.Log -> {
+        KoinPlatform.getKoin().get<QuickEntryInbox>().offer(link.toQuickEntry())
+        true
+    }
+    null -> false
 }
+
+/** One home-screen quick action, already localised; Swift picks the SF Symbol from [isPerson] and opens [url]. */
+class IosShortcutItem(val type: String, val title: String, val url: String, val isPerson: Boolean)
+
+private var shortcutCache: List<IosShortcutItem> = emptyList()
+
+/**
+ * Keeps [shortcutItems] in step with [ObserveShortcutsUseCase] for as long as the app runs (titles need compose
+ * resources, which are suspend, so they're built here rather than on demand).
+ */
+fun startShortcutSync() {
+    val observe = KoinPlatform.getKoin().get<ObserveShortcutsUseCase>()
+    MainScope().launch {
+        observe().collect { snapshot ->
+            val logMeetup = IosShortcutItem("log", getString(Res.string.shortcut_log_meetup), AppLink.log(), isPerson = false)
+            shortcutCache = listOf(logMeetup) + snapshot.people.map {
+                IosShortcutItem("person.${it.id.value}", it.name, AppLink.log(it.id), isPerson = true)
+            }
+        }
+    }
+}
+
+/**
+ * The app-icon quick actions Swift sets on `UIApplication.shortcutItems` when the app goes to the background:
+ * "Log a meetup" and the three most recent people (none while app lock or private notifications are on).
+ */
+fun shortcutItems(): List<IosShortcutItem> = shortcutCache
 
 private fun NSData.toByteArray(): ByteArray {
     val size = length.toInt()

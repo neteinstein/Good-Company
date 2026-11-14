@@ -18,4 +18,7 @@
         <item quantity="other">In %1$d days</item>
     </plurals>
     <string name="share_target_label">Save to a friend</string>
+    <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
+    <string name="shortcut_log_meetup">Log a meetup</string>
+    <string name="shortcut_log_meetup_short">Meetup</string>
 </resources>

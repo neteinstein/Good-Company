@@ -2,6 +2,7 @@
 <resources>
     <color name="splash_background">#1A1110</color>
     <color name="widget_background">#2A2120</color>
+    <color name="shortcut_background">#2A2120</color>
     <color name="widget_text">#F1DFDC</color>
     <color name="widget_text_secondary">#D8C2BE</color>
 </resources>

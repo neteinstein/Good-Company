@@ -6,18 +6,11 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.Rect
 import android.view.View
 import android.widget.RemoteViews
+import com.neteinstein.goodcompany.PhotoBitmaps
 import com.neteinstein.goodcompany.R
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
-import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HomeWidgetSummary
@@ -117,7 +110,7 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
             next?.let { views.setTextViewText(R.id.widget_next_when, whenText(context, summary, it)) }
 
             val catchUp = summary.catchUp
-            val photo = catchUp?.friend?.photo?.let(::roundPhoto)
+            val photo = catchUp?.friend?.photo?.let { PhotoBitmaps.round(it, PHOTO_PX) }
             if (photo == null) {
                 views.setViewVisibility(R.id.widget_catch_up_photo, View.GONE)
             } else {
@@ -140,22 +133,6 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
             }
             manager.updateAppWidget(ids, views)
         }
-
-        /** The photo cropped to a circle (RemoteViews can't clip), small enough for the widget's binder budget. */
-        private fun roundPhoto(photo: ContactPhoto): Bitmap? = runCatching {
-            val bytes = photo.bytes()
-            val source = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@runCatching null
-            val side = minOf(source.width, source.height, PHOTO_PX)
-            val out = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(out)
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
-            canvas.drawCircle(side / 2f, side / 2f, side / 2f, paint)
-            paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-            val crop = minOf(source.width, source.height)
-            val from = Rect((source.width - crop) / 2, (source.height - crop) / 2, (source.width + crop) / 2, (source.height + crop) / 2)
-            canvas.drawBitmap(source, from, Rect(0, 0, side, side), paint)
-            out
-        }.getOrNull()
 
         private fun title(context: Context, item: AgendaItem): String = when (item) {
             is AgendaItem.FriendBirthday -> context.getString(R.string.widget_birthday, item.friend.name.substringBefore(' '))

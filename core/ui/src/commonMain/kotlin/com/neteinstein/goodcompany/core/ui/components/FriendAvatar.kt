@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -88,3 +89,6 @@ private fun rememberPhotoBitmap(photo: ContactPhoto?): ImageBitmap? = remember(p
 
 /** The stable gradient pair for [name] — reuse it to tint a friend's screen so it feels like "theirs". */
 fun avatarColors(name: String): Pair<Color, Color> = AvatarGradients[name.hashCode().absoluteValue % AvatarGradients.size]
+
+/** [avatarColors] as ARGB ints, for drawing outside Compose (Android app-icon shortcut icons). */
+fun avatarColorsArgb(name: String): Pair<Int, Int> = avatarColors(name).let { (a, b) -> a.toArgb() to b.toArgb() }
