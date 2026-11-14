@@ -155,6 +155,10 @@ Seen in practice:
 
 ## Gotchas
 
+Short rules here; the full notes for each area live in a skill (see [Skills](#skills)). **Load the matching skill
+before changing that area**, and put new area-specific notes in that skill, not here. Numbers stay stable, so
+"gotcha N" references keep working.
+
 1. **iOS Koin init name.** Swift calls `InitKoinKt.doInitKoin()`. Kotlin/Native's Obj-C exporter prefixes `do` to
    top-level functions whose names start with `init`. Keep the parameterless `initKoin()` overload, since Swift can't
    pass the Kotlin lambda.
@@ -165,16 +169,8 @@ Seen in practice:
    - JetBrains lifecycle/navigation must match what CMP's own artifacts depend on (check the `.module` files).
    - Prefer stable releases; no `-alpha`/`-beta`/`-rc` without a written reason.
 3. **No `iosX64`.** It was removed upstream; only `iosArm64` + `iosSimulatorArm64`.
-4. **Hand-authored Xcode project.** `iosApp/iosApp.xcodeproj/project.pbxproj` is written by hand, not exported from
-   Xcode, and there's no CocoaPods or xcodegen. Three targets: the app, `ShareExtension` and `NextUpWidget` (both pure
-   Swift, embedded by the app's "Embed Foundation Extensions" phase). In the app target the "Compile Kotlin Framework" Run Script phase runs
-   `./gradlew :composeApp:embedAndSignAppleFrameworkForXcode` *before* Compile Sources. `ENABLE_USER_SCRIPT_SANDBOXING = NO`
-   is required for that. When adding a Swift file, add a `PBXFileReference`, a `PBXBuildFile`, the group child and the
-   Sources entry, all with new unique 24-hex IDs. Settings (team, bundle id, version) live in
-   `iosApp/Configuration/Config.xcconfig`; put a personal `TEAM_ID` in the gitignored `Signing.xcconfig`.
-   The three targets share the app group `APP_GROUP` (xcconfig → each `Info.plist` `AppGroupId` + `.entitlements`);
-   register it in the Apple Developer account. Extensions can't run Kotlin: they talk to the app only through the group
-   (see `composeApp/src/iosMain/.../IosBridge.kt`). Their strings are `Localizable.strings` variant groups (five languages).
+4. **Hand-authored Xcode project.** `iosApp/iosApp.xcodeproj/project.pbxproj` is written by hand (no Xcode export,
+   CocoaPods or xcodegen); three targets share the app group. Edit it only with `ios-project-edit`.
 5. **Compose resources on Android.** AGP 9's KMP library plugin has Android resources **off** by default, and Compose
    Multiplatform only packages `composeResources` (strings, fonts) into the APK's `assets/` when they're on. The
    `goodcompany.kmp.compose` convention sets `androidResources { enable = true }`; never drop it. Without it the web
@@ -193,20 +189,11 @@ Seen in practice:
    there is a manifest + CI change, no code change.
    CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
-9. **Persisted data.** App data lives in SQLite (gotcha 24); the `.sq` files are the schema. Adding a nullable column
-   or one with a default is a new numbered `.sqm` migration. A new table also needs its read/write in `db/*Tables.kt`,
-   its name in the matching `*_TABLES` list (observers), and a place in `SqlBackupRepository` / `replaceAllData` and the
-   domain `Backup` (export / restore). SQLDelight can't parse a `CHECK` on a column added with `ALTER TABLE … ADD COLUMN`
-   when it names the new column, so check such values in the mapper (e.g. `preferred_channel`). A column called `value` is
-   generated as `value_`. Device settings that must be readable before the database opens (theme, app lock,
-   onboarding, API key) are `DeviceSettings`, JSON under `device_settings.v1`; the rest of `AppSettings` is the
-   `user_preferences` row. The old `*.v1` JSON keys in `storage/PersistentState.kt` (`Keys`) are only read by the
-   one-off `LegacyJsonImport`.
-10. **Claude API.** `AnthropicIdeaGenerator` calls `POST /v1/messages` with model `claude-opus-5-5`,
-   `anthropic-version: 2026-10-21`, the `web_search_20260209` server tool, `fallbacks: "default"`
-   (beta `server-side-fallback-2026-07-01`) and `anthropic-dangerous-direct-browser-access: true` (needed for the
-   wasm build). It handles `pause_turn` and `refusal`. Don't add `temperature`/`top_p` (rejected on this API version)
-   or `thinking: disabled`.
+9. **Persisted data.** Every stored-data change (table, column, `CHECK`, backup field, device setting) follows
+   `persistence-change`: numbered `.sqm` migration, committed schema snapshot, `*_TABLES`, backup export/restore,
+   migration and contract tests.
+10. **Claude API.** Raw HTTP to `POST /v1/messages`; no `temperature`/`top_p` or `thinking: disabled`. Details in
+    `area-ai`.
 11. **Shared elements.** Features tag elements with `Modifier.sharedElement("avatar-<id>")` from `core:ui`; the actual
     `SharedTransitionLayout` wiring is in `AppNavHost`. Don't import navigation types into feature modules.
 12. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
@@ -221,226 +208,75 @@ Seen in practice:
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
 15. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
     `capture-screenshots` skill and look at every image. Never hand-edit or fake them.
-16. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,
-    quieter when the app isn't opened). Don't schedule catch-up notifications anywhere else. Birthdays, events, reminders
-    and plans are never throttled.
-17. **Google Drive backup.** Scope `drive.file` only (`DRIVE_FILE_SCOPE`), one file named `DRIVE_BACKUP_FILE_NAME`,
-    content = `ExportBackupUseCase` (never the API key). OAuth clients live in a Google Cloud project, not in the repo
-    (see `docs/GOOGLE_DRIVE.md`): Android needs none in code; iOS reads `GOOGLE_DRIVE_IOS_CLIENT_ID` (xcconfig →
-    Info.plist `GoogleDriveClientId`); web reads `<meta name="google-drive-client-id">`. Empty → the row is hidden.
-    Obj-C helper classes (e.g. the `ASWebAuthenticationSession` anchor) must be `class`, never `object`.
-18. **Widgets.** Android: `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
-    resources in `androidApp/src/main/res/values-*` (all five languages). iOS: `iosApp/NextUpWidget` (WidgetKit) reads the
-    `WidgetSnapshot` JSON the app writes to the app group (`startWidgetSync`); "We met" opens `goodcompany://met/<id>`.
-    Both show what `ObserveHomeWidgetUseCase` returns; keep the two in step (owner: iOS keeps pace with Android and web).
-19. **Share into the app (issue #24, D6, C1, F12, F17).** "Share → Good Company" lands in `ShareInbox` (domain), which
-    opens `ShareRoute` (who → confirm). Android: `ACTION_SEND` in `MainActivity` (`ShareIntents`: images downscaled to
-    1568 px JPEG, `EXTRA_TITLE`/`EXTRA_SUBJECT` as the title). iOS: the Share Extension writes `ShareInbox/*.json`
-    (+ `.jpg`, plus the item title) into the app group; the app reads it when it becomes active. Web: the manifest's
-    `share_target` (installed PWA only) → `?share_title&share_text&share_url` → `LaunchOptions.shared`.
-    The share is saved by `SaveSharedUseCase` as an `Attachment` (own `attachment` table, migration `6.sqm`, in backups)
-    for a person **or** a circle (exactly one owner; a circle's shows on every member's page via `Attachment.isFor`), or
-    as a `Gift` idea (`url`, `price`, person only). When it counts, it is logged through `LogInteractionUseCase`
-    (`source = SHARE`) and `Attachment.logId` points at the hangout / interaction / batch, which is how `Timeline.build`
-    shows it on that entry. Photos: a thumbnail (`PhotoShrinker`) plus an optional `PhotoRef` to the gallery item, never
-    the full photo. `rememberGalleryPhotoPicker` (Android Photo Picker + persistable grant, iOS `PHPicker` asset id) and
-    `rememberGalleryPhotoOpener` (`ACTION_VIEW` / `PHImageManager`; web: never) live in `:core:ui` platform; share-sheet
-    photos usually get no reference (thumbnail only). Friends are ranked by `ShareMatcher` (name, phone number via
-    `PhoneMatcher`, now in domain `util/`, recent contact, closeness); the type is guessed by `ShareGuesser`. Link titles
-    come only from the sending app: the app never fetches a shared link.
-20. **Blogs & feeds.** `FeedParser` (domain) is a tiny RSS/Atom reader; `KtorFeedFetcher` fetches straight from the
-    device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
-    browser many feeds fail because of CORS; that's expected.
-21. **Sideload self-update.** Settings → "App updates" exists only where the manifest declares `REQUEST_INSTALL_PACKAGES`
-    (`PlatformCapabilities.hasSelfUpdate`, so only the sideload build). `GitHubReleaseUpdateSource` reads the rolling
-    `test-build` release (title `Test build #<run>`, run number = `versionCode`, asset `good-company-sideload-test.apk`);
-    `CheckForUpdateUseCase` compares it with the installed `versionCode`; `AppUpdater` (Android) downloads the APK to
-    `cache/updates/` and opens the system installer through the sideload-only FileProvider. Keep the release title and
-    asset name in `.github/workflows/test-apk.yml` in step with the source. Android only installs over a build signed with
-    the same key (see CI_CD.md "Signing").
-22. **Contact write-back (Android sideload only).** `FriendRepositoryImpl` mirrors every friend that has a `contactId` onto
-    their contact through the `ContactsWriter` port (`ContactCard.from(friend)` is the projection; a write happens only when
-    the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
-    contact the app owns (`SOURCE_ID` = `goodcompany:<friendId>`, no account, so it never syncs to Google) joined to the real
-    contact with an aggregation exception. Never edit the user's own contact rows. The mirror
-    **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid (from CHILD links)/event), a changed detail
-    updates the app's own earlier row in place (`ContactRowPlanner`, pure and tested; its `Step` has no delete), and a detail
-    removed in the app, a cleared friend or a deleted friend leaves the contact as it is. The user's own contact rows are only read.
-    `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false` (so does
-    `IosContactsSource` since D2): people are chosen in the contact list with checkboxes (`ListContactsUseCase` reads without
-    photos, `SaveChosenContactsUseCase` reads `ContactsSource.readPhotos` for the ticked people only, then
-    `ImportPickedContactsUseCase`) or with the system contact picker, and a sync only refreshes friends that already have a
-    `contactId`, never importing the whole address book. `ContactRecord.starred` is Android's `STARRED` (iOS has none). New data that fits on a contact goes into
-    `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
-    `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
-    What is written (issue #20): relatives as `Relation` rows (partner → `TYPE_PARTNER`, parent → `TYPE_PARENT`; sibling, pet
-    and other → `TYPE_CUSTOM` with a localized label, since Android has no sibling type), "introduced by" as `TYPE_REFERRED_BY`,
-    and job, lives in, how we met, food, drinks, interests and custom fields as labelled lines in the one note (`NoteLabels`).
-    **Emails are never written back** (owner decision); they are read from the contact (`ContactRecord.emails`, `fromContact`)
-    and refreshed on sync, while typed ones are kept.
+16. **Notification budget.** Catch-up nudges go only through `NudgePolicy` in `NotificationPlanner`; birthdays, events,
+    reminders and plans are never throttled. Details in `area-notifications-widgets`.
+17. **Google Drive backup.** Scope `drive.file` only, one file, never the API key. Details in `area-backup-sync`.
+18. **Widgets.** Android `RemoteViews` and iOS WidgetKit show the same `ObserveHomeWidgetUseCase`; keep them in step.
+    Details in `area-notifications-widgets`.
+19. **Share into the app.** One `ShareInbox` fed by three platforms; the app never fetches a shared link and keeps only
+    photo thumbnails. Details in `area-sharing-gifts`.
+20. **Blogs & feeds.** Fetched from the device, at most every 20 h; CORS failures on the web are expected. Details in
+    `area-backup-sync`.
+21. **Sideload self-update.** Only in the sideload build; tied to the `test-build` release title and asset in
+    `test-apk.yml`. Details in `area-backup-sync`.
+22. **Contact write-back (Android sideload only).** The mirror never deletes, never edits the user's own contact rows
+    and never writes emails or photos. Details in `area-contacts`.
 23. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
-24. **SQLite (SQLDelight 2, issue #14).** `:core:data` has `GoodCompanyDatabase`
-    (`src/commonMain/sqldelight/`, `generateAsync = true`, so every query is `suspend`), opened lazily through
-    `AppDatabase` from the `createDatabaseDriverFactory()` expect/actual. The repositories are
-    `repository/SqlRepositories.kt` (mappers in `db/*Tables.kt`). On first open `LegacyJsonImport` moves the old JSON
-    documents in, in one transaction with a `db_meta` mark, then deletes the JSON (owner decision 2026-11-13), but only
-    when the database is persistent; unreadable keys and a failed import keep the JSON. The JSON `*RepositoryImpl`
-    classes remain only as the reference the SQL ones are checked against: both must pass `RepositoryContract`
-    (commonTest; the SQL subclass is in androidHostTest).
-    Go through `AppDatabase.access`/`transaction`/`observe`, never `get()` directly: the web driver can't run two
-    statements at once. Schema changes go in numbered `.sqm` migrations; after one, run
-    `generate<SourceSet>GoodCompanyDatabaseSchema` and commit the new `databases/<n>.db` (`verifySqlDelightMigration`
-    checks them). iOS: `ComposeApp.framework` is static, so the app target links `-lsqlite3` itself (`OTHER_LDFLAGS`).
-    Web: our own worker (`core/data/src/wasmJsMain/sqlite-worker`, official `@sqlite.org/sqlite-wasm`, OPFS
-    "SAH pool" VFS, no COOP/COEP needed) replaces SQLDelight's in-memory one. It's an npm `file:` package, so the
-    build uses a copy taken at install time: after editing it, bump `version` in its `package.json` (or rerun
-    `kotlinNpmInstall`), or the bundle keeps the old worker; the database works in one tab at a time,
-    and a second tab falls back to memory (`AppDatabase.isPersistent()` is false; the app shows a "won’t be saved" banner). `index.html?dbcheck` prints a
-    persistence smoke test to the console (open count must go up across reloads). Booleans: SQLite stores them as
-    0/1 and the worker returns numbers, while the web driver's `getBoolean` expects a JS boolean, so store flags as
-    `INTEGER` and convert in the mappers (or prove a `Boolean` column works on the web before relying on it).
-25. **Contact photos (issue #15).** `Friend.photo` is a `ContactPhoto` (base64 thumbnail, at most `ContactPhoto.MAX_BYTES`),
-    stored in its own `friend_photo` table and carried in backups. It is contact-owned like the birthday: a sync or a re-pick
-    replaces it, a contact without one never clears it (`ContactMerger`), and `.vcf` imports only fill a missing one.
-    Sources: Android `AndroidContactsSource` (the `Photo.PHOTO` thumbnail of `Contacts.PHOTO_ID`) and both Android pickers
-    (best effort through the picker's grant; the Android 17 picker isn't asked for the photo field, so it never turns into
-    a field chooser); iOS `CNContactThumbnailImageDataKey` (check `isKeyAvailable` first: an unfetched key is an Obj-C
-    exception); `VCardParser` reads inline `PHOTO`, never links. Larger pictures go through the `PhotoShrinker` port
-    (`createPhotoShrinker()` in `:core:ui`: Android graphics, Skia on iOS/web) to `MAX_SIDE_PX`. Render with
-    `FriendAvatar(friend)` / `StackedAvatars(friends)`. Widgets show the catch-up friend's photo (`WidgetSnapshot.CatchUp.photo`
-    on iOS) only when not private. The contact write-back never writes photos. A friend without a photo can get one from the
-    gallery (`rememberImagePicker` → `SetFriendPhotoUseCase`): each picker returns an upright JPEG of at most 512 px (UIKit
-    redraw on iOS, EXIF rotation on Android, `createImageBitmap` on the web), since the Skia decoder ignores EXIF.
-26. **Timeline and logging (issue #21).** Meetups are `Hangout`s (with an optional `HangoutActivity`, F3); calls, messages,
-    emails, video calls and WhatsApp days are `Interaction`s (`id`, `source`, `note`, `durationSeconds`, `batchId`,
-    `messageCount`); a `JournalEntry` is a dated note that never counts as contact (own `journal_entry` table, exposed through
-    `InteractionRepository`). Every non-meetup type counts like a call: warmth and the rhythm only with the friend's
-    "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
-    `Interaction.automaticId` and a partial unique index, so a re-sync never duplicates them; manual ones never dedupe.
-    Logging several people at once writes one row per person sharing a `batchId`. All logging goes through
-    `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is `LogInteractionSheet` (`:core:ui`), hosted
-    by the `LogInteractionRoute(friendIds, type)` dialog destination in `AppNavHost` (`type` is a `LogKind` or
-    `InteractionType` name). `Timeline.build` merges hangouts, interactions, journal, "What's new" and gifts given;
-    the full list is `FriendTimelineRoute`, and the WhatsApp import lives in its overflow menu. Migration `4.sqm` rebuilt
-    `interaction` with ids (old rows get their automatic id and a legacy source) and added the journal and hangout activity.
-27. **Closeness and circles (issue #22, D1).** Two separate ideas, mind the names. **Closeness** is the enum `Closeness`
-    (Inner / Close / Good friends, one per friend, `Friend.closeness`): it used to be `Circle` / `Friend.circle`, and it is
-    still stored as `circle` (`@SerialName("circle")`, the `friend.circle` column, the `circle_*` string keys and the
-    `*CircleDays` settings), so backups and the database didn't change. **Circles** are the free-form groups: the UI says
-    "circle", the code and tables keep `FriendGroup` / `friend_group` / `group_member` / `*Group*` use cases. A circle has an
-    emoji, a `CircleColor` (seven names; light/dark values only in `:core:ui` `circlePalette`, never ad-hoc colours) and
-    1+ members; `meetEveryDays` is the optional "Remind me when we haven't met" (null = off, the default for new circles)
-    and never touches a member's own rhythm. A circle "met" when a hangout had enough of its members
-    (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). Home is filtered by
-    `AppSettings.homeCircleFilter` (in `user_preferences`; `DeleteGroupUseCase` resets it, an unknown id reads as All):
-    every section shows only members, and the A–Z list all of them whatever their closeness. Choosing a circle anywhere
-    (check-in sheet, Log sheet, "Log a <circle> meetup" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
-    members with **nobody ticked** (F20). The editor is `CircleEditorRoute(id?)` in `:feature:hangouts`; delete has Undo
-    (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
-    `user_preferences.home_circle_filter`.
-
-28. **App-icon shortcuts (issue #23, D7).** `ObserveShortcutsUseCase` (domain, `Shortcuts.kt`) gives the three most recent
-    people by `Relationships.lastContact` (no orphans) and none while app lock or private notifications are on. A picked
-    shortcut is a `goodcompany://log[/<friendId>]` link (`AppLink`, shared parser, also `met/<id>` for the iOS widget)
-    → `QuickEntryInbox` → `App.kt` opens `LogInteractionRoute` (under the app lock, like `ShareInbox`). An unknown id opens
-    the sheet with nobody picked, and the sheet never saves an id it can't resolve. Android: `shortcuts/AppShortcuts.kt`
-    (dynamic shortcuts kept in step from `GoodCompanyApp`, icons from `PhotoBitmaps` or initials on `avatarColorsArgb`),
-    the `VIEW goodcompany://log` filter on `MainActivity`, labels in `androidApp/src/main/res/values-*`. Pinned person
-    shortcuts outlive privacy changes (Android keeps them; we only replace the dynamic ones). iOS: Kotlin builds the
-    localised `shortcutItems()` (`startShortcutSync`, compose string `shortcut_log_meetup`); `iOSApp.swift` sets
-    `UIApplication.shortcutItems` on every trip to the background and handles a pick in `QuickActionSceneDelegate`
-    (cold start and running), all in the existing Swift file, so the Xcode project didn't change. Web: none.
-29. **Named places (issue #44, F11).** GPS only: never call a place-search, geocoding or map service. A `NamedPlace`
-    (`named_place` table, migration `7.sqm`, in `Backup.places`) is a name, a point and `radiusM` (100). Meetups link to
-    one through `Place.placeId` (`hangout.place_id`, no foreign key). `CheckInUseCase` resolves the place: a fix inside a
-    radius (`NamedPlaces.nearest`, haversine, the edge counts, overlaps → the nearest) with no name or that place's name
-    takes it; a new name at a fix creates a place; no name and nothing near keeps just the coordinates. Rename and merge
-    go through `HangoutRepository` (one transaction in SQL) so every linked meetup's `place_name` follows; delete only
-    forgets the place (meetups keep their name and link, so Undo relinks them). "Usually here with" is
-    `NamedPlaces.usualPeople` (most frequent in the last 8 meetups there): chips that add on tap, never pre-ticked.
-    Both sheets draw it with `MeetupPlace` (`:core:ui`); Settings → Places is `PlacesRoute` in `:feature:settings`.
-30. **Links between people (issue #39, F6, F18).** `PersonLink` (own `person_link` table, migration `8.sqm`, in backups) is
-    stored **once**: `type` is what `to` is to `from`, and `LinkType.inverse` gives the other side (`PersonLink.roleSeenBy`).
-    Types are gender-neutral; the word comes from the described person's optional `Friend.pronouns` (`linkWord` in `:core:ui`,
-    neutral word when null). `Friend.relationToMe` is separate; a family one puts them in the built-in Family circle, which
-    `GroupsWithFamilyCircle` (domain) adds in front of the stored circles (never stored, writes to it are ignored; its name
-    comes from the `BuiltInCircleNames` port). One link per pair (`SaveLinkUseCase`); anniversaries come from a current
-    romance's `startedOn` (`PersonLinks.anniversaries` → agenda + notifications). Contact write-back: `ContactMirror` builds
-    each card with its links (`ContactCard.links`), so a link change rewrites both contacts and a rename the linked ones.
-31. **Kids are people (issue #40, F9).** A kid is a `Friend` with a `LinkType.CHILD` link from the parent (`KidsAsPeople`:
-    `kidsOf` / `parentsOf` / `parentsById`); `AddKidUseCase` creates both. `Friend.kids` and `Gift.forKidId` are legacy:
-    only old backups and the old JSON store carry them, and `KidsAsPeople.convert` turns them into people (in
-    `RestoreBackupUseCase`, in `replaceAllData` so `LegacyJsonImport` too, and for `SampleData`); the database does the
-    same in SQL as migration `10.sqm` (id kept unless taken, then `<parent>-<kid>`; link id `kid-link-<id>`) and drops `kid`, `kid_like` and
-    `gift.for_kid_id`. `Friend.showInMyList` hides someone from the A–Z list only (search, circles and the parent's page
-    still show them); it defaults to `KidsAsPeople.showsByDefault(parent)` = the parent is family. Agenda and notifications
-    find a kid's parent through the links (`KidBirthday(parent, kid)`); `ContactCard.kids` comes from CHILD links, so a
-    kid is written once (not also as a relation).
-
-32. **Calendar suggestions (issue #45, D3).** Opt-in (`AppSettings.calendarSuggestions`, `calendarIds`, `calendarOnSince`:
-    device settings, stripped from exports and kept on restore). The `CalendarReader` port (`createCalendarReader()`:
-    `AndroidCalendarReader` over `CalendarContract.Instances` with `READ_CALENDAR` in the main manifest, `IosCalendarReader`
-    over EventKit full access, `CalendarReader.None` on the web) is only read through `ObserveCalendarEventsUseCase`, which
-    returns nothing while the feature is off, no calendar is ticked or access is missing. Events live in memory only:
-    never stored, never in a backup, never in an AI request. `CalendarSuggester` (pure) matches by attendee email and
-    `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
-    (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
-    friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
-    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
-    `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
-    (`:feature:agenda`, also a card on Coming up).
-33. **AI switch (issue #37, F1).** `AppSettings.aiEnabled` (default off; stored in `user_preferences.ai_enabled`, where
-    NULL means "on when a key is saved", so people who had a key before keep AI) hides everything AI. **Every AI entry
-    point checks it:** use cases take the key from `AppSettings.usableAiKey` (null while AI is off), ViewModels expose
-    `hasAiKey = settings.usableAiKey != null` (and `aiEnabled` where a section or hint shows without a key), and screens
-    show no AI button, section, hint or "set up AI" prompt while it is off. The Ideas tab is filtered by
-    `TopLevelDestination.shown(aiEnabled)`, `LaunchOptions.startDestination` sends `tab=ideas` to Home, and
-    `RunWeeklyIdeasUseCase` returns `AI_OFF` (even forced). The web option `?ai` turns it on for demos and screenshots.
-    Restoring a backup keeps this device's switch, like the key. Settings → Activities (F3) edits
-    `AppSettings.activities` (the ones on, in order, never empty; `user_preferences.activities`, NULL = all), and
-    `ObserveActivitiesUseCase` offers only those to the log sheet.
-34. **Network map and "Your people" (issue #46, I12).** Both are pure domain code in `usecase/Network.kt` and
-    `usecase/PeopleDashboard.kt`; the screens live in `:feature:review` (`NetworkMapRoute`, `PeopleDashboardRoute`, from
-    Home's menu and the year in review). Only "your people" are shown (`PeopleDashboard.isYours`: a real friend, a
-    closeness, a relation to you or a circle member; never orphans or address-book-only contacts). Edges are person links
-    (#39) plus "introduced by", never co-presence; you are the `NetworkGraph.ME` node at the origin. The layout is our own
-    deterministic Fruchterman–Reingold (`ForceLayout`, fixed iteration budget, positions cached between emissions and
-    re-run for a third of the budget), drawn in a Compose `Canvas`: no graph library. Warmth is the same `Warmth.score`;
-    with Show warmth off node size and every dashboard warmth figure go away and only counts remain.
-
-35. **Automatic kinship (issue #41, F7).** `KinshipResolver` (domain, `usecase/Kinship.kt`, pure) proposes what someone
-    one step from a family member is to you (`step(viaToMe, personToVia)` is the whole table: brother's daughter → niece,
-    mother's sister → aunt, partner's mother → in-law). Ambiguous cases (half/step family, a parent's child or partner,
-    in-laws through an ex) offer a choice and are **never set automatically**; two parents who share a child make them a
-    plain sibling. A proposal only changes anything when the user taps it (`ConfirmKinshipUseCase` → `relationToMe`);
-    "Not right" / "Not family" adds the offered relations to `Friend.dismissedKinship` (`friend.dismissed_kinship`,
-    comma-separated `LinkType` names), which are never offered again. `STEP_PARENT` / `STEP_CHILD` / `HALF_SIBLING` /
-    `STEP_SIBLING` are family `LinkType`s; migration `14.sqm` rebuilds `person_link` for the wider `CHECK`. Proposals show on
-    the person's page and in `SuggestedFamilyRoute` (Home menu, plus a row on Home). Home search understands "my nieces and
-    nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
-    `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed
-    kinship only. Reuse that use case for any other "my nieces" picker.
-
-36. **Gift lists (issue #42, F8, F17).** A `GiftList` (title, optional `occasionDate`, `occasion` = the `GiftOccasion` a
-    gift given from it is recorded as) has `GiftListEntry`s (a person, an optional `budget`) whose `GiftListItem`s point at
-    that person's own `Gift`s by id with a `GiftStatus` (to buy → bought → given → to buy). There is no second gift store:
-    a gift added on a list is an idea on the person's page, and "given" sets `Gift.givenOn` / `occasion` there
-    (`AdvanceGiftStatusUseCase`; moving on from given makes it an idea again). Tables `gift_list`, `gift_list_entry`,
-    `gift_list_item` (migration `15.sqm`, in `Backup.giftLists`, in `SampleData`); a list is saved whole (delete + insert),
-    and `gift_id` has no foreign key because a friend's gift rows are rewritten on every save, so items whose gift is gone
-    are skipped when read. Prices are free text: `GiftPrices.parse` reads a number where it can and `GiftTotals` says when
-    a sum is partial; never guess a currency. "Duplicate" keeps people and budgets a year on, with no items. Adding people
-    takes a whole circle or a search that understands kinship (`ParseKinshipQueryUseCase`, #41). AI ideas reuse
-    `SuggestGiftsUseCase` and show only with `usableAiKey` (gotcha 33). Screens: `GiftListsRoute` / `GiftListRoute(id)` in
-    `:feature:hangouts` (Together tab row, plus "Gift lists" on a friend's gift card).
+24. **SQLite.** Always go through `AppDatabase.access`/`transaction`/`observe`, never `get()` (the web driver can't run
+    two statements at once); flags are `INTEGER`. Details in `persistence-change`.
+25. **Contact photos.** Thumbnails only, contact-owned like the birthday, never written back. Details in
+    `area-contacts`.
+26. **Timeline and logging.** All logging goes through `LogInteractionUseCase` (undo: `UndoLogUseCase`). Details in
+    `area-logging`.
+27. **Closeness and circles.** Closeness (`Closeness`, stored as `circle`) is not a circle (`FriendGroup`); never rename
+    stored names. Details in `area-people`.
+28. **App-icon shortcuts.** `goodcompany://` links parsed by `AppLink`; none while app lock or private notifications are
+    on. Details in `area-notifications-widgets`.
+29. **Named places.** GPS only: never call a place-search, geocoding or map service. Details in `area-logging`.
+30. **Links between people.** A `PersonLink` is stored once; read the other side with `LinkType.inverse`. Details in
+    `area-people`.
+31. **Kids are people.** A kid is a `Friend` with a `CHILD` link; `Friend.kids` is legacy. Details in `area-people`.
+32. **Calendar suggestions.** Opt-in; events stay in memory, never stored, backed up or sent to the AI. Details in
+    `area-logging`.
+33. **AI switch.** Every AI entry point checks `AppSettings.usableAiKey` / `aiEnabled`; nothing AI shows while it is
+    off. Details in `area-ai`.
+34. **Network map and "Your people".** Pure domain code, no graph library, only "your people". Details in
+    `area-people`.
+35. **Automatic kinship.** Proposed, never set automatically; reuse `ParseKinshipQueryUseCase`. Details in
+    `area-people`.
+36. **Gift lists.** One gift store (the person's `Gift`s); lists point at them; never guess a currency. Details in
+    `area-sharing-gifts`.
 
 ## Skills
+
+**Say which skills you loaded.** When you start implementing something, tell the user in one line which skills you
+loaded and why, e.g. `Skills: persistence-change (new table), area-people (links)`, or `Skills: none`. If you load
+another one later, say so when you do. Repeat the final list in the PR description, in the test plan under
+**Skills loaded**.
 
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:
 - `new-feature-module`: scaffold a `:feature:*` module that follows these conventions.
 - `verify-offline`: set up a sandbox (SDK, Maven mirror) and run every check that works without macOS or an emulator.
 - `regenerate-app-icons`: re-render the iOS app icons from `docs/brand/*.svg` (the Android adaptive icon is vector XML).
 - `capture-screenshots`: re-render the README screenshots from the real Compose web build in headless Chromium.
+- `build-in-sequence`: implement a list of planned issues one session at a time, each branch cut from the previous one
+  (stacked PRs), with every question asked up front so the sessions run unattended.
+
+Checklists for changes that keep coming back:
+- `persistence-change`: a table, column, `CHECK`, backup field or setting, end to end (gotchas 9, 24).
+- `new-screen`: a screen or sheet in an existing feature module (ViewModel, route, Koin, tests).
+- `add-strings`: user-facing text in all five languages, and which `strings.xml` it belongs in.
+- `refresh-branch`: merge `main` (or a stack parent) into a branch; renumber colliding migrations.
+- `ios-project-edit`: edit the hand-authored `project.pbxproj`, Info.plist, entitlements (gotcha 4).
+
+Area notes (load before touching the area):
+- `area-contacts`: picker/list, sync, photos, sideload write-back (gotchas 22, 25).
+- `area-people`: closeness vs. circles, person links, kids, kinship, network map (27, 30, 31, 34, 35).
+- `area-logging`: Log sheet, timeline, places, calendar suggestions (26, 29, 32).
+- `area-sharing-gifts`: share into the app, attachments, gifts and gift lists (19, 36).
+- `area-notifications-widgets`: nudge budget, widgets, app-icon shortcuts, deep links (16, 18, 28).
+- `area-ai`: the Claude client and the AI switch (10, 33).
+- `area-backup-sync`: Drive backup, feeds, sideload self-update (17, 20, 21).

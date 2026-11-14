@@ -29,6 +29,12 @@ You MUST also state what could NOT be run and why, e.g.:
 
 -
 
+**Skills loaded:**
+
+<!-- The .claude/skills used for this change and why, e.g. persistence-change (new table), area-people (links); or "none". -->
+
+-
+
 ## Risk
 
 <!--
