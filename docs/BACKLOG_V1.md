@@ -85,7 +85,6 @@ N4 cartão "Quando estiveste com…?" · N5 quatro níveis de proximidade · N6 
 
 ## ⛔ Bloqueados (não correr sem decisão)
 
-- **F5 · Juntar "Everyone" e "Real friends"**: em discussão com o outro autor.
 - **F13 · Mapas de encontros**: fornecedor de mapas por decidir (MapLibre + OSM é a proposta).
 - **D2 na build Play**: a lista com checkboxes só entra na Play depois de confirmar a política de `READ_CONTACTS`.
 - **D8 · Firebase Analytics**: em discussão; não remover código.

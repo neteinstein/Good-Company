@@ -27,8 +27,7 @@ in ⋮), #63 (snackbars) and #64 (pickers save on choice) come first or alongsid
 
 ## Open points (defaults used below)
 
-1. **F5 (Everyone and Real friends).** N2's one list sorted by closeness is the F5 proposal. The owner approved the
-   layout; F5 was also to be confirmed with the other author. Default: N2 doesn't merge until that's confirmed.
+1. **F5 (Everyone and Real friends).** Confirmed by the owner (2026-11-14): N2's one list sorted by closeness replaces both.
 2. **Acquaintances and "real friends".** Default: Acquaintances are not real friends (not in the Home/People "real
    friends" sense, no catch-up rhythm), but keep birthday reminders (F10).
 3. **"Who's free for…?"** goes to Plans; **"Last time with…"** and **Memories** go to Circles.
@@ -79,7 +78,7 @@ what needs you this week without listing everyone; screenshots refreshed.
   with a **Network map** link.
 - The more menu holds Add friend (#62), Pick from contacts, Import .vcf and Suggested family.
 - The old Friends Home sections that moved to Today (N1) are gone from here.
-- Depends on open point 1 (F5).
+- Implements F5 (confirmed 2026-11-14): this list replaces Everyone and Real friends.
 
 ### Tests
 ViewModel test: grouping and order by closeness, filter counts, A–Z option.
