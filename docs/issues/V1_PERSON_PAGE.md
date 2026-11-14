@@ -5,6 +5,8 @@ Owner review of a person's page (`FriendDetailScreen`) after the People tab revi
 [`PRODUCT_BRIEF.md`](../PRODUCT_BRIEF.md) ("Person page · view and edit", "· family around the photo",
 "· three tabs", "· one Message button", "· circles and \"Related to you?\""). Base: `origin/main` @ `584bc1b` (#86 merged).
 
+**Created as issue (2026-11-14):** P1 #90. The issue is the live copy.
+
 ## Owner answers (2026-11-14)
 
 1. **Edit on the same screen**: the pencil switches the page to edit mode, not a separate screen.
@@ -18,7 +20,7 @@ Owner review of a person's page (`FriendDetailScreen`) after the People tab revi
 
 ---
 
-## P1 · Person page: view and edit, family around the photo, one Message button
+## P1 (#90) · Person page: view and edit, family around the photo, one Message button
 
 ![Today](../mockups/v1-person/now.png)
 
