@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -120,53 +121,56 @@ private fun EnabledActivities(state: ActivitiesUiState, actions: ActivitiesActio
     val moveUp = stringResource(Res.string.activities_move_up)
     val moveDown = stringResource(Res.string.activities_move_down)
     order.forEachIndexed { index, a ->
-        val isDragged = dragged == a
-        val handle = Modifier.pointerInput(a) {
-            detectDragGestures(
-                onDragStart = {
-                    dragged = a
-                    dragStart = order.indexOf(a)
-                    offset = 0f
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                },
-                onDrag = { change, amount ->
-                    change.consume()
-                    offset += amount.y
-                    val current = order.indexOf(a)
-                    val target = (current + (offset / rowPx).roundToInt()).coerceIn(0, order.lastIndex)
-                    if (target != current) {
-                        order.add(target, order.removeAt(current))
-                        offset -= (target - current) * rowPx
-                    }
-                },
-                onDragEnd = {
-                    val end = order.indexOf(a)
-                    dragged = null
-                    offset = 0f
-                    if (end != dragStart) actions.onMove(dragStart, end)
-                },
-                onDragCancel = {
-                    dragged = null
-                    offset = 0f
-                },
+        // Keyed, so a row keeps its gesture while the list reorders under the finger.
+        key(a) {
+            val isDragged = dragged == a
+            val handle = Modifier.pointerInput(a) {
+                detectDragGestures(
+                    onDragStart = {
+                        dragged = a
+                        dragStart = order.indexOf(a)
+                        offset = 0f
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    },
+                    onDrag = { change, amount ->
+                        change.consume()
+                        offset += amount.y
+                        val current = order.indexOf(a)
+                        val target = (current + (offset / rowPx).roundToInt()).coerceIn(0, order.lastIndex)
+                        if (target != current) {
+                            order.add(target, order.removeAt(current))
+                            offset -= (target - current) * rowPx
+                        }
+                    },
+                    onDragEnd = {
+                        val end = order.indexOf(a)
+                        dragged = null
+                        offset = 0f
+                        if (end != dragStart) actions.onMove(dragStart, end)
+                    },
+                    onDragCancel = {
+                        dragged = null
+                        offset = 0f
+                    },
+                )
+            }
+            ActivityRow(
+                a,
+                checked = true,
+                enabled = state.canTurnOff,
+                onToggle = { actions.onToggle(a) },
+                handle = handle,
+                modifier = Modifier
+                    .zIndex(if (isDragged) 1f else 0f)
+                    .graphicsLayer { translationY = if (isDragged) offset else 0f }
+                    .semantics {
+                        customActions = listOfNotNull(
+                            CustomAccessibilityAction(moveUp) { actions.onMove(index, index - 1).let { true } }.takeIf { index > 0 },
+                            CustomAccessibilityAction(moveDown) { actions.onMove(index, index + 1).let { true } }.takeIf { index < order.lastIndex },
+                        )
+                    },
             )
         }
-        ActivityRow(
-            a,
-            checked = true,
-            enabled = state.canTurnOff,
-            onToggle = { actions.onToggle(a) },
-            handle = handle,
-            modifier = Modifier
-                .zIndex(if (isDragged) 1f else 0f)
-                .graphicsLayer { translationY = if (isDragged) offset else 0f }
-                .semantics {
-                    customActions = listOfNotNull(
-                        CustomAccessibilityAction(moveUp) { actions.onMove(index, index - 1).let { true } }.takeIf { index > 0 },
-                        CustomAccessibilityAction(moveDown) { actions.onMove(index, index + 1).let { true } }.takeIf { index < order.lastIndex },
-                    )
-                },
-        )
     }
 }
 
