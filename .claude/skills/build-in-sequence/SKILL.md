@@ -74,6 +74,9 @@ For issue *i* (1-based) with previous branch `prev` (for *i* = 1: the base branc
 > risk, a big scope change): then commit what is sound, push, and report `BLOCKED: <the question>`.
 > Stay inside this issue's scope; note unrelated problems in the PR instead of fixing them.
 >
+> **Skills.** Before coding, load the `area-*` skills for every area the issue touches, and the checklists that apply
+> (`persistence-change`, `new-screen`, `add-strings`, `ios-project-edit`). New area notes go into those skills.
+>
 > **Done means:**
 > 1. `./gradlew spotlessApply testDebugUnitTest koverVerify spotlessCheck :androidApp:lintDebug :androidApp:assembleDebug`
 >    green; plus `:composeApp:compileKotlinIosSimulatorArm64 :composeApp:compileKotlinWasmJs` (and an `xcodebuild` of
