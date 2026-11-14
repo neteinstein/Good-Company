@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.first
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -35,6 +36,7 @@ class CircleEditorViewModelTest {
         g.deleteGroup,
         g.restoreGroup,
         g.nextCircleColor,
+        g.circleCovers,
     )
 
     @Test
@@ -146,5 +148,61 @@ class CircleEditorViewModelTest {
         assertTrue(state.value.isNew)
         vm.onDelete() // nothing to delete
         assertNull(state.value.message)
+    }
+
+    // --- Cover photo (issue #88) ---
+
+    @Test
+    fun aNewCirclesCover_isSavedWithTheCircle() = runViewModelTest {
+        val vm = vm(null)
+        val state = collecting(vm.state)
+        vm.onCoverPicked(byteArrayOf(1, 2, 3))
+        assertNotNull(state.value.cover)
+        assertTrue(g.coverRepo.covers.first().isEmpty()) // nothing stored before Save
+        vm.onName("Surf")
+        vm.onMembers(listOf(ana))
+        vm.onSave()
+        val id = g.groupRepo.groups.value.single().id
+        assertNotNull(g.coverRepo.covers.first()[id])
+    }
+
+    @Test
+    fun aNewCircleCanDropThePickedCover() = runViewModelTest {
+        val vm = vm(null)
+        val state = collecting(vm.state)
+        vm.onCoverPicked(byteArrayOf(1))
+        vm.onRemoveCover()
+        assertNull(state.value.cover)
+        vm.onName("Surf")
+        vm.onMembers(listOf(ana))
+        vm.onSave()
+        assertTrue(g.coverRepo.covers.first().isEmpty())
+    }
+
+    @Test
+    fun anExistingCirclesCover_isSavedAtOnce_andRemovalHasUndo() = runViewModelTest {
+        val saved = g.saveGroup(null, "Surf", "🏄", CircleColor.TEAL, listOf(ana), null)
+        val vm = vm(saved.id)
+        val state = collecting(vm.state)
+        vm.onCoverPicked(byteArrayOf(4, 5))
+        val cover = g.coverRepo.covers.first()[saved.id]
+        assertNotNull(cover)
+        assertEquals(cover, state.value.cover)
+
+        vm.onRemoveCover()
+        assertEquals(CircleEditorMessage.CoverRemoved, state.value.message)
+        assertNull(state.value.cover)
+        vm.onUndoRemoveCover()
+        assertEquals(cover, g.coverRepo.covers.first()[saved.id])
+        assertEquals(cover, state.value.cover)
+    }
+
+    @Test
+    fun anUnreadablePicture_leavesTheCoverAsItWas() = runViewModelTest {
+        val vm = vm(null)
+        val state = collecting(vm.state)
+        vm.onCoverPicked(ByteArray(0))
+        assertEquals(CircleEditorMessage.CoverUnreadable, state.value.message)
+        assertNull(state.value.cover)
     }
 }

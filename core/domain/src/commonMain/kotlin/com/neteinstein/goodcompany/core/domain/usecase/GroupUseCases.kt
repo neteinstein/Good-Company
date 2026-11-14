@@ -1,12 +1,16 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
+import com.neteinstein.goodcompany.core.domain.repository.CoverShrinker
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
+import com.neteinstein.goodcompany.core.domain.repository.coverOf
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.Flow
@@ -71,19 +75,61 @@ class NextCircleColorUseCase(private val groups: GroupRepository) {
     }
 }
 
-/** Deletes a circle; Home goes back to "All" if it was filtered by it. Returns the circle, for Undo. */
-class DeleteGroupUseCase(private val groups: GroupRepository, private val settings: SettingsRepository) {
+/**
+ * Deletes a circle and its cover (issue #88); Home goes back to "All" if it was filtered by it. Returns the circle with
+ * its cover, for Undo. Its plans and reminders keep their `circleId`, which reads as no circle until Undo.
+ */
+class DeleteGroupUseCase(
+    private val groups: GroupRepository,
+    private val settings: SettingsRepository,
+    private val covers: CircleCoverRepository = CircleCoverRepository.None,
+) {
     suspend operator fun invoke(id: String): FriendGroup? {
         val group = groups.groups.first().firstOrNull { it.id == id }
+        val cover = covers.covers.first()[id]
         groups.delete(id)
+        if (cover != null) covers.set(id, null)
         settings.update { if (it.homeCircleFilter == id) it.copy(homeCircleFilter = null) else it }
-        return group
+        return group?.copy(cover = cover ?: group.cover)
     }
 }
 
-/** Undo for [DeleteGroupUseCase]: puts the circle back as it was (members who were deleted meanwhile are dropped). */
-class RestoreGroupUseCase(private val groups: GroupRepository) {
-    suspend operator fun invoke(group: FriendGroup) = groups.upsert(group)
+/**
+ * Undo for [DeleteGroupUseCase] (and for [SetCircleMemberUseCase]): puts the circle back as it was, with its cover when
+ * it had one (members who were deleted meanwhile are dropped).
+ */
+class RestoreGroupUseCase(
+    private val groups: GroupRepository,
+    private val covers: CircleCoverRepository = CircleCoverRepository.None,
+) {
+    suspend operator fun invoke(group: FriendGroup) {
+        groups.upsert(group)
+        group.cover?.let { covers.set(group.id, it) }
+    }
+}
+
+/**
+ * A circle's cover photo (issue #88): set from a picked, wide-cropped picture (shrunk to the cover limit), removed, or
+ * put back by Undo. Works for the built-in Family circle too (covers are keyed by circle id).
+ */
+class CircleCoverUseCases(private val covers: CircleCoverRepository, private val shrinker: CoverShrinker) {
+    /** Sets or replaces the cover. Returns the cover it had (null for none) wrapped in [Result]; a failure when [image] can't be read. */
+    suspend fun set(circleId: String, image: ByteArray?): Result<ContactPhoto?> {
+        val cover = shrinker.coverOf(image) ?: return Result.failure(IllegalArgumentException("Unreadable picture"))
+        val before = covers.covers.first()[circleId]
+        covers.set(circleId, cover)
+        return Result.success(before)
+    }
+
+    /** Removes the cover (the circle shows its colour again). Returns the cover it had, for Undo. */
+    suspend fun remove(circleId: String): ContactPhoto? {
+        val before = covers.covers.first()[circleId] ?: return null
+        covers.set(circleId, null)
+        return before
+    }
+
+    /** Undo: puts [cover] back (null removes the one set since). */
+    suspend fun restore(circleId: String, cover: ContactPhoto?) = covers.set(circleId, cover)
 }
 
 /** The circle Home is filtered by (null = All). Remembered between launches. */

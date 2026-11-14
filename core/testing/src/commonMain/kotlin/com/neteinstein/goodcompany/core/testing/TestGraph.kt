@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
@@ -20,6 +21,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
@@ -38,6 +40,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -68,12 +71,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCirclePageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
@@ -185,6 +188,7 @@ class TestGraph(
     val calendarDecisionRepo = FakeCalendarDecisionRepository()
     val giftListRepo = FakeGiftListRepository()
     val myPhotoRepo = FakeMyPhotoRepository()
+    val coverRepo = FakeCircleCoverRepository()
     val calendarReader = FakeCalendarReader()
     val observeCalendarEvents = ObserveCalendarEventsUseCase(settingsRepo, calendarReader, clock)
     val observeCalendarSuggestions =
@@ -196,7 +200,7 @@ class TestGraph(
     val setCalendarChosen = SetCalendarChosenUseCase(settingsRepo)
 
     /** The stored circles plus the built-in Family circle, as the app sees them. Writes go to [groupRepo]. */
-    val circles = GroupsWithFamilyCircle(groupRepo, friendRepo) { "Family" }
+    val circles = GroupsWithFamilyCircle(groupRepo, friendRepo, coverRepo) { "Family" }
     val backupRepo = FakeBackupRepository(
         friendRepo,
         hangoutRepo,
@@ -210,6 +214,7 @@ class TestGraph(
         calendarDecisionRepo,
         giftListRepo,
         myPhotoRepo,
+        coverRepo,
     )
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
@@ -291,7 +296,6 @@ class TestGraph(
     val backupToDrive = BackupToDriveUseCase(exportBackup, cloudStore, settingsRepo, clock)
     val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
     val currentLocation = GetCurrentLocationUseCase(location)
-    val observeHistory = ObserveHangoutHistoryUseCase(friendRepo, hangoutRepo)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val answerLastSeen = AnswerLastSeenUseCase(friendRepo, clock)
@@ -299,8 +303,11 @@ class TestGraph(
     val observeOccasionMatches = ObserveOccasionMatchesUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeGroups = ObserveGroupsUseCase(circles, friendRepo, hangoutRepo, clock)
     val saveGroup = SaveGroupUseCase(circles, ids)
-    val deleteGroup = DeleteGroupUseCase(circles, settingsRepo)
-    val restoreGroup = RestoreGroupUseCase(circles)
+    val deleteGroup = DeleteGroupUseCase(circles, settingsRepo, coverRepo)
+    val restoreGroup = RestoreGroupUseCase(circles, coverRepo)
+
+    /** Covers keep the first 16 bytes, like [thumbnailShrinker], so tests can tell a shrunk cover. */
+    val circleCovers = CircleCoverUseCases(coverRepo) { it.copyOf(minOf(it.size, 16)) }
     val setCircleMember = SetCircleMemberUseCase(circles)
     val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
@@ -319,6 +326,8 @@ class TestGraph(
         SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language, linkRepo)
     val observeReminders = ObserveRemindersUseCase(reminderRepo)
     val addReminder = AddReminderUseCase(reminderRepo, clock, ids)
+    val editReminder = EditReminderUseCase(reminderRepo)
+    val observeCirclePage = ObserveCirclePageUseCase(circles, friendRepo, hangoutRepo, planRepo, reminderRepo, interactionRepo, clock)
     val setReminderDone = SetReminderDoneUseCase(reminderRepo)
     val deleteReminder = DeleteReminderUseCase(reminderRepo)
     val restoreReminder = RestoreReminderUseCase(reminderRepo)
@@ -349,9 +358,14 @@ class TestGraph(
         clock,
         links = linkRepo,
         giftLists = giftListRepo,
+        covers = coverRepo,
+        sampleCover = { sampleCover },
     )
+
+    /** What [loadSampleData] puts on the sample surf circle. */
+    var sampleCover: ContactPhoto? = ContactPhoto("c2FtcGxl")
     val removeSampleData =
-        RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, giftListRepo)
+        RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, giftListRepo, coverRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val updateSource = FakeAppUpdateSource()
     val checkForUpdate = CheckForUpdateUseCase(updateSource)

@@ -12,6 +12,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - The app never fetches a shared link; titles come only from the sending app.
 - Photos are a thumbnail plus an optional gallery reference, never the full photo.
 - An attachment has exactly one owner: a person or a circle.
+- A circle's shares show on its page (#88, `TimelineEntry.Share`); one logged as a meetup shows once, on that meetup.
+  Deleting a share there goes through `DeleteTimelineEntryUseCase` (Undo restores the attachment).
 - There is one gift store (the person's `Gift`s); lists only point at them. Never guess a currency.
 - Share changes usually touch three platforms: Android `MainActivity`/`ShareIntents`, iOS `ShareExtension` (see
   `ios-project-edit`), web `LaunchOptions.shared`. Keep them in step.

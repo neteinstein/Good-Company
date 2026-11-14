@@ -14,22 +14,6 @@
     <string name="group_snooze_week">Amână o săptămână</string>
     <string name="group_snooze_weekend">Amintește-mi sâmbătă</string>
     <string name="group_more">Mai mult</string>
-    <string name="section_last_time_with">Ultima dată cu…</string>
-    <string name="clear">Șterge</string>
-    <string name="last_together">Împreună ultima dată %1$s</string>
-    <string name="last_together_place">Împreună ultima dată %1$s · %2$s</string>
-    <plurals name="times_total">
-        <item quantity="one">%1$s · %2$d× în total</item>
-        <item quantity="few">%1$s · %2$d× în total</item>
-        <item quantity="other">%1$s · %2$d× în total</item>
-    </plurals>
-    <string name="never_all">Nu ai înregistrat încă o întâlnire cu toți.</string>
-    <string name="section_memories">Amintiri</string>
-    <string name="section_memories_together">Amintiri împreună</string>
-    <string name="memories_empty_title">Încă nu ai amintiri</string>
-    <string name="memories_empty_body">Atinge „Sunt cu…” când ești cu prietenii. Cu timpul vei vedea pe cine nu ai mai văzut de mult.</string>
-    <string name="someone">Cineva</string>
-    <string name="delete_memory">Șterge amintirea</string>
     <string name="sheet_title">Sunt cu…</string>
     <string name="sheet_find">Caută un prieten</string>
     <string name="sheet_where">Unde? (opțional)</string>
@@ -39,7 +23,6 @@
     <string name="msg_location_denied">Permisiunea de locație a fost refuzată — scrie locul.</string>
     <string name="msg_location_unavailable">Nu am putut obține locația acum.</string>
     <string name="msg_logged_with">Timp cu %1$s înregistrat ✨</string>
-    <string name="msg_memory_deleted">Amintire ștearsă</string>
     <string name="msg_group_deleted">%1$s șters</string>
     <string name="msg_group_snoozed">%1$s amânat până pe %2$s</string>
     <string name="free_title">Cine e liber pentru…?</string>
@@ -148,4 +131,19 @@
         <item quantity="few">Adaugă %d persoane</item>
         <item quantity="other">Adaugă %d de persoane</item>
     </plurals>
+    <string name="page_people">Oameni · %1$d</string>
+    <string name="page_coming_up">Urmează</string>
+    <string name="page_together">Împreună</string>
+    <string name="page_members_at">%1$d din %2$d</string>
+    <string name="page_everyone">Toți</string>
+    <string name="page_empty">Încă nicio întâlnire. Atinge “Ne-am văzut” după ce vă vedeți.</string>
+    <string name="page_reminder">Memento</string>
+    <string name="page_cover">Fotografie de copertă</string>
+    <string name="cover_add">Adaugă copertă</string>
+    <string name="cover_change">Schimbă coperta</string>
+    <string name="cover_remove">Elimină coperta</string>
+    <string name="msg_cover_removed">Copertă eliminată</string>
+    <string name="msg_cover_unreadable">Imaginea nu a putut fi citită</string>
+    <string name="msg_entry_deleted">Eliminat din cronologie</string>
+    <string name="msg_reminder_saved">Memento salvat</string>
 </resources>

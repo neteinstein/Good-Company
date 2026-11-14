@@ -37,6 +37,7 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -46,6 +47,7 @@ import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
+import com.neteinstein.goodcompany.core.domain.repository.SampleCoverSource
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -400,6 +402,9 @@ object SampleData {
     }
 
     fun isSample(id: String) = id.startsWith(PREFIX)
+
+    /** The sample circle that gets the bundled cover photo (issue #88). */
+    const val COVER_CIRCLE_ID = PREFIX + "grp-surf"
 }
 
 /** Adds the sample circle (idempotent), in the user's language. */
@@ -415,6 +420,8 @@ class LoadSampleDataUseCase(
     private val texts: SampleTextsProvider = SampleTextsProvider { SampleTexts() },
     private val links: PersonLinkRepository = PersonLinkRepository.None,
     private val giftLists: GiftListRepository = GiftListRepository.None,
+    private val covers: CircleCoverRepository = CircleCoverRepository.None,
+    private val sampleCover: SampleCoverSource = SampleCoverSource.None,
 ) {
     suspend operator fun invoke() {
         val bundle = SampleData.build(clock, texts.texts())
@@ -432,6 +439,9 @@ class LoadSampleDataUseCase(
         bundle.journal.forEach { interactions.upsertJournal(it) }
         val existingLists = giftLists.lists.first().map { it.id }.toSet()
         bundle.giftLists.filterNot { it.id in existingLists }.forEach { giftLists.upsert(it) }
+        if (bundle.groups.any { it.id == SampleData.COVER_CIRCLE_ID } && SampleData.COVER_CIRCLE_ID !in covers.covers.first()) {
+            sampleCover.cover()?.let { covers.set(SampleData.COVER_CIRCLE_ID, it) }
+        }
     }
 }
 
@@ -445,8 +455,10 @@ class RemoveSampleDataUseCase(
     private val plans: PlanRepository,
     private val interactions: InteractionRepository,
     private val giftLists: GiftListRepository = GiftListRepository.None,
+    private val covers: CircleCoverRepository = CircleCoverRepository.None,
 ) {
     suspend operator fun invoke() {
+        covers.covers.first().keys.filter { SampleData.isSample(it) }.forEach { covers.set(it, null) }
         giftLists.lists.first().filter { SampleData.isSample(it.id) }.forEach { giftLists.delete(it.id) }
         friends.friends.first().filter { SampleData.isSample(it.id.value) }.forEach { friends.delete(it.id) }
         hangouts.hangouts.first().filter { SampleData.isSample(it.id) }.forEach { hangouts.delete(it.id) }

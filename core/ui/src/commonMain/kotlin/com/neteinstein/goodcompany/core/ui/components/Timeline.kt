@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.Luggage
 import androidx.compose.material.icons.rounded.LunchDining
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.SportsTennis
 import androidx.compose.material.icons.rounded.TheaterComedy
 import androidx.compose.material.icons.rounded.Videocam
@@ -74,6 +75,7 @@ import com.neteinstein.goodcompany.core.ui.resources.tl_gift
 import com.neteinstein.goodcompany.core.ui.resources.tl_journal
 import com.neteinstein.goodcompany.core.ui.resources.tl_message
 import com.neteinstein.goodcompany.core.ui.resources.tl_messages
+import com.neteinstein.goodcompany.core.ui.resources.tl_shared
 import com.neteinstein.goodcompany.core.ui.resources.tl_source_call_log
 import com.neteinstein.goodcompany.core.ui.resources.tl_source_imported
 import com.neteinstein.goodcompany.core.ui.resources.tl_source_shared
@@ -262,5 +264,11 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
         Icons.Rounded.CardGiftcard,
         stringResource(Res.string.tl_gift, entry.gift.title),
         detail = entry.gift.occasion?.let { occasionLabel(it) },
+    )
+    // Shared to a circle (issue #88): the caption as the title, the share itself below.
+    is TimelineEntry.Share -> EntryLook(
+        Icons.Rounded.Share,
+        entry.attachment.caption.trim().ifEmpty { stringResource(Res.string.tl_shared) },
+        attachment = entry.attachment,
     )
 }

@@ -1,0 +1,20 @@
+-- Circles' cover photos (issue #88): one JPEG per circle (base64, like my_photo), keyed by circle id with no foreign
+-- key, because the built-in Family circle has no friend_group row and a deleted circle's cover must survive for Undo
+-- (DeleteGroupUseCase removes it and Undo puts it back). Part of the backup.
+
+CREATE TABLE circle_cover (
+    circle_id TEXT NOT NULL PRIMARY KEY,
+    image_base64 TEXT NOT NULL
+);
+
+allCovers:
+SELECT * FROM circle_cover ORDER BY circle_id;
+
+put:
+INSERT OR REPLACE INTO circle_cover (circle_id, image_base64) VALUES (?, ?);
+
+delete:
+DELETE FROM circle_cover WHERE circle_id = ?;
+
+deleteAll:
+DELETE FROM circle_cover;

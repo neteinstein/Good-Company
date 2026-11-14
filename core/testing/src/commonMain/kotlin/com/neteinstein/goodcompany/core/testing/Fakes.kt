@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
+import com.neteinstein.goodcompany.core.domain.model.CircleCover
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
@@ -35,6 +36,7 @@ import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
@@ -313,6 +315,7 @@ class FakeBackupRepository(
     private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
     private val giftLists: FakeGiftListRepository = FakeGiftListRepository(),
     private val myPhoto: FakeMyPhotoRepository = FakeMyPhotoRepository(),
+    private val covers: FakeCircleCoverRepository = FakeCircleCoverRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
@@ -333,6 +336,7 @@ class FakeBackupRepository(
         calendarDecisions = calendarDecisions.decisions.value,
         giftLists = giftLists.state.value,
         myPhoto = myPhoto.photo.value,
+        circleCovers = covers.covers.value.map { (id, cover) -> CircleCover(id, cover) },
     )
 
     override suspend fun restore(backup: Backup) {
@@ -350,7 +354,23 @@ class FakeBackupRepository(
         calendarDecisions.decisions.value = backup.calendarDecisions
         giftLists.state.value = backup.giftLists
         myPhoto.photo.value = backup.myPhoto
+        covers.covers.value = backup.circleCovers.associate { it.circleId to it.cover }
         settings.update { backup.settings }
+    }
+}
+
+/** Circles' cover photos (issue #88), in memory, by circle id. */
+class FakeCircleCoverRepository(initial: Map<String, ContactPhoto> = emptyMap()) : CircleCoverRepository {
+    override val covers = MutableStateFlow(initial)
+
+    override suspend fun set(circleId: String, cover: ContactPhoto?) = covers.update {
+        if (cover ==
+            null
+        ) {
+            it - circleId
+        } else {
+            it + (circleId to cover)
+        }
     }
 }
 

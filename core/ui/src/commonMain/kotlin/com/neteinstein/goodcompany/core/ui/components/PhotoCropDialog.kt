@@ -54,15 +54,35 @@ import com.neteinstein.goodcompany.core.ui.resources.crop_use
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+/** The frame the crop editor shows: round for a person's photo, a wide 16:9 rectangle for a circle's cover (issue #88). */
+enum class CropShape(
+    /** Frame width for each unit of height. */
+    val aspect: Float,
+    /** The size of the cropped picture, in px. */
+    val outWidth: Int,
+    val outHeight: Int,
+) {
+    ROUND(1f, ContactPhoto.MAX_SIDE_PX, ContactPhoto.MAX_SIDE_PX),
+    WIDE(
+        ContactPhoto.COVER_ASPECT,
+        ContactPhoto.COVER_MAX_SIDE_PX,
+        (ContactPhoto.COVER_MAX_SIDE_PX / ContactPhoto.COVER_ASPECT).roundToInt(),
+    ),
+}
+
 /**
- * The crop editor's geometry (F14): a picture of [width] × [height] px shown under a round frame [frame] px wide. At
- * zoom 1 the picture just covers the frame; [offsetX]/[offsetY] move it from the centre, in screen px.
+ * The crop editor's geometry (F14): a picture of [width] × [height] px shown under a frame [frame] px wide and
+ * [frame] / [aspect] px high (round when [aspect] is 1, wide for a cover). At zoom 1 the picture just covers the frame;
+ * [offsetX]/[offsetY] move it from the centre, in screen px.
  */
-data class CropGeometry(val width: Int, val height: Int, val frame: Float) {
-    private val baseScale: Float get() = frame / min(width, height)
+data class CropGeometry(val width: Int, val height: Int, val frame: Float, val aspect: Float = 1f) {
+    private val frameWidth: Float get() = frame
+    private val frameHeight: Float get() = frame / aspect
+    private val baseScale: Float get() = max(frameWidth / width, frameHeight / height)
 
     /** [zoom] kept between 1 (the picture covers the frame) and [MAX_ZOOM]. */
     fun clampZoom(zoom: Float): Float = zoom.coerceIn(1f, MAX_ZOOM)
@@ -70,21 +90,22 @@ data class CropGeometry(val width: Int, val height: Int, val frame: Float) {
     /** [offset] kept so that the picture always covers the whole frame at [zoom]. */
     fun clampOffset(offset: Offset, zoom: Float): Offset {
         val scale = baseScale * zoom
-        val maxX = ((width * scale - frame) / 2).coerceAtLeast(0f)
-        val maxY = ((height * scale - frame) / 2).coerceAtLeast(0f)
+        val maxX = ((width * scale - frameWidth) / 2).coerceAtLeast(0f)
+        val maxY = ((height * scale - frameHeight) / 2).coerceAtLeast(0f)
         return Offset(offset.x.coerceIn(-maxX, maxX), offset.y.coerceIn(-maxY, maxY))
     }
 
-    /** The square of the picture, in its own pixels, that sits under the frame. */
+    /** The part of the picture, in its own pixels, that sits under the frame (a square when [aspect] is 1). */
     fun crop(offset: Offset, zoom: Float): PhotoCrop {
         val scale = baseScale * clampZoom(zoom)
         val clamped = clampOffset(offset, zoom)
-        val side = (frame / scale).roundToInt().coerceIn(1, min(width, height))
+        val w = (frameWidth / scale).roundToInt().coerceIn(1, width)
+        val h = (frameHeight / scale).roundToInt().coerceIn(1, height)
         val centerX = width / 2f - clamped.x / scale
         val centerY = height / 2f - clamped.y / scale
-        val left = (centerX - side / 2f).roundToInt().coerceIn(0, width - side)
-        val top = (centerY - side / 2f).roundToInt().coerceIn(0, height - side)
-        return PhotoCrop(left, top, side)
+        val left = (centerX - w / 2f).roundToInt().coerceIn(0, width - w)
+        val top = (centerY - h / 2f).roundToInt().coerceIn(0, height - h)
+        return PhotoCrop(left, top, w, h)
     }
 
     companion object {
@@ -93,11 +114,12 @@ data class CropGeometry(val width: Int, val height: Int, val frame: Float) {
 }
 
 /**
- * A full-screen editor that crops [image] to the avatar's round shape: pinch (or scroll) to zoom, drag to move (F14).
- * [onCropped] gets a [ContactPhoto.MAX_SIDE_PX] square JPEG, or empty bytes when the picture can't be read.
+ * A full-screen editor that crops [image] to [shape]: the avatar's round frame, or a circle cover's wide one (issue
+ * #88). Pinch (or scroll) to zoom, drag to move (F14). [onCropped] gets a JPEG of [CropShape.outWidth] ×
+ * [CropShape.outHeight], or empty bytes when the picture can't be read.
  */
 @Composable
-fun PhotoCropDialog(image: ByteArray, onDismiss: () -> Unit, onCropped: (ByteArray) -> Unit) {
+fun PhotoCropDialog(image: ByteArray, onDismiss: () -> Unit, onCropped: (ByteArray) -> Unit, shape: CropShape = CropShape.ROUND) {
     val bitmap = remember(image) { runCatching { image.decodeToImageBitmap() }.getOrNull() }
     if (bitmap == null) {
         LaunchedEffect(image) { onCropped(ByteArray(0)) }
@@ -144,10 +166,12 @@ fun PhotoCropDialog(image: ByteArray, onDismiss: () -> Unit, onCropped: (ByteArr
                 contentAlignment = Alignment.Center,
             ) {
                 val density = LocalDensity.current
-                val framePx = with(density) { (min(maxWidth.value, maxHeight.value) * FRAME_SHARE).dp.toPx() }
-                val g = CropGeometry(bitmap.width, bitmap.height, framePx)
+                // The frame's width: as wide as fits, and short enough for its height to fit too.
+                val framePx = with(density) { (min(maxWidth.value, maxHeight.value * shape.aspect) * FRAME_SHARE).dp.toPx() }
+                val frameHeightPx = framePx / shape.aspect
+                val g = CropGeometry(bitmap.width, bitmap.height, framePx, shape.aspect)
                 if (geometry != g) geometry = g
-                val scale = framePx / min(bitmap.width, bitmap.height) * zoom
+                val scale = max(framePx / bitmap.width, frameHeightPx / bitmap.height) * zoom
                 Image(
                     bitmap,
                     contentDescription = null,
@@ -160,12 +184,15 @@ fun PhotoCropDialog(image: ByteArray, onDismiss: () -> Unit, onCropped: (ByteArr
                         },
                 )
                 Canvas(Modifier.fillMaxSize()) {
-                    val radius = framePx / 2
-                    val circle = Path().apply {
-                        addOval(androidx.compose.ui.geometry.Rect(center, radius))
-                    }
-                    clipPath(circle, ClipOp.Difference) { drawRect(Color.Black.copy(alpha = SCRIM_ALPHA)) }
-                    drawCircle(Color.White, radius, center, style = Stroke(width = 2.dp.toPx()))
+                    val frameRect = androidx.compose.ui.geometry.Rect(
+                        center.x - framePx / 2,
+                        center.y - frameHeightPx / 2,
+                        center.x + framePx / 2,
+                        center.y + frameHeightPx / 2,
+                    )
+                    val outline = Path().apply { if (shape == CropShape.ROUND) addOval(frameRect) else addRect(frameRect) }
+                    clipPath(outline, ClipOp.Difference) { drawRect(Color.Black.copy(alpha = SCRIM_ALPHA)) }
+                    drawPath(outline, Color.White, style = Stroke(width = 2.dp.toPx()))
                 }
                 Text(
                     stringResource(Res.string.crop_hint),
@@ -187,7 +214,7 @@ fun PhotoCropDialog(image: ByteArray, onDismiss: () -> Unit, onCropped: (ByteArr
                             val g = geometry ?: return@Button
                             saving = true
                             scope.launch {
-                                onCropped(cropPhoto(image, g.crop(offset, zoom), ContactPhoto.MAX_SIDE_PX) ?: ByteArray(0))
+                                onCropped(cropPhoto(image, g.crop(offset, zoom), shape.outWidth, shape.outHeight) ?: ByteArray(0))
                             }
                         },
                     ) { Text(stringResource(Res.string.crop_use)) }

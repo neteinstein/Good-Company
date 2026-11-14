@@ -15,6 +15,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Android and iOS widgets show the same `ObserveHomeWidgetUseCase` data; change both (iOS keeps pace with Android).
 - Texts: notifications are rendered in `:core:ui` (`ResourceNotificationRenderer`); widget and shortcut labels are
   Android resources and iOS `Localizable.strings` (`add-strings`).
+- A reminder that belongs to a circle (#88, `Reminder.circleId`) is planned for the circle: its text names the circle,
+  then its own people (`NotificationPlanner`); who it's for is `Reminder.peopleIds(circles)`, today's members.
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
 
 ## Reference (moved from AGENTS.md)

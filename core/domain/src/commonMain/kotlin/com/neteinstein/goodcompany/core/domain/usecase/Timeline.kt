@@ -69,6 +69,15 @@ sealed interface TimelineEntry {
         override val key get() = "gift-${gift.id}"
         override val deletable get() = false
     }
+
+    /**
+     * Something shared to a circle that isn't shown on a meetup (issue #88: a circle's timeline). A share logged as a
+     * meetup shows once, on that [Meetup].
+     */
+    data class Share(val attachment: Attachment) : TimelineEntry {
+        override val key get() = "share-${attachment.id}"
+        override val at get() = attachment.at
+    }
 }
 
 /** The filter chips on the timeline screen. */
@@ -83,7 +92,8 @@ enum class TimelineFilter {
 
     fun matches(entry: TimelineEntry): Boolean = when (this) {
         ALL -> true
-        TOGETHER -> entry is TimelineEntry.Meetup || (entry is TimelineEntry.Contact && entry.interaction.type == InteractionType.MEETUP)
+        TOGETHER -> entry is TimelineEntry.Meetup || (entry is TimelineEntry.Contact && entry.interaction.type == InteractionType.MEETUP) ||
+            entry is TimelineEntry.Share
         CALLS -> entry is TimelineEntry.Contact && entry.interaction.type in CALL_TYPES
         MESSAGES -> entry is TimelineEntry.Contact && entry.interaction.type in MESSAGE_TYPES
         NOTES -> entry is TimelineEntry.Journal || entry is TimelineEntry.WhatsNew
@@ -175,6 +185,7 @@ class DeleteTimelineEntryUseCase(
                 friends.upsert(f.copy(lifeUpdates = f.lifeUpdates.filterNot { it.id == entry.update.id }))
             }
             is TimelineEntry.GiftGiven -> Unit
+            is TimelineEntry.Share -> interactions.deleteAttachment(entry.attachment.id)
         }
     }
 }
@@ -196,6 +207,7 @@ class RestoreTimelineEntryUseCase(
                 }
             }
             is TimelineEntry.GiftGiven -> Unit
+            is TimelineEntry.Share -> interactions.upsertAttachment(entry.attachment)
         }
     }
 }

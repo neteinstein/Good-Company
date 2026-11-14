@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.repository.BuiltInCircleNames
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import kotlinx.coroutines.flow.Flow
@@ -31,15 +32,18 @@ val FriendGroup.isBuiltIn: Boolean get() = id == FamilyCircle.ID
 
 /**
  * The stored circles plus the built-in [FamilyCircle] first, so Family shows up wherever circles do (Home filter,
- * check-in, Log, share). Writes to the built-in circle are ignored; everything else goes to [stored].
+ * check-in, Log, share), each with its cover photo from [covers] (issue #88). Writes to the built-in circle are ignored;
+ * everything else goes to [stored].
  */
 class GroupsWithFamilyCircle(
     private val stored: GroupRepository,
     friends: FriendRepository,
+    covers: CircleCoverRepository = CircleCoverRepository.None,
     private val names: BuiltInCircleNames,
 ) : GroupRepository {
-    override val groups: Flow<List<FriendGroup>> = combine(stored.groups, friends.friends) { groups, fs ->
-        listOfNotNull(FamilyCircle.of(fs, names.family())) + groups.filterNot { it.isBuiltIn }
+    override val groups: Flow<List<FriendGroup>> = combine(stored.groups, friends.friends, covers.covers) { groups, fs, cs ->
+        (listOfNotNull(FamilyCircle.of(fs, names.family())) + groups.filterNot { it.isBuiltIn })
+            .map { g -> cs[g.id]?.let { g.copy(cover = it) } ?: g }
     }
 
     override suspend fun upsert(group: FriendGroup) {

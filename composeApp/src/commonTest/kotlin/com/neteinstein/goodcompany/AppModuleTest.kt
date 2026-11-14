@@ -40,6 +40,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListVie
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -115,6 +116,7 @@ class AppModuleTest {
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null, FriendId("ana")) })
         assertNotNull(koin.get<GiftListsViewModel>())
         assertNotNull(koin.get<GiftListViewModel> { parametersOf("list-1") })
+        assertNotNull(koin.get<CirclePageViewModel> { parametersOf("circle-1") })
         assertNotNull(koin.get<HangoutsViewModel>())
         assertNotNull(koin.get<WhosFreeViewModel>())
         assertNotNull(koin.get<WeMetViewModel> { parametersOf(listOf(FriendId("x")), null, null) })
