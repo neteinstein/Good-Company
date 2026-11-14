@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
@@ -205,6 +206,7 @@ fun IdeasContent(
                     eyebrow = stringResource(Res.string.eyebrow),
                     title = stringResource(Res.string.title),
                     subtitle = stringResource(Res.string.subtitle),
+                    trailing = { HeaderSettingsButton(onOpenSettings) },
                 )
             }
             if (!state.isLoading && !state.hasAiKey && state.ideas.isEmpty() && state.kindFilter == null) {

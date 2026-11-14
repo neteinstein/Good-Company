@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
 import com.neteinstein.goodcompany.di.appModule
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
@@ -116,6 +117,7 @@ class AppModuleTest {
         assertNotNull(koin.get<WeMetViewModel> { parametersOf(emptyList<FriendId>(), "circle-1", PlanOccurrence("plan-1", null)) })
         assertNotNull(koin.get<LoggedMeetupViewModel>())
         assertNotNull(koin.get<AgendaViewModel>())
+        assertNotNull(koin.get<TodayViewModel>())
         assertNotNull(koin.get<IdeasViewModel>())
         assertNotNull(koin.get<SettingsViewModel>())
         assertNotNull(koin.get<PlacesViewModel>())

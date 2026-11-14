@@ -65,16 +65,8 @@
     <string name="card_see">Ver a %1$s</string>
     <string name="card_overdue">Merece un hola</string>
     <string name="card_group">%1$s %2$s</string>
-    <plurals name="catch_up_days">
-        <item quantity="one">%1$d día desde que os visteis · objetivo %2$s</item>
-        <item quantity="other">%1$d días desde que os visteis · objetivo %2$s</item>
-    </plurals>
-    <string name="catch_up_never">Aún no hay encuentros registrados</string>
-    <string name="catch_up_met">Nos vimos</string>
-    <string name="catch_up_called">Le llamé</string>
     <string name="snooze_week">Posponer una semana</string>
     <string name="snooze_weekend">Recuérdamelo el sábado</string>
-    <string name="drifting_message">Mensaje</string>
     <string name="msg_call_logged">Llamada con %1$s registrada — próximo aviso en una semana</string>
     <string name="msg_snoozed">%1$s pospuesto hasta el %2$s</string>
     <string name="msg_contacts_denied">Sin acceso a los contactos puedes añadir amigos a mano.</string>

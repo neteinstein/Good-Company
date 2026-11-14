@@ -578,4 +578,17 @@
     <string name="kin_search_half_sibling">meios-irmãos|meio-irmão|meias-irmãs|meia-irmã</string>
     <string name="kin_search_step_sibling">irmãos por afinidade|irmão por afinidade|irmãs por afinidade|irmã por afinidade</string>
     <string name="sample_gift_list_christmas">Natal</string>
+    <plurals name="catchup_days">
+        <item quantity="one">%1$d dia desde o último encontro · objetivo %2$s</item>
+        <item quantity="other">%1$d dias desde o último encontro · objetivo %2$s</item>
+    </plurals>
+    <string name="catchup_never">Ainda sem encontros registados</string>
+    <string name="catchup_met">Estivemos juntos</string>
+    <string name="catchup_called">Liguei-lhe</string>
+    <string name="catchup_snooze_week">Adiar uma semana</string>
+    <string name="catchup_snooze_weekend">Lembrar-me no sábado</string>
+    <string name="catchup_warmth">Calor da amizade: %1$s</string>
+    <string name="catchup_message">Mensagem</string>
+    <string name="catchup_more">Mais</string>
+    <string name="open_settings">Definições</string>
 </resources>

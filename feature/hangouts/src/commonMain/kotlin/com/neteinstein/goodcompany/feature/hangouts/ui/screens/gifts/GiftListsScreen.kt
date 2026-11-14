@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -47,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListSummary
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.showMessage
@@ -76,8 +79,11 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @Composable
 fun GiftListsScreen(
-    onBack: () -> Unit,
+    /** Null when the list is a tab's root (Plans while AI is off, until issue #67): no back arrow. */
+    onBack: (() -> Unit)?,
     onOpenList: (String) -> Unit,
+    /** As a tab's root: the header's Settings button (issue #65). */
+    onOpenSettings: (() -> Unit)? = null,
     viewModel: GiftListsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -91,6 +97,7 @@ fun GiftListsScreen(
         state,
         GiftListsActions(
             onBack = onBack,
+            onOpenSettings = onOpenSettings,
             onOpen = onOpenList,
             onNew = { viewModel.onNewList(NewGiftList(occasion = GiftOccasion.CHRISTMAS)) },
             onDismissNew = viewModel::onDismissNew,
@@ -104,7 +111,8 @@ fun GiftListsScreen(
 }
 
 data class GiftListsActions(
-    val onBack: () -> Unit = {},
+    val onBack: (() -> Unit)? = {},
+    val onOpenSettings: (() -> Unit)? = null,
     val onOpen: (String) -> Unit = {},
     val onNew: () -> Unit = {},
     val onDismissNew: () -> Unit = {},
@@ -140,13 +148,16 @@ fun GiftListsContent(state: GiftListsUiState, actions: GiftListsActions) {
                     Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = actions.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(CoreRes.string.back)) }
+                    actions.onBack?.let { back ->
+                        IconButton(onClick = back) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(CoreRes.string.back)) }
+                    } ?: Spacer(Modifier.width(16.dp))
                     Text(
                         stringResource(Res.string.gift_lists_title),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     IconButton(onClick = actions.onNew) { Icon(Icons.Rounded.Add, stringResource(Res.string.gift_lists_new)) }
+                    actions.onOpenSettings?.let { HeaderSettingsButton(it) }
                 }
             }
             if (!state.isLoading && state.current.isEmpty() && state.past.isEmpty()) {

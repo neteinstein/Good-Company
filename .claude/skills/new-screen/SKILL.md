@@ -48,6 +48,9 @@ Runtime parameters (an id) are the first constructor arguments. AI parts show on
 - `suspend fun FooMessage.text(): String = when (this) { … getString(Res.string.…) }` at the bottom of the file.
 - Navigation leaves the screen only through callbacks; no navigation types in the feature module. Shared elements use
   `Modifier.sharedElement("avatar-<id>")`.
+- Headers (issue #65): a **tab's** root screen puts `HeaderSettingsButton(onOpenSettings)` (core:ui) in its
+  `ScreenHeader` `trailing` (Settings is no longer a tab); a screen **pushed** over the tabs uses
+  `ScreenHeader(navigation = { HeaderBackButton(onBack) })`.
 
 ## 4. Wiring (`composeApp`)
 

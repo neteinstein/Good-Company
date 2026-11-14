@@ -84,10 +84,14 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
+import com.neteinstein.goodcompany.core.ui.components.CatchUpCard
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
+import com.neteinstein.goodcompany.core.ui.components.DriftingCard
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
+import com.neteinstein.goodcompany.core.ui.components.StoryBubbleChip
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.relativePast
@@ -177,11 +181,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.welcome_message_man
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_sample
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_title
-import com.neteinstein.goodcompany.feature.friends.ui.components.CatchUpCard
-import com.neteinstein.goodcompany.feature.friends.ui.components.DriftingCard
 import com.neteinstein.goodcompany.feature.friends.ui.components.FriendRow
 import com.neteinstein.goodcompany.feature.friends.ui.components.PersonChip
-import com.neteinstein.goodcompany.feature.friends.ui.components.StoryBubbleChip
 import com.neteinstein.goodcompany.feature.friends.ui.components.UpcomingCard
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
@@ -209,6 +210,8 @@ fun FriendsScreen(
     onOpenPeople: () -> Unit = {},
     /** "Suggested family" (F7). */
     onOpenSuggestedFamily: () -> Unit = {},
+    /** The header's Settings button (issue #65). */
+    onOpenSettings: () -> Unit = {},
     viewModel: FriendsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -264,6 +267,7 @@ fun FriendsScreen(
             onOpenNetwork = onOpenNetwork,
             onOpenPeople = onOpenPeople,
             onOpenSuggestedFamily = onOpenSuggestedFamily,
+            onOpenSettings = onOpenSettings,
         ),
     )
 }
@@ -295,6 +299,7 @@ data class FriendsActions(
     val onOpenNetwork: () -> Unit = {},
     val onOpenPeople: () -> Unit = {},
     val onOpenSuggestedFamily: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [FriendsMessage]. */
@@ -447,6 +452,7 @@ fun FriendsContent(
                                     )
                                 }
                             }
+                            HeaderSettingsButton(actions.onOpenSettings)
                         }
                     },
                 )

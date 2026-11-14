@@ -35,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyScreen
@@ -44,6 +45,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInSheetHost
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
@@ -67,10 +69,17 @@ private const val CONTACTS_ADDED = "contacts_added"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, startDestination: Any = FriendsRoute) {
+fun AppNavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    startDestination: Any = TodayRoute,
+    /** The AI switch (F1): Plans shows the weekly ideas only while it is on. */
+    aiEnabled: Boolean = false,
+) {
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
     val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
-    val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
+    // Settings is a screen of its own, opened from every tab header (issue #65).
+    val openSettings: () -> Unit = { navController.navigate(SettingsRoute) { launchSingleTop = true } }
     // The built-in Family circle (F6) has no editor: it fills itself from "relationship to me".
     val editCircle: (String?) -> Unit = { if (it != FamilyCircle.ID) navController.navigate(CircleEditorRoute(it)) }
     // Every in-app "We met" opens the small panel (issue #47); the widget and notification still log today directly.
@@ -103,6 +112,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenNetwork = { navController.navigate(NetworkMapRoute) },
                     onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
                     onOpenSuggestedFamily = { navController.navigate(SuggestedFamilyRoute) { launchSingleTop = true } },
+                    onOpenSettings = openSettings,
                 )
             }
             composable<ChooseContactsRoute>(
@@ -134,7 +144,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onLogPlan = logPlan,
                         onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                         // The friend page already set Home's circle filter; Home shows it.
-                        onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
+                        onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
                         onEditCircle = editCircle,
                         onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     )
@@ -241,19 +251,53 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onEditCircle = editCircle,
                     onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     onCircleMet = circleMet,
+                    onOpenSettings = openSettings,
                 )
             }
-            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
-                AgendaScreen(
+            sharedComposable<TodayRoute>(this@SharedTransitionLayout) {
+                TodayScreen(
                     onOpenFriend = openFriend,
+                    onOpenStory = openStory,
+                    onWeMet = weMet,
                     onCircleMet = circleMet,
                     onLogPlan = logPlan,
-                    onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
+                    onOpenAgenda = { navController.navigate(AgendaRoute) { launchSingleTop = true } },
+                    onOpenSettings = openSettings,
+                    onOpenPeople = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
+                    // "I'm with…" lives with the circles (feature modules never depend on each other).
+                    checkInSheet = { onSaved, onDismiss -> CheckInSheetHost(onSaved = onSaved, onDismiss = onDismiss) },
                 )
             }
-            composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
-            composable<SettingsRoute> {
+            // "Everything coming up" (the old Coming up tab), pushed from Today.
+            composable<AgendaRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                ProvideSharedElements(this@SharedTransitionLayout, this) {
+                    AgendaScreen(
+                        onOpenFriend = openFriend,
+                        onCircleMet = circleMet,
+                        onLogPlan = logPlan,
+                        onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+            }
+            composable<IdeasRoute> {
+                // Plans (issue #67 builds it): the weekly ideas while AI is on; with AI off nothing AI shows (F1),
+                // so the tab holds the gift lists until then.
+                if (aiEnabled) {
+                    IdeasScreen(onOpenSettings = openSettings)
+                } else {
+                    GiftListsScreen(onBack = null, onOpenList = { navController.navigate(GiftListRoute(it)) }, onOpenSettings = openSettings)
+                }
+            }
+            composable<SettingsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
                 SettingsScreen(
+                    onBack = { navController.popBackStack() },
                     appVersion = APP_VERSION,
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },

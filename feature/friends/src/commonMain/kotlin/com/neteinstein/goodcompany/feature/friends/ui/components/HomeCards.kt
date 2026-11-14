@@ -77,11 +77,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.card_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.card_say_hi
 import com.neteinstein.goodcompany.feature.friends.resources.card_see
 import com.neteinstein.goodcompany.feature.friends.resources.card_turns
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_called
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_days
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_met
-import com.neteinstein.goodcompany.feature.friends.resources.catch_up_never
-import com.neteinstein.goodcompany.feature.friends.resources.drifting_message
 import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
@@ -201,107 +196,6 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
     }
 }
 
-/** "Time to catch up" row: a full red ring means "you're past your goal". The menu offers "called" and snoozes. */
-@Composable
-fun CatchUpCard(
-    status: Relationships.MeetupStatus,
-    onOpen: () -> Unit,
-    onMet: () -> Unit,
-    onCalled: () -> Unit,
-    onSnooze: (SnoozeOption) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val f = status.friend
-    var menu by remember { mutableStateOf(false) }
-    Surface(
-        onClick = onOpen,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Row(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(progress = 1f, size = 56.dp, stroke = 4.dp, color = MaterialTheme.colorScheme.error) {
-                FriendAvatar(f, size = 44.dp)
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(f.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    status.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.catch_up_days, it, it, everyNDays(status.cadenceDays)) }
-                        ?: stringResource(Res.string.catch_up_never),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-                // Under the text, not beside it: labels like "Estivemos juntos" are long in some languages.
-                FilledTonalButton(
-                    onClick = onMet,
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                    modifier = Modifier.padding(top = 6.dp).height(34.dp),
-                ) { Text(stringResource(Res.string.catch_up_met), style = MaterialTheme.typography.labelLarge, maxLines = 1) }
-            }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
-                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.catch_up_called)) },
-                        leadingIcon = { Icon(Icons.Rounded.Call, null) },
-                        onClick = {
-                            menu = false
-                            onCalled()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.snooze_weekend)) },
-                        leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
-                        onClick = {
-                            menu = false
-                            onSnooze(SnoozeOption.WEEKEND)
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.snooze_week)) },
-                        leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
-                        onClick = {
-                            menu = false
-                            onSnooze(SnoozeOption.ONE_WEEK)
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-/** A real friend whose warmth is fading: nudge to reach out, or snooze. */
-@Composable
-fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Unit, modifier: Modifier = Modifier) {
-    val f = summary.friend
-    val color = warmthColor(summary.warmth.level)
-    Surface(
-        onClick = onOpen,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(progress = summary.warmth.value / 100f, size = 56.dp, stroke = 4.dp, color = color) {
-                FriendAvatar(f, size = 44.dp)
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(f.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = onSnooze) { Icon(Icons.Rounded.Snooze, stringResource(Res.string.snooze_week)) }
-            TextButton(onClick = onOpen) { Text(stringResource(Res.string.drifting_message)) }
-        }
-    }
-}
-
 /** Avatar + first name for the "Real friends" strip. */
 @Composable
 fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -312,36 +206,5 @@ fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifie
     ) {
         FriendAvatar(friend, size = 60.dp, highlighted = true)
         Text(friend.displayName.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-    }
-}
-
-/** "Before you meet": an Instagram-style story bubble with a gradient ring; tap for their catch-up story. */
-@Composable
-fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val friend = bubble.friend
-    val ring = if (bubble.freshCount > 0) {
-        listOf(Color(0xFFF2A100), Color(0xFFE5574F), Color(0xFFD81B60))
-    } else {
-        avatarColors(friend.displayName).let { (a, b) -> listOf(a, b) }
-    }
-    Column(
-        modifier.width(80.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Box(
-            Modifier.size(68.dp).clip(CircleShape).background(Brush.sweepGradient(ring + ring.first())).padding(3.dp)
-                .clip(CircleShape).background(MaterialTheme.colorScheme.background).padding(2.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            FriendAvatar(friend, size = 58.dp)
-        }
-        Text(friend.displayName.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(
-            relativeDay(bubble.meetingOn, today),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-        )
     }
 }

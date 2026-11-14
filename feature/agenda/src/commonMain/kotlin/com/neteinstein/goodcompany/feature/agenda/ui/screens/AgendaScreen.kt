@@ -53,6 +53,7 @@ import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -119,6 +120,8 @@ fun AgendaScreen(
     /** "Did you meet?" → yes: the "We met" panel on that occurrence (issues #43, #47). */
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     onOpenCalendar: () -> Unit = {},
+    /** "Everything coming up", pushed from Today (issue #65): a back arrow in the header. */
+    onBack: (() -> Unit)? = null,
     viewModel: AgendaViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -144,6 +147,7 @@ fun AgendaScreen(
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
         onSkipPlan = viewModel::onSkipPlan,
         onOpenCalendar = onOpenCalendar,
+        onBack = onBack,
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
@@ -184,6 +188,7 @@ fun AgendaContent(
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
     onOpenCalendar: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -221,6 +226,7 @@ fun AgendaContent(
                         0 -> stringResource(Res.string.nothing_ahead)
                         else -> pluralStringResource(Res.plurals.things_ahead, n, n)
                     },
+                    navigation = onBack?.let { back -> { HeaderBackButton(back) } },
                 )
             }
             item(key = "week") {
