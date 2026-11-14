@@ -425,8 +425,7 @@
     <string name="choose_pick_instead">Elegir de los contactos</string>
     <string name="choose_no_match">Nadie coincide</string>
     <string name="add_option_pick_body">Abre el selector de contactos del teléfono</string>
-    <string name="add_option_list">Elegir de la lista completa</string>
-    <string name="add_option_list_body">Marca a las personas que quieres tener cerca</string>
+    <string name="add_option_list_body">Marca a todas las personas que quieras de tu lista de contactos. Varias a la vez.</string>
     <string name="add_option_list_again">Vuelve a pedir acceso a los contactos</string>
     <string name="add_option_type">Escribirlo a mano</string>
     <string name="add_option_type_body">Añadir a alguien por su nombre</string>

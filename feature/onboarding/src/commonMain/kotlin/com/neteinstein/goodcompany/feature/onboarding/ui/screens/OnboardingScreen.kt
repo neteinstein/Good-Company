@@ -149,6 +149,13 @@ fun OnboardingScreen(
     val capabilities = currentPlatformCapabilities()
     // The picker needs no permission: "Pick people one by one instead" never asks for it (decision D2).
     val pickContact = rememberContactPicker(onPicked = viewModel::onContactsPicked)
+    // A refused contact list never blocks adding people: the system picker opens instead (owner decision 2026-11-14).
+    LaunchedEffect(state.pickerFallback) {
+        if (state.pickerFallback) {
+            viewModel.onPickerFallbackShown()
+            if (capabilities.hasContactPicker) pickContact()
+        }
+    }
     OnboardingContent(
         state = state,
         capabilities = capabilities,

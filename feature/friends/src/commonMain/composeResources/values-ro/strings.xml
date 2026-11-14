@@ -438,8 +438,7 @@
     <string name="choose_pick_instead">Alege din contacte</string>
     <string name="choose_no_match">Nimeni nu se potrivește</string>
     <string name="add_option_pick_body">Deschide selectorul de contacte al telefonului</string>
-    <string name="add_option_list">Alege din lista completă</string>
-    <string name="add_option_list_body">Bifează persoanele pe care vrei să le ții aproape</string>
+    <string name="add_option_list_body">Bifează pe toți cei pe care îi vrei din lista de contacte. Mai mulți deodată.</string>
     <string name="add_option_list_again">Cere din nou accesul la contacte</string>
     <string name="add_option_type">Scrie de mână</string>
     <string name="add_option_type_body">Adaugă pe cineva după nume</string>

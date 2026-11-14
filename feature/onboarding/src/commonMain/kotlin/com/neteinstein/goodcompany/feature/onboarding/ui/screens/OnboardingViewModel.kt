@@ -17,6 +17,8 @@ data class OnboardingUiState(
     val contactListDenied: Boolean = false,
     /** The "Choose friends" list (contacts with checkboxes, decision D2) is showing. */
     val contactListOpen: Boolean = false,
+    /** The contact list was refused just now, so the screen opens the system contact picker instead, once. */
+    val pickerFallback: Boolean = false,
     /** People added so far, from the contact list or the system contact picker. */
     val contactsPicked: Int = 0,
     val notificationsGranted: Boolean? = null,
@@ -35,10 +37,16 @@ class OnboardingViewModel(
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
 
-    /** "Show my contacts": the permission prompt resolved. Granted opens the list; refused keeps the picker. */
+    /**
+     * "Show my contacts": the permission prompt resolved. Granted opens the list; refused falls back to the system
+     * contact picker ([OnboardingUiState.pickerFallback], cleared by [onPickerFallbackShown]; owner decision 2026-11-14).
+     */
     fun onContactListPermissionResult(granted: Boolean) = _state.update {
-        it.copy(contactListOpen = granted, contactListDenied = !granted)
+        it.copy(contactListOpen = granted, contactListDenied = !granted, pickerFallback = !granted)
     }
+
+    /** The screen opened the system contact picker after a refused contact list. */
+    fun onPickerFallbackShown() = _state.update { it.copy(pickerFallback = false) }
 
     /** The contact list closed, having added [added] people (0 when the user went back). */
     fun onContactListClosed(added: Int) = _state.update {
