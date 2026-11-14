@@ -111,6 +111,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MergePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
@@ -224,6 +225,8 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -278,6 +281,7 @@ val appModule = module {
     single<AppUpdateSource> { GitHubReleaseUpdateSource(get()) }
     single { ShareInbox() }
     single { QuickEntryInbox() }
+    single { LoggedMeetupInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
@@ -460,8 +464,6 @@ val appModule = module {
             dismissIdea = get(),
             draftBirthdayMessage = get(),
             suggestGifts = get(),
-            checkIn = get(),
-            deleteHangout = get(),
             addReminder = get(),
             setCatchUpPaused = get(),
             savePlan = get(),
@@ -486,12 +488,16 @@ val appModule = module {
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::SuggestedFamilyViewModel)
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
-        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get(), plan, get(), get(), prefill)
+        LogInteractionViewModel(ids, type, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::GiftListsViewModel)
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
+    viewModel { (ids: List<FriendId>, circleId: String?, plan: PlanOccurrence?) ->
+        WeMetViewModel(ids, circleId, plan, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+    }
+    viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)

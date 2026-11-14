@@ -67,8 +67,6 @@ class FriendDetailViewModelTest {
         g.dismissIdea,
         g.draftBirthdayMessage,
         g.suggestGifts,
-        g.checkIn,
-        g.deleteHangout,
         g.addReminder,
         g.setCatchUpPaused,
         g.savePlan,
@@ -278,15 +276,16 @@ class FriendDetailViewModelTest {
     }
 
     @Test
-    fun togetherNowLogsHangoutCelebratesAndCanBeUndone() = runViewModelTest {
+    fun aPlansNoClosesItWithoutLoggingAMeetup() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onTogetherNow()
-        assertEquals(1, state.value.celebrate)
-        assertEquals(FriendDetailMessage.LoggedWith("Ana"), state.value.message)
-        assertEquals(1, state.value.detail!!.hangouts.size)
-        vm.onUndoTogether()
-        assertTrue(state.value.detail!!.hangouts.isEmpty())
+        vm.onOpenPlanEditor(null)
+        vm.onSavePlan(PlanInput("Dinner", emptyList(), g.clock.today()))
+        val plan = g.planRepo.plans.value.single()
+        // A yes opens the "We met" panel (issue #47); the friend page only handles the no.
+        vm.onConfirmPlan(plan.id, happened = false)
+        assertEquals(FriendDetailMessage.PlanClosed, state.value.message)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
     }
 
     @Test

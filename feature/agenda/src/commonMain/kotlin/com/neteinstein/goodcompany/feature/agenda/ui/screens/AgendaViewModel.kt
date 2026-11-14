@@ -7,7 +7,6 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
@@ -38,8 +37,6 @@ sealed interface AgendaMessage {
     data object ReminderSaved : AgendaMessage
 
     data object ReminderDeleted : AgendaMessage
-
-    data class GroupMet(val name: String) : AgendaMessage
 
     data class AiError(val error: Throwable) : AgendaMessage
 
@@ -90,7 +87,6 @@ class AgendaViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeSettings: ObserveSettingsUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
-    private val checkIn: CheckInUseCase,
     private val addReminder: AddReminderUseCase,
     private val setReminderDone: SetReminderDoneUseCase,
     private val deleteReminder: DeleteReminderUseCase,
@@ -176,17 +172,10 @@ class AgendaViewModel(
         }
     }
 
-    /** "We met" on an overdue group: logs a hangout with every member. */
-    fun onGroupMet(groupId: String) {
-        val item = state.value.agenda.filterIsInstance<AgendaItem.GroupOverdue>().firstOrNull { it.group.id == groupId } ?: return
-        if (item.group.memberIds.isEmpty()) return
-        viewModelScope.launch {
-            checkIn(item.group.memberIds)
-            local.update { it.copy(message = AgendaMessage.GroupMet(item.group.name)) }
-        }
-    }
-
-    /** "Did you meet?" answered from the agenda, for one occurrence ([day]; the open one when null). */
+    /**
+     * "Did you meet?" answered from the agenda, for one occurrence ([day]; the open one when null). A yes from the screen
+     * opens the "We met" panel instead (issue #47).
+     */
     fun onConfirmPlan(id: String, happened: Boolean, day: LocalDate? = null) {
         viewModelScope.launch {
             confirmPlan(id, happened, day)

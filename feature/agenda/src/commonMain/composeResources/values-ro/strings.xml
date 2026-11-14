@@ -46,7 +46,6 @@
     <string name="wish_gift_hint">Idei de cadou: %1$s</string>
     <string name="msg_reminder_saved">Memento salvat</string>
     <string name="msg_reminder_deleted">Memento șters</string>
-    <string name="msg_group_met">Timp cu %1$s înregistrat ✨</string>
     <string name="label_plan">Plan</string>
     <string name="row_relative">%1$s (familia lui/ei %2$s)</string>
     <string name="calendar_card_title">Din calendarul tău</string>

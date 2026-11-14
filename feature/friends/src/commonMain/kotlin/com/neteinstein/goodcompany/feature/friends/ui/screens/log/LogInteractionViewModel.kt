@@ -3,50 +3,39 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
-import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.ui.components.LogDraft
+import com.neteinstein.goodcompany.core.ui.components.LogSheetModel
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
-import com.neteinstein.goodcompany.core.ui.components.meetupPlaceState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-/** What's typed or picked in the sheet so far; the friends themselves come from the repository. */
-private data class Draft(
-    val kind: LogKind,
-    val people: List<FriendId>,
-    val date: LocalDate,
-    val note: String = "",
-    val placeName: String = "",
-    val location: GeoPoint? = null,
-    val isLocating: Boolean = false,
-    /** "Change" was tapped on a place that named itself: a new name is typed instead. */
-    val placeChanged: Boolean = false,
+/**
+ * What the sheet opens with besides people and type: a calendar suggestion's day and activity guess (D3), or what the
+ * "We met" panel had chosen when "More details" opened the sheet (issue #47). A future [date] falls back to today.
+ */
+data class LogPrefill(
+    val date: LocalDate? = null,
     val activity: HangoutActivity? = null,
-    val saving: Boolean = false,
-    val circleId: String? = null,
+    val note: String? = null,
+    val place: String? = null,
 )
-
-/** What the sheet opens with besides people and type, e.g. from a calendar suggestion (D3): its day and an activity guess. */
-data class LogPrefill(val date: LocalDate? = null, val activity: HangoutActivity? = null)
 
 data class LogInteractionUiState(
     val sheet: LogSheetState,
@@ -57,158 +46,76 @@ data class LogInteractionUiState(
 /**
  * The "Log" sheet behind `LogInteractionRoute(friendIds, type, circleId)`: [type] is a [LogKind] or an InteractionType
  * name (see [LogKind.parse]); unknown or null preselects "Met". [circleId] opens on that circle's members, nobody ticked
- * (F20: you tick who came). Saving goes through [LogInteractionUseCase].
- *
- * [plan] opens it as the answer to a plan's "Did you meet?" (issue #43): a meetup on that occurrence's day with the
- * plan's activity, place and title, its people ticked and its circle's members unticked. Saving also closes that
- * occurrence ([ConfirmPlanUseCase] without a second check-in), so a recurring plan moves on to the next one.
- *
- * [prefill] opens it on a calendar suggestion's day and guessed activity (D3).
+ * (F20: you tick who came). [plan] opens it as the answer to that plan occurrence's "Did you meet?" (issue #43); [prefill]
+ * on a given day, activity, note and place. The logic is [LogSheetModel], shared with the "We met" panel (issue #47);
+ * saving goes through [LogInteractionUseCase].
  */
 class LogInteractionViewModel(
     friendIds: List<FriendId>,
     type: String?,
     circleId: String?,
+    plan: PlanOccurrence?,
+    prefill: LogPrefill,
     observeFriends: ObserveFriendsUseCase,
     observeActivities: ObserveActivitiesUseCase,
     observeCircles: ObserveGroupsUseCase,
     observePlaceBook: ObservePlaceBookUseCase,
-    private val logInteraction: LogInteractionUseCase,
-    private val currentLocation: GetCurrentLocationUseCase,
-    private val clock: AppClock,
-    private val plan: PlanOccurrence? = null,
-    private val observePlans: ObservePlansUseCase? = null,
-    private val confirmPlan: ConfirmPlanUseCase? = null,
-    prefill: LogPrefill = LogPrefill(),
+    observePlans: ObservePlansUseCase,
+    logInteraction: LogInteractionUseCase,
+    confirmPlan: ConfirmPlanUseCase,
+    currentLocation: GetCurrentLocationUseCase,
+    loggedMeetups: LoggedMeetupInbox,
+    clock: AppClock,
 ) : ViewModel() {
-    private val draft = MutableStateFlow(
-        Draft(
-            LogKind.parse(type) ?: LogKind.MEETUP,
-            friendIds.distinct(),
-            // Never a future date (F2).
-            prefill.date?.let { minOf(it, clock.today()) } ?: clock.today(),
+    private val model = LogSheetModel(
+        viewModelScope,
+        LogDraft(
+            kind = LogKind.parse(type) ?: LogKind.MEETUP,
+            people = friendIds,
+            date = prefill.date ?: clock.today(),
+            note = prefill.note.orEmpty(),
+            placeName = prefill.place.orEmpty(),
             activity = prefill.activity,
             circleId = circleId,
         ),
+        observeFriends,
+        observeActivities,
+        observeCircles,
+        observePlaceBook,
+        observePlans,
+        logInteraction,
+        confirmPlan,
+        currentLocation,
+        loggedMeetups,
+        clock,
+        plan,
     )
     private val done = MutableStateFlow(false)
 
-    init {
-        if (plan != null && observePlans != null) {
-            viewModelScope.launch {
-                val p = observePlans().first().firstOrNull { it.id == plan.planId } ?: return@launch
-                val day = minOf(plan.date ?: p.date, clock.today())
-                draft.update {
-                    it.copy(
-                        kind = LogKind.MEETUP,
-                        people = p.friendIds,
-                        date = day,
-                        note = p.title,
-                        placeName = p.place.orEmpty(),
-                        activity = p.activity,
-                        circleId = p.circleId,
-                    )
-                }
-            }
-        }
-    }
+    val state: StateFlow<LogInteractionUiState> = combine(model.sheet, done) { sheet, isDone -> LogInteractionUiState(sheet, isDone) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogInteractionUiState(model.sheet.value))
 
-    private fun initial() = LogInteractionUiState(LogSheetState(kind = draft.value.kind, date = draft.value.date, today = clock.today()))
+    fun onKind(kind: LogKind) = model.onKind(kind)
 
-    val state: StateFlow<LogInteractionUiState> = combine(
-        combine(observeFriends(), observePlaceBook(), ::Pair),
-        observeActivities(),
-        observeCircles(),
-        draft,
-        done,
-    ) {
-            (friends, places),
-            activities,
-            circles,
-            d,
-            isDone,
-        ->
-        val byId = friends.associateBy { it.friend.id }
-        val circle = circles.firstOrNull { it.group.id == d.circleId }
-        val everyone = friends.map { it.friend }
-        LogInteractionUiState(
-            sheet = LogSheetState(
-                kind = d.kind,
-                people = d.people.mapNotNull { byId[it]?.friend },
-                everyone = everyone.sortedBy { it.displayName.lowercase() },
-                date = d.date,
-                today = clock.today(),
-                note = d.note,
-                place = meetupPlaceState(d.placeName, d.location, d.isLocating, d.placeChanged, places, d.people, everyone),
-                activity = d.activity,
-                activities = activities,
-                saving = d.saving,
-                circles = circles.map { it.group }.sortedBy { it.name.lowercase() },
-                circle = circle?.group,
-                circleMembers = circle?.members.orEmpty(),
-            ),
-            done = isDone,
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial())
+    fun onPeople(ids: List<FriendId>) = model.onPeople(ids)
 
-    fun onKind(kind: LogKind) = draft.update { it.copy(kind = kind) }
+    fun onCircle(id: String?) = model.onCircle(id)
 
-    fun onPeople(ids: List<FriendId>) = draft.update { it.copy(people = ids.distinct()) }
+    fun onTogglePerson(id: FriendId) = model.onTogglePerson(id)
 
-    /** Picks a circle (null = none): its members are listed unticked; whoever is already ticked stays ticked. */
-    fun onCircle(id: String?) = draft.update { it.copy(circleId = id) }
+    fun onDate(date: LocalDate) = model.onDate(date)
 
-    fun onTogglePerson(id: FriendId) = draft.update { if (id in it.people) it.copy(people = it.people - id) else it.copy(people = it.people + id) }
+    fun onNote(note: String) = model.onNote(note)
 
-    /** Future days can't be picked; they fall back to today. */
-    fun onDate(date: LocalDate) = draft.update { it.copy(date = minOf(date, clock.today())) }
+    fun onPlaceName(name: String) = model.onPlaceName(name)
 
-    fun onNote(note: String) = draft.update { it.copy(note = note) }
+    fun onActivity(activity: HangoutActivity?) = model.onActivity(activity)
 
-    fun onPlaceName(name: String) = draft.update { it.copy(placeName = name) }
+    fun onUseLocation() = model.onUseLocation()
 
-    fun onActivity(activity: HangoutActivity?) = draft.update { it.copy(activity = activity) }
+    fun onClearLocation() = model.onClearLocation()
 
-    fun onUseLocation() {
-        draft.update { it.copy(isLocating = true) }
-        viewModelScope.launch {
-            val point = currentLocation()
-            draft.update { it.copy(isLocating = false, location = point ?: it.location) }
-        }
-    }
+    fun onChangePlace() = model.onChangePlace()
 
-    fun onClearLocation() = draft.update { it.copy(location = null, placeChanged = false) }
-
-    /** F11: the place named itself, but it's somewhere else: type its name instead. */
-    fun onChangePlace() = draft.update { it.copy(placeChanged = true, placeName = "") }
-
-    fun onSave() {
-        val d = draft.value
-        val sheet = state.value.sheet
-        if (!sheet.canSave) return
-        // At a named place the meetup takes its name (CheckInUseCase matches it again from the fix).
-        val placeName = sheet.place.match?.place?.name ?: d.placeName
-        // Only people who exist: an app-icon shortcut can name someone deleted since (goodcompany://log/<id>).
-        val people = sheet.people.map { it.id }
-        draft.update { it.copy(saving = true) }
-        viewModelScope.launch {
-            val meetup = d.kind == LogKind.MEETUP
-            val ok = runCatching {
-                logInteraction(
-                    LogRequest(
-                        friendIds = people,
-                        kind = d.kind,
-                        date = d.date,
-                        note = d.note,
-                        placeName = placeName.takeIf { meetup },
-                        location = d.location.takeIf { meetup },
-                        activity = d.activity.takeIf { meetup },
-                    ),
-                )
-            }.isSuccess
-            if (ok && plan != null) confirmPlan?.invoke(plan.planId, happened = true, day = plan.date, logCheckIn = false)
-            draft.update { it.copy(saving = false) }
-            if (ok) done.value = true
-        }
-    }
+    fun onSave() = model.onSave { done.value = true }
 }

@@ -84,7 +84,6 @@
     <string name="drifting_message">Message</string>
 
     <!-- Messages -->
-    <string name="msg_logged_with">Logged time with %1$s ✨</string>
     <string name="msg_call_logged">Call with %1$s logged — next nudge in a week</string>
     <string name="msg_snoozed">%1$s snoozed until %2$s</string>
     <string name="msg_contacts_denied">Without contacts access you can still add friends by hand.</string>
@@ -96,7 +95,6 @@
     <string name="msg_vcf_result">%1$d added · %2$d updated · %3$d unchanged</string>
     <string name="msg_vcf_empty">No contacts found in that file.</string>
     <string name="msg_call_logged_short">Call logged — next nudge in a week</string>
-    <string name="msg_your_friend">your friend</string>
 
     <!-- Friend page -->
     <string name="detail_missing">This friend no longer exists.</string>

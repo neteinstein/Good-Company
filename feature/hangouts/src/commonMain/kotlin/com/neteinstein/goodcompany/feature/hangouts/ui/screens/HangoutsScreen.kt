@@ -162,6 +162,8 @@ fun HangoutsScreen(
     onOpenFriend: (FriendId) -> Unit,
     onOpenYearReview: (Int) -> Unit,
     onEditCircle: (String?) -> Unit = {},
+    /** "We met" on a circle card: opens the small "We met" panel on that circle, nobody ticked (issue #47, F20). */
+    onCircleMet: (String) -> Unit = {},
     onOpenGiftLists: () -> Unit = {},
     viewModel: HangoutsViewModel = koinViewModel(),
 ) {
@@ -179,7 +181,7 @@ fun HangoutsScreen(
             onUndoDelete = viewModel::onUndoDelete,
             onNewGroup = { onEditCircle(null) },
             onEditGroup = onEditCircle,
-            onCheckInGroup = viewModel::onCheckInGroup,
+            onCheckInGroup = onCircleMet,
             onSnoozeGroup = viewModel::onSnoozeGroup,
             onDeleteGroup = viewModel::onDeleteGroup,
             onMessageShown = viewModel::onMessageShown,

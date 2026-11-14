@@ -10,7 +10,6 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
@@ -85,8 +84,6 @@ fun addFriendOptions(hasContactPicker: Boolean, hasContactList: Boolean): List<A
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface FriendsMessage {
-    data class LoggedWith(val name: String?) : FriendsMessage
-
     data class CallLogged(val name: String) : FriendsMessage
 
     data class Snoozed(val name: String, val until: LocalDate) : FriendsMessage
@@ -160,7 +157,6 @@ class FriendsViewModel(
     private val importContactsFile: ImportContactsFileUseCase,
     private val addFriend: AddFriendUseCase,
     private val setRealFriend: SetRealFriendUseCase,
-    private val checkIn: CheckInUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
@@ -286,14 +282,6 @@ class FriendsViewModel(
     private fun firstName(id: FriendId): String? = state.value.friends.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
         ?: state.value.catchUp.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
         ?: state.value.drifting.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
-
-    /** "We met" straight from the catch-up card. */
-    fun onMetToday(id: FriendId) {
-        viewModelScope.launch {
-            checkIn(listOf(id))
-            local.update { it.copy(message = FriendsMessage.LoggedWith(firstName(id))) }
-        }
-    }
 
     fun onCalled(id: FriendId) {
         viewModelScope.launch {

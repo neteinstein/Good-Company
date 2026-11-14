@@ -41,17 +41,18 @@ class LogInteractionViewModelTest {
         ids,
         type,
         circleId,
+        plan,
+        prefill,
         g.observeFriends,
         g.observeActivities,
         g.observeGroups,
         g.observePlaceBook,
-        g.logInteraction,
-        g.currentLocation,
-        g.clock,
-        plan,
         g.observePlans,
+        g.logInteraction,
         g.confirmPlan,
-        prefill,
+        g.currentLocation,
+        g.loggedMeetups,
+        g.clock,
     )
 
     @Test
@@ -258,5 +259,20 @@ class LogInteractionViewModelTest {
         assertEquals(listOf(rui), h.friendIds)
         assertEquals(HangoutActivity.SPORTS, h.activity)
         assertEquals(LocalDate(2026, 3, 16), g.planRepo.plans.value.single().date, "the series moves on")
+    }
+
+    @Test
+    fun moreDetailsCarriesWhatThePanelHadChosen() = runViewModelTest {
+        val friday = g.clock.today().plus(DatePeriod(days = -8))
+        val vm = vm(prefill = LogPrefill(date = friday, activity = HangoutActivity.LUNCH, note = "Her new job", place = "Time Out"))
+        val state = collecting(vm.state)
+        assertEquals(friday, state.value.sheet.date)
+        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        assertEquals("Her new job", state.value.sheet.note)
+        assertEquals("Time Out", state.value.sheet.place.name)
+        vm.onSave()
+        assertEquals(HangoutActivity.LUNCH, g.hangoutRepo.hangouts.value.single().activity)
+        // A meetup saved from the sheet gets the app-wide "Logged time with … · Undo" snackbar.
+        assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
     }
 }

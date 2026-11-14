@@ -79,7 +79,6 @@ import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
 import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_group_met
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
@@ -105,7 +104,6 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 suspend fun AgendaMessage.text(): String = when (this) {
     AgendaMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
     AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
-    is AgendaMessage.GroupMet -> getString(Res.string.msg_group_met, name)
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
@@ -115,6 +113,9 @@ suspend fun AgendaMessage.text(): String = when (this) {
 @Composable
 fun AgendaScreen(
     onOpenFriend: (FriendId) -> Unit,
+    /** "We met" on an overdue circle: the small "We met" panel, nobody ticked (issue #47, F20). */
+    onCircleMet: (String) -> Unit = {},
+    /** "Did you meet?" → yes: the "We met" panel on that occurrence (issues #43, #47). */
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     onOpenCalendar: () -> Unit = {},
     viewModel: AgendaViewModel = koinViewModel(),
@@ -130,13 +131,13 @@ fun AgendaScreen(
         onMessageShown = viewModel::onMessageShown,
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
-        onGroupMet = viewModel::onGroupMet,
-        // A circle plan asks who came: the Log sheet with its members unticked (F20).
+        onGroupMet = onCircleMet,
+        // A yes opens the "We met" panel on that occurrence (a circle plan asks who came, F20); a no closes it here.
         onConfirmPlan = { item, happened ->
-            if (happened && item.circle != null) {
+            if (happened) {
                 onLogPlan(item.plan.id, item.occurrence)
             } else {
-                viewModel.onConfirmPlan(item.plan.id, happened, item.occurrence)
+                viewModel.onConfirmPlan(item.plan.id, false, item.occurrence)
             }
         },
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },

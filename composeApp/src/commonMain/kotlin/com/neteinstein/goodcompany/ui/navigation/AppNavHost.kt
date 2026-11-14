@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapScreen
@@ -72,11 +73,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
     // The built-in Family circle (F6) has no editor: it fills itself from "relationship to me".
     val editCircle: (String?) -> Unit = { if (it != FamilyCircle.ID) navController.navigate(CircleEditorRoute(it)) }
-
-    // "Did you meet?" on a circle plan: the Log sheet with the plan's activity and the circle's members unticked (F20).
-    val logPlan: (String, LocalDate) -> Unit = { planId, day ->
-        navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, plan = PlanOccurrence(planId, day).encode()))
-    }
+    // Every in-app "We met" opens the small panel (issue #47); the widget and notification still log today directly.
+    val weMet: (FriendId) -> Unit = { navController.navigate(WeMetRoute(friendIds = listOf(it.value))) }
+    val circleMet: (String) -> Unit = { navController.navigate(WeMetRoute(circleId = it)) }
+    // "Did you meet?" → yes: the panel on that occurrence's day with the plan's people and activity; a circle plan lists
+    // its members unticked (F20, issue #43).
+    val logPlan: (String, LocalDate) -> Unit = { planId, day -> navController.navigate(WeMetRoute(plan = PlanOccurrence(planId, day).encode())) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
@@ -94,6 +96,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenStory = openStory,
                     onEditCircle = editCircle,
                     onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
+                    onWeMet = weMet,
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
@@ -129,6 +132,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
                         onLogPlan = logPlan,
+                        onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
                         onEditCircle = editCircle,
@@ -157,8 +161,34 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     prefill = LogPrefill(
                         date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
                         activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
+                        note = route.note,
+                        place = route.place,
                     ),
                     onClose = { navController.popBackStack() },
+                )
+            }
+            dialog<WeMetRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
+                val route = entry.toRoute<WeMetRoute>()
+                WeMetPanelScreen(
+                    friendIds = route.friendIds.map(::FriendId),
+                    circleId = route.circleId,
+                    plan = route.plan,
+                    onClose = { navController.popBackStack() },
+                    onMoreDetails = { d ->
+                        // The full Log sheet takes the panel's place, with everything chosen so far.
+                        navController.navigate(
+                            LogInteractionRoute(
+                                friendIds = d.friendIds.map { it.value },
+                                type = LogKind.MEETUP.name,
+                                circleId = d.circleId,
+                                date = d.date.toString(),
+                                activity = d.activity?.name,
+                                note = d.note.ifEmpty { null },
+                                plan = d.plan?.encode(),
+                                place = d.placeName.ifEmpty { null },
+                            ),
+                        ) { popUpTo<WeMetRoute> { inclusive = true } }
+                    },
                 )
             }
             composable<CircleEditorRoute>(
@@ -210,11 +240,13 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
                     onEditCircle = editCircle,
                     onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
+                    onCircleMet = circleMet,
                 )
             }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
                 AgendaScreen(
                     onOpenFriend = openFriend,
+                    onCircleMet = circleMet,
                     onLogPlan = logPlan,
                     onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
                 )

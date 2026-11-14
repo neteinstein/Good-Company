@@ -43,7 +43,6 @@
     <string name="wish_gift_hint">Ideias de prenda: %1$s</string>
     <string name="msg_reminder_saved">Lembrete guardado</string>
     <string name="msg_reminder_deleted">Lembrete apagado</string>
-    <string name="msg_group_met">Tempo com %1$s registado ✨</string>
     <string name="label_plan">Plano</string>
     <string name="row_relative">%1$s (família de %2$s)</string>
     <string name="calendar_card_title">Do teu calendário</string>

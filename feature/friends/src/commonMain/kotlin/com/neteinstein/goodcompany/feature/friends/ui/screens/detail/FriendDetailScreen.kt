@@ -143,7 +143,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
-import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
@@ -260,7 +259,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_field_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_link_removed
-import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
@@ -376,7 +374,10 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
+    /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    /** "Together" opens the small "We met" panel (issue #47). */
+    onWeMet: () -> Unit = {},
     onOpenCircle: (String) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     onOpenGiftLists: () -> Unit = {},
@@ -467,8 +468,7 @@ fun FriendDetailScreen(
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
-            onTogetherNow = viewModel::onTogetherNow,
-            onUndoTogether = viewModel::onUndoTogether,
+            onWeMet = onWeMet,
             onOpenReminderEditor = viewModel::onOpenReminderEditor,
             onDismissReminderEditor = viewModel::onDismissReminderEditor,
             onSaveReminder = viewModel::onSaveReminder,
@@ -572,8 +572,8 @@ data class FriendDetailActions(
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
-    val onTogetherNow: () -> Unit = {},
-    val onUndoTogether: () -> Unit = {},
+    /** "Together": opens the "We met" panel. */
+    val onWeMet: () -> Unit = {},
     val onOpenReminderEditor: () -> Unit = {},
     val onDismissReminderEditor: () -> Unit = {},
     val onSaveReminder: (String, List<FriendId>, LocalDate?, Int) -> Unit = { _, _, _, _ -> },
@@ -597,7 +597,6 @@ private val RHYTHMS = listOf(7, 14, 30, 90)
 
 /** Localised snackbar text for a [FriendDetailMessage]. */
 suspend fun FriendDetailMessage.text(): String = when (this) {
-    is FriendDetailMessage.LoggedWith -> getString(Res.string.msg_logged_with, name)
     FriendDetailMessage.CallLogged -> getString(Res.string.msg_call_logged_short)
     is FriendDetailMessage.Snoozed -> getString(Res.string.touch_snoozed, until.shortLabelText())
     is FriendDetailMessage.IdeasFound -> if (count ==
@@ -676,8 +675,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null ||
-            state.undoLink != null
+        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
@@ -685,7 +683,6 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 state.undoLink != null -> actions.onUndoRemoveLink()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
                 state.undoPlan != null -> actions.onUndoCancelPlan()
-                else -> actions.onUndoTogether()
             }
         }
         actions.onMessageShown()
@@ -792,7 +789,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             friends = with.filterNot { it.id == f.id },
                             today = state.today,
                             onConfirm = { happened ->
-                                if (happened && circle != null) actions.onLogPlan(plan.id, plan.date) else actions.onConfirmPlan(plan.id, happened)
+                                // A yes opens the "We met" panel (issue #47): a person plan as well as a circle plan.
+                                if (happened) actions.onLogPlan(plan.id, plan.date) else actions.onConfirmPlan(plan.id, false)
                             },
                             onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
                             onChange = { actions.onOpenPlanEditor(plan) },
@@ -1766,13 +1764,10 @@ private fun Hero(
                     )
                 }
                 if (preferred != null) ChannelAction(channels.first())
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_together), onClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        actions.onTogetherNow()
-                    }, emphasized = preferred == null)
-                    HeartBurst(state.celebrate, Modifier.size(72.dp))
-                }
+                QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_together), onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    actions.onWeMet()
+                }, emphasized = preferred == null, modifier = Modifier.weight(1f))
                 channels.drop(if (preferred != null) 1 else 0).forEach { ChannelAction(it) }
                 QuickAction(
                     Icons.Rounded.AlarmAdd,

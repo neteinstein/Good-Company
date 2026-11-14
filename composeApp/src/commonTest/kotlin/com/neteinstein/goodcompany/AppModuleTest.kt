@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -35,6 +36,8 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapViewModel
@@ -99,11 +102,19 @@ class AppModuleTest {
         assertNotNull(
             koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), "MEETUP", null, PlanOccurrence("p1", null), LogPrefill()) },
         )
+        assertNotNull(
+            koin.get<LogInteractionViewModel> {
+                parametersOf(emptyList<FriendId>(), null, "circle-1", null, LogPrefill(activity = HangoutActivity.LUNCH, note = "n", place = "p"))
+            },
+        )
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null) })
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1") })
         assertNotNull(koin.get<GiftListsViewModel>())
         assertNotNull(koin.get<GiftListViewModel> { parametersOf("list-1") })
         assertNotNull(koin.get<HangoutsViewModel>())
+        assertNotNull(koin.get<WeMetViewModel> { parametersOf(listOf(FriendId("x")), null, null) })
+        assertNotNull(koin.get<WeMetViewModel> { parametersOf(emptyList<FriendId>(), "circle-1", PlanOccurrence("plan-1", null)) })
+        assertNotNull(koin.get<LoggedMeetupViewModel>())
         assertNotNull(koin.get<AgendaViewModel>())
         assertNotNull(koin.get<IdeasViewModel>())
         assertNotNull(koin.get<SettingsViewModel>())

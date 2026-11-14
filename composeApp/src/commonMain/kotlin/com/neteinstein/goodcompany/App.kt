@@ -65,6 +65,7 @@ import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupSnackbar
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
@@ -170,11 +171,16 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
                     }
                     Spacer(Modifier.weight(1f))
                 }
-                Box(Modifier.weight(1f)) { ContentWidth { AppNavHost(navController, startDestination = start) } }
+                Box(Modifier.weight(1f)) {
+                    ContentWidth { AppNavHost(navController, startDestination = start) }
+                    LoggedMeetupSnackbar(Modifier.align(Alignment.BottomCenter))
+                }
             }
         } else {
             Scaffold(
                 contentWindowInsets = WindowInsets(0),
+                // "Logged time with … · Undo" after the "We met" panel or the Log sheet (issue #47).
+                snackbarHost = { LoggedMeetupSnackbar() },
                 bottomBar = {
                     AnimatedVisibility(showChrome, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
                         NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {

@@ -174,16 +174,13 @@ class HangoutsViewModelTest {
         assertNull(state.value.draft!!.circleId)
         vm.onDismissCheckIn()
 
-        vm.onCheckInGroup(group.id)
-        assertEquals(group.id, state.value.draft!!.circleId)
-        assertTrue(state.value.draft!!.selected.isEmpty())
-        assertFalse(state.value.draft!!.canSave)
-        vm.onToggleDraftFriend(ana)
+        // The circle card's "We met" opens the "We met" panel (issue #47), not the check-in sheet: nothing is drafted here.
+        assertNull(state.value.draft)
+        vm.onStartCheckIn(ana)
+        vm.onPickDraftGroup(group.id)
         vm.onToggleDraftFriend(rui)
         vm.onSaveCheckIn()
         assertFalse(state.value.groups.single().isOverdue(g.clock.today()))
-        vm.onCheckInGroup("gone")
-        assertNull(state.value.draft)
 
         vm.onSnoozeGroup(group.id, SnoozeOption.ONE_WEEK)
         assertIs<HangoutsMessage.GroupSnoozed>(state.value.message)

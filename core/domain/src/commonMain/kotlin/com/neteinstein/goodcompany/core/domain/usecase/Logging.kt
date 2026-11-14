@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -9,12 +10,17 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -64,7 +70,11 @@ data class LogRequest(
 
 /** What a log wrote, so the caller can show it or undo it. */
 sealed interface LogResult {
-    data class Met(val hangout: Hangout) : LogResult
+    /**
+     * [plan] is the plan this meetup answered ("Did you meet?"), as it was before that occurrence was closed: Undo
+     * puts it back. Set by the sheet that closed it, not by [LogInteractionUseCase].
+     */
+    data class Met(val hangout: Hangout, val plan: Plan? = null) : LogResult
 
     data class Contacts(val interactions: List<Interaction>) : LogResult
 
@@ -132,10 +142,14 @@ class LogInteractionUseCase(
 class UndoLogUseCase(
     private val hangouts: HangoutRepository,
     private val interactions: InteractionRepository,
+    private val plans: PlanRepository,
 ) {
     suspend operator fun invoke(result: LogResult) {
         when (result) {
-            is LogResult.Met -> hangouts.delete(result.hangout.id)
+            is LogResult.Met -> {
+                hangouts.delete(result.hangout.id)
+                result.plan?.let { plans.upsert(it) }
+            }
             is LogResult.Contacts -> result.interactions.forEach { interactions.delete(it.id) }
             is LogResult.Journal -> result.entries.forEach { interactions.deleteJournal(it.id) }
         }
@@ -167,5 +181,26 @@ class SetActivitiesUseCase(private val settings: SettingsRepository) {
         val list = activities.distinct()
         if (list.isEmpty()) return
         settings.update { it.copy(activities = list) }
+    }
+}
+
+/** A meetup just logged in the app, with the people it was with (for "Logged time with Rui ✨ · Undo"). */
+data class LoggedMeetup(val result: LogResult.Met, val people: List<Friend>)
+
+/**
+ * The last meetup logged from the "We met" panel or the Log sheet (F2), until the app-wide snackbar has shown it.
+ * The sheet closes on save, so the snackbar that offers Undo lives outside it.
+ */
+class LoggedMeetupInbox {
+    private val state = MutableStateFlow<LoggedMeetup?>(null)
+    val pending: StateFlow<LoggedMeetup?> = state.asStateFlow()
+
+    fun offer(meetup: LoggedMeetup) {
+        state.value = meetup
+    }
+
+    /** Done with [meetup] (shown or undone); a newer one that arrived meanwhile stays. */
+    fun clear(meetup: LoggedMeetup) {
+        state.compareAndSet(meetup, null)
     }
 }

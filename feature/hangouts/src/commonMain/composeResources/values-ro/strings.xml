@@ -90,6 +90,19 @@
     <string name="circle_members_empty">Adaugă cel puțin un prieten.</string>
     <string name="circle_closeness_none">Fără apropiere setată</string>
     <string name="circle_closeness_note">Aici apropierea doar se vede, nu se editează: ține de persoană. Ritmul unui prieten nu se schimbă niciodată din cauza unui cerc.</string>
+    <!-- The small "We met" panel (issue #47) -->
+    <string name="met_title">Te-ai văzut cu %1$s</string>
+    <string name="met_title_circle">%1$s · cine a venit?</string>
+    <string name="met_more_details">Mai multe detalii</string>
+    <string name="met_add_note">Adaugă o notă</string>
+    <string name="met_add_place">Adaugă un loc</string>
+    <string name="met_save_on">Salvează · %1$s</string>
+    <plurals name="met_log_people">
+        <item quantity="one">Înregistrează %1$d persoană</item>
+        <item quantity="few">Înregistrează %1$d persoane</item>
+        <item quantity="other">Înregistrează %1$d de persoane</item>
+    </plurals>
+    <string name="met_more_people">Arată încă %1$d</string>
     <string name="gift_lists_title">Liste de cadouri</string>
     <string name="gift_lists_hint">Crăciun, Secret Santa, zile de naștere: cine primește ce și bugetul</string>
     <string name="gift_lists_new">Listă nouă</string>

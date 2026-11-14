@@ -86,6 +86,18 @@
     <string name="circle_members_empty">Adiciona pelo menos um amigo.</string>
     <string name="circle_closeness_none">Sem proximidade definida</string>
     <string name="circle_closeness_note">Aqui a proximidade só se vê, não se edita: pertence à pessoa. O ritmo de cada amigo nunca muda por causa de um círculo.</string>
+    <!-- The small "We met" panel (issue #47) -->
+    <string name="met_title">Estiveste com %1$s</string>
+    <string name="met_title_circle">%1$s · quem veio?</string>
+    <string name="met_more_details">Mais detalhes</string>
+    <string name="met_add_note">Adicionar uma nota</string>
+    <string name="met_add_place">Adicionar um local</string>
+    <string name="met_save_on">Guardar · %1$s</string>
+    <plurals name="met_log_people">
+        <item quantity="one">Registar %1$d pessoa</item>
+        <item quantity="other">Registar %1$d pessoas</item>
+    </plurals>
+    <string name="met_more_people">Mostrar mais %1$d</string>
     <string name="gift_lists_title">Listas de presentes</string>
     <string name="gift_lists_hint">Natal, amigo secreto, aniversários: quem recebe o quê, e o orçamento</string>
     <string name="gift_lists_new">Nova lista</string>
