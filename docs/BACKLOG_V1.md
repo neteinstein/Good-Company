@@ -61,9 +61,30 @@ por uma decisão em aberto e **não devem ser feitos** sem resposta do dono.
 | E2 | **Painel da rede** | spec #28 | Warmth por círculo, tendências, quem está a arrefecer. |
 | E3 | **IA: sugestões de mensagens além do aniversário** | spec #30 | Ex.: seguimento depois de um evento ou de um "What's new". Respeita F1. |
 
+## F. Polimento pedido pelo dono (14-11-2026)
+
+| # | Item | O que está feito | O que fazer / pronto quando |
+|---|---|---|---|
+| F1 | **Tirar o FAB "Add friend" e pô-lo no menu ⋮** | `ExtendedFloatingActionButton` em `FriendsScreen` chama `openAdd`; o menu ⋮ já existe no cabeçalho. | Primeiro item do ⋮ ("Add friend"), abre a mesma folha (na web, direto ao diálogo do nome); sem FAB nem os 88 dp de espaço em baixo; o estado vazio mantém o botão. Capturas atualizadas. O FAB "New reminder" da Agenda fica como está (dono, 14-11). |
+| F2 | **As snackbars desaparecem sempre** | `showSnackbar(..., actionLabel = …)` sem `duration` é `Indefinite` no Material 3: os Undo (página do amigo, Agenda, Timeline) nunca fecham, e o `onMessageShown()` seguinte fica preso atrás deles. `SnackbarHost` simples não fecha ao tocar. | Um `SnackbarHost` comum em `:core:ui` (fecha ao tocar e ao deslizar) usado nos 10 ecrãs; Undo com duração fixa (`Long`); teste que nenhuma é `Indefinite`. |
+| F3 | **Autosave nos popups de escolha** | `FamilySheet` (parentesco) tem o Save no fim do scroll; `LocalDatePickerDialog` (aniversários e outras datas) precisa de OK. | Diálogos só de escolha gravam e fecham ao escolher; folhas com texto gravam ao fechar (se o nome estiver preenchido) com Save fixo no topo; snackbar com Undo. Inventariar todos os popups de escolha no PR. Fazer com/depois de I2 (#36, aniversário sem ano mexe no mesmo seletor). |
+
+## G. Lacunas do brief verbatim (por escolher)
+
+| # | Ponto do brief | Estado | Proposta |
+|---|---|---|---|
+| G1 | "Once a week run the news…" | Android corre em fundo (`WeeklyIdeasWorker`); iOS só quando a app abre. | `BGTaskScheduler` no iOS (já em AGENTS.md §23). |
+| G2 | "…match that with SMS, Calls, Whatsapp messages etc." | SMS não (decisão); chamadas só sideload; WhatsApp por exportação manual. | Importar exportações de Messenger, Telegram e Signal como a do WhatsApp (`CHAT_IMPORT`). |
+| G3 | "Match tastes with news and conversations" | Notícias e temas feitos; conversas só via chats importados e notas. | Usar mais os chats importados (ex.: temas a partir do último chat), respeitando F1. |
+
+## H. Novo layout (14-11-2026)
+
+Plano em [`issues/V1_LAYOUT.md`](issues/V1_LAYOUT.md), mockups em [`mockups/v1-layout/`](mockups/v1-layout/index.html).
+N1 separadores Hoje · Pessoas · Círculos · Planos e Definições no cabeçalho · N2 Pessoas · N3 Círculos e Planos ·
+N4 cartão "Quando estiveste com…?" · N5 quatro níveis de proximidade · N6 círculos na página da pessoa · N7 a tua foto.
+
 ## ⛔ Bloqueados (não correr sem decisão)
 
-- **F5 · Juntar "Everyone" e "Real friends"**: em discussão com o outro autor.
 - **F13 · Mapas de encontros**: fornecedor de mapas por decidir (MapLibre + OSM é a proposta).
 - **D2 na build Play**: a lista com checkboxes só entra na Play depois de confirmar a política de `READ_CONTACTS`.
 - **D8 · Firebase Analytics**: em discussão; não remover código.

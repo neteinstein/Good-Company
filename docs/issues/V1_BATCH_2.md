@@ -445,3 +445,39 @@ optional), the callers no longer call `checkIn` directly (`FriendsViewModelTest`
 Tapping "We met" anywhere in the app opens the small panel; "We met" → Save logs today in two taps, and Friday's lunch
 can be logged a week later with the right date.
 
+
+---
+
+# Follow-ups from the owner (2026-11-14)
+
+**Created as issues (2026-11-14):** I14 #62 · I15 #63 · I16 #64. Batch 2 (#35–#47) is closed, so they start from
+current `main`. No migrations.
+Backlog rows F1–F3 in [`BACKLOG_V1.md`](../BACKLOG_V1.md); decisions dated 2026-11-14 in the brief.
+
+## I14 (#62) · Home: "Add friend" moves into the ⋮ menu
+
+- Remove the `ExtendedFloatingActionButton` from `FriendsContent`; add "Add friend" as the first ⋮ item, calling the
+  same `openAdd` (sheet of `AddFriendOption`s; web goes straight to the name dialog). Drop the 88 dp bottom padding.
+- The empty state keeps its own add button.
+- The Agenda's "New reminder" FAB stays as it is (owner, 2026-11-14).
+- Done when: no FAB on Home on any platform, adding works from ⋮, screenshots refreshed (`capture-screenshots`).
+
+## I15 (#63) · Snackbars always close and can be dismissed
+
+- Cause: Material 3 makes a snackbar with an `actionLabel` `SnackbarDuration.Indefinite` by default, so every Undo
+  snackbar stays forever and blocks the next message (`onMessageShown()` only runs when it closes).
+- Add a shared host in `:core:ui` (e.g. `AppSnackbarHost`) wrapping each `Snackbar` in a swipe-to-dismiss and a tap
+  that calls `dismiss()`; use it in all ten `Scaffold`s. Undo snackbars get `SnackbarDuration.Long`; a helper
+  (`showUndoSnackbar`) keeps that in one place. I13's new Undo uses it too.
+- Tests: the helper never passes `Indefinite`; ViewModel message types unchanged.
+- Done when: every snackbar goes away on its own, on tap and on swipe.
+
+## I16 (#64) · Choice popups save without a Save button
+
+- Choice-only dialogs save and close on the choice: `LocalDatePickerDialog` (birthdays, kids, events, met-on),
+  the gift occasion, chip pickers. Inventory every list/choice popup in the PR description.
+- Form sheets (`FamilySheet` and similar) save on dismiss when valid (name not blank), and their Save is pinned at
+  the top of the sheet instead of the end of the scroll.
+- A mistaken save is covered by an Undo snackbar (I15).
+- Coordinate with I2 (#36): a birthday without a year changes the same date picker.
+- Done when: setting a birthday or a relation needs no scroll and no extra tap to save.
