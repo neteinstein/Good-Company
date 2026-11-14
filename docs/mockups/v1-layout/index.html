@@ -269,6 +269,10 @@ body.solo .wrap{max-width:1480px}
 .qa span{width:46px;height:46px;border-radius:16px;background:var(--secondary-c);color:var(--on-secondary-c);display:grid;place-items:center}
 .chip.add{border-style:dashed;color:var(--primary);border-color:var(--primary)}
 .chip .x{width:13px;height:13px;stroke-width:2.5}
+.me{width:38px;height:38px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 38%,#F6D2B8 0 26%,transparent 27%),radial-gradient(circle at 50% 100%,#3F6560 0 46%,transparent 47%),linear-gradient(135deg,#E9A26B,#B5523B);box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--outline-v)}
+.me.xl{width:84px;height:84px;box-shadow:0 0 0 3px var(--s-low),0 0 0 5px var(--primary)}
+.sc{background:var(--s-low);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.sc .h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--primary)}
 .toast{position:absolute;left:12px;right:12px;bottom:84px;background:#3D3231;color:#FCEAE7;border-radius:12px;padding:12px 14px;font-size:13px;display:flex;justify-content:space-between}
 .toast b{color:#FFB4A9}
 </style>
@@ -330,21 +334,21 @@ body.solo .wrap{max-width:1480px}
 <div class="wrap">
 <header class="top">
   <h1>Good Company · new layout</h1>
-  <p>Proposal for review (2026-11-14). Today the bar is Friends · Together · Coming up · Ideas · Settings, and three of those tabs are mostly lists of people, while circles, gift lists, “Your people” and the network map sit at the end of lists or in the ⋮ menu. This sheet proposes four tabs, <b>Today · People · Circles · Plans</b>, with Settings moved to a gear in every tab’s header, four closeness levels without the word “circle”, a card that asks when you last saw someone instead of listing everyone as overdue, and circle chips on a person’s page. Colours, type and components are the app’s own; sample people are the demo set. These are proposals, not renders of the real app.</p>
+  <p>Proposal for review (2026-11-14). Today the bar is Friends · Together · Coming up · Ideas · Settings, and three of those tabs are mostly lists of people, while circles, gift lists, “Your people” and the network map sit at the end of lists or in the ⋮ menu. This sheet proposes four tabs, <b>Today · People · Circles · Plans</b>, with Settings (still one scrolling page) reached from your photo in every tab’s header, four closeness levels without the word “circle”, a card that asks when you last saw someone instead of listing everyone as overdue, and circle chips on a person’s page. Colours, type and components are the app’s own; sample people are the demo set. These are proposals, not renders of the real app.</p>
   <nav class="toc" aria-label="Mockups">
-    <a href="#tabs">L1 · Four tabs</a><a href="#today">L2 · Today, last-seen card, Settings</a><a href="#closeness">L3 · Four closeness levels</a><a href="#circles">L4 · Circles on a person’s page</a>
+    <a href="#tabs">L1 · Four tabs</a><a href="#today">L2 · Today, last-seen card, Settings &amp; your photo</a><a href="#closeness">L3 · Four closeness levels</a><a href="#circles">L4 · Circles on a person’s page</a>
   </nav>
 </header>
 
 <!-- ================= L1 TABS ================= -->
 <section class="issue" id="tabs">
   <div class="issue-h"><span class="tag">L1 · navigation</span><h2>Four tabs that each do one job</h2>
-  <p><b>Today</b> is what needs you now (it absorbs Coming up and the catch-up parts of Friends and Together). <b>People</b> is the one list of everyone, sorted by closeness (the F5 proposal), with “Your people” on top. <b>Circles</b> brings the circles out of the bottom of Together. <b>Plans</b> holds plans, gift lists, “Who’s free for…?” and, with AI on, the weekly ideas, so there is no AI-only tab coming and going. Settings is the gear at the top right.</p></div>
+  <p><b>Today</b> is what needs you now (it absorbs Coming up and the catch-up parts of Friends and Together). <b>People</b> is the one list of everyone, sorted by closeness (the F5 proposal), with “Your people” on top. <b>Circles</b> brings the circles out of the bottom of Together. <b>Plans</b> holds plans, gift lists, “Who’s free for…?” and, with AI on, the weekly ideas, so there is no AI-only tab coming and going. Settings is your photo at the top right.</p></div>
   <div class="screens">
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><h3>Today</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></span></div>
+    <div class="topbar"><h3>Today</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="me" aria-label="You and Settings"></span></div>
     <div class="scroll">
       <div class="cta"><div><div class="t1">I’m with…</div><div class="t2">Log who you’re with now</div></div><span class="go"><svg class="ic"><use href="#i-plus"/></svg></span></div>
       <div class="day">This week</div>
@@ -366,7 +370,7 @@ body.solo .wrap{max-width:1480px}
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><h3>People</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib"><svg class="ic"><use href="#i-more"/></svg></span><span class="ib"><svg class="ic"><use href="#i-gear"/></svg></span></div>
+    <div class="topbar"><h3>People</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib"><svg class="ic"><use href="#i-more"/></svg></span><span class="me" aria-label="You and Settings"></span></div>
     <div class="scroll">
       <div class="card">
         <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-chart"/></svg></span>Your people<span class="more">Open</span></div>
@@ -386,7 +390,7 @@ body.solo .wrap{max-width:1480px}
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><h3>Circles</h3><span class="ib"><svg class="ic"><use href="#i-plus"/></svg></span><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></span></div>
+    <div class="topbar"><h3>Circles</h3><span class="ib"><svg class="ic"><use href="#i-plus"/></svg></span><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="me" aria-label="You and Settings"></span></div>
     <div class="scroll">
       <div class="ccard" style="background:var(--c-teal)"><div class="row"><span style="font-size:22px">🧗</span><div class="grow"><div class="t1">Climbing</div><div class="t2">6 people · last time 9 days ago</div></div></div><div class="row"><div class="stack"><div class="av sm a">IR</div><div class="av sm b">JP</div><div class="av sm r">BC</div></div><span class="grow"></span><span class="pillb">We met</span></div></div>
       <div class="ccard" style="background:var(--c-purple)"><div class="row"><span style="font-size:22px">🎵</span><div class="grow"><div class="t1">Choir</div><div class="t2">16 people · rehearsal every Tuesday</div></div></div><div class="row"><div class="stack"><div class="av sm b">JP</div><div class="av sm m">MC</div><div class="av sm t">GC</div></div><span class="grow"></span><span class="pillb">We met</span></div></div>
@@ -401,7 +405,7 @@ body.solo .wrap{max-width:1480px}
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><h3>Plans</h3><span class="ib"><svg class="ic"><use href="#i-plus"/></svg></span><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></span></div>
+    <div class="topbar"><h3>Plans</h3><span class="ib"><svg class="ic"><use href="#i-plus"/></svg></span><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="me" aria-label="You and Settings"></span></div>
     <div class="scroll">
       <div class="lbl">Coming up</div>
       <div class="card">
@@ -425,13 +429,13 @@ body.solo .wrap{max-width:1480px}
 
 <!-- ================= L2 TODAY ================= -->
 <section class="issue" id="today">
-  <div class="issue-h"><span class="tag">L2 · Today</span><h2>Today, the last-seen card, and where Settings went</h2>
+  <div class="issue-h"><span class="tag">L2 · Today</span><h2>Today, the last-seen card, and Settings with your photo</h2>
   <p>Today a person with no meetup logged counts as overdue from today, so Coming up lists everyone. People with nothing logged stop counting as overdue. Instead one card asks, one person at a time, when you last saw them. The answer is an approximate date that only starts their rhythm; it is not a meetup and doesn’t show on the timeline.</p></div>
   <div class="screens">
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><h3>Today</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="ib" aria-label="Settings"><svg class="ic"><use href="#i-gear"/></svg></span></div>
+    <div class="topbar"><h3>Today</h3><span class="ib"><svg class="ic"><use href="#i-search"/></svg></span><span class="me" aria-label="You and Settings"></span></div>
     <div class="scroll">
       <div class="card" style="background:var(--primary-c);color:var(--on-primary-c)">
         <div class="row"><div class="av r">RS</div><div class="grow"><div class="t1">When did you last see Rui?</div><div class="t2" style="color:inherit;opacity:.8">Close · added from contacts · 1 of 12</div></div></div>
@@ -453,13 +457,18 @@ body.solo .wrap{max-width:1480px}
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
     <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Settings</h3></div>
     <div class="scroll">
-      <div class="trow"><svg class="ic"><use href="#i-heart"/></svg><div class="grow">Closeness and rhythms<small>Inner every 14 days · Close 30 · Friends 90</small></div><svg class="ic"><use href="#i-chev"/></svg></div>
-      <div class="trow"><svg class="ic"><use href="#i-bell"/></svg><div class="grow">Notifications<small>Weekly digest · birthdays</small></div><svg class="ic"><use href="#i-chev"/></svg></div>
-      <div class="trow"><svg class="ic"><use href="#i-spark"/></svg><div class="grow">AI<small>Off</small></div><svg class="ic"><use href="#i-chev"/></svg></div>
-      <div class="trow"><svg class="ic"><use href="#i-tag"/></svg><div class="grow">Tags, activities, places</div><svg class="ic"><use href="#i-chev"/></svg></div>
-      <div class="trow"><svg class="ic"><use href="#i-lock"/></svg><div class="grow">Backup and app lock</div><svg class="ic"><use href="#i-chev"/></svg></div>
+      <div class="sc" style="align-items:center;text-align:center">
+        <div class="avwrap"><span class="me xl" style="display:block"></span><span class="camb"><svg class="ic"><use href="#i-camera"/></svg></span></div>
+        <div class="t2" style="font-size:12.5px;color:var(--muted)">Your photo · shown in the header, at the centre of your network map and on your year in review</div>
+        <div class="btnrow" style="width:100%"><span class="btn out">Change</span><span class="btn out">Remove</span></div>
+      </div>
+      <div class="sc"><div class="h"><svg class="ic"><use href="#i-image"/></svg>Appearance</div><div class="seg"><div>Light</div><div>Dark</div><div class="on">System</div></div></div>
+      <div class="sc"><div class="h"><svg class="ic"><use href="#i-heart"/></svg>Closeness and rhythms</div>
+        <div class="trow"><div class="grow">Inner</div><span class="chip">14 days</span></div>
+        <div class="trow"><div class="grow">Close</div><span class="chip">30 days</span></div>
+      </div>
     </div>
-  </div><figcaption><b>Settings without a tab.</b> The gear at the top right of every tab opens Settings as a normal screen with a back arrow. The tab slot goes to Circles. Deep links and the web’s <code>?tab=settings</code> open the same screen.</figcaption></figure>
+  </div><figcaption><b>Settings stays one scrolling page.</b> Same section cards as today, reached from your photo at the top right of every tab (a gear while there is no photo). New first card: <b>your photo</b>, picked from the gallery with the same crop editor as a friend’s photo (#36); Remove goes back to the gear.</figcaption></figure>
   </div>
 </section>
 
@@ -486,15 +495,13 @@ body.solo .wrap{max-width:1480px}
 
   <figure><div class="phone">
     <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
-    <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Closeness and rhythms</h3></div>
+    <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Settings</h3></div>
     <div class="scroll">
-      <div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div><div class="grow">Inner<small>4 people</small></div><span class="chip">14 days</span></div>
-      <div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i></div><div class="grow">Close<small>9 people</small></div><span class="chip">30 days</span></div>
-      <div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i></i><i></i></div><div class="grow">Friends<small>15 people</small></div><span class="chip">90 days</span></div>
-      <div class="trow"><div class="dots"><i class="f"></i><i></i><i></i><i></i></div><div class="grow">Acquaintances<small>10 people</small></div><span class="chip">Off</span></div>
-      <div class="note">Acquaintances have no rhythm by default; you can give them one here.</div>
+      <div class="sc"><div class="h"><svg class="ic"><use href="#i-image"/></svg>Appearance</div><div class="seg"><div>Light</div><div>Dark</div><div class="on">System</div></div></div>
+      <div class="sc"><div class="h"><svg class="ic"><use href="#i-heart"/></svg>Closeness and rhythms</div><div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i></div><div class="grow">Inner<small>4 people</small></div><span class="chip">14 days</span></div><div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i></i></div><div class="grow">Close<small>9 people</small></div><span class="chip">30 days</span></div><div class="trow"><div class="dots"><i class="f"></i><i class="f"></i><i></i><i></i></div><div class="grow">Friends<small>15 people</small></div><span class="chip">90 days</span></div><div class="trow"><div class="dots"><i class="f"></i><i></i><i></i><i></i></div><div class="grow">Acquaintances<small>10 people</small></div><span class="chip">Off</span></div><div class="hint">Acquaintances have no rhythm by default; you can give them one.</div></div>
+      <div class="sc"><div class="h"><svg class="ic"><use href="#i-spark"/></svg>AI</div><div class="trow"><div class="grow">Use AI<small>Needs your own API key</small></div><span class="switch off"></span></div></div>
     </div>
-  </div><figcaption><b>Settings.</b> One default rhythm per level, as today, plus the new level (off by default).</figcaption></figure>
+  </div><figcaption><b>Settings.</b> The closeness card on the same scrolling page: one default rhythm per level, as today, plus the new level (off by default).</figcaption></figure>
   </div>
 </section>
 
