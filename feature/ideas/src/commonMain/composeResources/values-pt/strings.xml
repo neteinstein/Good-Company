@@ -45,4 +45,16 @@
     <string name="msg_no_key">Adiciona primeiro a tua chave da API nas Definições.</string>
     <string name="msg_no_friends">Liga as “Ideias de eventos semanais” para pelo menos um amigo.</string>
     <string name="msg_nothing">Nada para fazer agora.</string>
+    <!-- The Plans tab (issue #67) -->
+    <string name="plans_title">Planos</string>
+    <string name="plans_coming_up">Próximos</string>
+    <string name="plans_empty">Ainda não há planos. Toca em + para fazer um.</string>
+    <string name="plans_gift_lists_title">Listas de presentes</string>
+    <string name="plans_gift_lists_hint">Natal, amigo secreto, aniversários</string>
+    <string name="plans_gift_lists_progress">%1$s · %2$d de %3$d comprados</string>
+    <string name="plans_free_title">Quem está livre para…?</string>
+    <string name="plans_free_body">Encontra pessoas para uma atividade</string>
+    <string name="plans_ideas_title">Ideias para esta semana</string>
+    <string name="plans_ideas_all">Todas (%1$d)</string>
+    <string name="plans_ideas_empty">Ainda não há ideias. Abre-as para procurar.</string>
 </resources>

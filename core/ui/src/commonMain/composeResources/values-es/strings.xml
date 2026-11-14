@@ -591,4 +591,8 @@
     <string name="catchup_message">Mensaje</string>
     <string name="catchup_more">Más</string>
     <string name="open_settings">Ajustes</string>
+    <!-- "Your year in friendship" card on Today and Plans, in December (issue #67) -->
+    <string name="review_card_title">Tu %1$d en amistad</string>
+    <string name="review_card_body">A quién viste más, tus sitios favoritos y tu racha más larga — listo para compartir.</string>
+    <string name="review_card_cta">Ver tu año</string>
 </resources>

@@ -14,6 +14,8 @@ changing the request itself (model id, headers, parameters).
   the UI shows no AI button, section, hint or set-up prompt while it is off.
 - Requests carry `LanguageProvider.languageTag()` so the answer is in the UI language.
 - Never send calendar events, the API key or private data the feature doesn't need.
+- The Plans tab (`PlansViewModel`, `:feature:ideas`, issue #67) shows "Ideas for this week" only while
+  `usableAiKey != null`; the full list is `WeeklyIdeasRoute`, which pops back if AI is turned off.
 - Errors are `AiFailure.Reason` rendered by `aiErrorText` (`:core:ui`), never raw text.
 - Tests: `AnthropicIdeaGeneratorTest`, `AnthropicAssistantTest` (`core/data/src/commonTest`) with a mock engine.
 

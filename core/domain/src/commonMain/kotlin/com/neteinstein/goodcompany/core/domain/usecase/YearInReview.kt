@@ -13,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -115,6 +116,18 @@ object YearInReviewBuilder {
         val lastYearHasData = hangouts.any { it.at.toLocalDate(zone).year == today.year - 1 }
         return if (today.month == Month.JANUARY && lastYearHasData) today.year - 1 else today.year
     }
+
+    /**
+     * The year the "Your year in friendship" card offers on Today and Plans (issue #67): this year, in December only,
+     * once it has a meetup; null otherwise.
+     */
+    fun cardYear(today: LocalDate, hangouts: List<Hangout>, zone: TimeZone): Int? =
+        today.year.takeIf { today.month == Month.DECEMBER && hangouts.any { it.at.toLocalDate(zone).year == today.year } }
+}
+
+/** [YearInReviewBuilder.cardYear], kept up to date. */
+class ObserveYearReviewCardUseCase(private val hangouts: HangoutRepository, private val clock: AppClock) {
+    operator fun invoke(): Flow<Int?> = hangouts.hangouts.map { YearInReviewBuilder.cardYear(clock.today(), it, clock.timeZone) }
 }
 
 class ObserveYearInReviewUseCase(

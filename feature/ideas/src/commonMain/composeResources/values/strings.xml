@@ -47,4 +47,16 @@
     <string name="msg_no_key">Add your API key in Settings first.</string>
     <string name="msg_no_friends">Turn on “Weekly event ideas” for at least one friend.</string>
     <string name="msg_nothing">Nothing to do right now.</string>
+    <!-- The Plans tab (issue #67) -->
+    <string name="plans_title">Plans</string>
+    <string name="plans_coming_up">Coming up</string>
+    <string name="plans_empty">No plans yet. Tap + to make one.</string>
+    <string name="plans_gift_lists_title">Gift lists</string>
+    <string name="plans_gift_lists_hint">Christmas, a Secret Santa, birthdays</string>
+    <string name="plans_gift_lists_progress">%1$s · %2$d of %3$d bought</string>
+    <string name="plans_free_title">Who’s free for…?</string>
+    <string name="plans_free_body">Find people for an activity</string>
+    <string name="plans_ideas_title">Ideas for this week</string>
+    <string name="plans_ideas_all">All %1$d</string>
+    <string name="plans_ideas_empty">No ideas yet. Open them to look for some.</string>
 </resources>

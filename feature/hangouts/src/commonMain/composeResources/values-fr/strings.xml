@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title">Ensemble</string>
-    <string name="subtitle_seen">Tu as vu %1$d amis ce mois-ci 💛</string>
-    <string name="subtitle_none">Crée des souvenirs ce mois-ci</string>
-    <string name="hero_cta">Je suis avec…</string>
-    <string name="hero_cta_description">Je suis avec quelqu’un en ce moment</string>
-    <string name="hero_hint">Touche pour retenir avec qui tu es, et où</string>
-    <string name="hero_meetups">rencontres\nce mois-ci</string>
-    <string name="hero_friends">amis\nvus</string>
-    <string name="hero_spot">lieu\npréféré</string>
-    <string name="section_catch_up">Il est temps de se revoir</string>
-    <string name="section_coming_due">Bientôt</string>
-    <plurals name="meet_days_since">
-        <item quantity="one">%1$d jour depuis votre dernière rencontre · objectif %2$s</item>
-        <item quantity="other">%1$d jours depuis votre dernière rencontre · objectif %2$s</item>
-    </plurals>
-    <string name="meet_never">Aucune rencontre enregistrée</string>
-    <string name="meet_due">Prévu %1$s · %2$s</string>
-    <string name="meet_met">Vus</string>
-    <string name="groups_title">Vos cercles</string>
+    <string name="title">Cercles</string>
     <string name="groups_new">Nouveau cercle</string>
     <string name="groups_hint">Chorale, futsal, la vieille équipe… Un cercle filtre l’accueil, note une sortie avec tout le monde d’un coup et, si vous voulez, vous prévient quand ça fait longtemps.</string>
     <string name="group_last_together">Réunis %1$s</string>
@@ -32,9 +14,6 @@
     <string name="group_snooze_week">Reporter d’une semaine</string>
     <string name="group_snooze_weekend">Me le rappeler samedi</string>
     <string name="group_more">Plus</string>
-    <string name="review_card_title">Ton année %1$d en amitié</string>
-    <string name="review_card_body">Qui tu as vu le plus, tes lieux préférés et ta plus longue série — prêt à partager.</string>
-    <string name="review_card_cta">Voir ton année</string>
     <string name="section_last_time_with">La dernière fois avec…</string>
     <string name="clear">Effacer</string>
     <string name="last_together">Vus ensemble %1$s</string>
@@ -99,7 +78,6 @@
     </plurals>
     <string name="met_more_people">Afficher %1$d de plus</string>
     <string name="gift_lists_title">Listes de cadeaux</string>
-    <string name="gift_lists_hint">Noël, Secret Santa, anniversaires : qui reçoit quoi, et le budget</string>
     <string name="gift_lists_new">Nouvelle liste</string>
     <string name="gift_lists_empty">Pas encore de liste. Créez-en une pour Noël, un Secret Santa ou un anniversaire.</string>
     <string name="gift_lists_past">Passées</string>

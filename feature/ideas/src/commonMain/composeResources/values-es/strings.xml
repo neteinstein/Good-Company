@@ -45,4 +45,16 @@
     <string name="msg_no_key">Primero añade tu clave de API en Ajustes.</string>
     <string name="msg_no_friends">Activa “Ideas de planes semanales” para al menos un amigo.</string>
     <string name="msg_nothing">Nada que hacer ahora mismo.</string>
+    <!-- The Plans tab (issue #67) -->
+    <string name="plans_title">Planes</string>
+    <string name="plans_coming_up">Próximamente</string>
+    <string name="plans_empty">Aún no hay planes. Toca + para hacer uno.</string>
+    <string name="plans_gift_lists_title">Listas de regalos</string>
+    <string name="plans_gift_lists_hint">Navidad, amigo invisible, cumpleaños</string>
+    <string name="plans_gift_lists_progress">%1$s · %2$d de %3$d comprados</string>
+    <string name="plans_free_title">¿Quién se apunta a…?</string>
+    <string name="plans_free_body">Encuentra gente para una actividad</string>
+    <string name="plans_ideas_title">Ideas para esta semana</string>
+    <string name="plans_ideas_all">Todas (%1$d)</string>
+    <string name="plans_ideas_empty">Aún no hay ideas. Ábrelas para buscar.</string>
 </resources>

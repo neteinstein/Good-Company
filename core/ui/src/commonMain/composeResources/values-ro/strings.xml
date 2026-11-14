@@ -611,4 +611,8 @@
     <string name="catchup_message">Mesaj</string>
     <string name="catchup_more">Mai mult</string>
     <string name="open_settings">Setări</string>
+    <!-- "Your year in friendship" card on Today and Plans, in December (issue #67) -->
+    <string name="review_card_title">Anul tău %1$d în prietenie</string>
+    <string name="review_card_body">Pe cine ai văzut cel mai des, locurile preferate și cea mai lungă serie — gata de distribuit.</string>
+    <string name="review_card_cta">Vezi-ți anul</string>
 </resources>

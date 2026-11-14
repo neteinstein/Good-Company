@@ -2,8 +2,6 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,12 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EventAvailable
@@ -35,13 +30,13 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -57,14 +52,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.isBuiltIn
@@ -74,7 +65,6 @@ import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
-import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
@@ -87,26 +77,18 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
-import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.circle_built_in
 import com.neteinstein.goodcompany.core.ui.resources.circle_next_plan
+import com.neteinstein.goodcompany.core.ui.resources.plan_circle_people
 import com.neteinstein.goodcompany.core.ui.resources.plan_make
+import com.neteinstein.goodcompany.core.ui.resources.plan_people_count
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
-import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.clear
 import com.neteinstein.goodcompany.feature.hangouts.resources.delete_memory
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_days
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_due
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_hint
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_never
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_plan
-import com.neteinstein.goodcompany.feature.hangouts.resources.free_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_hint
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_delete
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_due
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_edit
@@ -120,13 +102,8 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.group_snooze_weeke
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_snoozed
 import com.neteinstein.goodcompany.feature.hangouts.resources.groups_hint
 import com.neteinstein.goodcompany.feature.hangouts.resources.groups_new
-import com.neteinstein.goodcompany.feature.hangouts.resources.groups_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.last_together
 import com.neteinstein.goodcompany.feature.hangouts.resources.last_together_place
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_days_since
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_due
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_met
-import com.neteinstein.goodcompany.feature.hangouts.resources.meet_never
 import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_body
 import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_deleted
@@ -136,20 +113,12 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_unava
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_memory_deleted
 import com.neteinstein.goodcompany.feature.hangouts.resources.never_all
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_body
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_cta
-import com.neteinstein.goodcompany.feature.hangouts.resources.review_card_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_catch_up
-import com.neteinstein.goodcompany.feature.hangouts.resources.section_coming_due
 import com.neteinstein.goodcompany.feature.hangouts.resources.section_last_time_with
 import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories
 import com.neteinstein.goodcompany.feature.hangouts.resources.section_memories_together
 import com.neteinstein.goodcompany.feature.hangouts.resources.someone
-import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_none
-import com.neteinstein.goodcompany.feature.hangouts.resources.subtitle_seen
 import com.neteinstein.goodcompany.feature.hangouts.resources.times_total
 import com.neteinstein.goodcompany.feature.hangouts.resources.title
-import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInHero
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInSheet
 import kotlinx.datetime.Month
 import kotlinx.datetime.toLocalDateTime
@@ -159,14 +128,14 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
+/** The Circles tab (issue #67, was Together): a card per circle, then "Last time with…" and the memories. */
 @Composable
 fun HangoutsScreen(
     onOpenFriend: (FriendId) -> Unit,
-    onOpenYearReview: (Int) -> Unit,
+    /** "+" (a new circle, null) and tapping a circle's card (its id): `CircleEditorRoute`. */
     onEditCircle: (String?) -> Unit = {},
     /** "We met" on a circle card: opens the small "We met" panel on that circle, nobody ticked (issue #47, F20). */
     onCircleMet: (String) -> Unit = {},
-    onOpenGiftLists: () -> Unit = {},
     /** The header's Settings button (issue #65). */
     onOpenSettings: () -> Unit = {},
     viewModel: HangoutsViewModel = koinViewModel(),
@@ -177,8 +146,6 @@ fun HangoutsScreen(
         state = state,
         actions = HangoutsActions(
             onOpenFriend = onOpenFriend,
-            onOpenYearReview = onOpenYearReview,
-            onStartCheckIn = viewModel::onStartCheckIn,
             onToggleFilter = viewModel::onToggleFilter,
             onClearFilter = viewModel::onClearFilter,
             onDeleteHangout = viewModel::onDeleteHangout,
@@ -189,10 +156,7 @@ fun HangoutsScreen(
             onSnoozeGroup = viewModel::onSnoozeGroup,
             onDeleteGroup = viewModel::onDeleteGroup,
             onMessageShown = viewModel::onMessageShown,
-            onSelectOccasion = viewModel::onSelectOccasion,
-            onPlanWith = viewModel::onPlanWith,
             onPlanWithCircle = viewModel::onPlanWithCircle,
-            onOpenGiftLists = onOpenGiftLists,
             onOpenSettings = onOpenSettings,
         ),
     )
@@ -202,8 +166,6 @@ fun HangoutsScreen(
             today = state.today,
             onDismiss = viewModel::onDismissPlan,
             onSave = viewModel::onSavePlan,
-            preselected = setOfNotNull(draft.friendId),
-            initialTitle = draft.occasion?.let { occasionLabel(it) }.orEmpty(),
             circles = state.groups.map { it.group },
             preselectedCircle = draft.circleId,
         )
@@ -230,8 +192,6 @@ fun HangoutsScreen(
 
 data class HangoutsActions(
     val onOpenFriend: (FriendId) -> Unit = {},
-    val onOpenYearReview: (Int) -> Unit = {},
-    val onStartCheckIn: (FriendId?) -> Unit = {},
     val onToggleFilter: (FriendId) -> Unit = {},
     val onClearFilter: () -> Unit = {},
     val onDeleteHangout: (String) -> Unit = {},
@@ -242,12 +202,8 @@ data class HangoutsActions(
     val onSnoozeGroup: (String, SnoozeOption) -> Unit = { _, _ -> },
     val onDeleteGroup: (String) -> Unit = {},
     val onMessageShown: () -> Unit = {},
-    val onSelectOccasion: (Occasion) -> Unit = {},
-    val onPlanWith: (FriendId, Occasion) -> Unit = { _, _ -> },
     /** "Plan" on a circle's card. */
     val onPlanWithCircle: (String) -> Unit = {},
-    /** Gift lists per occasion (F8). */
-    val onOpenGiftLists: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
 )
 
@@ -288,104 +244,18 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
         ) {
             item(key = "header") {
                 ScreenHeader(
-                    eyebrow = monthLong(state.today.month),
                     title = stringResource(Res.string.title),
-                    subtitle = if (state.stats.meetups > 0) {
-                        stringResource(Res.string.subtitle_seen, state.stats.friendsSeen)
-                    } else {
-                        stringResource(Res.string.subtitle_none)
+                    trailing = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            FilledTonalIconButton(onClick = actions.onNewGroup) {
+                                Icon(Icons.Rounded.Add, stringResource(Res.string.groups_new))
+                            }
+                            HeaderSettingsButton(actions.onOpenSettings)
+                        }
                     },
-                    trailing = { HeaderSettingsButton(actions.onOpenSettings) },
                 )
             }
-            item(key = "hero") { CheckInHero(state.stats, state.celebrate, onClick = { actions.onStartCheckIn(null) }) }
-
-            state.reviewYear?.let { year ->
-                item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
-            }
-
-            if (state.overdue.isNotEmpty()) {
-                item(key = "overdue-h") { SectionHeader(stringResource(Res.string.section_catch_up)) }
-                items(state.overdue, key = { "o-${it.friend.id.value}" }) { s ->
-                    MeetupRow(
-                        friend = s.friend,
-                        progress = 1f,
-                        overdue = true,
-                        subtitle = s.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.meet_days_since, it, it, everyNDays(s.cadenceDays)) }
-                            ?: stringResource(Res.string.meet_never),
-                        onClick = { actions.onOpenFriend(s.friend.id) },
-                        trailing = {
-                            FilledTonalButton(onClick = { actions.onStartCheckIn(s.friend.id) }) { Text(stringResource(Res.string.meet_met)) }
-                        },
-                        modifier = Modifier.animateItem(),
-                    )
-                }
-            }
-            if (state.upcoming.isNotEmpty()) {
-                item(key = "upcoming-h") { SectionHeader(stringResource(Res.string.section_coming_due)) }
-                items(state.upcoming, key = { "u-${it.friend.id.value}" }) { s ->
-                    val goal = s.cadenceDays.coerceAtLeast(1)
-                    MeetupRow(
-                        friend = s.friend,
-                        progress = (s.daysSinceLastSeen ?: 0).toFloat() / goal,
-                        overdue = false,
-                        subtitle = stringResource(Res.string.meet_due, relativeDayPhrase(s.dueDate, state.today), everyNDays(goal)),
-                        onClick = { actions.onOpenFriend(s.friend.id) },
-                        modifier = Modifier.animateItem(),
-                    )
-                }
-            }
-
-            item(key = "free-h") { SectionHeader(stringResource(Res.string.free_title)) }
-            if (state.occasions.isEmpty()) {
-                item(key = "free-hint") {
-                    Text(
-                        stringResource(Res.string.free_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-                    )
-                }
-            } else {
-                item(key = "free-chips") {
-                    Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        state.occasions.keys.forEach { o ->
-                            FilterChip(o == state.selectedOccasion, { actions.onSelectOccasion(o) }, label = { Text(occasionLabel(o)) })
-                        }
-                    }
-                }
-                val occasion = state.selectedOccasion
-                val matches = occasion?.let { state.occasions[it] }.orEmpty().take(FREE_LIMIT)
-                items(matches, key = { "free-${occasion?.name}-${it.friend.id.value}" }) { m ->
-                    MeetupRow(
-                        friend = m.friend,
-                        progress = if (m.catchUpDue) 1f else 0f,
-                        overdue = false,
-                        subtitle = when {
-                            m.catchUpDue -> stringResource(Res.string.free_due)
-                            m.daysSinceLastSeen != null -> pluralStringResource(Res.plurals.free_days, m.daysSinceLastSeen!!, m.daysSinceLastSeen!!)
-                            else -> stringResource(Res.string.free_never)
-                        },
-                        onClick = { actions.onOpenFriend(m.friend.id) },
-                        trailing = {
-                            TextButton(onClick = { occasion?.let { actions.onPlanWith(m.friend.id, it) } }) {
-                                Text(stringResource(Res.string.free_plan))
-                            }
-                        },
-                        modifier = Modifier.animateItem(),
-                    )
-                }
-            }
-
-            item(key = "groups-h") {
-                SectionHeader(stringResource(Res.string.groups_title)) {
-                    TextButton(onClick = actions.onNewGroup) { Text(stringResource(Res.string.groups_new)) }
-                }
-            }
-            if (state.groups.isEmpty()) {
+            if (!state.isLoading && state.groups.isEmpty()) {
                 item(key = "groups-empty") {
                     Text(
                         stringResource(Res.string.groups_hint),
@@ -396,18 +266,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                 }
             }
             items(state.groups, key = { "g-${it.group.id}" }) { g ->
-                GroupCard(g, state, actions, Modifier.animateItem())
-            }
-
-            item(key = "gift-lists") {
-                // F8: gift lists sit with the circles, since a list is usually "the cousins" or "the choir".
-                ListItem(
-                    headlineContent = { Text(stringResource(Res.string.gift_lists_title)) },
-                    supportingContent = { Text(stringResource(Res.string.gift_lists_hint)) },
-                    leadingContent = { Icon(Icons.Rounded.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null) },
-                    modifier = Modifier.clickable(onClick = actions.onOpenGiftLists).padding(horizontal = 4.dp),
-                )
+                CircleCard(g, state, actions, Modifier.animateItem())
             }
 
             item(key = "filter-h") {
@@ -542,52 +401,33 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
     }
 }
 
+/** One circle as a big card in its colour (issue #67): emoji, name, how many and when, the members and "We met". */
 @Composable
-private fun YearReviewCard(year: Int, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = MaterialTheme.shapes.large,
-        color = Color.Transparent,
-    ) {
-        Row(
-            Modifier.background(Brush.linearGradient(OnColorGradients.Indigo)).padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("✨", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(Res.string.review_card_title, year), style = MaterialTheme.typography.titleMedium, color = Color.White)
-                Text(stringResource(Res.string.review_card_body), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.9f))
-            }
-            Icon(Icons.AutoMirrored.Rounded.ArrowForward, stringResource(Res.string.review_card_cta), tint = Color.White)
-        }
-    }
-}
-
-@Composable
-private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState, actions: HangoutsActions, modifier: Modifier = Modifier) {
+private fun CircleCard(status: Relationships.GroupStatus, state: HangoutsUiState, actions: HangoutsActions, modifier: Modifier = Modifier) {
     val g = status.group
     val snoozed = g.snoozedUntil?.takeIf { it >= state.today }
-    val overdue = status.isOverdue(state.today)
+    val overdue = status.isOverdue(state.today) && snoozed == null
+    val palette = circlePalette(g.color)
     var menu by remember { mutableStateOf(false) }
     Surface(
         // The built-in Family circle (F6) fills itself and can't be edited or deleted.
         onClick = { if (!g.isBuiltIn) actions.onEditGroup(g.id) },
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = palette.accent,
+        contentColor = palette.onAccent,
     ) {
-        Row(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(48.dp).background(circlePalette(g.color).container, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) { Text(g.emoji, style = MaterialTheme.typography.titleLarge) }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(g.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    when {
+        Column(Modifier.padding(start = 16.dp, top = 14.dp, bottom = 14.dp, end = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier.size(44.dp).background(palette.onAccent.copy(alpha = 0.18f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { Text(g.emoji, style = MaterialTheme.typography.titleLarge) }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(g.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    val people = pluralStringResource(CoreRes.plurals.plan_people_count, status.members.size, status.members.size)
+                    val detail = when {
                         snoozed != null -> stringResource(Res.string.group_snoozed, snoozed.shortLabel())
                         overdue && g.meetEveryDays != null -> stringResource(Res.string.group_overdue, everyNDays(g.meetEveryDays!!))
                         status.dueDate != null && g.meetEveryDays != null ->
@@ -596,143 +436,97 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                             Res.string.group_last_together,
                             relativePast(status.lastTogether!!, state.now, state.zone),
                         )
+                        g.isBuiltIn -> stringResource(CoreRes.string.circle_built_in)
                         else -> stringResource(Res.string.group_never)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (overdue && snoozed == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                state.circlePlans[g.id]?.let { plan ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            if (plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable,
-                            null,
-                            Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            stringResource(CoreRes.string.circle_next_plan, plan.title, plan.date.shortLabel()),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
+                    Text(
+                        stringResource(CoreRes.string.plan_circle_people, people, detail),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.onAccent.copy(alpha = 0.9f),
+                    )
                 }
-                Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StackedAvatars(status.members, size = 24.dp, max = 6)
-                    Spacer(Modifier.width(10.dp))
-                    val pad = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
-                    val label: @Composable () -> Unit = {
-                        Text(stringResource(Res.string.group_met), style = MaterialTheme.typography.labelLarge, maxLines = 1)
-                    }
-                    if (overdue && snoozed == null) {
-                        Button(onClick = { actions.onCheckInGroup(g.id) }, contentPadding = pad, modifier = Modifier.height(34.dp)) { label() }
-                    } else {
-                        FilledTonalButton(onClick = {
-                            actions.onCheckInGroup(g.id)
-                        }, contentPadding = pad, modifier = Modifier.height(34.dp)) { label() }
+                if (!g.isBuiltIn) {
+                    Box {
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
+                        CircleMenu(g.id, g.meetEveryDays != null, menu, onDismiss = { menu = false }, actions = actions)
                     }
                 }
             }
-            if (g.isBuiltIn) {
-                Text(
-                    stringResource(CoreRes.string.circle_built_in),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                )
-            } else {
-                Box {
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
-                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(CoreRes.string.plan_make)) },
-                            leadingIcon = { Icon(Icons.Rounded.EventAvailable, null) },
-                            onClick = {
-                                menu = false
-                                actions.onPlanWithCircle(g.id)
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_edit)) },
-                            leadingIcon = { Icon(Icons.Rounded.Edit, null) },
-                            onClick = {
-                                menu = false
-                                actions.onEditGroup(g.id)
-                            },
-                        )
-                        if (g.meetEveryDays != null) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.group_snooze_weekend)) },
-                                leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
-                                onClick = {
-                                    menu = false
-                                    actions.onSnoozeGroup(g.id, SnoozeOption.WEEKEND)
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(Res.string.group_snooze_week)) },
-                                leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
-                                onClick = {
-                                    menu = false
-                                    actions.onSnoozeGroup(g.id, SnoozeOption.ONE_WEEK)
-                                },
-                            )
-                        }
-                        DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_delete)) },
-                            leadingIcon = { Icon(Icons.Rounded.Delete, null) },
-                            onClick = {
-                                menu = false
-                                actions.onDeleteGroup(g.id)
-                            },
-                        )
-                    }
+            state.circlePlans[g.id]?.let { plan ->
+                Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable, null, Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(CoreRes.string.circle_next_plan, plan.title, plan.date.shortLabel()),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.padding(end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                StackedAvatars(status.members, size = 32.dp, max = 6)
+                Spacer(Modifier.weight(1f))
+                // Overdue: the button stands out (the card's text colour as its fill).
+                Button(
+                    onClick = { actions.onCheckInGroup(g.id) },
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (overdue) palette.onAccent else palette.onAccent.copy(alpha = 0.2f),
+                        contentColor = if (overdue) palette.accent else palette.onAccent,
+                    ),
+                ) { Text(stringResource(Res.string.group_met), style = MaterialTheme.typography.labelLarge, maxLines = 1) }
             }
         }
     }
 }
 
 @Composable
-private fun MeetupRow(
-    friend: Friend,
-    progress: Float,
-    overdue: Boolean,
-    subtitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-    ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(
-                progress,
-                size = 52.dp,
-                stroke = 4.dp,
-                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-            ) {
-                FriendAvatar(friend, size = 40.dp)
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(friend.displayName, style = MaterialTheme.typography.titleSmall)
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            trailing?.invoke()
+private fun CircleMenu(id: String, hasRhythm: Boolean, open: Boolean, onDismiss: () -> Unit, actions: HangoutsActions) {
+    DropdownMenu(open, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(CoreRes.string.plan_make)) },
+            leadingIcon = { Icon(Icons.Rounded.EventAvailable, null) },
+            onClick = {
+                onDismiss()
+                actions.onPlanWithCircle(id)
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.group_edit)) },
+            leadingIcon = { Icon(Icons.Rounded.Edit, null) },
+            onClick = {
+                onDismiss()
+                actions.onEditGroup(id)
+            },
+        )
+        if (hasRhythm) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.group_snooze_weekend)) },
+                leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                onClick = {
+                    onDismiss()
+                    actions.onSnoozeGroup(id, SnoozeOption.WEEKEND)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.group_snooze_week)) },
+                leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                onClick = {
+                    onDismiss()
+                    actions.onSnoozeGroup(id, SnoozeOption.ONE_WEEK)
+                },
+            )
         }
+        DropdownMenuItem(
+            text = { Text(stringResource(Res.string.group_delete)) },
+            leadingIcon = { Icon(Icons.Rounded.Delete, null) },
+            onClick = {
+                onDismiss()
+                actions.onDeleteGroup(id)
+            },
+        )
     }
 }
-
-private const val FREE_LIMIT = 5

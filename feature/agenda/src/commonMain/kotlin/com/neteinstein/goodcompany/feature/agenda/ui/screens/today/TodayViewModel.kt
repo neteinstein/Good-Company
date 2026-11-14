@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -81,6 +82,8 @@ data class TodayUiState(
     val wishFor: Friend? = null,
     val wishDraft: String? = null,
     val isDraftingWish: Boolean = false,
+    /** "Your year in friendship" in December (issue #67), else null. */
+    val reviewYear: Int? = null,
     val today: LocalDate = LocalDate(2000, 1, 1),
 ) {
     /** There is someone to check in with: the "I'm with…" card shows. */
@@ -105,6 +108,7 @@ class TodayViewModel(
     observeStories: ObserveStoryBubblesUseCase,
     observeFriends: ObserveFriendsUseCase,
     observeSettings: ObserveSettingsUseCase,
+    observeReviewYear: ObserveYearReviewCardUseCase,
     private val addReminder: AddReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
     private val logCall: LogCallUseCase,
@@ -118,9 +122,11 @@ class TodayViewModel(
         observeAgenda(),
         observeMeetups(),
         observeStories(),
-        combine(observeFriends(), observeSettings()) { friends, settings -> friends to settings },
+        combine(observeFriends(), observeSettings(), observeReviewYear(), ::Triple),
         local,
-    ) { agenda, meetups, stories, (friends, settings), ui -> build(ui, agenda, meetups, stories, friends, settings) }
+    ) { agenda, meetups, stories, (friends, settings, reviewYear), ui ->
+        build(ui, agenda, meetups, stories, friends, settings).copy(reviewYear = reviewYear)
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
     private fun build(

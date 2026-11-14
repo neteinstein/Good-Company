@@ -15,6 +15,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
@@ -48,10 +49,12 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTim
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInSheetHost
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashboardScreen
@@ -245,9 +248,7 @@ fun AppNavHost(
             sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) {
                 HangoutsScreen(
                     onOpenFriend = openFriend,
-                    onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
                     onEditCircle = editCircle,
-                    onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     onCircleMet = circleMet,
                     onOpenSettings = openSettings,
                 )
@@ -264,6 +265,7 @@ fun AppNavHost(
                     onOpenPeople = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
                     // "I'm with…" lives with the circles (feature modules never depend on each other).
                     checkInSheet = { onSaved, onDismiss -> CheckInSheetHost(onSaved = onSaved, onDismiss = onDismiss) },
+                    onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
                 )
             }
             // "Everything coming up" (the old Coming up tab), pushed from Today.
@@ -282,13 +284,32 @@ fun AppNavHost(
                 }
             }
             composable<IdeasRoute> {
-                // Plans (issue #67 builds it): the weekly ideas while AI is on; with AI off nothing AI shows (F1),
-                // so the tab holds the gift lists until then.
+                // Plans (issue #67): works with AI off; the weekly ideas card shows only while AI is on (F1).
+                PlansScreen(
+                    onOpenSettings = openSettings,
+                    onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
+                    onOpenWhosFree = { navController.navigate(WhosFreeRoute) { launchSingleTop = true } },
+                    onOpenIdeas = { navController.navigate(WeeklyIdeasRoute) { launchSingleTop = true } },
+                    onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
+                    onLogPlan = logPlan,
+                )
+            }
+            composable<WeeklyIdeasRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                // Turning AI off while here leaves nothing to show (F1): go back to Plans.
                 if (aiEnabled) {
-                    IdeasScreen(onOpenSettings = openSettings)
+                    IdeasScreen(onOpenSettings = openSettings, onBack = { navController.popBackStack() })
                 } else {
-                    GiftListsScreen(onBack = null, onOpenList = { navController.navigate(GiftListRoute(it)) }, onOpenSettings = openSettings)
+                    LaunchedEffect(Unit) { navController.popBackStack() }
                 }
+            }
+            composable<WhosFreeRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                WhosFreeScreen(onBack = { navController.popBackStack() }, onOpenFriend = openFriend)
             }
             composable<SettingsRoute>(
                 enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },

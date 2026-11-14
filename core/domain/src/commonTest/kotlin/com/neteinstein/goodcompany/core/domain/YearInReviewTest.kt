@@ -65,4 +65,13 @@ class YearInReviewTest {
         assertEquals(2, YearInReviewBuilder.longestWeekStreak(d)) // weeks of Jan 5 and Jan 12
         assertEquals(0, YearInReviewBuilder.longestWeekStreak(emptyList()))
     }
+
+    @Test
+    fun theCardShowsInDecemberOnceTheYearHasAMeetup() {
+        val hangouts = listOf(Hangout("1", listOf(ana), at(2026, 3, 2)))
+        assertEquals(2026, YearInReviewBuilder.cardYear(LocalDate(2026, 12, 1), hangouts, TimeZone.UTC))
+        assertEquals(null, YearInReviewBuilder.cardYear(LocalDate(2026, 11, 30), hangouts, TimeZone.UTC))
+        assertEquals(null, YearInReviewBuilder.cardYear(LocalDate(2027, 12, 1), hangouts, TimeZone.UTC))
+        assertEquals(null, YearInReviewBuilder.cardYear(LocalDate(2026, 12, 1), emptyList(), TimeZone.UTC))
+    }
 }

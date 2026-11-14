@@ -1,27 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title">Together</string>
-    <string name="subtitle_seen">You’ve seen %1$d friends this month 💛</string>
-    <string name="subtitle_none">Make some memories this month</string>
+    <string name="title">Circles</string>
 
-    <string name="hero_cta">I’m with…</string>
-    <string name="hero_cta_description">I’m with someone now</string>
-    <string name="hero_hint">Tap to remember who you’re with, and where</string>
-    <string name="hero_meetups">meetups\nthis month</string>
-    <string name="hero_friends">friends\nseen</string>
-    <string name="hero_spot">favourite\nspot</string>
 
-    <string name="section_catch_up">Time to catch up</string>
-    <string name="section_coming_due">Coming due</string>
-    <plurals name="meet_days_since">
-        <item quantity="one">%1$d day since you met · goal %2$s</item>
-        <item quantity="other">%1$d days since you met · goal %2$s</item>
-    </plurals>
-    <string name="meet_never">No meetup logged yet</string>
-    <string name="meet_due">Due %1$s · %2$s</string>
-    <string name="meet_met">Met</string>
 
-    <string name="groups_title">Your circles</string>
     <string name="groups_new">New circle</string>
     <string name="groups_hint">Choir, futsal, the old team… A circle filters Home, logs a meetup with everyone at once and, if you like, reminds you when it’s been a while.</string>
     <string name="group_last_together">Together %1$s</string>
@@ -36,9 +18,6 @@
     <string name="group_snooze_weekend">Remind me Saturday</string>
     <string name="group_more">More</string>
 
-    <string name="review_card_title">Your %1$d in friendship</string>
-    <string name="review_card_body">Who you saw most, your favourite spots and your longest streak — ready to share.</string>
-    <string name="review_card_cta">See your year</string>
 
     <string name="section_last_time_with">Last time with…</string>
     <string name="clear">Clear</string>
@@ -106,7 +85,6 @@
     </plurals>
     <string name="met_more_people">Show %1$d more</string>
     <string name="gift_lists_title">Gift lists</string>
-    <string name="gift_lists_hint">Christmas, a Secret Santa, birthdays: who gets what, and the budget</string>
     <string name="gift_lists_new">New list</string>
     <string name="gift_lists_empty">No gift lists yet. Make one for Christmas, a Secret Santa or a birthday.</string>
     <string name="gift_lists_past">Past</string>

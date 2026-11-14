@@ -7,7 +7,6 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
-import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
@@ -17,11 +16,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.HangoutWithFriends
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.OccasionMatch
 import com.neteinstein.goodcompany.core.domain.usecase.PlaceBook
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
@@ -30,7 +26,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
-import com.neteinstein.goodcompany.core.domain.usecase.YearInReviewBuilder
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlaceState
 import com.neteinstein.goodcompany.core.ui.components.meetupPlaceState
@@ -39,14 +34,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /** The "I'm with…" sheet. */
@@ -82,36 +75,30 @@ sealed interface HangoutsMessage {
     data object PlanSaved : HangoutsMessage
 }
 
-/** The plan editor, opened from "Who's free for…?" (a friend and an occasion) or from a circle's card. */
-data class PlanDraft(val friendId: FriendId? = null, val occasion: Occasion? = null, val circleId: String? = null)
+/** The plan editor, opened from a circle's card with that circle picked. */
+data class PlanDraft(val circleId: String)
 
+/**
+ * The Circles tab (issue #67, was Together) and the "I'm with…" sheet ([CheckInSheetHost]): the circles, "Last time
+ * with…" and the memories.
+ */
 data class HangoutsUiState(
     /** Close friends first — the check-in picker and the "with…" filter. */
     val friends: List<Friend> = emptyList(),
     val history: List<HangoutWithFriends> = emptyList(),
     val filter: Set<FriendId> = emptySet(),
-    val overdue: List<Relationships.MeetupStatus> = emptyList(),
-    val upcoming: List<Relationships.MeetupStatus> = emptyList(),
     val draft: CheckInDraft? = null,
     /** The check-in's place (F11): named by itself at a known spot, with "Usually here with". */
     val draftPlace: MeetupPlaceState = MeetupPlaceState(),
-    /** Circles ("Your circles"), most overdue first. */
+    /** The circles, the built-in Family circle among them, last met first; never met last (issue #67). */
     val groups: List<Relationships.GroupStatus> = emptyList(),
-    /** The year the "Your year in friendship" card opens, or null when there's nothing to show yet. */
-    val reviewYear: Int? = null,
-    val stats: Relationships.MonthStats = Relationships.MonthStats(0, 0, null),
     /** Hangout deleted a moment ago, offered for undo. */
     val recentlyDeleted: Hangout? = null,
     /** Circle deleted a moment ago, offered for undo. */
     val recentlyDeletedGroup: FriendGroup? = null,
-    /** Increments on every check-in so the UI can celebrate. */
-    val celebrate: Int = 0,
     /** True until the stored data has been read once (so "no memories yet" isn't shown while loading). */
     val isLoading: Boolean = true,
     val message: HangoutsMessage? = null,
-    /** "Who's free for…?": friends per occasion (only occasions someone is tagged with). */
-    val occasions: Map<Occasion, List<OccasionMatch>> = emptyMap(),
-    val selectedOccasion: Occasion? = null,
     val planDraft: PlanDraft? = null,
     /** Each circle's next open plan (its card shows it), by circle id. */
     val circlePlans: Map<String, Plan> = emptyMap(),
@@ -126,10 +113,7 @@ data class HangoutsUiState(
 class HangoutsViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeHistory: ObserveHangoutHistoryUseCase,
-    observeMeetups: ObserveMeetupStatusUseCase,
-    observeAllHangouts: ObserveHangoutHistoryUseCase,
     observeGroups: ObserveGroupsUseCase,
-    observeOccasions: ObserveOccasionMatchesUseCase,
     observePlaceBook: ObservePlaceBookUseCase,
     observePlans: ObservePlansUseCase,
     private val savePlan: SavePlanUseCase,
@@ -148,13 +132,9 @@ class HangoutsViewModel(
     val state: StateFlow<HangoutsUiState> = combine(
         observeFriends(),
         observeHistory(filter),
-        observeMeetups(),
-        combine(observeAllHangouts(flowOf(emptySet())), observeGroups(), observeOccasions(), observePlaceBook(), observePlans(), ::Extras),
+        combine(observeGroups(), observePlaceBook(), observePlans(), ::Extras),
         local,
-    ) { friends, history, meetups, (all, groups, occasions, places, plans), ui ->
-        val today = clock.today()
-        val hangouts = all.map { it.hangout }
-        val reviewYear = YearInReviewBuilder.defaultYear(today, hangouts, clock.timeZone)
+    ) { friends, history, (groups, places, plans), ui ->
         val draft = ui.draft
         ui.copy(
             isLoading = false,
@@ -163,18 +143,13 @@ class HangoutsViewModel(
             } else {
                 meetupPlaceState(draft.place, draft.location, draft.isLocating, draft.placeChanged, places, draft.selected, friends.map { it.friend })
             },
-            groups = groups,
-            reviewYear = reviewYear.takeIf { y -> hangouts.any { it.at.toLocalDateTime(clock.timeZone).year == y } },
-            stats = Relationships.monthStats(all.map { it.hangout }, today, clock.timeZone),
+            // Last met first; circles never met keep their order at the end (sortedByDescending puts nulls last).
+            groups = groups.sortedByDescending { it.lastTogether },
             friends = friends.map { it.friend },
             history = history,
-            overdue = meetups.filter { it.isOverdue(today) },
-            upcoming = meetups.filterNot { it.isOverdue(today) }.take(UPCOMING_LIMIT),
-            occasions = occasions,
             circlePlans = plans.filter { it.circleId != null }.groupBy { it.circleId!! }.mapValues { (_, ps) -> ps.minBy { it.date } },
-            selectedOccasion = ui.selectedOccasion?.takeIf { it in occasions } ?: occasions.keys.firstOrNull(),
             now = clock.now(),
-            today = today,
+            today = clock.today(),
             zone = clock.timeZone,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HangoutsUiState())
@@ -247,7 +222,7 @@ class HangoutsViewModel(
             val place = state.value.draftPlace.match?.place?.name ?: draft.place
             checkIn(draft.selected, place, draft.location, draft.note)
             val names = state.value.friends.filter { it.id in draft.selected }.map { it.displayName.substringBefore(' ') }
-            local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = HangoutsMessage.LoggedWith(names)) }
+            local.update { it.copy(draft = null, message = HangoutsMessage.LoggedWith(names)) }
         }
     }
 
@@ -271,29 +246,16 @@ class HangoutsViewModel(
         }
     }
 
-    fun onSelectOccasion(occasion: Occasion) = local.update { it.copy(selectedOccasion = occasion) }
-
-    fun onPlanWith(friendId: FriendId, occasion: Occasion) = local.update { it.copy(planDraft = PlanDraft(friendId, occasion)) }
-
     /** "Plan" on a circle's card: the editor with that circle picked. */
     fun onPlanWithCircle(circleId: String) = local.update { it.copy(planDraft = PlanDraft(circleId = circleId)) }
 
     fun onDismissPlan() = local.update { it.copy(planDraft = null) }
 
     fun onSavePlan(input: PlanInput) {
-        val draft = local.value.planDraft ?: return
-        if (input.title.isBlank()) return
-        val fallback = draft.friendId
-        val withSomeone = if (input.friendIds.isEmpty() && input.circleId == null &&
-            fallback != null
-        ) {
-            input.copy(friendIds = listOf(fallback))
-        } else {
-            input
-        }
-        if (withSomeone.friendIds.isEmpty() && withSomeone.circleId == null) return
+        if (local.value.planDraft == null || input.title.isBlank()) return
+        if (input.friendIds.isEmpty() && input.circleId == null) return
         viewModelScope.launch {
-            savePlan.save(null, withSomeone)
+            savePlan.save(null, input)
             local.update { it.copy(planDraft = null, message = HangoutsMessage.PlanSaved) }
         }
     }
@@ -301,16 +263,10 @@ class HangoutsViewModel(
     fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null, recentlyDeletedGroup = null) }
 
     private fun Set<FriendId>.toggle(id: FriendId) = if (id in this) this - id else this + id
-
-    private companion object {
-        const val UPCOMING_LIMIT = 5
-    }
 }
 
 private data class Extras(
-    val all: List<HangoutWithFriends>,
     val groups: List<Relationships.GroupStatus>,
-    val occasions: Map<Occasion, List<OccasionMatch>>,
     val places: PlaceBook,
     val plans: List<Plan>,
 )

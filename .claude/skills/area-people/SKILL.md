@@ -18,6 +18,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
   doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; unknown reads as not set).
 - Circle colours come only from `circlePalette` (`:core:ui`).
+- The Circles tab (issue #67) is `HangoutsScreen`/`HangoutsViewModel` behind `HangoutsRoute` (route names kept): circle
+  cards last met first (never met last), Family among them, then "Last time with…" and memories. `CheckInSheetHost`
+  (Today's "I'm with…") shares that ViewModel. "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).
 - The People tab (`FriendsViewModel`, issue #66, F5) groups by `Closeness.entries` then "not set" (`levelOrder`), so a
   new level (e.g. #69's Acquaintances) gets its group and chip by being added to the enum in order; give it a label in
   `closenessLabel`. Chips count the listed people (circle filter and F9 applied, search not); a picked level nobody is in

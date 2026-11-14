@@ -1,25 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="title">Împreună</string>
-    <string name="subtitle_seen">Luna asta ai văzut %1$d prieteni 💛</string>
-    <string name="subtitle_none">Creează amintiri luna asta</string>
-    <string name="hero_cta">Sunt cu…</string>
-    <string name="hero_cta_description">Sunt cu cineva acum</string>
-    <string name="hero_hint">Atinge ca să ții minte cu cine ești și unde</string>
-    <string name="hero_meetups">întâlniri\nluna asta</string>
-    <string name="hero_friends">prieteni\nvăzuți</string>
-    <string name="hero_spot">locul\npreferat</string>
-    <string name="section_catch_up">E timpul să vă revedeți</string>
-    <string name="section_coming_due">În curând</string>
-    <plurals name="meet_days_since">
-        <item quantity="one">%1$d zi de când v-ați văzut · obiectiv %2$s</item>
-        <item quantity="few">%1$d zile de când v-ați văzut · obiectiv %2$s</item>
-        <item quantity="other">%1$d de zile de când v-ați văzut · obiectiv %2$s</item>
-    </plurals>
-    <string name="meet_never">Nicio întâlnire înregistrată încă</string>
-    <string name="meet_due">Scadent %1$s · %2$s</string>
-    <string name="meet_met">Văzuți</string>
-    <string name="groups_title">Cercurile tale</string>
+    <string name="title">Cercuri</string>
     <string name="groups_new">Cerc nou</string>
     <string name="groups_hint">Cor, futsal, echipa de demult… Un cerc filtrează ecranul principal, notează o întâlnire cu toți odată și, dacă vrei, îți amintește când a trecut ceva timp.</string>
     <string name="group_last_together">Împreună %1$s</string>
@@ -33,9 +14,6 @@
     <string name="group_snooze_week">Amână o săptămână</string>
     <string name="group_snooze_weekend">Amintește-mi sâmbătă</string>
     <string name="group_more">Mai mult</string>
-    <string name="review_card_title">Anul tău %1$d în prietenie</string>
-    <string name="review_card_body">Pe cine ai văzut cel mai des, locurile preferate și cea mai lungă serie — gata de distribuit.</string>
-    <string name="review_card_cta">Vezi-ți anul</string>
     <string name="section_last_time_with">Ultima dată cu…</string>
     <string name="clear">Șterge</string>
     <string name="last_together">Împreună ultima dată %1$s</string>
@@ -104,7 +82,6 @@
     </plurals>
     <string name="met_more_people">Arată încă %1$d</string>
     <string name="gift_lists_title">Liste de cadouri</string>
-    <string name="gift_lists_hint">Crăciun, Secret Santa, zile de naștere: cine primește ce și bugetul</string>
     <string name="gift_lists_new">Listă nouă</string>
     <string name="gift_lists_empty">Nicio listă încă. Fă una pentru Crăciun, un Secret Santa sau o zi de naștere.</string>
     <string name="gift_lists_past">Trecute</string>

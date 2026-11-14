@@ -47,4 +47,16 @@
     <string name="msg_no_key">Adaugă mai întâi cheia API în Setări.</string>
     <string name="msg_no_friends">Activează „Idei de ieșiri săptămânale” pentru cel puțin un prieten.</string>
     <string name="msg_nothing">Nimic de făcut acum.</string>
+    <!-- The Plans tab (issue #67) -->
+    <string name="plans_title">Planuri</string>
+    <string name="plans_coming_up">Urmează</string>
+    <string name="plans_empty">Încă nu ai planuri. Atinge + ca să faci unul.</string>
+    <string name="plans_gift_lists_title">Liste de cadouri</string>
+    <string name="plans_gift_lists_hint">Crăciun, Secret Santa, zile de naștere</string>
+    <string name="plans_gift_lists_progress">%1$s · %2$d din %3$d cumpărate</string>
+    <string name="plans_free_title">Cine e liber pentru…?</string>
+    <string name="plans_free_body">Găsește oameni pentru o activitate</string>
+    <string name="plans_ideas_title">Idei pentru săptămâna asta</string>
+    <string name="plans_ideas_all">Toate (%1$d)</string>
+    <string name="plans_ideas_empty">Încă nu sunt idei. Deschide-le ca să cauți.</string>
 </resources>
