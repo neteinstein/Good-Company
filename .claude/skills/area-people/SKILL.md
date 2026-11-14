@@ -46,13 +46,23 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   circle takes its cover and Undo (`RestoreGroupUseCase`) puts it back. The sample surf circle
   (`SampleData.COVER_CIRCLE_ID`) gets `files/sample_circle_cover.jpg` (`SampleCoverFromResources`, an original
   drawing, not a photo); removing the sample removes sample covers only.
-- The People tab (`FriendsViewModel`, issues #66 and #86, F5): header → search field → "Your people" → one row of
-  circle chips (`AllChip` "All · N" + `CircleChip`s, both in `:core:ui`, same size) → the list grouped by
+- The People tab (`FriendsViewModel`, issues #66, #86 and #89, F5): header → search field → "Your people" → one row of
+  circle chips (`PeopleFilterRow`: `AllChip` "All · N ▾", which opens the closeness menu, + `CircleChip`s, same size) → the list grouped by
   `Closeness.entries`, each heading with its count ("Close · 9"). No closeness filter chips, no folding, no circle card
   ("We met" lives on the Circles tab). A circle filters the list and keeps the grouping; "All · N" counts the list with
   no circle. Search hides the card and chips and keeps the grouping. A–Z (⋮ menu) names each row's level in a pill. A
   new level gets its heading by being added to the enum in order; give it a label in `closenessLabel`. The "Your
   people" card uses `ObservePeopleDashboardUseCase(withTrend = false)`.
+- **One people picker (issue #89).** Everywhere people are chosen uses `PeoplePickerSheet` (multiple: reminder,
+  plan, Log sheet, We met, circle editor, gift list) or `PersonPickerSheet` (single: person links), both in `:core:ui`
+  `components/PeoplePicker.kt`; Share to… embeds its body (`PeopleFilterRow` + `peopleByCloseness`) under its
+  suggestions. "I'm with…" keeps its own chips. The filtering is pure domain code: `PeopleFilter` (a circle **or** a
+  closeness level, one at a time: `withCircle` resets the level, `withCloseness` clears the circle) and
+  `PeopleFiltering.apply` (name search, kinship, `exclude`, `listedOnly` for the People tab's F9 rule, level counts).
+  The People tab's row is the same `PeopleFilterRow`: "All · N ▾" opens Everyone + the four levels with counts. The
+  circle stays remembered (`homeCircleFilter`); the level is **not** stored (in memory only, so no persistence change).
+  Callers that pick people pass every circle, Family included (`FriendDetail.circles`, `ShareTargets.filterCircles`).
+  Reminder and plan editors show the chosen people with `ChosenPeople` (avatar chips with × and "+ People").
 - Pickers save on choice, form sheets on close (#64): on a person's page the birthday, family and link sheets put Save
   in `SaveSheetHeader` (above the scroll) and save when dismissed if valid and changed; a relation-to-me chip or a gift
   occasion saves at once. Each such save goes through `FriendDetailViewModel.editWithUndo`/`offerUndo`, which keeps a

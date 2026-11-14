@@ -101,6 +101,8 @@ data class FriendDetail(
     val groups: List<FriendGroup> = emptyList(),
     /** Every circle that can be ticked for them (issue #70): the stored ones, never the built-in Family circle. */
     val allCircles: List<FriendGroup> = emptyList(),
+    /** Every circle, Family included: the people picker's filter row (issue #89). */
+    val circles: List<FriendGroup> = emptyList(),
     /** Things to bring up, from notes and dates you already have (works without an AI key). */
     val topics: List<TopicHint> = emptyList(),
     /** Planned meetups with this friend (or a circle they're in) that haven't happened yet. */
@@ -164,6 +166,7 @@ class ObserveFriendDetailUseCase(
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
             allCircles = gs.filterNot { it.isBuiltIn },
+            circles = gs,
             topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone, kids.map { it.person }),
             plans = ps.filter { p ->
                 p.status == PlanStatus.PLANNED && (id in p.friendIds || gs.any { it.id == p.circleId && id in it.memberIds })

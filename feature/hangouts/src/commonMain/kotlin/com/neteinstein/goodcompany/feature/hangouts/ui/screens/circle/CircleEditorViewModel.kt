@@ -59,6 +59,8 @@ data class CircleEditorUiState(
     val members: List<Friend> = emptyList(),
     /** Everyone who can be added, A–Z. */
     val everyone: List<Friend> = emptyList(),
+    /** The other circles, Family included: the people picker's filter row (issue #89). */
+    val circles: List<FriendGroup> = emptyList(),
     val saving: Boolean = false,
     /** Deleted a moment ago (Undo is on offer). */
     val deleted: FriendGroup? = null,
@@ -133,6 +135,7 @@ class CircleEditorViewModel(
             days = d.days,
             members = d.memberIds.mapNotNull { byId[it]?.friend },
             everyone = friends.map { it.friend }.sortedBy { it.displayName.lowercase() },
+            circles = groups.map { it.group }.filter { it.id != groupId },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), local.value)
 

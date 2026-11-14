@@ -11,7 +11,6 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListMath
-import com.neteinstein.goodcompany.core.domain.usecase.GiftListPicker
 import com.neteinstein.goodcompany.core.domain.usecase.GiftPrices
 import com.neteinstein.goodcompany.core.domain.usecase.Money
 import com.neteinstein.goodcompany.core.domain.usecase.SampleData
@@ -156,14 +155,6 @@ class GiftListsTest {
         assertEquals(listOf(FriendId("bruno")), g.giftListRepo.get(id)!!.entries.map { it.friendId })
         g.giftLists.restore(before)
         assertEquals(2, g.giftListRepo.get(id)!!.entries.size)
-    }
-
-    @Test
-    fun thePicker_findsByNameOrByKinship() {
-        val friends = listOf(friend("tomas", "Tomás Costa") { copy(relationToMe = LinkType.COUSIN) }, friend("ana", "Ana"), friend("rui", "Rui"))
-        assertEquals(listOf("Ana", "Rui", "Tomás Costa"), GiftListPicker.matches(friends, " ", null).map { it.name })
-        assertEquals(listOf("Tomás Costa"), GiftListPicker.matches(friends, "my cousins", setOf(LinkType.COUSIN)).map { it.name })
-        assertEquals(listOf("Rui"), GiftListPicker.matches(friends, "ru", null).map { it.name })
     }
 
     @Test

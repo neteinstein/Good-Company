@@ -7,9 +7,12 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FilteredPeople
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShareTargetsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFiltering
 import com.neteinstein.goodcompany.core.domain.usecase.RankedFriend
 import com.neteinstein.goodcompany.core.domain.usecase.SaveShareRequest
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
@@ -50,8 +53,14 @@ val SHARE_KINDS = listOf(LogKind.MEETUP, LogKind.MESSAGE, LogKind.CALL, LogKind.
 
 data class ShareUiState(
     val content: SharedContent? = null,
-    /** Ranked (named, number in the text, recent, then real friends, then A–Z) and filtered by [query]. */
+    /** Ranked (named, number in the text, recent, then real friends, then A–Z) and filtered by [query] and [filter]. */
     val friends: List<RankedFriend> = emptyList(),
+    /** The people picker's filter row (issue #89): everyone, a closeness level or a circle. */
+    val filter: PeopleFilter = PeopleFilter.Everyone,
+    /** Circles for the filter row, Family included. */
+    val filterCircles: List<FriendGroup> = emptyList(),
+    /** Everyone the filter and search leave who isn't suggested, for the picker's grouped list, with the row's counts. */
+    val others: FilteredPeople<Friend> = FilteredPeople(emptyList(), 0, emptyMap()),
     /** F12: circles to save it for, filtered by [query]. */
     val circles: List<FriendGroup> = emptyList(),
     val hasFriends: Boolean = true,
@@ -76,6 +85,9 @@ data class ShareUiState(
     val closed: Boolean = false,
     val isLoading: Boolean = true,
 ) {
+    /** Suggested on top (named in it, same number, seen today, recent): [friends] with a reason. */
+    val suggested: List<RankedFriend> get() = friends.filter { it.reason != null }
+
     /** The search matched nobody: offer to add the typed name as a friend (never automatic). */
     val canAddTyped: Boolean get() = query.isNotBlank() && friends.isEmpty() && circles.isEmpty()
 
@@ -109,6 +121,8 @@ class ShareToFriendViewModel(
             ui,
         ->
         val q = ui.query.trim().lowercase()
+        val listed = PeopleFiltering.apply(targets.friends, ui.filter, targets.filterCircles, ui.query)
+        val shown = listed.people.mapTo(HashSet()) { it.id }
         val ranked = content?.let { ShareMatcher.rank(targets.friends, it, targets.lastContact, clock.now(), clock.timeZone) }
             ?: targets.friends.sortedBy { it.displayName.lowercase() }.map { RankedFriend(it, null) }
         val byId = targets.friends.associateBy { it.id }
@@ -121,7 +135,9 @@ class ShareToFriendViewModel(
         }
         ui.copy(
             content = content,
-            friends = ranked.filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) },
+            friends = ranked.filter { it.friend.id in shown },
+            filterCircles = targets.filterCircles,
+            others = listed.copy(people = listed.people.filter { f -> ranked.none { it.friend.id == f.id && it.reason != null } }),
             circles = targets.circles.filter { q.isEmpty() || it.name.lowercase().contains(q) },
             hasFriends = targets.friends.isNotEmpty(),
             target = target,
@@ -149,6 +165,9 @@ class ShareToFriendViewModel(
     }
 
     fun onQueryChange(query: String) = local.update { it.copy(query = query) }
+
+    /** The filter row: everyone, a level or a circle, one at a time. */
+    fun onFilter(filter: PeopleFilter) = local.update { it.copy(filter = filter) }
 
     fun onSelect(friend: Friend) = local.update { it.copy(target = PickedTarget.Person(friend)) }
 

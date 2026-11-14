@@ -1084,6 +1084,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             LinkSheet(
                 friend = f,
                 others = detail.others.filter { it.id !in linked },
+                circles = detail.circles,
                 editing = linkEditing,
                 onDismiss = {
                     addingLink = false
@@ -1229,26 +1230,28 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onDismiss = { photoOptions = false },
             )
         }
+        // The people picker lists everyone (issue #89); this person starts chosen.
+        val everyone = listOf(f) + detail.others
         if (state.showReminderEditor) {
-            val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).distinctBy { it.id }
             ReminderEditor(
-                friends = people,
+                friends = everyone,
                 today = state.today,
                 onDismiss = actions.onDismissReminderEditor,
                 onSave = actions.onSaveReminder,
                 preselected = setOf(f.id),
+                circles = detail.circles,
             )
         }
         state.planEditing?.let { editing ->
-            val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).distinctBy { it.id }
             PlanEditor(
-                friends = people,
+                friends = everyone,
                 today = state.today,
                 onDismiss = actions.onDismissPlanEditor,
                 onSave = actions.onSavePlan,
                 preselected = setOf(f.id),
                 initial = editing.plan,
                 circles = detail.groups,
+                pickerCircles = detail.circles,
             )
         }
         if (state.showWish) {

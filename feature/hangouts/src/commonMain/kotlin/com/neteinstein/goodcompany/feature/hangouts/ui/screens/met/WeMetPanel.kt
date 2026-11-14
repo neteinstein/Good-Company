@@ -63,7 +63,7 @@ import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
-import com.neteinstein.goodcompany.core.ui.components.PeoplePicker
+import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
 import com.neteinstein.goodcompany.core.ui.components.activityLabel
 import com.neteinstein.goodcompany.core.ui.components.namesList
@@ -72,6 +72,7 @@ import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_less
 import com.neteinstein.goodcompany.core.ui.resources.log_more
 import com.neteinstein.goodcompany.core.ui.resources.log_note_hint
+import com.neteinstein.goodcompany.core.ui.resources.log_people_title
 import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
@@ -237,10 +238,18 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
         LocalDatePickerDialog(sheet.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = sheet.today)
     }
     if (pickingPeople) {
-        PeoplePicker(sheet.everyone, sheet.people.map { it.id }, onDismiss = { pickingPeople = false }, onDone = {
-            actions.onPeople(it)
-            pickingPeople = false
-        })
+        PeoplePickerSheet(
+            sheet.everyone,
+            sheet.circles,
+            chosen = sheet.people.map { it.id },
+            onDismiss = { pickingPeople = false },
+            onDone = {
+                actions.onPeople(it)
+                pickingPeople = false
+            },
+            title = stringResource(CoreRes.string.log_people_title),
+            requireSomeone = true,
+        )
     }
 }
 

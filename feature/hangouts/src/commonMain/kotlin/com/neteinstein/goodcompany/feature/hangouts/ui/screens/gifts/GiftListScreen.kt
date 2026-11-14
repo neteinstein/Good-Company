@@ -63,12 +63,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListPerson
 import com.neteinstein.goodcompany.core.domain.usecase.GiftTotals
 import com.neteinstein.goodcompany.core.domain.usecase.ListedGift
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
@@ -80,13 +82,11 @@ import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_add_gift
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_add_n
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_add_people
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_ai_ideas
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_ai_working
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_budget
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_budget_each
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_circle_chip
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_edit
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_from_link
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_gift_price
@@ -97,17 +97,13 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_name_age
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_budget
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_new_ideas
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_nobody
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_nobody_found
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_or_search
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_partial
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_pick_ideas
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_planned
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_remove_person
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_removed
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_search_hint
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_set_budget
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_spent
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_whole_circle
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_year
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_duplicate
 import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_more
@@ -145,9 +141,7 @@ fun GiftListScreen(
             onDuplicate = viewModel::onDuplicate,
             onStartAdding = viewModel::onStartAdding,
             onDismissAdding = viewModel::onDismissAdding,
-            onAddQuery = viewModel::onAddQuery,
-            onToggleCircle = viewModel::onToggleCircle,
-            onTogglePerson = viewModel::onTogglePerson,
+            kinshipOf = viewModel::kinshipOf,
             onAddBudget = viewModel::onAddBudget,
             onConfirmAdding = viewModel::onConfirmAdding,
             onSetBudget = viewModel::onSetBudget,
@@ -174,11 +168,10 @@ data class GiftListActions(
     val onDuplicate: () -> Unit = {},
     val onStartAdding: () -> Unit = {},
     val onDismissAdding: () -> Unit = {},
-    val onAddQuery: (String) -> Unit = {},
-    val onToggleCircle: (String) -> Unit = {},
-    val onTogglePerson: (FriendId) -> Unit = {},
+    /** The picker's kinship search ("my cousins"); null for a name search. */
+    val kinshipOf: suspend (String) -> Set<LinkType>? = { null },
     val onAddBudget: (String) -> Unit = {},
-    val onConfirmAdding: () -> Unit = {},
+    val onConfirmAdding: (List<FriendId>) -> Unit = {},
     val onSetBudget: (FriendId, String) -> Unit = { _, _ -> },
     val onRemovePerson: (FriendId) -> Unit = {},
     val onUndoRemove: () -> Unit = {},
@@ -493,88 +486,27 @@ private fun SavedIdeas(person: GiftListPerson, onPick: (String) -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+/** "Add people": the one people picker (issue #89), with one optional budget for everyone added. */
 @Composable
 private fun AddPeopleSheet(draft: AddPeopleDraft, state: GiftListUiState, actions: GiftListActions) {
-    val available = state.detail?.others.orEmpty().map { it.id }.toSet()
-    ModalBottomSheet(onDismissRequest = actions.onDismissAdding) {
-        LazyColumn(
-            Modifier.fillMaxWidth().navigationBarsPadding(),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item(key = "title") { Text(stringResource(Res.string.gift_list_add_people), style = MaterialTheme.typography.headlineSmall) }
-            val circles = state.circles.filter { c -> c.memberIds.any { it in available } }
-            if (circles.isNotEmpty()) {
-                item(key = "circles-h") { Text(stringResource(Res.string.gift_list_whole_circle), style = MaterialTheme.typography.labelLarge) }
-                item(key = "circles") {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        circles.forEach { circle ->
-                            val members = circle.memberIds.filter { it in available }
-                            FilterChip(
-                                selected = draft.picked.containsAll(members),
-                                onClick = { actions.onToggleCircle(circle.id) },
-                                label = { Text(stringResource(Res.string.gift_list_circle_chip, circle.emoji, circle.name, members.size)) },
-                            )
-                        }
-                    }
-                }
-            }
-            item(key = "search-h") { Text(stringResource(Res.string.gift_list_or_search), style = MaterialTheme.typography.labelLarge) }
-            item(key = "search") {
-                OutlinedTextField(
-                    value = draft.query,
-                    onValueChange = actions.onAddQuery,
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    placeholder = { Text(stringResource(Res.string.gift_list_search_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            val matches = state.matches
-            if (matches.isEmpty()) {
-                item(key = "none") {
-                    Text(
-                        stringResource(Res.string.gift_list_nobody_found),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            items(matches, key = { it.id.value }) { friend ->
-                Row(
-                    Modifier.fillMaxWidth().clickable { actions.onTogglePerson(friend.id) }.padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = friend.id in draft.picked, onCheckedChange = { actions.onTogglePerson(friend.id) })
-                    FriendAvatar(friend, size = 40.dp)
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(friend.displayName, style = MaterialTheme.typography.titleSmall)
-                        friend.relationToMe?.let {
-                            Text(
-                                relationToMeText(it, friend.pronouns),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-            item(key = "budget") {
-                OutlinedTextField(
-                    value = draft.budget,
-                    onValueChange = actions.onAddBudget,
-                    label = { Text(stringResource(Res.string.gift_list_budget_each)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            item(key = "confirm") {
-                Button(onClick = actions.onConfirmAdding, enabled = draft.picked.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-                    Text(pluralStringResource(Res.plurals.gift_list_add_n, draft.picked.size, draft.picked.size))
-                }
-            }
-        }
-    }
+    PeoplePickerSheet(
+        everyone = state.addable,
+        circles = state.circles,
+        chosen = emptyList(),
+        onDismiss = actions.onDismissAdding,
+        onDone = actions.onConfirmAdding,
+        title = stringResource(Res.string.gift_list_add_people),
+        requireSomeone = true,
+        kinshipOf = actions.kinshipOf,
+        extra = {
+            OutlinedTextField(
+                value = draft.budget,
+                onValueChange = actions.onAddBudget,
+                label = { Text(stringResource(Res.string.gift_list_budget_each)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+    )
 }
