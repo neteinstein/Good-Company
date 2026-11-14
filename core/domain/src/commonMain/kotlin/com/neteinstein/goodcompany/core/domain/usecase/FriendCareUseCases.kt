@@ -258,7 +258,7 @@ class DraftBirthdayMessageUseCase(
     private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     suspend operator fun invoke(id: FriendId): Result<String> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
         return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts, links, friends), language.languageTag())
     }
@@ -278,7 +278,7 @@ class SuggestGiftsUseCase(
     private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     suspend operator fun invoke(id: FriendId): Result<List<String>> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
         val person = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
         val parent = KidsAsPeople.parentsOf(id, links.links.first(), friends.friends.first().associateBy { it.id }).firstOrNull()
         val alreadyHave = person.gifts.map { it.title.lowercase() }.toSet()

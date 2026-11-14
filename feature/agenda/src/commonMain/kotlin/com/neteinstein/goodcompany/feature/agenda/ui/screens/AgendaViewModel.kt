@@ -59,6 +59,7 @@ data class AgendaUiState(
     val showReminderEditor: Boolean = false,
     val recentlyDeleted: Reminder? = null,
     val message: AgendaMessage? = null,
+    /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
     /** Friend whose birthday-wish sheet is open. */
     val wishFor: Friend? = null,
@@ -109,7 +110,7 @@ class AgendaViewModel(
     ) { agenda, reminders, friends, (settings, calendarCount), ui ->
         ui.copy(
             calendarCount = calendarCount,
-            hasAiKey = settings.hasAiKey,
+            hasAiKey = settings.usableAiKey != null,
             agenda = agenda,
             reminders = reminders,
             friends = friends.map { it.friend },

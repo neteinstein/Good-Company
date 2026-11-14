@@ -46,7 +46,7 @@ import kotlin.test.assertTrue
 class FriendDetailViewModelTest {
     private fun graph(apiKey: String? = null, withKid: Boolean = false) = TestGraph(
         listOf(friend("ana") { copy(likes = listOf("jazz"), kids = if (withKid) listOf(Kid("k1", "Leo")) else emptyList()) }),
-        settings = AppSettings(aiApiKey = apiKey),
+        settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),
     )
 
     private var g = graph()
@@ -88,6 +88,17 @@ class FriendDetailViewModelTest {
         g.clock,
         g.ids,
     )
+
+    @Test
+    fun aiOff_hidesTheAiSection_evenWithAKey() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana")), settings = AppSettings(aiApiKey = "sk-ant-key"))
+        val state = collecting(vm().state)
+        assertFalse(state.value.aiEnabled)
+        assertFalse(state.value.hasAiKey) // no gift or message suggestions either
+        g.settingsRepo.update { it.copy(aiEnabled = true) }
+        assertTrue(state.value.aiEnabled)
+        assertTrue(state.value.hasAiKey)
+    }
 
     @Test
     fun editsFlowBackIntoState() = runViewModelTest {

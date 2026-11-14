@@ -23,7 +23,7 @@ from the wasmJs build. No bundler is needed, so this works where `wasmJsBrowserD
    ```
    Scenes live in `scripts/screenshots/capture.js`. Each is a URL query parsed by
    `composeApp/src/commonMain/.../LaunchOptions.kt`:
-   `demo` (load sample friends), `tab=friends|together|agenda|ideas|settings`, `friend=<id>` (e.g. `sample-ana`),
+   `demo` (load sample friends), `ai` (turn the AI switch on; `tab=ideas` needs it), `tab=friends|together|agenda|ideas|settings`, `friend=<id>` (e.g. `sample-ana`),
    `theme=light|dark`, `onboarding`. `clicks: [[x, y], …]` taps CSS-pixel coordinates after load (used for the
    check-in sheet). Phone viewport is 393×852 at 2× scale.
 3. Rebuild the README banner (needs Pillow):

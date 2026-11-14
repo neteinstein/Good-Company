@@ -195,7 +195,7 @@ class UseCasesTest {
 
     @Test
     fun talkingPoints_storeIdeasForTheFriend() = runTest {
-        settings.update { it.copy(aiApiKey = "sk-test") }
+        settings.update { it.copy(aiApiKey = "sk-test", aiEnabled = true) }
         generator.result = Result.success(
             listOf(
                 GeneratedIdea(emptyList(), "news", "Jazz fest lineup", "Big names announced", "https://example.com", null),
@@ -229,8 +229,13 @@ class UseCasesTest {
                 ),
                 clock, ids,
             )
-        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY), useCase())
+        // AI off (the default): the job never runs, not even forced, whatever the key (F1).
         settings.update { it.copy(aiApiKey = "k") }
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.AI_OFF), useCase())
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.AI_OFF), useCase(force = true))
+        settings.update { it.copy(aiApiKey = null, aiEnabled = true) }
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY), useCase())
+        settings.update { it.copy(aiApiKey = "k", aiEnabled = true) }
         assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN), useCase())
 
         friends.upsert(friends.get(FriendId("ana"))!!.copy(suggestEvents = true))
@@ -251,7 +256,7 @@ class UseCasesTest {
 
     @Test
     fun weeklyIdeas_failureDoesNotAdvanceLastRun() = runTest {
-        settings.update { AppSettings(aiApiKey = "k", homeArea = "Lisbon") }
+        settings.update { AppSettings(aiApiKey = "k", homeArea = "Lisbon", aiEnabled = true) }
         friends.upsert(friends.get(FriendId("ana"))!!.copy(suggestEvents = true))
         generator.result = Result.failure(RuntimeException("boom"))
         val useCase =

@@ -57,6 +57,21 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun aiIsOffByDefault_andTheSwitchKeepsTheKey() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertFalse(state.value.settings.aiEnabled)
+        vm.onAiEnabledChange(true)
+        vm.onSaveApiKey("sk-ant-api03-abcdefghij1234")
+        assertTrue(state.value.settings.aiEnabled)
+        assertEquals("sk-ant-api03-abcdefghij1234", state.value.settings.usableAiKey)
+        vm.onAiEnabledChange(false)
+        assertFalse(state.value.settings.aiEnabled)
+        assertNull(state.value.settings.usableAiKey)
+        assertEquals("sk-ant-…1234", state.value.maskedKey) // kept for when it's turned back on
+    }
+
+    @Test
     fun preferencesUpdate() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)

@@ -30,8 +30,8 @@ import com.neteinstein.goodcompany.core.data.db.readLinks
 import com.neteinstein.goodcompany.core.data.db.readMessages
 import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
-import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
+import com.neteinstein.goodcompany.core.data.db.readStoredPreferences
 import com.neteinstein.goodcompany.core.data.db.toColumn
 import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.writeCalendarDecision
@@ -433,13 +433,15 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
     private val device = PersistentState(settings, DeviceSettings.KEY, DeviceSettings.serializer(), DeviceSettings())
     private val lock = Mutex()
 
+    // An unset AI switch follows the saved key, which is a device setting (issue #37). Kept as one long-lived observer:
+    // restarting it on every device change would cancel queries mid-flight, which the web driver doesn't survive.
     override val settings: Flow<AppSettings> =
-        combine(db.observe(*PREFERENCE_TABLES) { it.readPreferences(AppSettings()) }, device.flow) { preferences, device ->
-            device.applyTo(preferences)
+        combine(db.observe(*PREFERENCE_TABLES) { it.readStoredPreferences() }, device.flow) { preferences, device ->
+            preferences.withDevice(device::applyTo)
         }
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) = lock.withLock {
-        val current = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+        val current = current()
         val next = transform(current)
         if (next != current) {
             db.access { it.writePreferences(next) }
@@ -449,7 +451,7 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
 
     internal suspend fun writeDevice(settings: AppSettings) = device.update { DeviceSettings.of(settings) }
 
-    internal suspend fun current(): AppSettings = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+    internal suspend fun current(): AppSettings = db.access { it.readStoredPreferences() }.withDevice(device.value::applyTo)
 }
 
 /** Answers to calendar suggestions (D3), in their own table. */

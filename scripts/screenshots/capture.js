@@ -20,7 +20,7 @@ const scenes = [
   // Taps the big "I'm with…" button (CSS px) to show the check-in sheet.
   { name: 'checkin', query: '?demo&theme=light&tab=together', viewport: phone, clicks: [[196, 214], [86, 335], [89, 431]] },
   { name: 'agenda', query: '?demo&theme=light&tab=agenda', viewport: phone },
-  { name: 'ideas', query: '?demo&theme=light&tab=ideas', viewport: phone },
+  { name: 'ideas', query: '?demo&ai&theme=light&tab=ideas', viewport: phone },
   { name: 'settings', query: '?demo&theme=light&tab=settings', viewport: phone },
   { name: 'home-dark', query: '?demo&theme=dark', viewport: phone },
   { name: 'friend-dark', query: '?demo&theme=dark&friend=sample-sofia', viewport: phone },

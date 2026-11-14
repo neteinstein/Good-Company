@@ -148,7 +148,7 @@ class GenerateTalkingPointsUseCase(
 ) {
     suspend operator fun invoke(id: FriendId): Result<Int> {
         val s = settings.settings.first()
-        val key = s.aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = s.usableAiKey ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.success(0)
         val request = IdeaRequest(
             apiKey = key,
@@ -173,7 +173,7 @@ sealed interface WeeklyIdeasOutcome {
 
     data class Failed(val error: Throwable) : WeeklyIdeasOutcome
 
-    enum class Reason { DISABLED, NO_API_KEY, NOT_DUE, NO_FRIENDS_OPTED_IN }
+    enum class Reason { AI_OFF, DISABLED, NO_API_KEY, NOT_DUE, NO_FRIENDS_OPTED_IN }
 }
 
 /**
@@ -196,8 +196,9 @@ class RunWeeklyIdeasUseCase(
 ) {
     suspend operator fun invoke(force: Boolean = false): WeeklyIdeasOutcome {
         val s = settings.settings.first()
+        if (!s.aiEnabled) return WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.AI_OFF) // F1: never, not even forced
         if (!force && !s.weeklyIdeasEnabled) return WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.DISABLED)
-        val key = s.aiApiKey?.takeIf { it.isNotBlank() }
+        val key = s.usableAiKey
             ?: return WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY)
         if (!force && !isDue(s)) return WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NOT_DUE)
         val optedIn = friends.friends.first().filter { it.suggestEvents }.take(MAX_FRIENDS_PER_RUN)

@@ -405,4 +405,37 @@ class MigrationTest {
         assertTrue(database.planQueries.allPlanSkips().awaitAsList().isEmpty())
         driver.close()
     }
+
+    @Test
+    fun version13to14_aiFollowsTheSavedKey_untilChosen_andEveryActivityStaysOn() = runTest {
+        val driver = driverAt(13)
+        driver.execute(null, "INSERT INTO user_preferences VALUES (1, 7, 30, 90, 1, 6, 9, 1, 'Lisbon', 1, 0, NULL)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 13, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+
+        // Someone who already had a key keeps AI; someone without one gets the new default (off).
+        assertTrue(database.readPreferences(AppSettings(aiApiKey = "sk-ant-key")).aiEnabled)
+        val withoutKey = database.readPreferences(AppSettings())
+        assertEquals(false, withoutKey.aiEnabled)
+        assertEquals(HangoutActivity.entries, withoutKey.activities)
+        assertEquals("Lisbon", withoutKey.homeArea)
+
+        // Once written, the switch is what the user chose, whatever the key; the activities keep their order.
+        val chosen = withoutKey.copy(aiEnabled = false, activities = listOf(HangoutActivity.WALK, HangoutActivity.COFFEE))
+        database.writePreferences(chosen)
+        val read = database.readPreferences(AppSettings(aiApiKey = "sk-ant-key"))
+        assertEquals(false, read.aiEnabled)
+        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), read.activities)
+        driver.close()
+    }
+
+    @Test
+    fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
+        assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
+        assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))
+        assertEquals(listOf(HangoutActivity.TRIP, HangoutActivity.LUNCH), activitiesFromColumn("TRIP,BOWLING,LUNCH,TRIP"))
+        assertNull(HangoutActivity.entries.toActivitiesColumn())
+        assertEquals("TRIP,LUNCH", listOf(HangoutActivity.TRIP, HangoutActivity.LUNCH).toActivitiesColumn())
+    }
 }

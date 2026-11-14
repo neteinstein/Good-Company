@@ -359,10 +359,22 @@ internal suspend fun GoodCompanyDatabase.writeMessage(message: DomainMessage) {
 
 // --- User preferences (the part of AppSettings that lives in the database) ---
 
-/** The stored preferences applied onto [base]; [base] as it is when none were saved yet. */
-internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings {
-    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return base
-    return base.copy(
+/**
+ * The stored preferences, still to be put together with the device settings ([withDevice]): an AI switch never
+ * written (no row, or NULL from before migration 9) follows the API key, which lives in the device settings.
+ */
+internal class StoredPreferences(private val settings: AppSettings, private val aiEnabled: Boolean?) {
+    fun withDevice(applyDevice: (AppSettings) -> AppSettings): AppSettings =
+        applyDevice(settings).let { it.copy(aiEnabled = aiEnabled ?: it.hasAiKey) }
+}
+
+/** The stored preferences applied onto [base], which carries the device settings (the API key). */
+internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings =
+    readStoredPreferences(base).withDevice { device -> device }
+
+internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings = AppSettings()): StoredPreferences {
+    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return StoredPreferences(base, null)
+    val settings = base.copy(
         innerCircleDays = row.inner_circle_days.toInt(),
         closeCircleDays = row.close_circle_days.toInt(),
         goodFriendsDays = row.good_friends_days.toInt(),
@@ -374,8 +386,19 @@ internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): App
         showWarmth = row.show_warmth.toFlag(),
         privateNotifications = row.private_notifications.toFlag(),
         homeCircleFilter = row.home_circle_filter,
+        activities = activitiesFromColumn(row.activities),
     )
+    return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
+
+/** Comma-separated [HangoutActivity] names; unknown names are dropped, and nothing left (or NULL) means all of them. */
+internal fun activitiesFromColumn(column: String?): List<HangoutActivity> =
+    column?.split(',')?.mapNotNull { name -> HangoutActivity.entries.firstOrNull { it.name == name.trim() } }?.distinct()
+        ?.takeIf { it.isNotEmpty() }
+        ?: HangoutActivity.entries
+
+internal fun List<HangoutActivity>.toActivitiesColumn(): String? =
+    distinct().takeIf { it.isNotEmpty() && it != HangoutActivity.entries }?.joinToString(",") { it.name }
 
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
@@ -392,6 +415,8 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             show_warmth = settings.showWarmth.toColumn(),
             private_notifications = settings.privateNotifications.toColumn(),
             home_circle_filter = settings.homeCircleFilter,
+            ai_enabled = settings.aiEnabled.toColumn(),
+            activities = settings.activities.toActivitiesColumn(),
         ),
     )
 }

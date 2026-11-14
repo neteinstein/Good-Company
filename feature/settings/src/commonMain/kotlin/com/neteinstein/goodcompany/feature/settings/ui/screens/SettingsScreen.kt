@@ -27,6 +27,7 @@ import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
@@ -84,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -110,8 +112,13 @@ import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.settings.resources.Res
+import com.neteinstein.goodcompany.feature.settings.resources.activities
+import com.neteinstein.goodcompany.feature.settings.resources.activities_count
 import com.neteinstein.goodcompany.feature.settings.resources.ai
 import com.neteinstein.goodcompany.feature.settings.resources.ai_hint
+import com.neteinstein.goodcompany.feature.settings.resources.ai_off_note
+import com.neteinstein.goodcompany.feature.settings.resources.ai_switch
+import com.neteinstein.goodcompany.feature.settings.resources.ai_switch_hint
 import com.neteinstein.goodcompany.feature.settings.resources.allow_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
@@ -152,6 +159,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
+import com.neteinstein.goodcompany.feature.settings.resources.meetups
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
@@ -263,6 +271,7 @@ fun SettingsScreen(
     onOpenPlaces: () -> Unit = {},
     onOpenCalendar: () -> Unit = {},
     onOpenTags: () -> Unit = {},
+    onOpenActivities: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -295,6 +304,8 @@ fun SettingsScreen(
         actions = SettingsActions(
             onSaveApiKey = viewModel::onSaveApiKey,
             onClearApiKey = viewModel::onClearApiKey,
+            onAiEnabledChange = viewModel::onAiEnabledChange,
+            onOpenActivities = onOpenActivities,
             onThemeChange = viewModel::onThemeChange,
             onDynamicColorChange = viewModel::onDynamicColorChange,
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
@@ -354,6 +365,8 @@ fun SettingsScreen(
 data class SettingsActions(
     val onSaveApiKey: (String) -> Unit = {},
     val onClearApiKey: () -> Unit = {},
+    val onAiEnabledChange: (Boolean) -> Unit = {},
+    val onOpenActivities: () -> Unit = {},
     val onThemeChange: (ThemeMode) -> Unit = {},
     val onDynamicColorChange: (Boolean) -> Unit = {},
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
@@ -479,33 +492,26 @@ fun SettingsContent(
             }
 
             SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
-                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ApiKeyField(state.maskedKey, actions.onSaveApiKey, actions.onClearApiKey)
+                SwitchRow(stringResource(Res.string.ai_switch), stringResource(Res.string.ai_switch_hint), s.aiEnabled, actions.onAiEnabledChange)
+                if (!s.aiEnabled) {
                     Text(
-                        stringResource(Res.string.ai_hint),
+                        stringResource(Res.string.ai_off_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    var area by rememberSaveable(s.homeArea) { mutableStateOf(s.homeArea) }
-                    OutlinedTextField(
-                        value = area,
-                        onValueChange = {
-                            area = it
-                            actions.onHomeAreaChange(it)
-                        },
-                        leadingIcon = { Icon(Icons.Rounded.Place, null) },
-                        label = { Text(stringResource(Res.string.home_area)) },
-                        placeholder = { Text(stringResource(Res.string.home_area_placeholder)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
-                SwitchRow(
-                    stringResource(Res.string.weekly_plans),
-                    stringResource(Res.string.weekly_plans_hint),
-                    s.weeklyIdeasEnabled,
-                    actions.onWeeklyIdeasChange,
+                // The key, the area and the weekly plans only show while AI is on (F1).
+                if (s.aiEnabled) AiDetails(state, actions)
+            }
+
+            SectionCard(stringResource(Res.string.meetups), icon = Icons.Rounded.FavoriteBorder) {
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenActivities),
+                    headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.activities_count, s.activities.size, HangoutActivity.entries.size)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
             }
 
@@ -836,5 +842,39 @@ private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChang
         supportingContent = { Text(subtitle) },
         trailingContent = { Switch(checked, onChange) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+/** What the AI card shows while AI is on: the key, the home area and the weekly plans. */
+@Composable
+private fun AiDetails(state: SettingsUiState, actions: SettingsActions) {
+    val s = state.settings
+    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ApiKeyField(state.maskedKey, actions.onSaveApiKey, actions.onClearApiKey)
+        Text(
+            stringResource(Res.string.ai_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        var area by rememberSaveable(s.homeArea) { mutableStateOf(s.homeArea) }
+        OutlinedTextField(
+            value = area,
+            onValueChange = {
+                area = it
+                actions.onHomeAreaChange(it)
+            },
+            leadingIcon = { Icon(Icons.Rounded.Place, null) },
+            label = { Text(stringResource(Res.string.home_area)) },
+            placeholder = { Text(stringResource(Res.string.home_area_placeholder)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+        )
+    }
+    SwitchRow(
+        stringResource(Res.string.weekly_plans),
+        stringResource(Res.string.weekly_plans_hint),
+        s.weeklyIdeasEnabled,
+        actions.onWeeklyIdeasChange,
     )
 }

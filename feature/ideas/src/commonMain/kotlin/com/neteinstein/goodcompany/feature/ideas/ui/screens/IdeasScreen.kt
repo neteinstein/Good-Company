@@ -103,7 +103,7 @@ suspend fun IdeasMessage.text(): String = when (this) {
         when (reason) {
             WeeklyIdeasOutcome.Reason.NO_API_KEY -> Res.string.msg_no_key
             WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN -> Res.string.msg_no_friends
-            WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
+            WeeklyIdeasOutcome.Reason.AI_OFF, WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
         },
     )
     IdeasMessage.PlanSaved -> getString(CoreRes.string.plan_saved)

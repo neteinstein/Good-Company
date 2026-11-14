@@ -898,37 +898,46 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 }
             }
 
-            item(key = "ideas") {
-                SectionCard(
-                    stringResource(Res.string.ideas_title),
-                    icon = Icons.Rounded.AutoAwesome,
-                    action = {
-                        AnimatedContent(state.isGenerating) { busy ->
-                            if (busy) {
-                                CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                TextButton(onClick = if (state.hasAiKey) actions.onGenerateIdeas else actions.onOpenSettings) {
-                                    Text(stringResource(if (state.hasAiKey) Res.string.ideas_find else Res.string.ideas_setup))
+            if (state.aiEnabled) {
+                item(key = "ideas") {
+                    SectionCard(
+                        stringResource(Res.string.ideas_title),
+                        icon = Icons.Rounded.AutoAwesome,
+                        action = {
+                            AnimatedContent(state.isGenerating) { busy ->
+                                if (busy) {
+                                    CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
+                                } else {
+                                    TextButton(onClick = if (state.hasAiKey) actions.onGenerateIdeas else actions.onOpenSettings) {
+                                        Text(stringResource(if (state.hasAiKey) Res.string.ideas_find else Res.string.ideas_setup))
+                                    }
                                 }
                             }
+                        },
+                    ) {
+                        if (detail.topics.isNotEmpty()) {
+                            Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+                            detail.topics.forEach { TopicRow(topicText(it)) }
+                            if (detail.ideas.isNotEmpty()) Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome)
                         }
-                    },
-                ) {
-                    if (detail.topics.isNotEmpty()) {
-                        Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+                        if (detail.ideas.isEmpty()) {
+                            Hint(
+                                when {
+                                    !state.hasAiKey -> stringResource(Res.string.ideas_hint_no_ai)
+                                    detail.messageCount > 0 -> stringResource(Res.string.ideas_hint_ai_chats, firstName)
+                                    else -> stringResource(Res.string.ideas_hint_ai, firstName)
+                                },
+                            )
+                        }
+                        detail.ideas.take(5).forEach { IdeaRow(it, actions.onDismissIdea) }
+                    }
+                }
+            } else if (detail.topics.isNotEmpty()) {
+                // AI off (F1): the topics from notes need no AI, so they stay; nothing else of the AI card does.
+                item(key = "topics") {
+                    SectionCard(stringResource(Res.string.topics_from_notes), icon = Icons.Rounded.Lightbulb) {
                         detail.topics.forEach { TopicRow(topicText(it)) }
-                        if (detail.ideas.isNotEmpty()) Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome)
                     }
-                    if (detail.ideas.isEmpty()) {
-                        Hint(
-                            when {
-                                !state.hasAiKey -> stringResource(Res.string.ideas_hint_no_ai)
-                                detail.messageCount > 0 -> stringResource(Res.string.ideas_hint_ai_chats, firstName)
-                                else -> stringResource(Res.string.ideas_hint_ai, firstName)
-                            },
-                        )
-                    }
-                    detail.ideas.take(5).forEach { IdeaRow(it, actions.onDismissIdea) }
                 }
             }
 
@@ -1009,12 +1018,14 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         f.notifyBirthday,
                         actions.onToggleBirthdayNotifications,
                     )
-                    ToggleRow(
-                        stringResource(Res.string.prefs_events),
-                        stringResource(Res.string.prefs_events_hint),
-                        f.suggestEvents,
-                        actions.onToggleSuggestEvents,
-                    )
+                    if (state.aiEnabled) {
+                        ToggleRow(
+                            stringResource(Res.string.prefs_events),
+                            stringResource(Res.string.prefs_events_hint),
+                            f.suggestEvents,
+                            actions.onToggleSuggestEvents,
+                        )
+                    }
                     ToggleRow(
                         stringResource(Res.string.prefs_contact_counts),
                         stringResource(Res.string.prefs_contact_counts_hint),

@@ -418,7 +418,7 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(Res.string.share_suggest))
                     }
-                } else if (state.content?.image != null) {
+                } else if (state.aiEnabled && state.content?.image != null) {
                     Text(
                         stringResource(Res.string.share_ai_hint),
                         style = MaterialTheme.typography.bodySmall,

@@ -97,6 +97,15 @@ class LogInteractionViewModelTest {
     }
 
     @Test
+    fun theSheetOffersOnlyTheActivitiesTurnedOnInSettings() = runViewModelTest {
+        g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.WALK, HangoutActivity.COFFEE)) }
+        val state = collecting(vm().state)
+        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), state.value.sheet.activities)
+        g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.TRIP)) }
+        assertEquals(listOf(HangoutActivity.TRIP), state.value.sheet.activities)
+    }
+
+    @Test
     fun anUnknownIdFromAShortcutOpensWithNobodyAndIsNeverSaved() = runViewModelTest {
         val vm = vm(ids = listOf(FriendId("deleted")))
         val state = collecting(vm.state)

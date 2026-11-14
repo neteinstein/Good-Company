@@ -174,4 +174,13 @@
     <string name="msg_tag_renamed">Redenumită „%1$s”</string>
     <string name="msg_tag_merged">Unită în „%1$s”</string>
     <string name="msg_tag_deleted">„%1$s” ștearsă</string>
+    <string name="ai_switch">Funcții AI</string>
+    <string name="ai_switch_hint">Planuri săptămânale, subiecte de conversație, sugestii de cadouri și de mesaje, cu propria ta cheie Anthropic.</string>
+    <string name="ai_off_note">Cât timp e oprit, nimic din ce are nevoie de AI nu apare în aplicație.</string>
+    <string name="meetups">Întâlniri</string>
+    <string name="activities">Activități</string>
+    <string name="activities_count">%1$d din %2$d pornite</string>
+    <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd șase, celelalte sunt la Mai mult. Trage pentru a reordona.</string>
+    <string name="activities_move_up">Mută în sus</string>
+    <string name="activities_move_down">Mută în jos</string>
 </resources>

@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
@@ -215,6 +216,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
                     onOpenTags = { navController.navigate(TagsRoute) },
+                    onOpenActivities = { navController.navigate(ActivitiesRoute) },
                 )
             }
             composable<PlacesRoute>(
@@ -250,6 +252,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     },
                 )
             }
+            composable<ActivitiesRoute> { ActivitiesScreen(onBack = { navController.popBackStack() }) }
             composable<YearReviewRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },

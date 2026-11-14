@@ -1,0 +1,8 @@
+-- Version 13 → 14 (issue #37, F1 and F3): the AI switch and the activities the log sheet offers.
+-- ai_enabled: NULL until the app writes the row again; the app reads NULL as "on when an API key is saved" (the key
+-- lives in device settings, outside the database), so nothing disappears for people who already use AI.
+-- activities: the HangoutActivity names turned on, comma-separated, in the user's order; NULL = all of them.
+
+ALTER TABLE user_preferences ADD COLUMN ai_enabled INTEGER;
+
+ALTER TABLE user_preferences ADD COLUMN activities TEXT;

@@ -31,8 +31,8 @@ sealed interface RestoreResult {
 }
 
 /**
- * Replaces all app data with a backup. Device-specific settings that a backup shouldn't move (the AI key, the
- * app lock, onboarding state) stay as they are on this device.
+ * Replaces all app data with a backup. Device-specific settings that a backup shouldn't move (the AI key and the AI
+ * switch that goes with it, the app lock, onboarding state) stay as they are on this device.
  */
 class RestoreBackupUseCase(private val backups: BackupRepository) {
     suspend operator fun invoke(raw: String): RestoreResult {
@@ -45,6 +45,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
             KidsAsPeople.convert(backup).copy(
                 settings = backup.settings.copy(
                     aiApiKey = current.aiApiKey,
+                    aiEnabled = current.aiEnabled,
                     appLock = current.appLock,
                     onboardingDone = true,
                     lastOpenedAt = current.lastOpenedAt,

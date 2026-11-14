@@ -374,7 +374,7 @@ class SuggestUpdateFromSharedUseCase(
 ) {
     /** The suggested line, or null when the AI found nothing about them in what was shared. */
     suspend operator fun invoke(id: FriendId, content: SharedContent): Result<String?> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
         val text = listOfNotNull(
             content.title?.trim()?.takeIf { it.isNotEmpty() },

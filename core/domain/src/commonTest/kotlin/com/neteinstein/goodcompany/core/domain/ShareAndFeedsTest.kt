@@ -280,7 +280,7 @@ class ShareAndFeedsTest {
         val content = SharedContent(text = "Big news!", url = "https://lnkd.in/x", image = SharedImage(byteArrayOf(1), "image/jpeg"))
         assertIs<MissingApiKeyException>(g.suggestUpdateFromShared(ana.id, content).exceptionOrNull())
 
-        g.settingsRepo.update { AppSettings(aiApiKey = "k") }
+        g.settingsRepo.update { AppSettings(aiApiKey = "k", aiEnabled = true) }
         assertEquals("Started a new job", g.suggestUpdateFromShared(ana.id, content).getOrThrow())
         assertEquals("update:ana:Big news!\nhttps://lnkd.in/x:image/jpeg:en", g.assistant.calls.last())
 
