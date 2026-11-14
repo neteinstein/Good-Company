@@ -5,6 +5,8 @@ Owner review of the People tab after the four-tab layout (#65–#72) shipped. Mo
 [`PRODUCT_BRIEF.md`](../PRODUCT_BRIEF.md) ("People tab · search first, one filter row" and "People · everyone has a
 closeness; no hearts"). Base: `origin/main` @ `5ff361a`. One issue, by the owner's choice.
 
+**Created as issue (2026-11-14):** P1 #86. The issue is the live copy.
+
 ## Owner answers (2026-11-14)
 
 1. **One issue**, not a layout issue plus a data issue.
@@ -14,7 +16,7 @@ closeness; no hearts"). Base: `origin/main` @ `5ff361a`. One issue, by the owner
 
 ---
 
-## P1 · People tab: search first, one filter row, everyone has a closeness
+## P1 (#86) · People tab: search first, one filter row, everyone has a closeness
 
 ![Today](../mockups/v1-people/now.png)
 
