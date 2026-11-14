@@ -130,3 +130,5 @@
 | 2026-11-14 | **Friend page · circles as chips.** The person's circles show under the name with × to remove and "+ Circle" to tick circles in a sheet; no long press. | Owner. |
 | 2026-11-14 | **Settings · your photo.** Settings gets your own photo (gallery + crop), shown in every tab header, at the centre of the network map and on your year in review; in backups, never sent to contacts or the AI. | Owner. |
 | 2026-11-14 | **F5 · Everyone and Real friends merge (confirms F5).** One list of everyone sorted by closeness (People tab, #66) replaces the Everyone / Real friends split. | Owner confirmed. |
+| 2026-11-14 | **Catch-up · last-seen answers (issue #68).** The "When did you last see…?" card stores: This week = 3 days ago, This month = 15 days ago, A few months ago = 90 days ago, Over a year = 400 days ago; I don't know = today. | Owner, build-in-sequence preflight. |
+| 2026-11-14 | **Catch-up · the approximate last-seen date stays hidden (issue #68).** It only starts the rhythm; the person's page doesn't show it and keeps showing nothing logged until a real meetup. | Owner, build-in-sequence preflight. |
