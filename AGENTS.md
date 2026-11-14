@@ -444,3 +444,5 @@ Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:
 - `verify-offline`: set up a sandbox (SDK, Maven mirror) and run every check that works without macOS or an emulator.
 - `regenerate-app-icons`: re-render the iOS app icons from `docs/brand/*.svg` (the Android adaptive icon is vector XML).
 - `capture-screenshots`: re-render the README screenshots from the real Compose web build in headless Chromium.
+- `build-in-sequence`: implement a list of planned issues one session at a time, each branch cut from the previous one
+  (stacked PRs), with every question asked up front so the sessions run unattended.
