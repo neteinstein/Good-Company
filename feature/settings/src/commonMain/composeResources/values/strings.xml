@@ -140,4 +140,37 @@
     <string name="cal_row_on">On · chosen calendars only</string>
     <string name="cal_row_off">Off</string>
     <string name="cal_row_web">Not available in the browser</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Tags</string>
+    <string name="tags_row_hint">Rename, merge or delete likes and dislikes for everyone</string>
+    <string name="tags_title">Tags</string>
+    <string name="tags_search">Search tags</string>
+    <string name="tags_same">Looks like the same tag</string>
+    <string name="tags_merge">Merge</string>
+    <string name="tags_keep_both">Keep both</string>
+    <string name="tags_empty">No tags yet. What people like and dislike shows up here.</string>
+    <string name="tags_edit">Edit “%1$s”</string>
+    <string name="tags_name">Name</string>
+    <string name="tags_will_merge">Merges with “%1$s” for everyone</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">%1$d person likes</item>
+        <item quantity="other">%1$d people like</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">%1$d person doesn’t like</item>
+        <item quantity="other">%1$d people don’t like</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d likes</item>
+        <item quantity="other">%1$d like</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d doesn’t</item>
+        <item quantity="other">%1$d don’t</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Renamed to “%1$s”</string>
+    <string name="msg_tag_merged">Merged into “%1$s”</string>
+    <string name="msg_tag_deleted">“%1$s” deleted</string>
 </resources>

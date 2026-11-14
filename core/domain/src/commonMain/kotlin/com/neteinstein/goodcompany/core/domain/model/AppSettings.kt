@@ -48,6 +48,11 @@ data class AppSettings(
     val calendarIds: List<String> = emptyList(),
     /** When suggestions were last turned on: earlier events are shown under "Looking back". */
     val calendarOnSince: Instant? = null,
+    /**
+     * Spellings of one tag the user chose to keep apart in Settings → Tags ("Keep both"), each as `Tags.signature`.
+     * Stored with the device settings (no schema change); backups carry it like the rest of the settings.
+     */
+    val keptTagSpellings: Set<String> = emptySet(),
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }

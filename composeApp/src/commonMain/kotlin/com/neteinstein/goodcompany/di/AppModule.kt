@@ -78,6 +78,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
@@ -93,6 +94,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
@@ -124,6 +126,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShareTargetsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
@@ -134,6 +138,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
@@ -142,6 +147,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
@@ -196,6 +202,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
 import org.koin.core.module.dsl.factoryOf
@@ -275,6 +282,12 @@ val appModule = module {
     factoryOf(::AddKidUseCase)
     factoryOf(::SetShowInMyListUseCase)
     factoryOf(::PersonLinkUseCases)
+    factoryOf(::ObserveTagsUseCase)
+    factoryOf(::ObserveTagDuplicatesUseCase)
+    factoryOf(::KeepTagSpellingsUseCase)
+    factoryOf(::RenameTagUseCase)
+    factoryOf(::DeleteTagUseCase)
+    factoryOf(::RestoreTagUseCase)
     factoryOf(::AddFriendUseCase)
     factoryOf(::DeleteFriendUseCase)
     factoryOf(::SyncContactsUseCase)
@@ -407,6 +420,7 @@ val appModule = module {
             renameFriend = get(),
             setHomeCircleFilter = get(),
             observeAttachments = get(),
+            observeTags = get(),
             deleteAttachment = get(),
             restoreAttachment = get(),
             shareInbox = get(),
@@ -427,6 +441,7 @@ val appModule = module {
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PlacesViewModel)
+    viewModelOf(::TagsViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
     viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
     viewModelOf(::ShareToFriendViewModel)

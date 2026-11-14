@@ -134,4 +134,37 @@
     <string name="cal_row_on">Activé · calendriers choisis uniquement</string>
     <string name="cal_row_off">Désactivé</string>
     <string name="cal_row_web">Indisponible dans le navigateur</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Étiquettes</string>
+    <string name="tags_row_hint">Renommer, fusionner ou supprimer les goûts pour tout le monde</string>
+    <string name="tags_title">Étiquettes</string>
+    <string name="tags_search">Chercher une étiquette</string>
+    <string name="tags_same">On dirait la même étiquette</string>
+    <string name="tags_merge">Fusionner</string>
+    <string name="tags_keep_both">Garder les deux</string>
+    <string name="tags_empty">Pas encore d’étiquettes. Ce que les gens aiment ou non apparaît ici.</string>
+    <string name="tags_edit">Modifier « %1$s »</string>
+    <string name="tags_name">Nom</string>
+    <string name="tags_will_merge">Fusionne avec « %1$s » pour tout le monde</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">%1$d personne aime</item>
+        <item quantity="other">%1$d personnes aiment</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">%1$d personne n’aime pas</item>
+        <item quantity="other">%1$d personnes n’aiment pas</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d aime</item>
+        <item quantity="other">%1$d aiment</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d n’aime pas</item>
+        <item quantity="other">%1$d n’aiment pas</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Renommée en « %1$s »</string>
+    <string name="msg_tag_merged">Fusionnée dans « %1$s »</string>
+    <string name="msg_tag_deleted">« %1$s » supprimée</string>
 </resources>

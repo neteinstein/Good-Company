@@ -25,6 +25,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
@@ -39,6 +40,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
@@ -70,6 +72,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShareTargetsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
@@ -80,6 +84,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
@@ -88,6 +93,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
@@ -177,6 +183,12 @@ class TestGraph(
     val observeFriendDetail =
         ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, circles, planRepo, linkRepo, clock)
     val updateFriend = UpdateFriendUseCase(friendRepo)
+    val observeTags = ObserveTagsUseCase(friendRepo)
+    val observeTagDuplicates = ObserveTagDuplicatesUseCase(friendRepo, settingsRepo)
+    val keepTagSpellings = KeepTagSpellingsUseCase(settingsRepo)
+    val renameTag = RenameTagUseCase(friendRepo)
+    val deleteTag = DeleteTagUseCase(friendRepo)
+    val restoreTag = RestoreTagUseCase(friendRepo)
     val observeCatchUpStory = ObserveCatchUpStoryUseCase(observeFriendDetail, reminderRepo, clock)
     val feedFetcher = FakeFeedFetcher()
     val addFeed = AddFeedUseCase(friendRepo, feedFetcher, clock)

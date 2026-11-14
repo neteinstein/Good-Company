@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -193,6 +194,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.sample_loaded
 import com.neteinstein.goodcompany.feature.settings.resources.sample_remove_hint
 import com.neteinstein.goodcompany.feature.settings.resources.show_warmth
 import com.neteinstein.goodcompany.feature.settings.resources.show_warmth_hint
+import com.neteinstein.goodcompany.feature.settings.resources.tags_row
+import com.neteinstein.goodcompany.feature.settings.resources.tags_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.theme_auto
 import com.neteinstein.goodcompany.feature.settings.resources.theme_dark
 import com.neteinstein.goodcompany.feature.settings.resources.theme_light
@@ -259,6 +262,7 @@ fun SettingsScreen(
     appVersion: String,
     onOpenPlaces: () -> Unit = {},
     onOpenCalendar: () -> Unit = {},
+    onOpenTags: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -299,6 +303,7 @@ fun SettingsScreen(
             onClosenessDaysChange = viewModel::onClosenessDaysChange,
             onImportContactsFile = pickVcf,
             onOpenPlaces = onOpenPlaces,
+            onOpenTags = onOpenTags,
             onEnableNotifications = requestNotifications,
             onLoadSampleData = viewModel::onLoadSampleData,
             onRemoveSampleData = viewModel::onRemoveSampleData,
@@ -356,6 +361,7 @@ data class SettingsActions(
     val onReminderHourChange: (Int) -> Unit = {},
     val onClosenessDaysChange: (Closeness, Int) -> Unit = { _, _ -> },
     val onImportContactsFile: () -> Unit = {},
+    val onOpenTags: () -> Unit = {},
     val onEnableNotifications: () -> Unit = {},
     val onLoadSampleData: () -> Unit = {},
     val onRemoveSampleData: () -> Unit = {},
@@ -617,6 +623,14 @@ fun SettingsContent(
                     supportingContent = { Text(stringResource(Res.string.places_row_hint)) },
                     trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
+                    leadingContent = { Icon(Icons.AutoMirrored.Rounded.Label, null) },
+                    headlineContent = { Text(stringResource(Res.string.tags_row), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.tags_row_hint)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable(onClick = actions.onOpenTags),
                 )
                 ListItem(
                     leadingContent = { Icon(Icons.Rounded.Download, null) },

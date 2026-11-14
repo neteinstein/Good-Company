@@ -221,7 +221,7 @@ object SampleData {
             Friend(
                 id = id("rui"), name = "Rui Costa", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
-                likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
+                likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste, t.jazz), dislikes = listOf(t.earlyMornings),
                 job = t.ruiJob, livesIn = "Alvalade, Lisboa",
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-rui", t.newsRuiMove, now - 3.days)),
                 // Film titles are proper nouns; checkedAt = now so the demo never fetches.
@@ -260,7 +260,9 @@ object SampleData {
                 closeness = Closeness.INNER,
                 phoneNumbers = listOf("+351 915 777 888"),
                 birthday = bday(88, 35),
-                likes = listOf(t.football, t.bbq, t.surfing),
+                likes = listOf(t.football, t.bbq, t.surfing, t.craftBeer),
+                // Overlapping tags (F16): one person's like can be another's dislike.
+                dislikes = listOf(t.sushi),
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.SPORTS),
             ),
             Friend(
@@ -269,7 +271,7 @@ object SampleData {
                 ),
                 name = "Sofia Martins", isCloseFriend = true, closeness = Closeness.INNER, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 916 123 456"), birthday = bday(0, 29), meetEveryDays = 21,
-                likes = listOf(t.photography, t.travel, t.specialtyCoffee), dislikes = listOf(t.spicyFood),
+                likes = listOf(t.photography, t.travel, t.specialtyCoffee, t.hiking), dislikes = listOf(t.spicyFood, t.cilantro),
                 occasions = listOf(Occasion.COFFEE, Occasion.WEEKDAY_LUNCH),
             ),
             Friend(
@@ -278,7 +280,7 @@ object SampleData {
                 isCloseFriend = true,
                 closeness = Closeness.GOOD,
                 birthday = bday(57, 40),
-                likes = listOf(t.theatre, t.cooking, t.wine),
+                likes = listOf(t.theatre, t.cooking, t.wine, t.sushi),
                 kids = listOf(Kid(PREFIX + "clara", "Clara", bday(12, 10), listOf("Harry Potter", t.ballet))),
             ),
             Friend(id = id("joao"), name = "João Pereira", contactId = PREFIX + "c-joao", phoneNumbers = listOf("+351 917 000 111")),

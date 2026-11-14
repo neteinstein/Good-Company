@@ -198,6 +198,35 @@ abstract class RepositoryContract {
     // --- Friends ---
 
     @Test
+    fun updateAll_changesEveryoneAtOnce_andReturnsOnlyThoseItChanged() = runTest {
+        val writer = FakeContactsWriter()
+        val repo = open(writer = writer).friends
+        repo.upsert(friend("a") { copy(likes = listOf("sushi", "jazz"), contactId = "c-a") })
+        repo.upsert(friend("b") { copy(dislikes = listOf("Sushi")) })
+        repo.upsert(friend("c") { copy(likes = listOf("hiking")) })
+        val writesBefore = writer.writes
+
+        val before = repo.updateAll { f ->
+            f.copy(likes = f.likes.map { if (it == "sushi") "Sushi" else it })
+        }
+
+        assertEquals(listOf("a"), before.map { it.id.value })
+        assertEquals(listOf("sushi", "jazz"), before.single().likes)
+        val back = open().friends.friends.first()
+        assertEquals(listOf("a", "b", "c"), back.map { it.id.value })
+        assertEquals(listOf("Sushi", "jazz"), back[0].likes)
+        assertEquals(listOf("Sushi"), back[1].dislikes)
+        // The friend with a contact is mirrored once; nobody else is written.
+        assertEquals(writesBefore + 1, writer.writes)
+    }
+
+    @Test
+    fun keptTagSpellings_surviveARestart() = runTest {
+        open().settings.update { it.copy(keptTagSpellings = setOf("Sushi\nsushi")) }
+        assertEquals(setOf("Sushi\nsushi"), open().settings.settings.first().keptTagSpellings)
+    }
+
+    @Test
     fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
         val friend = richFriend()
         open().friends.upsert(friend)

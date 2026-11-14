@@ -790,6 +790,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_food_placeholder),
                         { actions.onAddTastes(TasteKind.FOOD, it) },
                         { actions.onRemoveTaste(TasteKind.FOOD, it) },
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_drink), Icons.Rounded.LocalCafe)
                     TagEditor(
@@ -797,6 +798,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_drink_placeholder),
                         { actions.onAddTastes(TasteKind.DRINK, it) },
                         { actions.onRemoveTaste(TasteKind.DRINK, it) },
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_doesnt_like), Icons.Rounded.ThumbDown)
                     TagEditor(
@@ -805,6 +807,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         actions.onAddDislikes,
                         actions.onRemoveDislike,
                         chipColor = MaterialTheme.colorScheme.errorContainer,
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_interests), Icons.Rounded.Interests)
                     TagEditor(
@@ -812,10 +815,17 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_interests_placeholder),
                         { actions.onAddTastes(TasteKind.INTEREST, it) },
                         { actions.onRemoveTaste(TasteKind.INTEREST, it) },
+                        catalog = state.tags,
                     )
                     // Everything stored as a like before the groups existed lives here, so nothing is lost or guessed.
                     Label(stringResource(Res.string.tastes_other_likes), Icons.Rounded.ThumbUp)
-                    TagEditor(f.likes, stringResource(Res.string.tastes_loves_placeholder), actions.onAddLikes, actions.onRemoveLike)
+                    TagEditor(
+                        f.likes,
+                        stringResource(Res.string.tastes_loves_placeholder),
+                        actions.onAddLikes,
+                        actions.onRemoveLike,
+                        catalog = state.tags,
+                    )
                 }
             }
 
@@ -1063,6 +1073,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     actions.onSaveRelative(it)
                     familyEditing = null
                 },
+                tags = state.tags,
             )
         }
         if (editingAbout) {
