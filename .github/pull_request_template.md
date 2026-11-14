@@ -35,6 +35,15 @@ You MUST also state what could NOT be run and why, e.g.:
 
 -
 
+## Screenshots to refresh
+
+<!--
+Screens whose look changed, by capture.js scene name (e.g. home, friend-dark), or "none". The images are refreshed
+later in one docs(screenshots) PR (AGENTS.md gotcha 15). Don't refresh them in a feature PR.
+-->
+
+-
+
 ## Risk
 
 <!--

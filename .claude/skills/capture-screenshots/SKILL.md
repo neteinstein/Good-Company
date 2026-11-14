@@ -1,9 +1,14 @@
 ---
 name: capture-screenshots
-description: Regenerate Good Company's README screenshots (docs/screenshots/*.png and banner.png) by rendering the real Compose web build in headless Chromium with sample data - works in cloud sandboxes with no emulator or Mac. Use after any visible UI change, or when asked for screenshots/previews of the app.
+description: Regenerate Good Company's README screenshots (docs/screenshots/*.png and banner.png) by rendering the real Compose web build in headless Chromium with sample data - works in cloud sandboxes with no emulator or Mac. Use for the periodic docs(screenshots) PR after a batch of UI changes has merged, or when asked for screenshots/previews of the app. Not part of feature PRs.
 ---
 
 # Capture screenshots
+
+**When:** in its own `docs(screenshots)` PR, cut from `main` after UI PRs have merged, not inside a feature PR. To
+find what to capture, collect the "Screenshots to refresh" lists from the merged PRs since the last refresh:
+`gh pr list --state merged --search "merged:>$(git log -1 --format=%cs -- docs/screenshots)" --json number,body`.
+Unsure? Capture every scene.
 
 The README images are **real renders** of the shared Compose UI (the same code that runs on Android and iOS), produced
 from the wasmJs build. No bundler is needed, so this works where `wasmJsBrowserDistribution` is blocked.

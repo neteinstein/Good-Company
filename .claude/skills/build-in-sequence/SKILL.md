@@ -13,7 +13,7 @@ Input: an ordered list of issue numbers (e.g. `#35 #36 #38`). The order given is
 
 ## Phase 1: preflight (the only phase that talks to the owner)
 
-1. **Read everything first.** `AGENTS.md`, `docs/PRODUCT_BRIEF.md` (verbatim brief + Decisions table) and, for each
+1. **Read everything first.** `AGENTS.md`, `docs/PRODUCT_BRIEF.md` (verbatim brief, then the Decisions rows its "Index by area" lists for the issues' areas) and, for each
    issue, `gh issue view <n> --comments` (body, acceptance criteria, linked mockups/plans in `docs/`). Note dependencies
    between issues: if the given order builds something before what it depends on, say so and propose the fixed order.
 2. **Check the starting point.** `git fetch`; the chain starts from the current branch unless the owner names another
@@ -78,10 +78,13 @@ For issue *i* (1-based) with previous branch `prev` (for *i* = 1: the base branc
 > (`persistence-change`, `new-screen`, `add-strings`, `ios-project-edit`). New area notes go into those skills.
 >
 > **Done means:**
-> 1. `./gradlew spotlessApply testDebugUnitTest koverVerify spotlessCheck :androidApp:lintDebug :androidApp:assembleDebug`
->    green; plus `:composeApp:compileKotlinIosSimulatorArm64 :composeApp:compileKotlinWasmJs` (and an `xcodebuild` of
->    scheme `iosApp` if the issue touches `iosApp/`). If the UI changed visibly, refresh screenshots with the
->    `capture-screenshots` skill and look at them.
+> 1. While iterating, use the fast loop in AGENTS.md ("Build & verify"): only the touched modules' tests. Before
+>    pushing, run once: `./gradlew spotlessApply testDebugUnitTest koverVerify spotlessCheck` and
+>    `python3 scripts/check-strings.py` (all of them green). Add `:androidApp:lintDebug :androidApp:assembleDebug` only
+>    if you changed a manifest, Android `res/` or `androidMain`. Add `:composeApp:compileKotlinIosSimulatorArm64` only
+>    for `iosMain`, `expect`/`actual` code or `iosApp/` (plus an `xcodebuild` of scheme `iosApp` for `iosApp/`). Add
+>    `:composeApp:compileKotlinWasmJs` only for `wasmJsMain`. CI runs everything else. Don't refresh screenshots: list
+>    the changed screens under "Screenshots to refresh" in the PR (gotcha 15).
 > 2. Conventional Commits (`feat(<module>): …`), ending with the repo's attribution trailer.
 > 3. `git push -u origin HEAD`, then a <draft/ready> PR with `gh pr create --base <prev or main> --title "<type>(<scope>): … (#<n>)"`
 >    using `.github/pull_request_template.md`: "Closes #<n>", the test plan (what ran, what couldn't), risk, and an

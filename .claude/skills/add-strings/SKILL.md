@@ -5,8 +5,14 @@ description: Add or change user-facing text in Good Company in all five language
 
 # Add strings
 
-No user-facing literal in Kotlin or Swift. Every English string lands in the same change in `values-pt`, `values-es`,
+No user-facing literal in Kotlin or Swift. Every English string lands in the same PR in `values-pt`, `values-es`,
 `values-fr` and `values-ro`.
+
+**Translate once, at the end.** While building, add English only. Wording usually changes a few times, and every
+change would mean editing five files. When the feature works and the copy has settled, run
+`python3 scripts/check-strings.py --todo`. It lists every missing key with its English text, per file. Translate them
+in one pass. You can hand that list to a subagent on a cheaper model, together with sections 2 and 3 below and the
+existing strings of the same file for tone. Then re-run the script until it prints "All translations complete."
 
 ## 1. Where the string goes
 
@@ -45,10 +51,8 @@ data (`NotificationContent`, `AiFailure.Reason`, `SampleTexts`) that `:core:ui` 
 ## 4. Check
 
 ```bash
-for f in $(git diff --name-only | grep 'values/strings.xml'); do
-  d=$(dirname $(dirname $f)); en=$(grep -c '<string \|<plurals ' $f)
-  for l in pt es fr ro; do echo "$d/values-$l: $(grep -c '<string \|<plurals ' $d/values-$l/strings.xml) (en $en)"; done
-done
+python3 scripts/check-strings.py          # exit 1 on any problem; CI runs it too
+python3 scripts/check-strings.py --todo   # same, with the English text of each missing key
 ```
-Counts must match per file. A new iOS `.lproj` string needs all five folders too. Then build Android once
-(`:androidApp:assembleDebug`): a missing translation or a bad placeholder fails there or in lint.
+It checks every `values/strings.xml` (Compose resources and Android `res/`) and every iOS `en.lproj/*.strings` against
+the four translations: missing and extra keys, matching placeholders, and plural quantities (Romanian `few`).
