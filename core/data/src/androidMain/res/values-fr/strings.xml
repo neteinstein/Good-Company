@@ -23,4 +23,8 @@
     <string name="contact_relation_in_law">Belle-famille</string>
     <string name="contact_relation_ex">Ex</string>
     <string name="contact_relation_colleague">Collègue</string>
+    <string name="contact_relation_step_parent">Beau-parent</string>
+    <string name="contact_relation_step_child">Beau-fils ou belle-fille</string>
+    <string name="contact_relation_half_sibling">Demi-frère ou demi-sœur</string>
+    <string name="contact_relation_step_sibling">Quasi-frère ou quasi-sœur</string>
 </resources>

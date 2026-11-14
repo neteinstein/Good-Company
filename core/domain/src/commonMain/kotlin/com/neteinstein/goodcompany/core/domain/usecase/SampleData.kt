@@ -12,7 +12,11 @@ import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
+import com.neteinstein.goodcompany.core.domain.model.GiftList
+import com.neteinstein.goodcompany.core.domain.model.GiftListEntry
+import com.neteinstein.goodcompany.core.domain.model.GiftListItem
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
@@ -34,6 +38,7 @@ import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
@@ -60,6 +65,7 @@ import kotlin.time.Duration.Companion.hours
  * (see `SampleTextsProvider`). Names and place names are proper nouns and stay as they are.
  */
 data class SampleTexts(
+    val giftListChristmas: String = "Christmas",
     val anaNotes: String = "Partner: Tiago. Allergic to peanuts.",
     val kneeSurgery: String = "Knee surgery",
     val jobInterview: String = "Job interview",
@@ -169,6 +175,8 @@ object SampleData {
         val journal: List<JournalEntry> = emptyList(),
         /** Links between the sample people: each sample kid is a person linked to their parent (F9). */
         val links: List<PersonLink> = emptyList(),
+        /** A Christmas gift list (F8) for some of them. */
+        val giftLists: List<GiftList> = emptyList(),
     )
 
     fun build(clock: AppClock, t: SampleTexts = SampleTexts()): Bundle {
@@ -213,7 +221,7 @@ object SampleData {
                 ),
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.CULTURE),
                 gifts = listOf(
-                    Gift(PREFIX + "g-vinyl", t.giftVinyl),
+                    Gift(PREFIX + "g-vinyl", t.giftVinyl, price = "€35"),
                     Gift(PREFIX + "g-dino", t.giftDinoLego, forKidId = PREFIX + "leo"),
                     Gift(PREFIX + "g-murakami", t.giftMurakami, givenOn = day(-362), occasion = GiftOccasion.BIRTHDAY),
                 ),
@@ -375,7 +383,22 @@ object SampleData {
         )
         // The sample kids are written as before and become people the same way old data does (F9).
         val (people, links) = KidsAsPeople.convert(friends, emptyList())
-        return Bundle(people, hangouts, reminders, ideas, groups, plans, interactions, journal, links)
+        val christmas = LocalDate(today.year, 12, 25).let { if (it < today) LocalDate(today.year + 1, 12, 25) else it }
+        val giftLists = listOf(
+            GiftList(
+                id = PREFIX + "gl-christmas",
+                title = "${t.giftListChristmas} ${christmas.year}",
+                occasionDate = christmas,
+                createdAt = now - 3.days,
+                occasion = GiftOccasion.CHRISTMAS,
+                entries = listOf(
+                    GiftListEntry(id("ana"), 40.0, listOf(GiftListItem(PREFIX + "g-vinyl", GiftStatus.BOUGHT))),
+                    GiftListEntry(id("leo"), 30.0, listOf(GiftListItem(PREFIX + "g-dino"))),
+                    GiftListEntry(id("marta"), null, listOf(GiftListItem(PREFIX + "g-ceramics"))),
+                ),
+            ),
+        )
+        return Bundle(people, hangouts, reminders, ideas, groups, plans, interactions, journal, links, giftLists)
     }
 
     fun isSample(id: String) = id.startsWith(PREFIX)
@@ -393,6 +416,7 @@ class LoadSampleDataUseCase(
     private val clock: AppClock,
     private val texts: SampleTextsProvider = SampleTextsProvider { SampleTexts() },
     private val links: PersonLinkRepository = PersonLinkRepository.None,
+    private val giftLists: GiftListRepository = GiftListRepository.None,
 ) {
     suspend operator fun invoke() {
         val bundle = SampleData.build(clock, texts.texts())
@@ -408,6 +432,8 @@ class LoadSampleDataUseCase(
         bundle.plans.filterNot { it.id in existingPlans }.forEach { plans.upsert(it) }
         interactions.addAll(bundle.interactions)
         bundle.journal.forEach { interactions.upsertJournal(it) }
+        val existingLists = giftLists.lists.first().map { it.id }.toSet()
+        bundle.giftLists.filterNot { it.id in existingLists }.forEach { giftLists.upsert(it) }
     }
 }
 
@@ -420,8 +446,10 @@ class RemoveSampleDataUseCase(
     private val groups: GroupRepository,
     private val plans: PlanRepository,
     private val interactions: InteractionRepository,
+    private val giftLists: GiftListRepository = GiftListRepository.None,
 ) {
     suspend operator fun invoke() {
+        giftLists.lists.first().filter { SampleData.isSample(it.id) }.forEach { giftLists.delete(it.id) }
         friends.friends.first().filter { SampleData.isSample(it.id.value) }.forEach { friends.delete(it.id) }
         hangouts.hangouts.first().filter { SampleData.isSample(it.id) }.forEach { hangouts.delete(it.id) }
         reminders.reminders.first().filter { SampleData.isSample(it.id) }.forEach { reminders.delete(it.id) }

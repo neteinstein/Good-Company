@@ -534,4 +534,20 @@
     <string name="show_in_my_list_hint_any">Off: they still show on the pages they’re linked to and in birthdays.</string>
     <string name="action_network">Your network</string>
     <string name="action_people">Your people</string>
+    <!-- Automatic kinship (issue #41, F7): proposals, Suggested family and the kinship search -->
+    <string name="kinship_title">%1$s is %2$s</string>
+    <string name="kinship_because">%1$s, and %2$s is %3$s.</string>
+    <string name="kinship_ask_title">How is %1$s related to you?</string>
+    <string name="kinship_yes">Yes, %1$s</string>
+    <string name="kinship_not_right">Not right</string>
+    <string name="kinship_not_family">Not family</string>
+    <string name="suggested_family_title">Suggested family</string>
+    <string name="suggested_family_empty">No suggestions right now. They come from the links between your relatives and other people.</string>
+    <string name="kin_search_result">%1$s · %2$d</string>
+    <string name="kin_search_empty">Nobody with that relationship yet. Confirm it on their page or in Suggested family.</string>
+    <plurals name="suggested_family_count">
+        <item quantity="one">%1$d person may be family</item>
+        <item quantity="other">%1$d people may be family</item>
+    </plurals>
+    <string name="gift_lists_link">Gift lists</string>
 </resources>

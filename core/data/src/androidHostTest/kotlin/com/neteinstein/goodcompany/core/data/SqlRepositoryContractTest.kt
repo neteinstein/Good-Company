@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.data.db.OpenedDriver
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlGiftListRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
@@ -29,6 +30,11 @@ import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
+import com.neteinstein.goodcompany.core.domain.model.GiftList
+import com.neteinstein.goodcompany.core.domain.model.GiftListEntry
+import com.neteinstein.goodcompany.core.domain.model.GiftListItem
+import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
@@ -96,6 +102,51 @@ class SqlRepositoryContractTest : RepositoryContract() {
 
     private val ana = FriendId("ana")
     private val rui = FriendId("rui")
+
+    // --- Gift lists (F8) ---
+
+    @Test
+    fun giftLists_saveWhole_skipUnknownPeople_goWithAFriend_andTravelInBackups() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana") { copy(gifts = listOf(Gift("lego", "LEGO", price = "€35"), Gift("book", "Book"))) })
+        s.friends.upsert(friend("rui"))
+        val lists = SqlGiftListRepository(db)
+        val list = GiftList(
+            id = "xmas",
+            title = "Christmas 2026",
+            occasionDate = LocalDate(2026, 12, 25),
+            createdAt = at(2026, 11, 1),
+            occasion = GiftOccasion.CHRISTMAS,
+            entries = listOf(
+                GiftListEntry(ana, 40.5, listOf(GiftListItem("lego", GiftStatus.BOUGHT), GiftListItem("book"))),
+                GiftListEntry(rui),
+                GiftListEntry(FriendId("ghost"), 10.0, listOf(GiftListItem("x"))),
+            ),
+        )
+        lists.upsert(list)
+        val stored = list.copy(entries = list.entries.take(2))
+        assertEquals(listOf(stored), lists.lists.first())
+        assertEquals(stored, lists.get("xmas"))
+
+        // Saved whole: a smaller list replaces the bigger one.
+        val smaller = stored.copy(title = "Natal 2026", occasion = null, occasionDate = null, entries = listOf(GiftListEntry(rui, 20.0)))
+        lists.upsert(smaller)
+        assertEquals(listOf(smaller), SqlGiftListRepository(db).lists.first())
+
+        // Saving a friend (their gifts are rewritten) keeps their place on the list; deleting them takes it away.
+        lists.upsert(stored)
+        s.friends.upsert(s.friends.get(ana)!!.copy(notes = "likes dinosaurs"))
+        assertEquals(stored, lists.get("xmas"))
+        val snapshot = s.backup.snapshot()
+        assertEquals(listOf(stored), snapshot.giftLists)
+        s.friends.delete(rui)
+        assertEquals(listOf(ana), lists.get("xmas")!!.entries.map { it.friendId })
+
+        s.backup.restore(snapshot)
+        assertEquals(listOf(stored), open().let { SqlGiftListRepository(db).lists.first() })
+        lists.delete("xmas")
+        assertNull(lists.get("xmas"))
+    }
 
     // --- Calendar suggestions (D3) ---
 

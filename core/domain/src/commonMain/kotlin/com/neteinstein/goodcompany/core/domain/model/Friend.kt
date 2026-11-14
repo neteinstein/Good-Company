@@ -105,6 +105,11 @@ data class Friend(
      * parent are family, and off for friends' kids, who still show on their parent's page and in birthdays.
      */
     val showInMyList: Boolean = true,
+    /**
+     * Kinship suggestions answered "Not right" / "Not family" (F7): the relations offered then, never proposed again for
+     * this person (see [com.neteinstein.goodcompany.core.domain.usecase.KinshipResolver]).
+     */
+    val dismissedKinship: Set<LinkType> = emptySet(),
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true

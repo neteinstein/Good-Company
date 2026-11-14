@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EventAvailable
@@ -38,6 +41,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -99,6 +103,8 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.free_hint
 import com.neteinstein.goodcompany.feature.hangouts.resources.free_never
 import com.neteinstein.goodcompany.feature.hangouts.resources.free_plan
 import com.neteinstein.goodcompany.feature.hangouts.resources.free_title
+import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_hint
+import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_delete
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_due
 import com.neteinstein.goodcompany.feature.hangouts.resources.group_edit
@@ -158,6 +164,7 @@ fun HangoutsScreen(
     onEditCircle: (String?) -> Unit = {},
     /** "We met" on a circle card: opens the small "We met" panel on that circle, nobody ticked (issue #47, F20). */
     onCircleMet: (String) -> Unit = {},
+    onOpenGiftLists: () -> Unit = {},
     viewModel: HangoutsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -181,6 +188,7 @@ fun HangoutsScreen(
             onSelectOccasion = viewModel::onSelectOccasion,
             onPlanWith = viewModel::onPlanWith,
             onPlanWithCircle = viewModel::onPlanWithCircle,
+            onOpenGiftLists = onOpenGiftLists,
         ),
     )
     state.planDraft?.let { draft ->
@@ -233,6 +241,8 @@ data class HangoutsActions(
     val onPlanWith: (FriendId, Occasion) -> Unit = { _, _ -> },
     /** "Plan" on a circle's card. */
     val onPlanWithCircle: (String) -> Unit = {},
+    /** Gift lists per occasion (F8). */
+    val onOpenGiftLists: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [HangoutsMessage]. */
@@ -380,6 +390,17 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
             }
             items(state.groups, key = { "g-${it.group.id}" }) { g ->
                 GroupCard(g, state, actions, Modifier.animateItem())
+            }
+
+            item(key = "gift-lists") {
+                // F8: gift lists sit with the circles, since a list is usually "the cousins" or "the choir".
+                ListItem(
+                    headlineContent = { Text(stringResource(Res.string.gift_lists_title)) },
+                    supportingContent = { Text(stringResource(Res.string.gift_lists_hint)) },
+                    leadingContent = { Icon(Icons.Rounded.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null) },
+                    modifier = Modifier.clickable(onClick = actions.onOpenGiftLists).padding(horizontal = 4.dp),
+                )
             }
 
             item(key = "filter-h") {

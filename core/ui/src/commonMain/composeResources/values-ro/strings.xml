@@ -567,4 +567,34 @@
         <item quantity="few">Lui %1$s și încă %2$d persoane nu</item>
         <item quantity="other">Lui %1$s și încă %2$d de persoane nu</item>
     </plurals>
+    <!-- Automatic kinship (issue #41, F7): step and half relations -->
+    <string name="link_step_parent_she">Mamă vitregă</string>
+    <string name="link_step_parent_he">Tată vitreg</string>
+    <string name="link_step_parent_they">Părinte vitreg</string>
+    <string name="link_step_child_she">Fiică vitregă</string>
+    <string name="link_step_child_he">Fiu vitreg</string>
+    <string name="link_step_child_they">Copil vitreg</string>
+    <string name="link_half_sibling_she">Soră vitregă</string>
+    <string name="link_half_sibling_he">Frate vitreg</string>
+    <string name="link_half_sibling_they">Frate sau soră vitregă</string>
+    <string name="link_step_sibling_she">Soră prin alianță</string>
+    <string name="link_step_sibling_he">Frate prin alianță</string>
+    <string name="link_step_sibling_they">Frate sau soră prin alianță</string>
+    <!-- Kinship search (F7): words separated by |, matched ignoring case and accents. kin_search_my ("my") may come before or after the word; kin_search_and joins several. -->
+    <string name="kin_search_my">mei|mele|meu|mea</string>
+    <string name="kin_search_and">și|&amp;</string>
+    <string name="kin_search_parent">părinți|părinții|părinte|părintele|mama|tata</string>
+    <string name="kin_search_child">copii|copiii|copil|copilul|fiice|fiicele|fiică|fii|fiii|fiu|fiul</string>
+    <string name="kin_search_sibling">frați|frații|frate|fratele|surori|surorile|soră|sora</string>
+    <string name="kin_search_grandparent">bunici|bunicii|bunic|bunicul|bunicile|bunică|bunica</string>
+    <string name="kin_search_grandchild">nepoți de bunic|nepoate de bunic</string>
+    <string name="kin_search_aunt_uncle">unchi|unchii|unchiul|mătuși|mătușile|mătușă|mătușa</string>
+    <string name="kin_search_niece_nephew">nepoți|nepoții|nepot|nepotul|nepoate|nepoatele|nepoată|nepoata</string>
+    <string name="kin_search_cousin">veri|verii|văr|vărul|verișori|verișorii|verișoare|verișoarele|verișoară|verișoara</string>
+    <string name="kin_search_in_law">cumnați|cumnații|cumnat|cumnatul|cumnate|cumnatele|cumnată|cumnata|socri|socrii|socru|socrul|soacră|soacra|gineri|ginerele|ginere|nurori|nurorile|noră|nora</string>
+    <string name="kin_search_step_parent">părinți vitregi|părinte vitreg|mamă vitregă|mama vitregă|tată vitreg|tatăl vitreg</string>
+    <string name="kin_search_step_child">copii vitregi|copil vitreg|fiică vitregă|fiu vitreg</string>
+    <string name="kin_search_half_sibling">frați vitregi|frate vitreg|surori vitrege|soră vitregă</string>
+    <string name="kin_search_step_sibling">frați prin alianță|frate prin alianță|surori prin alianță|soră prin alianță</string>
+    <string name="sample_gift_list_christmas">Crăciun</string>
 </resources>

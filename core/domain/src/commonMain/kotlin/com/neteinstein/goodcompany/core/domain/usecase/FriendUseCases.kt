@@ -114,6 +114,8 @@ data class FriendDetail(
     val kids: List<LinkedPerson> = emptyList(),
     /** Their parents among your people (F9): set for a kid, whose page then offers "Show in my list". */
     val parents: List<Friend> = emptyList(),
+    /** What they may be to you (F7), worked out from your relatives' links; null when nothing is proposed. */
+    val kinship: KinshipProposal? = null,
 )
 
 class ObserveFriendDetailUseCase(
@@ -168,6 +170,7 @@ class ObserveFriendDetailUseCase(
             lastJournal = journal.filter { it.friendId == id }.maxByOrNull { it.at },
             kids = kids,
             parents = KidsAsPeople.parentsOf(id, ls, byId),
+            kinship = if (friend.relationToMe == null) KinshipResolver.proposals(all, ls).firstOrNull { it.person.id == id } else null,
         )
     }
 

@@ -1,0 +1,30 @@
+-- Version 15 → 16 (issue #42, F8): gift lists per occasion, their people (with an optional budget) and the gifts
+-- planned for each person, moving from to buy to bought to given.
+
+CREATE TABLE gift_list (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    occasion_date TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE gift_list_entry (
+    list_id TEXT NOT NULL REFERENCES gift_list(id) ON DELETE CASCADE,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    budget REAL,
+    position INTEGER NOT NULL,
+    PRIMARY KEY (list_id, friend_id)
+);
+
+CREATE INDEX gift_list_entry_friend ON gift_list_entry(friend_id);
+
+CREATE TABLE gift_list_item (
+    list_id TEXT NOT NULL,
+    friend_id TEXT NOT NULL,
+    gift_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'TO_BUY' CHECK (status IN ('TO_BUY', 'BOUGHT', 'GIVEN')),
+    position INTEGER NOT NULL,
+    PRIMARY KEY (list_id, friend_id, gift_id),
+    FOREIGN KEY (list_id, friend_id) REFERENCES gift_list_entry(list_id, friend_id) ON DELETE CASCADE
+);

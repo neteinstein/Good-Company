@@ -156,6 +156,10 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
                 LinkType.IN_LAW -> Relation.TYPE_CUSTOM to R.string.contact_relation_in_law
                 LinkType.EX -> Relation.TYPE_CUSTOM to R.string.contact_relation_ex
                 LinkType.COLLEAGUE -> Relation.TYPE_CUSTOM to R.string.contact_relation_colleague
+                LinkType.STEP_PARENT -> Relation.TYPE_CUSTOM to R.string.contact_relation_step_parent
+                LinkType.STEP_CHILD -> Relation.TYPE_CUSTOM to R.string.contact_relation_step_child
+                LinkType.HALF_SIBLING -> Relation.TYPE_CUSTOM to R.string.contact_relation_half_sibling
+                LinkType.STEP_SIBLING -> Relation.TYPE_CUSTOM to R.string.contact_relation_step_sibling
             }
             add(relationRow(link.name, type, label?.let(context::getString)))
         }

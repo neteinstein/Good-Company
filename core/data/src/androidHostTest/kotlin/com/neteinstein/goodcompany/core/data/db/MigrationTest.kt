@@ -11,6 +11,11 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
+import com.neteinstein.goodcompany.core.domain.model.GiftList
+import com.neteinstein.goodcompany.core.domain.model.GiftListEntry
+import com.neteinstein.goodcompany.core.domain.model.GiftListItem
+import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -427,6 +432,97 @@ class MigrationTest {
         val read = database.readPreferences(AppSettings(aiApiKey = "sk-ant-key"))
         assertEquals(false, read.aiEnabled)
         assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), read.activities)
+        driver.close()
+    }
+
+    @Test
+    fun version14to15_keepsLinks_remembersDismissedKinship_andTakesStepAndHalfFamily() = runTest {
+        val driver = driverAt(14)
+        listOf("ana", "rui", "duarte").forEachIndexed { i, id ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', NULL, 1, 0, '', 0, 0, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+        driver.execute(
+            null,
+            "INSERT INTO person_link VALUES ('l1', 'rui', 'ana', 'SPOUSE', '2015-07-04', NULL, 'wedding', 1, 1700000000000)",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 14, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val spouse = PersonLink(
+            "l1",
+            FriendId("rui"),
+            FriendId("ana"),
+            LinkType.SPOUSE,
+            LocalDate(2015, 7, 4),
+            note = "wedding",
+            remindAnniversary = true,
+            addedAt = Instant.fromEpochMilliseconds(1700000000000),
+        )
+        assertEquals(listOf(spouse), database.readLinks())
+        assertTrue(database.readFriends().all { it.dismissedKinship.isEmpty() })
+
+        // The new family types are accepted; anything unknown still isn't.
+        val half = PersonLink("l2", FriendId("ana"), FriendId("duarte"), LinkType.HALF_SIBLING)
+        database.writeLink(half)
+        assertEquals(listOf(spouse, half), database.readLinks())
+        assertTrue(
+            runCatching {
+                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
+            }.isFailure,
+        )
+        val duarte = database.readFriends().first { it.id.value == "duarte" }
+        database.writeFriend(duarte.copy(relationToMe = LinkType.STEP_SIBLING, dismissedKinship = setOf(LinkType.SIBLING, LinkType.HALF_SIBLING)), 2)
+        val saved = database.readFriends().first { it.id.value == "duarte" }
+        assertEquals(LinkType.STEP_SIBLING, saved.relationToMe)
+        assertEquals(setOf(LinkType.SIBLING, LinkType.HALF_SIBLING), saved.dismissedKinship)
+        // Links still go with either person.
+        database.friendQueries.delete("ana")
+        assertTrue(database.readLinks().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version15to16_addsGiftLists_thatGoWithTheirFriend() = runTest {
+        val driver = driverAt(15)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 15, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        assertTrue(database.readGiftLists().isEmpty())
+        val list = GiftList(
+            "xmas",
+            "Christmas 2026",
+            LocalDate(2026, 12, 25),
+            Instant.fromEpochMilliseconds(1700000000000),
+            GiftOccasion.CHRISTMAS,
+            listOf(GiftListEntry(FriendId("ana"), 30.0, listOf(GiftListItem("g1", GiftStatus.GIVEN)))),
+        )
+        database.writeGiftList(list)
+        assertEquals(listOf(list), database.readGiftLists())
+        assertTrue(
+            runCatching {
+                driver.execute(null, "UPDATE gift_list_item SET status = 'LOST'", 0).await()
+            }.isFailure,
+        )
+        database.friendQueries.delete("ana")
+        assertEquals(listOf(list.copy(entries = emptyList())), database.readGiftLists())
         driver.close()
     }
 

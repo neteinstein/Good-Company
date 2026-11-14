@@ -33,6 +33,8 @@ data class Backup(
     val places: List<NamedPlace> = emptyList(),
     /** Answers to calendar suggestions ("No", "Never for this series"): ids only, never event details (D3). */
     val calendarDecisions: List<CalendarDecision> = emptyList(),
+    /** Gift lists per occasion (F8); missing in older backups. */
+    val giftLists: List<GiftList> = emptyList(),
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {

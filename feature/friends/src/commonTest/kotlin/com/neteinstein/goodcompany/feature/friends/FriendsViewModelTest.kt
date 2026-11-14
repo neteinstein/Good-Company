@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -50,6 +51,8 @@ class FriendsViewModelTest {
         g.snooze,
         g.loadSampleData,
         g.setHomeCircleFilter,
+        g.observeKinship,
+        g.parseKinshipQuery,
         g.clock,
     )
 
@@ -292,5 +295,30 @@ class FriendsViewModelTest {
         assertNull(state.value.message)
         vm.onContactsChosen(2)
         assertEquals(FriendsMessage.ContactsPicked(PickedContactsResult(2, 0)), state.value.message)
+    }
+
+    @Test
+    fun myNieces_findsConfirmedKinshipOnly_andCountsWhatsSuggested() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("rui") { copy(relationToMe = LinkType.SIBLING) },
+                friend("leonor") { copy(relationToMe = LinkType.NIECE_NEPHEW, showInMyList = false) },
+                friend("mia"),
+                friend("bia") { copy(relationToMe = LinkType.COUSIN) },
+            ),
+        )
+        // Mia is Rui's daughter too, but nobody has confirmed she's my niece yet.
+        g.linkRepo.upsert(PersonLink("1", FriendId("rui"), FriendId("mia"), LinkType.CHILD))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(1, state.value.suggestedFamily)
+        vm.onQueryChange("My nieces and nephews")
+        assertEquals(setOf(LinkType.NIECE_NEPHEW), state.value.kinship)
+        assertEquals(listOf("Leonor"), state.value.friends.map { it.friend.name })
+        vm.onQueryChange("my nieces, my cousins")
+        assertEquals(listOf("Bia", "Leonor"), state.value.friends.map { it.friend.name }.sorted())
+        vm.onQueryChange("leo")
+        assertNull(state.value.kinship)
+        assertEquals(listOf("Leonor"), state.value.friends.map { it.friend.name })
     }
 }

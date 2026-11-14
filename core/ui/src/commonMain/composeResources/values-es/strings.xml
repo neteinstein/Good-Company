@@ -548,4 +548,34 @@
         <item quantity="one">A %1$s y %2$d persona más no</item>
         <item quantity="other">A %1$s y %2$d personas más no</item>
     </plurals>
+    <!-- Automatic kinship (issue #41, F7): step and half relations -->
+    <string name="link_step_parent_she">Madrastra</string>
+    <string name="link_step_parent_he">Padrastro</string>
+    <string name="link_step_parent_they">Madrastra o padrastro</string>
+    <string name="link_step_child_she">Hijastra</string>
+    <string name="link_step_child_he">Hijastro</string>
+    <string name="link_step_child_they">Hijastra o hijastro</string>
+    <string name="link_half_sibling_she">Media hermana</string>
+    <string name="link_half_sibling_he">Medio hermano</string>
+    <string name="link_half_sibling_they">Media hermana o medio hermano</string>
+    <string name="link_step_sibling_she">Hermanastra</string>
+    <string name="link_step_sibling_he">Hermanastro</string>
+    <string name="link_step_sibling_they">Hermanastra o hermanastro</string>
+    <!-- Kinship search (F7): words separated by |, matched ignoring case and accents. kin_search_my ("my") may come before or after the word; kin_search_and joins several. -->
+    <string name="kin_search_my">mis|mi</string>
+    <string name="kin_search_and">y|e|&amp;</string>
+    <string name="kin_search_parent">padres|padre|madres|madre|papá|mamá</string>
+    <string name="kin_search_child">hijos|hijo|hijas|hija</string>
+    <string name="kin_search_sibling">hermanos|hermano|hermanas|hermana</string>
+    <string name="kin_search_grandparent">abuelos|abuelo|abuelas|abuela</string>
+    <string name="kin_search_grandchild">nietos|nieto|nietas|nieta</string>
+    <string name="kin_search_aunt_uncle">tíos|tío|tías|tía</string>
+    <string name="kin_search_niece_nephew">sobrinos|sobrino|sobrinas|sobrina</string>
+    <string name="kin_search_cousin">primos|primo|primas|prima</string>
+    <string name="kin_search_in_law">familia política|cuñados|cuñado|cuñadas|cuñada|suegros|suegro|suegras|suegra|yernos|yerno|nueras|nuera</string>
+    <string name="kin_search_step_parent">padrastros|padrastro|madrastras|madrastra</string>
+    <string name="kin_search_step_child">hijastros|hijastro|hijastras|hijastra</string>
+    <string name="kin_search_half_sibling">medios hermanos|medio hermano|medias hermanas|media hermana</string>
+    <string name="kin_search_step_sibling">hermanastros|hermanastro|hermanastras|hermanastra</string>
+    <string name="sample_gift_list_christmas">Navidad</string>
 </resources>

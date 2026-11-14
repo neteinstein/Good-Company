@@ -533,6 +533,17 @@ class FriendDetailViewModel(
         }
     }
 
+    /** "Yes, niece" or a chip on an open kinship proposal (F7): sets what they are to you. */
+    fun onConfirmKinship(relation: LinkType) {
+        viewModelScope.launch { links.confirmKinship(friendId, relation) }
+    }
+
+    /** "Not right" / "Not family" (F7): this proposal isn't offered again. */
+    fun onDismissKinship() {
+        val proposal = state.value.detail?.kinship ?: return
+        viewModelScope.launch { links.dismissKinship(friendId, proposal.options) }
+    }
+
     /** "Show in my list" (F9) for this person. */
     fun onSetShowInMyList(show: Boolean) {
         viewModelScope.launch { links.setShowInMyList(friendId, show) }
