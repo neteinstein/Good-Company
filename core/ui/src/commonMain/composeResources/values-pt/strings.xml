@@ -394,4 +394,16 @@
     <string name="circle_color_slate">Ardósia</string>
     <string name="circle_tick_who_came">Marca quem veio de %1$s.</string>
     <string name="log_title_circle">Registar encontro: %1$s</string>
+    <string name="attachment_kind_photo">Fotografia</string>
+    <string name="attachment_kind_link">Ligação</string>
+    <string name="attachment_kind_text">Texto de conversa</string>
+    <string name="attachment_note">ideia ou nota</string>
+    <string name="attachment_counted_met">contou como encontro</string>
+    <string name="attachment_counted_message">contou como mensagem</string>
+    <string name="attachment_counted_call">contou como chamada</string>
+    <string name="attachment_counted_email">contou como email</string>
+    <string name="attachment_counted_contact">contou como contacto</string>
+    <string name="attachment_original_gone">O original já não está na galeria</string>
+    <string name="attachment_copy">Copiar</string>
+    <string name="attachment_open_link">Abrir ligação</string>
 </resources>

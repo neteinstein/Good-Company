@@ -60,7 +60,7 @@ private class ImagePickerDelegate(var onPicked: (ByteArray?) -> Unit) :
  * larger than needed, then encodes it as JPEG.
  */
 @OptIn(ExperimentalForeignApi::class)
-private fun uprightJpeg(image: UIImage): ByteArray? {
+internal fun uprightJpeg(image: UIImage): ByteArray? {
     val (width, height) = image.size.useContents { width to height }
     if (width <= 0.0 || height <= 0.0) return null
     val scale = minOf(1.0, PICKED_MAX_SIDE / maxOf(width, height))
@@ -74,7 +74,7 @@ private fun uprightJpeg(image: UIImage): ByteArray? {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun NSData.toByteArray(): ByteArray? {
+internal fun NSData.toByteArray(): ByteArray? {
     val size = length.toInt()
     if (size == 0) return null
     return ByteArray(size).also { bytes -> bytes.usePinned { memcpy(it.addressOf(0), this.bytes, length) } }

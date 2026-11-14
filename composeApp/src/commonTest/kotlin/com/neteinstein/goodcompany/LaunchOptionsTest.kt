@@ -38,7 +38,12 @@ class LaunchOptionsTest {
     @Test
     fun parsesAWebShare() {
         val o = LaunchOptions.parse("?share_title=Ana%27s+news&share_text=Got+the+job%21+%F0%9F%8E%89&share_url=https%3A%2F%2Fx.io%2Fp")
-        assertEquals(SharedContent(text = "Ana's news\nGot the job! 🎉", url = "https://x.io/p"), o.shared)
+        assertEquals(SharedContent(text = "Got the job! 🎉", url = "https://x.io/p", title = "Ana's news"), o.shared)
+        assertEquals(SharedContent(text = "Just a title"), LaunchOptions.parse("?share_title=Just+a+title").shared)
+        assertEquals(
+            SharedContent(url = "https://x.io/p", title = "Page"),
+            LaunchOptions.parse("?share_title=Page&share_url=https%3A%2F%2Fx.io%2Fp").shared,
+        )
         assertEquals(null, LaunchOptions.parse("?share_text=+").shared)
         assertEquals("100% sure", LaunchOptions.percentDecode("100%25%20sure"))
         assertEquals("50%", LaunchOptions.percentDecode("50%"))

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.data.repository
 
+import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
@@ -13,20 +14,19 @@ import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
 import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
 import com.neteinstein.goodcompany.core.data.db.nextFriendPosition
+import com.neteinstein.goodcompany.core.data.db.readAttachments
 import com.neteinstein.goodcompany.core.data.db.readFriends
 import com.neteinstein.goodcompany.core.data.db.readGroups
 import com.neteinstein.goodcompany.core.data.db.readHangouts
 import com.neteinstein.goodcompany.core.data.db.readIdeas
 import com.neteinstein.goodcompany.core.data.db.readInteractions
-import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
-import com.neteinstein.goodcompany.core.data.db.readAttachments
 import com.neteinstein.goodcompany.core.data.db.readJournal
-import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.readMessages
 import com.neteinstein.goodcompany.core.data.db.readPlans
 import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
 import com.neteinstein.goodcompany.core.data.db.toColumn
+import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.writeFriend
 import com.neteinstein.goodcompany.core.data.db.writeGroup
 import com.neteinstein.goodcompany.core.data.db.writeHangout
@@ -39,9 +39,9 @@ import com.neteinstein.goodcompany.core.data.db.writePreferences
 import com.neteinstein.goodcompany.core.data.db.writeReminder
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
-import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -54,7 +54,6 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
-import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -71,6 +70,7 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow

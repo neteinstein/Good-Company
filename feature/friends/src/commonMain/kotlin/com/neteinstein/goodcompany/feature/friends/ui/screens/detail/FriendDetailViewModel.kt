@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
@@ -17,9 +18,12 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.model.SharedContent
+import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -27,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -35,8 +40,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
@@ -44,6 +51,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
@@ -103,6 +111,9 @@ sealed interface FriendDetailMessage {
 
     /** A "More about" line was deleted; offered with "Undo". */
     data class CustomFieldRemoved(val label: String) : FriendDetailMessage
+
+    /** A saved attachment was removed; offered with "Undo". */
+    data object AttachmentRemoved : FriendDetailMessage
 }
 
 /** Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are). */
@@ -171,6 +182,10 @@ data class FriendDetailUiState(
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
+    /** "Saved for <name>" (D6): their attachments and their circles', newest first. */
+    val attachments: List<Attachment> = emptyList(),
+    /** Attachment just removed, offered for undo. */
+    val undoAttachment: Attachment? = null,
 )
 
 class FriendDetailViewModel(
@@ -198,14 +213,24 @@ class FriendDetailViewModel(
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
     private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
+    observeAttachments: ObserveAttachmentsUseCase,
+    private val deleteAttachment: DeleteAttachmentUseCase,
+    private val restoreAttachment: RestoreAttachmentUseCase,
+    private val shareInbox: ShareInbox,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendDetailUiState())
 
-    val state: StateFlow<FriendDetailUiState> = combine(observeDetail(friendId), observeSettings(), local) { detail, settings, ui ->
+    val state: StateFlow<FriendDetailUiState> = combine(
+        observeDetail(friendId),
+        observeSettings(),
+        observeAttachments(friendId),
+        local,
+    ) { detail, settings, attachments, ui ->
         ui.copy(
             detail = detail,
+            attachments = attachments,
             isLoading = false,
             notFound = detail == null,
             hasAiKey = settings.hasAiKey,
@@ -653,5 +678,37 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null) }
+    // --- Saved (D6) ---
+
+    /**
+     * "Add a photo" on the Saved card: the picked photo goes through the same confirm step as a share, already for
+     * this friend. Empty [image] means it couldn't be read.
+     */
+    fun onAddSavedPhoto(image: ByteArray?, ref: PhotoRef?, takenOn: LocalDate?) {
+        if (image == null) return
+        if (image.isEmpty()) {
+            say(FriendDetailMessage.PhotoUnreadable)
+            return
+        }
+        shareInbox.offer(SharedContent(image = SharedImage(image, "image/jpeg"), photoRef = ref, takenOn = takenOn), friendId)
+    }
+
+    fun onRemoveAttachment(attachment: Attachment) {
+        viewModelScope.launch {
+            deleteAttachment(attachment)
+            local.update { it.copy(undoAttachment = attachment, message = FriendDetailMessage.AttachmentRemoved) }
+        }
+    }
+
+    fun onUndoRemoveAttachment() {
+        val attachment = local.value.undoAttachment ?: return
+        viewModelScope.launch {
+            restoreAttachment(attachment)
+            local.update { it.copy(undoAttachment = null) }
+        }
+    }
+
+    fun onMessageShown() = local.update {
+        it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null, undoAttachment = null)
+    }
 }

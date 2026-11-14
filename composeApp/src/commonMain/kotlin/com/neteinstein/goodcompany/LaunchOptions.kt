@@ -29,9 +29,10 @@ data class LaunchOptions(
             fun param(name: String) = params[name]?.let(::percentDecode)?.trim()?.takeIf { it.isNotEmpty() }
             val title = param("share_title")
             val text = param("share_text")
-            // Many apps put the link in `text`; keep the title as context when both are there.
-            val body = listOfNotNull(title, text).distinct().joinToString("\n").ifEmpty { null }
-            return SharedContent(text = body, url = param("share_url")).takeUnless { it.isEmpty }
+            val url = param("share_url")
+            // The title stays apart (it heads the link card, D6); alone, it is the text.
+            val body = text ?: title.takeIf { url == null }
+            return SharedContent(text = body, url = url, title = title.takeIf { it != body }).takeUnless { it.isEmpty }
         }
 
         /** `application/x-www-form-urlencoded` → text (UTF-8, `+` = space). Malformed escapes are kept as typed. */

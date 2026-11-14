@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -117,8 +118,14 @@ class ObserveFriendDetailUseCase(
         hangouts.hangouts,
         interactions.interactions,
         interactions.messages,
-        combine(ideas.ideas, settings.settings, groups.groups, plans.plans, interactions.journal) { i, s, g, p, j -> Extras(i, s, g, p, j) },
-    ) { all, hs, ints, msgs, (ideaList, s, gs, ps, journal) ->
+        combine(
+            ideas.ideas,
+            settings.settings,
+            groups.groups,
+            plans.plans,
+            combine(interactions.journal, interactions.attachments, ::Pair),
+        ) { i, s, g, p, ja -> Extras(i, s, g, p, ja.first, ja.second) },
+    ) { all, hs, ints, msgs, (ideaList, s, gs, ps, journal, attachments) ->
         val friend = all.firstOrNull { it.id == id } ?: return@combine null
         val byId = all.associateBy { it.id }
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
@@ -140,7 +147,7 @@ class ObserveFriendDetailUseCase(
             plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
             others = all.filter { it.id != id }.sortedBy { it.name.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
-            timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone),
+            timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone, attachments),
             lastJournal = journal.filter { it.friendId == id }.maxByOrNull { it.at },
         )
     }
@@ -159,6 +166,7 @@ class ObserveFriendDetailUseCase(
         val groups: List<FriendGroup>,
         val plans: List<Plan>,
         val journal: List<JournalEntry>,
+        val attachments: List<Attachment>,
     )
 }
 

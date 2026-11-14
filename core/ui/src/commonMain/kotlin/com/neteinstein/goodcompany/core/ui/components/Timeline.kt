@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
@@ -189,6 +190,7 @@ fun TimelineEntryRow(entry: TimelineEntry, zone: TimeZone, modifier: Modifier = 
                     Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                 }
             }
+            v.attachment?.let { AttachmentPreview(it, Modifier.padding(top = 6.dp)) }
         }
     }
 }
@@ -200,6 +202,8 @@ private data class EntryLook(
     val quote: String? = null,
     val tag: String? = null,
     val strong: Boolean = false,
+    /** The share it was logged from (D6): shown with its thumbnail. */
+    val attachment: Attachment? = null,
 )
 
 @Composable
@@ -220,6 +224,7 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
             detail = entry.others.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.tl_with, namesList(it)) },
             quote = h.note.trim().ifEmpty { null },
             strong = true,
+            attachment = entry.attachment,
         )
     }
     is TimelineEntry.Contact -> {
@@ -248,6 +253,7 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
                 InteractionSource.SHARE -> stringResource(Res.string.tl_source_shared)
                 InteractionSource.MANUAL, InteractionSource.NOTIFICATION -> null
             },
+            attachment = entry.attachment,
         )
     }
     is TimelineEntry.Journal -> EntryLook(Icons.AutoMirrored.Rounded.MenuBook, stringResource(Res.string.tl_journal), quote = entry.entry.text)

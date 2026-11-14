@@ -4,32 +4,32 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.FeedItem
+import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
-import com.neteinstein.goodcompany.core.domain.usecase.LogKind
-import com.neteinstein.goodcompany.core.domain.usecase.Relationships
-import com.neteinstein.goodcompany.core.domain.usecase.SaveShareRequest
-import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
-import com.neteinstein.goodcompany.core.domain.usecase.ShareGuess
-import com.neteinstein.goodcompany.core.domain.usecase.ShareGuesser
-import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
-import com.neteinstein.goodcompany.core.domain.usecase.ShareTarget
-import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
-import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
-import com.neteinstein.goodcompany.core.domain.model.FeedItem
-import com.neteinstein.goodcompany.core.domain.model.FriendFeed
-import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FeedParser
 import com.neteinstein.goodcompany.core.domain.usecase.FreshItem
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.SaveShareRequest
+import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
+import com.neteinstein.goodcompany.core.domain.usecase.ShareGuess
+import com.neteinstein.goodcompany.core.domain.usecase.ShareGuesser
 import com.neteinstein.goodcompany.core.domain.usecase.ShareMatcher
+import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
+import com.neteinstein.goodcompany.core.domain.usecase.ShareTarget
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -87,7 +87,10 @@ class ShareAndFeedsTest {
         )
         assertTrue(ShareMatcher.mentions(listOf(ana), SharedContent(image = SharedImage(byteArrayOf(1), "image/png"))).isEmpty())
         // The link's title counts too.
-        assertEquals(ShareReason.MENTIONED, ShareMatcher.rank(listOf(bea), SharedContent(url = "https://x.y", title = "Beatriz Rocha's trail")).single().reason)
+        assertEquals(
+            ShareReason.MENTIONED,
+            ShareMatcher.rank(listOf(bea), SharedContent(url = "https://x.y", title = "Beatriz Rocha's trail")).single().reason,
+        )
     }
 
     @Test

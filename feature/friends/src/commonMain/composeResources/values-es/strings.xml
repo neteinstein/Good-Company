@@ -303,7 +303,6 @@
     <string name="share_search">Buscar amigos</string>
     <string name="share_mentioned">Mencionado</string>
     <string name="share_change">Cambiar</string>
-    <string name="share_whats_new">Novedades de %1$s</string>
     <string name="share_suggest">Leer con IA</string>
     <string name="share_ai_hint">Añade tu clave de IA en Ajustes y Claude leerá las capturas por ti.</string>
     <string name="share_nothing_found">No hay novedades sobre %1$s. Escríbelo tú.</string>
@@ -439,4 +438,25 @@
         <item quantity="one">Añadir %1$d amigo</item>
         <item quantity="other">Añadir %1$d amigos</item>
     </plurals>
+    <string name="share_save_for">Guardar para %1$s</string>
+    <string name="share_reason_number">Número en el texto compartido</string>
+    <string name="share_reason_recent">Reciente</string>
+    <string name="share_reason_seen_today">Visto hoy</string>
+    <string name="share_circles">Círculos</string>
+    <string name="share_add_typed">Añadir a “%1$s” como amigo</string>
+    <string name="share_how_count">¿Cómo debe contar?</string>
+    <string name="share_counts">Cuenta como interacción</string>
+    <string name="share_counts_hint">Lo añade a la cronología y actualiza cuándo hablasteis por última vez</string>
+    <string name="share_note">Solo una idea o nota</string>
+    <string name="share_note_hint">Se guarda en la página de %1$s; el último contacto no cambia</string>
+    <string name="share_gift">Idea de regalo</string>
+    <string name="share_gift_hint">Se guarda en las ideas de regalo de %1$s, con el enlace</string>
+    <string name="share_caption">Descripción</string>
+    <string name="share_price">Precio (opcional)</string>
+    <string name="share_failed">No se pudo guardar. Inténtalo de nuevo.</string>
+    <string name="saved_title">Guardado para %1$s</string>
+    <string name="saved_see_all">Ver todo</string>
+    <string name="saved_add_photo">Añadir una foto</string>
+    <string name="saved_empty">Comparte un chat, un enlace o una foto con Good Company y aparecerá aquí.</string>
+    <string name="saved_removed">Eliminado de guardados</string>
 </resources>

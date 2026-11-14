@@ -30,7 +30,14 @@ final class ShareViewController: UIViewController {
         var text: String?
         var url: String?
         var image: UIImage?
-        let providers = (extensionContext?.inputItems as? [NSExtensionItem] ?? []).flatMap { $0.attachments ?? [] }
+        let items = extensionContext?.inputItems as? [NSExtensionItem] ?? []
+        let providers = items.flatMap { $0.attachments ?? [] }
+        // Safari and most apps give the page title as the item's title or content text (D6: shown on the link card).
+        let title = items.lazy.compactMap { item in
+            [item.attributedTitle?.string, item.attributedContentText?.string]
+                .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .first { !$0.isEmpty }
+        }.first
         for provider in providers {
             if url == nil, provider.hasItemConformingToTypeIdentifier(UTType.url.identifier),
                let item = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) {
@@ -54,6 +61,7 @@ final class ShareViewController: UIViewController {
         var entry: [String: String] = [:]
         entry["text"] = text
         entry["url"] = url
+        if let title, title != url, title != text { entry["title"] = title }
         if let image, let jpeg = Self.downscaled(image).jpegData(compressionQuality: 0.85) {
             let name = "\(id).jpg"
             guard (try? jpeg.write(to: inbox.appendingPathComponent(name))) != nil else { return false }

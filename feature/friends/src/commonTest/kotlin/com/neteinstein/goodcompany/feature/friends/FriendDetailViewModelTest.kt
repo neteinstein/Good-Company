@@ -1,6 +1,8 @@
 package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
@@ -12,6 +14,8 @@ import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
@@ -67,6 +71,10 @@ class FriendDetailViewModelTest {
         g.addFeed,
         g.setFriendPhoto,
         g.setHomeCircleFilter,
+        g.observeAttachments,
+        g.deleteAttachment,
+        g.restoreAttachment,
+        g.shareInbox,
         g.clock,
         g.ids,
     )
@@ -451,5 +459,43 @@ class FriendDetailViewModelTest {
         assertNull(state.value.undoCustomField)
         vm.onUndoRemoveCustomField()
         assertEquals(listOf("Club"), state.value.detail!!.friend.customFields.map { it.label })
+    }
+
+    @Test
+    fun savedPhotosGoThroughTheShareStep_andRemovedOnesComeBackWithUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddSavedPhoto(null, null, null)
+        assertNull(g.shareInbox.pending.value)
+        vm.onAddSavedPhoto(ByteArray(0), null, null)
+        assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
+        vm.onMessageShown()
+        val ref = PhotoRef(PhotoPlatform.IOS, "asset-1")
+        vm.onAddSavedPhoto(byteArrayOf(1, 2), ref, LocalDate(2026, 3, 1))
+        assertEquals(ref, g.shareInbox.pending.value?.photoRef)
+        assertEquals(FriendId("ana"), g.shareInbox.preselected.value)
+
+        val saved = Attachment(
+            id = "a1",
+            friendId = FriendId("ana"),
+            circleId = null,
+            kind = AttachmentKind.TEXT,
+            text = "see you soon",
+            url = null,
+            title = null,
+            photoRef = null,
+            thumbnail = null,
+            at = g.clock.now(),
+            interactionType = null,
+            logId = null,
+        )
+        g.interactionRepo.upsertAttachment(saved)
+        assertEquals(listOf("a1"), state.value.attachments.map { it.id })
+        vm.onRemoveAttachment(saved)
+        assertTrue(state.value.attachments.isEmpty())
+        assertEquals(FriendDetailMessage.AttachmentRemoved, state.value.message)
+        vm.onUndoRemoveAttachment()
+        assertEquals(listOf("a1"), state.value.attachments.map { it.id })
+        assertNull(state.value.undoAttachment)
     }
 }

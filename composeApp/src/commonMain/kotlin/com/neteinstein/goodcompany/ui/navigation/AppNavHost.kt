@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -142,7 +143,15 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 ShareToFriendScreen(
                     onClose = { navController.popBackStack(ShareRoute, inclusive = true) },
                     onSaved = { id ->
-                        navController.navigate(FriendDetailRoute(id.value)) { popUpTo<ShareRoute> { inclusive = true } }
+                        // "Add a photo" on a friend's page lands back on that page instead of opening it twice.
+                        val previous = navController.previousBackStackEntry
+                        val fromThatFriend = previous?.destination?.hasRoute<FriendDetailRoute>() == true &&
+                            previous.toRoute<FriendDetailRoute>().id == id.value
+                        if (fromThatFriend) {
+                            navController.popBackStack(ShareRoute, inclusive = true)
+                        } else {
+                            navController.navigate(FriendDetailRoute(id.value)) { popUpTo<ShareRoute> { inclusive = true } }
+                        }
                     },
                 )
             }

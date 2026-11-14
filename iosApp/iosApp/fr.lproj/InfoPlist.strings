@@ -2,3 +2,4 @@
 "NSContactsUsageDescription" = "Good Company affiche tes contacts pour que tu choisisses tes amis. Seules les personnes que tu choisis sont enregistrées dans l’app. Rien ne quitte ton appareil.";
 "NSLocationWhenInUseUsageDescription" = "Utilisée uniquement quand tu touches « Utiliser ma position », pour retenir où vous vous êtes vus et suggérer des sorties à proximité.";
 "NSFaceIDUsageDescription" = "Utilisé uniquement si vous activez le verrouillage de l’app, pour que vos notes sur vos amis restent privées.";
+"NSPhotoLibraryUsageDescription" = "Utilisé uniquement pour ouvrir l’original d’une photo enregistrée pour un ami. Good Company garde une petite copie et une référence, jamais la photo elle-même.";
