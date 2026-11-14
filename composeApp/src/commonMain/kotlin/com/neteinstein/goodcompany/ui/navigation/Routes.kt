@@ -66,6 +66,8 @@ import org.jetbrains.compose.resources.StringResource
 
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
+/** Settings → Activities: what the log sheet offers, in which order (F3). */
+@Serializable data object ActivitiesRoute
 
 /** Settings → Calendar suggestions (D3). */
 @Serializable data object CalendarSettingsRoute
@@ -85,4 +87,13 @@ enum class TopLevelDestination(val route: Any, val label: StringResource, val ic
     AGENDA(AgendaRoute, Res.string.nav_agenda, Icons.Outlined.Event, Icons.Rounded.Event),
     IDEAS(IdeasRoute, Res.string.nav_ideas, Icons.Outlined.AutoAwesome, Icons.Rounded.AutoAwesome),
     SETTINGS(SettingsRoute, Res.string.nav_settings, Icons.Outlined.Settings, Icons.Rounded.Settings),
+    ;
+
+    /** Ideas is AI only: it leaves the bar while AI is off (F1). */
+    fun isShown(aiEnabled: Boolean): Boolean = this != IDEAS || aiEnabled
+
+    companion object {
+        /** The tabs in the bar, given the AI switch. */
+        fun shown(aiEnabled: Boolean): List<TopLevelDestination> = entries.filter { it.isShown(aiEnabled) }
+    }
 }

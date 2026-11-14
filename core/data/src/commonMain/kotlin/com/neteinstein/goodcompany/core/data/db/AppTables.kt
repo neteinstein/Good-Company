@@ -359,9 +359,12 @@ internal suspend fun GoodCompanyDatabase.writeMessage(message: DomainMessage) {
 
 // --- User preferences (the part of AppSettings that lives in the database) ---
 
-/** The stored preferences applied onto [base]; [base] as it is when none were saved yet. */
+/**
+ * The stored preferences applied onto [base], which carries the device settings (the API key); [base] as it is when
+ * none were saved yet. An AI switch never written (no row, or NULL from before migration 7) is on when a key is saved.
+ */
 internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings {
-    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return base
+    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return base.copy(aiEnabled = base.hasAiKey)
     return base.copy(
         innerCircleDays = row.inner_circle_days.toInt(),
         closeCircleDays = row.close_circle_days.toInt(),
@@ -374,8 +377,19 @@ internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): App
         showWarmth = row.show_warmth.toFlag(),
         privateNotifications = row.private_notifications.toFlag(),
         homeCircleFilter = row.home_circle_filter,
+        aiEnabled = row.ai_enabled?.toFlag() ?: base.hasAiKey,
+        activities = activitiesFromColumn(row.activities),
     )
 }
+
+/** Comma-separated [HangoutActivity] names; unknown names are dropped, and nothing left (or NULL) means all of them. */
+internal fun activitiesFromColumn(column: String?): List<HangoutActivity> =
+    column?.split(',')?.mapNotNull { name -> HangoutActivity.entries.firstOrNull { it.name == name.trim() } }?.distinct()
+        ?.takeIf { it.isNotEmpty() }
+        ?: HangoutActivity.entries
+
+internal fun List<HangoutActivity>.toActivitiesColumn(): String? =
+    distinct().takeIf { it.isNotEmpty() && it != HangoutActivity.entries }?.joinToString(",") { it.name }
 
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
@@ -392,6 +406,8 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             show_warmth = settings.showWarmth.toColumn(),
             private_notifications = settings.privateNotifications.toColumn(),
             home_circle_filter = settings.homeCircleFilter,
+            ai_enabled = settings.aiEnabled.toColumn(),
+            activities = settings.activities.toActivitiesColumn(),
         ),
     )
 }

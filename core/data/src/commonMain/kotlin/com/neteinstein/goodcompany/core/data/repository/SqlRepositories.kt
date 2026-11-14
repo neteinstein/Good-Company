@@ -87,9 +87,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -433,13 +434,13 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
     private val device = PersistentState(settings, DeviceSettings.KEY, DeviceSettings.serializer(), DeviceSettings())
     private val lock = Mutex()
 
+    // The preferences are read on top of the device settings: an unset AI switch follows the saved key (issue #37).
+    @OptIn(ExperimentalCoroutinesApi::class)
     override val settings: Flow<AppSettings> =
-        combine(db.observe(*PREFERENCE_TABLES) { it.readPreferences(AppSettings()) }, device.flow) { preferences, device ->
-            device.applyTo(preferences)
-        }
+        device.flow.flatMapLatest { device -> db.observe(*PREFERENCE_TABLES) { it.readPreferences(device.applyTo(AppSettings())) } }
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) = lock.withLock {
-        val current = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+        val current = current()
         val next = transform(current)
         if (next != current) {
             db.access { it.writePreferences(next) }
@@ -449,7 +450,7 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
 
     internal suspend fun writeDevice(settings: AppSettings) = device.update { DeviceSettings.of(settings) }
 
-    internal suspend fun current(): AppSettings = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+    internal suspend fun current(): AppSettings = db.access { it.readPreferences(device.value.applyTo(AppSettings())) }
 }
 
 /** Answers to calendar suggestions (D3), in their own table. */

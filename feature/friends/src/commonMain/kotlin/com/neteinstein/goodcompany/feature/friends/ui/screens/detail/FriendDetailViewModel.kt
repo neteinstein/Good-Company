@@ -185,6 +185,9 @@ data class FriendDetailUiState(
     val detail: FriendDetail? = null,
     val isLoading: Boolean = true,
     val notFound: Boolean = false,
+    /** The AI switch (F1): off hides "Things to talk about" (the topics from notes stay) and every AI button. */
+    val aiEnabled: Boolean = false,
+    /** AI is on and a key is saved. */
     val hasAiKey: Boolean = false,
     val isGenerating: Boolean = false,
     val message: FriendDetailMessage? = null,
@@ -282,7 +285,8 @@ class FriendDetailViewModel(
             tags = tags,
             isLoading = false,
             notFound = detail == null,
-            hasAiKey = settings.hasAiKey,
+            aiEnabled = settings.aiEnabled,
+            hasAiKey = settings.usableAiKey != null,
             showWarmth = settings.showWarmth,
             freshCount = detail?.let { d ->
                 val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)

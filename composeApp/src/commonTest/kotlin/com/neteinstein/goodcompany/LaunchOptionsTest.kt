@@ -36,6 +36,18 @@ class LaunchOptionsTest {
     }
 
     @Test
+    fun ideasTabOnlyWithAi_andTabIdeasFallsBackToHome() {
+        assertFalse(TopLevelDestination.IDEAS in TopLevelDestination.shown(aiEnabled = false))
+        assertEquals(TopLevelDestination.entries, TopLevelDestination.shown(aiEnabled = true))
+        val ideas = LaunchOptions.parse("?tab=ideas")
+        assertEquals(TopLevelDestination.FRIENDS, ideas.startDestination(aiEnabled = false))
+        assertEquals(TopLevelDestination.IDEAS, ideas.startDestination(aiEnabled = true))
+        assertEquals(TopLevelDestination.IDEAS, LaunchOptions.parse("?ai&tab=ideas").startDestination(aiEnabled = false))
+        assertEquals(TopLevelDestination.AGENDA, LaunchOptions.parse("?tab=agenda").startDestination(aiEnabled = false))
+        assertEquals(TopLevelDestination.FRIENDS, LaunchOptions().startDestination(aiEnabled = true))
+    }
+
+    @Test
     fun parsesAWebShare() {
         val o = LaunchOptions.parse("?share_title=Ana%27s+news&share_text=Got+the+job%21+%F0%9F%8E%89&share_url=https%3A%2F%2Fx.io%2Fp")
         assertEquals(SharedContent(text = "Got the job! 🎉", url = "https://x.io/p", title = "Ana's news"), o.shared)
@@ -67,8 +79,9 @@ class LaunchOptionsTest {
             ),
             UpdateSettingsUseCase(settings),
             inbox,
-        )(LaunchOptions(loadSampleData = true, theme = ThemeMode.DARK, shared = SharedContent(text = "Got the job!")))
+        )(LaunchOptions.parse("?demo&ai&theme=dark").copy(shared = SharedContent(text = "Got the job!")))
         assertEquals("Got the job!", inbox.pending.value?.text)
+        assertTrue(settings.settings.value.aiEnabled)
         assertTrue(settings.settings.value.onboardingDone)
         assertEquals(ThemeMode.DARK, settings.settings.value.themeMode)
         assertFalse(settings.settings.value.dynamicColor)

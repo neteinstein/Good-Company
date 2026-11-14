@@ -173,4 +173,13 @@
     <string name="msg_tag_renamed">Renamed to “%1$s”</string>
     <string name="msg_tag_merged">Merged into “%1$s”</string>
     <string name="msg_tag_deleted">“%1$s” deleted</string>
+    <string name="ai_switch">AI features</string>
+    <string name="ai_switch_hint">Weekly plans, talking points, gift and message suggestions, using your own Anthropic key.</string>
+    <string name="ai_off_note">While this is off, nothing that needs AI is shown anywhere in the app.</string>
+    <string name="meetups">Meetups</string>
+    <string name="activities">Activities</string>
+    <string name="activities_count">%1$d of %2$d on</string>
+    <string name="activities_hint">What the log sheet offers when you met someone. The ones you use most come first, the rest in this order; six show, the others are behind More. Drag to reorder.</string>
+    <string name="activities_move_up">Move up</string>
+    <string name="activities_move_down">Move down</string>
 </resources>

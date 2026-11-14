@@ -63,6 +63,9 @@ data class ShareUiState(
     val today: LocalDate = LocalDate(2000, 1, 1),
     val caption: String = "",
     val price: String = "",
+    /** The AI switch (F1): off, nothing about AI shows, not even the hint to add a key. */
+    val aiEnabled: Boolean = false,
+    /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
     val isSuggesting: Boolean = false,
     val isSaving: Boolean = false,
@@ -122,7 +125,8 @@ class ShareToFriendViewModel(
             circles = targets.circles.filter { q.isEmpty() || it.name.lowercase().contains(q) },
             hasFriends = targets.friends.isNotEmpty(),
             target = target,
-            hasAiKey = settings.hasAiKey,
+            aiEnabled = settings.aiEnabled,
+            hasAiKey = settings.usableAiKey != null,
             closed = ui.closed || (content == null && ui.savedTo == null),
             isLoading = false,
         ).let { if (content != null && target != null && preparedFor !== content) prepare(it, content) else it }

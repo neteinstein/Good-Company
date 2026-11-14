@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 class AgendaViewModelTest {
     private fun graph(apiKey: String? = null) = TestGraph(
         listOf(friend("ana") { copy(isCloseFriend = true, birthday = Birthday(3, 12)) }, friend("rui")),
-        settings = AppSettings(aiApiKey = apiKey),
+        settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),
     )
 
     private var g = graph()

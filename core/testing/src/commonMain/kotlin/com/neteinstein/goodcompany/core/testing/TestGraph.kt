@@ -103,6 +103,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
@@ -231,7 +232,8 @@ class TestGraph(
     val observeAttachments = ObserveAttachmentsUseCase(interactionRepo, circles)
     val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)
     val restoreAttachment = RestoreAttachmentUseCase(interactionRepo)
-    val observeActivities = ObserveActivitiesUseCase(hangoutRepo)
+    val observeActivities = ObserveActivitiesUseCase(hangoutRepo, settingsRepo)
+    val setActivities = SetActivitiesUseCase(settingsRepo)
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
     val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)
     val restoreTimelineEntry = RestoreTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)

@@ -36,6 +36,7 @@ class IdeasViewModelTest {
 
     @Test
     fun withoutKeyExplainsAndDoesNotCallAi() = runViewModelTest {
+        g.settingsRepo.update { it.copy(aiEnabled = true) }
         val vm = vm()
         val state = collecting(vm.state)
         assertFalse(state.value.hasAiKey)
@@ -46,7 +47,7 @@ class IdeasViewModelTest {
 
     @Test
     fun runNowStoresIdeasWithFriendsAndDismissHidesThem() = runViewModelTest {
-        g.settingsRepo.update { it.copy(aiApiKey = "k") }
+        g.settingsRepo.update { it.copy(aiApiKey = "k", aiEnabled = true) }
         g.generator.result = Result.success(listOf(GeneratedIdea(listOf("ana"), "event", "Jazz night", "Fri", null, null)))
         val vm = vm()
         val state = collecting(vm.state)
@@ -66,7 +67,7 @@ class IdeasViewModelTest {
 
     @Test
     fun proposingAPlanMarksItAsProposed() = runViewModelTest {
-        g.settingsRepo.update { it.copy(aiApiKey = "k") }
+        g.settingsRepo.update { it.copy(aiApiKey = "k", aiEnabled = true) }
         g.generator.result = Result.success(listOf(GeneratedIdea(listOf("ana"), "event", "Jazz night", "Fri", null, null)))
         val vm = vm()
         val state = collecting(vm.state)

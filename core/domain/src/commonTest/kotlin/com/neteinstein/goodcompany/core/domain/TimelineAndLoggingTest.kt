@@ -261,6 +261,20 @@ class TimelineAndLoggingTest {
     }
 
     @Test
+    fun onlyTheActivitiesTurnedOnAreOffered_mostUsedFirst_thenTheUsersOrder() = runTest {
+        val g = TestGraph(friends = friends)
+        g.hangoutRepo.add(Hangout("a", listOf(ana), at(2026, 3, 1), activity = HangoutActivity.MUSIC))
+        g.hangoutRepo.add(Hangout("b", listOf(ana), at(2026, 3, 2), activity = HangoutActivity.TRIP))
+        g.setActivities(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE, HangoutActivity.MUSIC))
+        // TRIP is off now: it isn't offered, although an old meetup still has it.
+        assertEquals(listOf(HangoutActivity.MUSIC, HangoutActivity.WALK, HangoutActivity.COFFEE), g.observeActivities().first())
+        assertEquals(HangoutActivity.TRIP, g.hangoutRepo.hangouts.value.single { it.id == "b" }.activity)
+
+        g.setActivities(emptyList()) // never none
+        assertEquals(3, g.settingsRepo.settings.value.activities.size)
+    }
+
+    @Test
     fun notificationCalledIsLoggedAsSuch_andTheButtonAsManual() = runTest {
         val g = TestGraph(friends = friends)
         g.logCall(ana)

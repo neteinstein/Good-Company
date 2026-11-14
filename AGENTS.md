@@ -392,6 +392,16 @@ Seen in practice:
     upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
     `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
     (`:feature:agenda`, also a card on Coming up).
+33. **AI switch (issue #37, F1).** `AppSettings.aiEnabled` (default off; stored in `user_preferences.ai_enabled`, where
+    NULL means "on when a key is saved", so people who had a key before keep AI) hides everything AI. **Every AI entry
+    point checks it:** use cases take the key from `AppSettings.usableAiKey` (null while AI is off), ViewModels expose
+    `hasAiKey = settings.usableAiKey != null` (and `aiEnabled` where a section or hint shows without a key), and screens
+    show no AI button, section, hint or "set up AI" prompt while it is off. The Ideas tab is filtered by
+    `TopLevelDestination.shown(aiEnabled)`, `LaunchOptions.startDestination` sends `tab=ideas` to Home, and
+    `RunWeeklyIdeasUseCase` returns `AI_OFF` (even forced). The web option `?ai` turns it on for demos and screenshots.
+    Restoring a backup keeps this device's switch, like the key. Settings → Activities (F3) edits
+    `AppSettings.activities` (the ones on, in order, never empty; `user_preferences.activities`, NULL = all), and
+    `ObserveActivitiesUseCase` offers only those to the log sheet.
 
 ## Skills
 

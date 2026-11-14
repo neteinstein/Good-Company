@@ -52,6 +52,7 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.Calendar
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 
 const val APP_VERSION = "1.0.0"
 
@@ -215,6 +216,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
                     onOpenTags = { navController.navigate(TagsRoute) },
+                    onOpenActivities = { navController.navigate(ActivitiesRoute) },
                 )
             }
             composable<PlacesRoute>(
@@ -250,6 +252,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     },
                 )
             }
+            composable<ActivitiesRoute> { ActivitiesScreen(onBack = { navController.popBackStack() }) }
             composable<YearReviewRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },

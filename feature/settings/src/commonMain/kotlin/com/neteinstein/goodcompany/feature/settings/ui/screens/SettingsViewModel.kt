@@ -154,6 +154,9 @@ class SettingsViewModel(
         local.update { it.copy(message = SettingsMessage.KeyRemoved) }
     }
 
+    /** The AI switch (F1). Off hides every AI entry point; the saved key stays, so turning it back on needs nothing more. */
+    fun onAiEnabledChange(enabled: Boolean) = update { it.copy(aiEnabled = enabled) }
+
     fun onThemeChange(mode: ThemeMode) = update { it.copy(themeMode = mode) }
 
     fun onDynamicColorChange(enabled: Boolean) = update { it.copy(dynamicColor = enabled) }

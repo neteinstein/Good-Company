@@ -167,4 +167,13 @@
     <string name="msg_tag_renamed">Renommée en « %1$s »</string>
     <string name="msg_tag_merged">Fusionnée dans « %1$s »</string>
     <string name="msg_tag_deleted">« %1$s » supprimée</string>
+    <string name="ai_switch">Fonctions d’IA</string>
+    <string name="ai_switch_hint">Sorties de la semaine, sujets de conversation, idées de cadeaux et de messages, avec votre propre clé Anthropic.</string>
+    <string name="ai_off_note">Tant que c’est désactivé, rien qui demande l’IA n’apparaît dans l’app.</string>
+    <string name="meetups">Rencontres</string>
+    <string name="activities">Activités</string>
+    <string name="activities_count">%1$d sur %2$d activées</string>
+    <string name="activities_hint">Ce que propose le journal quand vous avez vu quelqu’un. Les plus utilisées d’abord, les autres dans cet ordre ; six sont affichées, le reste est sous Plus. Faites glisser pour réordonner.</string>
+    <string name="activities_move_up">Monter</string>
+    <string name="activities_move_down">Descendre</string>
 </resources>

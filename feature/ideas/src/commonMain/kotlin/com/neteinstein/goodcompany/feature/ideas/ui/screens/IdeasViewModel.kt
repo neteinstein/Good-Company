@@ -44,6 +44,7 @@ sealed interface IdeasMessage {
 data class IdeasUiState(
     val ideas: List<IdeaCard> = emptyList(),
     val kindFilter: IdeaKind? = null,
+    /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
     val weeklyEnabled: Boolean = true,
     val optedInFriends: Int = 0,
@@ -77,7 +78,7 @@ class IdeasViewModel(
         val byId = friends.associate { it.friend.id to it.friend }
         ui.copy(
             ideas = ideas.filter { ui.kindFilter == null || it.kind == ui.kindFilter }.map { IdeaCard(it, it.friendIds.mapNotNull(byId::get)) },
-            hasAiKey = settings.hasAiKey,
+            hasAiKey = settings.usableAiKey != null,
             weeklyEnabled = settings.weeklyIdeasEnabled,
             optedInFriends = friends.count { it.friend.suggestEvents },
             lastRunAt = settings.lastIdeasRunAt,

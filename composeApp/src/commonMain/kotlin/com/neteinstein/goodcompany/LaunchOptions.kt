@@ -23,7 +23,13 @@ data class LaunchOptions(
     val openStoryFriendId: String? = null,
     /** Something shared into the installed web app (Web Share Target: `share_title`, `share_text`, `share_url`). */
     val shared: SharedContent? = null,
+    /** Turns the AI switch on (`ai`), for demos and the screenshot pipeline. */
+    val enableAi: Boolean = false,
 ) {
+    /** The tab to open: [startTab] when it's shown, else Home (`tab=ideas` while AI is off, F1). */
+    fun startDestination(aiEnabled: Boolean): TopLevelDestination =
+        startTab?.takeIf { it.isShown(aiEnabled || enableAi) } ?: TopLevelDestination.FRIENDS
+
     companion object {
         private fun sharedFrom(params: Map<String, String>): SharedContent? {
             fun param(name: String) = params[name]?.let(::percentDecode)?.trim()?.takeIf { it.isNotEmpty() }
@@ -55,7 +61,7 @@ data class LaunchOptions(
         }
 
         /**
-         * Parses `demo`, `tab=<friends|together|agenda|ideas|settings>`, `friend=<id>`, `theme=<light|dark>`, `onboarding`,
+         * Parses `demo`, `ai`, `tab=<friends|together|agenda|ideas|settings>`, `friend=<id>`, `theme=<light|dark>`, `onboarding`,
          * `review`, `story=<id>`, and the Web Share Target's `share_title` / `share_text` / `share_url` (percent-encoded).
          */
         fun parse(query: String): LaunchOptions {
@@ -72,12 +78,13 @@ data class LaunchOptions(
                 showReview = "review" in params,
                 openStoryFriendId = params["story"]?.takeIf { it.isNotBlank() },
                 shared = sharedFrom(params),
+                enableAi = "ai" in params,
             )
         }
     }
 }
 
-/** Applies the data-side launch options (sample data, theme, onboarding state, an incoming web share). */
+/** Applies the data-side launch options (sample data, the AI switch, theme, onboarding state, an incoming web share). */
 class ApplyLaunchOptions(
     private val loadSampleData: LoadSampleDataUseCase,
     private val updateSettings: UpdateSettingsUseCase,
@@ -89,6 +96,7 @@ class ApplyLaunchOptions(
             loadSampleData()
             updateSettings { it.copy(onboardingDone = true) }
         }
+        if (options.enableAi) updateSettings { it.copy(aiEnabled = true) }
         if (options.showOnboarding) updateSettings { it.copy(onboardingDone = false) }
         options.theme?.let { theme -> updateSettings { it.copy(themeMode = theme, dynamicColor = false) } }
     }

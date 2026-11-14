@@ -149,6 +149,9 @@ class FriendCareUseCasesTest {
         val draft = DraftBirthdayMessageUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)
         assertIs<MissingApiKeyException>(draft(ana).exceptionOrNull())
         settings.update { it.copy(aiApiKey = "k") }
+        assertIs<MissingApiKeyException>(draft(ana).exceptionOrNull()) // a key alone isn't enough while AI is off (F1)
+        assertTrue(ai.calls.isEmpty())
+        settings.update { it.copy(aiEnabled = true) }
         assertEquals("Happy birthday!", draft(ana).getOrThrow())
         assertEquals("message:ana:pt-PT", ai.calls.single())
 

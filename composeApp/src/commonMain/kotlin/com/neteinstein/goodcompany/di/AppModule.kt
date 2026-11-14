@@ -158,6 +158,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
@@ -203,6 +204,7 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
 import org.koin.core.module.dsl.factoryOf
@@ -296,6 +298,7 @@ val appModule = module {
     factoryOf(::LogInteractionUseCase)
     factoryOf(::UndoLogUseCase)
     factoryOf(::ObserveActivitiesUseCase)
+    factoryOf(::SetActivitiesUseCase)
     factoryOf(::ObserveTimelineUseCase)
     factoryOf(::DeleteTimelineEntryUseCase)
     factoryOf(::RestoreTimelineEntryUseCase)
@@ -442,6 +445,7 @@ val appModule = module {
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PlacesViewModel)
     viewModelOf(::TagsViewModel)
+    viewModelOf(::ActivitiesViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
     viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
     viewModelOf(::ShareToFriendViewModel)
