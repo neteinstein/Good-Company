@@ -81,4 +81,17 @@
     <string name="today_empty_action">Go to People</string>
     <string name="today_call_logged">Call with %1$s logged — next nudge in a week</string>
     <string name="today_snoozed">%1$s snoozed until %2$s</string>
+    <string name="last_seen_title">When did you last see %1$s?</string>
+    <string name="last_seen_progress">%1$d of %2$d</string>
+    <string name="last_seen_this_week">This week</string>
+    <string name="last_seen_this_month">This month</string>
+    <string name="last_seen_few_months">A few months ago</string>
+    <string name="last_seen_over_year">Over a year</string>
+    <string name="last_seen_dont_know">I don’t know</string>
+    <string name="last_seen_not_now">Not now</string>
+    <string name="last_seen_got_this_week">Got it: %1$s, this week</string>
+    <string name="last_seen_got_this_month">Got it: %1$s, this month</string>
+    <string name="last_seen_got_few_months">Got it: %1$s, a few months ago</string>
+    <string name="last_seen_got_over_year">Got it: %1$s, over a year ago</string>
+    <string name="last_seen_got_dont_know">Got it: %1$s’s rhythm starts today</string>
 </resources>

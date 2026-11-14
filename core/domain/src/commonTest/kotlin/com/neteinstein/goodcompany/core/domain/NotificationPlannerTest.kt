@@ -82,7 +82,7 @@ class NotificationPlannerTest {
     @Test
     fun overdueMeetupNudgesTomorrowAndFutureOnDueDate() {
         val friends = listOf(
-            friend("ana") { copy(meetEveryDays = 7) },
+            friend("ana") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 1)) },
             friend("rui") { copy(meetEveryDays = 30) },
         )
         val hangouts = listOf(Hangout("h", listOf(com.neteinstein.goodcompany.core.domain.model.FriendId("rui")), at(2026, 3, 1)))

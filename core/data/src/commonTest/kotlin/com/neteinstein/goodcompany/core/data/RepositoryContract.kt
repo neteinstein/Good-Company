@@ -194,6 +194,7 @@ abstract class RepositoryContract {
         customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
         showInMyList = false,
         dismissedKinship = setOf(LinkType.NIECE_NEPHEW, LinkType.STEP_SIBLING),
+        approxLastSeen = LocalDate(2026, 2, 23),
     )
 
     // --- Friends ---
@@ -693,21 +694,25 @@ abstract class RepositoryContract {
                 skippedDates = listOf(LocalDate(2026, 3, 29)),
             ),
         )
-        from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon") }
+        // "Not now" on Today's last-seen card (issue #68) belongs to this device.
+        from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon", lastSeenCardHiddenOn = LocalDate(2026, 3, 10)) }
         val exported = from.backup.snapshot()
 
         val json = ExportBackupUseCase(from.backup, clock)()
         assertFalse("sk-secret" in json)
+        assertFalse("lastSeenCardHiddenOn" in json)
+        assertTrue("\"approxLastSeen\"" in json, json)
 
         val to = open()
         to.friends.upsert(friend("zed"))
         to.hangouts.add(Hangout("old", listOf(FriendId("zed")), at(2025, 1, 1)))
         to.hangouts.upsertPlace(NamedPlace("old-place", "Old", 1.0, 2.0))
-        to.settings.update { it.copy(aiApiKey = "sk-mine") }
+        to.settings.update { it.copy(aiApiKey = "sk-mine", lastSeenCardHiddenOn = LocalDate(2026, 3, 9)) }
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
 
         val restored = to.backup.snapshot()
-        assertEquals(exported.copy(settings = exported.settings.copy(aiApiKey = "sk-mine", onboardingDone = true)), restored)
+        val kept = exported.settings.copy(aiApiKey = "sk-mine", onboardingDone = true, lastSeenCardHiddenOn = LocalDate(2026, 3, 9))
+        assertEquals(exported.copy(settings = kept), restored)
         // Flows see the restored data straight away.
         assertEquals(listOf(richFriend()), to.friends.friends.first())
         assertEquals(listOf("h"), to.hangouts.hangouts.first().map { it.id })

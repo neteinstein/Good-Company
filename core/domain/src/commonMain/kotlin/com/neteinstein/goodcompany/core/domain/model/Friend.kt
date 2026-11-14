@@ -110,6 +110,12 @@ data class Friend(
      * this person (see [com.neteinstein.goodcompany.core.domain.usecase.KinshipResolver]).
      */
     val dismissedKinship: Set<LinkType> = emptySet(),
+    /**
+     * Issue #68: the approximate last time you saw them, from the "When did you last see…?" card on Today. It only
+     * starts the catch-up rhythm while no meetup is logged: it is not a hangout, doesn't count for warmth or stats,
+     * isn't shown on their page or timeline, and a real meetup always wins (see `Relationships.meetupStatuses`).
+     */
+    val approxLastSeen: LocalDate? = null,
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true

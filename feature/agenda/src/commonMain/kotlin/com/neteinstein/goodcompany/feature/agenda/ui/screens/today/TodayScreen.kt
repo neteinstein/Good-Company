@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CatchUpCard
@@ -64,6 +66,7 @@ import com.neteinstein.goodcompany.core.ui.components.StoryBubbleChip
 import com.neteinstein.goodcompany.core.ui.components.YearReviewCard
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
@@ -72,11 +75,17 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
+import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
 import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
+import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_got_dont_know
+import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_got_few_months
+import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_got_over_year
+import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_got_this_month
+import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_got_this_week
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.agenda.resources.today_all
 import com.neteinstein.goodcompany.feature.agenda.resources.today_before_you_meet
@@ -98,6 +107,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.today_title
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
+import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -113,6 +123,16 @@ suspend fun TodayMessage.text(): String = when (this) {
     TodayMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
     TodayMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
     is TodayMessage.AiError -> aiErrorText(error)
+    is TodayMessage.LastSeenAnswered -> getString(
+        when (answer) {
+            LastSeenAnswer.THIS_WEEK -> Res.string.last_seen_got_this_week
+            LastSeenAnswer.THIS_MONTH -> Res.string.last_seen_got_this_month
+            LastSeenAnswer.FEW_MONTHS -> Res.string.last_seen_got_few_months
+            LastSeenAnswer.OVER_A_YEAR -> Res.string.last_seen_got_over_year
+            LastSeenAnswer.DONT_KNOW -> Res.string.last_seen_got_dont_know
+        },
+        name,
+    )
 }
 
 /**
@@ -162,6 +182,9 @@ fun TodayScreen(
             onOpenYearReview = onOpenYearReview,
             onNewReminder = viewModel::onNewReminder,
             onMessageShown = viewModel::onMessageShown,
+            onLastSeenAnswer = viewModel::onLastSeenAnswer,
+            onLastSeenNotNow = viewModel::onLastSeenNotNow,
+            onUndoLastSeen = viewModel::onUndoLastSeen,
         ),
     )
     if (checkingIn) {
@@ -215,14 +238,25 @@ data class TodayActions(
     val onOpenYearReview: (Int) -> Unit = {},
     val onNewReminder: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
+    val onLastSeenAnswer: (FriendId, LastSeenAnswer) -> Unit = { _, _ -> },
+    val onLastSeenNotNow: () -> Unit = {},
+    val onUndoLastSeen: (TodayMessage.LastSeenAnswered) -> Unit = {},
 )
 
 @Composable
 fun TodayContent(state: TodayUiState, actions: TodayActions, modifier: Modifier = Modifier) {
     val snackbar = remember { SnackbarHostState() }
+    val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        snackbar.showMessage(message.text())
+        if (message is TodayMessage.LastSeenAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) {
+                actions.onUndoLastSeen(message)
+                return@LaunchedEffect
+            }
+        } else {
+            snackbar.showMessage(message.text())
+        }
         actions.onMessageShown()
     }
     Scaffold(
@@ -260,6 +294,18 @@ fun TodayContent(state: TodayUiState, actions: TodayActions, modifier: Modifier 
                     )
                 }
                 return@LazyColumn
+            }
+            state.lastSeenAsk?.let { friend ->
+                item(key = "last-seen") {
+                    LastSeenCard(
+                        friend,
+                        state.lastSeenPosition,
+                        state.lastSeenTotal,
+                        onAnswer = { actions.onLastSeenAnswer(friend.id, it) },
+                        onNotNow = actions.onLastSeenNotNow,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
             if (state.showCheckIn) item(key = "check-in") { CheckInCard(actions.onCheckIn) }
             state.reviewYear?.let { year ->

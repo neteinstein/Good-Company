@@ -82,15 +82,54 @@ class RelationshipsTest {
     }
 
     @Test
-    fun neverMetFriendWithRuleIsDueToday() {
-        val status = Relationships.meetupStatuses(
+    fun neverLoggedFriendWithRuleIsNotOverdue() {
+        // Issue #68: nothing logged and no last-seen answer → the rhythm hasn't started, so no status at all.
+        val statuses = Relationships.meetupStatuses(
             listOf(friend("zoe") { copy(meetEveryDays = 14) }),
             hangouts,
             LocalDate(2026, 3, 10),
             TimeZone.UTC,
+        )
+        assertTrue(statuses.isEmpty())
+    }
+
+    @Test
+    fun theApproximateLastSeenStartsTheRhythm_withoutShowingAsSeen() {
+        val status = Relationships.meetupStatuses(
+            listOf(friend("zoe") { copy(meetEveryDays = 14, approxLastSeen = LocalDate(2026, 2, 23)) }),
+            hangouts,
+            LocalDate(2026, 3, 10),
+            TimeZone.UTC,
         ).single()
-        assertEquals(LocalDate(2026, 3, 10), status.dueDate)
+        assertEquals(LocalDate(2026, 3, 9), status.dueDate)
+        assertTrue(status.isOverdue(LocalDate(2026, 3, 10)))
+        // Hidden (owner decision 2026-11-14): it isn't a meetup, so nothing reads as "last seen".
+        assertNull(status.lastSeenDate)
         assertNull(status.daysSinceLastSeen)
+
+        // "I don't know" = today: due one rhythm from now.
+        val unknown = Relationships.meetupStatuses(
+            listOf(friend("zoe") { copy(meetEveryDays = 14, approxLastSeen = LocalDate(2026, 3, 10)) }),
+            hangouts,
+            LocalDate(2026, 3, 10),
+            TimeZone.UTC,
+        ).single()
+        assertEquals(LocalDate(2026, 3, 24), unknown.dueDate)
+    }
+
+    @Test
+    fun aRealMeetupWinsOverTheApproximateLastSeen() {
+        // Rui was last seen on 1 March; an answer of "over a year" (or a later guess) doesn't move that.
+        for (guess in listOf(LocalDate(2025, 2, 3), LocalDate(2026, 3, 7))) {
+            val status = Relationships.meetupStatuses(
+                listOf(friend("rui") { copy(meetEveryDays = 14, approxLastSeen = guess) }),
+                hangouts,
+                LocalDate(2026, 3, 10),
+                TimeZone.UTC,
+            ).single()
+            assertEquals(LocalDate(2026, 3, 1), status.lastSeenDate)
+            assertEquals(LocalDate(2026, 3, 15), status.dueDate)
+        }
     }
 
     @Test

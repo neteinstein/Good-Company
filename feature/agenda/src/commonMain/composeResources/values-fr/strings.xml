@@ -79,4 +79,17 @@
     <string name="today_empty_action">Aller à Personnes</string>
     <string name="today_call_logged">Appel avec %1$s enregistré — prochain rappel dans une semaine</string>
     <string name="today_snoozed">%1$s reporté jusqu’au %2$s</string>
+    <string name="last_seen_title">Quand as-tu vu %1$s pour la dernière fois ?</string>
+    <string name="last_seen_progress">%1$d sur %2$d</string>
+    <string name="last_seen_this_week">Cette semaine</string>
+    <string name="last_seen_this_month">Ce mois-ci</string>
+    <string name="last_seen_few_months">Il y a quelques mois</string>
+    <string name="last_seen_over_year">Il y a plus d’un an</string>
+    <string name="last_seen_dont_know">Je ne sais pas</string>
+    <string name="last_seen_not_now">Pas maintenant</string>
+    <string name="last_seen_got_this_week">Noté : %1$s, cette semaine</string>
+    <string name="last_seen_got_this_month">Noté : %1$s, ce mois-ci</string>
+    <string name="last_seen_got_few_months">Noté : %1$s, il y a quelques mois</string>
+    <string name="last_seen_got_over_year">Noté : %1$s, il y a plus d’un an</string>
+    <string name="last_seen_got_dont_know">Noté : le rythme avec %1$s commence aujourd’hui</string>
 </resources>

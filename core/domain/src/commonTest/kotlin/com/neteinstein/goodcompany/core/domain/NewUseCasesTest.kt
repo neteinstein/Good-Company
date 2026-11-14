@@ -245,7 +245,7 @@ class HomeWidgetTest {
     fun showsNextThingAndMostOverdueFriend() = kotlinx.coroutines.test.runTest {
         val g = TestGraph(
             friends = listOf(
-                friend("ana") { copy(meetEveryDays = 7) },
+                friend("ana") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 1)) },
                 friend("bob") { copy(notifyBirthday = true, birthday = Birthday(3, 12)) },
             ),
         )

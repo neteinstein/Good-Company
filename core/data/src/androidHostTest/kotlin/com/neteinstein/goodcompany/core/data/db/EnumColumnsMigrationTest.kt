@@ -116,7 +116,8 @@ class EnumColumnsMigrationTest {
         val before = driver.dump()
         assertTrue(before.filterKeys { it != "db_meta" && it != "user_preferences" && it != "named_place" }.values.all { it.isNotEmpty() })
 
-        GoodCompanyDatabase.Schema.migrate(driver, 16, GoodCompanyDatabase.Schema.version).await()
+        // Only this step: later migrations add columns (17 → 18 adds friend.approx_last_seen), which the dump would show.
+        GoodCompanyDatabase.Schema.migrate(driver, 16, 17).await()
 
         assertEquals(before, driver.dump())
         assertTrue(driver.strings("SELECT \"table\" FROM pragma_foreign_key_check").isEmpty())

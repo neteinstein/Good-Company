@@ -49,7 +49,7 @@ class CadenceAndGroupsTest {
 
     @Test
     fun snoozePushesTheDueDateAndExpires() {
-        val snoozed = friend("ana") { copy(meetEveryDays = 7, snoozedUntil = LocalDate(2026, 3, 14)) }
+        val snoozed = friend("ana") { copy(meetEveryDays = 7, snoozedUntil = LocalDate(2026, 3, 14), approxLastSeen = LocalDate(2026, 3, 1)) }
         val status = Relationships.meetupStatuses(listOf(snoozed), emptyList(), today, TimeZone.UTC).single()
         assertEquals(LocalDate(2026, 3, 15), status.dueDate)
         assertFalse(status.isOverdue(today))
@@ -132,7 +132,7 @@ class CadenceAndGroupsTest {
 
     @Test
     fun notificationPlannerUsesCircleCadence() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) })
+        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.CLOSE, approxLastSeen = LocalDate(2026, 2, 8)) })
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, rules = rules)
         val content = planned.single().content as NotificationContent.MeetupDue
         assertEquals(30, content.everyDays)

@@ -65,7 +65,9 @@ class UseCasesTest {
     private val friends = FakeFriendRepository(
         listOf(
             friend("bob"),
-            friend("ana") { copy(isCloseFriend = true, likes = listOf("jazz"), meetEveryDays = 7) },
+            friend("ana") {
+                copy(isCloseFriend = true, likes = listOf("jazz"), meetEveryDays = 7, approxLastSeen = kotlinx.datetime.LocalDate(2026, 3, 1))
+            },
             friend("cat") { copy(birthday = Birthday(4, 1)) },
         ),
     )

@@ -1,0 +1,4 @@
+-- Version 17 → 18 (issue #68, N4): the approximate last time you saw someone, answered on Today's "When did you last
+-- see…?" card (yyyy-mm-dd). It only starts the catch-up rhythm while no meetup is logged; existing rows stay NULL.
+
+ALTER TABLE friend ADD COLUMN approx_last_seen TEXT;

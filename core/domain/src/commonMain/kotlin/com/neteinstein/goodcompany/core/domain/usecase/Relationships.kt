@@ -58,10 +58,14 @@ object Relationships {
     }
 
     /**
-     * Status of every friend with a cadence (own "meet every" or their circle's default).
-     * Never-met friends are due immediately; a snooze pushes the due date to the day after it ends.
-     * Paused friends are left out. For friends whose calls and chats count ([Friend.contactCountsAsCatchUp]), the
-     * last contact of any kind from [interactions] resets the rhythm, not only meetups.
+     * Status of every friend with a cadence (own "meet every" or their circle's default) whose rhythm has started: a
+     * meetup is logged, or the "When did you last see…?" card gave an approximate date ([Friend.approxLastSeen],
+     * issue #68). Someone with nothing logged and no answer isn't overdue and has no status (the card asks about them
+     * instead; see [LastSeenQuestions]). A real meetup always wins over the approximate date, which only moves the due
+     * date: [MeetupStatus.lastSeenDate] and [MeetupStatus.daysSinceLastSeen] stay null until something is logged.
+     * A snooze pushes the due date to the day after it ends. Paused friends are left out. For friends whose calls and
+     * chats count ([Friend.contactCountsAsCatchUp]), the last contact of any kind from [interactions] resets the
+     * rhythm, not only meetups.
      */
     fun meetupStatuses(
         friends: List<Friend>,
@@ -77,8 +81,9 @@ object Relationships {
             if (friend.catchUpPaused) return@mapNotNull null
             val every = rules.cadenceFor(friend) ?: return@mapNotNull null
             val last = (if (friend.contactCountsAsCatchUp) contact else seen)[friend.id]?.toLocalDate(zone)
-            val due = last?.plus(every, DateTimeUnit.DAY) ?: today
-            val snooze = friend.snoozedUntil?.takeIf { it >= today && (last == null || it > last) }
+            val since = last ?: friend.approxLastSeen ?: return@mapNotNull null
+            val due = since.plus(every, DateTimeUnit.DAY)
+            val snooze = friend.snoozedUntil?.takeIf { it >= today && it > since }
             MeetupStatus(
                 friend = friend,
                 lastSeenDate = last,

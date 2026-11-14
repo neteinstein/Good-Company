@@ -97,6 +97,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -393,9 +394,12 @@ internal data class DeviceSettings(
     val calendarIds: List<String> = emptyList(),
     val calendarOnSince: Instant? = null,
     val keptTagSpellings: Set<String> = emptySet(),
+    /** Issue #68: the day "Not now" hid Today's last-seen card. */
+    val lastSeenCardHiddenOn: LocalDate? = null,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         keptTagSpellings = keptTagSpellings,
+        lastSeenCardHiddenOn = lastSeenCardHiddenOn,
         aiApiKey = aiApiKey,
         lastIdeasRunAt = lastIdeasRunAt,
         themeMode = themeMode,
@@ -425,6 +429,7 @@ internal data class DeviceSettings(
             calendarIds = settings.calendarIds,
             calendarOnSince = settings.calendarOnSince,
             keptTagSpellings = settings.keptTagSpellings,
+            lastSeenCardHiddenOn = settings.lastSeenCardHiddenOn,
         )
     }
 }
