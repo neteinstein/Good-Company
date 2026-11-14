@@ -42,7 +42,8 @@ core/data/            Repository implementations, JSON persistence, platform dat
 core/ui/              Design system: theme (light/dark/dynamic), shared components, formatters, UI platform hooks.
 core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by every module's commonTest.
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
-feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI)
+feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI),
+                      friend timeline, the "Log" sheet destination
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules, "Who's free for…?"
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
@@ -299,6 +300,18 @@ Seen in practice:
     on iOS) only when not private. The contact write-back never writes photos. A friend without a photo can get one from the
     gallery (`rememberImagePicker` → `SetFriendPhotoUseCase`): each picker returns an upright JPEG of at most 512 px (UIKit
     redraw on iOS, EXIF rotation on Android, `createImageBitmap` on the web), since the Skia decoder ignores EXIF.
+26. **Timeline and logging (issue #21).** Meetups are `Hangout`s (with an optional `HangoutActivity`, F3); calls, messages,
+    emails, video calls and WhatsApp days are `Interaction`s (`id`, `source`, `note`, `durationSeconds`, `batchId`,
+    `messageCount`); a `JournalEntry` is a dated note that never counts as contact (own `journal_entry` table, exposed through
+    `InteractionRepository`). Every non-meetup type counts like a call: warmth and the rhythm only with the friend's
+    "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
+    `Interaction.automaticId` and a partial unique index, so a re-sync never duplicates them; manual ones never dedupe.
+    Logging several people at once writes one row per person sharing a `batchId`. All logging goes through
+    `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is `LogInteractionSheet` (`:core:ui`), hosted
+    by the `LogInteractionRoute(friendIds, type)` dialog destination in `AppNavHost` (`type` is a `LogKind` or
+    `InteractionType` name). `Timeline.build` merges hangouts, interactions, journal, "What's new" and gifts given;
+    the full list is `FriendTimelineRoute`, and the WhatsApp import lives in its overflow menu. Migration `4.sqm` rebuilt
+    `interaction` with ids (old rows get their automatic id and a legacy source) and added the journal and hangout activity.
 
 ## Skills
 

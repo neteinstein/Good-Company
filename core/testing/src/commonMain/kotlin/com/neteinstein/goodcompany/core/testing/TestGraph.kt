@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
@@ -32,7 +33,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
@@ -46,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
@@ -54,6 +58,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
@@ -67,6 +72,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 
@@ -117,8 +123,14 @@ class TestGraph(
     val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCircle = SetCircleUseCase(friendRepo)
     val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)
-    val logCall = LogCallUseCase(interactionRepo, snooze, clock)
+    val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
+    val logInteraction = LogInteractionUseCase(checkIn, interactionRepo, clock, ids)
+    val undoLog = UndoLogUseCase(hangoutRepo, interactionRepo)
+    val observeActivities = ObserveActivitiesUseCase(hangoutRepo)
+    val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
+    val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)
+    val restoreTimelineEntry = RestoreTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)
     val deleteHangout = DeleteHangoutUseCase(hangoutRepo)
     val restoreHangout = RestoreHangoutUseCase(hangoutRepo)
     val confirmPlan = ConfirmPlanUseCase(planRepo, friendRepo, checkIn, clock)
@@ -142,15 +154,17 @@ class TestGraph(
     val observeGroups = ObserveGroupsUseCase(groupRepo, friendRepo, hangoutRepo, clock)
     val saveGroup = SaveGroupUseCase(groupRepo, ids)
     val deleteGroup = DeleteGroupUseCase(groupRepo)
-    val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, clock)
+    val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)
     val dismissIdea = DismissIdeaUseCase(ideaRepo)
     val markIdeaProposed = MarkIdeaProposedUseCase(ideaRepo, clock)
-    val generateTalkingPoints = GenerateTalkingPointsUseCase(friendRepo, interactionRepo, settingsRepo, ideaRepo, generator, clock, ids, language)
-    val runWeeklyIdeas = RunWeeklyIdeasUseCase(friendRepo, interactionRepo, settingsRepo, ideaRepo, generator, location, clock, ids, language)
-    val draftBirthdayMessage = DraftBirthdayMessageUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
-    val suggestGifts = SuggestGiftsUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
-    val suggestUpdateFromShared = SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, settingsRepo, assistant, language)
+    val generateTalkingPoints =
+        GenerateTalkingPointsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, clock, ids, language)
+    val runWeeklyIdeas =
+        RunWeeklyIdeasUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, location, clock, ids, language)
+    val draftBirthdayMessage = DraftBirthdayMessageUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
+    val suggestGifts = SuggestGiftsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
+    val suggestUpdateFromShared = SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
     val observeReminders = ObserveRemindersUseCase(reminderRepo)
     val addReminder = AddReminderUseCase(reminderRepo, clock, ids)
     val setReminderDone = SetReminderDoneUseCase(reminderRepo)
@@ -169,8 +183,8 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, clock)
-    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo)
+    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, interactionRepo, clock)
+    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, interactionRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val updateSource = FakeAppUpdateSource()
     val checkForUpdate = CheckForUpdateUseCase(updateSource)

@@ -13,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.Plan
@@ -133,12 +134,22 @@ class FakeInteractionRepository(
     initial: List<Interaction> = emptyList(),
     var logEntries: List<Interaction> = emptyList(),
 ) : InteractionRepository {
-    private val state = MutableStateFlow(initial)
+    private val state = MutableStateFlow(initial.map { it.withId() })
     private val messageState = MutableStateFlow(emptyList<ConversationMessage>())
     override val interactions: StateFlow<List<Interaction>> = state
     override val messages: StateFlow<List<ConversationMessage>> = messageState
+    private val journalState = MutableStateFlow(emptyList<JournalEntry>())
+    override val journal: StateFlow<List<JournalEntry>> = journalState
 
-    override suspend fun addAll(interactions: List<Interaction>) = state.update { (it + interactions).distinct() }
+    override suspend fun addAll(interactions: List<Interaction>) = state.update { current ->
+        (current + interactions.map { it.withId() }).distinctBy { it.id }
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertJournal(entry: JournalEntry) = journalState.update { list -> list.filterNot { it.id == entry.id } + entry }
+
+    override suspend fun deleteJournal(id: String) = journalState.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun addMessages(messages: List<ConversationMessage>) = messageState.update { (it + messages).distinct() }
 
@@ -210,6 +221,7 @@ class FakeBackupRepository(
         reminders = reminders.reminders.value,
         interactions = interactions.interactions.value,
         messages = interactions.messages.value,
+        journal = interactions.journal.value,
         ideas = ideas.ideas.value,
         groups = groups.groups.value,
         plans = plans.plans.value,

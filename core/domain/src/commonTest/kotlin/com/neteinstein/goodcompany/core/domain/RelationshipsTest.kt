@@ -38,6 +38,33 @@ class RelationshipsTest {
     }
 
     @Test
+    fun newContactTypesResetTheRhythmOnlyWithTheSwitchOn() {
+        val email = listOf(Interaction(ana, InteractionType.EMAIL, at(2026, 3, 8)), Interaction(ana, InteractionType.VIDEO_CALL, at(2026, 3, 5)))
+        val today = LocalDate(2026, 3, 10)
+        val off = Relationships.meetupStatuses(
+            listOf(
+                friend("ana") {
+                    copy(meetEveryDays = 30)
+                },
+            ),
+            hangouts,
+            today,
+            TimeZone.UTC,
+            interactions = email,
+        )
+        assertEquals(LocalDate(2026, 2, 1), off.single().lastSeenDate)
+        val on = Relationships.meetupStatuses(
+            listOf(friend("ana") { copy(meetEveryDays = 30, contactCountsAsCatchUp = true) }),
+            hangouts,
+            today,
+            TimeZone.UTC,
+            interactions = email,
+        )
+        assertEquals(LocalDate(2026, 3, 8), on.single().lastSeenDate)
+        assertFalse(on.single().isOverdue(today))
+    }
+
+    @Test
     fun hangoutsWithAllRequiresEveryoneSelected() {
         assertEquals(listOf("2"), Relationships.hangoutsWithAll(hangouts, setOf(ana, rui)).map { it.id })
         assertEquals(listOf("2", "1"), Relationships.hangoutsWithAll(hangouts, setOf(ana)).map { it.id })

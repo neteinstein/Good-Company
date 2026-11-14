@@ -28,6 +28,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -100,6 +101,7 @@ class SqlRepositoryContractTest : RepositoryContract() {
         s.plans.upsert(Plan("p", listOf(ana, rui), "Lunch", LocalDate(2026, 3, 12), createdAt = at(2026, 3, 1)))
         s.interactions.addAll(listOf(Interaction(ana, InteractionType.CALL, at(2026, 3, 2)), Interaction(rui, InteractionType.CALL, at(2026, 3, 2))))
         s.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), true, "hi")))
+        s.interactions.upsertJournal(JournalEntry("j", ana, at(2026, 3, 2), "Porto"))
 
         s.friends.delete(ana)
 
@@ -110,6 +112,7 @@ class SqlRepositoryContractTest : RepositoryContract() {
         assertEquals(listOf(rui), s.plans.plans.first().single().friendIds)
         assertEquals(listOf(rui), s.interactions.interactions.first().map { it.friendId })
         assertTrue(s.interactions.messages.first().isEmpty())
+        assertTrue(s.interactions.journal.first().isEmpty())
     }
 
     @Test

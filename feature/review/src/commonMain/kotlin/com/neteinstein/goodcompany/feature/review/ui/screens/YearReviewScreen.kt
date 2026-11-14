@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
 import com.neteinstein.goodcompany.core.domain.usecase.YearInReview
 import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
@@ -63,6 +64,10 @@ import com.neteinstein.goodcompany.feature.review.resources.Res
 import com.neteinstein.goodcompany.feature.review.resources.back
 import com.neteinstein.goodcompany.feature.review.resources.biggest_body
 import com.neteinstein.goodcompany.feature.review.resources.biggest_title
+import com.neteinstein.goodcompany.feature.review.resources.contacts_body
+import com.neteinstein.goodcompany.feature.review.resources.contacts_calls
+import com.neteinstein.goodcompany.feature.review.resources.contacts_messages
+import com.neteinstein.goodcompany.feature.review.resources.contacts_title
 import com.neteinstein.goodcompany.feature.review.resources.copied
 import com.neteinstein.goodcompany.feature.review.resources.empty_body
 import com.neteinstein.goodcompany.feature.review.resources.empty_title
@@ -231,6 +236,18 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                 r.favouriteWeekday?.let { Fact("💛", stringResource(Res.string.rhythm_weekday, weekdayLong(it))) }
                 if (r.longestWeekStreak > 0) {
                     Fact("🔥", pluralStringResource(Res.plurals.rhythm_streak, r.longestWeekStreak, r.longestWeekStreak))
+                }
+            }
+        }
+        if (r.contacts > 0) {
+            item(key = "contacts") {
+                Story(OnColorGradients.Ideas, index = 4) {
+                    Text(stringResource(Res.string.contacts_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
+                    Text(pluralStringResource(Res.plurals.contacts_body, r.contacts, r.contacts), color = Color.White.copy(alpha = 0.9f))
+                    val calls = TimelineFilter.CALL_TYPES.sumOf { r.contactsByType[it] ?: 0 }
+                    val messages = TimelineFilter.MESSAGE_TYPES.sumOf { r.contactsByType[it] ?: 0 }
+                    if (calls > 0) Fact("📞", pluralStringResource(Res.plurals.contacts_calls, calls, calls))
+                    if (messages > 0) Fact("💬", pluralStringResource(Res.plurals.contacts_messages, messages, messages))
                 }
             }
         }

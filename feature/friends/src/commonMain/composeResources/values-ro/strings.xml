@@ -397,4 +397,24 @@
     <string name="story_fresh_food">Mâncare preferată nouă</string>
     <string name="story_fresh_drink">Băutură preferată nouă</string>
     <string name="story_fresh_interest">Interes nou</string>
+    <string name="timeline_title">Cronologie</string>
+    <string name="timeline_screen_title">Cronologia lui %1$s</string>
+    <string name="timeline_see_all">Vezi tot</string>
+    <string name="timeline_empty">Nimic încă. Atinge + ca să notezi o întâlnire, un apel, un mesaj sau o notă.</string>
+    <string name="timeline_filter_empty">Nimic cu acest filtru.</string>
+    <string name="timeline_log">Notează</string>
+    <string name="timeline_more_options">Mai multe opțiuni</string>
+    <string name="timeline_back">Înapoi</string>
+    <string name="timeline_filter_all">Tot</string>
+    <string name="timeline_filter_together">Împreună</string>
+    <string name="timeline_filter_calls">Apeluri</string>
+    <string name="timeline_filter_messages">Mesaje</string>
+    <string name="timeline_filter_notes">Note</string>
+    <string name="timeline_filter_gifts">Cadouri</string>
+    <string name="msg_timeline_removed">Eliminat din cronologie</string>
+    <string name="timeline_delete">Șterge</string>
+    <string name="contact_message">Mesaj %1$s</string>
+    <string name="contact_email">Email %1$s</string>
+    <string name="contact_video">Apel video %1$s</string>
+    <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
 </resources>

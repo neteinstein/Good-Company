@@ -52,7 +52,6 @@ class FriendDetailViewModelTest {
         g.setCircle,
         g.snooze,
         g.logCall,
-        g.importChat,
         g.generateTalkingPoints,
         g.dismissIdea,
         g.draftBirthdayMessage,
@@ -185,15 +184,9 @@ class FriendDetailViewModelTest {
     }
 
     @Test
-    fun chatImportAndAiWithoutKeyReportMessages() = runViewModelTest {
+    fun aiWithoutKeyReportsAMessage() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onChatPicked("not a chat")
-        assertEquals(FriendDetailMessage.ChatInvalid, state.value.message)
-        vm.onChatPicked("01/03/2026, 10:00 - Ana: hi")
-        assertEquals(FriendDetailMessage.ChatImported(1, "Ana"), state.value.message)
-        assertEquals(1, state.value.detail!!.messageCount)
-
         vm.onGenerateIdeas()
         assertIs<MissingApiKeyException>((state.value.message as FriendDetailMessage.AiError).error)
     }

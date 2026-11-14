@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
@@ -65,7 +66,17 @@ interface InteractionRepository {
     val interactions: Flow<List<Interaction>>
     val messages: Flow<List<ConversationMessage>>
 
+    /** Dated notes about friends. Kept here, in their own table, but they never count as contact. */
+    val journal: Flow<List<JournalEntry>>
+
+    /** Adds [interactions]; automatic ones already stored (same friend, type and time) are skipped. */
     suspend fun addAll(interactions: List<Interaction>)
+
+    suspend fun delete(id: String)
+
+    suspend fun upsertJournal(entry: JournalEntry)
+
+    suspend fun deleteJournal(id: String)
 
     suspend fun addMessages(messages: List<ConversationMessage>)
 

@@ -35,8 +35,10 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
@@ -420,7 +422,7 @@ abstract class RepositoryContract {
     fun interactions_matchTheCallLogByPhone_andSkipDuplicates() = runTest {
         val logs = object : CommunicationLogSource {
             override suspend fun read(since: Instant) = listOf(
-                LogEntry("+351 912 345 678", InteractionType.CALL, at(2026, 3, 9)),
+                LogEntry("+351 912 345 678", InteractionType.CALL, at(2026, 3, 9), durationSeconds = 840),
                 LogEntry("000", InteractionType.CALL, at(2026, 3, 9)),
             )
         }
@@ -429,11 +431,60 @@ abstract class RepositoryContract {
         s.friends.upsert(friendAna)
         assertEquals(1, s.interactions.syncCommunicationLogs(listOf(friendAna)))
         s.interactions.syncCommunicationLogs(listOf(friendAna))
+        // A row from a backup older than the timeline (no id) gets its stable automatic id and source.
         s.interactions.addAll(listOf(Interaction(ana, InteractionType.WHATSAPP, at(2026, 3, 1))))
         assertEquals(
-            listOf(Interaction(ana, InteractionType.WHATSAPP, at(2026, 3, 1)), Interaction(ana, InteractionType.CALL, at(2026, 3, 9))),
+            listOf(
+                Interaction(ana, InteractionType.WHATSAPP, at(2026, 3, 1)).withId(),
+                Interaction(
+                    ana,
+                    InteractionType.CALL,
+                    at(2026, 3, 9),
+                    id = Interaction.automaticId(ana, InteractionType.CALL, at(2026, 3, 9)),
+                    source = InteractionSource.CALL_LOG,
+                    durationSeconds = 840,
+                ),
+            ),
             open().interactions.interactions.first(),
         )
+        assertEquals(InteractionSource.CHAT_IMPORT, open().interactions.interactions.first().first().source)
+    }
+
+    @Test
+    fun interactions_dedupeAutomaticRowsOnly_andDelete() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        val t = at(2026, 3, 9)
+        val imported = Interaction(ana, InteractionType.WHATSAPP, t, id = "a", source = InteractionSource.CHAT_IMPORT, messageCount = 12)
+        // The same chat day under another id is still the same chat day.
+        val again = imported.copy(id = "b", messageCount = 3)
+        val manual1 = Interaction(ana, InteractionType.MESSAGE, t, id = "m1", note = "hi", batchId = "x")
+        val manual2 = Interaction(rui, InteractionType.MESSAGE, t, id = "m2", note = "hi", batchId = "x")
+        val manual3 = Interaction(ana, InteractionType.MESSAGE, t, id = "m3")
+        s.interactions.addAll(listOf(imported, again, manual1, manual2, manual3))
+        s.interactions.addAll(listOf(manual1))
+        val stored = open().interactions.interactions.first()
+        assertEquals(setOf("a", "m1", "m2", "m3"), stored.map { it.id }.toSet())
+        assertEquals(imported, stored.single { it.id == "a" })
+        assertEquals(manual2, stored.single { it.id == "m2" })
+
+        s.interactions.delete("m1")
+        assertEquals(setOf("a", "m2", "m3"), open().interactions.interactions.first().map { it.id }.toSet())
+    }
+
+    @Test
+    fun journal_upsertAndDelete() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val entry = JournalEntry("j1", ana, at(2026, 3, 2), "Talked about Porto")
+        s.interactions.upsertJournal(entry)
+        s.interactions.upsertJournal(entry.copy(text = "Talked about Porto and Leo"))
+        s.interactions.upsertJournal(JournalEntry("j2", ana, at(2026, 3, 5), "Race abroad"))
+        assertEquals(listOf("Talked about Porto and Leo", "Race abroad"), open().interactions.journal.first().map { it.text })
+        s.interactions.deleteJournal("j1")
+        assertEquals(listOf("j2"), open().interactions.journal.first().map { it.id })
+        assertTrue(open().interactions.interactions.first().isEmpty(), "a journal entry is never an interaction")
     }
 
     @Test

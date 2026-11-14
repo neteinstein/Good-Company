@@ -384,4 +384,24 @@
     <string name="story_fresh_food">Nova comida preferida</string>
     <string name="story_fresh_drink">Nova bebida preferida</string>
     <string name="story_fresh_interest">Novo interesse</string>
+    <string name="timeline_title">Cronologia</string>
+    <string name="timeline_screen_title">Cronologia de %1$s</string>
+    <string name="timeline_see_all">Ver tudo</string>
+    <string name="timeline_empty">Ainda nada registado. Toca em + para registar um encontro, uma chamada, uma mensagem ou uma nota.</string>
+    <string name="timeline_filter_empty">Nada aqui com este filtro.</string>
+    <string name="timeline_log">Registar</string>
+    <string name="timeline_more_options">Mais opções</string>
+    <string name="timeline_back">Voltar</string>
+    <string name="timeline_filter_all">Tudo</string>
+    <string name="timeline_filter_together">Juntos</string>
+    <string name="timeline_filter_calls">Chamadas</string>
+    <string name="timeline_filter_messages">Mensagens</string>
+    <string name="timeline_filter_notes">Notas</string>
+    <string name="timeline_filter_gifts">Presentes</string>
+    <string name="msg_timeline_removed">Removido da cronologia</string>
+    <string name="timeline_delete">Apagar</string>
+    <string name="contact_message">Mensagem %1$s</string>
+    <string name="contact_email">Email %1$s</string>
+    <string name="contact_video">Videochamada %1$s</string>
+    <string name="story_last_talk_title">Da última vez falaram sobre…</string>
 </resources>

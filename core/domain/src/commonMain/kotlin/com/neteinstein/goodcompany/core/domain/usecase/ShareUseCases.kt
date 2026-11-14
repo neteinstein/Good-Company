@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -76,6 +77,7 @@ class AddLifeUpdateUseCase(private val friends: FriendRepository, private val cl
 class SuggestUpdateFromSharedUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
+    private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
@@ -91,7 +93,7 @@ class SuggestUpdateFromSharedUseCase(
             .ifEmpty { null }
         return assistant.lifeUpdateFromShared(
             key,
-            IdeaMapper.profile(friend, interactions.messages.first()),
+            IdeaMapper.profile(friend, interactions, hangouts),
             text,
             content.image,
             language.languageTag(),

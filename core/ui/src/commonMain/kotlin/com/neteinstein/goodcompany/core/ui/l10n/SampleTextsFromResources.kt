@@ -76,11 +76,19 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_taste_travel
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_vegetarian_weekdays
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_wine
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_yoga
+import com.neteinstein.goodcompany.core.ui.resources.sample_tl_email_flats
+import com.neteinstein.goodcompany.core.ui.resources.sample_tl_journal_ana
+import com.neteinstein.goodcompany.core.ui.resources.sample_tl_journal_rui
+import com.neteinstein.goodcompany.core.ui.resources.sample_tl_message_surf
+import com.neteinstein.goodcompany.core.ui.resources.sample_tl_video_geres
 import org.jetbrains.compose.resources.getString
 
 /** The sample circle in the user's language (generated mapping: one resource per [SampleTexts] field). */
 object SampleTextsFromResources : SampleTextsProvider {
-    override suspend fun texts(): SampleTexts = SampleTexts(
+    override suspend fun texts(): SampleTexts = base().withTimeline()
+
+    // Split in two: one suspend function with every string is too large for the JVM.
+    private suspend fun base(): SampleTexts = SampleTexts(
         anaNotes = getString(Res.string.sample_ana_notes),
         kneeSurgery = getString(Res.string.sample_knee_surgery),
         jobInterview = getString(Res.string.sample_job_interview),
@@ -154,5 +162,13 @@ object SampleTextsFromResources : SampleTextsProvider {
         trailRunning = getString(Res.string.sample_taste_trail_running),
         shoeSize = getString(Res.string.sample_field_shoe_size),
         footballClub = getString(Res.string.sample_field_football_club),
+    )
+
+    private suspend fun SampleTexts.withTimeline(): SampleTexts = copy(
+        videoCallGeres = getString(Res.string.sample_tl_video_geres),
+        emailFlatListings = getString(Res.string.sample_tl_email_flats),
+        messageSurfPhotos = getString(Res.string.sample_tl_message_surf),
+        journalAnaPorto = getString(Res.string.sample_tl_journal_ana),
+        journalRuiRace = getString(Res.string.sample_tl_journal_rui),
     )
 }

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.AlarmAdd
@@ -142,9 +143,11 @@ import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
+import com.neteinstein.goodcompany.core.ui.components.TimelineEntryRow
 import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
+import com.neteinstein.goodcompany.core.ui.components.interactionIcon
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
@@ -159,7 +162,6 @@ import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
-import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
 import com.neteinstein.goodcompany.core.ui.resources.cancel
@@ -183,7 +185,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.chat_how
 import com.neteinstein.goodcompany.feature.friends.resources.chat_import
 import com.neteinstein.goodcompany.feature.friends.resources.chat_title
 import com.neteinstein.goodcompany.feature.friends.resources.contact_call
+import com.neteinstein.goodcompany.feature.friends.resources.contact_email
+import com.neteinstein.goodcompany.feature.friends.resources.contact_message
 import com.neteinstein.goodcompany.feature.friends.resources.contact_met
+import com.neteinstein.goodcompany.feature.friends.resources.contact_video
 import com.neteinstein.goodcompany.feature.friends.resources.contact_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.delete_body
 import com.neteinstein.goodcompany.feature.friends.resources.delete_body_contact
@@ -293,6 +298,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_other_likes
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_title
+import com.neteinstein.goodcompany.feature.friends.resources.timeline_empty
+import com.neteinstein.goodcompany.feature.friends.resources.timeline_log
+import com.neteinstein.goodcompany.feature.friends.resources.timeline_see_all
+import com.neteinstein.goodcompany.feature.friends.resources.timeline_title
 import com.neteinstein.goodcompany.feature.friends.resources.together_hint
 import com.neteinstein.goodcompany.feature.friends.resources.together_hung_out
 import com.neteinstein.goodcompany.feature.friends.resources.together_title
@@ -344,10 +353,11 @@ fun FriendDetailScreen(
     onOpenSettings: () -> Unit,
     onOpenStory: () -> Unit = {},
     onOpenFriend: (FriendId) -> Unit = {},
+    onOpenTimeline: () -> Unit = {},
+    onLog: () -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
     val pickPhoto = rememberImagePicker(onPicked = viewModel::onPhotoPicked)
     val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
@@ -398,7 +408,8 @@ fun FriendDetailScreen(
             onOpenWish = viewModel::onOpenWish,
             onDismissWish = viewModel::onDismissWish,
             onPersonaliseWish = viewModel::onPersonaliseWish,
-            onImportChat = pickChat,
+            onOpenTimeline = onOpenTimeline,
+            onLog = onLog,
             onAddPhoto = pickPhoto,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
@@ -469,7 +480,8 @@ data class FriendDetailActions(
     val onOpenWish: () -> Unit = {},
     val onDismissWish: () -> Unit = {},
     val onPersonaliseWish: () -> Unit = {},
-    val onImportChat: () -> Unit = {},
+    val onOpenTimeline: () -> Unit = {},
+    val onLog: () -> Unit = {},
     /** Offered only while the friend has no photo. */
     val onAddPhoto: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
@@ -500,10 +512,6 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     is FriendDetailMessage.LoggedWith -> getString(Res.string.msg_logged_with, name)
     FriendDetailMessage.CallLogged -> getString(Res.string.msg_call_logged_short)
     is FriendDetailMessage.Snoozed -> getString(Res.string.touch_snoozed, until.shortLabelText())
-    is FriendDetailMessage.ChatImported -> getPluralString(Res.plurals.msg_chat_imported, messages, messages).let { base ->
-        sender?.let { getString(Res.string.msg_chat_matched, base, it) } ?: base
-    }
-    FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
     is FriendDetailMessage.IdeasFound -> if (count ==
         0
     ) {
@@ -764,32 +772,23 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 }
             }
 
-            item(key = "together") {
-                SectionCard(stringResource(Res.string.together_title), icon = Icons.Rounded.Diversity3) {
-                    if (detail.hangouts.isEmpty()) Hint(stringResource(Res.string.together_hint))
-                    detail.hangouts.take(8).forEach { h ->
-                        val others = h.friends.filterNot { it.id == f.id }
-                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            DateBadge(h.hangout.at.toLocalDateTime(state.zone).date, state.today)
-                            Spacer(Modifier.width(14.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    h.hangout.place?.label ?: stringResource(Res.string.together_hung_out),
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                Text(
-                                    listOfNotNull(
-                                        relativePast(h.hangout.at, state.now, state.zone),
-                                        h.hangout.note.ifBlank {
-                                            null
-                                        },
-                                    ).joinToString(" · "),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+            item(key = "timeline") {
+                SectionCard(
+                    stringResource(Res.string.timeline_title),
+                    icon = Icons.Rounded.Diversity3,
+                    action = {
+                        Row {
+                            if (detail.timeline.isNotEmpty()) {
+                                TextButton(onClick = actions.onOpenTimeline) { Text(stringResource(Res.string.timeline_see_all)) }
                             }
-                            if (others.isNotEmpty()) StackedAvatars(others, size = 28.dp, max = 3)
+                            IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
                         }
+                    },
+                ) {
+                    if (detail.timeline.isEmpty()) Hint(stringResource(Res.string.timeline_empty))
+                    val latest = detail.timeline.take(3)
+                    latest.forEachIndexed { i, entry ->
+                        TimelineEntryRow(entry, state.zone, last = i == latest.lastIndex)
                     }
                 }
             }
@@ -806,11 +805,6 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        OutlinedButton(onClick = actions.onImportChat) {
-                            Icon(Icons.Rounded.UploadFile, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(Res.string.chat_import))
-                        }
                     }
                 }
             }
@@ -1541,6 +1535,9 @@ private fun LastContactRow(byType: Map<InteractionType, kotlin.time.Instant>, st
                 InteractionType.MEETUP -> Icons.Rounded.Groups to stringResource(Res.string.contact_met, ago)
                 InteractionType.CALL -> Icons.Rounded.Call to stringResource(Res.string.contact_call, ago)
                 InteractionType.WHATSAPP -> Icons.Rounded.Forum to stringResource(Res.string.contact_whatsapp, ago)
+                InteractionType.MESSAGE -> interactionIcon(type) to stringResource(Res.string.contact_message, ago)
+                InteractionType.EMAIL -> interactionIcon(type) to stringResource(Res.string.contact_email, ago)
+                InteractionType.VIDEO_CALL -> interactionIcon(type) to stringResource(Res.string.contact_video, ago)
             }
             InfoPill(label, icon = icon)
         }

@@ -51,6 +51,8 @@ internal object IdeaPrompts {
             if (f.drinks.isNotEmpty()) appendLine("  drinks: ${f.drinks.joinToString()}")
             if (f.interests.isNotEmpty()) appendLine("  interests & hobbies: ${f.interests.joinToString()}")
             if (f.news.isNotEmpty()) appendLine("  what's new in their life (newest first): ${f.news.joinToString("; ")}")
+            if (f.journal.isNotEmpty()) appendLine("  notes from recent conversations (newest first): ${f.journal.joinToString("; ")}")
+            if (f.lastMeetupNote.isNotBlank()) appendLine("  note from your last meetup: ${f.lastMeetupNote}")
             if (f.recentMessages.isNotEmpty()) {
                 appendLine("  recent chat (oldest first):")
                 f.recentMessages.forEach { appendLine("    $it") }

@@ -18,8 +18,10 @@ import com.neteinstein.goodcompany.di.appModule
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -70,6 +72,9 @@ class AppModuleTest {
         assertNotNull(koin.get<AppDatabase>())
         assertNotNull(koin.get<FriendsViewModel>())
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
+        assertNotNull(koin.get<FriendTimelineViewModel> { parametersOf(FriendId("x")) })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL") })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), null) })
         assertNotNull(koin.get<HangoutsViewModel>())
         assertNotNull(koin.get<AgendaViewModel>())
         assertNotNull(koin.get<IdeasViewModel>())

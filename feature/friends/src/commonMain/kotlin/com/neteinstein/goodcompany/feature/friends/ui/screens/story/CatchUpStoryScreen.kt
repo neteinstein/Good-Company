@@ -99,6 +99,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.story_kicker
 import com.neteinstein.goodcompany.feature.friends.resources.story_kid_age
 import com.neteinstein.goodcompany.feature.friends.resources.story_kid_birthday
 import com.neteinstein.goodcompany.feature.friends.resources.story_kids_title
+import com.neteinstein.goodcompany.feature.friends.resources.story_last_talk_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_last_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_last_with
 import com.neteinstein.goodcompany.feature.friends.resources.story_never_met
@@ -279,6 +280,7 @@ private fun slideColors(slide: StorySlide, friend: Friend): List<Color> = when (
     is StorySlide.Kids -> OnColorGradients.Teal
     is StorySlide.About -> OnColorGradients.Indigo.reversed()
     is StorySlide.LastTime -> OnColorGradients.Indigo
+    is StorySlide.LastTalk -> OnColorGradients.Teal
     is StorySlide.Tastes -> listOf(OnColorGradients.Raspberry, OnColorGradients.Violet)
     is StorySlide.Notes -> OnColorGradients.Teal.reversed()
     is StorySlide.ToDo -> OnColorGradients.Amber
@@ -430,6 +432,12 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
             if (slide.place != null) Body(slide.date.longLabel())
             if (slide.with.isNotEmpty()) Body(stringResource(Res.string.story_last_with, slide.with.joinToString()))
             slide.note?.let { Quote(it) }
+        }
+        is StorySlide.LastTalk -> {
+            Emoji("💬")
+            Kicker(stringResource(Res.string.story_last_talk_title))
+            Body(slide.date.longLabel())
+            Quote(slide.text)
         }
         is StorySlide.Tastes -> {
             Emoji("💛")

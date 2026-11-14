@@ -53,4 +53,17 @@
     <string name="share_top">Quem vi mais: %1$s</string>
     <string name="share_place">Sítio preferido: %1$s</string>
     <string name="share_footer">— feito com o Good Company</string>
+    <string name="contacts_title">Entretanto</string>
+    <plurals name="contacts_body">
+        <item quantity="one">%1$d vez em que falaram à distância</item>
+        <item quantity="other">%1$d vezes em que falaram à distância</item>
+    </plurals>
+    <plurals name="contacts_calls">
+        <item quantity="one">%1$d chamada</item>
+        <item quantity="other">%1$d chamadas</item>
+    </plurals>
+    <plurals name="contacts_messages">
+        <item quantity="one">%1$d mensagem ou email</item>
+        <item quantity="other">%1$d mensagens e emails</item>
+    </plurals>
 </resources>

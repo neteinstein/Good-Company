@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.data.db.GoodCompanyDatabase
 import com.neteinstein.goodcompany.core.data.db.HANGOUT_TABLES
 import com.neteinstein.goodcompany.core.data.db.IDEA_TABLES
 import com.neteinstein.goodcompany.core.data.db.INTERACTION_TABLES
+import com.neteinstein.goodcompany.core.data.db.JOURNAL_TABLES
 import com.neteinstein.goodcompany.core.data.db.MESSAGE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
@@ -17,6 +18,7 @@ import com.neteinstein.goodcompany.core.data.db.readGroups
 import com.neteinstein.goodcompany.core.data.db.readHangouts
 import com.neteinstein.goodcompany.core.data.db.readIdeas
 import com.neteinstein.goodcompany.core.data.db.readInteractions
+import com.neteinstein.goodcompany.core.data.db.readJournal
 import com.neteinstein.goodcompany.core.data.db.readMessages
 import com.neteinstein.goodcompany.core.data.db.readPlans
 import com.neteinstein.goodcompany.core.data.db.readPreferences
@@ -27,6 +29,7 @@ import com.neteinstein.goodcompany.core.data.db.writeGroup
 import com.neteinstein.goodcompany.core.data.db.writeHangout
 import com.neteinstein.goodcompany.core.data.db.writeIdea
 import com.neteinstein.goodcompany.core.data.db.writeInteraction
+import com.neteinstein.goodcompany.core.data.db.writeJournal
 import com.neteinstein.goodcompany.core.data.db.writeMessage
 import com.neteinstein.goodcompany.core.data.db.writePlan
 import com.neteinstein.goodcompany.core.data.db.writePreferences
@@ -45,6 +48,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
@@ -190,11 +195,24 @@ class SqlInteractionRepository(
 ) : InteractionRepository {
     override val interactions: Flow<List<Interaction>> = db.observe(*INTERACTION_TABLES) { it.readInteractions() }
     override val messages: Flow<List<ConversationMessage>> = db.observe(*MESSAGE_TABLES) { it.readMessages() }
+    override val journal: Flow<List<JournalEntry>> = db.observe(*JOURNAL_TABLES) { it.readJournal() }
 
     override suspend fun addAll(interactions: List<Interaction>) = db.transaction { database ->
         interactions.forEach { database.writeInteraction(it) }
         database.interactionQueries.trimInteractions(MAX_INTERACTIONS)
         Unit
+    }
+
+    override suspend fun delete(id: String) {
+        db.access { it.interactionQueries.deleteInteraction(id) }
+    }
+
+    override suspend fun upsertJournal(entry: JournalEntry) {
+        db.access { it.writeJournal(entry) }
+    }
+
+    override suspend fun deleteJournal(id: String) {
+        db.access { it.interactionQueries.deleteJournal(id) }
     }
 
     override suspend fun addMessages(messages: List<ConversationMessage>) = db.transaction { database ->
@@ -208,7 +226,14 @@ class SqlInteractionRepository(
         val byPhone = PhoneMatcher.index(friends) { it.phoneNumbers }
         val matched = entries.mapNotNull { e ->
             val friend = PhoneMatcher.key(e.phoneNumber)?.let(byPhone::get) ?: return@mapNotNull null
-            Interaction(friend.id, e.type, e.at)
+            Interaction(
+                friendId = friend.id,
+                type = e.type,
+                at = e.at,
+                id = Interaction.automaticId(friend.id, e.type, e.at),
+                source = InteractionSource.CALL_LOG,
+                durationSeconds = e.durationSeconds,
+            )
         }
         addAll(matched)
         return matched.size
@@ -356,6 +381,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 reminders = database.readReminders(),
                 interactions = database.readInteractions(),
                 messages = database.readMessages(),
+                journal = database.readJournal(),
                 ideas = database.readIdeas(),
                 groups = database.readGroups(),
                 plans = database.readPlans(),
@@ -384,6 +410,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     friendGroupQueries.deleteAll()
     interactionQueries.deleteAllInteractions()
     interactionQueries.deleteAllMessages()
+    interactionQueries.deleteAllJournal()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -393,5 +420,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     backup.groups.forEach { writeGroup(it) }
     backup.interactions.forEach { writeInteraction(it) }
     backup.messages.forEach { writeMessage(it) }
+    backup.journal.forEach { writeJournal(it) }
     writePreferences(backup.settings)
 }

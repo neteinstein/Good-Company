@@ -34,7 +34,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -72,10 +71,6 @@ sealed interface FriendDetailMessage {
     data object CallLogged : FriendDetailMessage
 
     data class Snoozed(val until: LocalDate) : FriendDetailMessage
-
-    data class ChatImported(val messages: Int, val sender: String?) : FriendDetailMessage
-
-    data object ChatInvalid : FriendDetailMessage
 
     data class IdeasFound(val count: Int) : FriendDetailMessage
 
@@ -187,7 +182,6 @@ class FriendDetailViewModel(
     private val setCircle: SetCircleUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val logCall: LogCallUseCase,
-    private val importChat: ImportChatUseCase,
     private val generateTalkingPoints: GenerateTalkingPointsUseCase,
     private val dismissIdea: DismissIdeaUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
@@ -546,14 +540,6 @@ class FriendDetailViewModel(
     }
 
     // --- Chats and AI talking points -----------------------------------------------------------------------------
-
-    fun onChatPicked(text: String?) {
-        if (text.isNullOrBlank()) return
-        viewModelScope.launch {
-            val result = importChat(friendId, text)
-            say(if (result.messages == 0) FriendDetailMessage.ChatInvalid else FriendDetailMessage.ChatImported(result.messages, result.friendSender))
-        }
-    }
 
     fun onGenerateIdeas() {
         if (local.value.isGenerating) return

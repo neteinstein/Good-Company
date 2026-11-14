@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -27,6 +28,7 @@ class CheckInUseCase(
         location: GeoPoint? = null,
         note: String = "",
         at: Instant? = null,
+        activity: HangoutActivity? = null,
     ): Hangout {
         require(friendIds.isNotEmpty()) { "Pick at least one friend" }
         val place = if (placeName.isNullOrBlank() && location == null) {
@@ -34,7 +36,7 @@ class CheckInUseCase(
         } else {
             Place(placeName?.trim()?.ifBlank { null }, location?.latitude, location?.longitude)
         }
-        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim())
+        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity)
         hangouts.add(hangout)
         return hangout
     }

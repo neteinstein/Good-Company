@@ -25,6 +25,15 @@ import org.jetbrains.compose.resources.StringResource
 
 @Serializable data class FriendDetailRoute(val id: String)
 
+/** A friend's whole timeline (filters, delete with Undo, WhatsApp import). */
+@Serializable data class FriendTimelineRoute(val id: String)
+
+/**
+ * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
+ * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met".
+ */
+@Serializable data class LogInteractionRoute(val friendIds: List<String>, val type: String? = null)
+
 /** "Save to a friend" for something shared into the app (see ShareInbox). */
 @Serializable data object ShareRoute
 
