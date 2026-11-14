@@ -99,4 +99,22 @@
     <string name="msg_drive_full">Google Drive-ul tău este plin.</string>
     <string name="msg_drive_offline">Nu s-a putut contacta Google Drive. Verifică conexiunea.</string>
     <string name="msg_drive_failed">Ceva n-a mers cu Google Drive. Încearcă din nou.</string>
+    <string name="places">Locuri</string>
+    <string name="places_row_hint">Nume date unor puncte GPS</string>
+    <string name="places_intro">Locurile sunt nume pe care le-ai dat unor puncte GPS. Nu părăsesc niciodată telefonul și nu se folosește niciun serviciu de hărți.</string>
+    <string name="places_empty">Încă nu ai locuri. Înregistrează o întâlnire cu locația ta și te vom întreba „Ce loc e acesta?”.</string>
+    <string name="places_usually">de obicei %1$s</string>
+    <string name="places_nearby">la %1$d m de „%2$s”</string>
+    <string name="places_rename">Redenumește</string>
+    <string name="places_merge">Unește</string>
+    <string name="places_merge_title">Unește „%1$s” cu…</string>
+    <string name="places_merge_hint">Întâlnirile de acolo primesc numele locului ales.</string>
+    <string name="places_merged">Unit cu „%1$s”</string>
+    <string name="places_deleted">„%1$s” a fost șters</string>
+    <string name="places_more">Mai multe pentru %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d întâlnire</item>
+        <item quantity="few">%1$d întâlniri</item>
+        <item quantity="other">%1$d de întâlniri</item>
+    </plurals>
 </resources>

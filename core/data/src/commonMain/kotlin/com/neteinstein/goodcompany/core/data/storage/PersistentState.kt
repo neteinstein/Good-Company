@@ -63,6 +63,7 @@ internal object Keys {
     const val MESSAGES = "messages.v1"
     const val JOURNAL = "journal.v1" // only the JSON reference repository: journal entries came after SQLite
     const val ATTACHMENTS = "attachments.v1" // only the JSON reference repository, like JOURNAL
+    const val PLACES = "places.v1" // only the JSON reference repository, like JOURNAL
     const val IDEAS = "ideas.v1"
     const val SETTINGS = "settings.v1"
     const val GROUPS = "groups.v1"

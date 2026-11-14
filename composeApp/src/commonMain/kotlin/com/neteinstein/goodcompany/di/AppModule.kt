@@ -64,6 +64,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -84,6 +85,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MergePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
@@ -97,6 +99,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -109,10 +113,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
@@ -157,6 +163,7 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
 import org.koin.core.module.dsl.factoryOf
@@ -234,6 +241,12 @@ val appModule = module {
     factoryOf(::RestoreTimelineEntryUseCase)
     factoryOf(::DeleteHangoutUseCase)
     factoryOf(::RestoreHangoutUseCase)
+    factoryOf(::ObservePlaceBookUseCase)
+    factoryOf(::ObservePlacesUseCase)
+    factoryOf(::RenamePlaceUseCase)
+    factoryOf(::DeletePlaceUseCase)
+    factoryOf(::RestorePlaceUseCase)
+    factoryOf(::MergePlacesUseCase)
     factoryOf(::GetCurrentLocationUseCase)
     factoryOf(::ObserveHangoutHistoryUseCase)
     factoryOf(::ObserveMeetupStatusUseCase)
@@ -345,13 +358,14 @@ val appModule = module {
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?) ->
-        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get())
+        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get())
     }
     viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::AgendaViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
+    viewModelOf(::PlacesViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
     viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
     viewModelOf(::ShareToFriendViewModel)

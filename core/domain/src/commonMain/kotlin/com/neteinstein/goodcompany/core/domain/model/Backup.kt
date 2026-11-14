@@ -27,6 +27,8 @@ data class Backup(
     val ideas: List<Idea> = emptyList(),
     val groups: List<FriendGroup> = emptyList(),
     val plans: List<Plan> = emptyList(),
+    /** Named places (F11): names given to GPS spots. */
+    val places: List<NamedPlace> = emptyList(),
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {

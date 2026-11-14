@@ -98,4 +98,21 @@
     <string name="msg_drive_full">Tu Google Drive está lleno.</string>
     <string name="msg_drive_offline">No se ha podido contactar con Google Drive. Revisa la conexión.</string>
     <string name="msg_drive_failed">Algo ha fallado con Google Drive. Vuelve a intentarlo.</string>
+    <string name="places">Lugares</string>
+    <string name="places_row_hint">Nombres que diste a puntos GPS</string>
+    <string name="places_intro">Los lugares son nombres que diste a puntos GPS. Nunca salen de tu teléfono y no se usa ningún servicio de mapas.</string>
+    <string name="places_empty">Aún no hay lugares. Registra un encuentro con tu ubicación y te preguntaremos “¿Qué lugar es este?”.</string>
+    <string name="places_usually">normalmente %1$s</string>
+    <string name="places_nearby">a %1$d m de “%2$s”</string>
+    <string name="places_rename">Renombrar</string>
+    <string name="places_merge">Unir</string>
+    <string name="places_merge_title">Unir “%1$s” con…</string>
+    <string name="places_merge_hint">Sus encuentros toman el nombre del lugar que elijas.</string>
+    <string name="places_merged">Unido con “%1$s”</string>
+    <string name="places_deleted">“%1$s” eliminado</string>
+    <string name="places_more">Más opciones para %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d encuentro</item>
+        <item quantity="other">%1$d encuentros</item>
+    </plurals>
 </resources>

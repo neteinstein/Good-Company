@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.Plan
@@ -130,13 +131,37 @@ class FakeContactsWriter : ContactsWriter {
     }
 }
 
-class FakeHangoutRepository(initial: List<Hangout> = emptyList()) : HangoutRepository {
+class FakeHangoutRepository(initial: List<Hangout> = emptyList(), places: List<NamedPlace> = emptyList()) : HangoutRepository {
     private val state = MutableStateFlow(initial)
     override val hangouts: StateFlow<List<Hangout>> = state
+    private val placeState = MutableStateFlow(places)
+    override val places: StateFlow<List<NamedPlace>> = placeState
 
     override suspend fun add(hangout: Hangout) = state.update { it + hangout }
 
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertPlace(place: NamedPlace) = placeState.update { list ->
+        if (list.any { it.id == place.id }) list.map { if (it.id == place.id) place else it } else list + place
+    }
+
+    override suspend fun deletePlace(id: String) = placeState.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun renamePlace(id: String, name: String) {
+        val place = placeState.value.firstOrNull { it.id == id } ?: return
+        upsertPlace(place.copy(name = name))
+        relink(id, id, name)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) {
+        val into = placeState.value.firstOrNull { it.id == intoId } ?: return
+        relink(fromId, intoId, into.name)
+        deletePlace(fromId)
+    }
+
+    private fun relink(fromId: String, toId: String, name: String) = state.update { list ->
+        list.map { h -> h.place?.takeIf { it.placeId == fromId }?.let { h.copy(place = it.copy(name = name, placeId = toId)) } ?: h }
+    }
 }
 
 class FakeReminderRepository(initial: List<Reminder> = emptyList()) : ReminderRepository {
@@ -254,6 +279,7 @@ class FakeBackupRepository(
         ideas = ideas.ideas.value,
         groups = groups.groups.value,
         plans = plans.plans.value,
+        places = hangouts.places.value,
         settings = settings.settings.value,
     )
 
@@ -263,6 +289,8 @@ class FakeBackupRepository(
         backup.friends.forEach { friends.upsert(it) }
         hangouts.hangouts.value.forEach { hangouts.delete(it.id) }
         backup.hangouts.forEach { hangouts.add(it) }
+        hangouts.places.value.forEach { hangouts.deletePlace(it.id) }
+        backup.places.forEach { hangouts.upsertPlace(it) }
         plans.plans.value.forEach { plans.delete(it.id) }
         backup.plans.forEach { plans.upsert(it) }
         settings.update { backup.settings }

@@ -30,6 +30,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.Dispatchers
@@ -86,6 +87,7 @@ class AppModuleTest {
         assertNotNull(koin.get<AgendaViewModel>())
         assertNotNull(koin.get<IdeasViewModel>())
         assertNotNull(koin.get<SettingsViewModel>())
+        assertNotNull(koin.get<PlacesViewModel>())
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
         assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
         assertNotNull(koin.get<ApplyLaunchOptions>())

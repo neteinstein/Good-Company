@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DarkMode
@@ -168,6 +169,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_update_permiss
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_result
 import com.neteinstein.goodcompany.feature.settings.resources.pings_at
+import com.neteinstein.goodcompany.feature.settings.resources.places
+import com.neteinstein.goodcompany.feature.settings.resources.places_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.privacy
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_base
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_call_log
@@ -247,7 +250,7 @@ suspend fun SettingsMessage.text(): String = when (this) {
 }
 
 @Composable
-fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(appVersion: String, onOpenPlaces: () -> Unit = {}, viewModel: SettingsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var notificationsAsked by remember { mutableIntStateOf(0) }
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
@@ -285,6 +288,7 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
             onReminderHourChange = viewModel::onReminderHourChange,
             onClosenessDaysChange = viewModel::onClosenessDaysChange,
             onImportContactsFile = pickVcf,
+            onOpenPlaces = onOpenPlaces,
             onEnableNotifications = requestNotifications,
             onLoadSampleData = viewModel::onLoadSampleData,
             onRemoveSampleData = viewModel::onRemoveSampleData,
@@ -359,6 +363,8 @@ data class SettingsActions(
     val onDriveRestore: () -> Unit = {},
     val onCheckForUpdate: () -> Unit = {},
     val onInstallUpdate: (AppUpdate) -> Unit = {},
+    /** Settings → Places (F11). */
+    val onOpenPlaces: () -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -567,6 +573,14 @@ fun SettingsContent(
                     headlineContent = { Text(stringResource(Res.string.import_vcf), style = MaterialTheme.typography.titleSmall) },
                     supportingContent = { Text(stringResource(Res.string.import_vcf_hint)) },
                     trailingContent = { FilledTonalButton(onClick = actions.onImportContactsFile) { Text(stringResource(Res.string.import)) } },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenPlaces),
+                    leadingContent = { Icon(Icons.Rounded.Place, null) },
+                    headlineContent = { Text(stringResource(Res.string.places), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.places_row_hint)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
                 ListItem(

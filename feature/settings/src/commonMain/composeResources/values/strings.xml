@@ -104,4 +104,21 @@
     <string name="msg_drive_full">Your Google Drive is full.</string>
     <string name="msg_drive_offline">Couldn’t reach Google Drive. Check your connection.</string>
     <string name="msg_drive_failed">Something went wrong with Google Drive. Try again.</string>
+    <string name="places">Places</string>
+    <string name="places_row_hint">Names you gave to GPS spots</string>
+    <string name="places_intro">Places are names you gave to GPS spots. They never leave your phone and no map service is used.</string>
+    <string name="places_empty">No places yet. Check in with your location and you’ll be asked “What place is this?”.</string>
+    <string name="places_usually">usually %1$s</string>
+    <string name="places_nearby">%1$d m from “%2$s”</string>
+    <string name="places_rename">Rename</string>
+    <string name="places_merge">Merge</string>
+    <string name="places_merge_title">Merge “%1$s” into…</string>
+    <string name="places_merge_hint">Its meetups take the name of the place you pick.</string>
+    <string name="places_merged">Merged into “%1$s”</string>
+    <string name="places_deleted">“%1$s” deleted</string>
+    <string name="places_more">More for %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d meetup</item>
+        <item quantity="other">%1$d meetups</item>
+    </plurals>
 </resources>

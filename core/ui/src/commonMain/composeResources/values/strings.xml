@@ -396,4 +396,17 @@
     <string name="attachment_original_gone">Original no longer in your gallery</string>
     <string name="attachment_copy">Copy</string>
     <string name="attachment_open_link">Open link</string>
+    <string name="log_locating">Finding you…</string>
+    <string name="place_what_is_this">What place is this?</string>
+    <string name="place_name_hint">Name it (optional)</string>
+    <string name="place_first_time">%1$s · first time here</string>
+    <string name="place_next_time">Next time you’re within %1$d m, it gets this name.</string>
+    <string name="place_named_auto">Named automatically · you’re %1$d m away</string>
+    <string name="place_change">Change</string>
+    <string name="place_usually_with">Usually here with</string>
+    <string name="place_add_person">Add %1$s</string>
+    <plurals name="place_suggest_hint">
+        <item quantity="one">From your last meetup here. Tap to add; nobody is added on their own.</item>
+        <item quantity="other">From your last %1$d meetups here. Tap to add; nobody is added on their own.</item>
+    </plurals>
 </resources>

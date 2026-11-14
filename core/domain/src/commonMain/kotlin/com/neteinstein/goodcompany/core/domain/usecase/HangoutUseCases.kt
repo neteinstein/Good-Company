@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -14,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlin.time.Instant
 
 /** The one-tap "I'm with…" check-in. */
@@ -31,14 +33,30 @@ class CheckInUseCase(
         activity: HangoutActivity? = null,
     ): Hangout {
         require(friendIds.isNotEmpty()) { "Pick at least one friend" }
-        val place = if (placeName.isNullOrBlank() && location == null) {
+        val name = placeName?.trim()?.ifBlank { null }
+        val named = location?.let { namedPlace(name, it) }
+        val place = if (name == null && location == null) {
             null
         } else {
-            Place(placeName?.trim()?.ifBlank { null }, location?.latitude, location?.longitude)
+            Place(named?.name ?: name, location?.latitude, location?.longitude, named?.id)
         }
         val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity)
         hangouts.add(hangout)
         return hangout
+    }
+
+    /**
+     * F11: within the radius of a named place, a meetup with no name (or that place's own name) takes that place.
+     * A new name at a GPS fix becomes a new named place, so the next check-in within ~100 m names itself. No name and
+     * no place nearby keeps just the coordinates.
+     */
+    private suspend fun namedPlace(name: String?, at: GeoPoint): NamedPlace? {
+        val match = NamedPlaces.nearest(hangouts.places.first(), at)?.place
+        return when {
+            name == null -> match
+            match != null && match.name.equals(name, ignoreCase = true) -> match
+            else -> NamedPlace(ids.next(), name, at.latitude, at.longitude).also { hangouts.upsertPlace(it) }
+        }
     }
 }
 

@@ -22,6 +22,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout as DomainHangout
 import com.neteinstein.goodcompany.core.domain.model.Idea as DomainIdea
 import com.neteinstein.goodcompany.core.domain.model.Interaction as DomainInteraction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry as DomainJournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace as DomainNamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Plan as DomainPlan
 import com.neteinstein.goodcompany.core.domain.model.Reminder as DomainReminder
 
@@ -30,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.model.Reminder as DomainReminder
 // The `friend` table is in every observer's list because deleting a friend removes their join rows by cascade.
 
 internal val HANGOUT_TABLES = arrayOf("hangout", "hangout_friend", "friend")
+internal val PLACE_TABLES = arrayOf("named_place")
 internal val REMINDER_TABLES = arrayOf("reminder", "reminder_friend", "friend")
 internal val IDEA_TABLES = arrayOf("idea", "idea_friend", "friend")
 internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "idea", "friend")
@@ -48,10 +50,10 @@ private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String)
 internal suspend fun GoodCompanyDatabase.readHangouts(): List<DomainHangout> {
     val friends = hangoutQueries.allHangoutFriends().awaitAsList().friendIdsBy({ it.hangout_id }, { it.friend_id })
     return hangoutQueries.allHangouts().awaitAsList().map { row ->
-        val place = if (row.place_name == null && row.place_latitude == null && row.place_longitude == null) {
+        val place = if (row.place_name == null && row.place_latitude == null && row.place_longitude == null && row.place_id == null) {
             null
         } else {
-            Place(row.place_name, row.place_latitude, row.place_longitude)
+            Place(row.place_name, row.place_latitude, row.place_longitude, row.place_id)
         }
         val activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } }
         DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note, activity)
@@ -71,10 +73,32 @@ internal suspend fun GoodCompanyDatabase.writeHangout(hangout: DomainHangout) {
             place_longitude = hangout.place?.longitude,
             note = hangout.note,
             activity = hangout.activity?.name,
+            place_id = hangout.place?.placeId,
         ),
     )
     q.deleteFriends(hangout.id)
     hangout.friendIds.forEachIndexed { i, f -> q.insertFriend(hangout.id, f.value, i.toLong()) }
+}
+
+// --- Named places ---
+
+internal suspend fun GoodCompanyDatabase.readPlaces(): List<DomainNamedPlace> = namedPlaceQueries.allPlaces().awaitAsList().map { row ->
+    DomainNamedPlace(row.id, row.name, row.latitude, row.longitude, row.radius_m.toInt())
+}
+
+/** Adds or updates [place]; an update keeps its place in the list, a new one goes to the end. */
+internal suspend fun GoodCompanyDatabase.writePlace(place: DomainNamedPlace) {
+    val q = namedPlaceQueries
+    q.upsertPlace(
+        Named_place(
+            id = place.id,
+            position = q.nextPlacePosition().awaitAsOneOrNull() ?: 0L,
+            name = place.name,
+            latitude = place.latitude,
+            longitude = place.longitude,
+            radius_m = place.radiusM.toLong(),
+        ),
+    )
 }
 
 // --- Reminders ---

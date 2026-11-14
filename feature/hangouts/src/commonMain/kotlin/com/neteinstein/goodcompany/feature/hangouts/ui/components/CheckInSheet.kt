@@ -43,19 +43,17 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
+import com.neteinstein.goodcompany.core.ui.components.MeetupPlaceState
 import com.neteinstein.goodcompany.core.ui.resources.circle_tick_who_came
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_clear_location
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_locating
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_log
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_note
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_pick
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_use_location
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_where
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInDraft
 import org.jetbrains.compose.resources.stringResource
@@ -65,6 +63,7 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 @Composable
 fun CheckInSheet(
     draft: CheckInDraft,
+    place: MeetupPlaceState,
     friends: List<Friend>,
     groups: List<FriendGroup>,
     onPickGroup: (String) -> Unit,
@@ -74,6 +73,7 @@ fun CheckInSheet(
     onNoteChange: (String) -> Unit,
     onUseLocation: () -> Unit,
     onClearLocation: () -> Unit,
+    onChangePlace: () -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -139,37 +139,15 @@ fun CheckInSheet(
                     )
                 }
             }
-            OutlinedTextField(
-                value = draft.place,
-                onValueChange = onPlaceChange,
-                leadingIcon = { Icon(Icons.Rounded.Place, null) },
-                label = { Text(stringResource(Res.string.sheet_where)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
+            MeetupPlace(
+                place,
+                freeTextLabel = stringResource(Res.string.sheet_where),
+                onName = onPlaceChange,
+                onUseLocation = onUseLocation,
+                onClearLocation = onClearLocation,
+                onChange = onChangePlace,
+                onAddPerson = onToggleFriend,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val location = draft.location
-                when {
-                    draft.isLocating -> {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(Res.string.sheet_locating))
-                    }
-                    location != null -> InputChip(
-                        selected = true,
-                        onClick = onClearLocation,
-                        label = { Text(Place(null, location.latitude, location.longitude).label.orEmpty()) },
-                        leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
-                        trailingIcon = { Icon(Icons.Rounded.Close, stringResource(Res.string.sheet_clear_location), Modifier.size(18.dp)) },
-                    )
-                    else -> AssistChip(
-                        onClick = onUseLocation,
-                        label = { Text(stringResource(Res.string.sheet_use_location)) },
-                        leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
-                    )
-                }
-            }
             OutlinedTextField(
                 value = draft.note,
                 onValueChange = onNoteChange,

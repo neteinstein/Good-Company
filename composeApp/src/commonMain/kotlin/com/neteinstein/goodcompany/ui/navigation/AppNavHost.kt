@@ -43,6 +43,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 
 const val APP_VERSION = "1.0.0"
 
@@ -182,7 +183,13 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
             }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend) }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
-            composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION) }
+            composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION, onOpenPlaces = { navController.navigate(PlacesRoute) }) }
+            composable<PlacesRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                PlacesScreen(onBack = { navController.popBackStack() })
+            }
             composable<YearReviewRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },

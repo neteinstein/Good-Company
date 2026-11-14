@@ -33,6 +33,7 @@ fun LogInteractionScreen(
             onPlaceName = viewModel::onPlaceName,
             onUseLocation = viewModel::onUseLocation,
             onClearLocation = viewModel::onClearLocation,
+            onChangePlace = viewModel::onChangePlace,
             onActivity = viewModel::onActivity,
             onCircle = viewModel::onCircle,
             onTogglePerson = viewModel::onTogglePerson,
