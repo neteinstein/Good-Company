@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
@@ -17,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LastSeenCard
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -81,6 +83,8 @@ data class TodayUiState(
     val drifting: List<FriendSummary> = emptyList(),
     /** Everyone, for the reminder editor and the birthday-wish sheet. */
     val friends: List<Friend> = emptyList(),
+    /** Every circle, Family included: the people picker's filter row in the reminder editor (issue #89). */
+    val circles: List<FriendGroup> = emptyList(),
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
     val message: TodayMessage? = null,
@@ -134,6 +138,7 @@ class TodayViewModel(
     private val answerLastSeen: AnswerLastSeenUseCase,
     private val hideLastSeenCard: HideLastSeenCardUseCase,
     private val clock: AppClock,
+    observeGroups: ObserveGroupsUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(TodayUiState())
 
@@ -141,10 +146,16 @@ class TodayViewModel(
         observeAgenda(),
         observeMeetups(),
         observeStories(),
-        combine(observeFriends(), observeSettings(), observeReviewYear(), observeLastSeen(), ::Extras),
+        combine(observeFriends(), observeSettings(), observeReviewYear(), observeLastSeen(), observeGroups(), ::Extras),
         local,
     ) { agenda, meetups, stories, extras, ui ->
-        build(ui, agenda, meetups, stories, extras.friends, extras.settings).copy(reviewYear = extras.reviewYear).withLastSeen(extras.lastSeen)
+        build(ui, agenda, meetups, stories, extras.friends, extras.settings).copy(
+            reviewYear = extras.reviewYear,
+            circles = extras.circles.map {
+                it.group
+            },
+        )
+            .withLastSeen(extras.lastSeen)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
@@ -180,7 +191,13 @@ class TodayViewModel(
         )
     }
 
-    private class Extras(val friends: List<FriendSummary>, val settings: AppSettings, val reviewYear: Int?, val lastSeen: LastSeenCard)
+    private class Extras(
+        val friends: List<FriendSummary>,
+        val settings: AppSettings,
+        val reviewYear: Int?,
+        val lastSeen: LastSeenCard,
+        val circles: List<Relationships.GroupStatus>,
+    )
 
     private fun TodayUiState.withLastSeen(card: LastSeenCard): TodayUiState {
         val ask = card.current

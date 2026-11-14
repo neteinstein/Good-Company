@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
@@ -48,6 +49,27 @@ class ShareToFriendViewModelTest {
         g.addFriend,
         g.clock,
     )
+
+    @Test
+    fun suggestionsStayOnTop_theRestIsGroupedByCloseness_andTheFilterRowNarrowsBoth() = runViewModelTest {
+        val g = graph()
+        g.shareInbox.offer(SharedContent(text = "Lunch with Ana"))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(listOf("ana"), state.value.suggested.map { it.friend.id.value })
+        // Not repeated below: Rui (Close) then Bea (Acquaintance), with the row's counts.
+        assertEquals(
+            listOf(Closeness.CLOSE to listOf("rui"), Closeness.ACQUAINTANCE to listOf("bea")),
+            state.value.others.byCloseness { it.closeness }.map { (c, p) -> c to p.map { it.id.value } },
+        )
+        assertEquals(3, state.value.others.everyoneCount)
+
+        vm.onFilter(PeopleFilter(closeness = Closeness.CLOSE))
+        assertTrue(state.value.suggested.isEmpty())
+        assertEquals(listOf("rui"), state.value.others.people.map { it.id.value })
+        vm.onFilter(PeopleFilter.Everyone)
+        assertEquals(3, state.value.friends.size)
+    }
 
     @Test
     fun ranksByNameNumberAndRecency_thenSavesAChatAsAMessage() = runViewModelTest {

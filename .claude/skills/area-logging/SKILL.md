@@ -12,6 +12,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - **All** logging goes through `LogInteractionUseCase(LogRequest)` and is undone with `UndoLogUseCase`. No screen writes
   hangouts or interactions directly.
 - Choosing a circle lists its members with **nobody ticked** (F20).
+- "+ Add people" on the Log sheet and We met opens `PeoplePickerSheet` (issue #89) with `requireSomeone = true`.
 - Automatic rows (call log, chat import) dedupe through `Interaction.automaticId`; manual rows never dedupe.
 - Places are GPS only: never call a geocoding, place-search or map service.
 - Calendar events live in memory: never stored, backed up, or sent to the AI.

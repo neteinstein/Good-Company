@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.agenda
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -40,9 +41,19 @@ class TodayViewModelTest {
         g.answerLastSeen,
         g.hideLastSeenCard,
         g.clock,
+        g.observeGroups,
     )
 
     private fun birthday(id: String, month: Int, day: Int): Friend = friend(id) { copy(birthday = Birthday(month, day)) }
+
+    @Test
+    fun theReminderEditorGetsEveryCircle_forThePeoplePicker() = runViewModelTest {
+        val g = TestGraph(listOf(friend("ana")))
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", memberIds = listOf(FriendId("ana"))))
+        val state = collecting(vm(g).state)
+        assertEquals(listOf("choir"), state.value.circles.map { it.id })
+        assertEquals(listOf("ana"), state.value.friends.map { it.id.value })
+    }
 
     @Test
     fun weekIsTheNextSevenDaysIncludingToday() = runViewModelTest {

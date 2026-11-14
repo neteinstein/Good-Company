@@ -598,4 +598,19 @@
     <string name="review_card_title">O teu %1$d em amizade</string>
     <string name="review_card_body">Quem viste mais, os teus sítios preferidos e a tua maior sequência — pronto a partilhar.</string>
     <string name="review_card_cta">Ver o teu ano</string>
+    <!-- People picker and the shared filter row (issue #89) -->
+    <string name="people_filter_all">Todos · %1$d</string>
+    <string name="people_filter_everyone">Toda a gente · %1$d</string>
+    <string name="people_filter_count">%1$s · %2$d</string>
+    <string name="people_picker_title">Com quem?</string>
+    <plurals name="people_picker_chosen_n">
+        <item quantity="one">%1$d escolhida</item>
+        <item quantity="other">%1$d escolhidas</item>
+    </plurals>
+    <string name="people_picker_chosen">Escolhidas · %1$d</string>
+    <string name="people_picker_tick_all">Marcar as %1$d</string>
+    <string name="people_picker_untick_all">Desmarcar todas</string>
+    <string name="people_picker_done">Feito · %1$d</string>
+    <string name="people_picker_nobody">Ninguém chamado ‘%1$s’</string>
+    <string name="people_picker_add">Pessoas</string>
 </resources>

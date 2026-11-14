@@ -133,6 +133,8 @@ data class ShareTargets(
     val friends: List<Friend> = emptyList(),
     val lastContact: Map<FriendId, Instant> = emptyMap(),
     val circles: List<FriendGroup> = emptyList(),
+    /** Every circle with members, Family included: the people picker's filter row (issue #89), not a target. */
+    val filterCircles: List<FriendGroup> = emptyList(),
 )
 
 class ObserveShareTargetsUseCase(
@@ -148,7 +150,8 @@ class ObserveShareTargetsUseCase(
         groups.groups,
     ) { fs, hs, ints, gs ->
         // Not the built-in Family circle: it isn't stored, so nothing can be kept on it (share to its people instead).
-        ShareTargets(fs, Relationships.lastContact(hs, ints), gs.filter { it.memberIds.isNotEmpty() && !it.isBuiltIn })
+        val withMembers = gs.filter { it.memberIds.isNotEmpty() }
+        ShareTargets(fs, Relationships.lastContact(hs, ints), withMembers.filterNot { it.isBuiltIn }, withMembers)
     }
 }
 

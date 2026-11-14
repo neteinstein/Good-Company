@@ -344,16 +344,3 @@ data class GiftListUseCases(
     val removeGift: RemoveGiftFromListUseCase,
     val advance: AdvanceGiftStatusUseCase,
 )
-
-/** Shared by the "Add people" sheet: who matches a search, by name or by kinship ("my cousins", issue #41). */
-object GiftListPicker {
-    fun matches(friends: List<Friend>, query: String, kinship: Set<LinkType>?): List<Friend> {
-        val q = query.trim()
-        val pool = friends.sortedBy { it.displayName.lowercase() }
-        return when {
-            kinship != null -> pool.filter { it.relationToMe in kinship }
-            q.isEmpty() -> pool
-            else -> pool.filter { it.displayName.contains(q, ignoreCase = true) || it.name.contains(q, ignoreCase = true) }
-        }
-    }
-}

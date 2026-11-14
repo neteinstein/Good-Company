@@ -44,6 +44,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     and `gift_id` has no foreign key because a friend's gift rows are rewritten on every save, so items whose gift is gone
     are skipped when read. Prices are free text: `GiftPrices.parse` reads a number where it can and `GiftTotals` says when
     a sum is partial; never guess a currency. "Duplicate" keeps people and budgets a year on, with no items. Adding people
-    takes a whole circle or a search that understands kinship (`ParseKinshipQueryUseCase`, #41). AI ideas reuse
+    takes the people picker (issue #89: a circle in its filter row + "Tick all" is the old "whole circle"; its search
+    understands kinship through `GiftListViewModel.kinshipOf` → `ParseKinshipQueryUseCase`, #41; the budget for everyone
+    added sits in the picker's `extra` slot). Share to… shows its suggested people on top, then the picker's filter row
+    and grouped list, then circles as targets and "Add ‘…’". AI ideas reuse
     `SuggestGiftsUseCase` and show only with `usableAiKey` (gotcha 33). Screens: `GiftListsRoute` / `GiftListRoute(id)` in
     `:feature:hangouts` (Together tab row, plus "Gift lists" on a friend's gift card).

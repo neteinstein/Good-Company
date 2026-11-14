@@ -7,6 +7,8 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFiltering
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -55,12 +57,13 @@ class GiftListViewModelTest {
         val vm = list(g, id)
         val state = collecting(vm.state)
         vm.onStartAdding()
-        vm.onAddQuery("my cousins")
-        assertEquals(setOf(LinkType.COUSIN), state.value.adding!!.kinship)
-        assertEquals(listOf("Bruno Costa", "Tomás Costa"), state.value.matches.map { it.name })
-        state.value.matches.forEach { vm.onTogglePerson(it.id) }
+        // The picker's kinship search ("my cousins") and its "Tick all".
+        val cousins = vm.kinshipOf("my cousins")
+        assertEquals(setOf(LinkType.COUSIN), cousins)
+        val shown = PeopleFiltering.apply(state.value.addable, PeopleFilter.Everyone, state.value.circles, "my cousins", cousins).people
+        assertEquals(listOf("Bruno Costa", "Tomás Costa"), shown.map { it.name })
         vm.onAddBudget("€40")
-        vm.onConfirmAdding()
+        vm.onConfirmAdding(shown.map { it.id })
         assertNull(state.value.adding)
         val people = state.value.detail!!.people
         assertEquals(listOf(40.0, 40.0), people.map { it.entry.budget })
@@ -91,7 +94,7 @@ class GiftListViewModelTest {
     }
 
     @Test
-    fun aWholeCircle_ticksItsMembersNotOnTheList_andAgainUnticksThem() = runViewModelTest {
+    fun aWholeCircle_isACircleInThePicker_withOnlyThoseNotOnTheList() = runViewModelTest {
         val g = graph()
         g.groupRepo.upsert(FriendGroup("c", "Cousins", "🌳", listOf(FriendId("tomas"), FriendId("bruno"))))
         val id = g.giftLists.create("Christmas", GiftOccasion.CHRISTMAS, null)!!
@@ -99,15 +102,13 @@ class GiftListViewModelTest {
         val vm = list(g, id)
         val state = collecting(vm.state)
         vm.onStartAdding()
-        vm.onToggleCircle("c")
-        assertEquals(setOf(FriendId("bruno")), state.value.adding!!.picked)
-        vm.onToggleCircle("c")
-        assertTrue(state.value.adding!!.picked.isEmpty())
-        vm.onToggleCircle("c")
-        vm.onConfirmAdding()
+        assertTrue(state.value.circles.any { it.id == "c" })
+        val inCircle = PeopleFiltering.apply(state.value.addable, PeopleFilter(circleId = "c"), state.value.circles).people
+        assertEquals(listOf(FriendId("bruno")), inCircle.map { it.id })
+        vm.onConfirmAdding(inCircle.map { it.id })
         assertEquals(listOf("tomas", "bruno"), g.giftListRepo.get(id)!!.entries.map { it.friendId.value })
         vm.onStartAdding()
-        vm.onConfirmAdding() // nobody picked: stays open
+        vm.onConfirmAdding(emptyList()) // nobody picked: stays open
         assertTrue(state.value.adding != null)
         vm.onDismissAdding()
         assertNull(state.value.adding)

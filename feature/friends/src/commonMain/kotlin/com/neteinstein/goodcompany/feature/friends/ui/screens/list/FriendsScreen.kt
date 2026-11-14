@@ -84,11 +84,13 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.ui.components.AllChip
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
+import com.neteinstein.goodcompany.core.ui.components.PeopleFilterRow
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.showMessage
@@ -137,7 +139,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_result
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_search
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_title
-import com.neteinstein.goodcompany.feature.friends.resources.people_all
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_cooling
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_count
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_meetups
@@ -226,6 +227,7 @@ fun FriendsScreen(
             onExploreSample = viewModel::onExploreSample,
             onMessageShown = viewModel::onMessageShown,
             onCircleFilter = viewModel::onCircleFilter,
+            onFilter = viewModel::onFilter,
             onEditCircle = onEditCircle,
             onOpenNetwork = onOpenNetwork,
             onOpenPeople = onOpenPeople,
@@ -249,6 +251,8 @@ data class FriendsActions(
     val onMessageShown: () -> Unit = {},
     /** Filters the list by a circle (null = All). */
     val onCircleFilter: (String?) -> Unit = {},
+    /** The filter row's choice (issue #89): a closeness level from the "All" menu, or a circle. */
+    val onFilter: (PeopleFilter) -> Unit = {},
     /** Long-press on a circle chip. */
     val onEditCircle: (String) -> Unit = {},
     val onOpenNetwork: () -> Unit = {},
@@ -553,23 +557,14 @@ fun FriendsContent(
 /** "All · N" + one chip per circle; the selected one shows its member count. A long-press edits the circle. */
 @Composable
 private fun CircleFilterRow(state: FriendsUiState, actions: FriendsActions) {
-    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        item(key = "all") {
-            AllChip(stringResource(Res.string.people_all, state.listedCount), selected = state.circle == null, onClick = {
-                actions.onCircleFilter(null)
-            })
-        }
-        items(state.circles, key = { it.group.id }) { c ->
-            val selected = state.circle?.group?.id == c.group.id
-            CircleChip(
-                c.group,
-                selected = selected,
-                onClick = { actions.onCircleFilter(if (selected) null else c.group.id) },
-                onLongClick = { actions.onEditCircle(c.group.id) },
-                trailing = if (selected) c.members.size.toString() else null,
-            )
-        }
-    }
+    PeopleFilterRow(
+        circles = state.circles.map { it.group },
+        filter = state.filter,
+        everyoneCount = state.listedCount,
+        levelCounts = state.levelCounts,
+        onFilter = actions.onFilter,
+        onLongClickCircle = actions.onEditCircle,
+    )
 }
 
 /** "Your people" on top of the list: people, meetups in 90 days and who's cooling; opens the dashboard or the map. */

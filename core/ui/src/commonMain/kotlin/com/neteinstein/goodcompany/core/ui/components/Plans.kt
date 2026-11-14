@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -116,9 +115,11 @@ fun PlanEditor(
     circles: List<FriendGroup> = emptyList(),
     preselectedCircle: String? = null,
     activities: List<HangoutActivity> = HangoutActivity.entries,
+    pickerCircles: List<FriendGroup> = circles,
 ) {
     var title by remember { mutableStateOf(initial?.title ?: initialTitle) }
-    var selected by remember { mutableStateOf(initial?.friendIds?.toSet() ?: preselected) }
+    var selected by remember { mutableStateOf(initial?.friendIds ?: preselected.toList()) }
+    var picking by remember { mutableStateOf(false) }
     var circleId by remember { mutableStateOf(initial?.circleId ?: preselectedCircle) }
     var withCircle by remember { mutableStateOf(circleId != null) }
     var activity by remember { mutableStateOf(initial?.activity) }
@@ -157,20 +158,9 @@ fun PlanEditor(
                         }
                     }
                 } else {
-                    FlowRow(
-                        Modifier.heightIn(max = 160.dp).verticalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        friends.sortedWith(compareByDescending<Friend> { it.id in selected }.thenByDescending { it.isCloseFriend })
-                            .take(MAX_CHIPS)
-                            .forEach { f ->
-                                FilterChip(
-                                    f.id in selected,
-                                    { selected = if (f.id in selected) selected - f.id else selected + f.id },
-                                    label = { Text(f.displayName.substringBefore(' ')) },
-                                )
-                            }
-                    }
+                    // Issue #89: the chosen people with ×, and "+ People" opens the one people picker.
+                    val byId = friends.associateBy { it.id }
+                    ChosenPeople(selected.mapNotNull(byId::get), onRemove = { selected = selected - it }, onAdd = { picking = true })
                 }
                 Text(stringResource(Res.string.plan_activity), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -214,7 +204,7 @@ fun PlanEditor(
             }
         },
         confirmButton = {
-            val people = if (circle != null) emptyList() else selected.toList()
+            val people = if (circle != null) emptyList() else selected
             TextButton(
                 onClick = {
                     onSave(
@@ -235,6 +225,12 @@ fun PlanEditor(
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date, onDismiss = { pickDate = false }, onPicked = { date = it })
+    if (picking) {
+        PeoplePickerSheet(friends, pickerCircles, chosen = selected, onDismiss = { picking = false }, onDone = {
+            selected = it
+            picking = false
+        })
+    }
     if (pickUntil) {
         LocalDatePickerDialog(repeat?.until ?: date, onDismiss = { pickUntil = false }, onPicked = { d ->
             repeat = repeat?.copy(until = d.takeIf { it >= date })
@@ -433,6 +429,5 @@ fun Plan.calendarEntry(friends: List<Friend>, on: LocalDate = date, circle: Frie
 )
 
 private const val DEFAULT_DAYS_AHEAD = 3
-private const val MAX_CHIPS = 40
 private const val SHOWN_ACTIVITIES = 6
 private const val QUICK_EVERY_DAYS = 15

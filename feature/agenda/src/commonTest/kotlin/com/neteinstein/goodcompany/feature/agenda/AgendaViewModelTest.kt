@@ -45,6 +45,7 @@ class AgendaViewModelTest {
         g.confirmPlan,
         g.clock,
         g.observeCalendarSuggestions,
+        g.observeGroups,
     )
 
     @Test
@@ -60,6 +61,13 @@ class AgendaViewModelTest {
         val r = state.value.reminders.single()
         assertEquals(at(2026, 3, 11, 18), r.dueAt)
         assertEquals(listOf(LocalDate(2026, 3, 11), LocalDate(2026, 3, 12)), state.value.agendaByDay.map { it.first })
+    }
+
+    @Test
+    fun theReminderEditorGetsEveryCircle_forThePeoplePicker() = runViewModelTest {
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", memberIds = listOf(FriendId("ana"))))
+        val state = collecting(vm().state)
+        assertEquals(listOf("choir"), state.value.circles.map { it.id })
     }
 
     @Test
