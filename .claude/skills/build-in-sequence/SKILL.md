@@ -53,7 +53,7 @@ For issue *i* (1-based) with previous branch `prev` (for *i* = 1: the base branc
 4. **On `BLOCKED`, a failed check, or a session waiting on a question:** apply the setting from phase 1. When stopping,
    report to the owner: what's done (branches, PRs), what blocked and why, what's left. Never answer a product question
    for the owner yourself.
-5. **At the end**, report the stack in order: issue → branch → PR → base, plus each PR's "Autonomous decisions".
+5. **At the end**, report the stack in order: issue → branch → PR → base, plus each PR's skills loaded and "Autonomous decisions".
    Remind the owner to merge **in order, bottom first, with merge commits** (the repo merges with merge commits). After a
    lower PR merges and its branch is deleted, GitHub retargets the next PR to `main`. If a lower PR changes during
    review, the higher branches need a rebase/merge from it: offer to run that as a session.
@@ -87,4 +87,4 @@ For issue *i* (1-based) with previous branch `prev` (for *i* = 1: the base branc
 >    using `.github/pull_request_template.md`: "Closes #<n>", the test plan (what ran, what couldn't), risk, and an
 >    "Autonomous decisions" section. In a stacked PR, say in the summary that it sits on <prev PR>.
 > 4. Your final message starts with `DONE` or `BLOCKED`, then: branch name, PR URL, checks run and their result,
->    autonomous decisions. Don't wait for CI.
+>    skills loaded, autonomous decisions. Don't wait for CI.

@@ -252,6 +252,11 @@ before changing that area**, and put new area-specific notes in that skill, not 
 
 ## Skills
 
+**Say which skills you loaded.** When you start implementing something, tell the user in one line which skills you
+loaded and why, e.g. `Skills: persistence-change (new table), area-people (links)`, or `Skills: none`. If you load
+another one later, say so when you do. Repeat the final list in the PR description, in the test plan under
+**Skills loaded**.
+
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:
 - `new-feature-module`: scaffold a `:feature:*` module that follows these conventions.
 - `verify-offline`: set up a sandbox (SDK, Maven mirror) and run every check that works without macOS or an emulator.
