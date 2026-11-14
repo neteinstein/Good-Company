@@ -14,21 +14,6 @@
     <string name="group_snooze_week">Adiar uma semana</string>
     <string name="group_snooze_weekend">Lembrar-me no sábado</string>
     <string name="group_more">Mais</string>
-    <string name="section_last_time_with">A última vez com…</string>
-    <string name="clear">Limpar</string>
-    <string name="last_together">Juntos pela última vez %1$s</string>
-    <string name="last_together_place">Juntos pela última vez %1$s · %2$s</string>
-    <plurals name="times_total">
-        <item quantity="one">%1$s · %2$d× no total</item>
-        <item quantity="other">%1$s · %2$d× no total</item>
-    </plurals>
-    <string name="never_all">Ainda não registaste um encontro com todos eles.</string>
-    <string name="section_memories">Memórias</string>
-    <string name="section_memories_together">Memórias juntos</string>
-    <string name="memories_empty_title">Ainda sem memórias</string>
-    <string name="memories_empty_body">Toca em “Estou com…” quando estiveres com amigos. Com o tempo vais ver de quem tens tido saudades.</string>
-    <string name="someone">Alguém</string>
-    <string name="delete_memory">Apagar memória</string>
     <string name="sheet_title">Estou com…</string>
     <string name="sheet_find">Procurar um amigo</string>
     <string name="sheet_where">Onde? (opcional)</string>
@@ -38,7 +23,6 @@
     <string name="msg_location_denied">Permissão de localização recusada — escreve o sítio.</string>
     <string name="msg_location_unavailable">Não foi possível obter a tua localização agora.</string>
     <string name="msg_logged_with">Tempo com %1$s registado ✨</string>
-    <string name="msg_memory_deleted">Memória apagada</string>
     <string name="msg_group_deleted">%1$s apagado</string>
     <string name="msg_group_snoozed">%1$s adiado até %2$s</string>
     <string name="free_title">Quem está livre para…?</string>
@@ -140,4 +124,19 @@
         <item quantity="one">Adicionar %d pessoa</item>
         <item quantity="other">Adicionar %d pessoas</item>
     </plurals>
+    <string name="page_people">Pessoas · %1$d</string>
+    <string name="page_coming_up">A seguir</string>
+    <string name="page_together">Juntos</string>
+    <string name="page_members_at">%1$d de %2$d</string>
+    <string name="page_everyone">Todos</string>
+    <string name="page_empty">Ainda não há encontros. Toca em “Estivemos juntos” depois de estarem juntos.</string>
+    <string name="page_reminder">Lembrete</string>
+    <string name="page_cover">Foto de capa</string>
+    <string name="cover_add">Adicionar capa</string>
+    <string name="cover_change">Mudar capa</string>
+    <string name="cover_remove">Remover capa</string>
+    <string name="msg_cover_removed">Capa removida</string>
+    <string name="msg_cover_unreadable">Não foi possível ler essa imagem</string>
+    <string name="msg_entry_deleted">Removido da cronologia</string>
+    <string name="msg_reminder_saved">Lembrete guardado</string>
 </resources>

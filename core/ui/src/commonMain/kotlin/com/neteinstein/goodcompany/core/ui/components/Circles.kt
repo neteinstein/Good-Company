@@ -2,12 +2,14 @@ package com.neteinstein.goodcompany.core.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
@@ -27,7 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -79,6 +84,29 @@ fun circlePalette(color: CircleColor): CirclePalette {
         CirclePalette(accent = t.accent, onAccent = Color.White, container = t.lightContainer, onContainer = t.lightOnContainer)
     }
 }
+
+/**
+ * A circle's backdrop (issue #88): its cover photo under a veil in the circle's colour, or the colour alone, with
+ * [CirclePalette.onAccent] as the content colour so the text keeps its contrast in light and dark themes. Used by the
+ * circle's page header and its card on the Circles tab, nowhere else.
+ */
+@Composable
+fun CircleBackdrop(group: FriendGroup, modifier: Modifier = Modifier, shape: Shape = RectangleShape, content: @Composable BoxScope.() -> Unit) {
+    val palette = circlePalette(group.color)
+    val cover = rememberPhotoBitmap(group.cover)
+    Surface(modifier, shape = shape, color = palette.accent, contentColor = palette.onAccent) {
+        Box {
+            if (cover != null) {
+                Image(cover, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+                Box(Modifier.matchParentSize().background(palette.accent.copy(alpha = COVER_VEIL_ALPHA)))
+            }
+            content()
+        }
+    }
+}
+
+/** How much of the circle's colour lies over its cover: enough for text, little enough to see the photo. */
+private const val COVER_VEIL_ALPHA = 0.72f
 
 /** The colour's name, for screen readers (swatches have no text). */
 @Composable

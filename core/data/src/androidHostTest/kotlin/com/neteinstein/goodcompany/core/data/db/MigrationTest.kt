@@ -619,6 +619,40 @@ class MigrationTest {
     }
 
     @Test
+    fun version20to21_remindersStartWithNoCircle_andCirclesWithNoCover() = runTest {
+        val driver = driverAt(20)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 1, 1, '', 0, 0, 'CLOSE', 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO reminder (id, position, title, due_at, done, created_at) VALUES ('r', 0, 'Call', 1000, 0, 500)", 0).await()
+        driver.execute(null, "INSERT INTO reminder_friend (reminder_id, friend_id, position) VALUES ('r', 'ana', 0)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 20, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val reminder = database.readReminders().single()
+        assertEquals("Call", reminder.title)
+        assertEquals(listOf(FriendId("ana")), reminder.friendIds)
+        assertNull(reminder.circleId)
+        assertTrue(database.readCircleCovers().isEmpty())
+
+        database.writeReminder(reminder.copy(circleId = "surf"))
+        assertEquals("surf", database.readReminders().single().circleId)
+        database.writeCircleCover("surf", ContactPhoto("AQID"))
+        assertEquals(mapOf("surf" to ContactPhoto("AQID")), database.readCircleCovers())
+        database.writeCircleCover("surf", ContactPhoto("BAU="))
+        assertEquals(mapOf("surf" to ContactPhoto("BAU=")), database.readCircleCovers())
+        database.writeCircleCover("surf", null)
+        assertTrue(database.readCircleCovers().isEmpty())
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

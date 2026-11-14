@@ -388,6 +388,7 @@
     <string name="tl_gift">Ai dăruit: %1$s</string>
     <string name="tl_source_call_log">jurnal de apeluri</string>
     <string name="tl_source_imported">importat</string>
+    <string name="tl_shared">Distribuit</string>
     <string name="tl_source_shared">distribuit</string>
     <plurals name="tl_messages">
         <item quantity="one">%1$d mesaj</item>

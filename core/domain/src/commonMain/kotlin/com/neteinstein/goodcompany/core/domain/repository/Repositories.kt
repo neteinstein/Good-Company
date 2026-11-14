@@ -151,11 +151,34 @@ interface IdeaRepository {
 }
 
 interface GroupRepository {
+    /** The circles; [FriendGroup.cover] is filled in only where covers are joined in (`GroupsWithFamilyCircle`). */
     val groups: Flow<List<FriendGroup>>
 
+    /** Saves the circle; its [FriendGroup.cover] is ignored (covers go through [CircleCoverRepository]). */
     suspend fun upsert(group: FriendGroup)
 
     suspend fun delete(id: String)
+}
+
+/**
+ * Circles' cover photos (issue #88): one per circle id, with no link to the circle row (the built-in Family circle has
+ * none), so a deleted circle's cover can be put back by Undo. Part of the backup.
+ */
+interface CircleCoverRepository {
+    /** Every cover, by circle id. */
+    val covers: Flow<Map<String, ContactPhoto>>
+
+    /** Sets or replaces the cover of [circleId]; null removes it. */
+    suspend fun set(circleId: String, cover: ContactPhoto?)
+
+    companion object {
+        /** No covers, for callers built without the store. */
+        val None: CircleCoverRepository = object : CircleCoverRepository {
+            override val covers: Flow<Map<String, ContactPhoto>> = flowOf(emptyMap())
+
+            override suspend fun set(circleId: String, cover: ContactPhoto?) = Unit
+        }
+    }
 }
 
 /**

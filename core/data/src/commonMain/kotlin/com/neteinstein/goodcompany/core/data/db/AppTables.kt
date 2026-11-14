@@ -47,6 +47,7 @@ internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
 internal val MY_PHOTO_TABLES = arrayOf("my_photo")
+internal val CIRCLE_COVER_TABLES = arrayOf("circle_cover")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
     groupBy(key).mapValues { (_, rows) -> rows.map { FriendId(friendId(it)) } }
@@ -112,7 +113,15 @@ internal suspend fun GoodCompanyDatabase.writePlace(place: DomainNamedPlace) {
 internal suspend fun GoodCompanyDatabase.readReminders(): List<DomainReminder> {
     val friends = reminderQueries.allReminderFriends().awaitAsList().friendIdsBy({ it.reminder_id }, { it.friend_id })
     return reminderQueries.allReminders().awaitAsList().map { row ->
-        DomainReminder(row.id, row.title, friends[row.id].orEmpty(), row.due_at?.toInstant(), row.done.toFlag(), row.created_at.toInstant())
+        DomainReminder(
+            row.id,
+            row.title,
+            friends[row.id].orEmpty(),
+            row.due_at?.toInstant(),
+            row.done.toFlag(),
+            row.created_at.toInstant(),
+            circleId = row.circle_id,
+        )
     }
 }
 
@@ -127,6 +136,7 @@ internal suspend fun GoodCompanyDatabase.writeReminder(reminder: DomainReminder)
             due_at = reminder.dueAt?.toColumn(),
             done = reminder.done.toColumn(),
             created_at = reminder.createdAt.toColumn(),
+            circle_id = reminder.circleId,
         ),
     )
     q.deleteFriends(reminder.id)
@@ -445,4 +455,15 @@ internal suspend fun GoodCompanyDatabase.readMyPhoto(): ContactPhoto? =
 
 internal suspend fun GoodCompanyDatabase.writeMyPhoto(photo: ContactPhoto?) {
     if (photo == null) myPhotoQueries.clear() else myPhotoQueries.put(photo.base64)
+}
+
+// --- Circle covers (issue #88) ---
+
+internal suspend fun GoodCompanyDatabase.readCircleCovers(): Map<String, ContactPhoto> =
+    circleCoverQueries.allCovers().awaitAsList()
+        .filter { it.image_base64.isNotBlank() }
+        .associate { it.circle_id to ContactPhoto(it.image_base64) }
+
+internal suspend fun GoodCompanyDatabase.writeCircleCover(circleId: String, cover: ContactPhoto?) {
+    if (cover == null) circleCoverQueries.delete(circleId) else circleCoverQueries.put(circleId, cover.base64)
 }

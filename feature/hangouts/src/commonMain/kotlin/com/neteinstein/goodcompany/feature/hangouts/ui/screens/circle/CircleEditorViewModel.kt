@@ -3,9 +3,11 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.io.encoding.Base64
 
 /** What's typed or picked so far. */
 private data class CircleDraft(
@@ -35,6 +38,12 @@ private data class CircleDraft(
 sealed interface CircleEditorMessage {
     /** Deleted, with Undo; the editor closes when the snackbar goes away without it. */
     data class Deleted(val name: String) : CircleEditorMessage
+
+    /** The cover was removed (issue #88), with Undo. */
+    data object CoverRemoved : CircleEditorMessage
+
+    /** The picked picture couldn't be read; the cover stays as it was. */
+    data object CoverUnreadable : CircleEditorMessage
 }
 
 data class CircleEditorUiState(
@@ -56,6 +65,13 @@ data class CircleEditorUiState(
     /** Saved or deleted for good: the screen closes. */
     val closed: Boolean = false,
     val message: CircleEditorMessage? = null,
+    /**
+     * The cover photo (issue #88): an existing circle's is saved as soon as it's picked or removed; a new circle's
+     * waits for Save (it has no id yet).
+     */
+    val cover: ContactPhoto? = null,
+    /** The cover a removal took away, for Undo. */
+    val removedCover: ContactPhoto? = null,
 ) {
     val canSave: Boolean get() = name.isNotBlank() && members.isNotEmpty() && !saving && deleted == null && !isLoading
 
@@ -79,9 +95,13 @@ class CircleEditorViewModel(
     private val deleteGroup: DeleteGroupUseCase,
     private val restoreGroup: RestoreGroupUseCase,
     private val nextColor: NextCircleColorUseCase,
+    private val covers: CircleCoverUseCases,
 ) : ViewModel() {
     private val draft = MutableStateFlow(CircleDraft())
     private val local = MutableStateFlow(CircleEditorUiState(isNew = groupId == null))
+
+    /** A new circle's picked cover, set once Save gives it an id. */
+    private var pendingCover: ByteArray? = null
 
     init {
         viewModelScope.launch {
@@ -101,9 +121,11 @@ class CircleEditorViewModel(
         }
     }
 
-    val state: StateFlow<CircleEditorUiState> = combine(observeFriends(), draft, local) { friends, d, ui ->
+    val state: StateFlow<CircleEditorUiState> = combine(observeFriends(), observeGroups(), draft, local) { friends, groups, d, ui ->
         val byId = friends.associateBy { it.friend.id }
+        val stored = groupId?.takeUnless { ui.isNew }?.let { id -> groups.firstOrNull { it.group.id == id }?.group?.cover }
         ui.copy(
+            cover = if (ui.isNew) ui.cover else stored,
             name = d.name,
             emoji = d.emoji,
             color = d.color,
@@ -136,8 +158,50 @@ class CircleEditorViewModel(
         local.update { it.copy(saving = true) }
         val d = draft.value
         viewModelScope.launch {
-            saveGroup(groupId.takeUnless { s.isNew }, d.name, d.emoji, d.color, d.memberIds, d.days.takeIf { d.remind })
+            val saved = saveGroup(groupId.takeUnless { s.isNew }, d.name, d.emoji, d.color, d.memberIds, d.days.takeIf { d.remind })
+            pendingCover?.let { covers.set(saved.id, it) }
             local.update { it.copy(saving = false, closed = true) }
+        }
+    }
+
+    /** Add / Change cover: a picked picture, cropped wide. */
+    fun onCoverPicked(image: ByteArray?) {
+        if (image == null || image.isEmpty()) {
+            local.update { it.copy(message = CircleEditorMessage.CoverUnreadable) }
+            return
+        }
+        val id = groupId.takeUnless { state.value.isNew }
+        if (id == null) {
+            // A new circle: shown now, saved with the circle.
+            pendingCover = image
+            local.update { it.copy(cover = ContactPhoto(Base64.encode(image))) }
+            return
+        }
+        viewModelScope.launch {
+            if (covers.set(id, image).isFailure) local.update { it.copy(message = CircleEditorMessage.CoverUnreadable) }
+        }
+    }
+
+    /** Remove cover: back to the circle's colour (Undo puts it back). */
+    fun onRemoveCover() {
+        val id = groupId.takeUnless { state.value.isNew }
+        if (id == null) {
+            pendingCover = null
+            local.update { it.copy(cover = null) }
+            return
+        }
+        viewModelScope.launch {
+            val before = covers.remove(id) ?: return@launch
+            local.update { it.copy(removedCover = before, message = CircleEditorMessage.CoverRemoved) }
+        }
+    }
+
+    fun onUndoRemoveCover() {
+        val id = groupId ?: return
+        val cover = local.value.removedCover ?: return
+        viewModelScope.launch {
+            covers.restore(id, cover)
+            local.update { it.copy(removedCover = null) }
         }
     }
 
@@ -159,7 +223,7 @@ class CircleEditorViewModel(
     }
 
     /** The snackbar went away: after a delete without Undo, the editor closes. */
-    fun onMessageShown() = local.update { it.copy(message = null, closed = it.closed || it.deleted != null) }
+    fun onMessageShown() = local.update { it.copy(message = null, removedCover = null, closed = it.closed || it.deleted != null) }
 
     private companion object {
         const val MAX_EMOJI_CHARS = 8

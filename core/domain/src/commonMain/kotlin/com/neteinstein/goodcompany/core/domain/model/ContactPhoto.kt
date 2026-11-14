@@ -21,9 +21,26 @@ value class ContactPhoto(val base64: String) {
         /** The longest side a shrunk photo gets. Avatars are at most 128 dp. */
         const val MAX_SIDE_PX = 256
 
+        /**
+         * A circle's cover photo (issue #88) fills a wide header, so it may be larger than an avatar: at most
+         * [COVER_MAX_SIDE_PX] on its long side and [COVER_MAX_BYTES] as JPEG. Avatars keep their own limits.
+         */
+        const val COVER_MAX_SIDE_PX = 1080
+
+        /** See [COVER_MAX_SIDE_PX]. */
+        const val COVER_MAX_BYTES = 200 * 1024
+
+        /** A cover is cropped wide: [COVER_ASPECT] wide for each unit of height (16:9). */
+        const val COVER_ASPECT = 16f / 9f
+
         /** A photo from [bytes] when they are a usable size; null for nothing, empty or too large. */
-        fun of(bytes: ByteArray?): ContactPhoto? = bytes
-            ?.takeIf { it.isNotEmpty() && it.size <= MAX_BYTES }
+        fun of(bytes: ByteArray?): ContactPhoto? = of(bytes, MAX_BYTES)
+
+        /** A cover from [bytes] when they are within [COVER_MAX_BYTES]; null otherwise. */
+        fun cover(bytes: ByteArray?): ContactPhoto? = of(bytes, COVER_MAX_BYTES)
+
+        private fun of(bytes: ByteArray?, maxBytes: Int): ContactPhoto? = bytes
+            ?.takeIf { it.isNotEmpty() && it.size <= maxBytes }
             ?.let { ContactPhoto(Base64.encode(it)) }
     }
 }

@@ -46,11 +46,22 @@ class AddReminderUseCase(
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
-    suspend operator fun invoke(title: String, friendIds: List<FriendId>, dueAt: Instant?): Reminder {
+    /** A new reminder about [friendIds] and/or the circle [circleId] (issue #88: it then belongs to the circle). */
+    suspend operator fun invoke(title: String, friendIds: List<FriendId>, dueAt: Instant?, circleId: String? = null): Reminder {
         require(title.isNotBlank()) { "Title required" }
-        val reminder = Reminder(ids.next(), title.trim(), friendIds.distinct(), dueAt, done = false, createdAt = clock.now())
+        val reminder = Reminder(ids.next(), title.trim(), friendIds.distinct(), dueAt, done = false, createdAt = clock.now(), circleId = circleId)
         reminders.upsert(reminder)
         return reminder
+    }
+}
+
+/** Changes a reminder's title, people, circle and time (a reminder opened from a circle's "Coming up", issue #88). */
+class EditReminderUseCase(private val reminders: ReminderRepository) {
+    suspend operator fun invoke(reminder: Reminder, title: String, friendIds: List<FriendId>, dueAt: Instant?, circleId: String?): Reminder {
+        require(title.isNotBlank()) { "Title required" }
+        val edited = reminder.copy(title = title.trim(), friendIds = friendIds.distinct(), dueAt = dueAt, circleId = circleId)
+        reminders.upsert(edited)
+        return edited
     }
 }
 

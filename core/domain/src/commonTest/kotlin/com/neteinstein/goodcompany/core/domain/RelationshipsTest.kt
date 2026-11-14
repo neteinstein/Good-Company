@@ -65,13 +65,6 @@ class RelationshipsTest {
     }
 
     @Test
-    fun hangoutsWithAllRequiresEveryoneSelected() {
-        assertEquals(listOf("2"), Relationships.hangoutsWithAll(hangouts, setOf(ana, rui)).map { it.id })
-        assertEquals(listOf("2", "1"), Relationships.hangoutsWithAll(hangouts, setOf(ana)).map { it.id })
-        assertEquals(3, Relationships.hangoutsWithAll(hangouts, emptySet()).size)
-    }
-
-    @Test
     fun meetupStatusIsDueEveryNDaysAfterLastSeen() {
         val friends = listOf(friend("ana") { copy(meetEveryDays = 30) }, friend("rui"))
         val status = Relationships.meetupStatuses(friends, hangouts, LocalDate(2026, 3, 10), TimeZone.UTC).single()

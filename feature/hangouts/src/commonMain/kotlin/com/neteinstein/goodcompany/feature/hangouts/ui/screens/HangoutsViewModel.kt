@@ -6,23 +6,18 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
-import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.HangoutWithFriends
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PlaceBook
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -33,8 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -66,8 +59,6 @@ sealed interface HangoutsMessage {
 
     data class LoggedWith(val names: List<String>) : HangoutsMessage
 
-    data object MemoryDeleted : HangoutsMessage
-
     data class GroupDeleted(val name: String) : HangoutsMessage
 
     data class GroupSnoozed(val name: String, val until: LocalDate) : HangoutsMessage
@@ -79,24 +70,20 @@ sealed interface HangoutsMessage {
 data class PlanDraft(val circleId: String)
 
 /**
- * The Circles tab (issue #67, was Together) and the "I'm with…" sheet ([CheckInSheetHost]): the circles, "Last time
- * with…" and the memories.
+ * The Circles tab (issue #67, was Together; only the circles since issue #88) and the "I'm with…" sheet
+ * ([CheckInSheetHost]). Meetups show on each circle's page and on each person's timeline.
  */
 data class HangoutsUiState(
-    /** Close friends first — the check-in picker and the "with…" filter. */
+    /** Close friends first — the check-in picker. */
     val friends: List<Friend> = emptyList(),
-    val history: List<HangoutWithFriends> = emptyList(),
-    val filter: Set<FriendId> = emptySet(),
     val draft: CheckInDraft? = null,
     /** The check-in's place (F11): named by itself at a known spot, with "Usually here with". */
     val draftPlace: MeetupPlaceState = MeetupPlaceState(),
     /** The circles, the built-in Family circle among them, last met first; never met last (issue #67). */
     val groups: List<Relationships.GroupStatus> = emptyList(),
-    /** Hangout deleted a moment ago, offered for undo. */
-    val recentlyDeleted: Hangout? = null,
     /** Circle deleted a moment ago, offered for undo. */
     val recentlyDeletedGroup: FriendGroup? = null,
-    /** True until the stored data has been read once (so "no memories yet" isn't shown while loading). */
+    /** True until the stored data has been read once (so the "no circles yet" hint isn't shown while loading). */
     val isLoading: Boolean = true,
     val message: HangoutsMessage? = null,
     val planDraft: PlanDraft? = null,
@@ -105,14 +92,10 @@ data class HangoutsUiState(
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
-) {
-    /** "Last time with Ana & Rui" — the newest hangout matching the filter. */
-    val lastTogether: HangoutWithFriends? get() = if (filter.isEmpty()) null else history.firstOrNull()
-}
+)
 
 class HangoutsViewModel(
     observeFriends: ObserveFriendsUseCase,
-    observeHistory: ObserveHangoutHistoryUseCase,
     observeGroups: ObserveGroupsUseCase,
     observePlaceBook: ObservePlaceBookUseCase,
     observePlans: ObservePlansUseCase,
@@ -121,20 +104,16 @@ class HangoutsViewModel(
     private val restoreGroup: RestoreGroupUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val checkIn: CheckInUseCase,
-    private val deleteHangout: DeleteHangoutUseCase,
-    private val restoreHangout: RestoreHangoutUseCase,
     private val currentLocation: GetCurrentLocationUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(HangoutsUiState())
-    private val filter = local.map { it.filter }.distinctUntilChanged()
 
     val state: StateFlow<HangoutsUiState> = combine(
         observeFriends(),
-        observeHistory(filter),
         combine(observeGroups(), observePlaceBook(), observePlans(), ::Extras),
         local,
-    ) { friends, history, (groups, places, plans), ui ->
+    ) { friends, (groups, places, plans), ui ->
         val draft = ui.draft
         ui.copy(
             isLoading = false,
@@ -146,17 +125,12 @@ class HangoutsViewModel(
             // Last met first; circles never met keep their order at the end (sortedByDescending puts nulls last).
             groups = groups.sortedByDescending { it.lastTogether },
             friends = friends.map { it.friend },
-            history = history,
             circlePlans = plans.filter { it.circleId != null }.groupBy { it.circleId!! }.mapValues { (_, ps) -> ps.minBy { it.date } },
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HangoutsUiState())
-
-    fun onToggleFilter(id: FriendId) = local.update { it.copy(filter = it.filter.toggle(id)) }
-
-    fun onClearFilter() = local.update { it.copy(filter = emptySet()) }
 
     fun onStartCheckIn(preselected: FriendId? = null) =
         local.update { it.copy(draft = CheckInDraft(selected = setOfNotNull(preselected))) }
@@ -177,7 +151,7 @@ class HangoutsViewModel(
     fun onDeleteGroup(groupId: String) {
         viewModelScope.launch {
             val removed = deleteGroup(groupId) ?: return@launch
-            local.update { it.copy(recentlyDeletedGroup = removed, recentlyDeleted = null, message = HangoutsMessage.GroupDeleted(removed.name)) }
+            local.update { it.copy(recentlyDeletedGroup = removed, message = HangoutsMessage.GroupDeleted(removed.name)) }
         }
     }
 
@@ -226,23 +200,12 @@ class HangoutsViewModel(
         }
     }
 
-    fun onDeleteHangout(id: String) {
-        val hangout = state.value.history.firstOrNull { it.hangout.id == id }?.hangout
-        viewModelScope.launch {
-            deleteHangout(id)
-            local.update { it.copy(recentlyDeleted = hangout, recentlyDeletedGroup = null, message = HangoutsMessage.MemoryDeleted) }
-        }
-    }
-
-    /** Undo for the last delete: a memory or a circle. */
+    /** Undo for the last circle delete. */
     fun onUndoDelete() {
-        val hangout = local.value.recentlyDeleted
-        val group = local.value.recentlyDeletedGroup
-        if (hangout == null && group == null) return
+        val group = local.value.recentlyDeletedGroup ?: return
         viewModelScope.launch {
-            hangout?.let { restoreHangout(it) }
-            group?.let { restoreGroup(it) }
-            local.update { it.copy(recentlyDeleted = null, recentlyDeletedGroup = null) }
+            restoreGroup(group)
+            local.update { it.copy(recentlyDeletedGroup = null) }
         }
     }
 
@@ -260,7 +223,7 @@ class HangoutsViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null, recentlyDeletedGroup = null) }
+    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeletedGroup = null) }
 
     private fun Set<FriendId>.toggle(id: FriendId) = if (id in this) this - id else this + id
 }

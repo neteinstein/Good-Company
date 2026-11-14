@@ -28,6 +28,8 @@ data class Backup(
     val attachments: List<Attachment> = emptyList(),
     val ideas: List<Idea> = emptyList(),
     val groups: List<FriendGroup> = emptyList(),
+    /** Circles' cover photos (issue #88), Family's too; missing in older backups (they restore with none). */
+    val circleCovers: List<CircleCover> = emptyList(),
     val plans: List<Plan> = emptyList(),
     /** Named places (F11): names given to GPS spots. */
     val places: List<NamedPlace> = emptyList(),

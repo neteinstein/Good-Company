@@ -4,6 +4,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.CALENDAR_DECISION_TABLES
+import com.neteinstein.goodcompany.core.data.db.CIRCLE_COVER_TABLES
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GIFT_LIST_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
@@ -22,6 +23,7 @@ import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
 import com.neteinstein.goodcompany.core.data.db.nextFriendPosition
 import com.neteinstein.goodcompany.core.data.db.readAttachments
 import com.neteinstein.goodcompany.core.data.db.readCalendarDecisions
+import com.neteinstein.goodcompany.core.data.db.readCircleCovers
 import com.neteinstein.goodcompany.core.data.db.readFriends
 import com.neteinstein.goodcompany.core.data.db.readGiftLists
 import com.neteinstein.goodcompany.core.data.db.readGroups
@@ -39,6 +41,7 @@ import com.neteinstein.goodcompany.core.data.db.readStoredPreferences
 import com.neteinstein.goodcompany.core.data.db.toColumn
 import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.writeCalendarDecision
+import com.neteinstein.goodcompany.core.data.db.writeCircleCover
 import com.neteinstein.goodcompany.core.data.db.writeFriend
 import com.neteinstein.goodcompany.core.data.db.writeGiftList
 import com.neteinstein.goodcompany.core.data.db.writeGroup
@@ -60,6 +63,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CircleCover
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
@@ -79,6 +83,7 @@ import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
@@ -507,6 +512,15 @@ class SqlMyPhotoRepository(private val db: AppDatabase) : MyPhotoRepository {
     }
 }
 
+/** Circles' cover photos (issue #88), keyed by circle id in their own table. */
+class SqlCircleCoverRepository(private val db: AppDatabase) : CircleCoverRepository {
+    override val covers: Flow<Map<String, ContactPhoto>> = db.observe(*CIRCLE_COVER_TABLES) { it.readCircleCovers() }
+
+    override suspend fun set(circleId: String, cover: ContactPhoto?) {
+        db.access { it.writeCircleCover(circleId, cover) }
+    }
+}
+
 /**
  * Export / restore across every table. The snapshot is read in one transaction; a restore replaces everything in one
  * transaction (all or nothing), then the device settings. The [Backup] JSON format is unchanged.
@@ -525,6 +539,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 attachments = database.readAttachments(),
                 ideas = database.readIdeas(),
                 groups = database.readGroups(),
+                circleCovers = database.readCircleCovers().map { (id, cover) -> CircleCover(id, cover) },
                 plans = database.readPlans(),
                 places = database.readPlaces(),
                 calendarDecisions = database.readCalendarDecisions(),
@@ -564,6 +579,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     calendarDecisionQueries.deleteAllDecisions()
     giftListQueries.deleteAllLists()
     myPhotoQueries.clear()
+    circleCoverQueries.deleteAll()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -580,5 +596,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     backup.calendarDecisions.forEach { writeCalendarDecision(it) }
     backup.giftLists.forEach { writeGiftList(it) } // after friends (and their gifts)
     writeMyPhoto(backup.myPhoto)
+    backup.circleCovers.forEach { writeCircleCover(it.circleId, it.cover) }
     writePreferences(backup.settings)
 }

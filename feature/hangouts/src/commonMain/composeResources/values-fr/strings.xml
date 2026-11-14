@@ -14,21 +14,6 @@
     <string name="group_snooze_week">Reporter d’une semaine</string>
     <string name="group_snooze_weekend">Me le rappeler samedi</string>
     <string name="group_more">Plus</string>
-    <string name="section_last_time_with">La dernière fois avec…</string>
-    <string name="clear">Effacer</string>
-    <string name="last_together">Vus ensemble %1$s</string>
-    <string name="last_together_place">Vus ensemble %1$s · %2$s</string>
-    <plurals name="times_total">
-        <item quantity="one">%1$s · %2$d× au total</item>
-        <item quantity="other">%1$s · %2$d× au total</item>
-    </plurals>
-    <string name="never_all">Tu n’as pas encore enregistré de rencontre avec eux tous.</string>
-    <string name="section_memories">Souvenirs</string>
-    <string name="section_memories_together">Souvenirs ensemble</string>
-    <string name="memories_empty_title">Pas encore de souvenirs</string>
-    <string name="memories_empty_body">Touche « Je suis avec… » quand tu es avec des amis. Avec le temps, tu verras qui te manque.</string>
-    <string name="someone">Quelqu’un</string>
-    <string name="delete_memory">Supprimer le souvenir</string>
     <string name="sheet_title">Je suis avec…</string>
     <string name="sheet_find">Trouver un ami</string>
     <string name="sheet_where">Où ? (facultatif)</string>
@@ -38,7 +23,6 @@
     <string name="msg_location_denied">Accès à la position refusé — saisis le lieu à la place.</string>
     <string name="msg_location_unavailable">Impossible d’obtenir ta position pour le moment.</string>
     <string name="msg_logged_with">Moment avec %1$s enregistré ✨</string>
-    <string name="msg_memory_deleted">Souvenir supprimé</string>
     <string name="msg_group_deleted">%1$s supprimé</string>
     <string name="msg_group_snoozed">%1$s reporté jusqu’au %2$s</string>
     <string name="free_title">Qui est partant pour… ?</string>
@@ -140,4 +124,19 @@
         <item quantity="one">Ajouter %d personne</item>
         <item quantity="other">Ajouter %d personnes</item>
     </plurals>
+    <string name="page_people">Personnes · %1$d</string>
+    <string name="page_coming_up">À venir</string>
+    <string name="page_together">Ensemble</string>
+    <string name="page_members_at">%1$d sur %2$d</string>
+    <string name="page_everyone">Tout le monde</string>
+    <string name="page_empty">Pas encore de sorties. Touchez “On s’est vus” après vous être retrouvés.</string>
+    <string name="page_reminder">Rappel</string>
+    <string name="page_cover">Photo de couverture</string>
+    <string name="cover_add">Ajouter une couverture</string>
+    <string name="cover_change">Changer la couverture</string>
+    <string name="cover_remove">Retirer la couverture</string>
+    <string name="msg_cover_removed">Couverture retirée</string>
+    <string name="msg_cover_unreadable">Impossible de lire cette image</string>
+    <string name="msg_entry_deleted">Retiré de la chronologie</string>
+    <string name="msg_reminder_saved">Rappel enregistré</string>
 </resources>

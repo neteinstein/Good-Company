@@ -39,7 +39,6 @@ class HangoutsViewModelTest {
 
     private fun vm() = HangoutsViewModel(
         g.observeFriends,
-        g.observeHistory,
         g.observeGroups,
         g.observePlaceBook,
         g.observePlans,
@@ -48,8 +47,6 @@ class HangoutsViewModelTest {
         g.restoreGroup,
         g.snooze,
         g.checkIn,
-        g.deleteHangout,
-        g.restoreHangout,
         g.currentLocation,
         g.clock,
     )
@@ -86,17 +83,13 @@ class HangoutsViewModelTest {
     }
 
     @Test
-    fun filtersHistoryForLastTimeWith() = runViewModelTest {
+    fun theTabHasOnlyTheCircles_noHistoryOrFilter() = runViewModelTest {
+        // Issue #88: "Last time with…" and the memories left the tab; meetups show on each circle's page.
         val vm = vm()
         val state = collecting(vm.state)
-        assertEquals(2, state.value.history.size)
-        assertNull(state.value.lastTogether)
-
-        vm.onToggleFilter(ana)
-        vm.onToggleFilter(rui)
-        assertEquals("1", state.value.lastTogether?.hangout?.id)
-        vm.onClearFilter()
-        assertEquals(2, state.value.history.size)
+        g.saveGroup(null, "Surf", "🏄", CircleColor.TEAL, listOf(ana, rui), null)
+        assertEquals(listOf("Surf"), state.value.groups.map { it.group.name })
+        assertFalse(state.value.isLoading)
     }
 
     @Test
@@ -131,17 +124,6 @@ class HangoutsViewModelTest {
         assertEquals(HangoutsMessage.LocationUnavailable, state.value.message)
         vm.onDismissCheckIn()
         assertNull(state.value.draft)
-    }
-
-    @Test
-    fun deleteAMemoryWithUndo() = runViewModelTest {
-        val vm = vm()
-        val state = collecting(vm.state)
-        vm.onDeleteHangout("1")
-        assertEquals(HangoutsMessage.MemoryDeleted, state.value.message)
-        assertTrue(g.hangoutRepo.hangouts.value.none { it.id == "1" })
-        vm.onUndoDelete()
-        assertTrue(g.hangoutRepo.hangouts.value.any { it.id == "1" })
     }
 
     @Test

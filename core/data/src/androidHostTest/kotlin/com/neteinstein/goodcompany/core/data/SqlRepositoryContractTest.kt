@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.db.OpenedDriver
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlCircleCoverRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGiftListRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
@@ -27,6 +28,7 @@ import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CardKid
 import com.neteinstein.goodcompany.core.domain.model.CardLink
+import com.neteinstein.goodcompany.core.domain.model.CircleCover
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -175,6 +177,49 @@ class SqlRepositoryContractTest : RepositoryContract() {
         // An older backup without one clears it.
         s.backup.restore(snapshot.copy(myPhoto = null))
         assertNull(photos.photo.first())
+    }
+
+    // --- Circle covers and circle reminders (issue #88) ---
+
+    @Test
+    fun circleCovers_setReplaceRemove_survivesARestart_andTravelInBackups() = runTest {
+        val s = open()
+        val covers = SqlCircleCoverRepository(db)
+        val first = ContactPhoto.cover(byteArrayOf(1, 2, 3))!!
+        val second = ContactPhoto.cover(byteArrayOf(4, 5))!!
+        assertTrue(covers.covers.first().isEmpty())
+
+        covers.set("surf", first)
+        covers.set("surf", second)
+        covers.set("choir", first)
+        assertEquals(mapOf("surf" to second, "choir" to first), SqlCircleCoverRepository(db).covers.first())
+
+        val snapshot = s.backup.snapshot()
+        assertEquals(setOf(CircleCover("surf", second), CircleCover("choir", first)), snapshot.circleCovers.toSet())
+        covers.set("surf", null)
+        assertEquals(mapOf("choir" to first), covers.covers.first())
+
+        s.backup.restore(snapshot)
+        assertEquals(mapOf("surf" to second, "choir" to first), covers.covers.first())
+        // An older backup without covers clears them.
+        s.backup.restore(snapshot.copy(circleCovers = emptyList()))
+        assertTrue(covers.covers.first().isEmpty())
+    }
+
+    @Test
+    fun aReminderKeepsItsCircle_acrossARestartAndABackup() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val reminder = Reminder("r", "Book the hut", listOf(ana), at(2026, 3, 20), createdAt = at(2026, 3, 1), circleId = "surf")
+        s.reminders.upsert(reminder)
+        s.reminders.upsert(reminder.copy(id = "plain", circleId = null))
+        assertEquals(listOf("surf", null), open().reminders.reminders.first().map { it.circleId })
+
+        val snapshot = s.backup.snapshot()
+        s.backup.restore(snapshot.copy(reminders = emptyList()))
+        assertTrue(s.reminders.reminders.first().isEmpty())
+        s.backup.restore(snapshot)
+        assertEquals(listOf(reminder, reminder.copy(id = "plain", circleId = null)), s.reminders.reminders.first())
     }
 
     // --- Calendar suggestions (D3) ---

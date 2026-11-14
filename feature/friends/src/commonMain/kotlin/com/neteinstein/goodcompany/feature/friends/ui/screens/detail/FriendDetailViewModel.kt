@@ -61,7 +61,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -285,7 +284,6 @@ class FriendDetailViewModel(
     private val setPhoto: SetFriendPhotoUseCase,
     private val removePhoto: RemoveFriendPhotoUseCase,
     private val renameFriend: RenameFriendUseCase,
-    private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
     private val setCircleMember: SetCircleMemberUseCase,
     private val restoreGroup: RestoreGroupUseCase,
     observeAttachments: ObserveAttachmentsUseCase,
@@ -398,11 +396,6 @@ class FriendDetailViewModel(
                 offerUndo(SavedEdit.CircleBefore(before), FriendDetailMessage.RemovedFromCircle(before))
             }
         }
-    }
-
-    /** A circle pill: Home is filtered by that circle (the screen then opens Home). */
-    fun onOpenCircle(groupId: String) {
-        viewModelScope.launch { setHomeCircleFilter(groupId) }
     }
 
     /** A level from the picker (four levels, no "not set", issue #86); saved on choice (#64). */

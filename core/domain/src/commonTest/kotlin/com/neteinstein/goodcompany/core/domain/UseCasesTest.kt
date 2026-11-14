@@ -22,7 +22,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -103,15 +102,6 @@ class UseCasesTest {
     @Test
     fun checkIn_withoutPlaceStoresNoPlace() = runTest {
         assertNull(CheckInUseCase(hangouts, clock, ids)(listOf(FriendId("ana"))).place)
-    }
-
-    @Test
-    fun hangoutHistory_filtersByEveryoneSelected() = runTest {
-        hangouts.add(Hangout("1", listOf(FriendId("ana")), at(2026, 1, 1)))
-        hangouts.add(Hangout("2", listOf(FriendId("ana"), FriendId("bob")), at(2026, 2, 1)))
-        val result = ObserveHangoutHistoryUseCase(friends, hangouts)(flowOf(setOf(FriendId("ana"), FriendId("bob")))).first()
-        assertEquals(listOf("2"), result.map { it.hangout.id })
-        assertEquals(listOf("Ana", "Bob"), result.single().friends.map { it.name })
     }
 
     @Test

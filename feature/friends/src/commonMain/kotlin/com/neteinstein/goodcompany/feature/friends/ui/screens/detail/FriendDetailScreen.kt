@@ -388,6 +388,7 @@ fun FriendDetailScreen(
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     /** "Together" opens the small "We met" panel (issue #47). */
     onWeMet: () -> Unit = {},
+    /** A circle chip: that circle's page (issue #88). */
     onOpenCircle: (String) -> Unit = {},
     /** "New circle with <name>": the circle editor with this person already in (issue #70). */
     onNewCircle: () -> Unit = {},
@@ -457,10 +458,7 @@ fun FriendDetailScreen(
             onPersonaliseWish = viewModel::onPersonaliseWish,
             onOpenTimeline = onOpenTimeline,
             onLog = onLog,
-            onOpenCircle = { id ->
-                viewModel.onOpenCircle(id)
-                onOpenCircle(id)
-            },
+            onOpenCircle = onOpenCircle,
             onSetInCircle = viewModel::onSetInCircle,
             onRemoveFromCircle = viewModel::onRemoveFromCircle,
             onNewCircle = onNewCircle,

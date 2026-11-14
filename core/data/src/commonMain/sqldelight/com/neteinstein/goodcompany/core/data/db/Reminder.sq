@@ -1,4 +1,6 @@
 -- "Remind me to book tickets for X to go with Y", and the friends each reminder is about.
+-- circle_id (issue #88) is the circle it belongs to, with no foreign key (like plan.circle_id): a deleted circle reads
+-- as none, so Undo on the circle brings its reminders back.
 
 CREATE TABLE reminder (
     id TEXT NOT NULL PRIMARY KEY,
@@ -6,7 +8,8 @@ CREATE TABLE reminder (
     title TEXT NOT NULL,
     due_at INTEGER,
     done INTEGER NOT NULL CHECK (done IN (0, 1)),
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    circle_id TEXT
 );
 
 CREATE TABLE reminder_friend (
@@ -28,12 +31,13 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM reminder;
 
 upsert:
-INSERT INTO reminder (id, position, title, due_at, done, created_at) VALUES ?
+INSERT INTO reminder (id, position, title, due_at, done, created_at, circle_id) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     title = excluded.title,
     due_at = excluded.due_at,
     done = excluded.done,
-    created_at = excluded.created_at;
+    created_at = excluded.created_at,
+    circle_id = excluded.circle_id;
 
 deleteFriends:
 DELETE FROM reminder_friend WHERE reminder_id = ?;

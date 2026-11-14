@@ -377,6 +377,7 @@
     <string name="tl_gift">Ofereceste: %1$s</string>
     <string name="tl_source_call_log">registo de chamadas</string>
     <string name="tl_source_imported">importado</string>
+    <string name="tl_shared">Partilhado</string>
     <string name="tl_source_shared">partilhado</string>
     <plurals name="tl_messages">
         <item quantity="one">%1$d mensagem</item>

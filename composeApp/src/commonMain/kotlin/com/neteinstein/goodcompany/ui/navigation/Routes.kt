@@ -56,6 +56,12 @@ import org.jetbrains.compose.resources.StringResource
  */
 @Serializable data class CircleEditorRoute(val id: String? = null, val withFriend: String? = null)
 
+/**
+ * A circle's page (issue #88): header, actions, people, "Coming up" and its timeline. [id] may be the built-in Family
+ * circle's. Opened from a card on the Circles tab and from a circle chip on a person's page.
+ */
+@Serializable data class CirclePageRoute(val id: String)
+
 /** "Choose friends": the phone's contacts with checkboxes (decision D2; iOS and the Android sideload build). */
 @Serializable data object ChooseContactsRoute
 

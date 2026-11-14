@@ -15,11 +15,14 @@ actual fun createPhotoShrinker(): PhotoShrinker = PhotoShrinker { image ->
     withContext(Dispatchers.Default) { uprightJpeg(image, ContactPhoto.MAX_SIDE_PX) }
 }
 
+internal actual suspend fun shrinkToJpeg(image: ByteArray, maxSide: Int, quality: Int): ByteArray? =
+    withContext(Dispatchers.Default) { uprightJpeg(image, maxSide, quality) }
+
 /**
  * Decodes [image], turns it upright (camera photos carry their rotation in EXIF, which BitmapFactory ignores), scales
  * it so its longest side is at most [maxSide] and encodes it as JPEG. Null when it isn't a readable image.
  */
-internal fun uprightJpeg(image: ByteArray, maxSide: Int): ByteArray? = runCatching {
+internal fun uprightJpeg(image: ByteArray, maxSide: Int, quality: Int = JPEG_QUALITY): ByteArray? = runCatching {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeByteArray(image, 0, image.size, bounds)
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runCatching null
@@ -35,7 +38,7 @@ internal fun uprightJpeg(image: ByteArray, maxSide: Int): ByteArray? = runCatchi
     }
     val upright = Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
     ByteArrayOutputStream().use { out ->
-        upright.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, out)
+        upright.compress(Bitmap.CompressFormat.JPEG, quality, out)
         out.toByteArray()
     }
 }.getOrNull()

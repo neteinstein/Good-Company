@@ -1,0 +1,714 @@
+<title>Person page mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a review sheet. One band per issue, phones side by side, notes under each phone. Colours are the app's own M3 tokens (core/ui Color.kt). */
+:root{
+  --primary:#B4372F;--on-primary:#fff;--primary-c:#FFDAD5;--on-primary-c:#410001;
+  --secondary:#3F6560;--secondary-c:#D5EBE6;--on-secondary-c:#0B2E2A;
+  --tertiary:#7A5900;--tertiary-c:#FFDEA6;--on-tertiary-c:#261900;
+  --bg:#FFF8F6;--fg:#231918;--muted:#534341;--outline:#857371;--outline-v:#D8C2BF;
+  --s-lowest:#fff;--s-low:#FFF0EE;--s:#FCEAE7;--s-high:#F6E4E2;--s-highest:#F1DEDC;
+  --scrim:rgba(35,25,24,.42);--page:#F3ECEA;--page-fg:#231918;--frame:#2a2120;
+  --font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --c-purple:linear-gradient(135deg,#7046E8,#4A2BB0);--c-blue:linear-gradient(135deg,#2B6FD6,#1A4AA0);
+  --c-amber:linear-gradient(135deg,#B8650A,#8A4A05);--c-teal:linear-gradient(135deg,#0F7A64,#0A5444);
+  --c-magenta:linear-gradient(135deg,#B0206A,#7E1048);--c-rust:linear-gradient(135deg,#C2461E,#8F2F12);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#FFB4A9;--on-primary:#690003;--primary-c:#8F1F1A;--on-primary-c:#FFDAD5;
+  --secondary:#A6CEC8;--secondary-c:#284B47;--on-secondary-c:#D5EBE6;
+  --tertiary:#F5BF48;--tertiary-c:#5C4200;--on-tertiary-c:#FFDEA6;
+  --bg:#1A1110;--fg:#F1DEDC;--muted:#D8C2BF;--outline:#A08C8A;--outline-v:#534341;
+  --s-lowest:#140C0B;--s-low:#231918;--s:#271D1C;--s-high:#322827;--s-highest:#3D3231;
+  --scrim:rgba(0,0,0,.55);--page:#110a09;--page-fg:#F1DEDC;--frame:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --primary:#FFB4A9;--on-primary:#690003;--primary-c:#8F1F1A;--on-primary-c:#FFDAD5;
+  --secondary:#A6CEC8;--secondary-c:#284B47;--on-secondary-c:#D5EBE6;
+  --tertiary:#F5BF48;--tertiary-c:#5C4200;--on-tertiary-c:#FFDEA6;
+  --bg:#1A1110;--fg:#F1DEDC;--muted:#D8C2BF;--outline:#A08C8A;--outline-v:#534341;
+  --s-lowest:#140C0B;--s-low:#231918;--s:#271D1C;--s-high:#322827;--s-highest:#3D3231;
+  --scrim:rgba(0,0,0,.55);--page:#110a09;--page-fg:#F1DEDC;--frame:#000;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--page-fg);font-family:var(--font);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+header.top h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+header.top p{margin:0;max-width:68ch;line-height:1.55;color:var(--muted)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.toc a{color:var(--on-secondary-c);background:var(--secondary-c);text-decoration:none;padding:6px 12px;border-radius:999px;font-weight:600;font-size:13px}
+section.issue{display:flex;flex-direction:column;gap:20px}
+.issue-h{display:flex;flex-direction:column;gap:6px;max-width:80ch}
+.issue-h .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);font-weight:700}
+.issue-h h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em}
+.issue-h p{margin:0;line-height:1.55;color:var(--muted)}
+.screens{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;width:340px;max-width:100%}
+figcaption{font-size:13px;line-height:1.5;color:var(--muted)}
+figcaption b{color:var(--page-fg)}
+
+/* ---------- phone ---------- */
+.phone{width:340px;max-width:100%;height:700px;border-radius:38px;background:var(--bg);color:var(--fg);
+  border:7px solid var(--frame);position:relative;overflow:hidden;display:flex;flex-direction:column;font-size:14px;
+  box-shadow:0 18px 40px -18px rgba(60,20,15,.35)}
+.sb{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:700}
+.scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px}
+.topbar{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 8px;flex:none}
+.topbar h3{margin:0;font-size:21px;font-weight:800;flex:1;letter-spacing:-.01em}
+.ib{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--s-high);flex:none}
+.ib svg,.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+.card{background:var(--s-low);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card-h{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.card-h .badge{width:30px;height:30px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center}
+.card-h .badge svg{width:16px;height:16px}
+.card-h .more{margin-left:auto;font-size:12px;font-weight:600;color:var(--primary)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--outline-v);border-radius:10px;padding:5px 10px;font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip.on{background:var(--secondary-c);color:var(--on-secondary-c);border-color:transparent;font-weight:600}
+.chip.pill{border-radius:999px}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.nowrap{flex-wrap:nowrap;overflow:hidden}
+.kv{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:13.5px}
+.kv .ic{width:18px;height:18px;color:var(--muted);margin-top:1px}
+.kv small{display:block;color:var(--muted);font-size:12px}
+.av{width:40px;height:40px;border-radius:50%;color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px;flex:none;letter-spacing:-.02em}
+.av.sm{width:28px;height:28px;font-size:10.5px}.av.lg{width:96px;height:96px;font-size:34px;box-shadow:0 0 0 4px var(--bg),0 0 0 6.5px var(--primary)}
+.av.ring{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--primary)}
+.p{background:var(--c-purple)}.b{background:var(--c-blue)}.a{background:var(--c-amber)}.t{background:var(--c-teal)}.m{background:var(--c-magenta)}.r{background:var(--c-rust)}
+.stack{display:flex}.stack .av{box-shadow:0 0 0 2px var(--s-low)}.stack .av+.av{margin-left:-8px}
+.row{display:flex;align-items:center;gap:12px}
+.row .grow{flex:1;min-width:0}
+.row .t1{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t2{font-size:12px;color:var(--muted)}
+.t2.red{color:var(--primary)}
+.btn{background:var(--primary);color:var(--on-primary);border-radius:999px;padding:11px 18px;font-weight:700;text-align:center;font-size:14px}
+.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.text{background:none;color:var(--primary);padding:8px 4px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 4px;text-align:center;
+  background:linear-gradient(180deg,#C9B4F0 0%,transparent 100%);margin:0 -16px;padding-top:10px}
+.hero h4{margin:6px 0 0;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--fg)}
+.fam{display:flex;flex-direction:column;gap:9px}
+.fam .rel{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.emo{width:28px;height:28px;border-radius:50%;background:var(--tertiary-c);display:grid;place-items:center;font-size:15px;flex:none}
+.tl{display:flex;flex-direction:column;gap:0;position:relative}
+.tl .month{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 0 6px 44px}
+.ev{display:grid;grid-template-columns:32px 1fr;gap:12px;position:relative;padding-bottom:12px}
+.ev::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--outline-v)}
+.ev:last-child::before{display:none}
+.ev .k{width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
+.ev .k svg{width:16px;height:16px}
+.k.meet{background:var(--primary);color:var(--on-primary)}
+.k.call{background:var(--secondary-c);color:var(--on-secondary-c)}
+.k.msg{background:var(--secondary-c);color:var(--on-secondary-c)}
+.k.note{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.k.gift{background:var(--primary-c);color:var(--primary)}
+.ev .body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ev .h{font-weight:600;font-size:13.5px}
+.ev .meta{font-size:12px;color:var(--muted)}
+.ev .q{font-size:12.5px;background:var(--s);border-radius:12px;padding:7px 10px;line-height:1.45}
+.src{font-size:10.5px;font-weight:600;color:var(--secondary);background:var(--secondary-c);border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--s-low);border-radius:28px 28px 0 0;padding:10px 18px 22px;display:flex;flex-direction:column;gap:14px}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--outline);margin:0 auto 2px;opacity:.6}
+.sheet h5{margin:0;font-size:19px;font-weight:800}
+.lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.field{border:1px solid var(--outline);border-radius:12px;padding:10px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center}
+.field.ph{color:var(--muted)}
+.field small{position:absolute}
+.seg{display:flex;border:1px solid var(--outline);border-radius:999px;overflow:hidden}
+.seg div{flex:1;text-align:center;padding:8px 4px;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px}
+.seg div+div{border-left:1px solid var(--outline)}
+.seg .on{background:var(--secondary-c);color:var(--on-secondary-c)}
+.choice{border:1.5px solid var(--outline-v);border-radius:18px;padding:11px 12px;display:grid;grid-template-columns:22px 1fr;gap:10px}
+.choice.on{border-color:var(--primary);background:var(--primary-c);color:var(--on-primary-c)}
+.choice .t1{font-weight:700;font-size:13.5px}.choice .t2{font-size:12px;opacity:.85;line-height:1.4}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--outline);margin-top:1px}
+.choice.on .radio{border-color:var(--primary);box-shadow:inset 0 0 0 4px var(--primary-c);background:var(--primary)}
+.cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--outline);flex:none;display:grid;place-items:center}
+.cb.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.cb svg{width:14px;height:14px;stroke-width:3}
+.nav{flex:none;display:flex;justify-content:space-around;background:var(--s);padding:8px 4px 12px}
+.nav div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted)}
+.nav .pillic{padding:4px 16px;border-radius:999px}
+.nav .on .pillic{background:var(--secondary-c);color:var(--on-secondary-c)}
+.nav .on{color:var(--fg)}
+.sticky{flex:none;padding:12px 16px 16px;background:var(--bg);border-top:1px solid var(--outline-v);display:flex;flex-direction:column;gap:8px}
+.az{font-size:12px;font-weight:700;color:var(--primary);padding:2px 0}
+.thumb{width:56px;height:56px;border-radius:14px;flex:none;background:linear-gradient(135deg,#E9A26B,#B5523B 60%,#6B2A35);position:relative;overflow:hidden}
+.thumb::after{content:"";position:absolute;left:10px;bottom:-12px;width:36px;height:36px;border-radius:50%;background:rgba(255,240,220,.55)}
+.thumb.big{width:100%;height:150px;border-radius:18px}
+.thumb.big::after{left:40%;width:110px;height:110px;bottom:-50px}
+.link{display:flex;gap:10px;align-items:center;background:var(--s);border-radius:14px;padding:8px 10px}
+.link .fav{width:34px;height:34px;border-radius:10px;background:var(--tertiary-c);display:grid;place-items:center;color:var(--on-tertiary-c);flex:none}
+.link .u{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* launcher */
+.wall{flex:1;position:relative;background:radial-gradient(120% 80% at 20% 10%,#5B3FA8,#24163F 55%,#120B1F);color:#fff;overflow:hidden}
+.wall.ios{background:radial-gradient(120% 90% at 80% 0%,#F29A6B,#B0405A 45%,#3A1A3A)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 10px;padding:22px 18px}
+.app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10.5px;opacity:.45}
+.app .ico{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.22)}
+.wall.ios .app .ico{border-radius:14px}
+.app.gc{opacity:1}
+.app.gc .ico{background:#FFF0EE;display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.gcmark{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 40%,#E5574F 0 38%,transparent 39%),radial-gradient(circle at 65% 60%,#00897B 0 38%,transparent 39%)}
+.pop{position:absolute;background:#FFF8F6;color:#231918;border-radius:22px;padding:6px;display:flex;flex-direction:column;box-shadow:0 14px 40px rgba(0,0,0,.4);width:230px}
+.pop .it{display:flex;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:600;border-radius:14px}
+.pop .it+.it{border-top:1px solid #F1DEDC}
+.pop .it .ic{color:#B4372F}
+.pop.ios{border-radius:14px;background:rgba(245,240,240,.92);padding:0;width:250px}
+.pop.ios .it{justify-content:space-between;border-radius:0;padding:11px 14px;font-weight:500}
+.pop.ios .it+.it{border-top:1px solid rgba(0,0,0,.12)}
+.blur{position:absolute;inset:0;backdrop-filter:blur(8px);background:rgba(20,10,20,.35)}
+.note{font-size:12px;line-height:1.45;color:var(--muted);background:var(--s);border-radius:14px;padding:10px 12px}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--tertiary-c);color:var(--on-tertiary-c);border-radius:16px;padding:10px 12px;font-size:12.5px;line-height:1.45}
+.search{display:flex;align-items:center;gap:10px;background:var(--s-high);border-radius:999px;padding:10px 14px;color:var(--muted);font-size:13.5px}
+.hint{font-size:11.5px;color:var(--muted)}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%}
+.sw.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.switch{width:44px;height:26px;border-radius:999px;background:var(--primary);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--on-primary)}
+.switch.off{background:var(--s-highest);border:2px solid var(--outline)}
+.switch.off::after{left:3px;right:auto;top:2px;width:16px;height:16px;background:var(--outline)}
+@media (max-width:420px){figure,.phone{width:100%}}
+@media (prefers-reduced-motion:no-preference){.toc a{transition:filter .15s}.toc a:hover{filter:brightness(.95)}}
+a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+/* solo mode for PNG export: #solo-<id> shows one band */
+body.solo header.top,body.solo section.issue:not(.show){display:none}
+body.solo{padding-block:24px}
+/* ---------- batch 2 additions ---------- */
+.avwrap{position:relative;display:inline-block}
+.camb{position:absolute;right:-4px;bottom:-4px;width:32px;height:32px;border-radius:50%;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;box-shadow:0 0 0 3px var(--bg)}
+.camb svg{width:16px;height:16px}
+.namerow{display:flex;align-items:center;gap:6px;justify-content:center}
+.namerow svg{width:16px;height:16px;color:var(--primary)}
+.dark{flex:1;background:#0d0908;color:#fff;display:flex;flex-direction:column}
+.dark .topbar h3{color:#fff;font-size:17px}
+.crop{position:relative;flex:1;overflow:hidden;background:linear-gradient(160deg,#F0B47E,#C3603F 50%,#6B2A35)}
+.crop .face{position:absolute;left:30%;top:20%;width:150px;height:170px;border-radius:50%;background:rgba(255,232,206,.72)}
+.crop .body{position:absolute;left:14%;top:56%;width:260px;height:260px;border-radius:50%;background:rgba(60,30,40,.55)}
+.crop .mask{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,transparent 0 118px,rgba(0,0,0,.66) 119px)}
+.crop .ring{position:absolute;left:50%;top:42%;width:238px;height:238px;margin:-119px 0 0 -119px;border-radius:50%;border:2px solid #fff}
+.crop .gest{position:absolute;left:0;right:0;bottom:16px;text-align:center;font-size:12px;opacity:.9}
+.darkbar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 22px;font-weight:700}
+.darkbar .btn{padding:10px 20px}
+.trow{display:flex;align-items:center;gap:12px;font-size:13.5px}
+.trow .grow{flex:1;min-width:0}
+.trow small{display:block;color:var(--muted);font-size:12px;line-height:1.4}
+.grip{color:var(--outline);font-size:15px;letter-spacing:-3px;width:14px}
+.act{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.act div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:8px 2px;border-radius:14px;border:1px solid var(--outline-v)}
+.act .on{background:var(--secondary-c);color:var(--on-secondary-c);border-color:transparent}
+.act span{font-size:20px;line-height:1.1}
+.status{font-size:11px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.st-buy{background:var(--s-highest);color:var(--muted)}.st-bought{background:var(--tertiary-c);color:var(--on-tertiary-c)}.st-given{background:var(--secondary-c);color:var(--on-secondary-c)}
+.meter{height:8px;border-radius:999px;background:var(--s-highest);overflow:hidden}.meter i{display:block;height:100%;background:var(--primary);border-radius:999px}
+.bars{display:flex;align-items:flex-end;gap:6px;height:84px}.bars i{flex:1;background:var(--secondary-c);border-radius:6px 6px 2px 2px}.bars i.hi{background:var(--primary)}
+.barlbl{display:flex;gap:6px;font-size:10px;color:var(--muted)}.barlbl span{flex:1;text-align:center}
+.hbar{display:grid;grid-template-columns:96px 1fr 28px;gap:8px;align-items:center;font-size:12.5px}
+.hbar b{font-weight:700;text-align:right}
+.dialog{position:absolute;left:18px;right:18px;top:150px;background:var(--s-high);border-radius:28px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.dialog h5{margin:0;font-size:19px;font-weight:800}
+.dialog p{margin:0;font-size:13px;line-height:1.5;color:var(--muted)}
+.actions{display:flex;justify-content:flex-end;gap:16px;align-items:center}
+.sugg{border:1.5px dashed var(--primary);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.sugg .why{font-size:12px;color:var(--muted);line-height:1.45}
+.btnrow{display:flex;gap:8px}.btnrow .btn{flex:1;padding:9px 10px;font-size:13px}
+.btn.out{background:none;color:var(--primary);border:1px solid var(--outline)}
+.map{flex:1;position:relative;background:radial-gradient(circle at 50% 46%,var(--s-low),var(--bg) 70%);overflow:hidden}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map .e{stroke:var(--outline-v);stroke-width:2;fill:none}
+.map .e.fam{stroke:var(--primary);opacity:.55}
+.map .e.rom{stroke:#B0206A;stroke-dasharray:4 4;opacity:.8}
+.map .e.intro{stroke:var(--outline);stroke-dasharray:2 5}
+.node{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600}
+.node .av{box-shadow:0 0 0 2.5px var(--bg)}
+.node.me .av{box-shadow:0 0 0 3px var(--bg),0 0 0 5.5px var(--primary)}
+.node .nl{background:var(--bg);border-radius:6px;padding:0 4px}
+.legend{position:absolute;left:12px;bottom:12px;right:12px;background:var(--s-high);border-radius:16px;padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.lock{flex:1;background:radial-gradient(120% 80% at 30% 0%,#6A4FB8,#2A1A48 55%,#140C22);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:40px;gap:4px}
+.lock .clock{font-size:64px;font-weight:300;letter-spacing:-.03em;line-height:1}
+.lock .date{font-size:14px;opacity:.85;margin-bottom:28px}
+.notif{background:rgba(255,248,246,.9);color:#231918;border-radius:22px;padding:12px 14px;margin:0 12px;display:flex;gap:10px;font-size:13px;width:calc(100% - 24px);line-height:1.4}
+.notif .app-i{width:28px;height:28px;border-radius:8px;background:#FFF0EE;display:grid;place-items:center;flex:none}
+.notif .app-i .gcmark{width:18px;height:18px}
+.notif b{display:block}
+.notif .acts{display:flex;gap:16px;margin-top:8px;font-weight:700;color:#B4372F;font-size:12.5px}
+.coords{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+.sep{height:1px;background:var(--outline-v)}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kpi div{background:var(--s);border-radius:16px;padding:10px 12px;font-size:12px;color:var(--muted)}
+.kpi b{display:block;font-size:22px;color:var(--fg);font-weight:800;letter-spacing:-.02em}
+.spark{width:100%;height:56px}
+.spark path{fill:none;stroke:var(--primary);stroke-width:2.5;stroke-linecap:round}
+.spark .area{fill:var(--primary-c);stroke:none;opacity:.7}
+.mini{font-size:11px;color:var(--muted)}
+body.solo .wrap{max-width:1480px}
+.syspick{flex:1;background:#fff;color:#1c1b1f;display:flex;flex-direction:column}
+.fab{position:absolute;right:16px;bottom:84px;background:var(--primary-c);color:var(--on-primary-c);border-radius:18px;padding:14px 16px;font-weight:700;display:flex;gap:8px;align-items:center;box-shadow:0 6px 16px rgba(60,20,15,.25);font-size:13.5px}
+.fab svg{width:18px;height:18px}
+.cta{background:var(--primary);color:var(--on-primary);border-radius:24px;padding:14px;display:flex;align-items:center;gap:12px}
+.cta .t1{font-weight:800;font-size:16px}.cta .t2{font-size:12px;opacity:.9}
+.cta .go{margin-left:auto;width:38px;height:38px;border-radius:50%;background:var(--on-primary);color:var(--primary);display:grid;place-items:center;flex:none}
+.day{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ccard{border-radius:22px;padding:14px;color:#fff;display:flex;flex-direction:column;gap:8px}
+.ccard .t1{font-weight:800;font-size:16px}.ccard .t2,.ccard .row .t2{font-size:12px;color:#fff;opacity:.92}
+.ccard .stack .av{box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+.ccard .pillb{background:rgba(255,255,255,.22);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--s-low);border-radius:20px;padding:12px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted)}
+.tile b{color:var(--fg);font-size:14px}
+.tile .badge{width:32px;height:32px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center}
+.tile .badge svg{width:16px;height:16px}
+.dots{display:flex;gap:3px}.dots i{width:8px;height:8px;border-radius:50%;background:var(--outline-v)}.dots i.f{background:var(--primary)}
+.qa{display:flex;gap:10px;justify-content:center}
+.qa div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600}
+.qa span{width:46px;height:46px;border-radius:16px;background:var(--secondary-c);color:var(--on-secondary-c);display:grid;place-items:center}
+.chip.add{border-style:dashed;color:var(--primary);border-color:var(--primary)}
+.chip .x{width:13px;height:13px;stroke-width:2.5}
+.me{width:38px;height:38px;border-radius:50%;flex:none;background:radial-gradient(circle at 50% 38%,#F6D2B8 0 26%,transparent 27%),radial-gradient(circle at 50% 100%,#3F6560 0 46%,transparent 47%),linear-gradient(135deg,#E9A26B,#B5523B);box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--outline-v)}
+.me.xl{width:84px;height:84px;box-shadow:0 0 0 3px var(--s-low),0 0 0 5px var(--primary)}
+.sc{background:var(--s-low);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.sc .h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--primary)}
+.toast{position:absolute;left:12px;right:12px;bottom:84px;background:#3D3231;color:#FCEAE7;border-radius:12px;padding:12px 14px;font-size:13px;display:flex;justify-content:space-between}
+.toast b{color:#FFB4A9}
+/* ---------- People tab additions ---------- */
+:root{--cc-choir:#E9DDFF;--on-cc-choir:#23005C;--cc-surf:#D3E4FF;--on-cc-surf:#001C3A;--cc-climb:#C8F0E2;--on-cc-climb:#00201A;--cc-fam:#FFDCC2;--on-cc-fam:#2E1500}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cc-choir:#4F2DA8;--on-cc-choir:#E9DDFF;--cc-surf:#1E4A8A;--on-cc-surf:#D3E4FF;--cc-climb:#0F5444;--on-cc-climb:#C8F0E2;--cc-fam:#6B3A0A;--on-cc-fam:#FFDCC2}}
+:root[data-theme="dark"]{--cc-choir:#4F2DA8;--on-cc-choir:#E9DDFF;--cc-surf:#1E4A8A;--on-cc-surf:#D3E4FF;--cc-climb:#0F5444;--on-cc-climb:#C8F0E2;--cc-fam:#6B3A0A;--on-cc-fam:#FFDCC2}
+.crow{display:flex;gap:8px;flex-wrap:nowrap;overflow:hidden;flex:none}
+/* CircleChip: min 36dp, 8dp corners, 12/8 padding */
+.cc{min-height:36px;border:1px solid var(--outline-v);border-radius:8px;padding:0 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none;background:var(--bg)}
+.cc .dot{width:8px;height:8px;border-radius:50%}
+.cc.on{border-color:transparent}
+.cc.choir.on{background:var(--cc-choir);color:var(--on-cc-choir)}
+.cc.all.on{background:var(--secondary-c);color:var(--on-secondary-c)}
+/* today's M3 FilterChip "All": 32dp, smaller text */
+.fc{height:32px;border:1px solid var(--outline-v);border-radius:8px;padding:0 10px;font-size:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex:none;align-self:center}
+.fc.on{background:var(--secondary-c);color:var(--on-secondary-c);border-color:transparent}
+.fc.on::before{content:"✓";font-size:11px}
+.ccard{background:var(--cc-choir);color:var(--on-cc-choir);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:10px;flex:none}
+.ccard .btn{background:#6E4BD8;color:#fff}
+.sec{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--primary);padding:4px 0 0}
+.sec .n{color:var(--muted);font-weight:600}
+.sec .car{margin-left:auto;width:18px;height:18px;color:var(--muted);transform:rotate(90deg)}
+.sec.closed{border-top:1px solid var(--outline-v);padding-top:10px}
+.sec.closed .car{transform:none}
+.peek{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.hrt{width:22px;height:22px;color:var(--primary);flex:none}
+.hrt.off{color:var(--outline)}
+.hrt.fill{fill:var(--primary)}
+.mk{width:20px;height:20px;border-radius:50%;background:#D32F2F;color:#fff;font-size:11px;font-weight:800;display:inline-grid;place-items:center;flex:none;box-shadow:0 0 0 2px var(--bg)}
+.mkrow{display:flex;align-items:center;gap:8px}
+.mkrow>*:not(.mk){flex:1;min-width:0}
+.issues{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.5;color:var(--muted)}
+.issues li{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start}
+.issues b{color:var(--page-fg)}
+.searchon{display:flex;align-items:center;gap:10px;background:var(--s-high);border-radius:999px;padding:10px 14px;font-size:13.5px;flex:none}
+.searchon .caret{width:1.5px;height:16px;background:var(--primary);margin-left:-8px}
+.searchon .ic{color:var(--muted)}
+.ddchip{min-height:36px;border:1px solid var(--outline-v);border-radius:8px;padding:0 8px 0 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;flex:none;background:var(--secondary-c);color:var(--on-secondary-c);border-color:transparent}
+.ddchip svg{width:16px;height:16px;transform:rotate(90deg)}
+.menu{position:absolute;background:var(--s-high);border-radius:16px;padding:6px 0;box-shadow:0 10px 30px -8px rgba(0,0,0,.35);width:200px;display:flex;flex-direction:column;z-index:2}
+.menu div{padding:10px 16px;font-size:13.5px;display:flex;justify-content:space-between}
+.menu div.on{font-weight:700;background:var(--secondary-c);color:var(--on-secondary-c)}
+.menu small{color:var(--muted);font-weight:500}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px}
+.vs div{background:var(--s);border-radius:12px;padding:8px 10px;line-height:1.4}
+.vs b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+table.mig{border-collapse:collapse;font-size:13px;width:100%;max-width:640px}
+table.mig th,table.mig td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--outline-v)}
+table.mig th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pill2{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;background:var(--secondary-c);color:var(--on-secondary-c)}
+.pill2 svg{width:14px;height:14px;transform:rotate(90deg)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8S10 3 7.5 4.5 9 8 12 8zm0 0s2-5 4.5-3.5S15 8 12 8z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="i-work" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-handshake" viewBox="0 0 24 24"><path d="M2 12l5-5 4 2 3-2 4 1 4 4-5 5-3-1-3 3-3-1z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-9.3-9.2C1.3 7.3 3.7 4 7 4c2 0 3.6 1.2 5 3 1.4-1.8 3-3 5-3 3.3 0 5.7 3.3 4.3 6.8C19.5 15.4 12 20 12 20z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14h14M2 6h14v14"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><path d="M6 3v6a6 6 0 0 0 6 6h6M6 21v-6M15 12l3 3-3 3"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+  <symbol id="i-tree" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 7.5V12M12 12H5v4.5M12 12h7v4.5"/></symbol>
+  <symbol id="i-cake" viewBox="0 0 24 24"><path d="M4 21V12h16v9M3 21h18M4 16c2 1.5 4 1.5 5.3 0 1.4 1.5 4 1.5 5.4 0 1.3 1.5 3.3 1.5 5.3 0M12 12V8M12 5.5c.8-.8.8-1.7 0-2.5-.8.8-.8 1.7 0 2.5"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+  <symbol id="i-nav" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2-8z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+</svg>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-circles" viewBox="0 0 24 24"><circle cx="8" cy="9" r="5"/><circle cx="16" cy="9" r="5"/><circle cx="12" cy="16" r="5"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+</svg>
+
+<style>
+/* ---------- Person page additions ---------- */
+.net{position:relative;width:300px;height:236px;flex:none;margin-top:8px}
+.net svg.lines{position:absolute;inset:0;width:100%;height:100%}
+.net svg.lines path{stroke:var(--outline);stroke-width:1.5;fill:none;opacity:.7}
+.net .n{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--fg)}
+.net .n .av{box-shadow:0 0 0 2.5px var(--bg)}
+.net .n .av.md{width:46px;height:46px;font-size:15px}
+.net .n .av.xs{width:38px;height:38px;font-size:13px}
+.net .n.main .av{width:96px;height:96px;font-size:34px;box-shadow:0 0 0 4px var(--bg),0 0 0 6.5px var(--primary)}
+.net .n.plus .av{background:var(--bg);color:var(--primary);border:1.5px dashed var(--primary);box-shadow:none}
+.net .n .rl{font-size:9.5px;font-weight:600;color:var(--muted)}
+.status-line{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.ip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;background:var(--s-high);color:var(--fg)}
+.ip.amber{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.ip.teal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.ip.dash{background:none;border:1px dashed var(--outline);color:var(--muted)}
+.ip svg{width:14px;height:14px}
+.ip .dd{transform:rotate(90deg)}
+.qa4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;padding:0 4px}
+.qa4 div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;font-weight:600}
+.qa4 span{width:52px;height:52px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center;position:relative}
+.qa4 .hi span{background:var(--primary);color:var(--on-primary)}
+.qa4 small{font-size:10px;color:var(--muted);font-weight:500;margin-top:-4px}
+.qa6{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;width:100%}
+.qa6 div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;font-weight:600}
+.qa6 span{width:42px;height:42px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center}
+.qa6 .hi span{background:var(--primary);color:var(--on-primary)}
+.ccx{min-height:32px;border-radius:8px;padding:0 8px 0 10px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;background:var(--cc-choir);color:var(--on-cc-choir)}
+.ccx.fy{background:var(--cc-fam);color:var(--on-cc-fam)}
+.ccx.surf{background:var(--cc-surf);color:var(--on-cc-surf)}
+.ccx svg{width:13px;height:13px;stroke-width:2.5}
+.ccx.edit{background:none;border:1px solid var(--outline-v);color:var(--muted)}
+.tag2{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:4px 9px;font-size:12px;font-weight:500;background:var(--s-high)}
+.tag2.no{background:var(--primary-c);color:var(--on-primary-c)}
+.tag2 svg{width:12px;height:12px;stroke-width:2.5}
+.sub{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sub svg{width:13px;height:13px}
+.gap6{display:flex;flex-direction:column;gap:6px}
+.dl{display:flex;align-items:center;gap:10px;font-size:13px}
+.dl .db{width:38px;height:40px;border-radius:10px;background:var(--primary-c);color:var(--on-primary-c);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex:none;line-height:1.1}
+.dl .db b{font-size:15px}
+.dl .grow{flex:1;min-width:0}
+.dl small{display:block;color:var(--muted);font-size:11.5px}
+.dl .go{font-size:12px;font-weight:700;color:var(--primary)}
+.complete{border:1.5px dashed var(--outline);border-radius:22px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.complete .t1{font-weight:700;font-size:14px}
+.complete .t2{font-size:12px;color:var(--muted)}
+.chip.add2{border:1px dashed var(--primary);color:var(--primary);border-radius:999px;font-weight:600}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--outline-v)}
+.opt:last-of-type{border-bottom:none}
+.opt .ob{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--secondary-c);color:var(--on-secondary-c);flex:none}
+.opt .ob.pref{background:var(--primary);color:var(--on-primary)}
+.opt .grow{flex:1;min-width:0}
+.opt .t1{font-weight:700;font-size:14px}.opt .t2{font-size:12px;color:var(--muted)}
+.prefb{font-size:10.5px;font-weight:700;background:var(--tertiary-c);color:var(--on-tertiary-c);border-radius:999px;padding:2px 8px}
+.editbar{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;flex:none;background:var(--secondary-c);color:var(--on-secondary-c)}
+.editbar h3{margin:0;font-size:17px;font-weight:800;flex:1}
+.editbar .btn{padding:8px 16px;font-size:13px}
+.ef{display:flex;flex-direction:column;gap:4px}
+.ef .lbl{font-size:11px}
+.danger{color:#B3261E;font-weight:700;font-size:13.5px;display:flex;align-items:center;gap:8px;padding:6px 2px}
+.danger svg{width:18px;height:18px}
+.togrow{display:flex;align-items:center;gap:10px;font-size:13px}
+.togrow .grow{flex:1}
+.togrow small{display:block;color:var(--muted);font-size:11.5px}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <h1>A person’s page: for every day, with editing on its own</h1>
+  <p>Proposal for review (2026-11-14), after the People tab review (#86). Today a person’s page is about 22 cards, nearly all of them always editable: tag editors, occasion chips, a × on every circle, update and moment, “Related to you?” always asking, the settings at the bottom and Delete next to Back. Someone who opens Ana to call her, or to remember her kids’ names, scrolls through a form. The proposal: the page is for <b>looking and acting</b>, the family sits around the photo, the content splits into three tabs (Summary, About, History), and the pencil switches to <b>editing</b> for what rarely changes. Tastes, notes and conversations stay editable without it.</p>
+  <nav class="toc"><a href="#now">Today</a><a href="#page">Top and Summary</a><a href="#tabs">About and History</a><a href="#edit">Edit mode</a></nav>
+</header>
+
+<!-- ============ NOW ============ -->
+<section class="issue" id="now">
+  <div class="issue-h"><span class="tag">Today · as built on claude/v1-86-people-tab</span><h2>What a person’s page does now</h2>
+  <p>The top of the page and a little further down. The red numbers are the points raised.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar" style="background:#E3D6F7"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><span style="flex:1"></span><span class="mk">6</span><span class="ib"><svg class="ic"><use href="#i-trash"/></svg></span></div>
+    <div class="scroll" style="gap:10px;padding-top:0">
+      <div class="hero" style="gap:7px;padding-bottom:6px">
+        <div class="avwrap"><div class="av lg p">AS</div><span class="camb"><svg class="ic"><use href="#i-camera"/></svg></span></div>
+        <div class="namerow"><h4 style="margin:4px 0 0">Ana Silva</h4><svg class="ic"><use href="#i-edit"/></svg></div>
+        <span class="ip teal">Close<svg class="ic dd"><use href="#i-chev"/></svg></span>
+        <div class="status-line"><span class="ip amber"><svg class="ic"><use href="#i-cake"/></svg>Nov 17 · in 3 days · turns 34</span>
+          <span class="mkrow" style="gap:4px"><span class="ip dash"><svg class="ic"><use href="#i-edit"/></svg>Related to you?</span><span class="mk">4</span></span>
+          <span class="ip teal"><svg class="ic"><use href="#i-pin"/></svg>Seen 2 days ago</span></div>
+        <div class="status-line" style="align-items:center"><span class="ccx">🎵 Choir<svg class="ic"><use href="#i-x"/></svg></span><span class="ccx surf">🏄 Surf<svg class="ic"><use href="#i-x"/></svg></span><span class="ccx fy">Family</span><span class="mk">2</span><span class="ip dash"><svg class="ic"><use href="#i-plus"/></svg>Circle</span></div>
+        <div class="mkrow" style="width:100%;padding:4px 6px 0"><div class="qa6">
+          <div class="hi"><span><svg class="ic"><use href="#i-chat"/></svg></span>WhatsApp</div>
+          <div><span><svg class="ic"><use href="#i-people"/></svg></span>Together</div>
+          <div><span><svg class="ic"><use href="#i-phone"/></svg></span>Call</div>
+          <div><span><svg class="ic"><use href="#i-chat"/></svg></span>Text</div>
+          <div><span><svg class="ic"><use href="#i-bell"/></svg></span>Remind</div>
+        </div><span class="mk">3</span></div>
+      </div>
+      <div class="card"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-people"/></svg></span>About Ana<span class="more">Edit</span></div>
+        <div class="kv"><svg class="ic"><use href="#i-work"/></svg><div>Product designer at Feedzai<small>What they do</small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-pin"/></svg><div>Campo de Ourique, Lisboa<small>Lives in</small></div></div>
+      </div>
+    </div>
+  </div></figure>
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="gap:10px;padding-top:8px">
+      <div class="mkrow"><div class="card" style="gap:8px">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-heart"/></svg></span>Tastes</div>
+        <div class="sub">Food</div>
+        <div class="chips"><span class="tag2">Ramen<svg class="ic"><use href="#i-x"/></svg></span><span class="tag2">Pastéis de nata<svg class="ic"><use href="#i-x"/></svg></span></div>
+        <div class="field ph" style="padding:7px 10px">Add food…</div>
+        <div class="sub">Drinks</div>
+        <div class="field ph" style="padding:7px 10px">Add drinks…</div>
+        <div class="sub">Doesn’t like</div>
+        <div class="chips"><span class="tag2 no">Coriander<svg class="ic"><use href="#i-x"/></svg></span></div>
+        <div class="field ph" style="padding:7px 10px">Add dislikes…</div>
+              </div><span class="mk">5</span></div>
+            <div class="mkrow"><div class="card" style="gap:8px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-tree"/></svg></span>Family<span class="more">Add</span></div>
+        <div class="row"><div class="av sm b">RC</div><div class="grow"><div class="t1">Rui Costa</div><div class="t2">Husband</div></div></div>
+        <div class="row"><div class="av sm t">TC</div><div class="grow"><div class="t1">Tomás</div><div class="t2">Son · 6</div></div></div>
+        <div class="mkrow"><div class="bugrow"><div class="av sm a">MS</div><div class="nm">Maria do Carmo Silva</div><span class="tb">Add as a person</span><svg class="ic" style="width:16px;height:16px"><use href="#i-x"/></svg></div><span class="mk">8</span></div>
+      </div><span class="mk">1</span></div>
+    </div>
+  </div></figure>
+  <figure style="width:420px"><ul class="issues">
+    <li><span class="mk">1</span><span><b>The family is far down.</b> The Family card is the 14th card, after tastes, occasions and gifts. To remember the kids’ names before a party you have to scroll.</span></li>
+    <li><span class="mk">2</span><span><b>Leaving a circle takes one tap.</b> Each circle chip carries a ×, and one accidental tap removes her (there is an Undo, but it’s easy to miss).</span></li>
+    <li><span class="mk">3</span><span><b>Three message buttons.</b> WhatsApp and Text (and Email when it’s the preferred channel) sit next to Call, Together and Remind: up to six buttons, squeezed.</span></li>
+    <li><span class="mk">4</span><span><b>“Related to you?” is always there.</b> For most friends the answer is “no” and stays “no”, but the pill keeps asking.</span></li>
+    <li><span class="mk">5</span><span><b>Every card is a form.</b> Tastes are five tag editors with empty fields, occasions are filter chips, updates and moments carry a ×. Good for filling in the first time, noisy every other time.</span></li>
+    <li><span class="mk">6</span><span><b>Delete sits next to Back.</b> The most destructive action is one of the two buttons on top.</span></li>
+    <li><span class="mk">8</span><span><b>Bug: squeezed names in Family.</b> “Add as a person” and the × sit to the right of a relative’s row and take most of its width, so the name wraps into a narrow, tall column (worse in Portuguese, “Adicionar como pessoa”).</span></li>
+    <li><span class="mk">·</span><span><b>Empty cards still show.</b> Every card appears with its hint, whether there is anything in it or not, so the page is always about 22 cards long.</span></li>
+  </ul></figure>
+  </div>
+</section>
+
+<!-- ============ NEW PAGE ============ -->
+<style>
+.tabs{display:flex;flex:none;border-bottom:1px solid var(--outline-v);background:var(--bg);margin:0 -16px}
+.tabs div{flex:1;text-align:center;padding:11px 4px 9px;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.tabs .on{color:var(--primary);border-bottom-color:var(--primary)}
+.mini-hero{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 8px;flex:none;background:#E3D6F7}
+.mini-hero .grow{flex:1;font-weight:800;font-size:16px}
+.mini-hero .av{width:32px;height:32px;font-size:12px}
+.mini-tabs{display:flex;flex:none;border-bottom:1px solid var(--outline-v);background:var(--bg)}
+.mini-tabs div{flex:1;text-align:center;padding:10px 4px 8px;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+.mini-tabs .on{color:var(--primary);border-bottom-color:var(--primary)}
+.notes{border:1px solid var(--outline);border-radius:12px;padding:9px 11px;font-size:12.5px;line-height:1.45;min-height:56px}
+.addrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.relrow{display:flex;align-items:flex-start;gap:10px}
+.relrow .grow{flex:1;min-width:0}
+.relrow .t1{font-weight:600;font-size:13.5px}
+.relrow .t2{font-size:12px;color:var(--muted)}
+.relrow .lnk{font-size:12px;font-weight:700;color:var(--primary);margin-top:3px;display:inline-block}
+.bugrow{display:flex;align-items:center;gap:8px}
+.bugrow .nm{width:44px;font-size:12.5px;font-weight:600;line-height:1.15;word-break:break-all}
+.bugrow .tb{font-size:12px;font-weight:700;color:var(--primary);white-space:nowrap}
+</style>
+<section class="issue" id="page">
+  <div class="issue-h"><span class="tag">Proposal · the top and the Summary tab</span><h2>Family around the photo, four actions, then three tabs</h2>
+  <p>The top shows who she is and who her people are, and the four actions you use. Under it, three tabs: <b>Summary</b> (opens by default: what’s coming, what to talk about, and the tastes and notes you edit right there), <b>About</b> and <b>History</b>. Scrolling shrinks the top into a bar with her name, and the tabs stay pinned under it.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar" style="background:#E3D6F7"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><span style="flex:1"></span><span class="ib"><svg class="ic"><use href="#i-edit"/></svg></span><span class="ib"><svg class="ic"><use href="#i-more"/></svg></span></div>
+    <div class="scroll" style="gap:10px;padding-top:0">
+      <div class="hero" style="gap:7px;padding-top:0;padding-bottom:6px">
+        <div class="net">
+          <svg class="lines" viewBox="0 0 300 236"><path d="M112 34 L138 74"/><path d="M188 34 L162 74"/><path d="M44 112 L100 112"/><path d="M150 160 L150 176 M96 176 H204 M96 176 V186 M150 176 V186 M204 176 V186"/></svg>
+          <div class="n" style="left:112px;top:22px"><div class="av xs a">LS</div><span class="rl">Mum</span></div>
+          <div class="n" style="left:188px;top:22px"><div class="av xs r">JS</div><span class="rl">Dad</span></div>
+          <div class="n" style="left:40px;top:112px"><div class="av md b">RC</div><span>Rui</span><span class="rl">Husband</span></div>
+          <div class="n main" style="left:150px;top:112px"><div class="av p">AS</div></div>
+          <div class="n" style="left:96px;top:208px"><div class="av xs t">TC</div><span>Tomás · 6</span></div>
+          <div class="n" style="left:150px;top:208px"><div class="av xs m">IC</div><span>Inês · 3</span></div>
+          <div class="n plus" style="left:204px;top:208px"><div class="av xs">+1</div><span>&nbsp;</span></div>
+        </div>
+        <h4 style="margin:0">Ana Silva</h4>
+        <div class="status-line"><span class="ip teal">Close<svg class="ic dd"><use href="#i-chev"/></svg></span><span class="ip amber"><svg class="ic"><use href="#i-cake"/></svg>Turns 34 in 3 days</span><span class="ip"><svg class="ic"><use href="#i-pin"/></svg>Seen 2 days ago</span></div>
+        <div class="status-line" style="align-items:center"><span class="ccx">🎵 Choir</span><span class="ccx surf">🏄 Surf</span><span class="ccx fy">Family</span><span class="ccx edit"><svg class="ic"><use href="#i-edit"/></svg>Circles</span></div>
+        <div class="qa4" style="margin-top:4px">
+          <div class="hi"><span><svg class="ic"><use href="#i-chat"/></svg></span>Message</div>
+          <div><span><svg class="ic"><use href="#i-phone"/></svg></span>Call</div>
+          <div><span><svg class="ic"><use href="#i-people"/></svg></span>We met</div>
+          <div><span><svg class="ic"><use href="#i-bell"/></svg></span>Remind</div>
+        </div>
+      </div>
+      <div class="tabs"><div class="on">Summary</div><div>About</div><div>History</div></div>
+    </div>
+  </div><figcaption><b>Top.</b> Parents above, partner(s) beside, kids below; tap any of them to open their page, “+N” opens the Family card (About tab). No family: just the photo. “Your sister” shows only when it’s set; “Related to you?” is asked in edit mode. Circles are plain chips; “Circles” opens the tick list. ⋮ holds Remove.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="mini-hero"><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-back"/></svg></span><div class="av p">AS</div><div class="grow">Ana Silva</div><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-chat"/></svg></span><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-phone"/></svg></span></div>
+    <div class="mini-tabs"><div class="on">Summary</div><div>About</div><div>History</div></div>
+    <div class="scroll" style="gap:10px;padding-top:10px">
+      <div class="card" style="gap:9px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-cal"/></svg></span>Coming up</div>
+        <div class="dl"><div class="db">NOV<b>17</b></div><div class="grow">Ana’s birthday · turns 34<small>In 3 days</small></div><span class="go">Wish</span></div>
+        <div class="dl"><div class="db">NOV<b>22</b></div><div class="grow">Dinner at Taberna<small>Plan · Saturday</small></div></div>
+        <div class="hint">Every 30 days · next catch-up due in 6 days</div>
+      </div>
+      <div class="card" style="gap:8px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-spark"/></svg></span>To talk about<span class="more">Add news</span></div>
+        <div class="kv"><svg class="ic"><use href="#i-star"/></svg><div>Started at Feedzai<small>News · 2 weeks ago</small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-note"/></svg><div>Ask how the Ghent reunion went<small>From your notes</small></div></div>
+      </div>
+      <div class="card" style="gap:7px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-heart"/></svg></span>Tastes</div>
+        <div class="addrow"><span class="tag2">🍜 Ramen<svg class="ic"><use href="#i-x"/></svg></span><span class="tag2">☕ Flat white<svg class="ic"><use href="#i-x"/></svg></span><span class="tag2">Surf<svg class="ic"><use href="#i-x"/></svg></span><span class="tag2 no">✕ Coriander<svg class="ic"><use href="#i-x"/></svg></span><span class="chip add2">+ Add</span></div>
+        <div class="hint">One row of chips; “+ Add” asks food, drink, interest or doesn’t like.</div>
+      </div>
+      <div class="card" style="gap:7px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-note"/></svg></span>Notes</div>
+        <div class="notes">Training for the Lisbon half marathon in March. Rui’s mum is ill, ask gently.</div>
+      </div>
+    </div>
+  </div><figcaption><b>Summary, scrolled.</b> The top shrinks to a bar (name, Message, Call) with the tabs pinned under it. Coming up, To talk about (news, topics, AI ideas when AI is on), then <b>Tastes and Notes, editable right here</b>: × on a taste, “+ Add”, notes typed in place, saved as you type.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar" style="background:#E3D6F7"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><span style="flex:1"></span><span class="ib"><svg class="ic"><use href="#i-edit"/></svg></span><span class="ib"><svg class="ic"><use href="#i-more"/></svg></span></div>
+    <div class="scroll" style="padding-top:0"><div class="hero" style="height:300px"></div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>Message Ana</h5>
+      <div class="opt"><span class="ob pref"><svg class="ic"><use href="#i-chat"/></svg></span><div class="grow"><div class="t1">WhatsApp <span class="prefb">preferred</span></div><div class="t2">+351 912 345 678</div></div></div>
+      <div class="opt"><span class="ob"><svg class="ic"><use href="#i-chat"/></svg></span><div class="grow"><div class="t1">Text message</div><div class="t2">+351 912 345 678</div></div></div>
+      <div class="opt"><span class="ob"><svg class="ic"><use href="#i-mail"/></svg></span><div class="grow"><div class="t1">Email</div><div class="t2">ana.silva@example.com</div></div></div>
+      <div class="hint">Email shows only when there is an address; WhatsApp and text only with a phone number. The preferred channel comes first; it’s set in edit mode.</div>
+    </div>
+  </div><figcaption><b>One Message button.</b> A tap always opens this sheet (one extra tap, never a surprise). It opens the app with nothing typed, as today. Call stays its own button.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ TABS ============ -->
+<section class="issue" id="tabs">
+  <div class="issue-h"><span class="tag">Proposal · About and History</span><h2>Who she is, and what happened</h2>
+  <p><b>About</b> is the reference: work, how you met, family, gifts, occasions, moments, saved things, blogs. Read-only until the pencil; a card with nothing in it doesn’t show, and “Complete Ana’s profile” lists what’s missing. <b>History</b> is the timeline and the conversations, which stay usable here (import a chat, log something).</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="mini-hero"><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-back"/></svg></span><div class="av p">AS</div><div class="grow">Ana Silva</div><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-edit"/></svg></span></div>
+    <div class="mini-tabs"><div>Summary</div><div class="on">About</div><div>History</div></div>
+    <div class="scroll" style="gap:10px;padding-top:10px">
+      <div class="complete"><div class="t1">Complete Ana’s profile</div><div class="t2">Shown only while something is missing</div>
+        <div class="chips"><span class="chip add2">+ Gift ideas</span><span class="chip add2">+ Blog or feed</span></div></div>
+      <div class="card" style="gap:8px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-people"/></svg></span>About Ana</div>
+        <div class="kv"><svg class="ic"><use href="#i-work"/></svg><div>Product designer at Feedzai</div></div>
+        <div class="kv"><svg class="ic"><use href="#i-handshake"/></svg><div>Erasmus in Ghent · 2011<small>Introduced by Rui Costa</small></div></div>
+        <div class="chips"><span class="chip pill">Coffee</span><span class="chip pill">Outdoors</span></div>
+      </div>
+      <div class="card" style="gap:10px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-tree"/></svg></span>Family<span class="more">Add</span></div>
+        <div class="relrow"><div class="av sm b">RC</div><div class="grow"><div class="t1">Rui Costa</div><div class="t2">Husband</div></div></div>
+        <div class="relrow"><div class="av sm a">MS</div><div class="grow"><div class="t1">Maria do Carmo Silva</div><div class="t2">Grandmother · birthday in 2 months</div><span class="lnk">+ Add as a person</span></div></div>
+        <div class="relrow"><div class="av sm r">PS</div><div class="grow"><div class="t1">Pedro Silva</div><div class="t2">Brother</div></div></div>
+      </div>
+    </div>
+  </div><figcaption><b>About.</b> The Family card lists everyone (siblings, grandparents…). <b>Bug fix:</b> “Add as a person” moves under the relative’s details, so the name keeps the full width; the × only shows in edit mode.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="mini-hero"><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-back"/></svg></span><div class="av p">AS</div><div class="grow">Ana Silva</div><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-plus"/></svg></span></div>
+    <div class="mini-tabs"><div>Summary</div><div>About</div><div class="on">History</div></div>
+    <div class="scroll" style="gap:10px;padding-top:10px">
+      <div class="card" style="gap:8px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-chat"/></svg></span>Conversations</div>
+        <div class="kv"><svg class="ic"><use href="#i-chat"/></svg><div>WhatsApp · 1,240 messages<small>Imported 3 weeks ago · feeds last contact and AI ideas</small></div></div>
+      </div>
+      <div class="tl">
+        <div class="month">November</div>
+        <div class="ev"><span class="k call"><svg class="ic"><use href="#i-phone"/></svg></span><div class="body"><span class="h">Call</span><span class="meta">4 days ago</span></div></div>
+        <div class="ev"><span class="k meet"><svg class="ic"><use href="#i-people"/></svg></span><div class="body"><span class="h">Coffee at Fábrica</span><span class="meta">12 days ago · with Rui</span><span class="q">She’s thinking of going freelance next year.</span></div></div>
+        <div class="month">October</div>
+        <div class="ev"><span class="k gift"><svg class="ic"><use href="#i-gift"/></svg></span><div class="body"><span class="h">Gave “Ghent, a city guide”</span><span class="meta">Oct 30</span></div></div>
+        <div class="ev"><span class="k msg"><svg class="ic"><use href="#i-chat"/></svg></span><div class="body"><span class="h">Message</span><span class="meta">Oct 18</span></div></div>
+      </div>
+    </div>
+  </div><figcaption><b>History.</b> Conversations (the imported WhatsApp chat, or how to import one) and the whole timeline in place, instead of the last three plus “See all”. The “+” logs something (the Log sheet).</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ EDIT ============ -->
+<section class="issue" id="edit">
+  <div class="issue-h"><span class="tag">Proposal · edit mode</span><h2>The pencil edits what rarely changes</h2>
+  <p>Same screen, same tab, same scroll position. The About cards show their editors (empty ones too), the × buttons appear, and “Related to you?”, the preferred channel, the rhythm controls, notification settings and Remove live here. Tastes, notes and conversations don’t need it. “Done” goes back. Everything still saves as you type, as today.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="editbar"><span class="ib" style="background:transparent"><svg class="ic"><use href="#i-edit"/></svg></span><h3>Editing Ana</h3><span class="btn">Done</span></div>
+    <div class="scroll" style="gap:10px;padding-top:10px">
+      <div class="card" style="gap:9px">
+        <div class="ef"><span class="lbl">Name</span><div class="field">Ana Silva</div></div>
+        <div class="ef"><span class="lbl">Related to you?</span><div class="field ph">No · tap to choose (sister, cousin…)</div></div>
+        <div class="ef"><span class="lbl">Message her first on</span><div class="seg"><div class="on">WhatsApp</div><div>Text</div><div>Email</div></div></div>
+      </div>
+      <div class="card" style="gap:8px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-heart"/></svg></span>Tastes</div>
+        <div class="sub">Food</div>
+        <div class="chips"><span class="tag2">Ramen<svg class="ic"><use href="#i-x"/></svg></span></div>
+        <div class="field ph" style="padding:7px 10px">Add food…</div>
+        <div class="sub">Doesn’t like</div>
+        <div class="chips"><span class="tag2 no">Coriander<svg class="ic"><use href="#i-x"/></svg></span></div>
+      </div>
+      <div class="card" style="gap:10px"><div class="card-h"><span class="badge"><svg class="ic"><use href="#i-gear"/></svg></span>Settings for Ana</div>
+        <div class="togrow"><div class="grow">Birthday notifications</div><span class="switch"></span></div>
+        <div class="togrow"><div class="grow">Show in my list</div><span class="switch"></span></div>
+        <div class="danger"><svg class="ic"><use href="#i-trash"/></svg>Remove Ana from Good Company</div>
+      </div>
+    </div>
+  </div><figcaption><b>Edit mode.</b> Name, “Related to you?” and preferred channel on top; then the About cards with their editors (tastes too, for a bulk tidy-up); settings and Remove at the bottom (Remove is also in ⋮).</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="padding-top:0"><div class="hero" style="height:300px"></div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>Ana’s circles</h5>
+      <div class="trow"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="grow">🎵 Choir</div></div>
+      <div class="trow"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="grow">🏄 Surf</div></div>
+      <div class="trow"><span class="cb"></span><div class="grow">🧗 Climbing</div></div>
+      <div class="trow" style="opacity:.6"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="grow">Family<small>Follows family links</small></div></div>
+      <div class="hint">Each tick saves at once, as every picker does; leaving a circle now takes “Circles” → untick, two deliberate taps, with an Undo after. No × on the page.</div>
+    </div>
+  </div><figcaption><b>Circles.</b> The tick list that “+ Circle” already opens, now the only way in or out of a circle from this page.</figcaption></figure>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){function apply(){var h=location.hash.replace('#','');var solo=h.indexOf('solo-')===0;document.body.classList.toggle('solo',solo);if(solo)document.documentElement.setAttribute('data-theme','light');
+document.querySelectorAll('section.issue').forEach(function(s){s.classList.toggle('show',solo&&s.id===h.slice(5));});}
+window.addEventListener('hashchange',apply);apply();})();
+</script>

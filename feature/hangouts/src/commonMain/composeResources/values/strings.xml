@@ -18,23 +18,6 @@
     <string name="group_snooze_weekend">Remind me Saturday</string>
     <string name="group_more">More</string>
 
-
-    <string name="section_last_time_with">Last time with…</string>
-    <string name="clear">Clear</string>
-    <string name="last_together">Last together %1$s</string>
-    <string name="last_together_place">Last together %1$s · %2$s</string>
-    <plurals name="times_total">
-        <item quantity="one">%1$s · %2$d× in total</item>
-        <item quantity="other">%1$s · %2$d× in total</item>
-    </plurals>
-    <string name="never_all">You haven’t logged a meetup with all of them yet.</string>
-    <string name="section_memories">Memories</string>
-    <string name="section_memories_together">Memories together</string>
-    <string name="memories_empty_title">No memories yet</string>
-    <string name="memories_empty_body">Tap “I’m with…” when you’re with friends. Over time you’ll see who you’ve been missing.</string>
-    <string name="someone">Someone</string>
-    <string name="delete_memory">Delete memory</string>
-
     <string name="sheet_title">I’m with…</string>
     <string name="sheet_find">Find a friend</string>
     <string name="sheet_where">Where? (optional)</string>
@@ -45,7 +28,6 @@
     <string name="msg_location_denied">Location permission denied — type the place instead.</string>
     <string name="msg_location_unavailable">Couldn’t get your location right now.</string>
     <string name="msg_logged_with">Logged time with %1$s ✨</string>
-    <string name="msg_memory_deleted">Memory deleted</string>
     <string name="msg_group_deleted">Deleted %1$s</string>
     <string name="msg_group_snoozed">%1$s snoozed until %2$s</string>
     <string name="free_title">Who’s free for…?</string>
@@ -147,4 +129,19 @@
         <item quantity="one">Add %d person</item>
         <item quantity="other">Add %d people</item>
     </plurals>
+    <string name="page_people">People · %1$d</string>
+    <string name="page_coming_up">Coming up</string>
+    <string name="page_together">Together</string>
+    <string name="page_members_at">%1$d of %2$d</string>
+    <string name="page_everyone">Everyone</string>
+    <string name="page_empty">No meetups yet. Tap “We met” after you get together.</string>
+    <string name="page_reminder">Reminder</string>
+    <string name="page_cover">Cover photo</string>
+    <string name="cover_add">Add cover</string>
+    <string name="cover_change">Change cover</string>
+    <string name="cover_remove">Remove cover</string>
+    <string name="msg_cover_removed">Cover removed</string>
+    <string name="msg_cover_unreadable">That picture couldn’t be read</string>
+    <string name="msg_entry_deleted">Removed from the timeline</string>
+    <string name="msg_reminder_saved">Reminder saved</string>
 </resources>

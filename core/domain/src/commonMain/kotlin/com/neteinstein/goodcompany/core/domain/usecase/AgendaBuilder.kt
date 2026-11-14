@@ -78,7 +78,8 @@ object AgendaBuilder {
         reminders.filter { !it.done && it.dueAt != null }.forEach { r ->
             val due = r.dueAt!!.toLocalDate(zone)
             if (due <= end) {
-                items += AgendaItem.ReminderDue(r, r.friendIds.mapNotNull(byId::get), maxOf(due, today))
+                // A circle reminder (issue #88) is for the circle's members as they are now.
+                items += AgendaItem.ReminderDue(r, r.peopleIds(groups).mapNotNull(byId::get), maxOf(due, today))
             }
         }
 

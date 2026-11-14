@@ -80,7 +80,6 @@ class FriendDetailViewModelTest {
         g.setFriendPhoto,
         g.removeFriendPhoto,
         g.renameFriend,
-        g.setHomeCircleFilter,
         g.setCircleMember,
         g.restoreGroup,
         g.observeAttachments,
