@@ -2,6 +2,8 @@ package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.await
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
@@ -131,6 +133,57 @@ class MigrationTest {
         assertEquals(4, database.readInteractions().size)
         database.writeHangout(Hangout("h2", listOf(ana), chat, activity = HangoutActivity.LUNCH))
         assertEquals(HangoutActivity.LUNCH, database.readHangouts().single { it.id == "h2" }.activity)
+        driver.close()
+    }
+
+    @Test
+    fun version5to6_givesExistingCirclesColoursInTurn_andHomeStartsOnAll() = runTest {
+        val driver = driverAt(5)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        // Nine groups, inserted out of order: colours follow position, and wrap around after seven.
+        (8 downTo 0).forEach { i ->
+            val every = if (i == 0) "30" else "NULL"
+            driver.execute(null, "INSERT INTO friend_group VALUES ('g$i', $i, 'Group $i', '👥', $every, NULL)", 0).await()
+        }
+        driver.execute(null, "INSERT INTO group_member VALUES ('g0', 'ana', 0)", 0).await()
+        driver.execute(
+            null,
+            "INSERT INTO user_preferences VALUES (1, 7, 30, 90, 1, 6, 9, 1, 'Lisbon', 1, 0)",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 5, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val groups = database.readGroups()
+
+        assertEquals(
+            listOf(
+                CircleColor.PURPLE, CircleColor.BLUE, CircleColor.TEAL, CircleColor.AMBER, CircleColor.RUST,
+                CircleColor.MAGENTA, CircleColor.SLATE, CircleColor.PURPLE, CircleColor.BLUE,
+            ),
+            groups.sortedBy { it.id }.map { it.color },
+        )
+        // An existing group keeps its rhythm and members.
+        val first = groups.single { it.id == "g0" }
+        assertEquals(30, first.meetEveryDays)
+        assertEquals(listOf(FriendId("ana")), first.memberIds)
+        val settings = database.readPreferences(AppSettings())
+        assertNull(settings.homeCircleFilter)
+        assertEquals("Lisbon", settings.homeArea)
+
+        // Both new columns round-trip.
+        database.writeGroup(first.copy(color = CircleColor.TEAL))
+        assertEquals(CircleColor.TEAL, database.readGroups().single { it.id == "g0" }.color)
+        database.writePreferences(settings.copy(homeCircleFilter = "g0"))
+        assertEquals("g0", database.readPreferences(AppSettings()).homeCircleFilter)
         driver.close()
     }
 }

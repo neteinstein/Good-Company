@@ -41,8 +41,8 @@
     </plurals>
     <string name="new_title">Caras novas</string>
     <plurals name="new_body">
-        <item quantity="one">%1$d pessoa juntou-se ao teu círculo</item>
-        <item quantity="other">%1$d pessoas juntaram-se ao teu círculo</item>
+        <item quantity="one">%1$d cara nova entre os teus amigos</item>
+        <item quantity="other">%1$d caras novas entre os teus amigos</item>
     </plurals>
     <plurals name="reminders_done">
         <item quantity="one">…e cumpriste %1$d lembrete ✅</item>

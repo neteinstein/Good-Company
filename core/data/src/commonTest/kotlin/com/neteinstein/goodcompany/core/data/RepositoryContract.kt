@@ -15,7 +15,7 @@ import com.neteinstein.goodcompany.core.data.source.LogEntry
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -136,7 +136,7 @@ abstract class RepositoryContract {
         meetEveryDays = 14,
         suggestEvents = true,
         isOrphaned = true,
-        circle = Circle.INNER,
+        closeness = Closeness.INNER,
         snoozedUntil = LocalDate(2026, 4, 1),
         gifts = listOf(
             Gift("g1", "Book", "Murakami", forKidId = null, givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),

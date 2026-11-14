@@ -171,12 +171,12 @@
         <item quantity="other">Ça fait %1$d jours — tu voulais vous voir %2$s.</item>
     </plurals>
     <string name="notif_meet_body_never">Aucune rencontre enregistrée — tu voulais vous voir %1$s.</string>
-    <string name="notif_group_title">%1$s : réunissez tout le monde</string>
+    <string name="notif_group_title">%1$s : il est temps de réunir le cercle</string>
     <plurals name="notif_group_body">
-        <item quantity="one">La dernière fois tous ensemble, c’était il y a %1$d jour.</item>
-        <item quantity="other">La dernière fois tous ensemble, c’était il y a %1$d jours.</item>
+        <item quantity="one">Le cercle s’est réuni il y a %1$d jour.</item>
+        <item quantity="other">Le cercle s’est réuni il y a %1$d jours.</item>
     </plurals>
-    <string name="notif_group_body_never">Vous ne vous êtes pas encore tous retrouvés.</string>
+    <string name="notif_group_body_never">Le cercle ne s’est pas encore réuni.</string>
     <string name="notif_action_met">On s’est vus</string>
     <string name="notif_action_called">J’ai appelé</string>
     <string name="notif_action_snooze_week">Semaine prochaine</string>
@@ -217,8 +217,9 @@
     <string name="sample_gift_dino_lego">Set LEGO dinosaures</string>
     <string name="sample_gift_board_game">Jeu de société Wingspan</string>
     <string name="sample_gift_ceramics">Bon pour un cours de céramique</string>
-    <string name="sample_group_board_games">Soirée jeux</string>
-    <string name="sample_group_surf">La bande du surf</string>
+    <string name="sample_circle_board_games">Soirée jeux</string>
+    <string name="sample_circle_surf">La bande du surf</string>
+    <string name="sample_circle_choir">Chorale</string>
     <string name="sample_taste_jazz">Jazz</string>
     <string name="sample_taste_sushi">Sushis</string>
     <string name="sample_taste_hiking">Randonnée</string>
@@ -384,4 +385,13 @@
     <string name="sample_tl_message_surf">J’ai envoyé les photos du voyage de surf</string>
     <string name="sample_tl_journal_ana">On a parlé du déménagement à Porto et de l’école de Leo</string>
     <string name="sample_tl_journal_rui">Il veut courir une course à l’étranger l’an prochain</string>
+    <string name="circle_color_purple">Violet</string>
+    <string name="circle_color_blue">Bleu</string>
+    <string name="circle_color_teal">Bleu canard</string>
+    <string name="circle_color_amber">Ambre</string>
+    <string name="circle_color_rust">Rouille</string>
+    <string name="circle_color_magenta">Magenta</string>
+    <string name="circle_color_slate">Ardoise</string>
+    <string name="circle_tick_who_came">Cochez qui est venu de %1$s.</string>
+    <string name="log_title_circle">Noter une sortie : %1$s</string>
 </resources>

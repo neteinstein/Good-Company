@@ -1,7 +1,8 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
@@ -20,9 +21,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -68,12 +72,12 @@ class FriendCareUseCasesTest {
     fun markingRealFriendPutsThemInCloseCircle() = runTest {
         val set = SetRealFriendUseCase(friends)
         set(ana, true)
-        assertEquals(Circle.CLOSE, friends.get(ana)!!.circle)
-        SetCircleUseCase(friends)(ana, Circle.INNER)
+        assertEquals(Closeness.CLOSE, friends.get(ana)!!.closeness)
+        SetClosenessUseCase(friends)(ana, Closeness.INNER)
         set.toggle(ana) // unmark
-        assertNull(friends.get(ana)!!.circle)
+        assertNull(friends.get(ana)!!.closeness)
         assertTrue(!friends.get(ana)!!.isCloseFriend)
-        SetCircleUseCase(friends)(ana, Circle.GOOD) // a circle implies real friend
+        SetClosenessUseCase(friends)(ana, Closeness.GOOD) // a circle implies real friend
         assertTrue(friends.get(ana)!!.isCloseFriend)
     }
 
@@ -152,21 +156,53 @@ class FriendCareUseCasesTest {
     }
 
     @Test
-    fun groupsCrudAndValidation() = runTest {
+    fun circlesCrudAndValidation() = runTest {
         val save = SaveGroupUseCase(groups, ids)
-        assertFailsWith<IllegalArgumentException> { save(null, "Solo", "🎲", listOf(ana), null) }
-        assertFailsWith<IllegalArgumentException> { save(null, " ", "🎲", listOf(ana, FriendId("rui")), null) }
-        val g = save(null, " Crew ", "", listOf(ana, FriendId("rui"), ana), 0)
+        assertFailsWith<IllegalArgumentException> { save(null, "Nobody", "🎲", CircleColor.BLUE, emptyList(), null) }
+        assertFailsWith<IllegalArgumentException> { save(null, " ", "🎲", CircleColor.BLUE, listOf(ana, FriendId("rui")), null) }
+        val g = save(null, " Crew ", "", CircleColor.TEAL, listOf(ana, FriendId("rui"), ana), 0)
         assertEquals("Crew", g.name)
         assertEquals("👥", g.emoji)
+        assertEquals(CircleColor.TEAL, g.color)
         assertEquals(2, g.memberIds.size)
         assertNull(g.meetEveryDays)
-        save(g.id, "Crew", "⚽", g.memberIds, 14)
+        snooze.group(g.id, SnoozeOption.ONE_WEEK)
+        save(g.id, "Crew", "⚽", CircleColor.RUST, g.memberIds, 14)
         val status = ObserveGroupsUseCase(groups, friends, hangouts, clock)().first().single()
         assertEquals("⚽", status.group.emoji)
+        assertEquals(CircleColor.RUST, status.group.color)
         assertEquals(14, status.group.meetEveryDays)
-        DeleteGroupUseCase(groups)(g.id)
-        assertTrue(groups.groups.value.isEmpty())
+        assertEquals(SnoozeOption.ONE_WEEK.until(clock.today()), status.group.snoozedUntil) // an edit keeps the snooze
+
+        // A circle of one is fine (D1).
+        val solo = save(null, "Mentor", "🧭", CircleColor.SLATE, listOf(ana), null)
+        assertEquals(listOf(ana), solo.memberIds)
+
+        // Deleting the circle Home is filtered by puts Home back on All; Undo puts the circle back.
+        SetHomeCircleFilterUseCase(settings)(g.id)
+        val removed = DeleteGroupUseCase(groups, settings)(g.id)!!
+        assertNull(settings.settings.first().homeCircleFilter)
+        assertEquals(listOf(solo.id), groups.groups.value.map { it.id })
+        RestoreGroupUseCase(groups)(removed)
+        assertEquals(setOf(g.id, solo.id), groups.groups.value.map { it.id }.toSet())
+        // Deleting another circle leaves the filter alone.
+        SetHomeCircleFilterUseCase(settings)(g.id)
+        DeleteGroupUseCase(groups, settings)(solo.id)
+        assertEquals(g.id, settings.settings.first().homeCircleFilter)
+        assertNull(DeleteGroupUseCase(groups, settings)("gone"))
+    }
+
+    @Test
+    fun newCirclesTakeTheNextFreeColour() = runTest {
+        val next = NextCircleColorUseCase(groups)
+        assertEquals(CircleColor.PURPLE, next())
+        groups.upsert(FriendGroup("a", "A", color = CircleColor.PURPLE))
+        groups.upsert(FriendGroup("b", "B", color = CircleColor.TEAL))
+        assertEquals(CircleColor.BLUE, next())
+        CircleColor.entries.forEachIndexed { i, c -> groups.upsert(FriendGroup("c$i", "C$i", color = c)) }
+        assertEquals(CircleColor.forIndex(groups.groups.value.size), next())
+        assertEquals(CircleColor.PURPLE, CircleColor.parse("NOPE"))
+        assertEquals(CircleColor.SLATE, CircleColor.parse("SLATE"))
     }
 
     @Test

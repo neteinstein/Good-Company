@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFrien
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
@@ -73,8 +74,10 @@ class AppModuleTest {
         assertNotNull(koin.get<FriendsViewModel>())
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<FriendTimelineViewModel> { parametersOf(FriendId("x")) })
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL") })
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), null) })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL", null) })
+        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), null, "circle-1") })
+        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null) })
+        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1") })
         assertNotNull(koin.get<HangoutsViewModel>())
         assertNotNull(koin.get<AgendaViewModel>())
         assertNotNull(koin.get<IdeasViewModel>())

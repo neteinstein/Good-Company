@@ -18,26 +18,20 @@
     <string name="meet_never">Aún no hay encuentros registrados</string>
     <string name="meet_due">Toca %1$s · %2$s</string>
     <string name="meet_met">Nos vimos</string>
-    <string name="groups_title">Tus grupos</string>
-    <string name="groups_new">Nuevo grupo</string>
-    <string name="groups_hint">La pandilla de los juegos de mesa, los del surf, el antiguo equipo… Guarda un grupo para registrar a todos a la vez y recibir un aviso cuando haga tiempo.</string>
-    <string name="group_last_together">Todos juntos %1$s</string>
-    <string name="group_never">Aún no habéis estado todos juntos</string>
+    <string name="groups_title">Tus círculos</string>
+    <string name="groups_new">Nuevo círculo</string>
+    <string name="groups_hint">Coro, fútbol sala, el equipo de siempre… Un círculo filtra el inicio, registra una quedada con todos a la vez y, si quieres, te avisa cuando ha pasado un tiempo.</string>
+    <string name="group_last_together">Juntos %1$s</string>
+    <string name="group_never">Aún no os habéis reunido</string>
     <string name="group_overdue">Toca reunirse · %1$s</string>
     <string name="group_due">Toca %1$s · %2$s</string>
     <string name="group_snoozed">Pospuesto hasta el %1$s</string>
     <string name="group_met">Nos vimos</string>
     <string name="group_edit">Editar</string>
-    <string name="group_delete">Eliminar grupo</string>
+    <string name="group_delete">Eliminar círculo</string>
     <string name="group_snooze_week">Posponer una semana</string>
     <string name="group_snooze_weekend">Recuérdamelo el sábado</string>
     <string name="group_more">Más</string>
-    <string name="group_editor_new">Nuevo grupo</string>
-    <string name="group_editor_edit">Editar grupo</string>
-    <string name="group_name">Nombre del grupo</string>
-    <string name="group_emoji">Emoji</string>
-    <string name="group_members">Miembros (al menos dos)</string>
-    <string name="group_rhythm">Veros</string>
     <string name="review_card_title">Tu %1$d en amistad</string>
     <string name="review_card_body">A quién viste más, tus sitios favoritos y tu racha más larga — listo para compartir.</string>
     <string name="review_card_cta">Ver tu año</string>
@@ -58,7 +52,6 @@
     <string name="delete_memory">Borrar recuerdo</string>
     <string name="sheet_title">Estoy con…</string>
     <string name="sheet_find">Buscar un amigo</string>
-    <string name="sheet_groups">Grupos</string>
     <string name="sheet_where">¿Dónde? (opcional)</string>
     <string name="sheet_locating">Buscando tu ubicación…</string>
     <string name="sheet_clear_location">Quitar ubicación</string>
@@ -70,7 +63,6 @@
     <string name="msg_location_unavailable">Ahora no se puede obtener tu ubicación.</string>
     <string name="msg_logged_with">Tiempo con %1$s registrado ✨</string>
     <string name="msg_memory_deleted">Recuerdo borrado</string>
-    <string name="msg_group_saved">%1$s guardado</string>
     <string name="msg_group_deleted">%1$s eliminado</string>
     <string name="msg_group_snoozed">%1$s pospuesto hasta el %2$s</string>
     <string name="free_title">¿Quién se apunta a…?</string>
@@ -82,4 +74,19 @@
         <item quantity="one">Visto hace %1$d día</item>
         <item quantity="other">Visto hace %1$d días</item>
     </plurals>
+    <string name="circle_editor_new">Nuevo círculo</string>
+    <string name="circle_editor_edit">Editar círculo</string>
+    <string name="circle_name">Nombre</string>
+    <string name="circle_emoji">Emoji</string>
+    <string name="circle_colour">Color</string>
+    <string name="circle_remind">Avisarme cuando no nos hayamos visto</string>
+    <string name="circle_remind_on">Objetivo: %1$s</string>
+    <string name="circle_remind_off">Desactivado: este círculo nunca envía avisos</string>
+    <plurals name="circle_members">
+        <item quantity="one">%1$d miembro</item>
+        <item quantity="other">%1$d miembros</item>
+    </plurals>
+    <string name="circle_members_empty">Añade al menos a un amigo.</string>
+    <string name="circle_closeness_none">Sin cercanía definida</string>
+    <string name="circle_closeness_note">Aquí la cercanía solo se muestra, no se edita: es de cada persona. El ritmo de un amigo nunca cambia por un círculo.</string>
 </resources>

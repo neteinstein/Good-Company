@@ -1,6 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.first
 class SetRealFriendUseCase(private val friends: FriendRepository) {
     suspend operator fun invoke(id: FriendId, real: Boolean) {
         val f = friends.get(id) ?: return
-        friends.upsert(f.copy(isCloseFriend = real, circle = if (real) f.circle ?: Circle.CLOSE else null))
+        friends.upsert(f.copy(isCloseFriend = real, closeness = if (real) f.closeness ?: Closeness.CLOSE else null))
     }
 
     suspend fun toggle(id: FriendId) {
@@ -39,11 +39,11 @@ class SetRealFriendUseCase(private val friends: FriendRepository) {
     }
 }
 
-class SetCircleUseCase(private val friends: FriendRepository) {
+class SetClosenessUseCase(private val friends: FriendRepository) {
     /** A circle implies "real friend"; null removes them from circles but keeps them a real friend. */
-    suspend operator fun invoke(id: FriendId, circle: Circle?) {
+    suspend operator fun invoke(id: FriendId, closeness: Closeness?) {
         val f = friends.get(id) ?: return
-        friends.upsert(f.copy(circle = circle, isCloseFriend = f.isCloseFriend || circle != null))
+        friends.upsert(f.copy(closeness = closeness, isCloseFriend = f.isCloseFriend || closeness != null))
     }
 }
 
@@ -158,7 +158,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                         photo = r.photo,
                         emails = ContactMerger.mergeEmails(emptyList(), r.emails),
                         isCloseFriend = true,
-                        circle = Circle.CLOSE,
+                        closeness = Closeness.CLOSE,
                     ),
                 )
                 added++
@@ -172,7 +172,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
                         .distinctBy(String::lowercase).map { FriendEmail(it, fromContact = true) },
                     isCloseFriend = true,
-                    circle = match.circle ?: Circle.CLOSE,
+                    closeness = match.closeness ?: Closeness.CLOSE,
                     isOrphaned = false,
                 )
                 if (merged != match) {

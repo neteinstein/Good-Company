@@ -61,7 +61,7 @@ object ContactMerger {
     /** True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count. */
     fun Friend.hasAppData(): Boolean = isCloseFriend || notifyBirthday || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
-        meetEveryDays != null || suggestEvents || circle != null || gifts.isNotEmpty() || catchUpPaused ||
+        meetEveryDays != null || suggestEvents || closeness != null || gifts.isNotEmpty() || catchUpPaused ||
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
         preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||

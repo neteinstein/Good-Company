@@ -115,7 +115,7 @@
     <string name="touch_title">Păstrați legătura</string>
     <string name="touch_last_together">Împreună ultima dată %1$s</string>
     <string name="touch_never">Nicio întâlnire înregistrată încă</string>
-    <string name="touch_pick">Alege un cerc sau cât de des vreți să vă vedeți — îți vom aminti.</string>
+    <string name="touch_pick">Alege apropierea sau cât de des ai vrea să vă vedeți — îți vom aminti.</string>
     <string name="touch_overdue">A trecut ceva timp — obiectivul tău e %1$s.</string>
     <plurals name="touch_goal">
         <item quantity="one">Obiectiv: %1$s · mai e %2$d zi</item>
@@ -124,10 +124,10 @@
     </plurals>
     <string name="touch_snoozed">Amânat până pe %1$s</string>
     <string name="touch_unsnooze">Reia</string>
-    <string name="touch_circle">Cerc</string>
+    <string name="touch_circle">Apropiere</string>
     <string name="touch_circle_none">Niciunul</string>
     <string name="touch_custom">Ritm propriu</string>
-    <string name="touch_from_circle">Din cercul lui: %1$s</string>
+    <string name="touch_from_circle">După apropiere: %1$s</string>
     <string name="touch_called">Am sunat</string>
     <string name="warmth_title">Căldură %1$d</string>
     <string name="warmth_hint_warm">Aveți un ritm bun.</string>
@@ -136,7 +136,7 @@
     <string name="contact_met">Văzuți %1$s</string>
     <string name="contact_call">Apel %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Grupuri</string>
+    <string name="groups_member_of">Cercuri</string>
     <string name="tastes_title">Pasiuni</string>
     <string name="tastes_loves">Adoră</string>
     <string name="tastes_loves_placeholder">Adaugă pasiuni — jazz, sushi, F1…</string>
@@ -417,4 +417,10 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Apel video %1$s</string>
     <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
+    <string name="circle_all">Toți</string>
+    <string name="circle_az">A–Z · %1$d în %2$s</string>
+    <string name="circle_last_together">Ultima dată împreună %1$s</string>
+    <string name="circle_never_together">Încă nu v-ați adunat</string>
+    <string name="circle_goal">obiectiv: %1$s</string>
+    <string name="circle_log_meetup">Notează o întâlnire: %1$s</string>
 </resources>

@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.data.db
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
@@ -176,7 +177,15 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
 internal suspend fun GoodCompanyDatabase.readGroups(): List<DomainGroup> {
     val members = friendGroupQueries.allMembers().awaitAsList().friendIdsBy({ it.group_id }, { it.friend_id })
     return friendGroupQueries.allGroups().awaitAsList().map { row ->
-        DomainGroup(row.id, row.name, row.emoji, members[row.id].orEmpty(), row.meet_every_days?.toInt(), row.snoozed_until?.toLocalDate())
+        DomainGroup(
+            id = row.id,
+            name = row.name,
+            emoji = row.emoji,
+            memberIds = members[row.id].orEmpty(),
+            meetEveryDays = row.meet_every_days?.toInt(),
+            snoozedUntil = row.snoozed_until?.toLocalDate(),
+            color = CircleColor.parse(row.color),
+        )
     }
 }
 
@@ -190,6 +199,7 @@ internal suspend fun GoodCompanyDatabase.writeGroup(group: DomainGroup) {
             emoji = group.emoji,
             meet_every_days = group.meetEveryDays?.toColumn(),
             snoozed_until = group.snoozedUntil?.toColumn(),
+            color = group.color.name,
         ),
     )
     q.deleteMembers(group.id)
@@ -266,6 +276,7 @@ internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): App
         homeArea = row.home_area,
         showWarmth = row.show_warmth.toFlag(),
         privateNotifications = row.private_notifications.toFlag(),
+        homeCircleFilter = row.home_circle_filter,
     )
 }
 
@@ -283,6 +294,7 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             home_area = settings.homeArea,
             show_warmth = settings.showWarmth.toColumn(),
             private_notifications = settings.privateNotifications.toColumn(),
+            home_circle_filter = settings.homeCircleFilter,
         ),
     )
 }

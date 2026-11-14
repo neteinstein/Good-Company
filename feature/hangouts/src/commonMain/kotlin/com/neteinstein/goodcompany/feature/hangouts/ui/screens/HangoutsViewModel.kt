@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -19,8 +20,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.OccasionMatch
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -49,19 +50,10 @@ data class CheckInDraft(
     val note: String = "",
     val location: GeoPoint? = null,
     val isLocating: Boolean = false,
+    /** A circle picked in the sheet: its members are listed first, nobody ticked, to tick who came (F20). */
+    val circleId: String? = null,
 ) {
     val canSave: Boolean get() = selected.isNotEmpty()
-}
-
-/** The group editor dialog. id == null → new group. */
-data class GroupDraft(
-    val id: String? = null,
-    val name: String = "",
-    val emoji: String = "👥",
-    val members: Set<FriendId> = emptySet(),
-    val meetEveryDays: Int? = 30,
-) {
-    val canSave: Boolean get() = name.isNotBlank() && members.size >= 2
 }
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
@@ -73,8 +65,6 @@ sealed interface HangoutsMessage {
     data class LoggedWith(val names: List<String>) : HangoutsMessage
 
     data object MemoryDeleted : HangoutsMessage
-
-    data class GroupSaved(val name: String) : HangoutsMessage
 
     data class GroupDeleted(val name: String) : HangoutsMessage
 
@@ -94,13 +84,15 @@ data class HangoutsUiState(
     val overdue: List<Relationships.MeetupStatus> = emptyList(),
     val upcoming: List<Relationships.MeetupStatus> = emptyList(),
     val draft: CheckInDraft? = null,
+    /** Circles ("Your circles"), most overdue first. */
     val groups: List<Relationships.GroupStatus> = emptyList(),
-    val groupDraft: GroupDraft? = null,
     /** The year the "Your year in friendship" card opens, or null when there's nothing to show yet. */
     val reviewYear: Int? = null,
     val stats: Relationships.MonthStats = Relationships.MonthStats(0, 0, null),
     /** Hangout deleted a moment ago, offered for undo. */
     val recentlyDeleted: Hangout? = null,
+    /** Circle deleted a moment ago, offered for undo. */
+    val recentlyDeletedGroup: FriendGroup? = null,
     /** Increments on every check-in so the UI can celebrate. */
     val celebrate: Int = 0,
     /** True until the stored data has been read once (so "no memories yet" isn't shown while loading). */
@@ -126,8 +118,8 @@ class HangoutsViewModel(
     observeGroups: ObserveGroupsUseCase,
     observeOccasions: ObserveOccasionMatchesUseCase,
     private val savePlan: SavePlanUseCase,
-    private val saveGroup: SaveGroupUseCase,
     private val deleteGroup: DeleteGroupUseCase,
+    private val restoreGroup: RestoreGroupUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val checkIn: CheckInUseCase,
     private val deleteHangout: DeleteHangoutUseCase,
@@ -179,43 +171,22 @@ class HangoutsViewModel(
 
     fun onToggleDraftFriend(id: FriendId) = editDraft { it.copy(selected = it.selected.toggle(id)) }
 
-    /** Tapping a saved group in the check-in sheet adds all its members. */
-    fun onPickDraftGroup(groupId: String) {
-        val members = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.memberIds ?: return
-        editDraft { it.copy(selected = if (it.selected.containsAll(members)) it.selected - members.toSet() else it.selected + members) }
-    }
+    /**
+     * Tapping a circle in the check-in sheet lists its members first with nobody ticked, so you tick who came (F20).
+     * Tapping it again goes back to everyone; people already ticked stay ticked.
+     */
+    fun onPickDraftGroup(groupId: String) = editDraft { it.copy(circleId = groupId.takeUnless { id -> id == it.circleId }) }
 
-    /** "We met" on a group card: opens the check-in sheet with every member selected. */
+    /** "We met" on a circle card: opens the check-in sheet on that circle, nobody ticked (F20). */
     fun onCheckInGroup(groupId: String) {
-        val members = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.memberIds ?: return
-        local.update { it.copy(draft = CheckInDraft(selected = members.toSet())) }
-    }
-
-    fun onNewGroup() = local.update { it.copy(groupDraft = GroupDraft()) }
-
-    fun onEditGroup(groupId: String) {
-        val g = state.value.groups.firstOrNull { it.group.id == groupId }?.group ?: return
-        local.update { it.copy(groupDraft = GroupDraft(g.id, g.name, g.emoji, g.memberIds.toSet(), g.meetEveryDays)) }
-    }
-
-    fun onDismissGroup() = local.update { it.copy(groupDraft = null) }
-
-    fun onGroupDraftChange(draft: GroupDraft) = local.update { it.copy(groupDraft = draft) }
-
-    fun onSaveGroup() {
-        val draft = local.value.groupDraft ?: return
-        if (!draft.canSave) return
-        viewModelScope.launch {
-            val group = saveGroup(draft.id, draft.name, draft.emoji, draft.members, draft.meetEveryDays)
-            local.update { it.copy(groupDraft = null, message = HangoutsMessage.GroupSaved(group.name)) }
-        }
+        if (state.value.groups.none { it.group.id == groupId }) return
+        local.update { it.copy(draft = CheckInDraft(circleId = groupId)) }
     }
 
     fun onDeleteGroup(groupId: String) {
-        val name = state.value.groups.firstOrNull { it.group.id == groupId }?.group?.name ?: return
         viewModelScope.launch {
-            deleteGroup(groupId)
-            local.update { it.copy(groupDraft = null, message = HangoutsMessage.GroupDeleted(name)) }
+            val removed = deleteGroup(groupId) ?: return@launch
+            local.update { it.copy(recentlyDeletedGroup = removed, recentlyDeleted = null, message = HangoutsMessage.GroupDeleted(removed.name)) }
         }
     }
 
@@ -263,15 +234,19 @@ class HangoutsViewModel(
         val hangout = state.value.history.firstOrNull { it.hangout.id == id }?.hangout
         viewModelScope.launch {
             deleteHangout(id)
-            local.update { it.copy(recentlyDeleted = hangout, message = HangoutsMessage.MemoryDeleted) }
+            local.update { it.copy(recentlyDeleted = hangout, recentlyDeletedGroup = null, message = HangoutsMessage.MemoryDeleted) }
         }
     }
 
+    /** Undo for the last delete: a memory or a circle. */
     fun onUndoDelete() {
-        val hangout = local.value.recentlyDeleted ?: return
+        val hangout = local.value.recentlyDeleted
+        val group = local.value.recentlyDeletedGroup
+        if (hangout == null && group == null) return
         viewModelScope.launch {
-            restoreHangout(hangout)
-            local.update { it.copy(recentlyDeleted = null) }
+            hangout?.let { restoreHangout(it) }
+            group?.let { restoreGroup(it) }
+            local.update { it.copy(recentlyDeleted = null, recentlyDeletedGroup = null) }
         }
     }
 
@@ -290,7 +265,7 @@ class HangoutsViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null) }
+    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null, recentlyDeletedGroup = null) }
 
     private fun Set<FriendId>.toggle(id: FriendId) = if (id in this) this - id else this + id
 

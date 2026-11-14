@@ -123,7 +123,7 @@
     <string name="touch_title">Stay in touch</string>
     <string name="touch_last_together">Last together %1$s</string>
     <string name="touch_never">No meetups logged yet</string>
-    <string name="touch_pick">Pick a circle or how often you’d like to meet — we’ll nudge you.</string>
+    <string name="touch_pick">Pick a closeness or how often you’d like to meet — we’ll nudge you.</string>
     <string name="touch_overdue">It’s been a while — your goal is %1$s.</string>
     <plurals name="touch_goal">
         <item quantity="one">Goal: %1$s · %2$d day to go</item>
@@ -131,10 +131,10 @@
     </plurals>
     <string name="touch_snoozed">Snoozed until %1$s</string>
     <string name="touch_unsnooze">Resume</string>
-    <string name="touch_circle">Circle</string>
+    <string name="touch_circle">Closeness</string>
     <string name="touch_circle_none">None</string>
     <string name="touch_custom">Custom rhythm</string>
-    <string name="touch_from_circle">From their circle: %1$s</string>
+    <string name="touch_from_circle">From their closeness: %1$s</string>
     <string name="touch_called">Called</string>
     <string name="warmth_title">Warmth %1$d</string>
     <string name="warmth_hint_warm">You’re in a good rhythm.</string>
@@ -143,7 +143,7 @@
     <string name="contact_met">Met %1$s</string>
     <string name="contact_call">Call %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Groups</string>
+    <string name="groups_member_of">Circles</string>
 
     <string name="tastes_title">Tastes</string>
     <string name="tastes_loves">Loves</string>
@@ -428,4 +428,10 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Video call %1$s</string>
     <string name="story_last_talk_title">Last time you talked about…</string>
+    <string name="circle_all">All</string>
+    <string name="circle_az">A–Z · %1$d in %2$s</string>
+    <string name="circle_last_together">Last together %1$s</string>
+    <string name="circle_never_together">Not together yet</string>
+    <string name="circle_goal">goal %1$s</string>
+    <string name="circle_log_meetup">Log a %1$s meetup</string>
 </resources>

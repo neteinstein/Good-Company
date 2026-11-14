@@ -19,7 +19,7 @@
     <string name="label_big_day">GRAND JOUR</string>
     <string name="label_reminder">RAPPEL</string>
     <string name="label_catch_up">À REVOIR</string>
-    <string name="label_group">GROUPE</string>
+    <string name="label_group">CERCLE</string>
     <string name="row_birthday">Anniversaire de %1$s</string>
     <string name="row_turns">Fête ses %1$d ans</string>
     <string name="row_loves">adore %1$s</string>
@@ -34,8 +34,8 @@
     </plurals>
     <string name="row_never">Aucune rencontre enregistrée</string>
     <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d jour depuis que vous étiez tous ensemble</item>
-        <item quantity="other">%1$s · %2$d jours depuis que vous étiez tous ensemble</item>
+        <item quantity="one">%1$s · %2$d jour depuis que le cercle s’est réuni</item>
+        <item quantity="other">%1$s · %2$d jours depuis que le cercle s’est réuni</item>
     </plurals>
     <string name="row_send_wishes">Souhaiter</string>
     <string name="row_we_met">On s’est vus</string>

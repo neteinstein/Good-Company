@@ -9,8 +9,8 @@
     <string name="dynamic_color">Culori din imaginea de fundal</string>
     <string name="dynamic_color_hint">Culoare dinamică Material You</string>
     <string name="language_note">Limba urmează setarea dispozitivului: English, Português, Español, Français sau Română.</string>
-    <string name="circles">Cercuri</string>
-    <string name="circles_hint">Cât de des vrei să vezi fiecare cerc. Ritmul propriu de pe pagina unui prieten are prioritate.</string>
+    <string name="circles">Apropiere</string>
+    <string name="circles_hint">Cât de des ai vrea să vezi oamenii de la fiecare nivel de apropiere. Ritmul propriu al unui prieten, de pe pagina lui, are prioritate.</string>
     <string name="ai">Idei cu AI</string>
     <string name="ai_hint">Folosește Claude cu propria ta cheie API Anthropic (console.anthropic.com). Cheia rămâne pe acest dispozitiv și e trimisă doar la api.anthropic.com, împreună cu pasiunile și fragmentele de conversație ale prietenilor implicați. Utilizarea e facturată în contul tău.</string>
     <string name="home_area">Orașul sau zona ta</string>
@@ -28,7 +28,7 @@
     <string name="sample_loaded">Prieteni de exemplu încărcați</string>
     <string name="sample">Prieteni de exemplu</string>
     <string name="sample_remove_hint">Elimină-i — prietenii tăi rămân neatinși.</string>
-    <string name="sample_add_hint">Adaugă un cerc demo ca să explorezi totul.</string>
+    <string name="sample_add_hint">Adaugă prieteni demonstrativi ca să explorezi toate funcțiile.</string>
     <string name="import_vcf">Importă fișier de contacte</string>
     <string name="import_vcf_hint">Un export .vcf din Google Contacts, iCloud, Outlook sau telefon.</string>
     <string name="import">Importă</string>

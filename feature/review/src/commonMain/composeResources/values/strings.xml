@@ -47,8 +47,8 @@
 
     <string name="new_title">New faces</string>
     <plurals name="new_body">
-        <item quantity="one">%1$d person joined your circle</item>
-        <item quantity="other">%1$d people joined your circle</item>
+        <item quantity="one">%1$d new face among your friends</item>
+        <item quantity="other">%1$d new faces among your friends</item>
     </plurals>
     <plurals name="reminders_done">
         <item quantity="one">…and you followed through on %1$d reminder ✅</item>

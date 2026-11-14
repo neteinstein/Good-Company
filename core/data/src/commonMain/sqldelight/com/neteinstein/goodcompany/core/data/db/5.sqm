@@ -1,0 +1,20 @@
+-- Version 5 → 6 (issue #22, decision D1): saved groups become circles. Each gets a colour; existing groups get the
+-- seven colours in turn, by position. Home remembers the circle it's filtered by (null = All).
+
+ALTER TABLE friend_group ADD COLUMN color TEXT NOT NULL DEFAULT 'PURPLE';
+
+UPDATE friend_group SET color = CASE (
+    SELECT count(*) FROM friend_group AS earlier
+    WHERE earlier.position < friend_group.position
+        OR (earlier.position = friend_group.position AND earlier.id < friend_group.id)
+) % 7
+    WHEN 0 THEN 'PURPLE'
+    WHEN 1 THEN 'BLUE'
+    WHEN 2 THEN 'TEAL'
+    WHEN 3 THEN 'AMBER'
+    WHEN 4 THEN 'RUST'
+    WHEN 5 THEN 'MAGENTA'
+    ELSE 'SLATE'
+END;
+
+ALTER TABLE user_preferences ADD COLUMN home_circle_filter TEXT;

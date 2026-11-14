@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +55,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
@@ -63,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.circle_tick_who_came
 import com.neteinstein.goodcompany.core.ui.resources.log_activity
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_clear_location
@@ -83,6 +86,7 @@ import com.neteinstein.goodcompany.core.ui.resources.log_pick_date
 import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_search
 import com.neteinstein.goodcompany.core.ui.resources.log_title
+import com.neteinstein.goodcompany.core.ui.resources.log_title_circle
 import com.neteinstein.goodcompany.core.ui.resources.log_today
 import com.neteinstein.goodcompany.core.ui.resources.log_use_location
 import com.neteinstein.goodcompany.core.ui.resources.log_yesterday
@@ -110,6 +114,11 @@ data class LogSheetState(
     /** Most used first (F3): the first [ObserveActivitiesUseCase.SHOWN] are on show, the rest behind "More". */
     val activities: List<HangoutActivity> = HangoutActivity.entries,
     val saving: Boolean = false,
+    /** Circles to pick from (decision D1). */
+    val circles: List<FriendGroup> = emptyList(),
+    /** The circle picked: its members are listed to tick who came, nobody ticked to start with (F20). */
+    val circle: FriendGroup? = null,
+    val circleMembers: List<Friend> = emptyList(),
 ) {
     /** Journal entries need text; everything else can be saved as it is. */
     val canSave: Boolean get() = people.isNotEmpty() && !saving && (kind != LogKind.JOURNAL || note.isNotBlank())
@@ -127,6 +136,10 @@ data class LogSheetActions(
     val onUseLocation: () -> Unit = {},
     val onClearLocation: () -> Unit = {},
     val onActivity: (HangoutActivity?) -> Unit = {},
+    /** Picks a circle (null or the same one again = none). */
+    val onCircle: (String?) -> Unit = {},
+    /** Ticks or unticks someone (a circle member who came). */
+    val onTogglePerson: (FriendId) -> Unit = {},
     val onSave: () -> Unit = {},
     val onDismiss: () -> Unit = {},
 )
@@ -175,8 +188,13 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Box(Modifier.size(width = 36.dp, height = 4.dp).background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp)))
                 }
+                val circle = state.circle
                 Text(
-                    stringResource(Res.string.log_title, namesList(state.people)),
+                    if (circle != null) {
+                        stringResource(Res.string.log_title_circle, circle.name)
+                    } else {
+                        stringResource(Res.string.log_title, namesList(state.people))
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.semantics { heading() },
                 )
@@ -189,6 +207,16 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                             leadingIcon = { Icon(logKindIcon(kind), null, Modifier.size(18.dp)) },
                         )
                     }
+                }
+                if (state.circles.isNotEmpty()) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        state.circles.forEach { g ->
+                            CircleChip(g, selected = circle?.id == g.id, onClick = { actions.onCircle(g.id.takeUnless { circle?.id == it }) })
+                        }
+                    }
+                }
+                if (circle != null) {
+                    CircleMembers(circle, state.circleMembers, state.people.map { it.id }.toSet(), actions.onTogglePerson)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StackedAvatars(state.people, size = 32.dp, max = 4)
@@ -280,6 +308,30 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
     }
 }
 
+/** A circle's members with a tick each (F20: nobody is ticked to start with; tick who came). */
+@Composable
+private fun CircleMembers(circle: FriendGroup, members: List<Friend>, ticked: Set<FriendId>, onToggle: (FriendId) -> Unit) {
+    Column {
+        Text(
+            stringResource(Res.string.circle_tick_who_came, circle.name),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        members.forEach { f ->
+            val on = f.id in ticked
+            Row(
+                Modifier.fillMaxWidth().clickable { onToggle(f.id) }.padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(on, onCheckedChange = { onToggle(f.id) })
+                FriendAvatar(f, size = 32.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(f.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
 /** F2: Today is preselected; Yesterday and "Pick a date" log past meetups. Nothing hidden behind a long-press. */
 @Composable
 private fun DateChoice(state: LogSheetState, onDate: (LocalDate) -> Unit, onPick: () -> Unit) {
@@ -299,7 +351,7 @@ private fun DateChoice(state: LogSheetState, onDate: (LocalDate) -> Unit, onPick
 
 /** "+ Add people": tick who it was with (searchable). The people already picked stay ticked. */
 @Composable
-private fun PeoplePicker(everyone: List<Friend>, picked: List<FriendId>, onDismiss: () -> Unit, onDone: (List<FriendId>) -> Unit) {
+fun PeoplePicker(everyone: List<Friend>, picked: List<FriendId>, onDismiss: () -> Unit, onDone: (List<FriendId>) -> Unit) {
     var chosen by remember { mutableStateOf(picked) }
     var query by rememberSaveable { mutableStateOf("") }
     AlertDialog(

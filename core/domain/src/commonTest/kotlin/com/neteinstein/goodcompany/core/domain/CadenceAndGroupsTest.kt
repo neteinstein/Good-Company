@@ -2,7 +2,7 @@ package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -28,18 +28,18 @@ class CadenceAndGroupsTest {
 
     @Test
     fun customCadenceBeatsCircleAndCircleNeedsRealFriend() {
-        assertEquals(7, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, circle = Circle.INNER) }))
-        assertEquals(90, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, circle = Circle.GOOD) }))
-        assertEquals(14, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, circle = Circle.GOOD, meetEveryDays = 14) }))
-        assertNull(rules.cadenceFor(friend("a") { copy(isCloseFriend = false, circle = Circle.INNER) }))
+        assertEquals(7, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.INNER) }))
+        assertEquals(90, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.GOOD) }))
+        assertEquals(14, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.GOOD, meetEveryDays = 14) }))
+        assertNull(rules.cadenceFor(friend("a") { copy(isCloseFriend = false, closeness = Closeness.INNER) }))
         assertEquals(CadenceRules.Source.CUSTOM, rules.sourceFor(friend("a") { copy(meetEveryDays = 3) }))
-        assertEquals(CadenceRules.Source.CIRCLE, rules.sourceFor(friend("a") { copy(isCloseFriend = true, circle = Circle.CLOSE) }))
+        assertEquals(CadenceRules.Source.CLOSENESS, rules.sourceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) }))
         assertEquals(CadenceRules(3, 20, 60), CadenceRules.from(AppSettings(innerCircleDays = 3, closeCircleDays = 20, goodFriendsDays = 60)))
     }
 
     @Test
     fun circleFriendsGetNudgesWithoutPerFriendSetup() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, circle = Circle.INNER) })
+        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER) })
         val hangouts = listOf(Hangout("h", listOf(FriendId("ana")), at(2026, 3, 1)))
         val status = Relationships.meetupStatuses(friends, hangouts, today, TimeZone.UTC, rules).single()
         assertEquals(LocalDate(2026, 3, 8), status.dueDate)
@@ -67,19 +67,19 @@ class CadenceAndGroupsTest {
     }
 
     @Test
-    fun groupStatusUsesHangoutsWithEveryMember() {
-        val friends = listOf(friend("ana"), friend("rui"), friend("zoe"))
+    fun circleMeetsWhenEnoughMembersCame() {
+        val friends = listOf(friend("ana"), friend("rui"), friend("zoe"), friend("leo"))
         val ids = friends.map { it.id }
         val hangouts = listOf(
-            Hangout("1", ids, at(2026, 2, 1)),
-            Hangout("2", ids.take(2), at(2026, 3, 5)),
+            Hangout("1", ids.take(2), at(2026, 2, 1)),
+            Hangout("2", ids.take(1), at(2026, 3, 5)), // one of four isn't the circle meeting
         )
         val group = FriendGroup("g", "Crew", "🎲", ids, meetEveryDays = 30)
         val status = Relationships.groupStatuses(listOf(group), friends, hangouts, today, TimeZone.UTC).single()
         assertEquals(at(2026, 2, 1), status.lastTogether)
         assertEquals(37, status.daysSince)
         assertTrue(status.isOverdue(today))
-        assertEquals(3, status.members.size)
+        assertEquals(4, status.members.size)
 
         val noCadence = Relationships.groupStatuses(listOf(group.copy(meetEveryDays = null)), friends, hangouts, today, TimeZone.UTC).single()
         assertNull(noCadence.dueDate)
@@ -93,6 +93,28 @@ class CadenceAndGroupsTest {
             TimeZone.UTC,
         ).single()
         assertFalse(snoozed.isOverdue(today))
+    }
+
+    @Test
+    fun meetupQuorum() {
+        assertEquals(listOf(0, 1, 2, 2, 2, 3, 8), listOf(0, 1, 2, 3, 4, 5, 16).map(Relationships::meetupQuorum))
+        val ana = FriendId("ana")
+        val rui = FriendId("rui")
+        // A circle of one meets whenever that friend is seen; a pair only when both are there.
+        assertEquals(at(2026, 3, 1), Relationships.lastCircleMeetup(listOf(Hangout("h", listOf(ana), at(2026, 3, 1))), setOf(ana)))
+        assertNull(Relationships.lastCircleMeetup(listOf(Hangout("h", listOf(ana), at(2026, 3, 1))), setOf(ana, rui)))
+        assertNull(Relationships.lastCircleMeetup(listOf(Hangout("h", listOf(ana), at(2026, 3, 1))), emptySet()))
+    }
+
+    @Test
+    fun aNewCircleHasNoReminderUntilOneIsSet() {
+        val friends = listOf(friend("ana"))
+        val solo = FriendGroup("g", "Mentor", memberIds = friends.map { it.id })
+        val status = Relationships.groupStatuses(listOf(solo), friends, emptyList(), today, TimeZone.UTC).single()
+        assertNull(status.dueDate)
+        assertFalse(status.isOverdue(today))
+        assertTrue(NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, groups = listOf(solo)).isEmpty())
+        assertTrue(AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC, groups = listOf(solo)).isEmpty())
     }
 
     @Test
@@ -110,7 +132,7 @@ class CadenceAndGroupsTest {
 
     @Test
     fun notificationPlannerUsesCircleCadence() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, circle = Circle.CLOSE) })
+        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) })
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, rules = rules)
         val content = planned.single().content as NotificationContent.MeetupDue
         assertEquals(30, content.everyDays)

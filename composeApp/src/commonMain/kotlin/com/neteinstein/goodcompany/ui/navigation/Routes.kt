@@ -30,9 +30,12 @@ import org.jetbrains.compose.resources.StringResource
 
 /**
  * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
- * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met".
+ * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met". [circleId] opens on that circle's members, nobody ticked (F20).
  */
-@Serializable data class LogInteractionRoute(val friendIds: List<String>, val type: String? = null)
+@Serializable data class LogInteractionRoute(val friendIds: List<String>, val type: String? = null, val circleId: String? = null)
+
+/** The circle editor (decision D1); [id] null creates a circle. */
+@Serializable data class CircleEditorRoute(val id: String? = null)
 
 /** "Save to a friend" for something shared into the app (see ShareInbox). */
 @Serializable data object ShareRoute

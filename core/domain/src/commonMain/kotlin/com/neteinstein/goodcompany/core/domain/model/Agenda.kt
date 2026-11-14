@@ -49,6 +49,20 @@ sealed interface AgendaItem {
     }
 }
 
+/** Everyone an agenda item is about (a circle's reminder: its members). Used to filter Home by a circle. */
+val AgendaItem.friendIds: Set<FriendId>
+    get() = when (this) {
+        is AgendaItem.FriendBirthday -> setOf(friend.id)
+        is AgendaItem.KidBirthday -> setOf(parent.id)
+        is AgendaItem.RelativeBirthday -> setOf(friend.id)
+        is AgendaItem.FriendEvent -> setOf(friend.id)
+        is AgendaItem.ReminderDue -> friends.mapTo(mutableSetOf()) { it.id }
+        is AgendaItem.MeetupOverdue -> setOf(friend.id)
+        is AgendaItem.PlanUpcoming -> friends.mapTo(mutableSetOf()) { it.id }
+        is AgendaItem.PlanToConfirm -> friends.mapTo(mutableSetOf()) { it.id }
+        is AgendaItem.GroupOverdue -> group.memberIds.toSet()
+    }
+
 /** A raw entry from the device address book. */
 data class ContactRecord(
     val contactId: String,

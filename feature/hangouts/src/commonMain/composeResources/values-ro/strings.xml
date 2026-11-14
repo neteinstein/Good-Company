@@ -19,26 +19,20 @@
     <string name="meet_never">Nicio întâlnire înregistrată încă</string>
     <string name="meet_due">Scadent %1$s · %2$s</string>
     <string name="meet_met">Văzuți</string>
-    <string name="groups_title">Grupurile tale</string>
-    <string name="groups_new">Grup nou</string>
-    <string name="groups_hint">Gașca de jocuri, prietenii de surf, vechea echipă… Salvează un grup ca să-i înregistrezi pe toți deodată și să primești un memento când a trecut o vreme.</string>
-    <string name="group_last_together">Toți împreună %1$s</string>
-    <string name="group_never">Încă nu ați fost toți împreună</string>
+    <string name="groups_title">Cercurile tale</string>
+    <string name="groups_new">Cerc nou</string>
+    <string name="groups_hint">Cor, futsal, echipa de demult… Un cerc filtrează ecranul principal, notează o întâlnire cu toți odată și, dacă vrei, îți amintește când a trecut ceva timp.</string>
+    <string name="group_last_together">Împreună %1$s</string>
+    <string name="group_never">Încă nu v-ați adunat</string>
     <string name="group_overdue">E timpul să vă adunați · %1$s</string>
     <string name="group_due">Scadent %1$s · %2$s</string>
     <string name="group_snoozed">Amânat până pe %1$s</string>
     <string name="group_met">Ne-am văzut</string>
     <string name="group_edit">Editează</string>
-    <string name="group_delete">Șterge grupul</string>
+    <string name="group_delete">Șterge cercul</string>
     <string name="group_snooze_week">Amână o săptămână</string>
     <string name="group_snooze_weekend">Amintește-mi sâmbătă</string>
     <string name="group_more">Mai mult</string>
-    <string name="group_editor_new">Grup nou</string>
-    <string name="group_editor_edit">Editează grupul</string>
-    <string name="group_name">Numele grupului</string>
-    <string name="group_emoji">Emoji</string>
-    <string name="group_members">Membri (cel puțin doi)</string>
-    <string name="group_rhythm">Întâlniri</string>
     <string name="review_card_title">Anul tău %1$d în prietenie</string>
     <string name="review_card_body">Pe cine ai văzut cel mai des, locurile preferate și cea mai lungă serie — gata de distribuit.</string>
     <string name="review_card_cta">Vezi-ți anul</string>
@@ -60,7 +54,6 @@
     <string name="delete_memory">Șterge amintirea</string>
     <string name="sheet_title">Sunt cu…</string>
     <string name="sheet_find">Caută un prieten</string>
-    <string name="sheet_groups">Grupuri</string>
     <string name="sheet_where">Unde? (opțional)</string>
     <string name="sheet_locating">Te localizăm…</string>
     <string name="sheet_clear_location">Șterge locația</string>
@@ -72,7 +65,6 @@
     <string name="msg_location_unavailable">Nu am putut obține locația acum.</string>
     <string name="msg_logged_with">Timp cu %1$s înregistrat ✨</string>
     <string name="msg_memory_deleted">Amintire ștearsă</string>
-    <string name="msg_group_saved">%1$s salvat</string>
     <string name="msg_group_deleted">%1$s șters</string>
     <string name="msg_group_snoozed">%1$s amânat până pe %2$s</string>
     <string name="free_title">Cine e liber pentru…?</string>
@@ -85,4 +77,20 @@
         <item quantity="few">Văzut acum %1$d zile</item>
         <item quantity="other">Văzut acum %1$d de zile</item>
     </plurals>
+    <string name="circle_editor_new">Cerc nou</string>
+    <string name="circle_editor_edit">Editează cercul</string>
+    <string name="circle_name">Nume</string>
+    <string name="circle_emoji">Emoji</string>
+    <string name="circle_colour">Culoare</string>
+    <string name="circle_remind">Amintește-mi când nu ne-am văzut</string>
+    <string name="circle_remind_on">Obiectiv: %1$s</string>
+    <string name="circle_remind_off">Oprit: acest cerc nu trimite niciodată mementouri</string>
+    <plurals name="circle_members">
+        <item quantity="one">%1$d membru</item>
+        <item quantity="few">%1$d membri</item>
+        <item quantity="other">%1$d de membri</item>
+    </plurals>
+    <string name="circle_members_empty">Adaugă cel puțin un prieten.</string>
+    <string name="circle_closeness_none">Fără apropiere setată</string>
+    <string name="circle_closeness_note">Aici apropierea doar se vede, nu se editează: ține de persoană. Ritmul unui prieten nu se schimbă niciodată din cauza unui cerc.</string>
 </resources>

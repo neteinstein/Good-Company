@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -50,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -69,11 +71,16 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
+import com.neteinstein.goodcompany.core.ui.components.circlePalette
+import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
+import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
@@ -92,6 +99,12 @@ import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contact
 import com.neteinstein.goodcompany.feature.friends.resources.add_hint
 import com.neteinstein.goodcompany.feature.friends.resources.add_name
 import com.neteinstein.goodcompany.feature.friends.resources.add_title
+import com.neteinstein.goodcompany.feature.friends.resources.circle_all
+import com.neteinstein.goodcompany.feature.friends.resources.circle_az
+import com.neteinstein.goodcompany.feature.friends.resources.circle_goal
+import com.neteinstein.goodcompany.feature.friends.resources.circle_last_together
+import com.neteinstein.goodcompany.feature.friends.resources.circle_log_meetup
+import com.neteinstein.goodcompany.feature.friends.resources.circle_never_together
 import com.neteinstein.goodcompany.feature.friends.resources.fab_add_friend
 import com.neteinstein.goodcompany.feature.friends.resources.filter_everyone
 import com.neteinstein.goodcompany.feature.friends.resources.filter_real_friends
@@ -153,7 +166,13 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Route: pulls state from [FriendsViewModel] and handles the platform permission prompt and file picker. */
 @Composable
-fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, onOpenStory: (FriendId) -> Unit = {}, viewModel: FriendsViewModel = koinViewModel()) {
+fun FriendsScreen(
+    onOpenFriend: (FriendId) -> Unit,
+    onOpenStory: (FriendId) -> Unit = {},
+    onEditCircle: (String) -> Unit = {},
+    onLogCircle: (String) -> Unit = {},
+    viewModel: FriendsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
@@ -181,6 +200,9 @@ fun FriendsScreen(onOpenFriend: (FriendId) -> Unit, onOpenStory: (FriendId) -> U
             onAddFriend = viewModel::onAddFriend,
             onExploreSample = viewModel::onExploreSample,
             onMessageShown = viewModel::onMessageShown,
+            onCircleFilter = viewModel::onCircleFilter,
+            onEditCircle = onEditCircle,
+            onLogCircle = onLogCircle,
         ),
     )
 }
@@ -201,6 +223,12 @@ data class FriendsActions(
     val onAddFriend: (String) -> Unit = {},
     val onExploreSample: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
+    /** Filters Home by a circle (null = All). */
+    val onCircleFilter: (String?) -> Unit = {},
+    /** Long-press on a circle chip. */
+    val onEditCircle: (String) -> Unit = {},
+    /** "Log a <circle> meetup" on the circle card. */
+    val onLogCircle: (String) -> Unit = {},
 )
 
 /** Localised snackbar text for a [FriendsMessage]. */
@@ -319,6 +347,10 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                     },
                 )
             }
+            if (!isEmpty && state.circles.isNotEmpty()) {
+                item(key = "circles") { CircleFilterRow(state, actions) }
+                state.circle?.let { c -> item(key = "circle-card") { CircleCard(c, state, actions) } }
+            }
             item(key = "progress") {
                 AnimatedVisibility(state.isSyncing) { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) }
             }
@@ -413,16 +445,26 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FilterChip(
-                        state.filter == FriendFilter.CLOSE,
-                        { actions.onFilterChange(FriendFilter.CLOSE) },
-                        label = { Text(stringResource(Res.string.filter_real_friends)) },
-                    )
-                    FilterChip(
-                        state.filter == FriendFilter.ALL,
-                        { actions.onFilterChange(FriendFilter.ALL) },
-                        label = { Text(stringResource(Res.string.filter_everyone, state.totalCount)) },
-                    )
+                    val circle = state.circle
+                    if (circle != null) {
+                        // A circle shows all its members, whatever their closeness.
+                        Text(
+                            stringResource(Res.string.circle_az, state.friends.size, circle.group.name).uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        FilterChip(
+                            state.filter == FriendFilter.CLOSE,
+                            { actions.onFilterChange(FriendFilter.CLOSE) },
+                            label = { Text(stringResource(Res.string.filter_real_friends)) },
+                        )
+                        FilterChip(
+                            state.filter == FriendFilter.ALL,
+                            { actions.onFilterChange(FriendFilter.ALL) },
+                            label = { Text(stringResource(Res.string.filter_everyone, state.totalCount)) },
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
                     SortMenu(state.sort, actions.onSortChange)
                 }
@@ -476,6 +518,59 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
             actions.onAddFriend(it)
             showAdd = false
         })
+    }
+}
+
+/** "All" + one chip per circle; the selected one shows its member count. A long-press edits the circle. */
+@Composable
+private fun CircleFilterRow(state: FriendsUiState, actions: FriendsActions) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item(key = "all") {
+            FilterChip(state.circle == null, { actions.onCircleFilter(null) }, label = { Text(stringResource(Res.string.circle_all)) })
+        }
+        items(state.circles, key = { it.group.id }) { c ->
+            val selected = state.circle?.group?.id == c.group.id
+            CircleChip(
+                c.group,
+                selected = selected,
+                onClick = { actions.onCircleFilter(if (selected) null else c.group.id) },
+                onLongClick = { actions.onEditCircle(c.group.id) },
+                trailing = if (selected) c.members.size.toString() else null,
+            )
+        }
+    }
+}
+
+/** The selected circle: last time together, the reminder goal and "Log a <circle> meetup". */
+@Composable
+private fun CircleCard(status: Relationships.GroupStatus, state: FriendsUiState, actions: FriendsActions) {
+    val g = status.group
+    val palette = circlePalette(g.color)
+    Surface(
+        color = palette.container,
+        contentColor = palette.onContainer,
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(g.emoji, style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(g.name, style = MaterialTheme.typography.titleMedium)
+                    val last = status.lastTogether?.let { stringResource(Res.string.circle_last_together, relativePast(it, state.now, state.zone)) }
+                        ?: stringResource(Res.string.circle_never_together)
+                    val goal = g.meetEveryDays?.let { stringResource(Res.string.circle_goal, everyNDays(it)) }
+                    Text(listOfNotNull(last, goal).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { actions.onLogCircle(g.id) },
+                colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+            ) { Text(stringResource(Res.string.circle_log_meetup, g.name)) }
+        }
     }
 }
 

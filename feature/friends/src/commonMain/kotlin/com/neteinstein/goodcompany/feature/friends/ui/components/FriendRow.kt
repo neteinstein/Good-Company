@@ -32,7 +32,7 @@ import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativePast
-import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
+import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.row_added_in_app
@@ -90,10 +90,10 @@ fun FriendRow(
                 overflow = TextOverflow.Ellipsis,
             )
             val birthdaySoon = summary.nextBirthday?.takeIf { today.daysUntil(it) in 0..14 }
-            val circle = f.circle?.takeIf { f.isCloseFriend }
-            if (birthdaySoon != null || summary.meetupOverdue || circle != null) {
+            val closeness = f.closeness?.takeIf { f.isCloseFriend }
+            if (birthdaySoon != null || summary.meetupOverdue || closeness != null) {
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    circle?.let { InfoPill(circleLabel(it, short = true)) }
+                    closeness?.let { InfoPill(closenessLabel(it, short = true)) }
                     birthdaySoon?.let { InfoPill(relativeDay(it, today), icon = Icons.Rounded.Cake, emphasized = true) }
                     if (summary.meetupOverdue) InfoPill(stringResource(Res.string.row_catch_up), icon = Icons.Rounded.Schedule)
                 }

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
@@ -22,11 +23,13 @@ class LogInteractionViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null) = LogInteractionViewModel(
+    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null, circleId: String? = null) = LogInteractionViewModel(
         ids,
         type,
+        circleId,
         g.observeFriends,
         g.observeActivities,
+        g.observeGroups,
         g.logInteraction,
         g.currentLocation,
         g.clock,
@@ -97,5 +100,26 @@ class LogInteractionViewModelTest {
         assertNull(state.value.sheet.location)
         vm.onKind(LogKind.EMAIL)
         assertEquals(LogKind.EMAIL, state.value.sheet.kind)
+    }
+
+    @Test
+    fun aCircleListsItsMembersWithNobodyTicked() = runViewModelTest {
+        val circle = g.saveGroup(null, "Choir", "🎵", CircleColor.PURPLE, listOf(ana, rui), null)
+        val vm = vm(ids = emptyList(), type = "MEETUP", circleId = circle.id)
+        val state = collecting(vm.state)
+        assertEquals("Choir", state.value.sheet.circle?.name)
+        assertEquals(listOf(ana, rui), state.value.sheet.circleMembers.map { it.id })
+        assertTrue(state.value.sheet.people.isEmpty())
+        assertFalse(state.value.sheet.canSave)
+        assertEquals(listOf("Choir"), state.value.sheet.circles.map { it.name })
+
+        vm.onTogglePerson(rui) // Ana didn't come
+        vm.onSave()
+        assertEquals(listOf(rui), g.hangoutRepo.hangouts.value.single().friendIds)
+
+        vm.onCircle(null)
+        assertNull(state.value.sheet.circle)
+        vm.onTogglePerson(rui)
+        assertTrue(state.value.sheet.people.isEmpty())
     }
 }

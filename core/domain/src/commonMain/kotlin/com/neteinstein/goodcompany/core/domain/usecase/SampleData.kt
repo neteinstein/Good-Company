@@ -1,7 +1,8 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
@@ -87,6 +88,7 @@ data class SampleTexts(
     val giftCeramicsClass: String = "Ceramics class voucher",
     val groupBoardGames: String = "Board game night",
     val groupSurf: String = "Surf crew",
+    val groupChoir: String = "Choir",
     // Tastes
     val jazz: String = "Jazz",
     val sushi: String = "Sushi",
@@ -179,7 +181,7 @@ object SampleData {
 
         val friends = listOf(
             Friend(
-                id = id("ana"), name = "Ana Silva", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
+                id = id("ana"), name = "Ana Silva", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 912 345 678"), birthday = bday(3, 34), meetEveryDays = 14,
                 likes = listOf(t.jazz, t.sushi, t.hiking, "Murakami"), dislikes = listOf(t.crowds, t.cilantro),
                 likesAddedAt = mapOf(t.hiking to now - 1.days),
@@ -213,7 +215,7 @@ object SampleData {
                 ),
             ),
             Friend(
-                id = id("rui"), name = "Rui Costa", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
+                id = id("rui"), name = "Rui Costa", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
                 job = t.ruiJob, livesIn = "Alvalade, Lisboa",
@@ -235,7 +237,7 @@ object SampleData {
                 gifts = listOf(Gift(PREFIX + "g-wingspan", t.giftBoardGame, givenOn = day(-320), occasion = GiftOccasion.CHRISTMAS)),
             ),
             Friend(
-                id = id("marta"), name = "Marta Lopes", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true,
+                id = id("marta"), name = "Marta Lopes", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true,
                 phoneNumbers = listOf("+351 914 555 000"), birthday = bday(41, 31),
                 likes = listOf(t.yoga, t.indieFilms, t.ceramics), dislikes = listOf(t.horrorMovies),
                 job = t.martaJob, preferredChannel = ContactChannel.CALL,
@@ -251,14 +253,17 @@ object SampleData {
                 id = id("pedro"),
                 name = "Pedro Almeida",
                 isCloseFriend = true,
-                circle = Circle.INNER,
+                closeness = Closeness.INNER,
                 phoneNumbers = listOf("+351 915 777 888"),
                 birthday = bday(88, 35),
                 likes = listOf(t.football, t.bbq, t.surfing),
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.SPORTS),
             ),
             Friend(
-                id = id("sofia"), name = "Sofia Martins", isCloseFriend = true, circle = Circle.INNER, notifyBirthday = true, suggestEvents = true,
+                id = id(
+                    "sofia",
+                ),
+                name = "Sofia Martins", isCloseFriend = true, closeness = Closeness.INNER, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 916 123 456"), birthday = bday(0, 29), meetEveryDays = 21,
                 likes = listOf(t.photography, t.travel, t.specialtyCoffee), dislikes = listOf(t.spicyFood),
                 occasions = listOf(Occasion.COFFEE, Occasion.WEEKDAY_LUNCH),
@@ -267,7 +272,7 @@ object SampleData {
                 id = id("beatriz"),
                 name = "Beatriz Rocha",
                 isCloseFriend = true,
-                circle = Circle.GOOD,
+                closeness = Closeness.GOOD,
                 birthday = bday(57, 40),
                 likes = listOf(t.theatre, t.cooking, t.wine),
                 kids = listOf(Kid(PREFIX + "clara", "Clara", bday(12, 10), listOf("Harry Potter", t.ballet))),
@@ -318,8 +323,24 @@ object SampleData {
         )
 
         val groups = listOf(
-            FriendGroup(PREFIX + "grp-games", t.groupBoardGames, "🎲", listOf(id("rui"), id("pedro"), id("beatriz")), meetEveryDays = 30),
-            FriendGroup(PREFIX + "grp-surf", t.groupSurf, "🏄", listOf(id("pedro"), id("rui")), meetEveryDays = 21),
+            FriendGroup(
+                PREFIX + "grp-games",
+                t.groupBoardGames,
+                "🎲",
+                listOf(id("rui"), id("pedro"), id("beatriz")),
+                meetEveryDays = 30,
+                color = CircleColor.AMBER,
+            ),
+            FriendGroup(PREFIX + "grp-surf", t.groupSurf, "🏄", listOf(id("pedro"), id("rui")), meetEveryDays = 21, color = CircleColor.TEAL),
+            // A bigger circle where closeness varies: two Close, one Inner, one Good friend and three with none.
+            FriendGroup(
+                PREFIX + "grp-choir",
+                t.groupChoir,
+                "🎵",
+                listOf(id("ana"), id("sofia"), id("marta"), id("beatriz"), id("joao"), id("miguel"), id("carla")),
+                meetEveryDays = 30,
+                color = CircleColor.PURPLE,
+            ),
         )
         val plans = listOf(
             Plan(PREFIX + "plan-lunch", listOf(id("ana")), t.planLunch, day(0), place = "Time Out Market", createdAt = now - 2.days),

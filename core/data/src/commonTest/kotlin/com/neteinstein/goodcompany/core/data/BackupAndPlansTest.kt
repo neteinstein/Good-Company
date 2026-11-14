@@ -12,6 +12,8 @@ import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -158,5 +160,45 @@ class BackupAndPlansTest {
         assertEquals(emptyList(), ana.emails)
         assertEquals(emptyList(), ana.food + ana.drinks + ana.interests)
         assertEquals(emptyList(), ana.customFields)
+    }
+
+    @Test
+    fun aBackupFromBeforeCircles_restoresGroupsAndCloseness() = runTest {
+        // Written by an older version: groups without a colour, the tier stored as "circle", no Home circle filter.
+        val json = """
+            {"format":"good-company-backup","version":1,"exportedAt":"2026-03-01T10:00:00Z",
+             "friends":[{"id":"ana","name":"Ana","isCloseFriend":true,"circle":"INNER"},{"id":"rui","name":"Rui"}],
+             "groups":[{"id":"g","name":"Crew","emoji":"🎲","memberIds":["ana","rui"],"meetEveryDays":21}],
+             "settings":{"innerCircleDays":10}}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(Closeness.INNER, snap.friends.single { it.id.value == "ana" }.closeness)
+        val crew = snap.groups.single()
+        assertEquals(CircleColor.PURPLE, crew.color)
+        assertEquals(21, crew.meetEveryDays) // an existing group keeps its rhythm
+        assertEquals(listOf(FriendId("ana"), FriendId("rui")), crew.memberIds)
+        assertEquals(10, snap.settings.innerCircleDays)
+        assertEquals(null, snap.settings.homeCircleFilter)
+    }
+
+    @Test
+    fun closenessIsStillWrittenAsCircle_andCircleColoursRoundTrip() = runTest {
+        val from = Stores()
+        from.friends.upsert(friend("ana", "Ana") { copy(isCloseFriend = true, closeness = Closeness.GOOD) })
+        from.groups.upsert(FriendGroup("g", "Choir", "🎵", listOf(FriendId("ana")), color = CircleColor.MAGENTA))
+        from.appSettings.update { it.copy(homeCircleFilter = "g") }
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        assertTrue(Regex("\"circle\":\\s*\"GOOD\"").containsMatchIn(json), json)
+        assertFalse("\"closeness\"" in json)
+        assertTrue(Regex("\"color\":\\s*\"MAGENTA\"").containsMatchIn(json), json)
+
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(Closeness.GOOD, snap.friends.single().closeness)
+        assertEquals(CircleColor.MAGENTA, snap.groups.single().color)
+        assertEquals("g", snap.settings.homeCircleFilter)
     }
 }

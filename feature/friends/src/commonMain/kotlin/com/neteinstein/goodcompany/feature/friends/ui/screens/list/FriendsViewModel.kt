@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -16,11 +17,13 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -102,6 +105,10 @@ data class FriendsUiState(
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
+    /** Every circle, A–Z, for the chip row under the header. */
+    val circles: List<Relationships.GroupStatus> = emptyList(),
+    /** The circle Home is filtered by (remembered between launches); null = All. Every section shows only its members. */
+    val circle: Relationships.GroupStatus? = null,
 ) {
     val isSearching: Boolean get() = query.isNotBlank()
 }
@@ -112,6 +119,7 @@ class FriendsViewModel(
     observeMeetups: ObserveMeetupStatusUseCase,
     observeSettings: ObserveSettingsUseCase,
     observeStories: ObserveStoryBubblesUseCase,
+    observeCircles: ObserveGroupsUseCase,
     private val importPickedContacts: ImportPickedContactsUseCase,
     private val syncContacts: SyncContactsUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
@@ -121,6 +129,7 @@ class FriendsViewModel(
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
+    private val setCircleFilter: SetHomeCircleFilterUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendsUiState())
@@ -129,15 +138,25 @@ class FriendsViewModel(
         observeFriends(),
         observeAgenda(),
         observeMeetups(),
-        combine(observeSettings(), observeStories()) { settings, stories -> settings to stories },
+        combine(observeSettings(), observeStories(), observeCircles()) { settings, stories, circles -> Triple(settings, stories, circles) },
         local,
-    ) { all, agenda, meetups, (settings, stories), ui ->
+    ) { everyone, fullAgenda, allMeetups, (settings, allStories, circles), ui ->
         val today = clock.today()
         val q = ui.query.trim().lowercase()
-        // First run: nobody marked as close yet → show everyone instead of an empty list.
-        val filter = if (ui.filter == FriendFilter.CLOSE && all.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
+        // A deleted circle (or one from another device's backup) reads as All.
+        val circle = circles.firstOrNull { it.group.id == settings.homeCircleFilter }
+        val members = circle?.group?.memberIds?.toSet()
+        fun FriendId.inCircle() = members == null || this in members
+        val all = everyone.filter { it.friend.id.inCircle() }
+        val agenda = fullAgenda.filter { item ->
+            members == null || if (item is AgendaItem.GroupOverdue) item.group.id == circle?.group?.id else item.friendIds.any { it in members }
+        }
+        val meetups = allMeetups.filter { it.friend.id.inCircle() }
+        val stories = allStories.filter { it.friend.id.inCircle() }
+        // First run: nobody marked as close yet → show everyone instead of an empty list. A circle shows all its members.
+        val filter = if (ui.filter == FriendFilter.CLOSE && everyone.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
         val matching = all
-            .filter { q.isNotEmpty() || filter == FriendFilter.ALL || it.friend.isCloseFriend }
+            .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
             .filter { q.isEmpty() || it.friend.name.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
         val visible = when (ui.sort) {
             FriendSort.NAME -> matching.sortedBy { it.friend.name.lowercase() }
@@ -167,7 +186,9 @@ class FriendsViewModel(
                 .filter { s -> s.friend.snoozedUntil?.let { it < today } ?: true }
                 .sortedBy { it.warmth.value }
                 .take(3),
-            totalCount = all.size,
+            totalCount = everyone.size,
+            circles = circles.sortedBy { it.group.name.lowercase() },
+            circle = circle,
             showWarmth = settings.showWarmth,
             isLoading = false,
             filter = filter,
@@ -192,6 +213,11 @@ class FriendsViewModel(
     fun onFilterChange(filter: FriendFilter) = local.update { it.copy(filter = filter) }
 
     fun onSortChange(sort: FriendSort) = local.update { it.copy(sort = sort) }
+
+    /** Filters every Home section by a circle (null = All); remembered between launches. */
+    fun onCircleFilter(groupId: String?) {
+        viewModelScope.launch { setCircleFilter(groupId) }
+    }
 
     fun onToggleClose(id: FriendId) {
         viewModelScope.launch { setRealFriend.toggle(id) }

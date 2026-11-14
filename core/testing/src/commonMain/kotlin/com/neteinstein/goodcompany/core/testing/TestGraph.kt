@@ -35,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
@@ -55,6 +56,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
@@ -63,8 +65,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
@@ -121,7 +124,7 @@ class TestGraph(
     /** Keeps small pictures as they are and can't shrink large ones, like the real one with an unreadable image. */
     val setFriendPhoto = SetFriendPhotoUseCase(friendRepo, PhotoShrinker.None)
     val setRealFriend = SetRealFriendUseCase(friendRepo)
-    val setCircle = SetCircleUseCase(friendRepo)
+    val setCloseness = SetClosenessUseCase(friendRepo)
     val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)
     val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
@@ -153,7 +156,10 @@ class TestGraph(
     val observeOccasionMatches = ObserveOccasionMatchesUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeGroups = ObserveGroupsUseCase(groupRepo, friendRepo, hangoutRepo, clock)
     val saveGroup = SaveGroupUseCase(groupRepo, ids)
-    val deleteGroup = DeleteGroupUseCase(groupRepo)
+    val deleteGroup = DeleteGroupUseCase(groupRepo, settingsRepo)
+    val restoreGroup = RestoreGroupUseCase(groupRepo)
+    val nextCircleColor = NextCircleColorUseCase(groupRepo)
+    val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)
     val dismissIdea = DismissIdeaUseCase(ideaRepo)

@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.core.data.db
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.CustomField
@@ -98,7 +98,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             meetEveryDays = row.meet_every_days?.toInt(),
             suggestEvents = row.suggest_events.toFlag(),
             isOrphaned = row.is_orphaned.toFlag(),
-            circle = row.circle?.let(Circle::valueOf),
+            closeness = row.circle?.let(Closeness::valueOf),
             snoozedUntil = row.snoozed_until?.toLocalDate(),
             gifts = gifts[id].orEmpty().map {
                 DomainGift(it.id, it.title, it.note, it.for_kid_id, it.given_on?.toLocalDate(), it.occasion?.let(GiftOccasion::valueOf))
@@ -179,7 +179,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             meet_every_days = friend.meetEveryDays?.toColumn(),
             suggest_events = friend.suggestEvents.toColumn(),
             is_orphaned = friend.isOrphaned.toColumn(),
-            circle = friend.circle?.name,
+            circle = friend.closeness?.name,
             snoozed_until = friend.snoozedUntil?.toColumn(),
             catch_up_paused = friend.catchUpPaused.toColumn(),
             contact_counts_as_catch_up = friend.contactCountsAsCatchUp.toColumn(),

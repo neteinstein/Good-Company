@@ -13,7 +13,9 @@ CREATE TABLE user_preferences (
     weekly_ideas_enabled INTEGER NOT NULL CHECK (weekly_ideas_enabled IN (0, 1)),
     home_area TEXT NOT NULL,
     show_warmth INTEGER NOT NULL CHECK (show_warmth IN (0, 1)),
-    private_notifications INTEGER NOT NULL CHECK (private_notifications IN (0, 1))
+    private_notifications INTEGER NOT NULL CHECK (private_notifications IN (0, 1)),
+    -- The circle (friend_group id) Home is filtered by; null = All. No foreign key: a deleted circle reads as All.
+    home_circle_filter TEXT
 );
 
 get:

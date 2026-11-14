@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
@@ -33,6 +34,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFrien
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
@@ -45,6 +47,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
     val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
+    val editCircle: (String?) -> Unit = { navController.navigate(CircleEditorRoute(it)) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
@@ -54,7 +57,14 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = { fadeOut(tween(160)) + scaleOut(targetScale = 0.98f) },
         ) {
-            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) { FriendsScreen(onOpenFriend = openFriend, onOpenStory = openStory) }
+            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) {
+                FriendsScreen(
+                    onOpenFriend = openFriend,
+                    onOpenStory = openStory,
+                    onEditCircle = editCircle,
+                    onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
+                )
+            }
             composable<FriendDetailRoute>(
                 enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
                 popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
@@ -69,6 +79,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                        // The friend page already set Home's circle filter; Home shows it.
+                        onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
+                        onEditCircle = editCircle,
                     )
                 }
             }
@@ -88,8 +101,15 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 LogInteractionScreen(
                     friendIds = route.friendIds.map(::FriendId),
                     type = route.type,
+                    circleId = route.circleId,
                     onClose = { navController.popBackStack() },
                 )
+            }
+            composable<CircleEditorRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) { entry ->
+                CircleEditorScreen(groupId = entry.toRoute<CircleEditorRoute>().id, onClose = { navController.popBackStack() })
             }
             composable<ShareRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
@@ -121,7 +141,11 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 )
             }
             sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) {
-                HangoutsScreen(onOpenFriend = openFriend, onOpenYearReview = { navController.navigate(YearReviewRoute(it)) })
+                HangoutsScreen(
+                    onOpenFriend = openFriend,
+                    onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
+                    onEditCircle = editCircle,
+                )
             }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend) }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }

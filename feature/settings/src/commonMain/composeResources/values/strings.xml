@@ -10,8 +10,8 @@
     <string name="dynamic_color_hint">Material You dynamic colour</string>
     <string name="language_note">Language follows your device: English, Português, Español, Français or Română.</string>
 
-    <string name="circles">Circles</string>
-    <string name="circles_hint">How often you’d like to see each circle. A friend’s own rhythm on their page wins over these.</string>
+    <string name="circles">Closeness</string>
+    <string name="circles_hint">How often you’d like to see people at each closeness. A friend’s own rhythm on their page wins over these.</string>
 
     <string name="ai">AI ideas</string>
     <string name="ai_hint">Uses Claude with your own Anthropic API key (console.anthropic.com). The key stays on this device and is only sent to api.anthropic.com, with the tastes and chat snippets of the friends involved. Usage is billed to your account.</string>
@@ -32,7 +32,7 @@
     <string name="sample_loaded">Sample friends are loaded</string>
     <string name="sample">Sample friends</string>
     <string name="sample_remove_hint">Remove them — your own friends stay untouched.</string>
-    <string name="sample_add_hint">Add a demo circle to explore every feature.</string>
+    <string name="sample_add_hint">Add demo friends to explore every feature.</string>
     <string name="import_vcf">Import contacts file</string>
     <string name="import_vcf_hint">A .vcf export from Google Contacts, iCloud, Outlook or your phone.</string>
     <string name="import">Import</string>
