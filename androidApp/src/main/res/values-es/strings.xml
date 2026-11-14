@@ -19,4 +19,7 @@
         <item quantity="many">En %1$d días</item>
     </plurals>
     <string name="share_target_label">Guardar en un amigo</string>
+    <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
+    <string name="shortcut_log_meetup">Registrar una quedada</string>
+    <string name="shortcut_log_meetup_short">Quedada</string>
 </resources>

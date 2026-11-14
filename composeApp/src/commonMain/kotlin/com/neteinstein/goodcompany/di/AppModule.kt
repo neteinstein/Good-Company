@@ -97,9 +97,11 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUse
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
@@ -188,6 +190,7 @@ val appModule = module {
     single<FeedFetcher> { KtorFeedFetcher(get()) }
     single<AppUpdateSource> { GitHubReleaseUpdateSource(get()) }
     single { ShareInbox() }
+    single { QuickEntryInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
@@ -274,6 +277,7 @@ val appModule = module {
     factoryOf(::ExportBackupUseCase)
     factoryOf(::RestoreBackupUseCase)
     factoryOf(::ObserveHomeWidgetUseCase)
+    factoryOf(::ObserveShortcutsUseCase)
     factoryOf(::ObserveCatchUpStoryUseCase)
     factoryOf(::ObserveStoryBubblesUseCase)
     factoryOf(::AddFeedUseCase)

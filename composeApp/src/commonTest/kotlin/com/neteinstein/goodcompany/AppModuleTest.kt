@@ -10,6 +10,8 @@ import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
@@ -41,6 +43,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 
 /** Resolves the whole graph from the single shared [appModule]; only OS-bound sources are swapped for fakes. */
 class AppModuleTest {
@@ -87,6 +90,8 @@ class AppModuleTest {
         assertNotNull(koin.get<ApplyLaunchOptions>())
         assertNotNull(koin.get<CatchUpStoryViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<ShareToFriendViewModel>())
+        assertNotNull(koin.get<ObserveShortcutsUseCase>())
+        assertSame(koin.get<QuickEntryInbox>(), koin.get<QuickEntryInbox>())
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(null) })
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(2025) })
         assertNotNull(koin.get<HandleNotificationActionUseCase>())

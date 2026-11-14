@@ -328,6 +328,18 @@ Seen in practice:
     (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
     `user_preferences.home_circle_filter`.
 
+28. **App-icon shortcuts (issue #23, D7).** `ObserveShortcutsUseCase` (domain, `Shortcuts.kt`) gives the three most recent
+    people by `Relationships.lastContact` (no orphans) and none while app lock or private notifications are on. A picked
+    shortcut is a `goodcompany://log[/<friendId>]` link (`AppLink`, shared parser, also `met/<id>` for the iOS widget)
+    → `QuickEntryInbox` → `App.kt` opens `LogInteractionRoute` (under the app lock, like `ShareInbox`). An unknown id opens
+    the sheet with nobody picked, and the sheet never saves an id it can't resolve. Android: `shortcuts/AppShortcuts.kt`
+    (dynamic shortcuts kept in step from `GoodCompanyApp`, icons from `PhotoBitmaps` or initials on `avatarColorsArgb`),
+    the `VIEW goodcompany://log` filter on `MainActivity`, labels in `androidApp/src/main/res/values-*`. Pinned person
+    shortcuts outlive privacy changes (Android keeps them; we only replace the dynamic ones). iOS: Kotlin builds the
+    localised `shortcutItems()` (`startShortcutSync`, compose string `shortcut_log_meetup`); `iOSApp.swift` sets
+    `UIApplication.shortcutItems` on every trip to the background and handles a pick in `QuickActionSceneDelegate`
+    (cold start and running), all in the existing Swift file, so the Xcode project didn't change. Web: none.
+
 ## Skills
 
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:

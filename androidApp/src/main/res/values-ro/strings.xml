@@ -19,4 +19,7 @@
         <item quantity="other">Peste %1$d de zile</item>
     </plurals>
     <string name="share_target_label">Salvează la un prieten</string>
+    <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
+    <string name="shortcut_log_meetup">Notează o întâlnire</string>
+    <string name="shortcut_log_meetup_short">Întâlnire</string>
 </resources>

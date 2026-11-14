@@ -99,6 +99,8 @@ android {
 dependencies {
     implementation(projects.composeApp)
     implementation(projects.core.data)
+    // avatarColorsArgb for the app-icon shortcut icons.
+    implementation(projects.core.ui)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)

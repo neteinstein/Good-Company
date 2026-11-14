@@ -56,6 +56,7 @@ import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
 import com.neteinstein.goodcompany.composeApp.resources.storage_temporary
+import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
@@ -68,6 +69,7 @@ import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
+import com.neteinstein.goodcompany.ui.navigation.LogInteractionRoute
 import com.neteinstein.goodcompany.ui.navigation.ShareRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
 import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
@@ -133,6 +135,14 @@ private fun AppScaffold(launch: LaunchOptions) {
     val shareInbox: ShareInbox = koinInject()
     val pendingShare by shareInbox.pending.collectAsStateWithLifecycle()
     LaunchedEffect(pendingShare) { if (pendingShare != null) navController.navigate(ShareRoute) { launchSingleTop = true } }
+    // An app-icon shortcut ("Log a meetup", or one of the recent people): opens the Log sheet, under the app lock.
+    val quickEntryInbox: QuickEntryInbox = koinInject()
+    val pendingEntry by quickEntryInbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingEntry) {
+        val entry = pendingEntry ?: return@LaunchedEffect
+        navController.navigate(LogInteractionRoute(entry.friendIds.map { it.value }, entry.kind.name))
+        quickEntryInbox.clear()
+    }
 
     BoxWithConstraints {
         val wide = maxWidth >= 720.dp

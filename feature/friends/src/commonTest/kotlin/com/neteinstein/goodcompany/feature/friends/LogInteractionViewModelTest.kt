@@ -62,6 +62,18 @@ class LogInteractionViewModelTest {
     }
 
     @Test
+    fun anUnknownIdFromAShortcutOpensWithNobodyAndIsNeverSaved() = runViewModelTest {
+        val vm = vm(ids = listOf(FriendId("deleted")))
+        val state = collecting(vm.state)
+        assertTrue(state.value.sheet.people.isEmpty())
+        assertFalse(state.value.sheet.canSave)
+        vm.onTogglePerson(rui)
+        vm.onSave()
+        assertTrue(state.value.done)
+        assertEquals(listOf(rui), g.hangoutRepo.hangouts.value.single().friendIds)
+    }
+
+    @Test
     fun savingACallInThePastLogsItThatDayAndDropsMeetupFields() = runViewModelTest {
         val vm = vm(type = "CALL")
         val state = collecting(vm.state)

@@ -7,4 +7,6 @@
     <string name="nav_ideas">Ideias</string>
     <string name="nav_settings">Definições</string>
     <string name="storage_temporary">As alterações neste separador não vão ser guardadas. O Good Company deve estar aberto noutro separador, continue lá.</string>
+    <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
+    <string name="shortcut_log_meetup">Registar um encontro</string>
 </resources>

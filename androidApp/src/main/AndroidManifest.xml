@@ -50,6 +50,12 @@
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="image/*" />
             </intent-filter>
+            <!-- App-icon shortcuts (AppShortcuts): goodcompany://log and goodcompany://log/<friendId> open the Log sheet. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="goodcompany" android:host="log" />
+            </intent-filter>
         </activity>
 
         <!-- "Who's next" home-screen widget. -->
