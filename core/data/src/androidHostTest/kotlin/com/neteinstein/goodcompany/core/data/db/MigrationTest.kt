@@ -545,6 +545,34 @@ class MigrationTest {
     }
 
     @Test
+    fun version18to19_keepsFriendsAndTheirPhotos_andStartsWithNoPhotoOfYou() = runTest {
+        val driver = driverAt(18)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up, approx_last_seen)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, 'notes', 0, 0, 'CLOSE', 0, 0, '2026-02-23')
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO friend_photo (friend_id, image_base64) VALUES ('ana', 'AQID')", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 18, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertEquals(ContactPhoto("AQID"), ana.photo)
+        assertEquals(LocalDate(2026, 2, 23), ana.approxLastSeen)
+        assertNull(database.readMyPhoto())
+
+        database.writeMyPhoto(ContactPhoto("BAU="))
+        assertEquals(ContactPhoto("BAU="), database.readMyPhoto())
+        database.writeMyPhoto(null)
+        assertNull(database.readMyPhoto())
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

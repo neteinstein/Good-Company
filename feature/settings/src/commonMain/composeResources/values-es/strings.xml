@@ -176,4 +176,11 @@
     <string name="activities_hint">Lo que ofrece el registro cuando has visto a alguien. Las que más usas salen primero, las demás en este orden; se muestran seis, el resto está en Más. Arrastra para reordenar.</string>
     <string name="activities_move_up">Subir</string>
     <string name="activities_move_down">Bajar</string>
+    <!-- Your photo (issue #71) -->
+    <string name="my_photo">Tu foto</string>
+    <string name="my_photo_hint">Aparece arriba en cada pestaña, en el centro de tu red y en tu año en amistad. Nunca se envía a tus contactos ni a la IA.</string>
+    <string name="my_photo_choose">Elegir una foto</string>
+    <string name="my_photo_change">Cambiar</string>
+    <string name="msg_my_photo_unreadable">No se ha podido leer esa imagen. Prueba con un JPEG o PNG.</string>
+    <string name="msg_my_photo_removed">Foto quitada</string>
 </resources>

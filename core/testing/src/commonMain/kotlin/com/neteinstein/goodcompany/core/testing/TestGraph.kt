@@ -78,6 +78,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
@@ -103,6 +104,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFromGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveGiftFromListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
@@ -133,6 +135,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
@@ -182,6 +185,7 @@ class TestGraph(
     val linkRepo = FakePersonLinkRepository(seeded.second, friends = friendRepo)
     val calendarDecisionRepo = FakeCalendarDecisionRepository()
     val giftListRepo = FakeGiftListRepository()
+    val myPhotoRepo = FakeMyPhotoRepository()
     val calendarReader = FakeCalendarReader()
     val observeCalendarEvents = ObserveCalendarEventsUseCase(settingsRepo, calendarReader, clock)
     val observeCalendarSuggestions =
@@ -206,6 +210,7 @@ class TestGraph(
         linkRepo,
         calendarDecisionRepo,
         giftListRepo,
+        myPhotoRepo,
     )
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
@@ -238,6 +243,9 @@ class TestGraph(
     /** Keeps small pictures as they are and can't shrink large ones, like the real one with an unreadable image. */
     val setFriendPhoto = SetFriendPhotoUseCase(friendRepo, PhotoShrinker.None)
     val removeFriendPhoto = RemoveFriendPhotoUseCase(friendRepo)
+    val observeMyPhoto = ObserveMyPhotoUseCase(myPhotoRepo)
+    val setMyPhoto = SetMyPhotoUseCase(myPhotoRepo, PhotoShrinker.None)
+    val removeMyPhoto = RemoveMyPhotoUseCase(myPhotoRepo)
     val renameFriend = RenameFriendUseCase(friendRepo)
     val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCloseness = SetClosenessUseCase(friendRepo)

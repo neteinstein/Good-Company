@@ -176,4 +176,11 @@
     <string name="activities_hint">O que o registo oferece quando estiveste com alguém. As que usas mais aparecem primeiro, as outras por esta ordem; mostram-se seis, o resto fica em Mais. Arrasta para reordenar.</string>
     <string name="activities_move_up">Mover para cima</string>
     <string name="activities_move_down">Mover para baixo</string>
+    <!-- Your photo (issue #71) -->
+    <string name="my_photo">A tua foto</string>
+    <string name="my_photo_hint">Aparece no topo de cada separador, no centro da tua rede e no teu ano em amizade. Nunca vai para os teus contactos nem para a IA.</string>
+    <string name="my_photo_choose">Escolher uma foto</string>
+    <string name="my_photo_change">Mudar</string>
+    <string name="msg_my_photo_unreadable">Não foi possível ler essa imagem. Experimenta um JPEG ou PNG.</string>
+    <string name="msg_my_photo_removed">Foto removida</string>
 </resources>

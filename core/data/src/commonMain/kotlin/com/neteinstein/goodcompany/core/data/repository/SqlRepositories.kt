@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.data.db.INTERACTION_TABLES
 import com.neteinstein.goodcompany.core.data.db.JOURNAL_TABLES
 import com.neteinstein.goodcompany.core.data.db.LINK_TABLES
 import com.neteinstein.goodcompany.core.data.db.MESSAGE_TABLES
+import com.neteinstein.goodcompany.core.data.db.MY_PHOTO_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLACE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
@@ -30,6 +31,7 @@ import com.neteinstein.goodcompany.core.data.db.readInteractions
 import com.neteinstein.goodcompany.core.data.db.readJournal
 import com.neteinstein.goodcompany.core.data.db.readLinks
 import com.neteinstein.goodcompany.core.data.db.readMessages
+import com.neteinstein.goodcompany.core.data.db.readMyPhoto
 import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
 import com.neteinstein.goodcompany.core.data.db.readReminders
@@ -46,6 +48,7 @@ import com.neteinstein.goodcompany.core.data.db.writeInteraction
 import com.neteinstein.goodcompany.core.data.db.writeJournal
 import com.neteinstein.goodcompany.core.data.db.writeLink
 import com.neteinstein.goodcompany.core.data.db.writeMessage
+import com.neteinstein.goodcompany.core.data.db.writeMyPhoto
 import com.neteinstein.goodcompany.core.data.db.writePlace
 import com.neteinstein.goodcompany.core.data.db.writePlan
 import com.neteinstein.goodcompany.core.data.db.writePreferences
@@ -83,6 +86,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.MyPhotoRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
@@ -494,6 +498,15 @@ class SqlGiftListRepository(private val db: AppDatabase) : GiftListRepository {
     }
 }
 
+/** Your own photo (issue #71), one row in its own table. */
+class SqlMyPhotoRepository(private val db: AppDatabase) : MyPhotoRepository {
+    override val photo: Flow<ContactPhoto?> = db.observe(*MY_PHOTO_TABLES) { it.readMyPhoto() }
+
+    override suspend fun set(photo: ContactPhoto?) {
+        db.access { it.writeMyPhoto(photo) }
+    }
+}
+
 /**
  * Export / restore across every table. The snapshot is read in one transaction; a restore replaces everything in one
  * transaction (all or nothing), then the device settings. The [Backup] JSON format is unchanged.
@@ -516,6 +529,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 places = database.readPlaces(),
                 calendarDecisions = database.readCalendarDecisions(),
                 giftLists = database.readGiftLists(),
+                myPhoto = database.readMyPhoto(),
             )
         }
         return backup.copy(settings = settings.current())
@@ -549,6 +563,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     personLinkQueries.deleteAll()
     calendarDecisionQueries.deleteAllDecisions()
     giftListQueries.deleteAllLists()
+    myPhotoQueries.clear()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -564,5 +579,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     backup.links.forEach { writeLink(it) } // after friends, which they link
     backup.calendarDecisions.forEach { writeCalendarDecision(it) }
     backup.giftLists.forEach { writeGiftList(it) } // after friends (and their gifts)
+    writeMyPhoto(backup.myPhoto)
     writePreferences(backup.settings)
 }

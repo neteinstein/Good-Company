@@ -1,0 +1,7 @@
+-- Version 18 → 19 (issue #71, N7): your own photo, shown in every tab header, at the centre of the network map and on
+-- your year in review. One row at most; nothing to backfill.
+
+CREATE TABLE my_photo (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    image_base64 TEXT NOT NULL
+);

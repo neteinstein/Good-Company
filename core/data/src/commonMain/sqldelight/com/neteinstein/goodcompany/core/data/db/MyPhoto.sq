@@ -1,0 +1,16 @@
+-- Your own photo (issue #71): one small thumbnail (base64 JPEG, like friend_photo), at most one row (id = 1). Part of the
+-- backup; never written to contacts, never sent to the AI.
+
+CREATE TABLE my_photo (
+    id INTEGER NOT NULL PRIMARY KEY CHECK (id = 1),
+    image_base64 TEXT NOT NULL
+);
+
+get:
+SELECT image_base64 FROM my_photo WHERE id = 1;
+
+put:
+INSERT OR REPLACE INTO my_photo (id, image_base64) VALUES (1, ?);
+
+clear:
+DELETE FROM my_photo;

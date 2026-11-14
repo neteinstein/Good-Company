@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
@@ -38,8 +39,39 @@ class SettingsViewModelTest {
         g.backupToDrive,
         g.fetchDriveBackup,
         g.checkForUpdate,
+        g.observeMyPhoto,
+        g.setMyPhoto,
+        g.removeMyPhoto,
         g.clock,
     )
+
+    @Test
+    fun yourPhotoCanBeSetChangedRemovedAndPutBack() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertNull(state.value.myPhoto)
+        vm.onRemoveMyPhoto() // nothing to remove
+        assertNull(state.value.message)
+
+        vm.onMyPhotoPicked(byteArrayOf(1, 2, 3))
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.myPhoto)
+        vm.onMyPhotoPicked(byteArrayOf(4, 5))
+        assertEquals(ContactPhoto.of(byteArrayOf(4, 5)), state.value.myPhoto)
+
+        vm.onMyPhotoPicked(null)
+        assertEquals(SettingsMessage.MyPhotoUnreadable, state.value.message)
+        assertEquals(ContactPhoto.of(byteArrayOf(4, 5)), state.value.myPhoto)
+        vm.onMessageShown()
+
+        vm.onRemoveMyPhoto()
+        assertNull(state.value.myPhoto)
+        assertNull(g.myPhotoRepo.photo.value)
+        assertEquals(SettingsMessage.MyPhotoRemoved, state.value.message)
+        vm.onUndoRemoveMyPhoto()
+        assertEquals(ContactPhoto.of(byteArrayOf(4, 5)), state.value.myPhoto)
+        vm.onUndoRemoveMyPhoto() // only once
+        assertEquals(ContactPhoto.of(byteArrayOf(4, 5)), g.myPhotoRepo.photo.value)
+    }
 
     @Test
     fun apiKeyIsTrimmedMaskedAndRemovable() = runViewModelTest {

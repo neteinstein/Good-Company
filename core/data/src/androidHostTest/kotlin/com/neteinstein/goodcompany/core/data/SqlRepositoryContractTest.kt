@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlMyPhotoRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
@@ -26,6 +27,7 @@ import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CardKid
 import com.neteinstein.goodcompany.core.domain.model.CardLink
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -146,6 +148,33 @@ class SqlRepositoryContractTest : RepositoryContract() {
         assertEquals(listOf(stored), open().let { SqlGiftListRepository(db).lists.first() })
         lists.delete("xmas")
         assertNull(lists.get("xmas"))
+    }
+
+    // --- Your photo (issue #71) ---
+
+    @Test
+    fun myPhoto_setReplaceRemove_survivesARestart_andTravelsInBackups() = runTest {
+        val s = open()
+        val photos = SqlMyPhotoRepository(db)
+        val first = ContactPhoto.of(byteArrayOf(1, 2, 3))!!
+        val second = ContactPhoto.of(byteArrayOf(4, 5))!!
+        assertNull(photos.photo.first())
+
+        photos.set(first)
+        assertEquals(first, photos.photo.first())
+        photos.set(second)
+        assertEquals(second, SqlMyPhotoRepository(db).photo.first())
+
+        val snapshot = s.backup.snapshot()
+        assertEquals(second, snapshot.myPhoto)
+        photos.set(null)
+        assertNull(photos.photo.first())
+
+        s.backup.restore(snapshot)
+        assertEquals(second, photos.photo.first())
+        // An older backup without one clears it.
+        s.backup.restore(snapshot.copy(myPhoto = null))
+        assertNull(photos.photo.first())
     }
 
     // --- Calendar suggestions (D3) ---

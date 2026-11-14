@@ -52,3 +52,14 @@ the Play build is picker-only. When you learn something new about this area, add
     on iOS) only when not private. The contact write-back never writes photos. A friend without a photo can get one from the
     gallery (`rememberImagePicker` → `SetFriendPhotoUseCase`): each picker returns an upright JPEG of at most 512 px (UIKit
     redraw on iOS, EXIF rotation on Android, `createImageBitmap` on the web), since the Skia decoder ignores EXIF.
+
+## Your own photo (issue #71, N7)
+
+Not a contact photo, but it follows the same rules: a `ContactPhoto` thumbnail (`SetMyPhotoUseCase` shrinks through
+`PhotoShrinker`, `MAX_BYTES`), picked with `rememberImagePicker` and cropped with `PhotoCropDialog` (Settings → first
+card, Change / Remove with Undo). Stored in its own one-row `my_photo` table (migration `18.sqm`), carried as
+`Backup.myPhoto` (null in older backups, which clears it on restore). It is never written to contacts (`ContactCard`
+knows nothing of it) and never sent to the AI. `AppViewModel` observes it and `App` provides it as `LocalMyPhoto`
+(`:core:ui` `HeaderButtons.kt`); readers are `HeaderSettingsButton` (photo instead of the gear, every tab header), the
+network map's centre node and the year in review hero card. Add a new place by reading `LocalMyPhoto`, not by
+injecting the use case into another ViewModel.

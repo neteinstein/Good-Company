@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
@@ -15,10 +16,13 @@ import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
+import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
@@ -67,6 +71,12 @@ sealed interface SettingsMessage {
     data object UpdateNeedsPermission : SettingsMessage
 
     data object UpdateFailed : SettingsMessage
+
+    /** The picked picture couldn't be read; your photo stays as it was (issue #71). */
+    data object MyPhotoUnreadable : SettingsMessage
+
+    /** Your photo was removed; the snackbar offers Undo. */
+    data object MyPhotoRemoved : SettingsMessage
 }
 
 /** Where the sideload build's "App updates" row stands. */
@@ -95,6 +105,8 @@ data class ExportFile(val name: String, val content: String)
 
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
+    /** Your own photo (issue #71), the first card; null while none is set. */
+    val myPhoto: ContactPhoto? = null,
     /** Masked form of the saved key, e.g. "sk-ant-…9f3a". */
     val maskedKey: String? = null,
     val hasSampleData: Boolean = false,
@@ -124,13 +136,20 @@ class SettingsViewModel(
     private val backupToDrive: BackupToDriveUseCase,
     private val fetchDriveBackup: FetchDriveBackupUseCase,
     private val checkForUpdate: CheckForUpdateUseCase,
+    observeMyPhoto: ObserveMyPhotoUseCase,
+    private val setMyPhoto: SetMyPhotoUseCase,
+    private val removeMyPhoto: RemoveMyPhotoUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(SettingsUiState())
 
-    val state: StateFlow<SettingsUiState> = combine(observeSettings(), hasSampleData(), local) { settings, sample, ui ->
+    /** The photo just removed, for the snackbar's Undo. */
+    private var removedPhoto: ContactPhoto? = null
+
+    val state: StateFlow<SettingsUiState> = combine(observeSettings(), hasSampleData(), observeMyPhoto(), local) { settings, sample, photo, ui ->
         ui.copy(
             settings = settings,
+            myPhoto = photo,
             maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask),
             hasSampleData = sample,
             now = clock.now(),
@@ -140,6 +159,31 @@ class SettingsViewModel(
 
     private fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch { updateSettings(transform) }
+    }
+
+    // --- Your photo (issue #71) --------------------------------------------------------------------------------------
+
+    /** A picked and cropped picture; replaces the photo you had. One that can't be read changes nothing. */
+    fun onMyPhotoPicked(image: ByteArray?) {
+        viewModelScope.launch {
+            if (!setMyPhoto(image)) local.update { it.copy(message = SettingsMessage.MyPhotoUnreadable) }
+        }
+    }
+
+    fun onRemoveMyPhoto() {
+        val photo = state.value.myPhoto ?: return
+        removedPhoto = photo
+        viewModelScope.launch {
+            removeMyPhoto()
+            local.update { it.copy(message = SettingsMessage.MyPhotoRemoved) }
+        }
+    }
+
+    /** Puts back the photo [onRemoveMyPhoto] took away. */
+    fun onUndoRemoveMyPhoto() {
+        val photo = removedPhoto ?: return
+        removedPhoto = null
+        viewModelScope.launch { setMyPhoto(photo.bytes()) }
     }
 
     fun onSaveApiKey(key: String) {

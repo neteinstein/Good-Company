@@ -176,4 +176,11 @@
     <string name="activities_hint">Ce que propose le journal quand vous avez vu quelqu’un. Les plus utilisées d’abord, les autres dans cet ordre ; six sont affichées, le reste est sous Plus. Faites glisser pour réordonner.</string>
     <string name="activities_move_up">Monter</string>
     <string name="activities_move_down">Descendre</string>
+    <!-- Your photo (issue #71) -->
+    <string name="my_photo">Ta photo</string>
+    <string name="my_photo_hint">Affichée en haut de chaque onglet, au centre de ton réseau et dans ton année en amitié. Jamais envoyée à tes contacts ni à l’IA.</string>
+    <string name="my_photo_choose">Choisir une photo</string>
+    <string name="my_photo_change">Changer</string>
+    <string name="msg_my_photo_unreadable">Impossible de lire cette image. Essaie un JPEG ou un PNG.</string>
+    <string name="msg_my_photo_removed">Photo supprimée</string>
 </resources>

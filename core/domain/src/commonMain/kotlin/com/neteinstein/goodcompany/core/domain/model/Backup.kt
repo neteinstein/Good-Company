@@ -35,6 +35,8 @@ data class Backup(
     val calendarDecisions: List<CalendarDecision> = emptyList(),
     /** Gift lists per occasion (F8); missing in older backups. */
     val giftLists: List<GiftList> = emptyList(),
+    /** Your own photo (issue #71); missing in older backups. */
+    val myPhoto: ContactPhoto? = null,
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {
