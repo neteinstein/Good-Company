@@ -84,7 +84,6 @@
     <string name="contact_met">Văzuți %1$s</string>
     <string name="contact_call">Apel %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Cercuri</string>
     <string name="tastes_title">Pasiuni</string>
     <string name="tastes_loves">Adoră</string>
     <string name="tastes_loves_placeholder">Adaugă pasiuni — jazz, sushi, F1…</string>
@@ -511,4 +510,10 @@
         <item quantity="few">%1$d se răcesc: %2$s</item>
         <item quantity="other">%1$d se răcesc: %2$s</item>
     </plurals>
+    <!-- Circles on a person's page (issue #70) -->
+    <string name="circles_add">Cerc</string>
+    <string name="circles_sheet_title">Cercuri pentru %1$s</string>
+    <string name="circles_new_with">Cerc nou cu %1$s</string>
+    <string name="circles_remove">Scoate din %1$s</string>
+    <string name="msg_removed_from_circle">Nu mai e în %1$s</string>
 </resources>

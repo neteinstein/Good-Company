@@ -69,6 +69,7 @@ import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -139,6 +140,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
+import com.neteinstein.goodcompany.core.domain.usecase.isBuiltIn
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
@@ -202,6 +204,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.chat_count
 import com.neteinstein.goodcompany.feature.friends.resources.chat_how
 import com.neteinstein.goodcompany.feature.friends.resources.chat_import
 import com.neteinstein.goodcompany.feature.friends.resources.chat_title
+import com.neteinstein.goodcompany.feature.friends.resources.circles_add
+import com.neteinstein.goodcompany.feature.friends.resources.circles_remove
 import com.neteinstein.goodcompany.feature.friends.resources.contact_call
 import com.neteinstein.goodcompany.feature.friends.resources.contact_email
 import com.neteinstein.goodcompany.feature.friends.resources.contact_message
@@ -235,7 +239,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.gifts_none_found
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggestions
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_title
-import com.neteinstein.goodcompany.feature.friends.resources.groups_member_of
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_dismiss
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_find
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_ai
@@ -262,6 +265,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_link_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.friends.resources.msg_removed_from_circle
 import com.neteinstein.goodcompany.feature.friends.resources.msg_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
 import com.neteinstein.goodcompany.feature.friends.resources.news_hint
@@ -381,7 +385,8 @@ fun FriendDetailScreen(
     /** "Together" opens the small "We met" panel (issue #47). */
     onWeMet: () -> Unit = {},
     onOpenCircle: (String) -> Unit = {},
-    onEditCircle: (String) -> Unit = {},
+    /** "New circle with <name>": the circle editor with this person already in (issue #70). */
+    onNewCircle: () -> Unit = {},
     onOpenGiftLists: () -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
@@ -453,7 +458,9 @@ fun FriendDetailScreen(
                 viewModel.onOpenCircle(id)
                 onOpenCircle(id)
             },
-            onEditCircle = onEditCircle,
+            onSetInCircle = viewModel::onSetInCircle,
+            onRemoveFromCircle = viewModel::onRemoveFromCircle,
+            onNewCircle = onNewCircle,
             onOpenGiftLists = onOpenGiftLists,
             onAddPhoto = pickPhoto,
             onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
@@ -563,9 +570,14 @@ data class FriendDetailActions(
     val onPersonaliseWish: () -> Unit = {},
     val onOpenTimeline: () -> Unit = {},
     val onLog: () -> Unit = {},
-    /** A circle pill: Home filtered by that circle. A long-press edits the circle. */
+    /** A circle chip: People filtered by that circle. */
     val onOpenCircle: (String) -> Unit = {},
-    val onEditCircle: (String) -> Unit = {},
+    /** A tick in the "+ Circle" sheet (issue #70); saves at once, with Undo. */
+    val onSetInCircle: (groupId: String, member: Boolean) -> Unit = { _, _ -> },
+    /** The × on a circle chip, with Undo. */
+    val onRemoveFromCircle: (String) -> Unit = {},
+    /** "New circle with <name>" in the sheet. */
+    val onNewCircle: () -> Unit = {},
     /** "Gift lists" on the gift card (F8). */
     val onOpenGiftLists: () -> Unit = {},
     /** Picks a picture for the avatar (then the crop editor), offered for everyone (F14). */
@@ -630,6 +642,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
     is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
     FriendDetailMessage.Saved -> getString(Res.string.msg_saved)
+    is FriendDetailMessage.RemovedFromCircle -> getString(Res.string.msg_removed_from_circle, "${circle.emoji} ${circle.name}")
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -652,6 +665,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
     var editingName by rememberSaveable { mutableStateOf(false) }
     var photoOptions by rememberSaveable { mutableStateOf(false) }
+    var choosingCircles by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var seeAllSaved by rememberSaveable { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<AttachmentView?>(null) }
@@ -717,6 +731,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     onPhoto = { if (f.avatar == null) actions.onAddPhoto() else photoOptions = true },
                     onDelete = { confirmDelete = true },
                     onEditRelationToMe = { editingRelationToMe = true },
+                    onAddCircle = { choosingCircles = true },
                 )
             }
 
@@ -1190,6 +1205,18 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             BirthdaySheet(f, latestYear = state.today.year, onSave = actions.onSaveBirthday, onDismiss = { pickBirthday = false })
         }
         if (editingName) NameDialog(f, onSave = actions.onRename, onDismiss = { editingName = false })
+        if (choosingCircles) {
+            CircleSheet(
+                f,
+                circles = detail.allCircles,
+                onToggle = actions.onSetInCircle,
+                onNewCircle = {
+                    choosingCircles = false
+                    actions.onNewCircle()
+                },
+                onDismiss = { choosingCircles = false },
+            )
+        }
         if (photoOptions) {
             PhotoOptionsSheet(
                 f,
@@ -1507,14 +1534,6 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
                 ),
             )
         }
-        if (detail.groups.isNotEmpty()) {
-            Label(stringResource(Res.string.groups_member_of), Icons.Rounded.Diversity3)
-            FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                detail.groups.forEach { g ->
-                    CircleChip(g, selected = true, onClick = { actions.onOpenCircle(g.id) }, onLongClick = { actions.onEditCircle(g.id) })
-                }
-            }
-        }
         LastContactRow(detail.lastContactByType, state)
     }
 }
@@ -1629,6 +1648,7 @@ private fun Hero(
     onPhoto: () -> Unit,
     onDelete: () -> Unit,
     onEditRelationToMe: () -> Unit,
+    onAddCircle: () -> Unit,
 ) {
     val (start, end) = avatarColors(f.displayName)
     val uri = LocalUriHandler.current
@@ -1735,6 +1755,30 @@ private fun Hero(
                     InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
                 }
                 if (f.isOrphaned) InfoPill(stringResource(Res.string.detail_orphaned))
+            }
+            Spacer(Modifier.height(10.dp))
+            // Their circles (issue #70): tap opens the circle, × takes them out (Undo), "+ Circle" ticks more. The
+            // built-in Family circle follows relations, so it has no ×.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                state.detail?.groups.orEmpty().forEach { g ->
+                    CircleChip(
+                        g,
+                        selected = true,
+                        onClick = { actions.onOpenCircle(g.id) },
+                        showDot = false,
+                        onRemove = if (g.isBuiltIn) null else ({ actions.onRemoveFromCircle(g.id) }),
+                        removeLabel = stringResource(Res.string.circles_remove, g.name),
+                    )
+                }
+                AssistChip(
+                    onClick = onAddCircle,
+                    label = { Text(stringResource(Res.string.circles_add)) },
+                    leadingIcon = { Icon(Icons.Rounded.Add, null, Modifier.size(AssistChipDefaults.IconSize)) },
+                )
             }
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {

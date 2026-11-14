@@ -146,7 +146,7 @@ fun AppNavHost(
                         onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
-                        onEditCircle = editCircle,
+                        onNewCircle = { navController.navigate(CircleEditorRoute(withFriend = id)) },
                         onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     )
                 }
@@ -206,7 +206,12 @@ fun AppNavHost(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
             ) { entry ->
-                CircleEditorScreen(groupId = entry.toRoute<CircleEditorRoute>().id, onClose = { navController.popBackStack() })
+                val route = entry.toRoute<CircleEditorRoute>()
+                CircleEditorScreen(
+                    groupId = route.id,
+                    onClose = { navController.popBackStack() },
+                    withFriend = route.withFriend?.let(::FriendId),
+                )
             }
             composable<ShareRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },

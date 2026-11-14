@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
@@ -99,7 +101,8 @@ fun CircleDot(color: CircleColor, modifier: Modifier = Modifier, size: Dp = 10.d
 
 /**
  * A circle as a chip: colour dot, emoji and name. Selected = filled with the circle's colour, plus [trailing] (e.g.
- * " · 16" members). [onLongClick] opens the circle editor where that's offered.
+ * " · 16" members). [onLongClick] opens the circle editor where that's offered. [onRemove] adds a × at the end
+ * (labelled [removeLabel]) that takes the person out of the circle (a person's page, issue #70).
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -111,6 +114,8 @@ fun CircleChip(
     trailing: String? = null,
     showDot: Boolean = true,
     onLongClick: (() -> Unit)? = null,
+    onRemove: (() -> Unit)? = null,
+    removeLabel: String? = null,
 ) {
     val palette = circlePalette(group.color)
     Surface(
@@ -135,6 +140,13 @@ fun CircleChip(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (onRemove != null) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = removeLabel,
+                    modifier = Modifier.size(24.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRemove).padding(3.dp),
+                )
+            }
         }
     }
 }

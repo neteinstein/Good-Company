@@ -67,10 +67,12 @@ data class CircleEditorUiState(
 
 /**
  * The circle editor behind `CircleEditorRoute(id)` (decision D1): emoji, name, colour, the optional reminder and the
- * members. [groupId] null creates a circle, starting on the next colour in turn and with the reminder off.
+ * members. [groupId] null creates a circle, starting on the next colour in turn and with the reminder off;
+ * [withFriend] starts a new one with that person already in ("New circle with <name>" on their page, issue #70).
  */
 class CircleEditorViewModel(
     private val groupId: String?,
+    private val withFriend: FriendId?,
     observeFriends: ObserveFriendsUseCase,
     private val observeGroups: ObserveGroupsUseCase,
     private val saveGroup: SaveGroupUseCase,
@@ -93,7 +95,7 @@ class CircleEditorViewModel(
                     days = it.meetEveryDays ?: CircleEditorUiState.DEFAULT_DAYS,
                     memberIds = it.memberIds,
                 )
-            } ?: CircleDraft(color = nextColor())
+            } ?: CircleDraft(color = nextColor(), memberIds = listOfNotNull(withFriend))
             // A circle that's gone (deleted elsewhere) opens as a new one.
             local.update { it.copy(isNew = existing == null, isLoading = false) }
         }

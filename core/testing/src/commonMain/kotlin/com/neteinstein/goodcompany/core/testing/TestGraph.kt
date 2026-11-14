@@ -128,6 +128,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
@@ -294,6 +295,7 @@ class TestGraph(
     val saveGroup = SaveGroupUseCase(circles, ids)
     val deleteGroup = DeleteGroupUseCase(circles, settingsRepo)
     val restoreGroup = RestoreGroupUseCase(circles)
+    val setCircleMember = SetCircleMemberUseCase(circles)
     val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)

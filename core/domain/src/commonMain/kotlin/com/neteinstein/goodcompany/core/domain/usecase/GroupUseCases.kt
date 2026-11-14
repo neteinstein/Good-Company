@@ -90,3 +90,18 @@ class RestoreGroupUseCase(private val groups: GroupRepository) {
 class SetHomeCircleFilterUseCase(private val settings: SettingsRepository) {
     suspend operator fun invoke(groupId: String?) = settings.update { it.copy(homeCircleFilter = groupId) }
 }
+
+/**
+ * Puts one person in a circle or takes them out (issue #70: the chips and the "+ Circle" sheet on their page). Returns
+ * the circle as it was, for Undo ([RestoreGroupUseCase]); null when nothing changed (an unknown or built-in circle, or
+ * they were already in / out). Taking out the last member keeps the circle, with nobody in it: its name, colour,
+ * reminder and plans stay, and the editor can add people again.
+ */
+class SetCircleMemberUseCase(private val groups: GroupRepository) {
+    suspend operator fun invoke(groupId: String, friendId: FriendId, member: Boolean): FriendGroup? {
+        val group = groups.groups.first().firstOrNull { it.id == groupId } ?: return null
+        if (group.isBuiltIn || (friendId in group.memberIds) == member) return null
+        groups.upsert(group.copy(memberIds = if (member) group.memberIds + friendId else group.memberIds - friendId))
+        return group
+    }
+}

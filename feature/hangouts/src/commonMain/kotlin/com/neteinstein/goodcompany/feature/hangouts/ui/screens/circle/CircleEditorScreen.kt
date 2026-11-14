@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleColorSwatch
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -96,7 +97,9 @@ import com.neteinstein.goodcompany.core.ui.resources.undo as undoLabel
 fun CircleEditorScreen(
     groupId: String?,
     onClose: () -> Unit,
-    viewModel: CircleEditorViewModel = koinViewModel(key = "circle-$groupId") { parametersOf(groupId) },
+    /** A new circle that starts with this person in (issue #70). */
+    withFriend: FriendId? = null,
+    viewModel: CircleEditorViewModel = koinViewModel(key = "circle-$groupId-${withFriend?.value}") { parametersOf(groupId, withFriend) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.closed) { if (state.closed) onClose() }

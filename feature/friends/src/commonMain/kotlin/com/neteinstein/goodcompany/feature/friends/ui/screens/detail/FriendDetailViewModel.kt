@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
@@ -52,9 +53,11 @@ import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
@@ -137,6 +140,9 @@ sealed interface FriendDetailMessage {
 
     /** A choice or a sheet saved on its own (no Save tap, #64); offered with "Undo". */
     data object Saved : FriendDetailMessage
+
+    /** The × on a circle chip took them out of [circle] (issue #70); offered with "Undo". */
+    data class RemovedFromCircle(val circle: FriendGroup) : FriendDetailMessage
 }
 
 /** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
@@ -191,6 +197,9 @@ sealed interface SavedEdit {
 
     /** [previous] null = the link was new; [other]'s pronouns are set from the same sheet. */
     data class LinkBefore(val savedId: String, val previous: PersonLink?, val other: FriendId, val otherPronouns: Pronouns?) : SavedEdit
+
+    /** A circle as it was before they were put in or taken out (issue #70). */
+    data class CircleBefore(val circle: FriendGroup) : SavedEdit
 }
 
 /** A deleted "More about" line and where it was, kept for "Undo". */
@@ -276,6 +285,8 @@ class FriendDetailViewModel(
     private val removePhoto: RemoveFriendPhotoUseCase,
     private val renameFriend: RenameFriendUseCase,
     private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
+    private val setCircleMember: SetCircleMemberUseCase,
+    private val restoreGroup: RestoreGroupUseCase,
     observeAttachments: ObserveAttachmentsUseCase,
     observeTags: ObserveTagsUseCase,
     private val deleteAttachment: DeleteAttachmentUseCase,
@@ -357,6 +368,7 @@ class FriendDetailViewModel(
                     f.copy(gifts = f.gifts.map { if (it.id == undo.gift.id) undo.gift else it })
                 }
                 is SavedEdit.KidAdded -> deleteFriend(undo.id)
+                is SavedEdit.CircleBefore -> restoreGroup(undo.circle)
                 is SavedEdit.RelationToMeBefore -> links.setRelationToMe(friendId, undo.relation, undo.pronouns)
                 is SavedEdit.LinkBefore -> {
                     val previous = undo.previous
@@ -369,6 +381,25 @@ class FriendDetailViewModel(
 
     fun onToggleClose() {
         viewModelScope.launch { setRealFriend.toggle(friendId) }
+    }
+
+    /**
+     * A tick in the "+ Circle" sheet (issue #70): saves at once (#64), with Undo. The built-in Family circle isn't
+     * offered (it follows relations), and writes to it are ignored anyway.
+     */
+    fun onSetInCircle(groupId: String, member: Boolean) {
+        viewModelScope.launch {
+            setCircleMember(groupId, friendId, member)?.let { before -> offerUndo(SavedEdit.CircleBefore(before)) }
+        }
+    }
+
+    /** The × on a circle chip: takes them out, with Undo (issue #70). */
+    fun onRemoveFromCircle(groupId: String) {
+        viewModelScope.launch {
+            setCircleMember(groupId, friendId, member = false)?.let { before ->
+                offerUndo(SavedEdit.CircleBefore(before), FriendDetailMessage.RemovedFromCircle(before))
+            }
+        }
     }
 
     /** A circle pill: Home is filtered by that circle (the screen then opens Home). */

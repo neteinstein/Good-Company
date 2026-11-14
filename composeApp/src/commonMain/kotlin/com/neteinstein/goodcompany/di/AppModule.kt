@@ -186,6 +186,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
@@ -412,6 +413,7 @@ val appModule = module {
     factoryOf(::SaveGroupUseCase)
     factoryOf(::DeleteGroupUseCase)
     factoryOf(::RestoreGroupUseCase)
+    factoryOf(::SetCircleMemberUseCase)
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
@@ -486,6 +488,8 @@ val appModule = module {
             removePhoto = get(),
             renameFriend = get(),
             setHomeCircleFilter = get(),
+            setCircleMember = get(),
+            restoreGroup = get(),
             observeAttachments = get(),
             observeTags = get(),
             deleteAttachment = get(),
@@ -501,7 +505,7 @@ val appModule = module {
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
         LogInteractionViewModel(ids, type, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::GiftListsViewModel)
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)

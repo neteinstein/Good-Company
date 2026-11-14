@@ -50,8 +50,11 @@ import org.jetbrains.compose.resources.StringResource
  */
 @Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val plan: String? = null)
 
-/** The circle editor (decision D1); [id] null creates a circle. */
-@Serializable data class CircleEditorRoute(val id: String? = null)
+/**
+ * The circle editor (decision D1); [id] null creates a circle. [withFriend] starts a new circle with that person in
+ * ("New circle with <name>" on their page, issue #70).
+ */
+@Serializable data class CircleEditorRoute(val id: String? = null, val withFriend: String? = null)
 
 /** "Choose friends": the phone's contacts with checkboxes (decision D2; iOS and the Android sideload build). */
 @Serializable data object ChooseContactsRoute
