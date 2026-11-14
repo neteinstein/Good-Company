@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,7 +30,6 @@ import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Sms
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -56,7 +57,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -119,7 +119,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.channel_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.family_add_title
 import com.neteinstein.goodcompany.feature.friends.resources.family_birthday_line
 import com.neteinstein.goodcompany.feature.friends.resources.family_birthday_optional
-import com.neteinstein.goodcompany.feature.friends.resources.family_birthday_set
 import com.neteinstein.goodcompany.feature.friends.resources.family_edit_title
 import com.neteinstein.goodcompany.feature.friends.resources.family_hint
 import com.neteinstein.goodcompany.feature.friends.resources.family_likes
@@ -142,7 +141,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.more_title
 import com.neteinstein.goodcompany.feature.friends.resources.more_value
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.stringResource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
@@ -169,14 +167,15 @@ internal fun channelIcon(channel: ContactChannel): ImageVector = when (channel) 
 
 // --- About ------------------------------------------------------------------------------------------------------------
 
-/** The "About <name>" card: one line per detail, each hidden when empty. */
+/** The "About <name>" card: one line per detail, each hidden when empty; "Edit" only in edit mode ([editing]). */
 @Composable
-internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOpenFriend: (FriendId) -> Unit) {
+internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOpenFriend: (FriendId) -> Unit, editing: Boolean = true) {
     val firstName = f.displayName.substringBefore(' ')
     SectionCard(
         stringResource(Res.string.about_title, firstName),
         icon = Icons.Rounded.People,
-        action = { TextButton(onClick = onEdit) { Text(stringResource(CoreRes.string.edit)) } },
+        // Issue #90: the editor is for edit mode (or the "Complete…" chip); the page only shows what's there.
+        action = if (editing) ({ TextButton(onClick = onEdit) { Text(stringResource(CoreRes.string.edit)) } }) else null,
     ) {
         val met = f.met?.takeUnless { it.isEmpty }
         val introducer = f.introducedBy
@@ -407,6 +406,7 @@ internal fun FamilyCard(
     onEditLink: (LinkedPerson) -> Unit = {},
     onAddLink: () -> Unit = {},
     onAddAsPerson: (String) -> Unit = {},
+    editing: Boolean = true,
 ) {
     // Partners first (F18), then exes, then kids and family; friends and colleagues have their own card.
     val romantic = links.filter { it.role.isRomantic }
@@ -419,10 +419,14 @@ internal fun FamilyCard(
     ) {
         if (f.relatives.isEmpty() && romantic.isEmpty() && kids.isEmpty() && family.isEmpty()) Hint(stringResource(Res.string.family_hint))
         romantic.forEach { LinkRow(it, onOpenPerson, onEditLink) }
-        f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
+        f.relatives.filter {
+            it.relation == Relation.PARTNER
+        }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative.takeIf { editing }, onAddAsPerson) }
         kids.forEach { LinkRow(it, onOpenPerson, onEditLink) }
         family.forEach { LinkRow(it, onOpenPerson, onEditLink) }
-        f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
+        f.relatives.filter {
+            it.relation != Relation.PARTNER
+        }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative.takeIf { editing }, onAddAsPerson) }
         TextButton(onClick = onAddLink, modifier = Modifier.padding(horizontal = 8.dp)) {
             Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
@@ -436,9 +440,11 @@ private fun RelativeRow(
     r: Relative,
     today: LocalDate,
     onEdit: (Relative) -> Unit,
-    onRemove: (String) -> Unit,
+    onRemove: ((String) -> Unit)?,
     onAddAsPerson: (String) -> Unit,
 ) {
+    // Issue #90: the name keeps the full width; "Add as a person" sits under the details and the × shows only in edit
+    // mode ([onRemove] null otherwise).
     ListItem(
         modifier = Modifier.clickable { onEdit(r) },
         leadingContent = {
@@ -447,22 +453,26 @@ private fun RelativeRow(
         },
         headlineContent = { Text(r.name, style = MaterialTheme.typography.titleSmall) },
         supportingContent = {
-            val parts = listOfNotNull(
-                relationLabel(r.relation),
-                r.note.takeIf { it.isNotBlank() },
-                r.birthday?.let { stringResource(Res.string.family_birthday_line, relativeDay(it.nextOccurrence(today), today)) },
-                r.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.family_likes_line, it.joinToString()) },
-            )
-            Text(parts.joinToString(" · "))
-        },
-        trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                val parts = listOfNotNull(
+                    relationLabel(r.relation),
+                    r.note.takeIf { it.isNotBlank() },
+                    r.birthday?.let { stringResource(Res.string.family_birthday_line, relativeDay(it.nextOccurrence(today), today)) },
+                    r.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.family_likes_line, it.joinToString()) },
+                )
+                Text(parts.joinToString(" · "))
                 // A relative who is only a name can become a person with their own page (question 1).
                 if (PersonLinks.typeFor(r.relation) != null) {
-                    TextButton(onClick = { onAddAsPerson(r.id) }) { Text(stringResource(Res.string.add_as_person)) }
+                    TextButton(
+                        onClick = { onAddAsPerson(r.id) },
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+                        modifier = Modifier.heightIn(min = 32.dp),
+                    ) { Text(stringResource(Res.string.add_as_person), style = MaterialTheme.typography.labelLarge) }
                 }
-                IconButton(onClick = { onRemove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) }
             }
+        },
+        trailingContent = onRemove?.let { remove ->
+            { IconButton(onClick = { remove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) } }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
@@ -588,23 +598,28 @@ internal fun FamilySheet(
 
 // --- More about (custom fields) ---------------------------------------------------------------------------------------
 
+/** "More about <name>": free label/value lines. Add, edit and × only in edit mode ([editing], issue #90). */
 @Composable
-internal fun MoreAboutCard(f: Friend, onAdd: () -> Unit, onEdit: (CustomField) -> Unit, onRemove: (String) -> Unit) {
+internal fun MoreAboutCard(f: Friend, onAdd: () -> Unit, onEdit: (CustomField) -> Unit, onRemove: (String) -> Unit, editing: Boolean = true) {
     SectionCard(
         stringResource(Res.string.more_title, f.displayName.substringBefore(' ')),
         icon = Icons.AutoMirrored.Rounded.List,
-        action = { TextButton(onClick = onAdd) { Text(stringResource(Res.string.more_add)) } },
+        action = if (editing) ({ TextButton(onClick = onAdd) { Text(stringResource(Res.string.more_add)) } }) else null,
     ) {
         if (f.customFields.isEmpty()) Hint(stringResource(Res.string.more_hint))
         f.customFields.forEach { field ->
             ListItem(
-                modifier = Modifier.clickable { onEdit(field) },
+                modifier = Modifier.clickable(enabled = editing) { onEdit(field) },
                 headlineContent = { Text(field.value, style = MaterialTheme.typography.titleSmall) },
                 supportingContent = { Text(field.label) },
-                trailingContent = {
-                    IconButton(onClick = { onRemove(field.id) }) {
-                        Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, field.label))
+                trailingContent = if (editing) {
+                    {
+                        IconButton(onClick = { onRemove(field.id) }) {
+                            Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, field.label))
+                        }
                     }
+                } else {
+                    null
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )

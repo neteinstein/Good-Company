@@ -634,4 +634,13 @@
     <string name="people_picker_done">Gata · %1$d</string>
     <string name="people_picker_nobody">Nimeni numit ‘%1$s’</string>
     <string name="people_picker_add">Persoane</string>
+    <!-- Family around a person's photo (issue #90) -->
+    <string name="family_ring_person">%1$s, %2$s</string>
+    <string name="family_ring_kid_age">%1$s · %2$d</string>
+    <string name="family_ring_more_short">+%1$d</string>
+    <plurals name="family_ring_more">
+        <item quantity="one">Încă %1$d copil</item>
+        <item quantity="few">Încă %1$d copii</item>
+        <item quantity="other">Încă %1$d de copii</item>
+    </plurals>
 </resources>

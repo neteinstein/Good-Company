@@ -613,4 +613,12 @@
     <string name="people_picker_done">Feito · %1$d</string>
     <string name="people_picker_nobody">Ninguém chamado ‘%1$s’</string>
     <string name="people_picker_add">Pessoas</string>
+    <!-- Family around a person's photo (issue #90) -->
+    <string name="family_ring_person">%1$s, %2$s</string>
+    <string name="family_ring_kid_age">%1$s · %2$d</string>
+    <string name="family_ring_more_short">+%1$d</string>
+    <plurals name="family_ring_more">
+        <item quantity="one">Mais %1$d filho</item>
+        <item quantity="other">Mais %1$d filhos</item>
+    </plurals>
 </resources>

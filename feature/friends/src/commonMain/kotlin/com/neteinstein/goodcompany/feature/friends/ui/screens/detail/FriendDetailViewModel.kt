@@ -139,9 +139,6 @@ sealed interface FriendDetailMessage {
 
     /** A choice or a sheet saved on its own (no Save tap, #64); offered with "Undo". */
     data object Saved : FriendDetailMessage
-
-    /** The × on a circle chip took them out of [circle] (issue #70); offered with "Undo". */
-    data class RemovedFromCircle(val circle: FriendGroup) : FriendDetailMessage
 }
 
 /** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
@@ -389,15 +386,6 @@ class FriendDetailViewModel(
         }
     }
 
-    /** The × on a circle chip: takes them out, with Undo (issue #70). */
-    fun onRemoveFromCircle(groupId: String) {
-        viewModelScope.launch {
-            setCircleMember(groupId, friendId, member = false)?.let { before ->
-                offerUndo(SavedEdit.CircleBefore(before), FriendDetailMessage.RemovedFromCircle(before))
-            }
-        }
-    }
-
     /** A level from the picker (four levels, no "not set", issue #86); saved on choice (#64). */
     fun onClosenessChange(closeness: Closeness) {
         viewModelScope.launch { setCloseness(friendId, closeness) }
@@ -471,6 +459,9 @@ class FriendDetailViewModel(
             emails = fromContact + typed.filter { it.lowercase() !in keys }.map { FriendEmail(it) },
         )
     }
+
+    /** "Message them first on" in edit mode (issue #90): a choice, saved at once (#64); null = no preference. */
+    fun onSetPreferredChannel(channel: ContactChannel?) = edit { it.copy(preferredChannel = channel) }
 
     // --- Family -----------------------------------------------------------------------------------------------------
 
