@@ -3,9 +3,14 @@ package com.neteinstein.goodcompany.core.ui.l10n
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTexts
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.ui.resources.Res
+import com.neteinstein.goodcompany.core.ui.resources.sample_ana_job
+import com.neteinstein.goodcompany.core.ui.resources.sample_ana_met_place
 import com.neteinstein.goodcompany.core.ui.resources.sample_ana_notes
+import com.neteinstein.goodcompany.core.ui.resources.sample_beagle
 import com.neteinstein.goodcompany.core.ui.resources.sample_beatriz_dinner
 import com.neteinstein.goodcompany.core.ui.resources.sample_board_games_note
+import com.neteinstein.goodcompany.core.ui.resources.sample_field_football_club
+import com.neteinstein.goodcompany.core.ui.resources.sample_field_shoe_size
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_board_game
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_ceramics
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_dino_lego
@@ -26,6 +31,7 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_idea_photo_when
 import com.neteinstein.goodcompany.core.ui.resources.sample_jazz_night
 import com.neteinstein.goodcompany.core.ui.resources.sample_job_interview
 import com.neteinstein.goodcompany.core.ui.resources.sample_knee_surgery
+import com.neteinstein.goodcompany.core.ui.resources.sample_marta_job
 import com.neteinstein.goodcompany.core.ui.resources.sample_news_leo_school
 import com.neteinstein.goodcompany.core.ui.resources.sample_news_marta_job
 import com.neteinstein.goodcompany.core.ui.resources.sample_news_rui_move
@@ -35,6 +41,7 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_photos
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_present
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_surf
 import com.neteinstein.goodcompany.core.ui.resources.sample_reminder_tickets
+import com.neteinstein.goodcompany.core.ui.resources.sample_rui_job
 import com.neteinstein.goodcompany.core.ui.resources.sample_ruis_place
 import com.neteinstein.goodcompany.core.ui.resources.sample_surf_morning
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_ballet
@@ -54,6 +61,8 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_taste_hiking
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_horror
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_indie_films
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_jazz
+import com.neteinstein.goodcompany.core.ui.resources.sample_taste_oat_flat_white
+import com.neteinstein.goodcompany.core.ui.resources.sample_taste_padel
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_painting
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_pancakes
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_photography
@@ -62,7 +71,9 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_taste_spicy
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_surfing
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_sushi
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_theatre
+import com.neteinstein.goodcompany.core.ui.resources.sample_taste_trail_running
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_travel
+import com.neteinstein.goodcompany.core.ui.resources.sample_taste_vegetarian_weekdays
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_wine
 import com.neteinstein.goodcompany.core.ui.resources.sample_taste_yoga
 import org.jetbrains.compose.resources.getString
@@ -132,5 +143,16 @@ object SampleTextsFromResources : SampleTextsProvider {
         newsRuiMove = getString(Res.string.sample_news_rui_move),
         newsMartaJob = getString(Res.string.sample_news_marta_job),
         planLunch = getString(Res.string.sample_plan_lunch),
+        anaJob = getString(Res.string.sample_ana_job),
+        anaMetPlace = getString(Res.string.sample_ana_met_place),
+        ruiJob = getString(Res.string.sample_rui_job),
+        martaJob = getString(Res.string.sample_marta_job),
+        beagle = getString(Res.string.sample_beagle),
+        padel = getString(Res.string.sample_taste_padel),
+        vegetarianWeekdays = getString(Res.string.sample_taste_vegetarian_weekdays),
+        oatFlatWhite = getString(Res.string.sample_taste_oat_flat_white),
+        trailRunning = getString(Res.string.sample_taste_trail_running),
+        shoeSize = getString(Res.string.sample_field_shoe_size),
+        footballClub = getString(Res.string.sample_field_football_club),
     )
 }

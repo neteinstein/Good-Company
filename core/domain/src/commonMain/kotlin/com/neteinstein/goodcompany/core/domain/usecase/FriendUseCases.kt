@@ -90,6 +90,10 @@ data class FriendDetail(
     val topics: List<TopicHint> = emptyList(),
     /** Planned meetups with this friend that haven't happened yet. */
     val plans: List<Plan> = emptyList(),
+    /** Everyone else, A–Z: who could have introduced you (the "introduced by" picker and link). */
+    val others: List<Friend> = emptyList(),
+    /** "More about" labels already used on other friends, most used first: suggestions for a new field. */
+    val customFieldLabels: List<String> = emptyList(),
 )
 
 class ObserveFriendDetailUseCase(
@@ -128,8 +132,18 @@ class ObserveFriendDetailUseCase(
             groups = gs.filter { id in it.memberIds },
             topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone),
             plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
+            others = all.filter { it.id != id }.sortedBy { it.name.lowercase() },
+            customFieldLabels = customFieldLabels(all.filter { it.id != id }),
         )
     }
+
+    /** Labels used on [friends]' custom fields, most used first (ties A–Z), case-insensitively distinct. */
+    fun customFieldLabels(friends: List<Friend>): List<String> = friends.flatMap { f -> f.customFields.map { it.label.trim() } }
+        .filter { it.isNotEmpty() }
+        .groupBy { it.lowercase() }
+        .values
+        .sortedWith(compareByDescending<List<String>> { it.size }.thenBy { it.first().lowercase() })
+        .map { it.first() }
 
     private data class Extras(val ideas: List<Idea>, val settings: AppSettings, val groups: List<FriendGroup>, val plans: List<Plan>)
 }

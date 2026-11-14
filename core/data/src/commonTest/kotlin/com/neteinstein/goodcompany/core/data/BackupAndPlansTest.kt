@@ -106,4 +106,26 @@ class BackupAndPlansTest {
         // Flows see the restored data straight away.
         assertEquals("Ana", to.friends.friends.first().single().name)
     }
+
+    @Test
+    fun aBackupFromBeforeTheFullProfile_restoresWithEmptyNewFields() = runTest {
+        // Written by an older version: no about, family, taste-group, email or custom-field keys at all.
+        val json = """
+            {"format":"good-company-backup","version":1,"exportedAt":"2026-03-01T10:00:00Z","friends":[
+              {"id":"ana","name":"Ana","likes":["jazz"],"dislikes":["cilantro"],"kids":[{"id":"k","name":"Leo"}]}
+            ]}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val ana = to.backup.snapshot().friends.single()
+        assertEquals(listOf("jazz"), ana.likes)
+        assertEquals(listOf("cilantro"), ana.dislikes)
+        assertEquals(listOf("Leo"), ana.kids.map { it.name })
+        assertEquals("", ana.job)
+        assertEquals(null, ana.met)
+        assertEquals(emptyList(), ana.relatives)
+        assertEquals(emptyList(), ana.emails)
+        assertEquals(emptyList(), ana.food + ana.drinks + ana.interests)
+        assertEquals(emptyList(), ana.customFields)
+    }
 }

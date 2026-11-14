@@ -56,6 +56,20 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
             }
         }
 
+        val emails = HashMap<String, MutableList<String>>()
+        resolver.query(
+            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Email.CONTACT_ID, ContactsContract.CommonDataKinds.Email.ADDRESS),
+            null,
+            null,
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val address = c.getString(1)?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+                emails.getOrPut(c.getString(0)) { mutableListOf() } += address
+            }
+        }
+
         val birthdays = HashMap<String, Birthday>()
         resolver.query(
             ContactsContract.Data.CONTENT_URI,
@@ -75,7 +89,9 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
         // The sideload build mirrors app data onto contacts through a raw contact of its own (AndroidContactsWriter).
         // It is joined to the person's real contact, but should that ever fail it must not show up as a new friend.
         val mirrorOnly = mirrorOnlyContactIds(resolver)
-        names.filterKeys { it !in mirrorOnly }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id]) }
+        names.filterKeys {
+            it !in mirrorOnly
+        }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id], emails[id].orEmpty()) }
     }
 
     /**

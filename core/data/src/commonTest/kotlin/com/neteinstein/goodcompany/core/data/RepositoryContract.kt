@@ -17,11 +17,14 @@ import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
+import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -33,12 +36,16 @@ import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
@@ -148,6 +155,32 @@ abstract class RepositoryContract {
             ),
         ),
         photo = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 1, 2, 3)),
+        job = "Designer",
+        livesIn = "Porto",
+        met = MetInfo("Erasmus in Ghent", LocalDate(2011, 9, 1), dayKnown = false),
+        introducedBy = Introducer(FriendId("rui"), "Rui"),
+        preferredChannel = ContactChannel.WHATSAPP,
+        emails = listOf(FriendEmail("ana@work.example", fromContact = true), FriendEmail("ana@home.example")),
+        relatives = listOf(
+            Relative(
+                "r1",
+                Relation.PARTNER,
+                "Tiago",
+                Birthday(7, 2, 1988),
+                listOf("padel", "F1"),
+                "",
+                notifyBirthday = true,
+                addedAt = at(2026, 2, 3),
+            ),
+            Relative("r2", Relation.PET, "Bolacha", note = "beagle"),
+        ),
+        food = listOf("sushi", "pastéis de nata"),
+        drinks = listOf("Alvarinho"),
+        interests = listOf("ceramics", "trail running"),
+        foodAddedAt = mapOf("pastéis de nata" to at(2026, 2, 4)),
+        drinksAddedAt = mapOf("Alvarinho" to at(2026, 2, 5)),
+        interestsAddedAt = mapOf("trail running" to at(2026, 2, 6)),
+        customFields = listOf(CustomField("f1", "Shoe size", "38"), CustomField("f2", "Club", "Benfica")),
     )
 
     // --- Friends ---
@@ -159,6 +192,16 @@ abstract class RepositoryContract {
         val again = open().friends
         assertEquals(friend, again.get(friend.id))
         assertEquals(listOf(friend), again.friends.first())
+    }
+
+    @Test
+    fun aHowWeMetDate_keepsWhetherTheDayIsKnown() = runTest {
+        val repo = open().friends
+        repo.upsert(friend("a") { copy(met = MetInfo("", LocalDate(2011, 9, 4))) })
+        repo.upsert(friend("b") { copy(met = MetInfo("Uni", null)) })
+        val back = open().friends.friends.first().associateBy { it.id.value }
+        assertEquals(MetInfo("", LocalDate(2011, 9, 4), dayKnown = true), back.getValue("a").met)
+        assertEquals(MetInfo("Uni", null), back.getValue("b").met)
     }
 
     @Test

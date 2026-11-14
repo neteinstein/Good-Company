@@ -167,6 +167,12 @@ internal object AssistantPrompts {
         if (f.likes.isNotEmpty()) appendLine("Loves: ${f.likes.joinToString()}")
         if (f.dislikes.isNotEmpty()) appendLine("Dislikes: ${f.dislikes.joinToString()}")
         if (f.kids.isNotEmpty()) appendLine("Kids: ${f.kids.joinToString()}")
+        if (f.job.isNotBlank()) appendLine("Work: ${f.job}")
+        if (f.livesIn.isNotBlank()) appendLine("Lives in: ${f.livesIn}")
+        if (f.family.isNotEmpty()) appendLine("Family: ${f.family.joinToString("; ")}")
+        if (f.food.isNotEmpty()) appendLine("Food: ${f.food.joinToString()}")
+        if (f.drinks.isNotEmpty()) appendLine("Drinks: ${f.drinks.joinToString()}")
+        if (f.interests.isNotEmpty()) appendLine("Interests & hobbies: ${f.interests.joinToString()}")
         if (f.news.isNotEmpty()) appendLine("What's new in their life (newest first): ${f.news.joinToString("; ")}")
         if (f.recentMessages.isNotEmpty()) {
             appendLine("Recent chat (oldest first):")

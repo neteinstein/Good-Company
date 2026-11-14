@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import platform.Contacts.CNContact
+import platform.Contacts.CNContactEmailAddressesKey
 import platform.Contacts.CNContactStore
 import platform.Contacts.CNContactThumbnailImageDataKey
 import platform.Contacts.CNEntityType
@@ -213,8 +214,16 @@ private fun CNContact.toRecord(): ContactRecord? = runCatching {
     } else {
         null
     }
-    ContactRecord(identifier, name, phones, birthday, thumbnail())
+    ContactRecord(identifier, name, phones, birthday, thumbnail(), emails())
 }.getOrNull()
+
+/** The picked contact's email addresses, when the picker handed them over. */
+private fun CNContact.emails(): List<String> {
+    // Reading a key that wasn't fetched raises an Objective-C exception, which runCatching can't catch.
+    if (!isKeyAvailable(CNContactEmailAddressesKey)) return emptyList()
+    return emailAddresses.mapNotNull { ((it as? CNLabeledValue)?.value as? String)?.trim()?.takeIf(String::isNotEmpty) }
+        .distinctBy(String::lowercase)
+}
 
 /** The picked contact's thumbnail. The picker hands over what it showed, so check the key before reading it. */
 @OptIn(ExperimentalForeignApi::class)

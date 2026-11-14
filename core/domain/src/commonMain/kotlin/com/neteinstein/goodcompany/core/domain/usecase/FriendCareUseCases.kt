@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 import com.neteinstein.goodcompany.core.domain.model.Circle
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
@@ -149,6 +150,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                         phoneNumbers = r.phoneNumbers.distinct(),
                         birthday = r.birthday,
                         photo = r.photo,
+                        emails = ContactMerger.mergeEmails(emptyList(), r.emails),
                         isCloseFriend = true,
                         circle = Circle.CLOSE,
                     ),
@@ -160,6 +162,9 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinct(),
                     birthday = match.birthday ?: r.birthday,
                     photo = r.photo ?: match.photo,
+                    // The pickers can't always read emails, so a re-pick only adds them.
+                    emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
+                        .distinctBy(String::lowercase).map { FriendEmail(it, fromContact = true) },
                     isCloseFriend = true,
                     circle = match.circle ?: Circle.CLOSE,
                     isOrphaned = false,
@@ -198,13 +203,26 @@ class ImportContactsFileUseCase(
                 ?: current.firstOrNull { f -> f.phoneNumbers.mapNotNull(::phoneKey).any { it in phoneKeys } }
             val photo = if (match?.photo == null) photos.photoOf(r.photo) else null
             if (match == null) {
-                friends.upsert(Friend(FriendId("vcf-${ids.next()}"), r.name, phoneNumbers = r.phoneNumbers, birthday = r.birthday, photo = photo))
+                // A .vcf friend has no contact to sync with, so its emails are kept like typed ones.
+                val emails = r.emails.distinctBy(String::lowercase).map { FriendEmail(it) }
+                friends.upsert(
+                    Friend(
+                        FriendId("vcf-${ids.next()}"),
+                        r.name,
+                        phoneNumbers = r.phoneNumbers,
+                        birthday = r.birthday,
+                        photo = photo,
+                        emails = emails,
+                    ),
+                )
                 added++
             } else {
                 val merged = match.copy(
                     phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinctBy { phoneKey(it) ?: it },
                     birthday = match.birthday ?: r.birthday,
                     photo = match.photo ?: photo,
+                    emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
+                        .distinctBy(String::lowercase).map { FriendEmail(it) },
                 )
                 if (merged != match) {
                     friends.upsert(merged)

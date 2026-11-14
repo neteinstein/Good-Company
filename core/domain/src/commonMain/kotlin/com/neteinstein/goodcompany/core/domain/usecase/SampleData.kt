@@ -2,8 +2,11 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
+import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -13,11 +16,15 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -108,6 +115,18 @@ data class SampleTexts(
     val newsRuiMove: String = "Moved to a new flat in Alvalade",
     val newsMartaJob: String = "Looking for a new job, tired of agency life",
     val planLunch: String = "Lunch at Time Out Market",
+    // Full profile (issue #20)
+    val anaJob: String = "Product designer at Feedzai",
+    val anaMetPlace: String = "Erasmus in Ghent",
+    val ruiJob: String = "Data engineer",
+    val martaJob: String = "Art director at an agency",
+    val beagle: String = "Beagle",
+    val padel: String = "Padel",
+    val vegetarianWeekdays: String = "Vegetarian on weekdays",
+    val oatFlatWhite: String = "Oat flat white",
+    val trailRunning: String = "Trail running",
+    val shoeSize: String = "Shoe size",
+    val footballClub: String = "Football club",
 )
 
 /** Supplies [SampleTexts] in the user's language (implemented with UI string resources). */
@@ -154,6 +173,24 @@ object SampleData {
                 importantEvents = listOf(ImportantEvent(PREFIX + "ana-knee", t.kneeSurgery, day(2), remindDaysBefore = 1, addedAt = now - 1.days)),
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-leo", t.newsLeoSchool, now - 1.days)),
                 notes = t.anaNotes,
+                job = t.anaJob,
+                livesIn = "Campo de Ourique, Lisboa",
+                met = MetInfo(t.anaMetPlace, LocalDate(2011, 9, 1), dayKnown = false),
+                introducedBy = Introducer(id("rui"), "Rui Costa"),
+                preferredChannel = ContactChannel.WHATSAPP,
+                emails = listOf(FriendEmail("ana.silva@example.com")),
+                relatives = listOf(
+                    Relative(PREFIX + "ana-tiago", Relation.PARTNER, "Tiago Marques", likes = listOf(t.padel), addedAt = now - 2.days),
+                    Relative(PREFIX + "ana-bolacha", Relation.PET, "Bolacha", note = t.beagle),
+                ),
+                food = listOf("Pastéis de nata", t.vegetarianWeekdays),
+                drinks = listOf(t.oatFlatWhite, "Alvarinho"),
+                interests = listOf(t.ceramics, t.trailRunning, "Bossa nova"),
+                interestsAddedAt = mapOf(t.trailRunning to now - 2.days),
+                customFields = listOf(
+                    CustomField(PREFIX + "ana-shoe", t.shoeSize, "38"),
+                    CustomField(PREFIX + "ana-club", t.footballClub, "Benfica"),
+                ),
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.CULTURE),
                 gifts = listOf(
                     Gift(PREFIX + "g-vinyl", t.giftVinyl),
@@ -165,6 +202,7 @@ object SampleData {
                 id = id("rui"), name = "Rui Costa", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
+                job = t.ruiJob, livesIn = "Alvalade, Lisboa",
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-rui", t.newsRuiMove, now - 3.days)),
                 // Film titles are proper nouns; checkedAt = now so the demo never fetches.
                 feeds = listOf(
@@ -186,6 +224,7 @@ object SampleData {
                 id = id("marta"), name = "Marta Lopes", isCloseFriend = true, circle = Circle.CLOSE, notifyBirthday = true,
                 phoneNumbers = listOf("+351 914 555 000"), birthday = bday(41, 31),
                 likes = listOf(t.yoga, t.indieFilms, t.ceramics), dislikes = listOf(t.horrorMovies),
+                job = t.martaJob, preferredChannel = ContactChannel.CALL,
                 kids = listOf(
                     Kid(PREFIX + "ines", "Inês", bday(25, 4), listOf("Frozen", t.painting)),
                     Kid(PREFIX + "tomas", "Tomás", bday(130, 8), listOf(t.football, "Minecraft")),

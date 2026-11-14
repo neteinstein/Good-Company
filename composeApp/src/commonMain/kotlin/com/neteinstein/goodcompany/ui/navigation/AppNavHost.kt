@@ -62,6 +62,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onBack = { navController.popBackStack() },
                         onOpenSettings = openSettings,
                         onOpenStory = { navController.navigate(CatchUpStoryRoute(id, fromFriend = true)) },
+                        onOpenFriend = openFriend,
                     )
                 }
             }

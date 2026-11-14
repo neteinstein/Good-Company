@@ -4,15 +4,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
+import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -96,7 +104,34 @@ sealed interface FriendDetailMessage {
 
     /** The picked picture couldn't be read (or no picture came back). */
     data object PhotoUnreadable : FriendDetailMessage
+
+    /** A "More about" line was deleted; offered with "Undo". */
+    data class CustomFieldRemoved(val label: String) : FriendDetailMessage
 }
+
+/** Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are). */
+data class AboutEdit(
+    val job: String = "",
+    val livesIn: String = "",
+    val met: MetInfo? = null,
+    val introducedBy: Introducer? = null,
+    val preferredChannel: ContactChannel? = null,
+    val emails: List<String> = emptyList(),
+)
+
+/** A relative from the "Add to <name>'s family" sheet ([id] null = new). */
+data class RelativeEdit(
+    val id: String? = null,
+    val relation: Relation,
+    val name: String,
+    val birthday: LocalDate? = null,
+    val likes: List<String> = emptyList(),
+    val note: String = "",
+    val notifyBirthday: Boolean = true,
+)
+
+/** A deleted "More about" line and where it was, kept for "Undo". */
+data class RemovedCustomField(val field: CustomField, val index: Int)
 
 data class PlanEditing(val plan: Plan?)
 
@@ -127,6 +162,8 @@ data class FriendDetailUiState(
     val planEditing: PlanEditing? = null,
     /** Plan just cancelled, offered for undo. */
     val undoPlan: Plan? = null,
+    /** "More about" line just deleted, offered for undo. */
+    val undoCustomField: RemovedCustomField? = null,
     /** Show the warmth score (off in Settings = softer view). */
     val showWarmth: Boolean = true,
     /** Things added since you last met — the catch-up story leads with them. */
@@ -245,6 +282,120 @@ class FriendDetailViewModel(
     fun onRemoveDislike(value: String) = edit { it.copy(dislikes = it.dislikes - value) }
 
     fun onNotesChange(notes: String) = edit { it.copy(notes = notes) }
+
+    // --- About ------------------------------------------------------------------------------------------------------
+
+    fun onSaveAbout(about: AboutEdit) = edit { f ->
+        val typed = about.emails.map(String::trim).filter { it.isNotEmpty() }.distinctBy(String::lowercase)
+        val fromContact = f.emails.filter { it.fromContact }
+        val keys = fromContact.mapTo(HashSet()) { it.address.lowercase() }
+        f.copy(
+            job = about.job.trim(),
+            livesIn = about.livesIn.trim(),
+            met = about.met?.let { it.copy(place = it.place.trim()) }?.takeUnless { it.isEmpty },
+            introducedBy = about.introducedBy?.let { it.copy(name = it.name.trim()) }?.takeIf { it.name.isNotEmpty() },
+            preferredChannel = about.preferredChannel,
+            emails = fromContact + typed.filter { it.lowercase() !in keys }.map { FriendEmail(it) },
+        )
+    }
+
+    // --- Family -----------------------------------------------------------------------------------------------------
+
+    fun onSaveRelative(edit: RelativeEdit) {
+        if (edit.name.isBlank()) return
+        val now = clock.now()
+        val relative = Relative(
+            id = edit.id ?: ids.next(),
+            relation = edit.relation,
+            name = edit.name.trim(),
+            birthday = edit.birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
+            likes = edit.likes,
+            note = edit.note.trim(),
+            notifyBirthday = edit.notifyBirthday,
+        )
+        edit { f ->
+            val existing = f.relatives.firstOrNull { it.id == relative.id }
+            f.copy(
+                relatives = if (existing != null) {
+                    f.relatives.map { if (it.id == relative.id) relative.copy(addedAt = existing.addedAt) else it }
+                } else {
+                    f.relatives + relative.copy(addedAt = now)
+                },
+            )
+        }
+    }
+
+    fun onRemoveRelative(id: String) = edit { f -> f.copy(relatives = f.relatives.filterNot { it.id == id }) }
+
+    // --- Tastes by kind (food, drink, interests) ---------------------------------------------------------------------
+
+    fun onAddTastes(kind: TasteKind, values: List<String>) {
+        val now = clock.now()
+        edit { f ->
+            when (kind) {
+                TasteKind.FOOD -> {
+                    val added = values.filterNot { it in f.food }
+                    f.copy(food = (f.food + values).distinct(), foodAddedAt = f.foodAddedAt + added.associateWith { now })
+                }
+                TasteKind.DRINK -> {
+                    val added = values.filterNot { it in f.drinks }
+                    f.copy(drinks = (f.drinks + values).distinct(), drinksAddedAt = f.drinksAddedAt + added.associateWith { now })
+                }
+                TasteKind.INTEREST -> {
+                    val added = values.filterNot { it in f.interests }
+                    f.copy(interests = (f.interests + values).distinct(), interestsAddedAt = f.interestsAddedAt + added.associateWith { now })
+                }
+            }
+        }
+    }
+
+    fun onRemoveTaste(kind: TasteKind, value: String) = edit { f ->
+        when (kind) {
+            TasteKind.FOOD -> f.copy(food = f.food - value, foodAddedAt = f.foodAddedAt - value)
+            TasteKind.DRINK -> f.copy(drinks = f.drinks - value, drinksAddedAt = f.drinksAddedAt - value)
+            TasteKind.INTEREST -> f.copy(interests = f.interests - value, interestsAddedAt = f.interestsAddedAt - value)
+        }
+    }
+
+    // --- "More about" (custom fields) ---------------------------------------------------------------------------------
+
+    fun onSaveCustomField(id: String?, label: String, value: String) {
+        if (label.isBlank() || value.isBlank()) return
+        val field = CustomField(id ?: ids.next(), label.trim(), value.trim())
+        edit { f ->
+            f.copy(
+                customFields = if (f.customFields.any { it.id == field.id }) {
+                    f.customFields.map { if (it.id == field.id) field else it }
+                } else {
+                    f.customFields + field
+                },
+            )
+        }
+    }
+
+    fun onRemoveCustomField(id: String) {
+        val fields = state.value.detail?.friend?.customFields ?: return
+        val index = fields.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return
+        val removed = fields[index]
+        edit { f -> f.copy(customFields = f.customFields.filterNot { it.id == id }) }
+        local.update {
+            it.copy(undoCustomField = RemovedCustomField(removed, index), message = FriendDetailMessage.CustomFieldRemoved(removed.label))
+        }
+    }
+
+    fun onUndoRemoveCustomField() {
+        val removed = local.value.undoCustomField ?: return
+        edit { f ->
+            if (f.customFields.any { it.id == removed.field.id }) {
+                f
+            } else {
+                val list = f.customFields.toMutableList()
+                list.add(removed.index.coerceIn(0, list.size), removed.field)
+                f.copy(customFields = list)
+            }
+        }
+        local.update { it.copy(undoCustomField = null) }
+    }
 
     fun onSaveKid(id: String?, name: String, birthday: LocalDate?, likes: List<String>) {
         if (name.isBlank()) return
@@ -509,5 +660,5 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null, undoPlan = null) }
+    fun onMessageShown() = local.update { it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null) }
 }

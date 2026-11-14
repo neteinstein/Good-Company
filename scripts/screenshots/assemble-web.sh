@@ -19,6 +19,14 @@ cp -r composeApp/build/processedResources/wasmJs/main/* "$OUT/"
 ( cd scripts/screenshots && npm install --silent --no-audit --no-fund >/dev/null )
 cp scripts/screenshots/node_modules/@js-joda/core/dist/js-joda.esm.js "$OUT/js-joda.esm.js"
 
+# The SQLite worker (core/data/src/wasmJsMain/sqlite-worker), normally bundled by webpack. Workers don't see the page's
+# import map, so its one bare import is pointed at a copy of @sqlite.org/sqlite-wasm (keep its version in step with
+# `sqlite-wasm` in gradle/libs.versions.toml).
+mkdir -p "$OUT/good-company-sqlite-worker" "$OUT/sqlite-wasm"
+cp scripts/screenshots/node_modules/@sqlite.org/sqlite-wasm/dist/* "$OUT/sqlite-wasm/"
+sed 's#from "@sqlite.org/sqlite-wasm"#from "../sqlite-wasm/index.mjs"#' core/data/src/wasmJsMain/sqlite-worker/sqlite.worker.js \
+  > "$OUT/good-company-sqlite-worker/sqlite.worker.js"
+
 cat > "$OUT/index.html" <<'HTML'
 <!doctype html>
 <html lang="en">

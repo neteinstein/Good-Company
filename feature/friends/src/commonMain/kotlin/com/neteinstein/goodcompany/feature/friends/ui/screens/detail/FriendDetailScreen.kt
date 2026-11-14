@@ -45,14 +45,18 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.RssFeed
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Sms
@@ -109,6 +113,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
+import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
@@ -118,6 +124,7 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
@@ -231,6 +238,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_error
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
+import com.neteinstein.goodcompany.feature.friends.resources.msg_field_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
@@ -257,6 +265,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.prefs_real
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_real_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
 import com.neteinstein.goodcompany.feature.friends.resources.qa_call
+import com.neteinstein.goodcompany.feature.friends.resources.qa_email
 import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
 import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_together
@@ -273,8 +282,16 @@ import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_today
 import com.neteinstein.goodcompany.feature.friends.resources.story_meeting_tomorrow
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_doesnt_like
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_drink
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_drink_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_food
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_food_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_interests
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_interests_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_loves_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_other_likes
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_title
 import com.neteinstein.goodcompany.feature.friends.resources.together_hint
 import com.neteinstein.goodcompany.feature.friends.resources.together_hung_out
@@ -326,6 +343,7 @@ fun FriendDetailScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenStory: () -> Unit = {},
+    onOpenFriend: (FriendId) -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -339,6 +357,15 @@ fun FriendDetailScreen(
             onBack = onBack,
             onOpenSettings = onOpenSettings,
             onOpenStory = onOpenStory,
+            onOpenFriend = onOpenFriend,
+            onSaveAbout = viewModel::onSaveAbout,
+            onSaveRelative = viewModel::onSaveRelative,
+            onRemoveRelative = viewModel::onRemoveRelative,
+            onAddTastes = viewModel::onAddTastes,
+            onRemoveTaste = viewModel::onRemoveTaste,
+            onSaveCustomField = viewModel::onSaveCustomField,
+            onRemoveCustomField = viewModel::onRemoveCustomField,
+            onUndoRemoveCustomField = viewModel::onUndoRemoveCustomField,
             onAddLifeUpdate = viewModel::onAddLifeUpdate,
             onRemoveLifeUpdate = viewModel::onRemoveLifeUpdate,
             onAddFeed = viewModel::onAddFeed,
@@ -401,6 +428,15 @@ data class FriendDetailActions(
     val onBack: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onOpenStory: () -> Unit = {},
+    val onOpenFriend: (FriendId) -> Unit = {},
+    val onSaveAbout: (AboutEdit) -> Unit = {},
+    val onSaveRelative: (RelativeEdit) -> Unit = {},
+    val onRemoveRelative: (String) -> Unit = {},
+    val onAddTastes: (TasteKind, List<String>) -> Unit = { _, _ -> },
+    val onRemoveTaste: (TasteKind, String) -> Unit = { _, _ -> },
+    val onSaveCustomField: (id: String?, label: String, value: String) -> Unit = { _, _, _ -> },
+    val onRemoveCustomField: (String) -> Unit = {},
+    val onUndoRemoveCustomField: () -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
     val onRemoveLifeUpdate: (String) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
@@ -487,14 +523,17 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
     FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
+    is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions) {
     val snackbar = remember { SnackbarHostState() }
-    var kidEditing by remember { mutableStateOf<Kid?>(null) }
-    var addingKid by rememberSaveable { mutableStateOf(false) }
+    var familyEditing by remember { mutableStateOf<FamilyEditing?>(null) }
+    var editingAbout by rememberSaveable { mutableStateOf(false) }
+    var fieldEditing by remember { mutableStateOf<CustomField?>(null) }
+    var addingField by rememberSaveable { mutableStateOf(false) }
     var addingEvent by rememberSaveable { mutableStateOf(false) }
     var addingGift by rememberSaveable { mutableStateOf(false) }
     var addingNews by rememberSaveable { mutableStateOf(false) }
@@ -506,10 +545,14 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoHangoutId != null || state.undoPlan != null
+        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
-            if (state.undoPlan != null) actions.onUndoCancelPlan() else actions.onUndoTogether()
+            when {
+                state.undoCustomField != null -> actions.onUndoRemoveCustomField()
+                state.undoPlan != null -> actions.onUndoCancelPlan()
+                else -> actions.onUndoTogether()
+            }
         }
         actions.onMessageShown()
     }
@@ -526,6 +569,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         val firstName = f.name.substringBefore(' ')
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
             item(key = "hero") { Hero(f, state, actions, onEditBirthday = { pickBirthday = true }, onDelete = { confirmDelete = true }) }
+
+            item(key = "about") { AboutCard(f, detail.others, onEdit = { editingAbout = true }, onOpenFriend = actions.onOpenFriend) }
 
             item(key = "story") {
                 val meeting = detail.plans.firstOrNull { it.date >= state.today && state.today.daysUntil(it.date) <= 1 }?.date
@@ -588,9 +633,21 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "tastes") {
                 SectionCard(stringResource(Res.string.tastes_title), icon = Icons.Rounded.ThumbUp) {
-                    Label(stringResource(Res.string.tastes_loves), Icons.Rounded.ThumbUp)
-                    TagEditor(f.likes, stringResource(Res.string.tastes_loves_placeholder), actions.onAddLikes, actions.onRemoveLike)
-                    Label(stringResource(Res.string.tastes_dislikes), Icons.Rounded.ThumbDown)
+                    Label(stringResource(Res.string.tastes_food), Icons.Rounded.Restaurant)
+                    TagEditor(
+                        f.food,
+                        stringResource(Res.string.tastes_food_placeholder),
+                        { actions.onAddTastes(TasteKind.FOOD, it) },
+                        { actions.onRemoveTaste(TasteKind.FOOD, it) },
+                    )
+                    Label(stringResource(Res.string.tastes_drink), Icons.Rounded.LocalCafe)
+                    TagEditor(
+                        f.drinks,
+                        stringResource(Res.string.tastes_drink_placeholder),
+                        { actions.onAddTastes(TasteKind.DRINK, it) },
+                        { actions.onRemoveTaste(TasteKind.DRINK, it) },
+                    )
+                    Label(stringResource(Res.string.tastes_doesnt_like), Icons.Rounded.ThumbDown)
                     TagEditor(
                         f.dislikes,
                         stringResource(Res.string.tastes_dislikes_placeholder),
@@ -598,7 +655,21 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         actions.onRemoveDislike,
                         chipColor = MaterialTheme.colorScheme.errorContainer,
                     )
+                    Label(stringResource(Res.string.tastes_interests), Icons.Rounded.Interests)
+                    TagEditor(
+                        f.interests,
+                        stringResource(Res.string.tastes_interests_placeholder),
+                        { actions.onAddTastes(TasteKind.INTEREST, it) },
+                        { actions.onRemoveTaste(TasteKind.INTEREST, it) },
+                    )
+                    // Everything stored as a like before the groups existed lives here, so nothing is lost or guessed.
+                    Label(stringResource(Res.string.tastes_other_likes), Icons.Rounded.ThumbUp)
+                    TagEditor(f.likes, stringResource(Res.string.tastes_loves_placeholder), actions.onAddLikes, actions.onRemoveLike)
                 }
+            }
+
+            item(key = "more") {
+                MoreAboutCard(f, onAdd = { addingField = true }, onEdit = { fieldEditing = it }, onRemove = actions.onRemoveCustomField)
             }
 
             item(key = "occasions") {
@@ -617,39 +688,16 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "gifts") { Gifts(f, state, actions, onAdd = { addingGift = true }, onGive = { givingGift = it }) }
 
-            item(key = "kids") {
-                SectionCard(
-                    stringResource(Res.string.kids_title),
-                    icon = Icons.Rounded.ChildCare,
-                    action = { TextButton(onClick = { addingKid = true }) { Text(stringResource(CoreRes.string.add)) } },
-                ) {
-                    if (f.kids.isEmpty()) Hint(stringResource(Res.string.kids_hint))
-                    f.kids.forEach { kid ->
-                        ListItem(
-                            modifier = Modifier.clickable { kidEditing = kid },
-                            leadingContent = { FriendAvatar(kid.name, kid.name.take(1).uppercase(), size = 44.dp) },
-                            headlineContent = { Text(kid.name, style = MaterialTheme.typography.titleSmall) },
-                            supportingContent = {
-                                val parts = listOfNotNull(
-                                    kid.birthday?.let { b ->
-                                        val next = b.nextOccurrence(state.today)
-                                        val day = relativeDay(next, state.today)
-                                        b.ageOn(next)?.let { stringResource(Res.string.kids_birthday_turns, day, it) }
-                                            ?: stringResource(Res.string.kids_birthday, day)
-                                    },
-                                    kid.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.kids_loves, it.joinToString()) },
-                                )
-                                if (parts.isNotEmpty()) Text(parts.joinToString("\n"))
-                            },
-                            trailingContent = {
-                                IconButton(onClick = { actions.onRemoveKid(kid.id) }) {
-                                    Icon(Icons.Rounded.Close, stringResource(Res.string.kids_remove, kid.name))
-                                }
-                            },
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        )
-                    }
-                }
+            item(key = "family") {
+                FamilyCard(
+                    f,
+                    state.today,
+                    onAdd = { familyEditing = FamilyEditing.New },
+                    onEditKid = { familyEditing = FamilyEditing.EditKid(it) },
+                    onEditRelative = { familyEditing = FamilyEditing.EditRelative(it) },
+                    onRemoveKid = actions.onRemoveKid,
+                    onRemoveRelative = actions.onRemoveRelative,
+                )
             }
 
             item(key = "moments") {
@@ -819,18 +867,40 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             }
         }
 
-        if (addingKid || kidEditing != null) {
-            val editing = kidEditing
-            KidDialog(
-                kid = editing,
-                onDismiss = {
-                    addingKid = false
-                    kidEditing = null
+        familyEditing?.let { editing ->
+            FamilySheet(
+                firstName = firstName,
+                editing = editing,
+                onDismiss = { familyEditing = null },
+                onSaveKid = { id, name, birthday, likes ->
+                    actions.onSaveKid(id, name, birthday, likes)
+                    familyEditing = null
                 },
-                onSave = { name, birthday, likes ->
-                    actions.onSaveKid(editing?.id, name, birthday, likes)
-                    addingKid = false
-                    kidEditing = null
+                onSaveRelative = {
+                    actions.onSaveRelative(it)
+                    familyEditing = null
+                },
+            )
+        }
+        if (editingAbout) {
+            AboutDialog(f, detail.others, onDismiss = { editingAbout = false }) {
+                actions.onSaveAbout(it)
+                editingAbout = false
+            }
+        }
+        if (addingField || fieldEditing != null) {
+            val editing = fieldEditing
+            CustomFieldDialog(
+                field = editing,
+                suggestions = detail.customFieldLabels,
+                onDismiss = {
+                    addingField = false
+                    fieldEditing = null
+                },
+                onSave = { label, value ->
+                    actions.onSaveCustomField(editing?.id, label, value)
+                    addingField = false
+                    fieldEditing = null
                 },
             )
         }
@@ -893,6 +963,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
                 phone = f.phoneNumbers.firstOrNull(),
                 onDismiss = actions.onDismissWish,
+                preferred = f.preferredChannel,
+                email = f.emails.firstOrNull()?.address,
                 isGenerating = state.isDraftingWish,
                 onPersonalise = if (state.hasAiKey) actions.onPersonaliseWish else null,
                 header = if (ideas.isEmpty()) {
@@ -1380,26 +1452,48 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
             }
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+                val email = f.emails.firstOrNull()?.address
+                // The preferred channel's action comes first and is the highlighted one; Together keeps its heart burst.
+                val preferred = f.preferredChannel?.takeIf { it != ContactChannel.EMAIL || email != null }
+                val channels = buildList {
+                    add(ContactChannel.CALL)
+                    add(ContactChannel.SMS)
+                    add(ContactChannel.WHATSAPP)
+                    if (preferred == ContactChannel.EMAIL) add(ContactChannel.EMAIL)
+                }.sortedBy { if (it == preferred) 0 else 1 }
+
+                @Composable
+                fun ChannelAction(channel: ContactChannel) {
+                    val (icon, label) = when (channel) {
+                        ContactChannel.CALL -> Icons.Rounded.Call to stringResource(Res.string.qa_call)
+                        ContactChannel.SMS -> Icons.Rounded.Sms to stringResource(Res.string.qa_text)
+                        ContactChannel.WHATSAPP -> Icons.AutoMirrored.Rounded.Chat to stringResource(Res.string.qa_whatsapp)
+                        ContactChannel.EMAIL -> Icons.Rounded.Email to stringResource(Res.string.qa_email)
+                    }
+                    val link = when (channel) {
+                        ContactChannel.CALL -> digits?.let { "tel:$it" }
+                        ContactChannel.SMS -> digits?.let { "sms:$it" }
+                        ContactChannel.WHATSAPP -> digits?.let { "https://wa.me/" + it.filter(Char::isDigit) }
+                        ContactChannel.EMAIL -> email?.let { "mailto:${it.trim()}" }
+                    }
+                    QuickAction(
+                        icon,
+                        label,
+                        onClick = { link?.let(uri::openUri) },
+                        enabled = link != null,
+                        emphasized = channel == preferred,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (preferred != null) ChannelAction(channels.first())
                 Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_together), onClick = {
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         actions.onTogetherNow()
-                    }, emphasized = true)
+                    }, emphasized = preferred == null)
                     HeartBurst(state.celebrate, Modifier.size(72.dp))
                 }
-                QuickAction(Icons.Rounded.Call, stringResource(Res.string.qa_call), onClick = {
-                    digits?.let { uri.openUri("tel:$it") }
-                }, enabled = digits != null, modifier = Modifier.weight(1f))
-                QuickAction(Icons.Rounded.Sms, stringResource(Res.string.qa_text), onClick = {
-                    digits?.let { uri.openUri("sms:$it") }
-                }, enabled = digits != null, modifier = Modifier.weight(1f))
-                QuickAction(
-                    Icons.AutoMirrored.Rounded.Chat,
-                    stringResource(Res.string.qa_whatsapp),
-                    onClick = { digits?.let { uri.openUri("https://wa.me/" + it.filter(Char::isDigit)) } },
-                    enabled = digits != null,
-                    modifier = Modifier.weight(1f),
-                )
+                channels.drop(if (preferred != null) 1 else 0).forEach { ChannelAction(it) }
                 QuickAction(
                     Icons.Rounded.AlarmAdd,
                     stringResource(Res.string.qa_remind),

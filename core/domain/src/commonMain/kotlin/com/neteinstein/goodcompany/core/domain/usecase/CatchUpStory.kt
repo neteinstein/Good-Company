@@ -4,9 +4,12 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
@@ -39,12 +42,28 @@ sealed interface FreshItem {
 
     data class NewLike(val like: String, override val addedAt: Instant) : FreshItem
 
+    /** A new food, drink or interest. */
+    data class NewTaste(val taste: String, val kind: TasteKind, override val addedAt: Instant) : FreshItem
+
+    /** A new partner, parent, sibling, pet… */
+    data class NewRelative(val name: String, val relation: Relation, override val addedAt: Instant) : FreshItem
+
     /** A new post on a blog / feed you follow for them ([addedAt] = when it was published). */
     data class NewPost(val title: String, val feedTitle: String, val link: String?, override val addedAt: Instant) : FreshItem
 }
 
 /** One kid line on the "Ask about the kids" slide. */
 data class StoryKid(val name: String, val age: Int?, val nextBirthday: LocalDate?, val birthdaySoon: Boolean, val likes: List<String>)
+
+/** One relative line on the family slide. */
+data class StoryRelative(
+    val name: String,
+    val relation: Relation,
+    val note: String,
+    val nextBirthday: LocalDate?,
+    val birthdaySoon: Boolean,
+    val likes: List<String>,
+)
 
 /** One full-screen card of a friend's catch-up story, in the order shown. Rendered by the UI. */
 sealed interface StorySlide {
@@ -60,12 +79,22 @@ sealed interface StorySlide {
     /** Their birthday just happened or is coming up. */
     data class Birthday(val date: LocalDate, val turning: Int?, val isPast: Boolean) : StorySlide
 
-    data class Kids(val kids: List<StoryKid>) : StorySlide
+    /** "About": what they do, where they live, how you met and who introduced you. */
+    data class About(val job: String, val livesIn: String, val met: MetInfo?, val introducedBy: String?) : StorySlide
+
+    /** The family slide: kids first, then the other relatives. */
+    data class Kids(val kids: List<StoryKid>, val relatives: List<StoryRelative> = emptyList()) : StorySlide
 
     /** The last meetup: when, where, who else, and what you noted. */
     data class LastTime(val date: LocalDate, val place: String?, val note: String?, val with: List<String>) : StorySlide
 
-    data class Tastes(val likes: List<String>, val dislikes: List<String>) : StorySlide
+    data class Tastes(
+        val likes: List<String>,
+        val dislikes: List<String>,
+        val food: List<String> = emptyList(),
+        val drinks: List<String> = emptyList(),
+        val interests: List<String> = emptyList(),
+    ) : StorySlide
 
     data class Notes(val text: String) : StorySlide
 
@@ -108,6 +137,10 @@ object CatchUpStoryBuilder {
         friend.kids.forEach { kid -> kid.addedAt?.let { add(FreshItem.NewKid(kid.name, it)) } }
         friend.importantEvents.forEach { e -> e.addedAt?.let { add(FreshItem.NewEvent(e.title, e.date, it)) } }
         friend.likes.forEach { like -> friend.likesAddedAt[like]?.let { add(FreshItem.NewLike(like, it)) } }
+        friend.food.forEach { t -> friend.foodAddedAt[t]?.let { add(FreshItem.NewTaste(t, TasteKind.FOOD, it)) } }
+        friend.drinks.forEach { t -> friend.drinksAddedAt[t]?.let { add(FreshItem.NewTaste(t, TasteKind.DRINK, it)) } }
+        friend.interests.forEach { t -> friend.interestsAddedAt[t]?.let { add(FreshItem.NewTaste(t, TasteKind.INTEREST, it)) } }
+        friend.relatives.forEach { r -> r.addedAt?.let { add(FreshItem.NewRelative(r.name, r.relation, it)) } }
         friend.feeds.forEach { feed ->
             feed.items.forEach { item -> item.publishedAt?.let { add(FreshItem.NewPost(item.title, feed.title, item.link, it)) } }
         }
@@ -130,8 +163,16 @@ object CatchUpStoryBuilder {
                 is FreshItem.NewEvent -> ask += item.title
                 is FreshItem.NewKid -> ask += item.name
                 is FreshItem.NewLike -> ask += item.like
+                is FreshItem.NewTaste -> ask += item.taste
+                is FreshItem.NewRelative -> ask += item.name
                 is FreshItem.NewPost -> ask += item.title
             }
+        }
+
+        val met = friend.met?.takeUnless { it.isEmpty }
+        val introducer = friend.introducedBy?.name?.trim()?.takeIf { it.isNotEmpty() }
+        if (friend.job.isNotBlank() || friend.livesIn.isNotBlank() || met != null || introducer != null) {
+            slides += StorySlide.About(friend.job.trim(), friend.livesIn.trim(), met, introducer)
         }
 
         val freshEvents = fresh.filterIsInstance<FreshItem.NewEvent>().map { it.title }.toSet()
@@ -152,7 +193,7 @@ object CatchUpStoryBuilder {
             }
         }
 
-        if (friend.kids.isNotEmpty()) {
+        if (friend.kids.isNotEmpty() || friend.relatives.isNotEmpty()) {
             slides += StorySlide.Kids(
                 friend.kids.map { kid ->
                     val next = kid.birthday?.nextOccurrence(today)
@@ -162,6 +203,17 @@ object CatchUpStoryBuilder {
                         nextBirthday = next,
                         birthdaySoon = next != null && today.daysUntil(next) <= KID_BIRTHDAY_SOON_DAYS,
                         likes = kid.likes,
+                    )
+                },
+                friend.relatives.map { r ->
+                    val next = r.birthday?.nextOccurrence(today)
+                    StoryRelative(
+                        name = r.name,
+                        relation = r.relation,
+                        note = r.note,
+                        nextBirthday = next,
+                        birthdaySoon = next != null && today.daysUntil(next) <= KID_BIRTHDAY_SOON_DAYS,
+                        likes = r.likes,
                     )
                 },
             )
@@ -177,8 +229,15 @@ object CatchUpStoryBuilder {
             )
         }
 
-        if (friend.likes.isNotEmpty() || friend.dislikes.isNotEmpty()) {
-            slides += StorySlide.Tastes(friend.likes.take(MAX_TASTES), friend.dislikes.take(MAX_TASTES))
+        val hasTastes = listOf(friend.likes, friend.dislikes, friend.food, friend.drinks, friend.interests).any { it.isNotEmpty() }
+        if (hasTastes) {
+            slides += StorySlide.Tastes(
+                likes = friend.likes.take(MAX_TASTES),
+                dislikes = friend.dislikes.take(MAX_TASTES),
+                food = friend.food.take(MAX_TASTES),
+                drinks = friend.drinks.take(MAX_TASTES),
+                interests = friend.interests.take(MAX_TASTES),
+            )
         }
         friend.notes.trim().takeIf { it.isNotEmpty() }?.let { slides += StorySlide.Notes(it) }
 

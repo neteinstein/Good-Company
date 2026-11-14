@@ -87,6 +87,13 @@ data class FriendProfile(
     val recentMessages: List<String>,
     /** What's new in their life, newest first (from "What's new"). */
     val news: List<String> = emptyList(),
+    val job: String = "",
+    val livesIn: String = "",
+    /** Partner, parents, siblings, pets: "PARTNER: Tiago (likes padel)". Kids are in [kids]. */
+    val family: List<String> = emptyList(),
+    val food: List<String> = emptyList(),
+    val drinks: List<String> = emptyList(),
+    val interests: List<String> = emptyList(),
 )
 
 data class GeneratedIdea(

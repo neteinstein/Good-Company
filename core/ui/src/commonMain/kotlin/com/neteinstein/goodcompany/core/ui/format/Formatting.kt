@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.ui.format
 import androidx.compose.runtime.Composable
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.date_long
+import com.neteinstein.goodcompany.core.ui.resources.date_month_year
 import com.neteinstein.goodcompany.core.ui.resources.date_short
 import com.neteinstein.goodcompany.core.ui.resources.day_days_ago
 import com.neteinstein.goodcompany.core.ui.resources.day_in_days
@@ -136,6 +137,10 @@ fun LocalDate.shortLabel(): String = stringResource(Res.string.date_short, month
 
 /** [shortLabel] outside composition (snackbars, shared text). */
 suspend fun LocalDate.shortLabelText(): String = getString(Res.string.date_short, getStringArray(Res.array.months_short)[month.ordinal], day)
+
+/** "Sep 2011": a month and year, for dates whose day isn't known. */
+@Composable
+fun LocalDate.monthYearLabel(): String = stringResource(Res.string.date_month_year, monthShort(month), year)
 
 /** "Mar 10, 2026" / "10 mar 2026". */
 @Composable

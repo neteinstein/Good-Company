@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.FreshItem
 import com.neteinstein.goodcompany.core.domain.usecase.StorySlide
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -66,10 +67,13 @@ import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
+import com.neteinstein.goodcompany.core.ui.l10n.relationLabel
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.about_introduced_by_line
 import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
 import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
+import com.neteinstein.goodcompany.feature.friends.resources.story_about_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_added
 import com.neteinstein.goodcompany.feature.friends.resources.story_bigday_past
 import com.neteinstein.goodcompany.feature.friends.resources.story_bigday_soon
@@ -79,9 +83,13 @@ import com.neteinstein.goodcompany.feature.friends.resources.story_birthday_soon
 import com.neteinstein.goodcompany.feature.friends.resources.story_birthday_turned
 import com.neteinstein.goodcompany.feature.friends.resources.story_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.story_done
+import com.neteinstein.goodcompany.feature.friends.resources.story_family_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_ask
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_count
+import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_drink
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_event
+import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_food
+import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_interest
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_kid
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_like
 import com.neteinstein.goodcompany.feature.friends.resources.story_fresh_post
@@ -107,6 +115,11 @@ import com.neteinstein.goodcompany.feature.friends.resources.story_seen_at
 import com.neteinstein.goodcompany.feature.friends.resources.story_tastes_avoid
 import com.neteinstein.goodcompany.feature.friends.resources.story_tastes_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_todo_title
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_drink
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_food
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_interests
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_other_likes
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.dateLabel
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -264,6 +277,7 @@ private fun slideColors(slide: StorySlide, friend: Friend): List<Color> = when (
     is StorySlide.BigDay -> OnColorGradients.Ideas
     is StorySlide.Birthday -> OnColorGradients.Sunset
     is StorySlide.Kids -> OnColorGradients.Teal
+    is StorySlide.About -> OnColorGradients.Indigo.reversed()
     is StorySlide.LastTime -> OnColorGradients.Indigo
     is StorySlide.Tastes -> listOf(OnColorGradients.Raspberry, OnColorGradients.Violet)
     is StorySlide.Notes -> OnColorGradients.Teal.reversed()
@@ -308,6 +322,12 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
                         is FreshItem.NewEvent -> Res.string.story_fresh_event
                         is FreshItem.NewLike -> Res.string.story_fresh_like
                         is FreshItem.NewPost -> Res.string.story_fresh_post
+                        is FreshItem.NewRelative -> Res.string.story_fresh_kid
+                        is FreshItem.NewTaste -> when (item.kind) {
+                            TasteKind.FOOD -> Res.string.story_fresh_food
+                            TasteKind.DRINK -> Res.string.story_fresh_drink
+                            TasteKind.INTEREST -> Res.string.story_fresh_interest
+                        }
                     },
                 ),
             )
@@ -318,8 +338,11 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
                     is FreshItem.NewEvent -> item.title
                     is FreshItem.NewLike -> item.like
                     is FreshItem.NewPost -> item.title
+                    is FreshItem.NewRelative -> item.name
+                    is FreshItem.NewTaste -> item.taste
                 },
             )
+            if (item is FreshItem.NewRelative) Body(relationLabel(item.relation))
             if (item is FreshItem.NewPost && item.feedTitle.isNotBlank()) Body(item.feedTitle)
             if (item is FreshItem.NewEvent) Body(relativeDay(item.date, state.today))
             Body(
@@ -357,9 +380,34 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
                 Body(stringResource(if (slide.isPast) Res.string.story_birthday_turned else Res.string.story_birthday_turns, it))
             }
         }
+        is StorySlide.About -> {
+            Emoji("🪪")
+            Headline(stringResource(Res.string.story_about_title))
+            if (slide.job.isNotEmpty()) Fact("💼", slide.job)
+            if (slide.livesIn.isNotEmpty()) Fact("📍", slide.livesIn)
+            slide.met?.let { met ->
+                val text = listOfNotNull(met.place.takeIf { it.isNotBlank() }, met.dateLabel()).joinToString(" · ")
+                if (text.isNotEmpty()) Fact("🤝", text)
+            }
+            slide.introducedBy?.let { Fact("👋", stringResource(Res.string.about_introduced_by_line, it)) }
+        }
         is StorySlide.Kids -> {
-            Emoji("🧸")
-            Headline(stringResource(Res.string.story_kids_title))
+            Emoji(if (slide.kids.isEmpty()) "🏡" else "🧸")
+            Headline(stringResource(if (slide.relatives.isEmpty()) Res.string.story_kids_title else Res.string.story_family_title))
+            slide.relatives.forEach { r ->
+                Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FriendAvatar(r.name, r.name.take(1).uppercase(), size = 48.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        val label = listOfNotNull(relationLabel(r.relation), r.note.takeIf { it.isNotBlank() }).joinToString(", ")
+                        Text("${r.name} · $label", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                        r.nextBirthday?.takeIf { r.birthdaySoon }?.let { next ->
+                            Small(stringResource(Res.string.story_kid_birthday, relativeDayPhrase(next, state.today)))
+                        }
+                        if (r.likes.isNotEmpty()) Small(stringResource(Res.string.kids_loves, r.likes.joinToString()))
+                    }
+                }
+            }
             slide.kids.forEach { kid ->
                 Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     FriendAvatar(kid.name, kid.name.take(1).uppercase(), size = 48.dp)
@@ -386,6 +434,18 @@ private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: Catc
         is StorySlide.Tastes -> {
             Emoji("💛")
             Headline(stringResource(Res.string.story_tastes_title))
+            listOf(
+                Res.string.tastes_food to slide.food,
+                Res.string.tastes_drink to slide.drinks,
+                Res.string.tastes_interests to slide.interests,
+            ).filter { it.second.isNotEmpty() }.forEach { (label, values) ->
+                Kicker(stringResource(label))
+                Chips(values)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (slide.likes.isNotEmpty() && (slide.food + slide.drinks + slide.interests).isNotEmpty()) {
+                Kicker(stringResource(Res.string.tastes_other_likes))
+            }
             Chips(slide.likes)
             if (slide.dislikes.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))

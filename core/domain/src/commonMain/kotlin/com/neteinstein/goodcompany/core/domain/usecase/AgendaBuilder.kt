@@ -16,7 +16,7 @@ import kotlinx.datetime.plus
 
 /**
  * Builds the "Coming up" agenda for the next [horizonDays] days:
- * birthdays (friend + kids) for friends you care about, important events, open reminders, planned meetups and
+ * birthdays (friend + kids, and relatives whose reminder is on) for friends you care about, important events, open reminders, planned meetups and
  * overdue catch-ups. Overdue reminders, catch-ups and unconfirmed past plans are pinned to [today] so they stay visible.
  */
 object AgendaBuilder {
@@ -50,6 +50,13 @@ object AgendaBuilder {
                         val next = b.nextOccurrence(today)
                         if (inWindow(next)) items += AgendaItem.KidBirthday(friend, kid, next, b.ageOn(next))
                     }
+                }
+            }
+            // A relative's birthday has its own switch (on by default, brief decision F10), whatever the friend's settings.
+            friend.relatives.filter { it.notifyBirthday }.forEach { relative ->
+                relative.birthday?.let { b ->
+                    val next = b.nextOccurrence(today)
+                    if (inWindow(next)) items += AgendaItem.RelativeBirthday(friend, relative, next, b.ageOn(next))
                 }
             }
             friend.importantEvents.filter { inWindow(it.date) }.forEach { items += AgendaItem.FriendEvent(friend, it) }
@@ -90,6 +97,7 @@ object AgendaBuilder {
         is AgendaItem.FriendEvent -> 1
         is AgendaItem.FriendBirthday -> 2
         is AgendaItem.KidBirthday -> 3
+        is AgendaItem.RelativeBirthday -> 3
         is AgendaItem.ReminderDue -> 4
     }
 }
