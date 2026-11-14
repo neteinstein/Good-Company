@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_field_shoe_size
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_board_game
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_ceramics
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_dino_lego
+import com.neteinstein.goodcompany.core.ui.resources.sample_gift_list_christmas
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_murakami
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_vinyl
 import com.neteinstein.goodcompany.core.ui.resources.sample_idea_ceramics_body
@@ -118,6 +119,7 @@ object SampleTextsFromResources : SampleTextsProvider {
         giftDinoLego = getString(Res.string.sample_gift_dino_lego),
         giftBoardGame = getString(Res.string.sample_gift_board_game),
         giftCeramicsClass = getString(Res.string.sample_gift_ceramics),
+        giftListChristmas = getString(Res.string.sample_gift_list_christmas),
         groupBoardGames = getString(Res.string.sample_circle_board_games),
         groupSurf = getString(Res.string.sample_circle_surf),
         groupChoir = getString(Res.string.sample_circle_choir),

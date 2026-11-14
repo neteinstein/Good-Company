@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
@@ -224,6 +225,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.feeds_hint
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_no_posts
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_title
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_to_news
+import com.neteinstein.goodcompany.feature.friends.resources.gift_lists_link
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_hint
@@ -377,6 +379,7 @@ fun FriendDetailScreen(
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     onOpenCircle: (String) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
+    onOpenGiftLists: () -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -448,6 +451,7 @@ fun FriendDetailScreen(
                 onOpenCircle(id)
             },
             onEditCircle = onEditCircle,
+            onOpenGiftLists = onOpenGiftLists,
             onAddPhoto = pickPhoto,
             onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
             onRemovePhoto = viewModel::onRemovePhoto,
@@ -557,6 +561,8 @@ data class FriendDetailActions(
     /** A circle pill: Home filtered by that circle. A long-press edits the circle. */
     val onOpenCircle: (String) -> Unit = {},
     val onEditCircle: (String) -> Unit = {},
+    /** "Gift lists" on the gift card (F8). */
+    val onOpenGiftLists: () -> Unit = {},
     /** Picks a picture for the avatar (then the crop editor), offered for everyone (F14). */
     val onAddPhoto: () -> Unit = {},
     /** Crops the photo shown again. */
@@ -1596,6 +1602,12 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                     }
                 }
             }
+        }
+        // F8: gift lists per occasion live on the Together tab; this is the way there from a person.
+        TextButton(onClick = actions.onOpenGiftLists, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(Icons.Rounded.Checklist, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.gift_lists_link))
         }
     }
 }

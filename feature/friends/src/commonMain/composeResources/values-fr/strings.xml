@@ -526,4 +526,5 @@
         <item quantity="one">%1$d personne est peut-être de ta famille</item>
         <item quantity="other">%1$d personnes sont peut-être de ta famille</item>
     </plurals>
+    <string name="gift_lists_link">Listes de cadeaux</string>
 </resources>

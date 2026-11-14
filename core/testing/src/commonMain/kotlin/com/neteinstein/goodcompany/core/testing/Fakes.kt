@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
+import com.neteinstein.goodcompany.core.domain.model.GiftList
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -42,6 +43,7 @@ import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
+import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaGenerator
@@ -308,6 +310,7 @@ class FakeBackupRepository(
     private val settings: FakeSettingsRepository,
     private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
     private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
+    private val giftLists: FakeGiftListRepository = FakeGiftListRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
@@ -326,6 +329,7 @@ class FakeBackupRepository(
         places = hangouts.places.value,
         settings = settings.settings.value,
         calendarDecisions = calendarDecisions.decisions.value,
+        giftLists = giftLists.state.value,
     )
 
     override suspend fun restore(backup: Backup) {
@@ -341,8 +345,22 @@ class FakeBackupRepository(
         plans.plans.value.forEach { plans.delete(it.id) }
         backup.plans.forEach { plans.upsert(it) }
         calendarDecisions.decisions.value = backup.calendarDecisions
+        giftLists.state.value = backup.giftLists
         settings.update { backup.settings }
     }
+}
+
+class FakeGiftListRepository(initial: List<GiftList> = emptyList()) : GiftListRepository {
+    val state = MutableStateFlow(initial)
+    override val lists: Flow<List<GiftList>> = state
+
+    override suspend fun get(id: String): GiftList? = state.value.firstOrNull { it.id == id }
+
+    override suspend fun upsert(list: GiftList) = state.update { lists ->
+        if (lists.any { it.id == list.id }) lists.map { if (it.id == list.id) list else it } else lists + list
+    }
+
+    override suspend fun delete(id: String) = state.update { lists -> lists.filterNot { it.id == id } }
 }
 
 class FakeCalendarDecisionRepository(initial: List<CalendarDecision> = emptyList()) : CalendarDecisionRepository {

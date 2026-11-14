@@ -11,6 +11,11 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
+import com.neteinstein.goodcompany.core.domain.model.GiftList
+import com.neteinstein.goodcompany.core.domain.model.GiftListEntry
+import com.neteinstein.goodcompany.core.domain.model.GiftListItem
+import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.GiftStatus
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -482,6 +487,42 @@ class MigrationTest {
         // Links still go with either person.
         database.friendQueries.delete("ana")
         assertTrue(database.readLinks().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version15to16_addsGiftLists_thatGoWithTheirFriend() = runTest {
+        val driver = driverAt(15)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 15, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        assertTrue(database.readGiftLists().isEmpty())
+        val list = GiftList(
+            "xmas",
+            "Christmas 2026",
+            LocalDate(2026, 12, 25),
+            Instant.fromEpochMilliseconds(1700000000000),
+            GiftOccasion.CHRISTMAS,
+            listOf(GiftListEntry(FriendId("ana"), 30.0, listOf(GiftListItem("g1", GiftStatus.GIVEN)))),
+        )
+        database.writeGiftList(list)
+        assertEquals(listOf(list), database.readGiftLists())
+        assertTrue(
+            runCatching {
+                driver.execute(null, "UPDATE gift_list_item SET status = 'LOST'", 0).await()
+            }.isFailure,
+        )
+        database.friendQueries.delete("ana")
+        assertEquals(listOf(list.copy(entries = emptyList())), database.readGiftLists())
         driver.close()
     }
 

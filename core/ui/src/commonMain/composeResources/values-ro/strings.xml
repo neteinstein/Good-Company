@@ -596,4 +596,5 @@
     <string name="kin_search_step_child">copii vitregi|copil vitreg|fiică vitregă|fiu vitreg</string>
     <string name="kin_search_half_sibling">frați vitregi|frate vitreg|surori vitrege|soră vitregă</string>
     <string name="kin_search_step_sibling">frați prin alianță|frate prin alianță|surori prin alianță|soră prin alianță</string>
+    <string name="sample_gift_list_christmas">Crăciun</string>
 </resources>

@@ -46,6 +46,8 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStory
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapScreen
@@ -130,6 +132,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
                         onEditCircle = editCircle,
+                        onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     )
                 }
             }
@@ -206,6 +209,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenFriend = openFriend,
                     onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
                     onEditCircle = editCircle,
+                    onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                 )
             }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
@@ -294,6 +298,25 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
             ) {
                 SuggestedFamilyScreen(onBack = { navController.popBackStack() }, onOpenFriend = openFriend)
+            }
+            composable<GiftListsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                GiftListsScreen(onBack = { navController.popBackStack() }, onOpenList = { navController.navigate(GiftListRoute(it)) })
+            }
+            composable<GiftListRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) { entry ->
+                val id = entry.toRoute<GiftListRoute>().id
+                GiftListScreen(
+                    listId = id,
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    // A duplicate replaces the list it was made from on the back stack.
+                    onOpenList = { copy -> navController.navigate(GiftListRoute(copy)) { popUpTo<GiftListRoute> { inclusive = true } } },
+                )
             }
         }
     }

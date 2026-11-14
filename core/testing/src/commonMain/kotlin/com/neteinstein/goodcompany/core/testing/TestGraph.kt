@@ -8,19 +8,24 @@ import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddGiftToListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddKidUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
@@ -31,10 +36,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.GroupsWithFamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
@@ -60,6 +67,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestion
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
@@ -87,12 +96,15 @@ import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFromGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveGiftFromListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreLinkUseCase
@@ -113,6 +125,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUse
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
@@ -128,6 +141,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UpdateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 
 /**
@@ -161,6 +175,7 @@ class TestGraph(
     val language = LanguageProvider { "en" }
     val linkRepo = FakePersonLinkRepository(seeded.second, friends = friendRepo)
     val calendarDecisionRepo = FakeCalendarDecisionRepository()
+    val giftListRepo = FakeGiftListRepository()
     val calendarReader = FakeCalendarReader()
     val observeCalendarEvents = ObserveCalendarEventsUseCase(settingsRepo, calendarReader, clock)
     val observeCalendarSuggestions =
@@ -184,6 +199,7 @@ class TestGraph(
         settingsRepo,
         linkRepo,
         calendarDecisionRepo,
+        giftListRepo,
     )
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
@@ -304,9 +320,20 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData =
-        LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, clock, links = linkRepo)
-    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo)
+    val loadSampleData = LoadSampleDataUseCase(
+        friendRepo,
+        hangoutRepo,
+        reminderRepo,
+        ideaRepo,
+        circles,
+        planRepo,
+        interactionRepo,
+        clock,
+        links = linkRepo,
+        giftLists = giftListRepo,
+    )
+    val removeSampleData =
+        RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, giftListRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val updateSource = FakeAppUpdateSource()
     val checkForUpdate = CheckForUpdateUseCase(updateSource)
@@ -340,4 +367,20 @@ class TestGraph(
     )
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)
+
+    val observeGiftLists = ObserveGiftListsUseCase(giftListRepo, friendRepo, clock)
+    val observeGiftList = ObserveGiftListUseCase(giftListRepo, friendRepo, clock)
+    val giftLists = GiftListUseCases(
+        create = CreateGiftListUseCase(giftListRepo, ids, clock),
+        update = UpdateGiftListUseCase(giftListRepo),
+        delete = DeleteGiftListUseCase(giftListRepo),
+        restore = RestoreGiftListUseCase(giftListRepo),
+        duplicate = DuplicateGiftListUseCase(giftListRepo, ids, clock),
+        addPeople = AddPeopleToGiftListUseCase(giftListRepo),
+        removePerson = RemoveFromGiftListUseCase(giftListRepo),
+        setBudget = SetGiftBudgetUseCase(giftListRepo),
+        addGift = AddGiftToListUseCase(giftListRepo, friendRepo, ids),
+        removeGift = RemoveGiftFromListUseCase(giftListRepo),
+        advance = AdvanceGiftStatusUseCase(giftListRepo, friendRepo, clock),
+    )
 }
