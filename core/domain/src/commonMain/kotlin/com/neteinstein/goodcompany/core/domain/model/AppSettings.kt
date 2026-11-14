@@ -20,10 +20,15 @@ data class AppSettings(
     val reminderHour: Int = 9,
     /** First-run onboarding completed (or skipped). */
     val onboardingDone: Boolean = false,
-    /** Default "meet every N days" per closeness (Inner / Close / Good friends; stored under their old "circle" names). */
+    /** Default "meet every N days" per closeness (Inner / Close / Friends; stored under their old "circle" names). */
     val innerCircleDays: Int = 7,
     val closeCircleDays: Int = 30,
     val goodFriendsDays: Int = 90,
+    /**
+     * Issue #69: Acquaintances' default "meet every N days"; null (the default) = no catch-up rhythm. Kept with the
+     * device settings (no schema change), and carried by backups like the rest of the settings.
+     */
+    val acquaintanceDays: Int? = null,
     /** Gather catch-up nudges into one weekly note instead of one per friend. */
     val weeklyDigest: Boolean = true,
     /** Day of the weekly digest (ISO: 1 = Monday … 7 = Sunday). */

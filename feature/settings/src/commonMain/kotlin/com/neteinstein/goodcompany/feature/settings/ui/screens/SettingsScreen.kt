@@ -109,6 +109,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
+import com.neteinstein.goodcompany.core.ui.resources.cadence_off
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
@@ -378,7 +379,8 @@ data class SettingsActions(
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
     val onHomeAreaChange: (String) -> Unit = {},
     val onReminderHourChange: (Int) -> Unit = {},
-    val onClosenessDaysChange: (Closeness, Int) -> Unit = { _, _ -> },
+    /** A level's default rhythm; null turns it off (only Acquaintances can be off, issue #69). */
+    val onClosenessDaysChange: (Closeness, Int?) -> Unit = { _, _ -> },
     val onImportContactsFile: () -> Unit = {},
     val onOpenTags: () -> Unit = {},
     val onEnableNotifications: () -> Unit = {},
@@ -478,6 +480,7 @@ fun SettingsContent(
                     Closeness.INNER to s.innerCircleDays,
                     Closeness.CLOSE to s.closeCircleDays,
                     Closeness.GOOD to s.goodFriendsDays,
+                    Closeness.ACQUAINTANCE to s.acquaintanceDays,
                 ).forEach { (closeness, days) ->
                     Text(
                         closenessLabel(closeness),
@@ -488,7 +491,15 @@ fun SettingsContent(
                         Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        (CIRCLE_OPTIONS + days).distinct().sorted().forEach { d ->
+                        // Acquaintances have no rhythm by default (issue #69); the real-friend levels always have one.
+                        if (!closeness.isRealFriend) {
+                            FilterChip(
+                                days == null,
+                                { actions.onClosenessDaysChange(closeness, null) },
+                                label = { Text(stringResource(CoreRes.string.cadence_off)) },
+                            )
+                        }
+                        (CIRCLE_OPTIONS + listOfNotNull(days)).distinct().sorted().forEach { d ->
                             FilterChip(days == d, { actions.onClosenessDaysChange(closeness, d) }, label = { Text(everyNDays(d)) })
                         }
                     }

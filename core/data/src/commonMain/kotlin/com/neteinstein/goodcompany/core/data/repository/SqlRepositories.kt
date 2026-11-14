@@ -396,9 +396,12 @@ internal data class DeviceSettings(
     val keptTagSpellings: Set<String> = emptySet(),
     /** Issue #68: the day "Not now" hid Today's last-seen card. */
     val lastSeenCardHiddenOn: LocalDate? = null,
+    /** Issue #69: Acquaintances' default rhythm (null = none). Here to avoid a schema change; backups still carry it. */
+    val acquaintanceDays: Int? = null,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         keptTagSpellings = keptTagSpellings,
+        acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
         aiApiKey = aiApiKey,
         lastIdeasRunAt = lastIdeasRunAt,
@@ -430,6 +433,7 @@ internal data class DeviceSettings(
             calendarOnSince = settings.calendarOnSince,
             keptTagSpellings = settings.keptTagSpellings,
             lastSeenCardHiddenOn = settings.lastSeenCardHiddenOn,
+            acquaintanceDays = settings.acquaintanceDays,
         )
     }
 }

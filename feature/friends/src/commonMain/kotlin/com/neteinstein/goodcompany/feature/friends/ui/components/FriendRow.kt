@@ -96,7 +96,7 @@ fun FriendRow(
                 overflow = TextOverflow.Ellipsis,
             )
             val birthdaySoon = summary.nextBirthday?.takeIf { today.daysUntil(it) in 0..14 }
-            val closeness = f.closeness?.takeIf { f.isCloseFriend }
+            val closeness = f.shownCloseness
             if (birthdaySoon != null || summary.meetupOverdue || closeness != null) {
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     closeness?.let { InfoPill(closenessLabel(it, short = true)) }

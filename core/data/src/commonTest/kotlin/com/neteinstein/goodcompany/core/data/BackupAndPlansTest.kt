@@ -212,6 +212,22 @@ class BackupAndPlansTest {
     }
 
     @Test
+    fun acquaintancesAndTheirRhythm_roundTripThroughABackup() = runTest {
+        val from = Stores()
+        from.friends.upsert(friend("ana", "Ana") { copy(closeness = Closeness.ACQUAINTANCE) })
+        from.appSettings.update { it.copy(acquaintanceDays = 180) }
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        assertTrue(Regex("\"circle\":\\s*\"ACQUAINTANCE\"").containsMatchIn(json), json)
+
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(Closeness.ACQUAINTANCE, snap.friends.single().closeness)
+        assertFalse(snap.friends.single().isCloseFriend)
+        assertEquals(180, snap.settings.acquaintanceDays)
+    }
+
+    @Test
     fun attachmentsRoundTripWithThumbnailAndReference_andOlderBackupsHaveNone() = runTest {
         val from = Stores()
         from.friends.upsert(friend("ana", "Ana") { copy(gifts = listOf(Gift("g1", "Lego", url = "https://shop.example/l", price = "€35"))) })

@@ -31,7 +31,7 @@
         <li><b>Coming up</b>: swipeable cards for birthdays (theirs <i>and their kids'</i>), big days and reminders.</li>
         <li><b>Time to catch up</b>: friends past their rhythm, with one-tap <i>We met</i>, <i>Called them</i> or a snooze (“remind me Saturday”).</li>
         <li><b>Drifting apart</b>: real friends whose <b>warmth score</b> is fading — sort everyone by “needs attention first”.</li>
-        <li><b>Real friends in circles</b>: Inner (weekly), Close (monthly) or Good friends (quarterly) — every circle has its own default rhythm.</li>
+        <li><b>Closeness</b>: Inner (weekly), Close (monthly), Friends (quarterly) or Acquaintances (no catch-up rhythm unless you set one) — every level has its own default rhythm.</li>
         <li>Pull in your address book — or import a <b>.vcf</b> file from Google Contacts / iCloud (handy on the web).</li>
         <li>Search by name <i>or taste</i> — “jazz”, “F1”, “sushi”.</li>
         <li><b>Pick from contacts</b> without giving the app your whole address book.</li>

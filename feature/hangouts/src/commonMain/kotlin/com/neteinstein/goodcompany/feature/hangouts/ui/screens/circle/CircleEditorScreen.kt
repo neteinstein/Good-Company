@@ -297,7 +297,7 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
 /** A member with their closeness, read-only (it belongs to the person, not the circle). */
 @Composable
 private fun MemberRow(friend: Friend, onRemove: () -> Unit) {
-    val closeness = friend.closeness?.takeIf { friend.isCloseFriend }
+    val closeness = friend.shownCloseness
     ListItem(
         modifier = Modifier.widthIn(max = 720.dp),
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),

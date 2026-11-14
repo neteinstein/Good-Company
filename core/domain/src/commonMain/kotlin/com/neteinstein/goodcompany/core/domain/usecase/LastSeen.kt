@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -34,7 +35,8 @@ enum class LastSeenAnswer(val daysAgo: Int) {
 object LastSeenQuestions {
     /**
      * People with a catch-up rhythm whose rhythm hasn't started: nothing logged that counts for them (a meetup, or any
-     * contact when calls and chats count) and no answer yet. Paused people are left out. Closest first, then by name.
+     * contact when calls and chats count) and no answer yet. Paused people and Acquaintances (issue #69, even with a
+     * rhythm from Settings) are left out. Closest first, then by name.
      */
     fun pending(
         friends: List<Friend>,
@@ -45,7 +47,7 @@ object LastSeenQuestions {
         val seen = Relationships.lastSeen(hangouts).keys
         val contacted = interactions.mapTo(HashSet()) { it.friendId }
         return friends
-            .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && rules.cadenceFor(f) != null }
+            .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && f.closeness != Closeness.ACQUAINTANCE && rules.cadenceFor(f) != null }
             .filter { f -> f.id !in seen && !(f.contactCountsAsCatchUp && f.id in contacted) }
             .sortedWith(compareBy<Friend> { it.closeness?.ordinal ?: Int.MAX_VALUE }.thenBy { it.displayName.lowercase() })
     }

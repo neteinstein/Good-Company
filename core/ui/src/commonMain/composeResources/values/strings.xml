@@ -89,13 +89,15 @@
     <string name="cadence_quarterly">Quarterly</string>
     <string name="cadence_off">Off</string>
 
-    <!-- Closeness (Inner / Close / Good friends). The keys keep their old "circle_" names. -->
-    <string name="circle_inner">Inner circle</string>
-    <string name="circle_close">Close friends</string>
-    <string name="circle_good">Good friends</string>
+    <!-- Closeness (Inner / Close / Friends / Acquaintances, issue #69). The keys keep their old "circle_" names. -->
+    <string name="circle_inner">Inner</string>
+    <string name="circle_close">Close</string>
+    <string name="circle_good">Friends</string>
     <string name="circle_inner_short">Inner</string>
     <string name="circle_close_short">Close</string>
-    <string name="circle_good_short">Good</string>
+    <string name="circle_good_short">Friends</string>
+    <string name="circle_acquaintance">Acquaintances</string>
+    <string name="circle_acquaintance_short">Acquaintances</string>
 
     <!-- Warmth -->
     <string name="warmth_warm">Warm</string>
