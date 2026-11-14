@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.testing
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -170,6 +171,14 @@ class FakeInteractionRepository(
 
     override suspend fun deleteJournal(id: String) = journalState.update { list -> list.filterNot { it.id == id } }
 
+    private val attachmentState = MutableStateFlow(emptyList<Attachment>())
+    override val attachments: StateFlow<List<Attachment>> = attachmentState
+
+    override suspend fun upsertAttachment(attachment: Attachment) =
+        attachmentState.update { list -> list.filterNot { it.id == attachment.id } + attachment }
+
+    override suspend fun deleteAttachment(id: String) = attachmentState.update { list -> list.filterNot { it.id == id } }
+
     override suspend fun addMessages(messages: List<ConversationMessage>) = messageState.update { (it + messages).distinct() }
 
     override suspend fun syncCommunicationLogs(friends: List<Friend>): Int {
@@ -241,6 +250,7 @@ class FakeBackupRepository(
         interactions = interactions.interactions.value,
         messages = interactions.messages.value,
         journal = interactions.journal.value,
+        attachments = interactions.attachments.value,
         ideas = ideas.ideas.value,
         groups = groups.groups.value,
         plans = plans.plans.value,

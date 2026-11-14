@@ -406,4 +406,16 @@
     <string name="circle_color_slate">Ardezie</string>
     <string name="circle_tick_who_came">Bifează cine a venit din %1$s.</string>
     <string name="log_title_circle">Notează o întâlnire: %1$s</string>
+    <string name="attachment_kind_photo">Fotografie</string>
+    <string name="attachment_kind_link">Link</string>
+    <string name="attachment_kind_text">Text din conversație</string>
+    <string name="attachment_note">idee sau notă</string>
+    <string name="attachment_counted_met">contat ca întâlnire</string>
+    <string name="attachment_counted_message">contat ca mesaj</string>
+    <string name="attachment_counted_call">contat ca apel</string>
+    <string name="attachment_counted_email">contat ca e-mail</string>
+    <string name="attachment_counted_contact">contat ca contact</string>
+    <string name="attachment_original_gone">Originalul nu mai este în galerie</string>
+    <string name="attachment_copy">Copiază</string>
+    <string name="attachment_open_link">Deschide linkul</string>
 </resources>

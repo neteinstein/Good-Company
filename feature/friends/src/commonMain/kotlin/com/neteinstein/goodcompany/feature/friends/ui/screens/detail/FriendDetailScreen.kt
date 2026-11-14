@@ -98,6 +98,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -113,6 +114,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
@@ -124,6 +127,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
@@ -161,7 +165,10 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.platform.OpenedPhoto
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoOpener
+import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
@@ -278,6 +285,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.qa_together
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
+import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import com.neteinstein.goodcompany.feature.friends.resources.story_cta
@@ -335,6 +343,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.KidDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import kotlinx.datetime.daysUntil
@@ -362,6 +371,10 @@ fun FriendDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val pickPhoto = rememberImagePicker(onPicked = viewModel::onPhotoPicked)
+    val pickSavedPhoto = rememberGalleryPhotoPicker { picked ->
+        picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
+    }
+    val photoOpener = rememberGalleryPhotoOpener()
     val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
     FriendDetailContent(
@@ -419,6 +432,10 @@ fun FriendDetailScreen(
             },
             onEditCircle = onEditCircle,
             onAddPhoto = pickPhoto,
+            onAddSavedPhoto = pickSavedPhoto,
+            onOpenOriginal = photoOpener::open,
+            onRemoveAttachment = viewModel::onRemoveAttachment,
+            onUndoRemoveAttachment = viewModel::onUndoRemoveAttachment,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
@@ -456,6 +473,11 @@ data class FriendDetailActions(
     val onSaveCustomField: (id: String?, label: String, value: String) -> Unit = { _, _, _ -> },
     val onRemoveCustomField: (String) -> Unit = {},
     val onUndoRemoveCustomField: () -> Unit = {},
+    /** "Add a photo" on the Saved card (the gallery picker that keeps a reference). */
+    val onAddSavedPhoto: () -> Unit = {},
+    val onOpenOriginal: suspend (PhotoRef) -> OpenedPhoto = { OpenedPhoto.Unavailable },
+    val onRemoveAttachment: (Attachment) -> Unit = {},
+    val onUndoRemoveAttachment: () -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
     val onRemoveLifeUpdate: (String) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
@@ -543,6 +565,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
+    FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -561,13 +584,39 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var givingGift by remember { mutableStateOf<Gift?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var seeAllSaved by rememberSaveable { mutableStateOf(false) }
+    var viewing by remember { mutableStateOf<AttachmentView?>(null) }
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
+    val openAttachment: (Attachment) -> Unit = { a ->
+        when (a.kind) {
+            AttachmentKind.LINK -> a.url?.let(openLink)
+            AttachmentKind.TEXT -> viewing = AttachmentView.Text(a)
+            AttachmentKind.PHOTO -> {
+                val ref = a.photoRef
+                if (ref == null) {
+                    viewing = AttachmentView.Photo(a, null)
+                } else {
+                    scope.launch {
+                        when (val opened = actions.onOpenOriginal(ref)) {
+                            OpenedPhoto.Shown -> Unit
+                            is OpenedPhoto.Loaded -> viewing = AttachmentView.Photo(a, opened.image)
+                            OpenedPhoto.Unavailable -> viewing = AttachmentView.Photo(a, null)
+                        }
+                    }
+                }
+            }
+        }
+    }
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null
+        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
+                state.undoAttachment != null -> actions.onUndoRemoveAttachment()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
                 state.undoPlan != null -> actions.onUndoCancelPlan()
                 else -> actions.onUndoTogether()
@@ -623,6 +672,18 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         )
                     }
                 }
+            }
+
+            item(key = "saved") {
+                SavedCard(
+                    firstName,
+                    state.attachments,
+                    state.today,
+                    state.zone,
+                    onAddPhoto = actions.onAddSavedPhoto,
+                    onOpen = openAttachment,
+                    onSeeAll = { seeAllSaved = true },
+                )
             }
 
             item(key = "feeds") { Feeds(f, state, actions, onAdd = { addingFeed = true }) }
@@ -935,6 +996,28 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 actions.onMarkGiftGiven(gift.id, occasion)
                 givingGift = null
             }
+        }
+        if (seeAllSaved) {
+            SavedListSheet(
+                firstName,
+                state.attachments,
+                state.today,
+                state.zone,
+                onOpen = openAttachment,
+                onRemove = actions.onRemoveAttachment,
+                onDismiss = { seeAllSaved = false },
+            )
+        }
+        viewing?.let { view ->
+            AttachmentViewer(
+                view,
+                onOpenLink = openLink,
+                onRemove = {
+                    actions.onRemoveAttachment(view.attachment)
+                    viewing = null
+                },
+                onDismiss = { viewing = null },
+            )
         }
         if (pickBirthday) {
             val initial = f.birthday?.let { LocalDate(it.year ?: 1990, Month(it.month), it.day) }

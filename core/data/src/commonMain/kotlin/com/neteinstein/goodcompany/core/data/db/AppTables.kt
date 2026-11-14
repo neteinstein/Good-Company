@@ -3,14 +3,19 @@ package com.neteinstein.goodcompany.core.data.db
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage as DomainMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup as DomainGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout as DomainHangout
@@ -32,6 +37,7 @@ internal val GROUP_TABLES = arrayOf("friend_group", "group_member", "friend")
 internal val INTERACTION_TABLES = arrayOf("interaction", "friend")
 internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
 internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
+internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
@@ -229,6 +235,49 @@ internal suspend fun GoodCompanyDatabase.readJournal(): List<DomainJournalEntry>
 /** Adds or replaces [entry] (skipped when its friend is gone). */
 internal suspend fun GoodCompanyDatabase.writeJournal(entry: DomainJournalEntry) {
     interactionQueries.upsertJournal(entry.id, entry.friendId.value, entry.at.toColumn(), entry.text)
+}
+
+internal suspend fun GoodCompanyDatabase.readAttachments(): List<DomainAttachment> =
+    attachmentQueries.allAttachments().awaitAsList().map { row ->
+        DomainAttachment(
+            id = row.id,
+            friendId = row.friend_id?.let(::FriendId),
+            circleId = row.circle_id,
+            kind = AttachmentKind.valueOf(row.kind),
+            text = row.text,
+            url = row.url,
+            title = row.title,
+            photoRef = row.photo_platform?.let { p -> row.photo_ref?.let { PhotoRef(PhotoPlatform.valueOf(p), it) } },
+            thumbnail = row.thumbnail?.let(::ContactPhoto),
+            caption = row.caption,
+            at = row.at.toInstant(),
+            countsAsInteraction = row.counts_as_interaction.toFlag(),
+            interactionType = row.interaction_type?.let(InteractionType::valueOf),
+            logId = row.log_id,
+            createdAt = row.created_at.toInstant(),
+        )
+    }
+
+/** Adds or replaces [attachment] (skipped when its friend or circle is gone). */
+internal suspend fun GoodCompanyDatabase.writeAttachment(attachment: DomainAttachment) {
+    attachmentQueries.upsertAttachment(
+        id = attachment.id,
+        friendId = attachment.friendId?.value,
+        circleId = attachment.circleId.takeIf { attachment.friendId == null },
+        kind = attachment.kind.name,
+        text = attachment.text,
+        url = attachment.url,
+        title = attachment.title,
+        photoPlatform = attachment.photoRef?.platform?.name,
+        photoRef = attachment.photoRef?.value,
+        thumbnail = attachment.thumbnail?.base64,
+        caption = attachment.caption,
+        at = attachment.at.toColumn(),
+        countsAsInteraction = attachment.countsAsInteraction.toColumn(),
+        interactionType = attachment.interactionType?.name,
+        logId = attachment.logId,
+        createdAt = attachment.createdAt.toColumn(),
+    )
 }
 
 internal suspend fun GoodCompanyDatabase.readMessages(): List<DomainMessage> =

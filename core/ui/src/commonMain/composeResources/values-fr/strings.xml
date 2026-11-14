@@ -394,4 +394,16 @@
     <string name="circle_color_slate">Ardoise</string>
     <string name="circle_tick_who_came">Cochez qui est venu de %1$s.</string>
     <string name="log_title_circle">Noter une sortie : %1$s</string>
+    <string name="attachment_kind_photo">Photo</string>
+    <string name="attachment_kind_link">Lien</string>
+    <string name="attachment_kind_text">Texte de discussion</string>
+    <string name="attachment_note">idée ou note</string>
+    <string name="attachment_counted_met">compté comme une rencontre</string>
+    <string name="attachment_counted_message">compté comme un message</string>
+    <string name="attachment_counted_call">compté comme un appel</string>
+    <string name="attachment_counted_email">compté comme un e-mail</string>
+    <string name="attachment_counted_contact">compté comme un contact</string>
+    <string name="attachment_original_gone">L’original n’est plus dans votre galerie</string>
+    <string name="attachment_copy">Copier</string>
+    <string name="attachment_open_link">Ouvrir le lien</string>
 </resources>

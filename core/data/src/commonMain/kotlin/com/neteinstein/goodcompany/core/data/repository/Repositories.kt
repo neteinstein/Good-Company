@@ -2,10 +2,10 @@ package com.neteinstein.goodcompany.core.data.repository
 
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
-import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
 import com.neteinstein.goodcompany.core.data.storage.Keys
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -35,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -161,16 +162,25 @@ class InteractionRepositoryImpl(
     override val messages: Flow<List<ConversationMessage>> = messageStore.flow
     private val journalStore = PersistentState(settings, Keys.JOURNAL, ListSerializer(JournalEntry.serializer()), emptyList())
     override val journal: Flow<List<JournalEntry>> = journalStore.flow
+    private val attachmentStore = PersistentState(settings, Keys.ATTACHMENTS, ListSerializer(Attachment.serializer()), emptyList())
+    override val attachments: Flow<List<Attachment>> = attachmentStore.flow
 
-    internal suspend fun replaceAll(list: List<Interaction>, messages: List<ConversationMessage>, journal: List<JournalEntry>) {
+    internal suspend fun replaceAll(
+        list: List<Interaction>,
+        messages: List<ConversationMessage>,
+        journal: List<JournalEntry>,
+        attachments: List<Attachment> = emptyList(),
+    ) {
         store.update { merged(emptyList(), list) }
         messageStore.update { messages }
         journalStore.update { journal }
+        attachmentStore.update { attachments }
     }
 
     internal val current: List<Interaction> get() = store.value
     internal val currentMessages: List<ConversationMessage> get() = messageStore.value
     internal val currentJournal: List<JournalEntry> get() = journalStore.value
+    internal val currentAttachments: List<Attachment> get() = attachmentStore.value
 
     override suspend fun addAll(interactions: List<Interaction>) = store.update { current -> merged(current, interactions) }
 
@@ -191,6 +201,12 @@ class InteractionRepositoryImpl(
     }
 
     override suspend fun deleteJournal(id: String) = journalStore.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertAttachment(attachment: Attachment) = attachmentStore.update { list ->
+        list.filterNot { it.id == attachment.id } + attachment
+    }
+
+    override suspend fun deleteAttachment(id: String) = attachmentStore.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun addMessages(messages: List<ConversationMessage>) = messageStore.update { current ->
         (current + messages).distinct()
@@ -311,6 +327,7 @@ class BackupRepositoryImpl(
         interactions = interactions.current,
         messages = interactions.currentMessages,
         journal = interactions.currentJournal,
+        attachments = interactions.currentAttachments,
         ideas = ideas.current,
         groups = groups.current,
         plans = plans.current,
@@ -321,7 +338,7 @@ class BackupRepositoryImpl(
         friends.replaceAll(backup.friends)
         hangouts.replaceAll(backup.hangouts)
         reminders.replaceAll(backup.reminders)
-        interactions.replaceAll(backup.interactions, backup.messages, backup.journal)
+        interactions.replaceAll(backup.interactions, backup.messages, backup.journal, backup.attachments)
         ideas.replaceAll(backup.ideas)
         groups.replaceAll(backup.groups)
         plans.replaceAll(backup.plans)

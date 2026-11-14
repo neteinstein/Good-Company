@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.data.repository
 
+import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
@@ -13,6 +14,7 @@ import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
 import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
 import com.neteinstein.goodcompany.core.data.db.nextFriendPosition
+import com.neteinstein.goodcompany.core.data.db.readAttachments
 import com.neteinstein.goodcompany.core.data.db.readFriends
 import com.neteinstein.goodcompany.core.data.db.readGroups
 import com.neteinstein.goodcompany.core.data.db.readHangouts
@@ -24,6 +26,7 @@ import com.neteinstein.goodcompany.core.data.db.readPlans
 import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
 import com.neteinstein.goodcompany.core.data.db.toColumn
+import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.writeFriend
 import com.neteinstein.goodcompany.core.data.db.writeGroup
 import com.neteinstein.goodcompany.core.data.db.writeHangout
@@ -36,9 +39,9 @@ import com.neteinstein.goodcompany.core.data.db.writePreferences
 import com.neteinstein.goodcompany.core.data.db.writeReminder
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
-import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -67,6 +70,7 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -203,6 +207,7 @@ class SqlInteractionRepository(
     override val interactions: Flow<List<Interaction>> = db.observe(*INTERACTION_TABLES) { it.readInteractions() }
     override val messages: Flow<List<ConversationMessage>> = db.observe(*MESSAGE_TABLES) { it.readMessages() }
     override val journal: Flow<List<JournalEntry>> = db.observe(*JOURNAL_TABLES) { it.readJournal() }
+    override val attachments: Flow<List<Attachment>> = db.observe(*ATTACHMENT_TABLES) { it.readAttachments() }
 
     override suspend fun addAll(interactions: List<Interaction>) = db.transaction { database ->
         interactions.forEach { database.writeInteraction(it) }
@@ -220,6 +225,14 @@ class SqlInteractionRepository(
 
     override suspend fun deleteJournal(id: String) {
         db.access { it.interactionQueries.deleteJournal(id) }
+    }
+
+    override suspend fun upsertAttachment(attachment: Attachment) {
+        db.access { it.writeAttachment(attachment) }
+    }
+
+    override suspend fun deleteAttachment(id: String) {
+        db.access { it.attachmentQueries.deleteAttachment(id) }
     }
 
     override suspend fun addMessages(messages: List<ConversationMessage>) = db.transaction { database ->
@@ -389,6 +402,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 interactions = database.readInteractions(),
                 messages = database.readMessages(),
                 journal = database.readJournal(),
+                attachments = database.readAttachments(),
                 ideas = database.readIdeas(),
                 groups = database.readGroups(),
                 plans = database.readPlans(),
@@ -418,6 +432,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     interactionQueries.deleteAllInteractions()
     interactionQueries.deleteAllMessages()
     interactionQueries.deleteAllJournal()
+    attachmentQueries.deleteAllAttachments()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -428,5 +443,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     backup.interactions.forEach { writeInteraction(it) }
     backup.messages.forEach { writeMessage(it) }
     backup.journal.forEach { writeJournal(it) }
+    backup.attachments.forEach { writeAttachment(it) } // after friends and circles, which they belong to
     writePreferences(backup.settings)
 }

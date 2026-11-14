@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -88,6 +89,14 @@ interface InteractionRepository {
     suspend fun upsertJournal(entry: JournalEntry)
 
     suspend fun deleteJournal(id: String)
+
+    /** Shared things kept on a friend's or a circle's page (D6, F12). They go with the friend or circle. */
+    val attachments: Flow<List<Attachment>>
+
+    /** Adds or replaces [attachment] (skipped when its friend or circle is gone). */
+    suspend fun upsertAttachment(attachment: Attachment)
+
+    suspend fun deleteAttachment(id: String)
 
     suspend fun addMessages(messages: List<ConversationMessage>)
 

@@ -83,7 +83,7 @@ fun FriendAvatar(
 
 /** Decoded once per photo; null (so initials show) when there's none or it isn't a readable image. */
 @Composable
-private fun rememberPhotoBitmap(photo: ContactPhoto?): ImageBitmap? = remember(photo) {
+fun rememberPhotoBitmap(photo: ContactPhoto?): ImageBitmap? = remember(photo) {
     photo?.let { runCatching { it.bytes().takeIf(ByteArray::isNotEmpty)?.decodeToImageBitmap() }.getOrNull() }
 }
 

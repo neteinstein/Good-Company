@@ -303,7 +303,6 @@
     <string name="share_search">Rechercher des amis</string>
     <string name="share_mentioned">Mentionné</string>
     <string name="share_change">Changer</string>
-    <string name="share_whats_new">Quoi de neuf pour %1$s</string>
     <string name="share_suggest">Lire avec l’IA</string>
     <string name="share_ai_hint">Ajoutez votre clé d’IA dans les Réglages et Claude lira les captures d’écran pour vous.</string>
     <string name="share_nothing_found">Aucune nouvelle de %1$s trouvée. Écrivez-la vous-même.</string>
@@ -439,4 +438,25 @@
         <item quantity="one">Ajouter %1$d ami</item>
         <item quantity="other">Ajouter %1$d amis</item>
     </plurals>
+    <string name="share_save_for">Enregistrer pour %1$s</string>
+    <string name="share_reason_number">Numéro dans le texte partagé</string>
+    <string name="share_reason_recent">Récent</string>
+    <string name="share_reason_seen_today">Vu aujourd’hui</string>
+    <string name="share_circles">Cercles</string>
+    <string name="share_add_typed">Ajouter « %1$s » comme ami</string>
+    <string name="share_how_count">Comment le compter ?</string>
+    <string name="share_counts">Compte comme une interaction</string>
+    <string name="share_counts_hint">L’ajoute à la chronologie et met à jour votre dernier échange</string>
+    <string name="share_note">Juste une idée ou une note</string>
+    <string name="share_note_hint">Gardé sur la page de %1$s ; le dernier contact ne change pas</string>
+    <string name="share_gift">Idée cadeau</string>
+    <string name="share_gift_hint">Enregistrée dans les idées cadeaux de %1$s, avec le lien</string>
+    <string name="share_caption">Légende</string>
+    <string name="share_price">Prix (facultatif)</string>
+    <string name="share_failed">Impossible d’enregistrer. Réessayez.</string>
+    <string name="saved_title">Enregistré pour %1$s</string>
+    <string name="saved_see_all">Tout voir</string>
+    <string name="saved_add_photo">Ajouter une photo</string>
+    <string name="saved_empty">Partagez une discussion, un lien ou une photo avec Good Company et ils apparaîtront ici.</string>
+    <string name="saved_removed">Retiré des éléments enregistrés</string>
 </resources>

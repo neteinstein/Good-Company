@@ -233,11 +233,21 @@ Seen in practice:
     resources in `androidApp/src/main/res/values-*` (all five languages). iOS: `iosApp/NextUpWidget` (WidgetKit) reads the
     `WidgetSnapshot` JSON the app writes to the app group (`startWidgetSync`); "We met" opens `goodcompany://met/<id>`.
     Both show what `ObserveHomeWidgetUseCase` returns; keep the two in step (owner: iOS keeps pace with Android and web).
-19. **Share into the app.** "Share → Good Company" lands in `ShareInbox` (domain), which opens the "Save to a friend"
-    screen. Android: `ACTION_SEND` in `MainActivity` (`ShareIntents`, images downscaled to 1568 px JPEG). iOS: the Share
-    Extension writes `ShareInbox/*.json` (+ `.jpg`) into the app group; the app reads it when it becomes active. Web: the
-    manifest's `share_target` (installed PWA only) → `?share_title&share_text&share_url` → `LaunchOptions.shared`.
-    Shared content is never stored as-is: only the "What's new" line the user saves.
+19. **Share into the app (issue #24, D6, C1, F12, F17).** "Share → Good Company" lands in `ShareInbox` (domain), which
+    opens `ShareRoute` (who → confirm). Android: `ACTION_SEND` in `MainActivity` (`ShareIntents`: images downscaled to
+    1568 px JPEG, `EXTRA_TITLE`/`EXTRA_SUBJECT` as the title). iOS: the Share Extension writes `ShareInbox/*.json`
+    (+ `.jpg`, plus the item title) into the app group; the app reads it when it becomes active. Web: the manifest's
+    `share_target` (installed PWA only) → `?share_title&share_text&share_url` → `LaunchOptions.shared`.
+    The share is saved by `SaveSharedUseCase` as an `Attachment` (own `attachment` table, migration `6.sqm`, in backups)
+    for a person **or** a circle (exactly one owner; a circle's shows on every member's page via `Attachment.isFor`), or
+    as a `Gift` idea (`url`, `price`, person only). When it counts, it is logged through `LogInteractionUseCase`
+    (`source = SHARE`) and `Attachment.logId` points at the hangout / interaction / batch, which is how `Timeline.build`
+    shows it on that entry. Photos: a thumbnail (`PhotoShrinker`) plus an optional `PhotoRef` to the gallery item, never
+    the full photo. `rememberGalleryPhotoPicker` (Android Photo Picker + persistable grant, iOS `PHPicker` asset id) and
+    `rememberGalleryPhotoOpener` (`ACTION_VIEW` / `PHImageManager`; web: never) live in `:core:ui` platform; share-sheet
+    photos usually get no reference (thumbnail only). Friends are ranked by `ShareMatcher` (name, phone number via
+    `PhoneMatcher`, now in domain `util/`, recent contact, closeness); the type is guessed by `ShareGuesser`. Link titles
+    come only from the sending app: the app never fetches a shared link.
 20. **Blogs & feeds.** `FeedParser` (domain) is a tiny RSS/Atom reader; `KtorFeedFetcher` fetches straight from the
     device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
     browser many feeds fail because of CORS; that's expected.

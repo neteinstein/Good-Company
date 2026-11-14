@@ -334,16 +334,20 @@ private fun CircleMembers(circle: FriendGroup, members: List<Friend>, ticked: Se
 
 /** F2: Today is preselected; Yesterday and "Pick a date" log past meetups. Nothing hidden behind a long-press. */
 @Composable
-private fun DateChoice(state: LogSheetState, onDate: (LocalDate) -> Unit, onPick: () -> Unit) {
-    val yesterday = state.today.minus(1, DateTimeUnit.DAY)
-    val other = state.date != state.today && state.date != yesterday
+private fun DateChoice(state: LogSheetState, onDate: (LocalDate) -> Unit, onPick: () -> Unit) = LogDateChoice(state.date, state.today, onDate, onPick)
+
+/** Today / Yesterday / a picked date, as on the Log sheet (also used by the share screen). */
+@Composable
+fun LogDateChoice(date: LocalDate, today: LocalDate, onDate: (LocalDate) -> Unit, onPick: () -> Unit) {
+    val yesterday = today.minus(1, DateTimeUnit.DAY)
+    val other = date != today && date != yesterday
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(state.date == state.today, onClick = { onDate(state.today) }, label = { Text(stringResource(Res.string.log_today)) })
-        FilterChip(state.date == yesterday, onClick = { onDate(yesterday) }, label = { Text(stringResource(Res.string.log_yesterday)) })
+        FilterChip(date == today, onClick = { onDate(today) }, label = { Text(stringResource(Res.string.log_today)) })
+        FilterChip(date == yesterday, onClick = { onDate(yesterday) }, label = { Text(stringResource(Res.string.log_yesterday)) })
         FilterChip(
             other,
             onClick = onPick,
-            label = { Text(if (other) state.date.shortLabel() else stringResource(Res.string.log_pick_date)) },
+            label = { Text(if (other) date.shortLabel() else stringResource(Res.string.log_pick_date)) },
             leadingIcon = { Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(18.dp)) },
         )
     }

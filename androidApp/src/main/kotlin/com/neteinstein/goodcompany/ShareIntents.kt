@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany
 
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,6 +10,8 @@ import android.os.Build
 import androidx.core.graphics.scale
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
+import com.neteinstein.goodcompany.core.ui.platform.dateTaken
+import com.neteinstein.goodcompany.core.ui.platform.keepReference
 import java.io.ByteArrayOutputStream
 import kotlin.math.max
 
@@ -20,14 +23,19 @@ object ShareIntents {
     private const val MAX_SIDE = 1568
     private const val JPEG_QUALITY = 85
 
-    fun read(intent: Intent?, resolver: ContentResolver): SharedContent? {
+    fun read(intent: Intent?, context: Context): SharedContent? {
         if (intent?.action != Intent.ACTION_SEND) return null
         val text = intent.getStringExtra(Intent.EXTRA_TEXT)?.trim()?.takeIf { it.isNotEmpty() }
-        val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)?.trim()?.takeIf { it.isNotEmpty() }
+        val title = (intent.getStringExtra(Intent.EXTRA_TITLE) ?: intent.getStringExtra(Intent.EXTRA_SUBJECT))
+            ?.trim()?.takeIf { it.isNotEmpty() }
         val url = text?.let { Regex("https?://\\S+").find(it)?.value }
-        val body = listOfNotNull(subject, text).distinct().joinToString("\n").ifEmpty { null }
-        val image = if (intent.type?.startsWith("image/") == true) stream(intent)?.let { readImage(it, resolver) } else null
-        return SharedContent(text = body, url = url, image = image).takeUnless { it.isEmpty }
+        val uri = if (intent.type?.startsWith("image/") == true) stream(intent) else null
+        val image = uri?.let { readImage(it, context.contentResolver) }
+        // D6: keep a reference to the original only when the sender lets us keep access; otherwise thumbnail only.
+        val ref = if (image != null) keepReference(context, uri) else null
+        val takenOn = if (image != null) dateTaken(context, uri) else null
+        return SharedContent(text = text, url = url, image = image, title = title, photoRef = ref, takenOn = takenOn)
+            .takeUnless { it.isEmpty }
     }
 
     private fun stream(intent: Intent): Uri? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

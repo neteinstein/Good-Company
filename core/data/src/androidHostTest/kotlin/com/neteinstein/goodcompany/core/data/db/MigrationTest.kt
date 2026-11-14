@@ -3,8 +3,11 @@ package com.neteinstein.goodcompany.core.data.db
 import app.cash.sqldelight.async.coroutines.await
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -184,6 +187,48 @@ class MigrationTest {
         assertEquals(CircleColor.TEAL, database.readGroups().single { it.id == "g0" }.color)
         database.writePreferences(settings.copy(homeCircleFilter = "g0"))
         assertEquals("g0", database.readPreferences(AppSettings()).homeCircleFilter)
+        driver.close()
+    }
+
+    @Test
+    fun version6to7_keepsGifts_andAttachmentsGoWithTheirFriendOrCircle() = runTest {
+        val driver = driverAt(6)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO gift VALUES ('ana', 'g1', 0, 'Book', 'Murakami', NULL, NULL, NULL)", 0).await()
+        driver.execute(null, "INSERT INTO friend_group VALUES ('crew', 0, 'Crew', '👥', NULL, NULL, 'TEAL')", 0).await()
+        driver.execute(null, "INSERT INTO group_member VALUES ('crew', 'ana', 0)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 6, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertEquals(Gift("g1", "Book", "Murakami"), ana.gifts.single())
+        database.writeFriend(ana.copy(gifts = listOf(Gift("g1", "Lego", url = "https://shop.example/l", price = "€35"))), 0)
+        assertEquals("€35", database.readFriends().single().gifts.single().price)
+
+        val mine = Attachment("a1", friendId = ana.id, kind = AttachmentKind.TEXT, text = "hi", at = Instant.fromEpochSeconds(1))
+        val ours = Attachment("a2", circleId = "crew", kind = AttachmentKind.LINK, url = "https://x.y", at = Instant.fromEpochSeconds(2))
+        database.writeAttachment(mine)
+        database.writeAttachment(ours)
+        database.writeAttachment(mine.copy(id = "lost", friendId = FriendId("nobody")))
+        assertEquals(listOf(mine, ours), database.readAttachments())
+        // Neither or both owners is refused by the schema.
+        assertTrue(
+            runCatching {
+                driver.execute(null, "INSERT INTO attachment (id, kind, at, created_at) VALUES ('x', 'TEXT', 1, 1)", 0).await()
+            }.isFailure,
+        )
+        database.friendGroupQueries.delete("crew")
+        assertEquals(listOf(mine), database.readAttachments())
+        database.friendQueries.delete("ana")
+        assertTrue(database.readAttachments().isEmpty())
         driver.close()
     }
 }

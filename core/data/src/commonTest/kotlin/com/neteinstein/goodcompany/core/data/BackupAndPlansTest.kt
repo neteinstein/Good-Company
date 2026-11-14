@@ -11,12 +11,16 @@ import com.neteinstein.goodcompany.core.data.repository.ReminderRepositoryImpl
 import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
@@ -26,6 +30,8 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -200,5 +206,38 @@ class BackupAndPlansTest {
         assertEquals(Closeness.GOOD, snap.friends.single().closeness)
         assertEquals(CircleColor.MAGENTA, snap.groups.single().color)
         assertEquals("g", snap.settings.homeCircleFilter)
+    }
+
+    @Test
+    fun attachmentsRoundTripWithThumbnailAndReference_andOlderBackupsHaveNone() = runTest {
+        val from = Stores()
+        from.friends.upsert(friend("ana", "Ana") { copy(gifts = listOf(Gift("g1", "Lego", url = "https://shop.example/l", price = "€35"))) })
+        val photo = Attachment(
+            id = "a1",
+            friendId = FriendId("ana"),
+            kind = AttachmentKind.PHOTO,
+            photoRef = PhotoRef(PhotoPlatform.IOS, "ABC/L0/001"),
+            thumbnail = ContactPhoto("AQID"),
+            caption = "Lunch",
+            at = at(2026, 3, 2),
+            countsAsInteraction = true,
+            interactionType = InteractionType.MEETUP,
+            logId = "h1",
+        )
+        from.interactions.upsertAttachment(photo)
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        assertTrue("\"thumbnail\"" in json && "ABC/L0/001" in json, json)
+
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf(photo), snap.attachments)
+        assertEquals("€35", snap.friends.single().gifts.single().price)
+
+        val old = """{"format":"good-company-backup","version":1,"friends":[{"id":"ana","name":"Ana","gifts":[{"id":"g","title":"Book"}]}]}"""
+        val again = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(old))
+        assertEquals(emptyList(), again.backup.snapshot().attachments)
+        assertEquals(null, again.backup.snapshot().friends.single().gifts.single().url)
     }
 }

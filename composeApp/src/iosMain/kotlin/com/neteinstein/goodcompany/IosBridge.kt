@@ -59,7 +59,13 @@ private fun groupContainerPath(): String? = appGroupId()?.let {
 
 /** What the Share Extension writes (see ShareViewController.swift). */
 @Serializable
-private data class InboxEntry(val text: String? = null, val url: String? = null, val image: String? = null, val mediaType: String? = null)
+private data class InboxEntry(
+    val text: String? = null,
+    val url: String? = null,
+    val title: String? = null,
+    val image: String? = null,
+    val mediaType: String? = null,
+)
 
 /** Called by Swift each time the app becomes active: hands the newest share to the "Save to a friend" screen. */
 fun receivePendingShares() {
@@ -78,7 +84,7 @@ fun receivePendingShares() {
     }
     files.forEach { fm.removeItemAtPath("$dir/$it", null) }
     entry ?: return
-    KoinPlatform.getKoin().get<ShareInbox>().offer(SharedContent(text = entry.text, url = entry.url, image = image))
+    KoinPlatform.getKoin().get<ShareInbox>().offer(SharedContent(text = entry.text, url = entry.url, image = image, title = entry.title))
 }
 
 /**

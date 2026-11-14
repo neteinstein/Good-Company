@@ -394,4 +394,16 @@
     <string name="circle_color_slate">Pizarra</string>
     <string name="circle_tick_who_came">Marca quién vino de %1$s.</string>
     <string name="log_title_circle">Registrar quedada: %1$s</string>
+    <string name="attachment_kind_photo">Foto</string>
+    <string name="attachment_kind_link">Enlace</string>
+    <string name="attachment_kind_text">Texto del chat</string>
+    <string name="attachment_note">idea o nota</string>
+    <string name="attachment_counted_met">contado como quedada</string>
+    <string name="attachment_counted_message">contado como mensaje</string>
+    <string name="attachment_counted_call">contado como llamada</string>
+    <string name="attachment_counted_email">contado como correo</string>
+    <string name="attachment_counted_contact">contado como contacto</string>
+    <string name="attachment_original_gone">El original ya no está en tu galería</string>
+    <string name="attachment_copy">Copiar</string>
+    <string name="attachment_open_link">Abrir enlace</string>
 </resources>

@@ -13,6 +13,8 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.source.LogEntry
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
@@ -43,6 +45,8 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
@@ -140,7 +144,7 @@ abstract class RepositoryContract {
         snoozedUntil = LocalDate(2026, 4, 1),
         gifts = listOf(
             Gift("g1", "Book", "Murakami", forKidId = null, givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
-            Gift("g2", "Lego set", forKidId = "k1"),
+            Gift("g2", "Lego set", forKidId = "k1", url = "https://shop.example/lego", price = "€35"),
         ),
         catchUpPaused = true,
         contactCountsAsCatchUp = true,
@@ -502,6 +506,43 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun attachments_upsertDeleteAndKeepEveryField() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.groups.upsert(FriendGroup("crew", "Crew", memberIds = listOf(ana)))
+        val photo = Attachment(
+            id = "a1",
+            friendId = ana,
+            kind = AttachmentKind.PHOTO,
+            photoRef = PhotoRef(PhotoPlatform.ANDROID, "content://media/picker/0/1"),
+            thumbnail = ContactPhoto("AQID"),
+            caption = "Lunch at Ramiro",
+            at = at(2026, 3, 2),
+            countsAsInteraction = true,
+            interactionType = InteractionType.MEETUP,
+            logId = "h1",
+            createdAt = at(2026, 3, 3),
+        )
+        val link = Attachment(
+            id = "a2",
+            circleId = "crew",
+            kind = AttachmentKind.LINK,
+            url = "https://wikiloc.com/trails/1",
+            title = "Gerês trail",
+            at = at(2026, 3, 4),
+        )
+        val text = Attachment("a3", friendId = ana, kind = AttachmentKind.TEXT, text = "See you\nsoon", at = at(2026, 3, 5))
+        s.interactions.upsertAttachment(photo)
+        s.interactions.upsertAttachment(link)
+        s.interactions.upsertAttachment(text.copy(caption = "old"))
+        s.interactions.upsertAttachment(text)
+        assertEquals(listOf(photo, link, text), open().interactions.attachments.first())
+        s.interactions.deleteAttachment("a2")
+        assertEquals(listOf("a1", "a3"), open().interactions.attachments.first().map { it.id })
+        assertTrue(open().interactions.interactions.first().isEmpty(), "saving an attachment logs nothing by itself")
+    }
+
+    @Test
     fun messages_keepTheLatest60PerFriend() = runTest {
         val s = open()
         s.friends.upsert(friend("ana"))
@@ -562,6 +603,10 @@ abstract class RepositoryContract {
         from.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), fromMe = true, text = "hi")))
         from.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 3, 1))))
         from.groups.upsert(FriendGroup("g", "Crew", memberIds = listOf(ana)))
+        from.interactions.upsertAttachment(
+            Attachment("a", friendId = ana, kind = AttachmentKind.PHOTO, thumbnail = ContactPhoto("AQID"), at = at(2026, 3, 2)),
+        )
+        from.interactions.upsertAttachment(Attachment("b", circleId = "g", kind = AttachmentKind.TEXT, text = "hi", at = at(2026, 3, 3)))
         from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "i", createdAt = at(2026, 3, 1)))
         from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon") }
         val exported = from.backup.snapshot()

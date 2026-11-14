@@ -327,7 +327,6 @@
     <string name="share_search">Search friends</string>
     <string name="share_mentioned">Mentioned</string>
     <string name="share_change">Change</string>
-    <string name="share_whats_new">What’s new with %1$s</string>
     <string name="share_suggest">Read it with AI</string>
     <string name="share_ai_hint">Add your AI key in Settings and Claude can read screenshots for you.</string>
     <string name="share_nothing_found">No news about %1$s found in it. Write it yourself.</string>
@@ -463,4 +462,25 @@
         <item quantity="one">Add %1$d friend</item>
         <item quantity="other">Add %1$d friends</item>
     </plurals>
+    <string name="share_save_for">Save for %1$s</string>
+    <string name="share_reason_number">Number in the shared text</string>
+    <string name="share_reason_recent">Recent</string>
+    <string name="share_reason_seen_today">Seen today</string>
+    <string name="share_circles">Circles</string>
+    <string name="share_add_typed">Add “%1$s” as a friend</string>
+    <string name="share_how_count">How should this count?</string>
+    <string name="share_counts">Counts as an interaction</string>
+    <string name="share_counts_hint">Adds it to the timeline and updates when you last spoke</string>
+    <string name="share_note">Just an idea or note</string>
+    <string name="share_note_hint">Kept on %1$s’s page; last contact stays as it is</string>
+    <string name="share_gift">Gift idea</string>
+    <string name="share_gift_hint">Saved in %1$s’s gift ideas, with the link</string>
+    <string name="share_caption">Caption</string>
+    <string name="share_price">Price (optional)</string>
+    <string name="share_failed">Couldn’t save it. Try again.</string>
+    <string name="saved_title">Saved for %1$s</string>
+    <string name="saved_see_all">See all</string>
+    <string name="saved_add_photo">Add a photo</string>
+    <string name="saved_empty">Share a chat, a link or a photo to Good Company and it shows up here.</string>
+    <string name="saved_removed">Removed from saved</string>
 </resources>

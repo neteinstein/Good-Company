@@ -384,4 +384,16 @@
     <string name="circle_color_slate">Slate</string>
     <string name="circle_tick_who_came">Tick who came from %1$s.</string>
     <string name="log_title_circle">Log a %1$s meetup</string>
+    <string name="attachment_kind_photo">Photo</string>
+    <string name="attachment_kind_link">Link</string>
+    <string name="attachment_kind_text">Chat text</string>
+    <string name="attachment_note">idea or note</string>
+    <string name="attachment_counted_met">counted as met</string>
+    <string name="attachment_counted_message">counted as a message</string>
+    <string name="attachment_counted_call">counted as a call</string>
+    <string name="attachment_counted_email">counted as an email</string>
+    <string name="attachment_counted_contact">counted as contact</string>
+    <string name="attachment_original_gone">Original no longer in your gallery</string>
+    <string name="attachment_copy">Copy</string>
+    <string name="attachment_open_link">Open link</string>
 </resources>

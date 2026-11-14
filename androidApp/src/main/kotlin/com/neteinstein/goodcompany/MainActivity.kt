@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun receive(intent: Intent?) {
-        ShareIntents.read(intent, contentResolver)?.let(shareInbox::offer)
+        ShareIntents.read(intent, this)?.let(shareInbox::offer)
         receiveShortcut(intent)
     }
 

@@ -1,5 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -67,6 +69,33 @@ class TimelineAndLoggingTest {
             listOf("hangout-h1", "interaction-c1", "journal-j1", "interaction-v1", "update-u1", "interaction-e1", "gift-g1", "interaction-w1"),
             keys,
         )
+    }
+
+    @Test
+    fun sharesThatCountedShowOnTheirEntry_andIdeasDont() {
+        fun shared(id: String, logId: String?, counts: Boolean, type: InteractionType? = null) = Attachment(
+            id = id,
+            friendId = ana,
+            kind = AttachmentKind.TEXT,
+            text = id,
+            at = at(2026, 3, 9),
+            countsAsInteraction = counts,
+            interactionType = type,
+            logId = logId,
+        )
+        val attachments = listOf(
+            shared("photo", "h1", true, InteractionType.MEETUP),
+            shared("mail", "b", true, InteractionType.EMAIL),
+            shared("call", "c1", true, InteractionType.CALL),
+            shared("idea", "v1", false),
+        )
+        val entries = Timeline.build(ana, friends, hangouts, interactions, journal, TimeZone.UTC, attachments)
+        assertEquals(entries.size, anaTimeline().size, "attachments never add entries")
+        assertEquals("photo", entries.filterIsInstance<TimelineEntry.Meetup>().single().attachment?.id)
+        val contacts = entries.filterIsInstance<TimelineEntry.Contact>().associateBy { it.interaction.id }
+        assertEquals("mail", contacts.getValue("e1").attachment?.id, "a batch is found by its batch id")
+        assertEquals("call", contacts.getValue("c1").attachment?.id)
+        assertNull(contacts.getValue("v1").attachment)
     }
 
     @Test

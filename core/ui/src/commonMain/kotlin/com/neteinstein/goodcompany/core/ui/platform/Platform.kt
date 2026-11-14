@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import kotlinx.datetime.LocalDate
 
 /*
@@ -102,6 +103,41 @@ expect fun rememberTextFilePicker(kind: FileKind = FileKind.TEXT, onPicked: (tex
  */
 @Composable
 expect fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit
+
+/**
+ * A photo picked with "Add a photo" on a friend's "Saved" card: an upright JPEG of at most 512 px ([image] empty when
+ * it couldn't be read), plus a gallery reference and the photo's date when the platform gives them (D6).
+ */
+class PickedPhoto(val image: ByteArray, val ref: PhotoRef?, val takenOn: LocalDate?)
+
+/**
+ * Returns a launcher for the system photo picker in a mode that can keep a reference to the gallery item without
+ * full library access: Android's Photo Picker with a persistable read permission, iOS `PHPickerViewController` on the
+ * shared library (its asset identifier). The web has no gallery: the picture comes back without a reference.
+ * Reports null when cancelled.
+ */
+@Composable
+expect fun rememberGalleryPhotoPicker(onPicked: (PickedPhoto?) -> Unit): () -> Unit
+
+/** What opening a saved photo's original did. */
+sealed interface OpenedPhoto {
+    /** Handed to the system viewer (Android). */
+    data object Shown : OpenedPhoto
+
+    /** Loaded to show in the app (iOS, or Android without a viewer). */
+    class Loaded(val image: ByteArray) : OpenedPhoto
+
+    /** Deleted, no longer allowed, or from another device: the app shows the thumbnail instead. */
+    data object Unavailable : OpenedPhoto
+}
+
+/** Opens the original of a saved photo through its [PhotoRef]. A reference from another platform is never opened. */
+fun interface GalleryPhotoOpener {
+    suspend fun open(ref: PhotoRef): OpenedPhoto
+}
+
+@Composable
+expect fun rememberGalleryPhotoOpener(): GalleryPhotoOpener
 
 /** Result of [TextSharer.share]. */
 enum class ShareOutcome { SHARE_SHEET, COPIED }

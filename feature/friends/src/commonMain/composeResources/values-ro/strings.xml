@@ -316,7 +316,6 @@
     <string name="share_search">Caută prieteni</string>
     <string name="share_mentioned">Menționat</string>
     <string name="share_change">Schimbă</string>
-    <string name="share_whats_new">Noutăți despre %1$s</string>
     <string name="share_suggest">Citește cu AI</string>
     <string name="share_ai_hint">Adaugă cheia AI în Setări și Claude va citi capturile de ecran pentru tine.</string>
     <string name="share_nothing_found">Nu am găsit noutăți despre %1$s. Scrie tu.</string>
@@ -454,4 +453,25 @@
         <item quantity="few">Adaugă %1$d prieteni</item>
         <item quantity="other">Adaugă %1$d de prieteni</item>
     </plurals>
+    <string name="share_save_for">Salvează pentru %1$s</string>
+    <string name="share_reason_number">Număr în textul partajat</string>
+    <string name="share_reason_recent">Recent</string>
+    <string name="share_reason_seen_today">Văzut azi</string>
+    <string name="share_circles">Cercuri</string>
+    <string name="share_add_typed">Adaugă „%1$s” ca prieten</string>
+    <string name="share_how_count">Cum să conteze?</string>
+    <string name="share_counts">Contează ca interacțiune</string>
+    <string name="share_counts_hint">O adaugă în cronologie și actualizează ultima discuție</string>
+    <string name="share_note">Doar o idee sau o notă</string>
+    <string name="share_note_hint">Rămâne pe pagina lui %1$s; ultimul contact nu se schimbă</string>
+    <string name="share_gift">Idee de cadou</string>
+    <string name="share_gift_hint">Salvată în ideile de cadou pentru %1$s, cu linkul</string>
+    <string name="share_caption">Descriere</string>
+    <string name="share_price">Preț (opțional)</string>
+    <string name="share_failed">Nu s-a putut salva. Încearcă din nou.</string>
+    <string name="saved_title">Salvat pentru %1$s</string>
+    <string name="saved_see_all">Vezi tot</string>
+    <string name="saved_add_photo">Adaugă o fotografie</string>
+    <string name="saved_empty">Partajează o conversație, un link sau o fotografie cu Good Company și apare aici.</string>
+    <string name="saved_removed">Eliminat din salvate</string>
 </resources>
