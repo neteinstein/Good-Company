@@ -48,11 +48,11 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
-import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 
 const val APP_VERSION = "1.0.0"
 

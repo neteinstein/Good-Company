@@ -35,10 +35,10 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
-import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.Dispatchers

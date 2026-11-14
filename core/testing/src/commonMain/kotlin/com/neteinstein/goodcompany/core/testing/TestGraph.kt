@@ -101,9 +101,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase

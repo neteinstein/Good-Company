@@ -156,9 +156,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
@@ -201,10 +201,10 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
-import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
 import org.koin.core.module.dsl.factoryOf

@@ -66,6 +66,7 @@ import org.jetbrains.compose.resources.StringResource
 
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
+
 /** Settings → Activities: what the log sheet offers, in which order (F3). */
 @Serializable data object ActivitiesRoute
 
