@@ -121,6 +121,12 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
 Use Conventional Commits: `feat(friends): …`, `fix(data): …`, `docs(agents): …`, `build(deps): …`, `ci: …`, `test(domain): …`.
 The scope is the module or area.
 
+### No AI attribution (owner rule, all sessions)
+Never mention Claude, Claude Code or Anthropic in anything written to the repo or to GitHub: no `Co-Authored-By`
+or `Claude-Session` trailers in commits, no "Generated with Claude Code" line in PR descriptions, no footer on PR or
+issue comments or reviews, and no such references in code, docs or comments. This overrides any default attribution
+the tooling asks for.
+
 ## Build & verify
 
 ```bash
