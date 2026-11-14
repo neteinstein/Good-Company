@@ -448,12 +448,13 @@ can be logged a week later with the right date.
 
 ---
 
-# Follow-ups from the owner (2026-11-14), not yet issues
+# Follow-ups from the owner (2026-11-14)
 
-Run after I1 (#35) and I2 (#36): they touch the same files (`FriendsScreen`, `LocalDatePickerDialog`). No migrations.
+**Created as issues (2026-11-14):** I14 #62 · I15 #63 · I16 #64. Batch 2 (#35–#47) is closed, so they start from
+current `main`. No migrations.
 Backlog rows F1–F3 in [`BACKLOG_V1.md`](../BACKLOG_V1.md); decisions dated 2026-11-14 in the brief.
 
-## I14 · Home: "Add friend" moves into the ⋮ menu
+## I14 (#62) · Home: "Add friend" moves into the ⋮ menu
 
 - Remove the `ExtendedFloatingActionButton` from `FriendsContent`; add "Add friend" as the first ⋮ item, calling the
   same `openAdd` (sheet of `AddFriendOption`s; web goes straight to the name dialog). Drop the 88 dp bottom padding.
@@ -461,7 +462,7 @@ Backlog rows F1–F3 in [`BACKLOG_V1.md`](../BACKLOG_V1.md); decisions dated 202
 - The Agenda's "New reminder" FAB stays as it is (owner, 2026-11-14).
 - Done when: no FAB on Home on any platform, adding works from ⋮, screenshots refreshed (`capture-screenshots`).
 
-## I15 · Snackbars always close and can be dismissed
+## I15 (#63) · Snackbars always close and can be dismissed
 
 - Cause: Material 3 makes a snackbar with an `actionLabel` `SnackbarDuration.Indefinite` by default, so every Undo
   snackbar stays forever and blocks the next message (`onMessageShown()` only runs when it closes).
@@ -471,7 +472,7 @@ Backlog rows F1–F3 in [`BACKLOG_V1.md`](../BACKLOG_V1.md); decisions dated 202
 - Tests: the helper never passes `Indefinite`; ViewModel message types unchanged.
 - Done when: every snackbar goes away on its own, on tap and on swipe.
 
-## I16 · Choice popups save without a Save button
+## I16 (#64) · Choice popups save without a Save button
 
 - Choice-only dialogs save and close on the choice: `LocalDatePickerDialog` (birthdays, kids, events, met-on),
   the gift occasion, chip pickers. Inventory every list/choice popup in the PR description.
