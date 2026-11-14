@@ -71,6 +71,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
@@ -101,6 +102,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.GroupsWithFamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
@@ -131,6 +133,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
@@ -372,6 +375,9 @@ val appModule = module {
     factoryOf(::GetCurrentLocationUseCase)
     factoryOf(::ObserveHangoutHistoryUseCase)
     factoryOf(::ObserveMeetupStatusUseCase)
+    factoryOf(::ObserveLastSeenCardUseCase)
+    factoryOf(::AnswerLastSeenUseCase)
+    factoryOf(::HideLastSeenCardUseCase)
     factoryOf(::ObserveRemindersUseCase)
     factoryOf(::AddReminderUseCase)
     factoryOf(::SetReminderDoneUseCase)

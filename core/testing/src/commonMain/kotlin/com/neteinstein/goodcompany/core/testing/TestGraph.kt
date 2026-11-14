@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
@@ -45,6 +46,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.GroupsWithFamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
@@ -74,6 +76,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
@@ -283,6 +286,9 @@ class TestGraph(
     val currentLocation = GetCurrentLocationUseCase(location)
     val observeHistory = ObserveHangoutHistoryUseCase(friendRepo, hangoutRepo)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
+    val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
+    val answerLastSeen = AnswerLastSeenUseCase(friendRepo, clock)
+    val hideLastSeenCard = HideLastSeenCardUseCase(settingsRepo, clock)
     val observeOccasionMatches = ObserveOccasionMatchesUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeGroups = ObserveGroupsUseCase(circles, friendRepo, hangoutRepo, clock)
     val saveGroup = SaveGroupUseCase(circles, ids)

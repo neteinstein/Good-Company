@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
@@ -515,6 +516,31 @@ class MigrationTest {
         assertEquals(listOf(list.copy(entries = listOf(toBuy))), database.readGiftLists())
         database.friendQueries.delete("ana")
         assertEquals(listOf(list.copy(entries = emptyList())), database.readGiftLists())
+        driver.close()
+    }
+
+    @Test
+    fun version17to18_friendsStartWithNoApproximateLastSeen_andItRoundTrips() = runTest {
+        val driver = driverAt(17)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, 'notes', 0, 0, 'CLOSE', 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 17, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertEquals("notes", ana.notes)
+        assertEquals(Closeness.CLOSE, ana.closeness)
+        assertNull(ana.approxLastSeen)
+
+        database.writeFriend(ana.copy(approxLastSeen = LocalDate(2026, 2, 23)), 0)
+        assertEquals(LocalDate(2026, 2, 23), database.readFriends().single().approxLastSeen)
         driver.close()
     }
 

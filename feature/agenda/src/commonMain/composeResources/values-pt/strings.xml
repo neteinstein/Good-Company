@@ -79,4 +79,17 @@
     <string name="today_empty_action">Ir para Pessoas</string>
     <string name="today_call_logged">Chamada com %1$s registada — próximo lembrete daqui a uma semana</string>
     <string name="today_snoozed">%1$s adiado até %2$s</string>
+    <string name="last_seen_title">Quando estiveste com %1$s pela última vez?</string>
+    <string name="last_seen_progress">%1$d de %2$d</string>
+    <string name="last_seen_this_week">Esta semana</string>
+    <string name="last_seen_this_month">Este mês</string>
+    <string name="last_seen_few_months">Há uns meses</string>
+    <string name="last_seen_over_year">Há mais de um ano</string>
+    <string name="last_seen_dont_know">Não sei</string>
+    <string name="last_seen_not_now">Agora não</string>
+    <string name="last_seen_got_this_week">Registado: %1$s, esta semana</string>
+    <string name="last_seen_got_this_month">Registado: %1$s, este mês</string>
+    <string name="last_seen_got_few_months">Registado: %1$s, há uns meses</string>
+    <string name="last_seen_got_over_year">Registado: %1$s, há mais de um ano</string>
+    <string name="last_seen_got_dont_know">Registado: o ritmo com %1$s começa hoje</string>
 </resources>

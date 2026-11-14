@@ -159,6 +159,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             customPhoto = customPhotos[id],
             showInMyList = row.show_in_my_list.toFlag(),
             dismissedKinship = row.dismissed_kinship.split(',').mapNotNull { LinkType.parse(it.trim()) }.toSet(),
+            approxLastSeen = row.approx_last_seen?.toLocalDate(),
         )
     }
 }
@@ -210,6 +211,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             custom_name = friend.customName?.takeIf { it.isNotBlank() },
             show_in_my_list = friend.showInMyList.toColumn(),
             dismissed_kinship = friend.dismissedKinship.map { it.name }.sorted().joinToString(","),
+            approx_last_seen = friend.approxLastSeen?.toColumn(),
         ),
     )
     q.deleteChildren(id).await()

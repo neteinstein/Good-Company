@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
@@ -60,6 +61,11 @@ data class AppSettings(
     val aiEnabled: Boolean = false,
     /** The activities the log sheet offers (F3), in the user's order; never empty. Defaults to all of them. */
     val activities: List<HangoutActivity> = HangoutActivity.entries,
+    /**
+     * Issue #68: the day "Not now" hid Today's "When did you last see…?" card; it shows again the next day.
+     * Device-only like [lastOpenedAt]: never exported, kept on restore.
+     */
+    val lastSeenCardHiddenOn: LocalDate? = null,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 

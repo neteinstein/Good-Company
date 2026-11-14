@@ -83,4 +83,17 @@
     <string name="today_empty_action">Mergi la Oameni</string>
     <string name="today_call_logged">Apel cu %1$s înregistrat — următorul memento peste o săptămână</string>
     <string name="today_snoozed">%1$s amânat până pe %2$s</string>
+    <string name="last_seen_title">Când te-ai văzut ultima dată cu %1$s?</string>
+    <string name="last_seen_progress">%1$d din %2$d</string>
+    <string name="last_seen_this_week">Săptămâna aceasta</string>
+    <string name="last_seen_this_month">Luna aceasta</string>
+    <string name="last_seen_few_months">Acum câteva luni</string>
+    <string name="last_seen_over_year">Acum peste un an</string>
+    <string name="last_seen_dont_know">Nu știu</string>
+    <string name="last_seen_not_now">Nu acum</string>
+    <string name="last_seen_got_this_week">Notat: %1$s, săptămâna aceasta</string>
+    <string name="last_seen_got_this_month">Notat: %1$s, luna aceasta</string>
+    <string name="last_seen_got_few_months">Notat: %1$s, acum câteva luni</string>
+    <string name="last_seen_got_over_year">Notat: %1$s, acum peste un an</string>
+    <string name="last_seen_got_dont_know">Notat: ritmul cu %1$s începe azi</string>
 </resources>

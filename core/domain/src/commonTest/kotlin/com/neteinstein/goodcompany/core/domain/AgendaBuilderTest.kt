@@ -70,7 +70,8 @@ class AgendaBuilderTest {
     @Test
     fun overdueMeetupsAppearFirst() {
         val friends = listOf(
-            friend("ana") { copy(meetEveryDays = 7, isCloseFriend = true, birthday = Birthday(3, 10)) },
+            // Answered on the last-seen card (issue #68): never-logged people with no answer aren't overdue.
+            friend("ana") { copy(meetEveryDays = 7, isCloseFriend = true, birthday = Birthday(3, 10), approxLastSeen = LocalDate(2026, 1, 1)) },
         )
         val items = AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC)
         assertIs<AgendaItem.MeetupOverdue>(items[0])

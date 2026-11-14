@@ -29,9 +29,10 @@ class NudgesAndPlansTest {
     private val today = LocalDate(2026, 3, 10)
     private val zone = TimeZone.UTC
     private val overdue = listOf(
-        friend("ana") { copy(meetEveryDays = 7) },
-        friend("bob") { copy(meetEveryDays = 7) },
-        friend("cat") { copy(meetEveryDays = 7) },
+        // Answered on the last-seen card a week ago (issue #68), so all three are due today.
+        friend("ana") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 3)) },
+        friend("bob") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 3)) },
+        friend("cat") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 3)) },
     )
 
     private fun plan(policy: NudgePolicy, friends: List<Friend> = overdue, plans: List<Plan> = emptyList()) =
@@ -87,7 +88,7 @@ class NudgesAndPlansTest {
         val friends = listOf(
             friend("ana") { copy(meetEveryDays = 7, catchUpPaused = true) },
             friend("bob") { copy(meetEveryDays = 7, contactCountsAsCatchUp = true) },
-            friend("cat") { copy(meetEveryDays = 7) },
+            friend("cat") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 3)) },
         )
         val chats = listOf(
             Interaction(FriendId("bob"), InteractionType.WHATSAPP, at(2026, 3, 9)),

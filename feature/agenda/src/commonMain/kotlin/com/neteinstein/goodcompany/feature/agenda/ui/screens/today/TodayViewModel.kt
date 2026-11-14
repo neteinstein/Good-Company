@@ -7,12 +7,17 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
+import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.LastSeenCard
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
@@ -53,6 +58,9 @@ sealed interface TodayMessage {
     data object PlanSkipped : TodayMessage
 
     data class AiError(val error: Throwable) : TodayMessage
+
+    /** The last-seen card stored [answer] for [id] (issue #68); Undo puts back [previous]. */
+    data class LastSeenAnswered(val id: FriendId, val name: String, val answer: LastSeenAnswer, val previous: LocalDate?) : TodayMessage
 }
 
 /**
@@ -85,6 +93,14 @@ data class TodayUiState(
     /** "Your year in friendship" in December (issue #67), else null. */
     val reviewYear: Int? = null,
     val today: LocalDate = LocalDate(2000, 1, 1),
+    /** "When did you last see…?" (issue #68): the person asked about now; null hides the card. */
+    val lastSeenAsk: Friend? = null,
+    /** Where [lastSeenAsk] is in this round ("1 of 12"): answers given since Today opened, plus one. */
+    val lastSeenPosition: Int = 0,
+    /** Answers given since Today opened plus everyone still to ask. */
+    val lastSeenTotal: Int = 0,
+    /** Answers given since Today opened (Undo takes one back). */
+    val lastSeenAnswered: Int = 0,
 ) {
     /** There is someone to check in with: the "I'm with…" card shows. */
     val showCheckIn: Boolean get() = friends.isNotEmpty()
@@ -109,11 +125,14 @@ class TodayViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeSettings: ObserveSettingsUseCase,
     observeReviewYear: ObserveYearReviewCardUseCase,
+    observeLastSeen: ObserveLastSeenCardUseCase,
     private val addReminder: AddReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
+    private val answerLastSeen: AnswerLastSeenUseCase,
+    private val hideLastSeenCard: HideLastSeenCardUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(TodayUiState())
@@ -122,10 +141,10 @@ class TodayViewModel(
         observeAgenda(),
         observeMeetups(),
         observeStories(),
-        combine(observeFriends(), observeSettings(), observeReviewYear(), ::Triple),
+        combine(observeFriends(), observeSettings(), observeReviewYear(), observeLastSeen(), ::Extras),
         local,
-    ) { agenda, meetups, stories, (friends, settings, reviewYear), ui ->
-        build(ui, agenda, meetups, stories, friends, settings).copy(reviewYear = reviewYear)
+    ) { agenda, meetups, stories, extras, ui ->
+        build(ui, agenda, meetups, stories, extras.friends, extras.settings).copy(reviewYear = extras.reviewYear).withLastSeen(extras.lastSeen)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
@@ -159,6 +178,44 @@ class TodayViewModel(
             isLoading = false,
             today = today,
         )
+    }
+
+    private class Extras(val friends: List<FriendSummary>, val settings: AppSettings, val reviewYear: Int?, val lastSeen: LastSeenCard)
+
+    private fun TodayUiState.withLastSeen(card: LastSeenCard): TodayUiState {
+        val ask = card.current
+        return copy(
+            lastSeenAsk = ask,
+            lastSeenPosition = if (ask == null) 0 else lastSeenAnswered + 1,
+            lastSeenTotal = if (ask == null) 0 else lastSeenAnswered + card.pending.size,
+        )
+    }
+
+    /** An answer on the last-seen card: stores the approximate date and moves on to the next person, with Undo. */
+    fun onLastSeenAnswer(id: FriendId, answer: LastSeenAnswer) {
+        viewModelScope.launch {
+            val previous = state.value.friends.firstOrNull { it.id == id }?.approxLastSeen
+            answerLastSeen(id, answer) ?: return@launch
+            local.update {
+                it.copy(
+                    lastSeenAnswered = it.lastSeenAnswered + 1,
+                    message = TodayMessage.LastSeenAnswered(id, firstName(id), answer, previous),
+                )
+            }
+        }
+    }
+
+    /** Undo on the answer's snackbar: the person is asked again. */
+    fun onUndoLastSeen(message: TodayMessage.LastSeenAnswered) {
+        viewModelScope.launch {
+            answerLastSeen.undo(message.id, message.previous)
+            local.update { it.copy(lastSeenAnswered = (it.lastSeenAnswered - 1).coerceAtLeast(0), message = null) }
+        }
+    }
+
+    /** "Not now": the card goes away until tomorrow. */
+    fun onLastSeenNotNow() {
+        viewModelScope.launch { hideLastSeenCard() }
     }
 
     private fun firstName(id: FriendId): String = state.value.friends.firstOrNull { it.id == id }?.displayName?.substringBefore(' ').orEmpty()

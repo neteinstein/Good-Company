@@ -85,3 +85,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
     `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed
     kinship only. Reuse that use case for any other "my nieces" picker.
+- **Last-seen card and never-logged people (issue #68, N4).** Someone with a rhythm (`CadenceRules.cadenceFor`) but
+    nothing logged is **not overdue**: `Relationships.meetupStatuses` gives them no status at all. Today's "When did you
+    last see…?" card (`LastSeenQuestions.pending`, `ObserveLastSeenCardUseCase`, `:feature:agenda` `LastSeenCard`) asks
+    about them one at a time, closest first; `LastSeenAnswer` stores `Friend.approxLastSeen` (`friend.approx_last_seen`,
+    migration `17.sqm`, in backups): this week 3 days ago, this month 15, a few months 90, over a year 400, "I don't
+    know" today (owner decisions 2026-11-14). It only moves the due date: `MeetupStatus.lastSeenDate`/`daysSinceLastSeen`
+    stay null, the person's page and timeline never show it, it isn't a hangout (no warmth, no stats), and a real
+    meetup (or any contact when `contactCountsAsCatchUp`) always wins. "Not now" is `AppSettings.lastSeenCardHiddenOn`,
+    device-only (`DeviceSettings`, stripped from exports, kept on restore). Acquaintances (#69) must not be asked.

@@ -49,6 +49,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
                     appLock = current.appLock,
                     onboardingDone = true,
                     lastOpenedAt = current.lastOpenedAt,
+                    lastSeenCardHiddenOn = current.lastSeenCardHiddenOn,
                     lastDriveBackupAt = current.lastDriveBackupAt,
                     calendarSuggestions = current.calendarSuggestions,
                     calendarIds = current.calendarIds,
@@ -60,9 +61,10 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
     }
 }
 
-/** Settings as a backup carries them: no AI key and nothing about this device's calendars (D3). */
+/** Settings as a backup carries them: no AI key, nothing about this device's calendars (D3) or its Today card. */
 internal fun AppSettings.withoutDeviceOnly() = copy(
     aiApiKey = null,
+    lastSeenCardHiddenOn = null,
     calendarSuggestions = false,
     calendarIds = emptyList(),
     calendarOnSince = null,
