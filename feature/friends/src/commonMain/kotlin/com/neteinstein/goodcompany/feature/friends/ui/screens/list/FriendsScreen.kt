@@ -135,7 +135,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.home_title
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged
 import com.neteinstein.goodcompany.feature.friends.resources.msg_contacts_denied
-import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_picked
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sample_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_snoozed
@@ -144,7 +143,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_synced
 import com.neteinstein.goodcompany.feature.friends.resources.msg_synced_calls
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_result
-import com.neteinstein.goodcompany.feature.friends.resources.msg_your_friend
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_close
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_search
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_title
@@ -190,6 +188,8 @@ fun FriendsScreen(
     onOpenStory: (FriendId) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     onLogCircle: (String) -> Unit = {},
+    /** "We met" on a catch-up or drifting card: opens the small "We met" panel (issue #47). */
+    onWeMet: (FriendId) -> Unit = {},
     /** Opens the "Choose friends" list (contacts with checkboxes). */
     onChooseContacts: () -> Unit = {},
     /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
@@ -230,7 +230,7 @@ fun FriendsScreen(
             onOpenFriend = onOpenFriend,
             onOpenStory = onOpenStory,
             onToggleClose = viewModel::onToggleClose,
-            onMetToday = viewModel::onMetToday,
+            onMetToday = onWeMet,
             onCalled = viewModel::onCalled,
             onSnooze = viewModel::onSnooze,
             onAddFriend = viewModel::onAddFriend,
@@ -272,7 +272,6 @@ data class FriendsActions(
 
 /** Localised snackbar text for a [FriendsMessage]. */
 suspend fun FriendsMessage.text(): String = when (this) {
-    is FriendsMessage.LoggedWith -> getString(Res.string.msg_logged_with, name ?: getString(Res.string.msg_your_friend))
     is FriendsMessage.CallLogged -> getString(Res.string.msg_call_logged, name)
     is FriendsMessage.Snoozed -> getString(Res.string.msg_snoozed, name, until.shortLabelText())
     FriendsMessage.ContactsDenied -> getString(Res.string.msg_contacts_denied)

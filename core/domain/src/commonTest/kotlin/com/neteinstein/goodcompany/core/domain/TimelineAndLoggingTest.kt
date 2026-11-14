@@ -11,9 +11,12 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.domain.usecase.LogResult
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetup
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Timeline
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
@@ -161,6 +164,40 @@ class TimelineAndLoggingTest {
         assertEquals("Lunch", hangout.note)
         assertEquals(listOf(hangout), g.hangoutRepo.hangouts.value)
         assertTrue(g.interactionRepo.interactions.value.isEmpty())
+    }
+
+    @Test
+    fun aMeetupAnsweringAPlanClosesIt_andUndoPutsBothBack() = runTest {
+        val g = TestGraph(friends = friends)
+        val plan = g.savePlan(null, "Lunch at Time Out", listOf(ana), LocalDate(2026, 3, 6))
+        val result = assertIs<LogResult.Met>(
+            g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, date = LocalDate(2026, 3, 6), planId = plan.id)),
+        )
+        assertEquals(plan, result.plan)
+        assertEquals(PlanStatus.HAPPENED, g.planRepo.plans.value.single().status)
+        assertEquals(at(2026, 3, 6), result.hangout.at)
+
+        // A plan already answered isn't closed again; an unknown one is ignored.
+        assertNull(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, planId = plan.id))).plan)
+        assertNull(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, planId = "gone"))).plan)
+
+        g.undoLog(result)
+        assertTrue(g.hangoutRepo.hangouts.value.none { it.id == result.hangout.id })
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+    }
+
+    @Test
+    fun theLoggedMeetupInboxKeepsANewerMeetup() = runTest {
+        val g = TestGraph(friends = friends)
+        val first = LoggedMeetup(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP))), emptyList())
+        val second = LoggedMeetup(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(rui), LogKind.MEETUP))), emptyList())
+        val inbox = LoggedMeetupInbox()
+        inbox.offer(first)
+        inbox.offer(second)
+        inbox.clear(first)
+        assertEquals(second, inbox.pending.value)
+        inbox.clear(second)
+        assertNull(inbox.pending.value)
     }
 
     @Test

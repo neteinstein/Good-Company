@@ -44,7 +44,6 @@ class FriendsViewModelTest {
         g.importContactsFile,
         g.addFriend,
         g.setRealFriend,
-        g.checkIn,
         g.logCall,
         g.snooze,
         g.loadSampleData,
@@ -180,11 +179,6 @@ class FriendsViewModelTest {
         assertEquals(s.friends.size, s.sections.sumOf { it.second.size })
         assertFalse(s.week.isEmpty)
         assertEquals(Greeting.AFTERNOON, s.greeting) // FixedClock is 12:00 UTC
-
-        val overdue = s.catchUp.first().friend.id
-        vm.onMetToday(overdue)
-        assertTrue(state.value.catchUp.none { it.friend.id == overdue })
-        assertIs<FriendsMessage.LoggedWith>(state.value.message)
     }
 
     @Test

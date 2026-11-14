@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.plus
 import kotlin.test.Test
@@ -23,15 +24,22 @@ class LogInteractionViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null, circleId: String? = null) = LogInteractionViewModel(
+    private fun vm(
+        ids: List<FriendId> = listOf(ana),
+        type: String? = null,
+        circleId: String? = null,
+        prefill: LogPrefill = LogPrefill(),
+    ) = LogInteractionViewModel(
         ids,
         type,
         circleId,
+        prefill,
         g.observeFriends,
         g.observeActivities,
         g.observeGroups,
         g.logInteraction,
         g.currentLocation,
+        g.loggedMeetups,
         g.clock,
     )
 
@@ -133,5 +141,27 @@ class LogInteractionViewModelTest {
         assertNull(state.value.sheet.circle)
         vm.onTogglePerson(rui)
         assertTrue(state.value.sheet.people.isEmpty())
+    }
+
+    @Test
+    fun moreDetailsCarriesWhatThePanelHadChosen() = runViewModelTest {
+        val friday = g.clock.today().plus(DatePeriod(days = -8))
+        val vm = vm(prefill = LogPrefill(date = friday.toString(), activity = "LUNCH", note = "Her new job"))
+        val state = collecting(vm.state)
+        assertEquals(friday, state.value.sheet.date)
+        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        assertEquals("Her new job", state.value.sheet.note)
+        vm.onSave()
+        assertEquals(HangoutActivity.LUNCH, g.hangoutRepo.hangouts.value.single().activity)
+        // A meetup saved from the sheet gets the app-wide "Logged time with … · Undo" snackbar.
+        assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
+    }
+
+    @Test
+    fun aBrokenOrFuturePrefillFallsBackToToday() = runViewModelTest {
+        val today = g.clock.today()
+        assertEquals(today, collecting(vm(prefill = LogPrefill(date = "nonsense", activity = "nope")).state).value.sheet.date)
+        val future = today.plus(DatePeriod(days = 2)).toString()
+        assertEquals(today, collecting(vm(prefill = LogPrefill(date = future)).state).value.sheet.date)
     }
 }

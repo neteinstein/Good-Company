@@ -36,6 +36,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
@@ -124,6 +125,7 @@ class TestGraph(
     val refreshFeeds = RefreshFeedsUseCase(friendRepo, feedFetcher, clock)
     val shareInbox = ShareInbox()
     val quickEntryInbox = QuickEntryInbox()
+    val loggedMeetups = LoggedMeetupInbox()
     val observeShortcuts = ObserveShortcutsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo)
     val addLifeUpdate = AddLifeUpdateUseCase(friendRepo, clock, ids)
     val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, clock)
@@ -140,8 +142,8 @@ class TestGraph(
     val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)
     val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
-    val logInteraction = LogInteractionUseCase(checkIn, interactionRepo, clock, ids)
-    val undoLog = UndoLogUseCase(hangoutRepo, interactionRepo)
+    val logInteraction = LogInteractionUseCase(checkIn, interactionRepo, planRepo, clock, ids)
+    val undoLog = UndoLogUseCase(hangoutRepo, interactionRepo, planRepo)
 
     /** Turns any picture into its first 16 bytes, so a test can tell a thumbnail from the shared image. */
     val thumbnailShrinker = PhotoShrinker { it.copyOf(minOf(it.size, 16)) }

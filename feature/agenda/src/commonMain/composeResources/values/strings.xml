@@ -45,7 +45,6 @@
 
     <string name="msg_reminder_saved">Reminder saved</string>
     <string name="msg_reminder_deleted">Reminder deleted</string>
-    <string name="msg_group_met">Logged time with %1$s ✨</string>
     <string name="label_plan">Plan</string>
     <string name="row_relative">%1$s (%2$s’s family)</string>
 </resources>

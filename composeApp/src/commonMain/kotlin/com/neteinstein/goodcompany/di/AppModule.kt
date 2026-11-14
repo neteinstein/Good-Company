@@ -83,6 +83,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
@@ -148,11 +149,14 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseConta
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -200,6 +204,7 @@ val appModule = module {
     single<AppUpdateSource> { GitHubReleaseUpdateSource(get()) }
     single { ShareInbox() }
     single { QuickEntryInbox() }
+    single { LoggedMeetupInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
@@ -324,8 +329,6 @@ val appModule = module {
             dismissIdea = get(),
             draftBirthdayMessage = get(),
             suggestGifts = get(),
-            checkIn = get(),
-            deleteHangout = get(),
             addReminder = get(),
             setCatchUpPaused = get(),
             savePlan = get(),
@@ -344,11 +347,15 @@ val appModule = module {
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
-    viewModel { (ids: List<FriendId>, type: String?, circleId: String?) ->
-        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get())
+    viewModel { (ids: List<FriendId>, type: String?, circleId: String?, prefill: LogPrefill) ->
+        LogInteractionViewModel(ids, type, circleId, prefill, get(), get(), get(), get(), get(), get(), get())
     }
     viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
+    viewModel { (ids: List<FriendId>, circleId: String?, planId: String?) ->
+        WeMetViewModel(ids, circleId, planId, get(), get(), get(), get(), get(), get(), get(), get())
+    }
+    viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)

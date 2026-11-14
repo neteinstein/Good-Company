@@ -74,7 +74,6 @@ import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
 import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_group_met
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
@@ -100,14 +99,22 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 suspend fun AgendaMessage.text(): String = when (this) {
     AgendaMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
     AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
-    is AgendaMessage.GroupMet -> getString(Res.string.msg_group_met, name)
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
 }
 
+/**
+ * [onCircleMet] and [onPlanMet] open the "We met" panel (issue #47) on a circle (nobody ticked) or on a plan's
+ * "Did you meet?" yes; "No" just closes the plan here.
+ */
 @Composable
-fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = koinViewModel()) {
+fun AgendaScreen(
+    onOpenFriend: (FriendId) -> Unit,
+    onCircleMet: (String) -> Unit = {},
+    onPlanMet: (String) -> Unit = {},
+    viewModel: AgendaViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val addToCalendar = rememberCalendarAdder()
     AgendaContent(
@@ -119,8 +126,8 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         onMessageShown = viewModel::onMessageShown,
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
-        onGroupMet = viewModel::onGroupMet,
-        onConfirmPlan = viewModel::onConfirmPlan,
+        onGroupMet = onCircleMet,
+        onConfirmPlan = { id, happened -> if (happened) onPlanMet(id) else viewModel.onConfirmPlan(id, false) },
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends)) },
     )
     if (state.showReminderEditor) {

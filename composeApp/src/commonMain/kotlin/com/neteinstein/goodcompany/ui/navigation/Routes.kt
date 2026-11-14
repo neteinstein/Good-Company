@@ -31,8 +31,23 @@ import org.jetbrains.compose.resources.StringResource
 /**
  * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
  * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met". [circleId] opens on that circle's members, nobody ticked (F20).
+ * [date] (ISO), [activity], [note] and [planId] carry what the "We met" panel had chosen ("More details").
  */
-@Serializable data class LogInteractionRoute(val friendIds: List<String>, val type: String? = null, val circleId: String? = null)
+@Serializable data class LogInteractionRoute(
+    val friendIds: List<String>,
+    val type: String? = null,
+    val circleId: String? = null,
+    val date: String? = null,
+    val activity: String? = null,
+    val note: String? = null,
+    val planId: String? = null,
+)
+
+/**
+ * The small "We met" panel (issue #47, F2): every in-app "We met" opens it. [friendIds] or [circleId] (members listed,
+ * nobody ticked, F20); [planId] answers that plan's "Did you meet?".
+ */
+@Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val planId: String? = null)
 
 /** The circle editor (decision D1); [id] null creates a circle. */
 @Serializable data class CircleEditorRoute(val id: String? = null)

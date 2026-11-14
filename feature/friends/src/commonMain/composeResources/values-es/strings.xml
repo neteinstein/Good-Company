@@ -75,7 +75,6 @@
     <string name="snooze_week">Posponer una semana</string>
     <string name="snooze_weekend">Recuérdamelo el sábado</string>
     <string name="drifting_message">Mensaje</string>
-    <string name="msg_logged_with">Tiempo con %1$s registrado ✨</string>
     <string name="msg_call_logged">Llamada con %1$s registrada — próximo aviso en una semana</string>
     <string name="msg_snoozed">%1$s pospuesto hasta el %2$s</string>
     <string name="msg_contacts_denied">Sin acceso a los contactos puedes añadir amigos a mano.</string>
@@ -87,7 +86,6 @@
     <string name="msg_vcf_result">%1$d añadidos · %2$d actualizados · %3$d sin cambios</string>
     <string name="msg_vcf_empty">No hay contactos en ese archivo.</string>
     <string name="msg_call_logged_short">Llamada registrada — próximo aviso en una semana</string>
-    <string name="msg_your_friend">tu amigo</string>
     <string name="detail_missing">Este amigo ya no existe.</string>
     <string name="detail_back">Atrás</string>
     <string name="detail_remove_friend">Quitar amigo</string>

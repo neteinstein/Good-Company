@@ -35,11 +35,13 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseConta
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
@@ -56,6 +58,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
     val editCircle: (String?) -> Unit = { navController.navigate(CircleEditorRoute(it)) }
+    // Every in-app "We met" opens the small panel (issue #47); the widget and notification still log today directly.
+    val weMet: (FriendId) -> Unit = { navController.navigate(WeMetRoute(friendIds = listOf(it.value))) }
+    val circleMet: (String) -> Unit = { navController.navigate(WeMetRoute(circleId = it)) }
+    val planMet: (String) -> Unit = { navController.navigate(WeMetRoute(planId = it)) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
@@ -73,6 +79,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenStory = openStory,
                     onEditCircle = editCircle,
                     onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
+                    onWeMet = weMet,
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
@@ -104,6 +111,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                        onWeMet = { planId ->
+                            navController.navigate(if (planId != null) WeMetRoute(planId = planId) else WeMetRoute(friendIds = listOf(id)))
+                        },
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
                         onEditCircle = editCircle,
@@ -127,7 +137,31 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     friendIds = route.friendIds.map(::FriendId),
                     type = route.type,
                     circleId = route.circleId,
+                    prefill = LogPrefill(route.date, route.activity, route.note, route.planId),
                     onClose = { navController.popBackStack() },
+                )
+            }
+            dialog<WeMetRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
+                val route = entry.toRoute<WeMetRoute>()
+                WeMetPanelScreen(
+                    friendIds = route.friendIds.map(::FriendId),
+                    circleId = route.circleId,
+                    planId = route.planId,
+                    onClose = { navController.popBackStack() },
+                    onMoreDetails = { d ->
+                        // The full Log sheet takes the panel's place, with everything chosen so far.
+                        navController.navigate(
+                            LogInteractionRoute(
+                                friendIds = d.friendIds.map { it.value },
+                                type = LogKind.MEETUP.name,
+                                circleId = d.circleId,
+                                date = d.date.toString(),
+                                activity = d.activity?.name,
+                                note = d.note.ifEmpty { null },
+                                planId = d.planId,
+                            ),
+                        ) { popUpTo<WeMetRoute> { inclusive = true } }
+                    },
                 )
             }
             composable<CircleEditorRoute>(
@@ -178,9 +212,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenFriend = openFriend,
                     onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
                     onEditCircle = editCircle,
+                    onCircleMet = circleMet,
                 )
             }
-            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend) }
+            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
+                AgendaScreen(onOpenFriend = openFriend, onCircleMet = circleMet, onPlanMet = planMet)
+            }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
             composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION) }
             composable<YearReviewRoute>(

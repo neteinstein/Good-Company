@@ -34,7 +34,6 @@ class AgendaViewModelTest {
         g.observeFriends,
         g.observeSettings,
         g.draftBirthdayMessage,
-        g.checkIn,
         g.addReminder,
         g.setReminderDone,
         g.deleteReminder,
@@ -101,15 +100,13 @@ class AgendaViewModelTest {
     }
 
     @Test
-    fun overdueGroupCanBeMarkedAsMet() = runViewModelTest {
+    fun overdueGroupIsListed_andTheAgendaNeverLogsAMeetupItself() = runViewModelTest {
         g.groupRepo.upsert(FriendGroup("g1", "Surf", "🏄", listOf(FriendId("ana"), FriendId("rui")), meetEveryDays = 14))
         val vm = vm()
         val state = collecting(vm.state)
         assertTrue(state.value.agenda.any { it is AgendaItem.GroupOverdue })
-        vm.onGroupMet("g1")
-        assertEquals(AgendaMessage.GroupMet("Surf"), state.value.message)
-        assertTrue(state.value.agenda.none { it is AgendaItem.GroupOverdue })
-        assertEquals(1, g.hangoutRepo.hangouts.value.size)
+        // "We met" opens the "We met" panel (issue #47); the agenda no longer depends on CheckInUseCase at all.
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
     }
 
     @Test

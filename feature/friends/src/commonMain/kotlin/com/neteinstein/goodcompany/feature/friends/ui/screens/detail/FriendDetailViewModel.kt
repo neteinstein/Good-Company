@@ -29,11 +29,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
-import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
@@ -75,7 +73,6 @@ import kotlin.time.Instant
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface FriendDetailMessage {
-    data class LoggedWith(val name: String) : FriendDetailMessage
 
     data object CallLogged : FriendDetailMessage
 
@@ -153,10 +150,6 @@ data class FriendDetailUiState(
     val isGenerating: Boolean = false,
     val message: FriendDetailMessage? = null,
     val deleted: Boolean = false,
-    /** Hangout just logged with "Together", offered for undo. */
-    val undoHangoutId: String? = null,
-    /** Increments on every "Together" so the UI can play the heart burst. */
-    val celebrate: Int = 0,
     val showReminderEditor: Boolean = false,
     /** Kid id (or "" for the friend) whose gift ideas the AI is working on. */
     val suggestingGiftsFor: String? = null,
@@ -202,8 +195,6 @@ class FriendDetailViewModel(
     private val dismissIdea: DismissIdeaUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
     private val suggestGifts: SuggestGiftsUseCase,
-    private val checkIn: CheckInUseCase,
-    private val deleteHangout: DeleteHangoutUseCase,
     private val addReminder: AddReminderUseCase,
     private val setCatchUpPaused: SetCatchUpPausedUseCase,
     private val savePlan: SavePlanUseCase,
@@ -598,23 +589,6 @@ class FriendDetailViewModel(
         }
     }
 
-    /** One tap: "we're together right now". */
-    fun onTogetherNow() {
-        viewModelScope.launch {
-            val hangout = checkIn(listOf(friendId))
-            val name = state.value.detail?.friend?.name?.substringBefore(' ').orEmpty()
-            local.update { it.copy(message = FriendDetailMessage.LoggedWith(name), undoHangoutId = hangout.id, celebrate = it.celebrate + 1) }
-        }
-    }
-
-    fun onUndoTogether() {
-        val id = local.value.undoHangoutId ?: return
-        viewModelScope.launch {
-            deleteHangout(id)
-            local.update { it.copy(undoHangoutId = null) }
-        }
-    }
-
     fun onOpenReminderEditor() = local.update { it.copy(showReminderEditor = true) }
 
     fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false) }
@@ -656,6 +630,7 @@ class FriendDetailViewModel(
         }
     }
 
+    /** "Did you meet?" answered on the friend page. A yes from the screen opens the "We met" panel instead (issue #47). */
     fun onConfirmPlan(id: String, happened: Boolean) {
         viewModelScope.launch {
             confirmPlan(id, happened)
@@ -709,6 +684,6 @@ class FriendDetailViewModel(
     }
 
     fun onMessageShown() = local.update {
-        it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null, undoAttachment = null)
+        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null)
     }
 }

@@ -177,12 +177,6 @@ class HangoutsViewModel(
      */
     fun onPickDraftGroup(groupId: String) = editDraft { it.copy(circleId = groupId.takeUnless { id -> id == it.circleId }) }
 
-    /** "We met" on a circle card: opens the check-in sheet on that circle, nobody ticked (F20). */
-    fun onCheckInGroup(groupId: String) {
-        if (state.value.groups.none { it.group.id == groupId }) return
-        local.update { it.copy(draft = CheckInDraft(circleId = groupId)) }
-    }
-
     fun onDeleteGroup(groupId: String) {
         viewModelScope.launch {
             val removed = deleteGroup(groupId) ?: return@launch

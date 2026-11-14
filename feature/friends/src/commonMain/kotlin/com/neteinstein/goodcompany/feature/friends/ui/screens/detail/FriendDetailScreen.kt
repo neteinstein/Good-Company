@@ -136,7 +136,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
-import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
@@ -254,7 +253,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_field_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
-import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
@@ -365,6 +363,8 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
+    /** "Together" and a plan's "Did you meet?" yes open the small "We met" panel (issue #47); the plan id, or null. */
+    onWeMet: (planId: String?) -> Unit = {},
     onOpenCircle: (String) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
@@ -439,8 +439,7 @@ fun FriendDetailScreen(
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
-            onTogetherNow = viewModel::onTogetherNow,
-            onUndoTogether = viewModel::onUndoTogether,
+            onWeMet = { onWeMet(null) },
             onOpenReminderEditor = viewModel::onOpenReminderEditor,
             onDismissReminderEditor = viewModel::onDismissReminderEditor,
             onSaveReminder = viewModel::onSaveReminder,
@@ -451,7 +450,7 @@ fun FriendDetailScreen(
             onOpenPlanEditor = viewModel::onOpenPlanEditor,
             onDismissPlanEditor = viewModel::onDismissPlanEditor,
             onSavePlan = viewModel::onSavePlan,
-            onConfirmPlan = viewModel::onConfirmPlan,
+            onConfirmPlan = { id, happened -> if (happened) onWeMet(id) else viewModel.onConfirmPlan(id, false) },
             onCancelPlan = viewModel::onCancelPlan,
             onUndoCancelPlan = viewModel::onUndoCancelPlan,
             onAddPlanToCalendar = { plan, friends -> addToCalendar(plan.calendarEntry(friends)) },
@@ -520,8 +519,8 @@ data class FriendDetailActions(
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
-    val onTogetherNow: () -> Unit = {},
-    val onUndoTogether: () -> Unit = {},
+    /** "Together": opens the "We met" panel. */
+    val onWeMet: () -> Unit = {},
     val onOpenReminderEditor: () -> Unit = {},
     val onDismissReminderEditor: () -> Unit = {},
     val onSaveReminder: (String, List<FriendId>, LocalDate?, Int) -> Unit = { _, _, _, _ -> },
@@ -542,7 +541,6 @@ private val RHYTHMS = listOf(7, 14, 30, 90)
 
 /** Localised snackbar text for a [FriendDetailMessage]. */
 suspend fun FriendDetailMessage.text(): String = when (this) {
-    is FriendDetailMessage.LoggedWith -> getString(Res.string.msg_logged_with, name)
     FriendDetailMessage.CallLogged -> getString(Res.string.msg_call_logged_short)
     is FriendDetailMessage.Snoozed -> getString(Res.string.touch_snoozed, until.shortLabelText())
     is FriendDetailMessage.IdeasFound -> if (count ==
@@ -612,14 +610,13 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null
+        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
                 state.undoPlan != null -> actions.onUndoCancelPlan()
-                else -> actions.onUndoTogether()
             }
         }
         actions.onMessageShown()
@@ -1576,13 +1573,10 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     )
                 }
                 if (preferred != null) ChannelAction(channels.first())
-                Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_together), onClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        actions.onTogetherNow()
-                    }, emphasized = preferred == null)
-                    HeartBurst(state.celebrate, Modifier.size(72.dp))
-                }
+                QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_together), onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    actions.onWeMet()
+                }, emphasized = preferred == null, modifier = Modifier.weight(1f))
                 channels.drop(if (preferred != null) 1 else 0).forEach { ChannelAction(it) }
                 QuickAction(
                     Icons.Rounded.AlarmAdd,

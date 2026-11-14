@@ -43,7 +43,6 @@
     <string name="wish_gift_hint">Idées cadeaux : %1$s</string>
     <string name="msg_reminder_saved">Rappel enregistré</string>
     <string name="msg_reminder_deleted">Rappel supprimé</string>
-    <string name="msg_group_met">Moment avec %1$s enregistré ✨</string>
     <string name="label_plan">Projet</string>
     <string name="row_relative">%1$s (famille de %2$s)</string>
 </resources>

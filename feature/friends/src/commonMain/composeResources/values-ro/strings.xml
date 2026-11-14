@@ -79,7 +79,6 @@
     <string name="snooze_week">Amână o săptămână</string>
     <string name="snooze_weekend">Amintește-mi sâmbătă</string>
     <string name="drifting_message">Mesaj</string>
-    <string name="msg_logged_with">Timp cu %1$s înregistrat ✨</string>
     <string name="msg_call_logged">Apel cu %1$s înregistrat — următorul memento peste o săptămână</string>
     <string name="msg_snoozed">%1$s amânat până pe %2$s</string>
     <string name="msg_contacts_denied">Fără acces la contacte poți adăuga prieteni manual.</string>
@@ -91,7 +90,6 @@
     <string name="msg_vcf_result">%1$d adăugați · %2$d actualizați · %3$d neschimbați</string>
     <string name="msg_vcf_empty">Fișierul nu conține contacte.</string>
     <string name="msg_call_logged_short">Apel înregistrat — următorul memento peste o săptămână</string>
-    <string name="msg_your_friend">prietenul tău</string>
     <string name="detail_missing">Acest prieten nu mai există.</string>
     <string name="detail_back">Înapoi</string>
     <string name="detail_remove_friend">Elimină prietenul</string>
