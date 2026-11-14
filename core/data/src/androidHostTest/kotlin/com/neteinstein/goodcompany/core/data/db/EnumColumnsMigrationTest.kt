@@ -134,6 +134,23 @@ class EnumColumnsMigrationTest {
     }
 
     @Test
+    fun acquaintance_isStoredInTheOldCircleColumn_withNoMigration() = runTest {
+        // Issue #69: the fourth closeness level needs no migration since 16 dropped the CHECK on friend.circle.
+        val driver = driverAt(16)
+        driver.fillVersion16()
+        GoodCompanyDatabase.Schema.migrate(driver, 16, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        driver.exec("UPDATE friend SET circle = 'ACQUAINTANCE' WHERE id = 'ana'")
+        assertEquals(Closeness.ACQUAINTANCE, database.readFriends().first { it.id.value == "ana" }.closeness)
+
+        // And the mapper writes it back under the same name.
+        val ana = database.readFriends().first { it.id.value == "ana" }
+        database.writeFriend(ana.copy(closeness = Closeness.ACQUAINTANCE, isCloseFriend = false), 0)
+        assertEquals(listOf("ACQUAINTANCE"), driver.strings("SELECT circle FROM friend WHERE id = 'ana'"))
+        driver.close()
+    }
+
+    @Test
     fun unknownEnumNames_canBeStored_andReadAsTheirFallback() = runTest {
         val driver = driverAt(16)
         driver.fillVersion16()

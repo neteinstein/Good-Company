@@ -83,6 +83,8 @@ class SettingsViewModelTest {
         vm.onClosenessDaysChange(Closeness.INNER, 14)
         vm.onClosenessDaysChange(Closeness.CLOSE, 60)
         vm.onClosenessDaysChange(Closeness.GOOD, 0)
+        vm.onClosenessDaysChange(Closeness.INNER, null) // only Acquaintances can be off
+        vm.onClosenessDaysChange(Closeness.ACQUAINTANCE, 180)
         vm.onNotificationPermissionResult(false)
         val s = state.value.settings
         assertEquals(ThemeMode.DARK, s.themeMode)
@@ -93,6 +95,9 @@ class SettingsViewModelTest {
         assertEquals(14, s.innerCircleDays)
         assertEquals(60, s.closeCircleDays)
         assertEquals(1, s.goodFriendsDays)
+        assertEquals(180, s.acquaintanceDays)
+        vm.onClosenessDaysChange(Closeness.ACQUAINTANCE, null)
+        assertEquals(null, state.value.settings.acquaintanceDays)
         assertEquals(SettingsMessage.Notifications(false), state.value.message)
         assertEquals("••••", SettingsViewModel.mask("short"))
     }

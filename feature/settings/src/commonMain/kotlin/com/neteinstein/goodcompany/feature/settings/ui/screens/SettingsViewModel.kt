@@ -165,13 +165,14 @@ class SettingsViewModel(
 
     fun onHomeAreaChange(area: String) = update { it.copy(homeArea = area) }
 
-    /** Default "meet every N days" for a circle. */
-    fun onClosenessDaysChange(closeness: Closeness, days: Int) = update {
-        val d = days.coerceIn(1, 365)
+    /** Default "meet every N days" for a closeness level; null (off) only applies to Acquaintances (issue #69). */
+    fun onClosenessDaysChange(closeness: Closeness, days: Int?) = update {
+        val d = days?.coerceIn(1, 365)
         when (closeness) {
-            Closeness.INNER -> it.copy(innerCircleDays = d)
-            Closeness.CLOSE -> it.copy(closeCircleDays = d)
-            Closeness.GOOD -> it.copy(goodFriendsDays = d)
+            Closeness.INNER -> d?.let { v -> it.copy(innerCircleDays = v) } ?: it
+            Closeness.CLOSE -> d?.let { v -> it.copy(closeCircleDays = v) } ?: it
+            Closeness.GOOD -> d?.let { v -> it.copy(goodFriendsDays = v) } ?: it
+            Closeness.ACQUAINTANCE -> it.copy(acquaintanceDays = d)
         }
     }
 

@@ -1730,7 +1730,7 @@ private fun Hero(
                         emphasized = relation != null,
                     )
                 }
-                f.closeness?.takeIf { f.isCloseFriend }?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
+                f.shownCloseness?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
                 state.detail?.lastSeen?.let {
                     InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
                 }

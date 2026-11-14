@@ -30,6 +30,8 @@ import com.neteinstein.goodcompany.core.ui.resources.ai_error_unavailable
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_title
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
+import com.neteinstein.goodcompany.core.ui.resources.circle_acquaintance
+import com.neteinstein.goodcompany.core.ui.resources.circle_acquaintance_short
 import com.neteinstein.goodcompany.core.ui.resources.circle_close
 import com.neteinstein.goodcompany.core.ui.resources.circle_close_short
 import com.neteinstein.goodcompany.core.ui.resources.circle_good
@@ -330,6 +332,7 @@ fun closenessLabel(closeness: Closeness, short: Boolean = false): String = strin
         Closeness.INNER -> if (short) Res.string.circle_inner_short else Res.string.circle_inner
         Closeness.CLOSE -> if (short) Res.string.circle_close_short else Res.string.circle_close
         Closeness.GOOD -> if (short) Res.string.circle_good_short else Res.string.circle_good
+        Closeness.ACQUAINTANCE -> if (short) Res.string.circle_acquaintance_short else Res.string.circle_acquaintance
     },
 )
 

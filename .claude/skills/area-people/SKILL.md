@@ -31,10 +31,19 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `SavedEdit` (only what that save touched) for the "Saved · Undo" snackbar (`onUndoSave`). `LocalDatePickerDialog`
   picks on the day tap, with no OK.
 
+- **Acquaintances (issue #69).** `Closeness.ACQUAINTANCE` is the one level with `isRealFriend == false`:
+  `SetClosenessUseCase` turns `isCloseFriend` off for it (on for the other three), `SetRealFriendUseCase` moves an
+  Acquaintance up to Close, and re-picking from contacts keeps them an Acquaintance. Show a level with
+  `Friend.shownCloseness` (a real friend's level, or Acquaintance), never `closeness.takeIf { isCloseFriend }`.
+  No rhythm unless Settings sets `AppSettings.acquaintanceDays` (a `DeviceSettings` field, exported in backups like
+  `keptTagSpellings`, so no schema change); `CadenceRules.daysFor` is nullable for that reason. They keep birthday
+  reminders (F10) and are never asked by Today's last-seen card, even with a rhythm. Labels: Inner · Close · Friends ·
+  Acquaintances; the `circle_*` string keys stay.
+
 ## Reference (moved from AGENTS.md)
 
 27. **Closeness and circles (issue #22, D1).** Two separate ideas, mind the names. **Closeness** is the enum `Closeness`
-    (Inner / Close / Good friends, one per friend, `Friend.closeness`): it used to be `Circle` / `Friend.circle`, and it is
+    (Inner / Close / Friends / Acquaintances, one per friend, `Friend.closeness`; the third is still stored as `GOOD`): it used to be `Circle` / `Friend.circle`, and it is
     still stored as `circle` (`@SerialName("circle")`, the `friend.circle` column, the `circle_*` string keys and the
     `*CircleDays` settings), so backups and the database didn't change. **Circles** are the free-form groups: the UI says
     "circle", the code and tables keep `FriendGroup` / `friend_group` / `group_member` / `*Group*` use cases. A circle has an

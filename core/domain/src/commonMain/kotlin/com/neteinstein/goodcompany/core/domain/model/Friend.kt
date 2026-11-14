@@ -45,7 +45,7 @@ data class Friend(
     /** Contact disappeared from the address book; kept because it has app data. */
     val isOrphaned: Boolean = false,
     /**
-     * How close a real friend is (Inner / Close / Good friends) — gives a default "meet every" cadence without
+     * How close someone is (Inner / Close / Friends / Acquaintances) — gives a default "meet every" cadence without
      * per-friend setup. Stored as "circle" (its name before decision D1), so backups and the database are unchanged.
      */
     @SerialName("circle")
@@ -120,6 +120,12 @@ data class Friend(
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true
 
+    /**
+     * The closeness to show on chips and pills: a real friend's level, or Acquaintance (never a real friend, so it
+     * shows whatever [isCloseFriend] says). Null when there is nothing to show.
+     */
+    val shownCloseness: Closeness? get() = closeness?.takeIf { isCloseFriend || !it.isRealFriend }
+
     /** The name shown everywhere: [customName] when set, else the contact's [name]. */
     val displayName: String
         get() = customName?.takeIf { it.isNotBlank() } ?: name
@@ -188,10 +194,22 @@ data class ImportantEvent(
 )
 
 /**
- * Dunbar-style tiers for real friends. Each has a default cadence (configurable in Settings) so reminders work
- * the moment someone is marked as a real friend. A per-friend "meet every" value still overrides it.
+ * How close someone is (issue #69): Inner · Close · Friends ([GOOD], stored under its old name) · Acquaintances.
+ * The first three are real friends, each with a default cadence (configurable in Settings) so reminders work the
+ * moment someone is marked as a real friend. [ACQUAINTANCE] is never a real friend and has no rhythm unless one is set
+ * in Settings; birthdays still remind (F10). A per-friend "meet every" value still overrides any default.
+ * Stored by name in `friend.circle` (no `CHECK`, issue #72), so a new value needs no migration.
  */
-enum class Closeness { INNER, CLOSE, GOOD }
+enum class Closeness {
+    INNER,
+    CLOSE,
+    GOOD,
+    ACQUAINTANCE,
+    ;
+
+    /** Whether this level makes someone a real friend: every level but [ACQUAINTANCE]. */
+    val isRealFriend: Boolean get() = this != ACQUAINTANCE
+}
 
 /**
  * A gift idea ([givenOn] null) or a gift already given. [forKidId] is only read from old backups (a gift for one of

@@ -26,13 +26,13 @@ import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.first
 
 /**
- * Marks/unmarks a real friend. Marking puts them in the Close circle by default, so catch-up reminders work with
- * one tap; unmarking clears the circle (their own "meet every" override, if any, is kept).
+ * Marks/unmarks a real friend. Marking puts them in Close by default (an Acquaintance moves up to Close), so catch-up
+ * reminders work with one tap; unmarking clears the closeness (their own "meet every" override, if any, is kept).
  */
 class SetRealFriendUseCase(private val friends: FriendRepository) {
     suspend operator fun invoke(id: FriendId, real: Boolean) {
         val f = friends.get(id) ?: return
-        friends.upsert(f.copy(isCloseFriend = real, closeness = if (real) f.closeness ?: Closeness.CLOSE else null))
+        friends.upsert(f.copy(isCloseFriend = real, closeness = if (real) f.closeness?.takeIf { it.isRealFriend } ?: Closeness.CLOSE else null))
     }
 
     suspend fun toggle(id: FriendId) {
@@ -42,10 +42,17 @@ class SetRealFriendUseCase(private val friends: FriendRepository) {
 }
 
 class SetClosenessUseCase(private val friends: FriendRepository) {
-    /** A circle implies "real friend"; null removes them from circles but keeps them a real friend. */
+    /**
+     * Inner, Close or Friends imply "real friend"; Acquaintance means not one (issue #69); null clears the level but
+     * keeps them a real friend if they were one.
+     */
     suspend operator fun invoke(id: FriendId, closeness: Closeness?) {
         val f = friends.get(id) ?: return
-        friends.upsert(f.copy(closeness = closeness, isCloseFriend = f.isCloseFriend || closeness != null))
+        val real = when {
+            closeness == null -> f.isCloseFriend
+            else -> closeness.isRealFriend
+        }
+        friends.upsert(f.copy(closeness = closeness, isCloseFriend = real))
     }
 }
 
@@ -174,7 +181,8 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     // The pickers can't always read emails, so a re-pick only adds them.
                     emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
                         .distinctBy(String::lowercase).map { FriendEmail(it, fromContact = true) },
-                    isCloseFriend = true,
+                    // Picking someone again keeps an Acquaintance an Acquaintance (issue #69).
+                    isCloseFriend = match.closeness?.isRealFriend ?: true,
                     closeness = match.closeness ?: Closeness.CLOSE,
                     isOrphaned = false,
                 )

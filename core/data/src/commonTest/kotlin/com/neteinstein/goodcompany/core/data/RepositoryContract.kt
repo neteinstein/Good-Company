@@ -229,6 +229,15 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun acquaintanceRhythm_survivesARestart_andCanBeTurnedOff() = runTest {
+        assertNull(open().settings.settings.first().acquaintanceDays)
+        open().settings.update { it.copy(acquaintanceDays = 180) }
+        assertEquals(180, open().settings.settings.first().acquaintanceDays)
+        open().settings.update { it.copy(acquaintanceDays = null) }
+        assertNull(open().settings.settings.first().acquaintanceDays)
+    }
+
+    @Test
     fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
         val friend = richFriend()
         open().friends.upsert(friend)
