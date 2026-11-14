@@ -54,6 +54,9 @@ import org.jetbrains.compose.resources.StringResource
 
 @Serializable data object SettingsRoute
 
+/** Settings → Places (F11). */
+@Serializable data object PlacesRoute
+
 /** Year in review; [year] null = the most relevant year. */
 @Serializable data class YearReviewRoute(val year: Int? = null)
 

@@ -418,4 +418,18 @@
     <string name="attachment_original_gone">Originalul nu mai este în galerie</string>
     <string name="attachment_copy">Copiază</string>
     <string name="attachment_open_link">Deschide linkul</string>
+    <string name="log_locating">Te localizăm…</string>
+    <string name="place_what_is_this">Ce loc e acesta?</string>
+    <string name="place_name_hint">Dă-i un nume (opțional)</string>
+    <string name="place_first_time">%1$s · prima dată aici</string>
+    <string name="place_next_time">Data viitoare când ești la mai puțin de %1$d m, va primi acest nume.</string>
+    <string name="place_named_auto">Numit automat · ești la %1$d m</string>
+    <string name="place_change">Schimbă</string>
+    <string name="place_usually_with">De obicei aici cu</string>
+    <string name="place_add_person">Adaugă pe %1$s</string>
+    <plurals name="place_suggest_hint">
+        <item quantity="one">Din ultima ta întâlnire aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+        <item quantity="few">Din ultimele tale %1$d întâlniri aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+        <item quantity="other">Din ultimele tale %1$d de întâlniri aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+    </plurals>
 </resources>

@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
@@ -30,6 +31,7 @@ class LogInteractionViewModelTest {
         g.observeFriends,
         g.observeActivities,
         g.observeGroups,
+        g.observePlaceBook,
         g.logInteraction,
         g.currentLocation,
         g.clock,
@@ -109,9 +111,54 @@ class LogInteractionViewModelTest {
         val state = collecting(vm.state)
         vm.onUseLocation()
         vm.onClearLocation()
-        assertNull(state.value.sheet.location)
+        assertNull(state.value.sheet.place.location)
         vm.onKind(LogKind.EMAIL)
         assertEquals(LogKind.EMAIL, state.value.sheet.kind)
+    }
+
+    @Test
+    fun atANamedPlace_itNamesItself_andSuggestsTheUsualPeopleWithoutTickingThem() = runViewModelTest {
+        val home = GeoPoint(38.7139, -9.1394)
+        g.location.point = home
+        // First time: "What place is this?"
+        val first = vm(ids = listOf(ana, rui))
+        val firstState = collecting(first.state)
+        first.onUseLocation()
+        assertEquals(home, firstState.value.sheet.place.location)
+        assertTrue(firstState.value.sheet.place.firstTimeHere)
+        assertNull(firstState.value.sheet.place.match)
+        first.onPlaceName("Inês’s house")
+        first.onSave()
+        assertTrue(firstState.value.done)
+
+        // Second time, a few metres away: named by itself; Rui is suggested, not ticked.
+        g.location.point = GeoPoint(38.71392, -9.1394)
+        val second = vm(ids = listOf(ana))
+        val state = collecting(second.state)
+        second.onUseLocation()
+        val place = state.value.sheet.place
+        assertEquals("Inês’s house", place.match?.place?.name)
+        assertEquals(listOf(rui), place.suggested.map { it.id })
+        assertEquals(1, place.suggestedFrom)
+        assertEquals(listOf(ana), state.value.sheet.people.map { it.id })
+        second.onTogglePerson(rui) // tapping the suggestion adds them
+        assertTrue(state.value.sheet.place.suggested.isEmpty())
+        second.onSave()
+        val saved = g.hangoutRepo.hangouts.value.last()
+        assertEquals("Inês’s house", saved.place?.name)
+        assertEquals(1, g.hangoutRepo.places.value.size)
+
+        // "Change": somewhere else nearby gets its own name.
+        val third = vm(ids = listOf(ana))
+        val thirdState = collecting(third.state)
+        third.onUseLocation()
+        third.onChangePlace()
+        assertNull(thirdState.value.sheet.place.match)
+        assertTrue(thirdState.value.sheet.place.suggested.isEmpty())
+        third.onPlaceName("Café downstairs")
+        third.onSave()
+        assertEquals("Café downstairs", g.hangoutRepo.hangouts.value.last().place?.name)
+        assertEquals(2, g.hangoutRepo.places.value.size)
     }
 
     @Test

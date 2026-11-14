@@ -44,6 +44,7 @@ import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
@@ -375,6 +376,40 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun namedPlaces_persist_renameAndMergeRelinkMeetups_deleteLeavesThem() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val mum = NamedPlace("mum", "Mum’s", 38.7139, -9.1394)
+        val graca = NamedPlace("graca", "Graça’s place", 38.7143, -9.1394, radiusM = 150)
+        s.hangouts.upsertPlace(mum)
+        s.hangouts.upsertPlace(graca)
+        s.hangouts.upsertPlace(mum.copy(latitude = 38.714)) // an update keeps its place in the list
+        assertEquals(listOf(mum.copy(latitude = 38.714), graca), open().hangouts.places.first())
+
+        s.hangouts.add(Hangout("h1", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7139, -9.1394, "mum")))
+        s.hangouts.add(Hangout("h2", listOf(ana), at(2026, 3, 2), Place("Graça’s place", 38.7143, -9.1394, "graca")))
+        s.hangouts.add(Hangout("h3", listOf(ana), at(2026, 3, 3), Place("Mum’s")))
+        s.hangouts.add(Hangout("h4", listOf(ana), at(2026, 3, 4), Place(placeId = "graca")))
+        assertEquals("graca", open().hangouts.hangouts.first().last().place?.placeId)
+
+        s.hangouts.renamePlace("mum", "Mum & Dad’s")
+        s.hangouts.renamePlace("nowhere", "x") // unknown: nothing changes
+        assertEquals(listOf("Mum & Dad’s", "Graça’s place", "Mum’s", null), open().hangouts.hangouts.first().map { it.place?.name })
+        assertEquals("Mum & Dad’s", open().hangouts.places.first().first().name)
+
+        s.hangouts.mergePlaces("graca", "mum")
+        val merged = open().hangouts.hangouts.first()
+        assertEquals(listOf("mum", "mum", null, "mum"), merged.map { it.place?.placeId })
+        assertEquals(listOf("Mum & Dad’s", "Mum & Dad’s", "Mum’s", "Mum & Dad’s"), merged.map { it.place?.name })
+        assertEquals(listOf(38.7143, -9.1394), merged[1].place.let { listOf(it?.latitude, it?.longitude) }) // coordinates kept
+        assertEquals(listOf("mum"), open().hangouts.places.first().map { it.id })
+
+        s.hangouts.deletePlace("mum")
+        assertTrue(open().hangouts.places.first().isEmpty())
+        assertEquals(listOf("mum", "mum", null, "mum"), open().hangouts.hangouts.first().map { it.place?.placeId })
+    }
+
+    @Test
     fun groups_persistAndUpdateInPlace() = runTest {
         val s = open()
         s.friends.upsert(friend("ana"))
@@ -597,7 +632,8 @@ abstract class RepositoryContract {
     fun exportThenRestoreOnAnotherDevice_replacesEverythingButTheApiKey() = runTest {
         val from = open()
         from.friends.upsert(richFriend())
-        from.hangouts.add(Hangout("h", listOf(ana), at(2026, 3, 1)))
+        from.hangouts.add(Hangout("h", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7, -9.1, "pl")))
+        from.hangouts.upsertPlace(NamedPlace("pl", "Mum’s", 38.7, -9.1))
         from.reminders.upsert(Reminder("r", "Tickets", listOf(ana), createdAt = at(2026, 3, 1)))
         from.interactions.addAll(listOf(Interaction(ana, InteractionType.CALL, at(2026, 3, 2))))
         from.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), fromMe = true, text = "hi")))
@@ -617,6 +653,7 @@ abstract class RepositoryContract {
         val to = open()
         to.friends.upsert(friend("zed"))
         to.hangouts.add(Hangout("old", listOf(FriendId("zed")), at(2025, 1, 1)))
+        to.hangouts.upsertPlace(NamedPlace("old-place", "Old", 1.0, 2.0))
         to.settings.update { it.copy(aiApiKey = "sk-mine") }
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
 
@@ -625,6 +662,7 @@ abstract class RepositoryContract {
         // Flows see the restored data straight away.
         assertEquals(listOf(richFriend()), to.friends.friends.first())
         assertEquals(listOf("h"), to.hangouts.hangouts.first().map { it.id })
+        assertEquals(listOf("pl"), to.hangouts.places.first().map { it.id })
     }
 
     @Test

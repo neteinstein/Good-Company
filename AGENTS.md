@@ -354,6 +354,16 @@ Seen in practice:
     `UIApplication.shortcutItems` on every trip to the background and handles a pick in `QuickActionSceneDelegate`
     (cold start and running), all in the existing Swift file, so the Xcode project didn't change. Web: none.
 
+29. **Named places (issue #44, F11).** GPS only: never call a place-search, geocoding or map service. A `NamedPlace`
+    (`named_place` table, migration `7.sqm`, in `Backup.places`) is a name, a point and `radiusM` (100). Meetups link to
+    one through `Place.placeId` (`hangout.place_id`, no foreign key). `CheckInUseCase` resolves the place: a fix inside a
+    radius (`NamedPlaces.nearest`, haversine, the edge counts, overlaps → the nearest) with no name or that place's name
+    takes it; a new name at a fix creates a place; no name and nothing near keeps just the coordinates. Rename and merge
+    go through `HangoutRepository` (one transaction in SQL) so every linked meetup's `place_name` follows; delete only
+    forgets the place (meetups keep their name and link, so Undo relinks them). "Usually here with" is
+    `NamedPlaces.usualPeople` (most frequent in the last 8 meetups there): chips that add on tap, never pre-ticked.
+    Both sheets draw it with `MeetupPlace` (`:core:ui`); Settings → Places is `PlacesRoute` in `:feature:settings`.
+
 ## Skills
 
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:

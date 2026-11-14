@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
@@ -64,6 +65,20 @@ interface HangoutRepository {
     suspend fun add(hangout: Hangout)
 
     suspend fun delete(id: String)
+
+    /** Named places (F11): names given to GPS spots. They never leave the device. */
+    val places: Flow<List<NamedPlace>>
+
+    suspend fun upsertPlace(place: NamedPlace)
+
+    /** Forgets the place. Meetups that were there keep their name and their link (so an undo links them again). */
+    suspend fun deletePlace(id: String)
+
+    /** Renames the place and every meetup linked to it, in one go. */
+    suspend fun renamePlace(id: String, name: String)
+
+    /** Moves every meetup at [fromId] to [intoId] (its id and name), then deletes [fromId], in one go. */
+    suspend fun mergePlaces(fromId: String, intoId: String)
 }
 
 interface ReminderRepository {

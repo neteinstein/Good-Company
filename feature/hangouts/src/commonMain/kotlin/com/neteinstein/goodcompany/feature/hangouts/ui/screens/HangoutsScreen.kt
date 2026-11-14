@@ -187,6 +187,7 @@ fun HangoutsScreen(
     state.draft?.let { draft ->
         CheckInSheet(
             draft = draft,
+            place = state.draftPlace,
             friends = state.friends,
             groups = state.groups.map { it.group },
             onPickGroup = viewModel::onPickDraftGroup,
@@ -196,6 +197,7 @@ fun HangoutsScreen(
             onNoteChange = viewModel::onDraftNoteChange,
             onUseLocation = requestLocation,
             onClearLocation = viewModel::onClearDraftLocation,
+            onChangePlace = viewModel::onChangeDraftPlace,
             onSave = viewModel::onSaveCheckIn,
             onDismiss = viewModel::onDismissCheckIn,
         )

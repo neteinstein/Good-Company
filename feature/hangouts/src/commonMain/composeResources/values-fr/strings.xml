@@ -53,9 +53,6 @@
     <string name="sheet_title">Je suis avec…</string>
     <string name="sheet_find">Trouver un ami</string>
     <string name="sheet_where">Où ? (facultatif)</string>
-    <string name="sheet_locating">Localisation…</string>
-    <string name="sheet_clear_location">Effacer la position</string>
-    <string name="sheet_use_location">Utiliser ma position</string>
     <string name="sheet_note">Note (facultatif)</string>
     <string name="sheet_pick">Choisis avec qui tu es</string>
     <string name="sheet_log">Enregistrer · %1$d</string>

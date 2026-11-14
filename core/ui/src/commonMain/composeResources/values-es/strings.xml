@@ -406,4 +406,17 @@
     <string name="attachment_original_gone">El original ya no está en tu galería</string>
     <string name="attachment_copy">Copiar</string>
     <string name="attachment_open_link">Abrir enlace</string>
+    <string name="log_locating">Buscando tu ubicación…</string>
+    <string name="place_what_is_this">¿Qué lugar es este?</string>
+    <string name="place_name_hint">Ponle nombre (opcional)</string>
+    <string name="place_first_time">%1$s · primera vez aquí</string>
+    <string name="place_next_time">La próxima vez que estés a menos de %1$d m, tendrá este nombre.</string>
+    <string name="place_named_auto">Nombre automático · estás a %1$d m</string>
+    <string name="place_change">Cambiar</string>
+    <string name="place_usually_with">Sueles estar aquí con</string>
+    <string name="place_add_person">Añadir a %1$s</string>
+    <plurals name="place_suggest_hint">
+        <item quantity="one">De tu último encuentro aquí. Toca para añadir; nadie se añade solo.</item>
+        <item quantity="other">De tus últimos %1$d encuentros aquí. Toca para añadir; nadie se añade solo.</item>
+    </plurals>
 </resources>

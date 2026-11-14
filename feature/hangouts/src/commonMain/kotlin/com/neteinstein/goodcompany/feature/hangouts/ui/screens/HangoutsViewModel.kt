@@ -18,7 +18,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.OccasionMatch
+import com.neteinstein.goodcompany.core.domain.usecase.PlaceBook
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
@@ -27,6 +29,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.YearInReviewBuilder
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.ui.components.MeetupPlaceState
+import com.neteinstein.goodcompany.core.ui.components.meetupPlaceState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,6 +54,8 @@ data class CheckInDraft(
     val note: String = "",
     val location: GeoPoint? = null,
     val isLocating: Boolean = false,
+    /** "Change" was tapped on a place that named itself (F11): a new name is typed instead. */
+    val placeChanged: Boolean = false,
     /** A circle picked in the sheet: its members are listed first, nobody ticked, to tick who came (F20). */
     val circleId: String? = null,
 ) {
@@ -84,6 +90,8 @@ data class HangoutsUiState(
     val overdue: List<Relationships.MeetupStatus> = emptyList(),
     val upcoming: List<Relationships.MeetupStatus> = emptyList(),
     val draft: CheckInDraft? = null,
+    /** The check-in's place (F11): named by itself at a known spot, with "Usually here with". */
+    val draftPlace: MeetupPlaceState = MeetupPlaceState(),
     /** Circles ("Your circles"), most overdue first. */
     val groups: List<Relationships.GroupStatus> = emptyList(),
     /** The year the "Your year in friendship" card opens, or null when there's nothing to show yet. */
@@ -117,6 +125,7 @@ class HangoutsViewModel(
     observeAllHangouts: ObserveHangoutHistoryUseCase,
     observeGroups: ObserveGroupsUseCase,
     observeOccasions: ObserveOccasionMatchesUseCase,
+    observePlaceBook: ObservePlaceBookUseCase,
     private val savePlan: SavePlanUseCase,
     private val deleteGroup: DeleteGroupUseCase,
     private val restoreGroup: RestoreGroupUseCase,
@@ -134,14 +143,20 @@ class HangoutsViewModel(
         observeFriends(),
         observeHistory(filter),
         observeMeetups(),
-        combine(observeAllHangouts(flowOf(emptySet())), observeGroups(), observeOccasions()) { all, groups, occ -> Triple(all, groups, occ) },
+        combine(observeAllHangouts(flowOf(emptySet())), observeGroups(), observeOccasions(), observePlaceBook(), ::Extras),
         local,
-    ) { friends, history, meetups, (all, groups, occasions), ui ->
+    ) { friends, history, meetups, (all, groups, occasions, places), ui ->
         val today = clock.today()
         val hangouts = all.map { it.hangout }
         val reviewYear = YearInReviewBuilder.defaultYear(today, hangouts, clock.timeZone)
+        val draft = ui.draft
         ui.copy(
             isLoading = false,
+            draftPlace = if (draft == null) {
+                MeetupPlaceState()
+            } else {
+                meetupPlaceState(draft.place, draft.location, draft.isLocating, draft.placeChanged, places, draft.selected, friends.map { it.friend })
+            },
             groups = groups,
             reviewYear = reviewYear.takeIf { y -> hangouts.any { it.at.toLocalDateTime(clock.timeZone).year == y } },
             stats = Relationships.monthStats(all.map { it.hangout }, today, clock.timeZone),
@@ -204,7 +219,10 @@ class HangoutsViewModel(
 
     fun onDraftNoteChange(note: String) = editDraft { it.copy(note = note) }
 
-    fun onClearDraftLocation() = editDraft { it.copy(location = null) }
+    fun onClearDraftLocation() = editDraft { it.copy(location = null, placeChanged = false) }
+
+    /** F11: the place named itself, but it's somewhere else: type its name instead. */
+    fun onChangeDraftPlace() = editDraft { it.copy(placeChanged = true, place = "") }
 
     /** Called once the location permission prompt resolves. */
     fun onLocationPermissionResult(granted: Boolean) {
@@ -224,7 +242,9 @@ class HangoutsViewModel(
         val draft = local.value.draft ?: return
         if (!draft.canSave) return
         viewModelScope.launch {
-            checkIn(draft.selected, draft.place, draft.location, draft.note)
+            // At a named place the meetup takes its name (CheckInUseCase matches it again from the fix).
+            val place = state.value.draftPlace.match?.place?.name ?: draft.place
+            checkIn(draft.selected, place, draft.location, draft.note)
             val names = state.value.friends.filter { it.id in draft.selected }.map { it.name.substringBefore(' ') }
             local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = HangoutsMessage.LoggedWith(names)) }
         }
@@ -273,3 +293,10 @@ class HangoutsViewModel(
         const val UPCOMING_LIMIT = 5
     }
 }
+
+private data class Extras(
+    val all: List<HangoutWithFriends>,
+    val groups: List<Relationships.GroupStatus>,
+    val occasions: Map<Occasion, List<OccasionMatch>>,
+    val places: PlaceBook,
+)

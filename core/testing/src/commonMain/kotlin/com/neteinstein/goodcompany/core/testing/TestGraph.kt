@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
@@ -37,6 +38,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MergePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
@@ -49,6 +51,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -61,10 +65,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
@@ -140,6 +146,12 @@ class TestGraph(
     val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)
     val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
+    val observePlaceBook = ObservePlaceBookUseCase(hangoutRepo)
+    val observePlaces = ObservePlacesUseCase(friendRepo, hangoutRepo)
+    val renamePlace = RenamePlaceUseCase(hangoutRepo)
+    val deletePlace = DeletePlaceUseCase(hangoutRepo)
+    val restorePlace = RestorePlaceUseCase(hangoutRepo)
+    val mergePlaces = MergePlacesUseCase(hangoutRepo)
     val logInteraction = LogInteractionUseCase(checkIn, interactionRepo, clock, ids)
     val undoLog = UndoLogUseCase(hangoutRepo, interactionRepo)
 

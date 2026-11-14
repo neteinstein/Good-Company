@@ -59,9 +59,6 @@
     <string name="sheet_title">I’m with…</string>
     <string name="sheet_find">Find a friend</string>
     <string name="sheet_where">Where? (optional)</string>
-    <string name="sheet_locating">Finding you…</string>
-    <string name="sheet_clear_location">Clear location</string>
-    <string name="sheet_use_location">Use my location</string>
     <string name="sheet_note">Note (optional)</string>
     <string name="sheet_pick">Pick who you’re with</string>
     <string name="sheet_log">Log it · %1$d</string>

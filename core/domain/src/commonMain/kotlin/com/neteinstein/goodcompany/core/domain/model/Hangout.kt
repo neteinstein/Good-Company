@@ -26,6 +26,8 @@ data class Place(
     val name: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    /** The [NamedPlace] this meetup was at (F11), if any. Renaming or merging that place updates [name] here too. */
+    val placeId: String? = null,
 ) {
     val label: String?
         get() = name?.takeIf { it.isNotBlank() }

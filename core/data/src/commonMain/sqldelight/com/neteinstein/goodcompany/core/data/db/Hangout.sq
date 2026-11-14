@@ -8,7 +8,9 @@ CREATE TABLE hangout (
     place_latitude REAL,
     place_longitude REAL,
     note TEXT NOT NULL,
-    activity TEXT
+    activity TEXT,
+    -- The named place (F11) this meetup was at; see NamedPlace.sq.
+    place_id TEXT
 );
 
 CREATE TABLE hangout_friend (
@@ -21,6 +23,8 @@ CREATE TABLE hangout_friend (
 -- "When did I last see X", "everyone at this check-in".
 CREATE INDEX hangout_friend_friend_id ON hangout_friend(friend_id);
 
+CREATE INDEX hangout_place_id ON hangout(place_id);
+
 allHangouts:
 SELECT * FROM hangout ORDER BY position;
 
@@ -31,14 +35,19 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM hangout;
 
 upsert:
-INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note, activity) VALUES ?
+INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note, activity, place_id) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     at = excluded.at,
     place_name = excluded.place_name,
     place_latitude = excluded.place_latitude,
     place_longitude = excluded.place_longitude,
     note = excluded.note,
-    activity = excluded.activity;
+    activity = excluded.activity,
+    place_id = excluded.place_id;
+
+-- Renaming or merging a named place: its meetups take the new id and name.
+relinkPlace:
+UPDATE hangout SET place_id = :toId, place_name = :name WHERE place_id = :fromId;
 
 deleteFriends:
 DELETE FROM hangout_friend WHERE hangout_id = ?;

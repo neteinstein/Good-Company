@@ -12,8 +12,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
+import com.neteinstein.goodcompany.core.ui.components.meetupPlaceState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +33,9 @@ private data class Draft(
     val note: String = "",
     val placeName: String = "",
     val location: GeoPoint? = null,
+    val isLocating: Boolean = false,
+    /** "Change" was tapped on a place that named itself: a new name is typed instead. */
+    val placeChanged: Boolean = false,
     val activity: HangoutActivity? = null,
     val saving: Boolean = false,
     val circleId: String? = null,
@@ -54,6 +59,7 @@ class LogInteractionViewModel(
     observeFriends: ObserveFriendsUseCase,
     observeActivities: ObserveActivitiesUseCase,
     observeCircles: ObserveGroupsUseCase,
+    observePlaceBook: ObservePlaceBookUseCase,
     private val logInteraction: LogInteractionUseCase,
     private val currentLocation: GetCurrentLocationUseCase,
     private val clock: AppClock,
@@ -63,8 +69,14 @@ class LogInteractionViewModel(
 
     private fun initial() = LogInteractionUiState(LogSheetState(kind = draft.value.kind, date = draft.value.date, today = clock.today()))
 
-    val state: StateFlow<LogInteractionUiState> = combine(observeFriends(), observeActivities(), observeCircles(), draft, done) {
-            friends,
+    val state: StateFlow<LogInteractionUiState> = combine(
+        combine(observeFriends(), observePlaceBook(), ::Pair),
+        observeActivities(),
+        observeCircles(),
+        draft,
+        done,
+    ) {
+            (friends, places),
             activities,
             circles,
             d,
@@ -72,16 +84,16 @@ class LogInteractionViewModel(
         ->
         val byId = friends.associateBy { it.friend.id }
         val circle = circles.firstOrNull { it.group.id == d.circleId }
+        val everyone = friends.map { it.friend }
         LogInteractionUiState(
             sheet = LogSheetState(
                 kind = d.kind,
                 people = d.people.mapNotNull { byId[it]?.friend },
-                everyone = friends.map { it.friend }.sortedBy { it.name.lowercase() },
+                everyone = everyone.sortedBy { it.name.lowercase() },
                 date = d.date,
                 today = clock.today(),
                 note = d.note,
-                placeName = d.placeName,
-                location = d.location,
+                place = meetupPlaceState(d.placeName, d.location, d.isLocating, d.placeChanged, places, d.people, everyone),
                 activity = d.activity,
                 activities = activities,
                 saving = d.saving,
@@ -112,18 +124,24 @@ class LogInteractionViewModel(
     fun onActivity(activity: HangoutActivity?) = draft.update { it.copy(activity = activity) }
 
     fun onUseLocation() {
+        draft.update { it.copy(isLocating = true) }
         viewModelScope.launch {
-            val point = currentLocation() ?: return@launch
-            draft.update { it.copy(location = point) }
+            val point = currentLocation()
+            draft.update { it.copy(isLocating = false, location = point ?: it.location) }
         }
     }
 
-    fun onClearLocation() = draft.update { it.copy(location = null) }
+    fun onClearLocation() = draft.update { it.copy(location = null, placeChanged = false) }
+
+    /** F11: the place named itself, but it's somewhere else: type its name instead. */
+    fun onChangePlace() = draft.update { it.copy(placeChanged = true, placeName = "") }
 
     fun onSave() {
         val d = draft.value
         val sheet = state.value.sheet
         if (!sheet.canSave) return
+        // At a named place the meetup takes its name (CheckInUseCase matches it again from the fix).
+        val placeName = sheet.place.match?.place?.name ?: d.placeName
         // Only people who exist: an app-icon shortcut can name someone deleted since (goodcompany://log/<id>).
         val people = sheet.people.map { it.id }
         draft.update { it.copy(saving = true) }
@@ -136,7 +154,7 @@ class LogInteractionViewModel(
                         kind = d.kind,
                         date = d.date,
                         note = d.note,
-                        placeName = d.placeName.takeIf { meetup },
+                        placeName = placeName.takeIf { meetup },
                         location = d.location.takeIf { meetup },
                         activity = d.activity.takeIf { meetup },
                     ),

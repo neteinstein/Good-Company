@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.data.repository
 
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
@@ -10,6 +11,7 @@ import com.neteinstein.goodcompany.core.data.db.IDEA_TABLES
 import com.neteinstein.goodcompany.core.data.db.INTERACTION_TABLES
 import com.neteinstein.goodcompany.core.data.db.JOURNAL_TABLES
 import com.neteinstein.goodcompany.core.data.db.MESSAGE_TABLES
+import com.neteinstein.goodcompany.core.data.db.PLACE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
 import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
@@ -22,6 +24,7 @@ import com.neteinstein.goodcompany.core.data.db.readIdeas
 import com.neteinstein.goodcompany.core.data.db.readInteractions
 import com.neteinstein.goodcompany.core.data.db.readJournal
 import com.neteinstein.goodcompany.core.data.db.readMessages
+import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
 import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
@@ -34,6 +37,7 @@ import com.neteinstein.goodcompany.core.data.db.writeIdea
 import com.neteinstein.goodcompany.core.data.db.writeInteraction
 import com.neteinstein.goodcompany.core.data.db.writeJournal
 import com.neteinstein.goodcompany.core.data.db.writeMessage
+import com.neteinstein.goodcompany.core.data.db.writePlace
 import com.neteinstein.goodcompany.core.data.db.writePlan
 import com.neteinstein.goodcompany.core.data.db.writePreferences
 import com.neteinstein.goodcompany.core.data.db.writeReminder
@@ -55,6 +59,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
@@ -186,6 +191,26 @@ class SqlHangoutRepository(private val db: AppDatabase) : HangoutRepository {
 
     override suspend fun delete(id: String) {
         db.access { it.hangoutQueries.delete(id) }
+    }
+
+    override val places: Flow<List<NamedPlace>> = db.observe(*PLACE_TABLES) { it.readPlaces() }
+
+    override suspend fun upsertPlace(place: NamedPlace) = db.transaction { it.writePlace(place) }
+
+    override suspend fun deletePlace(id: String) {
+        db.access { it.namedPlaceQueries.deletePlace(id) }
+    }
+
+    override suspend fun renamePlace(id: String, name: String) = db.transaction { database ->
+        val row = database.namedPlaceQueries.placeById(id).awaitAsOneOrNull() ?: return@transaction
+        database.namedPlaceQueries.upsertPlace(row.copy(name = name))
+        database.hangoutQueries.relinkPlace(toId = id, name = name, fromId = id)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) = db.transaction { database ->
+        val into = database.namedPlaceQueries.placeById(intoId).awaitAsOneOrNull() ?: return@transaction
+        database.hangoutQueries.relinkPlace(toId = intoId, name = into.name, fromId = fromId)
+        database.namedPlaceQueries.deletePlace(fromId)
     }
 }
 
@@ -406,6 +431,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 ideas = database.readIdeas(),
                 groups = database.readGroups(),
                 plans = database.readPlans(),
+                places = database.readPlaces(),
             )
         }
         return backup.copy(settings = settings.current())
@@ -433,9 +459,11 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     interactionQueries.deleteAllMessages()
     interactionQueries.deleteAllJournal()
     attachmentQueries.deleteAllAttachments()
+    namedPlaceQueries.deleteAllPlaces()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
+    backup.places.forEach { writePlace(it) }
     backup.hangouts.forEach { writeHangout(it) }
     backup.reminders.forEach { writeReminder(it) }
     backup.plans.forEach { writePlan(it) }
