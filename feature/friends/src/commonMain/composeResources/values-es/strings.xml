@@ -40,14 +40,12 @@
     <string name="msg_call_logged_short">Llamada registrada — próximo aviso en una semana</string>
     <string name="detail_missing">Este amigo ya no existe.</string>
     <string name="detail_back">Atrás</string>
-    <string name="detail_remove_friend">Quitar amigo</string>
     <string name="detail_add_birthday">Añadir cumpleaños</string>
     <string name="detail_add_photo">Añadir foto</string>
     <string name="detail_birthday_turns">%1$s · cumple %2$d</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Visto %1$s</string>
     <string name="detail_orphaned">Ya no está en tus contactos</string>
-    <string name="qa_together">Juntos</string>
     <string name="qa_call">Llamar</string>
     <string name="qa_text">SMS</string>
     <string name="qa_whatsapp">WhatsApp</string>
@@ -58,7 +56,6 @@
     <string name="birthday_send_wishes">Felicitar</string>
     <string name="wish_title">Felicitación para %1$s</string>
     <string name="wish_gift_hint">Ideas de regalo: %1$s</string>
-    <string name="touch_title">Mantener el contacto</string>
     <string name="touch_last_together">Os visteis por última vez %1$s</string>
     <string name="touch_never">Aún no hay encuentros registrados</string>
     <string name="touch_pick">Elige la cercanía o cada cuánto quieres veros — te lo recordaremos.</string>
@@ -117,7 +114,6 @@
         <item quantity="one">%1$s · aviso %2$d día antes</item>
         <item quantity="other">%1$s · aviso %2$d días antes</item>
     </plurals>
-    <string name="ideas_title">Temas de conversación</string>
     <string name="ideas_find">Buscar ideas</string>
     <string name="ideas_setup">Configurar IA</string>
     <string name="ideas_hint_ai">Noticias y temas de conversación según lo que le encanta a %1$s.</string>
@@ -177,7 +173,6 @@
     <string name="touch_paused">Los avisos están en pausa.</string>
     <string name="touch_resume">Reactivar</string>
     <string name="plans_add">Planear</string>
-    <string name="plans_empty">Nada planeado. Elige un día y te lo recordará, y luego te preguntará si pasó.</string>
     <string name="occasions_title">Buena compañía para</string>
     <string name="occasions_hint">Se usa en «¿Quién se apunta a…?» en la pestaña Juntos.</string>
     <string name="topics_from_notes">De lo que ya sabes</string>
@@ -333,7 +328,6 @@
     <string name="story_fresh_interest">Nuevo interés</string>
     <string name="timeline_title">Cronología</string>
     <string name="timeline_screen_title">Cronología de %1$s</string>
-    <string name="timeline_see_all">Ver todo</string>
     <string name="timeline_empty">Aún no hay nada. Toca + para registrar una quedada, una llamada, un mensaje o una nota.</string>
     <string name="timeline_filter_empty">Nada con este filtro.</string>
     <string name="timeline_log">Registrar</string>
@@ -487,9 +481,33 @@
         <item quantity="other">%1$d enfriándose: %2$s</item>
     </plurals>
     <!-- Circles on a person's page (issue #70) -->
-    <string name="circles_add">Círculo</string>
     <string name="circles_sheet_title">Círculos de %1$s</string>
     <string name="circles_new_with">Nuevo círculo con %1$s</string>
-    <string name="circles_remove">Quitar de %1$s</string>
-    <string name="msg_removed_from_circle">Ya no está en %1$s</string>
+    <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
+    <string name="qa_message">Mensaje</string>
+    <string name="qa_we_met">Nos vimos</string>
+    <string name="message_sheet_title">Mensaje a %1$s</string>
+    <string name="tab_summary">Resumen</string>
+    <string name="tab_about">Sobre</string>
+    <string name="tab_history">Historial</string>
+    <string name="editing_title">Editando a %1$s</string>
+    <string name="edit_done">Hecho</string>
+    <string name="edit_person">Editar a %1$s</string>
+    <string name="detail_more_options">Más opciones</string>
+    <string name="remove_person">Quitar a %1$s</string>
+    <string name="complete_title">Completa el perfil de %1$s</string>
+    <string name="complete_about">Sobre</string>
+    <string name="complete_more">Más sobre</string>
+    <string name="complete_occasions">Buena compañía para</string>
+    <string name="complete_family">Familia</string>
+    <string name="complete_moments">Momentos importantes</string>
+    <string name="complete_gifts">Ideas de regalo</string>
+    <string name="complete_saved">Guardado</string>
+    <string name="complete_feeds">Blog o feed</string>
+    <string name="circles_edit">Círculos</string>
+    <string name="tastes_add_title">Añadir a los gustos de %1$s</string>
+    <string name="coming_up_title">Próximamente</string>
+    <string name="talk_title">Para hablar</string>
+    <string name="news_add">Añadir novedad</string>
+    <string name="relation_to_me_pick">Toca para elegir (hermana, primo…)</string>
 </resources>

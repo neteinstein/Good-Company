@@ -114,18 +114,30 @@ class FriendDetailViewModelTest {
     }
 
     @Test
-    fun circleChipX_removesWithUndo() = runViewModelTest {
+    fun circleUntick_inTheSheet_takesThemOutWithUndo() = runViewModelTest {
+        // Issue #90: circle chips have no ×; leaving a circle is an untick in the "Circles" sheet.
         val surf = FriendGroup("surf", "Surf", emoji = "🏄", memberIds = listOf(FriendId("ana"), FriendId("x")), meetEveryDays = 14)
         g.groupRepo.upsert(surf)
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onRemoveFromCircle("surf")
+        vm.onSetInCircle("surf", member = false)
         assertEquals(listOf(FriendId("x")), g.groupRepo.groups.value.single().memberIds)
-        assertEquals(FriendDetailMessage.RemovedFromCircle(surf), state.value.message)
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
         assertTrue(state.value.detail!!.groups.isEmpty())
 
         vm.onUndoSave()
         assertEquals(surf, g.groupRepo.groups.value.single()) // back as it was, order and reminder included
+    }
+
+    @Test
+    fun preferredChannel_fromEditMode_savesAtOnce() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSetPreferredChannel(ContactChannel.EMAIL)
+        assertEquals(ContactChannel.EMAIL, g.friendRepo.get(FriendId("ana"))?.preferredChannel)
+        assertEquals(ContactChannel.EMAIL, state.value.detail!!.friend.preferredChannel)
+        vm.onSetPreferredChannel(null)
+        assertNull(g.friendRepo.get(FriendId("ana"))?.preferredChannel)
     }
 
     @Test

@@ -25,6 +25,8 @@ kotlinx-serialization = "1.12.0"
 # --- JetBrains AndroidX ports (multiplatform) ---
 jetbrains-lifecycle = "2.11.0"
 jetbrains-navigation = "2.10.0"
+# NavigationBackHandler (a person's page leaves edit mode on Back, issue #90): the version CMP 1.12's ui-backhandler requires.
+jetbrains-navigationevent = "1.1.0"
 
 # --- AndroidX (Android-only) ---
 androidx-activity = "1.13.0"
@@ -77,6 +79,7 @@ compose-material-icons-extended = { module = "org.jetbrains.compose.material:mat
 jetbrains-lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "jetbrains-lifecycle" }
 jetbrains-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "jetbrains-lifecycle" }
 jetbrains-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "jetbrains-navigation" }
+jetbrains-navigationevent-compose = { module = "org.jetbrains.androidx.navigationevent:navigationevent-compose", version.ref = "jetbrains-navigationevent" }
 
 # AndroidX (Android only)
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
