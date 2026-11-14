@@ -88,6 +88,7 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
+import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.showMessage
@@ -273,6 +274,8 @@ fun SettingsScreen(
     onOpenCalendar: () -> Unit = {},
     onOpenTags: () -> Unit = {},
     onOpenActivities: () -> Unit = {},
+    /** Settings is opened from a tab header (issue #65), so it has a back arrow; null hides it. */
+    onBack: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -307,6 +310,7 @@ fun SettingsScreen(
             onClearApiKey = viewModel::onClearApiKey,
             onAiEnabledChange = viewModel::onAiEnabledChange,
             onOpenActivities = onOpenActivities,
+            onBack = onBack,
             onThemeChange = viewModel::onThemeChange,
             onDynamicColorChange = viewModel::onDynamicColorChange,
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
@@ -364,6 +368,7 @@ fun SettingsScreen(
 }
 
 data class SettingsActions(
+    val onBack: (() -> Unit)? = null,
     val onSaveApiKey: (String) -> Unit = {},
     val onClearApiKey: () -> Unit = {},
     val onAiEnabledChange: (Boolean) -> Unit = {},
@@ -420,7 +425,11 @@ fun SettingsContent(
     val s = state.settings
     Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            ScreenHeader(eyebrow = stringResource(Res.string.eyebrow), title = stringResource(Res.string.title))
+            ScreenHeader(
+                eyebrow = stringResource(Res.string.eyebrow),
+                title = stringResource(Res.string.title),
+                navigation = actions.onBack?.let { back -> { HeaderBackButton(back) } },
+            )
 
             SectionCard(stringResource(Res.string.appearance), icon = Icons.Rounded.Palette) {
                 val modes = listOf(

@@ -72,16 +72,8 @@
     <string name="card_see">See %1$s</string>
     <string name="card_overdue">Worth a hello</string>
     <string name="card_group">%1$s %2$s</string>
-    <plurals name="catch_up_days">
-        <item quantity="one">%1$d day since you met · goal %2$s</item>
-        <item quantity="other">%1$d days since you met · goal %2$s</item>
-    </plurals>
-    <string name="catch_up_never">No meetup logged yet</string>
-    <string name="catch_up_met">We met</string>
-    <string name="catch_up_called">Called them</string>
     <string name="snooze_week">Snooze a week</string>
     <string name="snooze_weekend">Remind me Saturday</string>
-    <string name="drifting_message">Message</string>
 
     <!-- Messages -->
     <string name="msg_call_logged">Call with %1$s logged — next nudge in a week</string>

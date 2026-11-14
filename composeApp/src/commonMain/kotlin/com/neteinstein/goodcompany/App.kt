@@ -71,6 +71,7 @@ import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.LogInteractionRoute
+import com.neteinstein.goodcompany.ui.navigation.SettingsRoute
 import com.neteinstein.goodcompany.ui.navigation.ShareRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
 import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
@@ -130,17 +131,17 @@ private fun TemporaryStorageBanner() {
 
 @Composable
 private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
-    val tabs = TopLevelDestination.shown(aiEnabled)
+    val tabs = TopLevelDestination.entries
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val current = entry?.destination
     val selected = TopLevelDestination.entries.firstOrNull { d -> current?.hierarchy?.any { it.hasRoute(d.route::class) } == true }
     val showChrome = selected != null
-    // Chosen once: `tab=ideas` opens Home while AI is off (F1).
-    val start = remember { launch.startDestination(aiEnabled).route }
+    val start = remember { launch.startDestination.route }
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
     LaunchedEffect(launch.openStoryFriendId) { launch.openStoryFriendId?.let { navController.navigate(CatchUpStoryRoute(it)) } }
     LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
+    LaunchedEffect(launch.openSettings) { if (launch.openSettings) navController.navigate(SettingsRoute) }
     // Something shared from another app (Android intent, iOS share extension, web share target).
     val shareInbox: ShareInbox = koinInject()
     val pendingShare by shareInbox.pending.collectAsStateWithLifecycle()
@@ -172,7 +173,7 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
                     Spacer(Modifier.weight(1f))
                 }
                 Box(Modifier.weight(1f)) {
-                    ContentWidth { AppNavHost(navController, startDestination = start) }
+                    ContentWidth { AppNavHost(navController, startDestination = start, aiEnabled = aiEnabled) }
                     LoggedMeetupSnackbar(Modifier.align(Alignment.BottomCenter))
                 }
             }
@@ -195,7 +196,7 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
                         }
                     }
                 },
-            ) { padding -> AppNavHost(navController, Modifier.padding(padding), startDestination = start) }
+            ) { padding -> AppNavHost(navController, Modifier.padding(padding), startDestination = start, aiEnabled = aiEnabled) }
         }
     }
 }

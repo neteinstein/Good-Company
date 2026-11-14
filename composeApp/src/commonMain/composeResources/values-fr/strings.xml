@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Good Company</string>
-    <string name="nav_friends">Amis</string>
-    <string name="nav_together">Ensemble</string>
-    <string name="nav_agenda">À venir</string>
-    <string name="nav_ideas">Idées</string>
-    <string name="nav_settings">Réglages</string>
     <string name="storage_temporary">Les modifications dans cet onglet ne seront pas enregistrées. Good Company est sans doute ouvert dans un autre onglet, continuez-y.</string>
     <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
     <string name="shortcut_log_meetup">Noter une sortie</string>
+    <string name="nav_today">Aujourd’hui</string>
+    <string name="nav_people">Personnes</string>
+    <string name="nav_circles">Cercles</string>
+    <string name="nav_plans">Projets</string>
 </resources>

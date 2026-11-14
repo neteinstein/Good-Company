@@ -8,7 +8,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
 
 /**
- * Optional start-up options — used by the web build's URL query (`?demo&tab=together&theme=dark`) for demos
+ * Optional start-up options — used by the web build's URL query (`?demo&tab=circles&theme=dark`) for demos
  * and for the README screenshot pipeline (scripts/screenshots). Mobile builds start with the defaults.
  */
 data class LaunchOptions(
@@ -25,12 +25,25 @@ data class LaunchOptions(
     val shared: SharedContent? = null,
     /** Turns the AI switch on (`ai`), for demos and the screenshot pipeline. */
     val enableAi: Boolean = false,
+    /** Opens Settings on top of the start tab (`tab=settings`: Settings is no longer a tab, issue #65). */
+    val openSettings: Boolean = false,
 ) {
-    /** The tab to open: [startTab] when it's shown, else Home (`tab=ideas` while AI is off, F1). */
-    fun startDestination(aiEnabled: Boolean): TopLevelDestination =
-        startTab?.takeIf { it.isShown(aiEnabled || enableAi) } ?: TopLevelDestination.FRIENDS
+    /** The tab to open: [startTab], else Today (issue #65). */
+    val startDestination: TopLevelDestination get() = startTab ?: TopLevelDestination.TODAY
 
     companion object {
+        /** The tab names from before issue #65, mapped to the tab that took their place. */
+        private val OLD_TAB_NAMES = mapOf(
+            "friends" to TopLevelDestination.PEOPLE,
+            "together" to TopLevelDestination.CIRCLES,
+            "agenda" to TopLevelDestination.TODAY,
+            "ideas" to TopLevelDestination.PLANS,
+        )
+
+        /** A `tab=` value: a tab's name (`today`, `people`, `circles`, `plans`) or an old one; null when unknown. */
+        fun tabFrom(name: String): TopLevelDestination? = TopLevelDestination.entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            ?: OLD_TAB_NAMES[name.lowercase()]
+
         private fun sharedFrom(params: Map<String, String>): SharedContent? {
             fun param(name: String) = params[name]?.let(::percentDecode)?.trim()?.takeIf { it.isNotEmpty() }
             val title = param("share_title")
@@ -61,7 +74,7 @@ data class LaunchOptions(
         }
 
         /**
-         * Parses `demo`, `ai`, `tab=<friends|together|agenda|ideas|settings>`, `friend=<id>`, `theme=<light|dark>`, `onboarding`,
+         * Parses `demo`, `ai`, `tab=<today|people|circles|plans|settings>` (or an old name, see [tabFrom]), `friend=<id>`, `theme=<light|dark>`, `onboarding`,
          * `review`, `story=<id>`, and the Web Share Target's `share_title` / `share_text` / `share_url` (percent-encoded).
          */
         fun parse(query: String): LaunchOptions {
@@ -71,7 +84,7 @@ data class LaunchOptions(
             }
             return LaunchOptions(
                 loadSampleData = "demo" in params,
-                startTab = params["tab"]?.let { tab -> TopLevelDestination.entries.firstOrNull { it.name.equals(tab, ignoreCase = true) } },
+                startTab = params["tab"]?.let(::tabFrom),
                 openFriendId = params["friend"]?.takeIf { it.isNotBlank() },
                 theme = params["theme"]?.let { t -> ThemeMode.entries.firstOrNull { it.name.equals(t, ignoreCase = true) } },
                 showOnboarding = "onboarding" in params,
@@ -79,6 +92,7 @@ data class LaunchOptions(
                 openStoryFriendId = params["story"]?.takeIf { it.isNotBlank() },
                 shared = sharedFrom(params),
                 enableAi = "ai" in params,
+                openSettings = params["tab"].equals("settings", ignoreCase = true),
             )
         }
     }

@@ -62,4 +62,21 @@
     <string name="cal_empty_body">Les événements avec vos amis dans les calendriers choisis apparaissent ici une fois terminés.</string>
     <string name="cal_msg_no">« %1$s » ne sera plus suggéré</string>
     <string name="cal_msg_never">Plus de suggestions pour « %1$s »</string>
+    <string name="today_before_you_meet">Avant de vous voir</string>
+    <string name="today_catch_up">Il est temps de se revoir</string>
+    <string name="today_drifting">Vous vous éloignez</string>
+    <string name="today_drifting_hint">Vous étiez plus proches. Un petit message peut tout changer.</string>
+    <string name="today_logged_with">Moment avec %1$s enregistré ✨</string>
+    <string name="today_checkin_title">Je suis avec…</string>
+    <string name="today_title">Aujourd’hui</string>
+    <string name="today_checkin_body">Note avec qui tu es maintenant</string>
+    <string name="today_this_week">Cette semaine</string>
+    <string name="today_nothing_week">Rien dans les 7 prochains jours</string>
+    <string name="today_everything">Tout ce qui arrive</string>
+    <string name="today_all">Tous · %1$d</string>
+    <string name="today_empty_title">Qui sont tes proches ?</string>
+    <string name="today_empty_body">Ajoute les personnes qui comptent dans l’onglet Personnes. Aujourd’hui te montre ensuite ce qui t’attend cette semaine.</string>
+    <string name="today_empty_action">Aller à Personnes</string>
+    <string name="today_call_logged">Appel avec %1$s enregistré — prochain rappel dans une semaine</string>
+    <string name="today_snoozed">%1$s reporté jusqu’au %2$s</string>
 </resources>

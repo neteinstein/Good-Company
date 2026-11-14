@@ -68,17 +68,8 @@
     <string name="card_see">Vezi-l/o pe %1$s</string>
     <string name="card_overdue">Merită un salut</string>
     <string name="card_group">%1$s %2$s</string>
-    <plurals name="catch_up_days">
-        <item quantity="one">%1$d zi de când v-ați văzut · obiectiv %2$s</item>
-        <item quantity="few">%1$d zile de când v-ați văzut · obiectiv %2$s</item>
-        <item quantity="other">%1$d de zile de când v-ați văzut · obiectiv %2$s</item>
-    </plurals>
-    <string name="catch_up_never">Nicio întâlnire înregistrată încă</string>
-    <string name="catch_up_met">Ne-am văzut</string>
-    <string name="catch_up_called">L-am sunat</string>
     <string name="snooze_week">Amână o săptămână</string>
     <string name="snooze_weekend">Amintește-mi sâmbătă</string>
-    <string name="drifting_message">Mesaj</string>
     <string name="msg_call_logged">Apel cu %1$s înregistrat — următorul memento peste o săptămână</string>
     <string name="msg_snoozed">%1$s amânat până pe %2$s</string>
     <string name="msg_contacts_denied">Fără acces la contacte poți adăuga prieteni manual.</string>

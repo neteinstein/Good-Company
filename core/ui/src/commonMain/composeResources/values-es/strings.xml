@@ -578,4 +578,17 @@
     <string name="kin_search_half_sibling">medios hermanos|medio hermano|medias hermanas|media hermana</string>
     <string name="kin_search_step_sibling">hermanastros|hermanastro|hermanastras|hermanastra</string>
     <string name="sample_gift_list_christmas">Navidad</string>
+    <plurals name="catchup_days">
+        <item quantity="one">%1$d día desde que os visteis · objetivo %2$s</item>
+        <item quantity="other">%1$d días desde que os visteis · objetivo %2$s</item>
+    </plurals>
+    <string name="catchup_never">Aún no hay encuentros registrados</string>
+    <string name="catchup_met">Nos vimos</string>
+    <string name="catchup_called">Le llamé</string>
+    <string name="catchup_snooze_week">Posponer una semana</string>
+    <string name="catchup_snooze_weekend">Recuérdamelo el sábado</string>
+    <string name="catchup_warmth">Calidez de la amistad: %1$s</string>
+    <string name="catchup_message">Mensaje</string>
+    <string name="catchup_more">Más</string>
+    <string name="open_settings">Ajustes</string>
 </resources>

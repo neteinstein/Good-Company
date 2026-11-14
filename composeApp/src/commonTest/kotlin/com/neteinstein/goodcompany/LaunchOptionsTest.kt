@@ -24,9 +24,9 @@ import kotlin.test.assertTrue
 class LaunchOptionsTest {
     @Test
     fun parsesQuery() {
-        val o = LaunchOptions.parse("?demo&tab=Together&theme=dark&friend=sample-ana")
+        val o = LaunchOptions.parse("?demo&tab=Circles&theme=dark&friend=sample-ana")
         assertTrue(o.loadSampleData)
-        assertEquals(TopLevelDestination.TOGETHER, o.startTab)
+        assertEquals(TopLevelDestination.CIRCLES, o.startTab)
         assertEquals(ThemeMode.DARK, o.theme)
         assertEquals("sample-ana", o.openFriendId)
         assertEquals(LaunchOptions(), LaunchOptions.parse(""))
@@ -36,15 +36,36 @@ class LaunchOptionsTest {
     }
 
     @Test
-    fun ideasTabOnlyWithAi_andTabIdeasFallsBackToHome() {
-        assertFalse(TopLevelDestination.IDEAS in TopLevelDestination.shown(aiEnabled = false))
-        assertEquals(TopLevelDestination.entries, TopLevelDestination.shown(aiEnabled = true))
-        val ideas = LaunchOptions.parse("?tab=ideas")
-        assertEquals(TopLevelDestination.FRIENDS, ideas.startDestination(aiEnabled = false))
-        assertEquals(TopLevelDestination.IDEAS, ideas.startDestination(aiEnabled = true))
-        assertEquals(TopLevelDestination.IDEAS, LaunchOptions.parse("?ai&tab=ideas").startDestination(aiEnabled = false))
-        assertEquals(TopLevelDestination.AGENDA, LaunchOptions.parse("?tab=agenda").startDestination(aiEnabled = false))
-        assertEquals(TopLevelDestination.FRIENDS, LaunchOptions().startDestination(aiEnabled = true))
+    fun fourTabs_noAiOnlyTab_startOnToday() {
+        assertEquals(
+            listOf(TopLevelDestination.TODAY, TopLevelDestination.PEOPLE, TopLevelDestination.CIRCLES, TopLevelDestination.PLANS),
+            TopLevelDestination.entries,
+        )
+        assertEquals(TopLevelDestination.TODAY, LaunchOptions().startDestination)
+        // Plans is a tab whatever the AI switch (no more falling back while AI is off).
+        assertEquals(TopLevelDestination.PLANS, LaunchOptions.parse("?tab=plans").startDestination)
+        assertEquals(TopLevelDestination.PLANS, LaunchOptions.parse("?ai&tab=plans").startDestination)
+    }
+
+    @Test
+    fun newTabNames() {
+        assertEquals(TopLevelDestination.TODAY, LaunchOptions.parse("?tab=today").startTab)
+        assertEquals(TopLevelDestination.PEOPLE, LaunchOptions.parse("?tab=people").startTab)
+        assertEquals(TopLevelDestination.CIRCLES, LaunchOptions.parse("?tab=circles").startTab)
+        assertEquals(TopLevelDestination.PLANS, LaunchOptions.parse("?tab=PLANS").startTab)
+    }
+
+    @Test
+    fun oldTabNamesMapAcross_andSettingsOpensSettings() {
+        assertEquals(TopLevelDestination.PEOPLE, LaunchOptions.parse("?tab=friends").startTab)
+        assertEquals(TopLevelDestination.CIRCLES, LaunchOptions.parse("?tab=Together").startTab)
+        assertEquals(TopLevelDestination.TODAY, LaunchOptions.parse("?tab=agenda").startTab)
+        assertEquals(TopLevelDestination.PLANS, LaunchOptions.parse("?tab=ideas").startTab)
+        val settings = LaunchOptions.parse("?demo&tab=settings")
+        assertTrue(settings.openSettings)
+        assertEquals(null, settings.startTab)
+        assertEquals(TopLevelDestination.TODAY, settings.startDestination)
+        assertFalse(LaunchOptions.parse("?tab=today").openSettings)
     }
 
     @Test

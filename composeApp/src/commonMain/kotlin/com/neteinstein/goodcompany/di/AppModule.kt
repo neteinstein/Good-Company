@@ -212,6 +212,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
@@ -499,6 +500,7 @@ val appModule = module {
     }
     viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)
+    viewModelOf(::TodayViewModel)
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)
     viewModelOf(::IdeasViewModel)

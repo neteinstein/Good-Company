@@ -45,7 +45,7 @@ feature/onboarding/   First-run intro pager, permission primers, "explore with s
 feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI),
                       friend timeline, the "Log" sheet destination
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?", gift lists
-feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
+feature/agenda/       Today (the first tab: check-in, the next 7 days, catch-ups) + "Everything coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
 feature/review/       "Your year in friendship" (story cards + share), the network map and the "Your people" dashboard

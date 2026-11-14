@@ -597,4 +597,18 @@
     <string name="kin_search_half_sibling">frați vitregi|frate vitreg|surori vitrege|soră vitregă</string>
     <string name="kin_search_step_sibling">frați prin alianță|frate prin alianță|surori prin alianță|soră prin alianță</string>
     <string name="sample_gift_list_christmas">Crăciun</string>
+    <plurals name="catchup_days">
+        <item quantity="one">%1$d zi de când v-ați văzut · obiectiv %2$s</item>
+        <item quantity="few">%1$d zile de când v-ați văzut · obiectiv %2$s</item>
+        <item quantity="other">%1$d de zile de când v-ați văzut · obiectiv %2$s</item>
+    </plurals>
+    <string name="catchup_never">Nicio întâlnire înregistrată încă</string>
+    <string name="catchup_met">Ne-am văzut</string>
+    <string name="catchup_called">L-am sunat</string>
+    <string name="catchup_snooze_week">Amână o săptămână</string>
+    <string name="catchup_snooze_weekend">Amintește-mi sâmbătă</string>
+    <string name="catchup_warmth">Căldura prieteniei: %1$s</string>
+    <string name="catchup_message">Mesaj</string>
+    <string name="catchup_more">Mai mult</string>
+    <string name="open_settings">Setări</string>
 </resources>

@@ -203,13 +203,16 @@ fun ScreenHeader(
     subtitle: String? = null,
     eyebrow: String? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** Before the title, e.g. a back arrow on a screen pushed over the tabs (Settings, "Everything coming up"). */
+    navigation: (@Composable () -> Unit)? = null,
 ) {
     Box(modifier.fillMaxWidth()) {
         BlobBackground(Modifier.matchParentSize())
         Row(
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 20.dp, bottom = 16.dp),
+            Modifier.fillMaxWidth().padding(start = if (navigation != null) 4.dp else 20.dp, end = 12.dp, top = 20.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            navigation?.invoke()
             Column(Modifier.weight(1f)) {
                 if (eyebrow != null) {
                     Text(eyebrow, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)

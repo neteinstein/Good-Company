@@ -72,6 +72,7 @@ import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -166,6 +167,8 @@ fun HangoutsScreen(
     /** "We met" on a circle card: opens the small "We met" panel on that circle, nobody ticked (issue #47, F20). */
     onCircleMet: (String) -> Unit = {},
     onOpenGiftLists: () -> Unit = {},
+    /** The header's Settings button (issue #65). */
+    onOpenSettings: () -> Unit = {},
     viewModel: HangoutsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -190,6 +193,7 @@ fun HangoutsScreen(
             onPlanWith = viewModel::onPlanWith,
             onPlanWithCircle = viewModel::onPlanWithCircle,
             onOpenGiftLists = onOpenGiftLists,
+            onOpenSettings = onOpenSettings,
         ),
     )
     state.planDraft?.let { draft ->
@@ -244,6 +248,7 @@ data class HangoutsActions(
     val onPlanWithCircle: (String) -> Unit = {},
     /** Gift lists per occasion (F8). */
     val onOpenGiftLists: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [HangoutsMessage]. */
@@ -290,6 +295,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                     } else {
                         stringResource(Res.string.subtitle_none)
                     },
+                    trailing = { HeaderSettingsButton(actions.onOpenSettings) },
                 )
             }
             item(key = "hero") { CheckInHero(state.stats, state.celebrate, onClick = { actions.onStartCheckIn(null) }) }

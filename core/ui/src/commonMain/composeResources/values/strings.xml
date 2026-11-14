@@ -569,4 +569,17 @@
     <string name="kin_search_half_sibling">half-siblings|half-sibling|half-sisters|half-sister|half-brothers|half-brother</string>
     <string name="kin_search_step_sibling">stepsiblings|stepsibling|stepsisters|stepsister|stepbrothers|stepbrother</string>
     <string name="sample_gift_list_christmas">Christmas</string>
+    <plurals name="catchup_days">
+        <item quantity="one">%1$d day since you met · goal %2$s</item>
+        <item quantity="other">%1$d days since you met · goal %2$s</item>
+    </plurals>
+    <string name="catchup_never">No meetup logged yet</string>
+    <string name="catchup_met">We met</string>
+    <string name="catchup_called">Called them</string>
+    <string name="catchup_snooze_week">Snooze a week</string>
+    <string name="catchup_snooze_weekend">Remind me Saturday</string>
+    <string name="catchup_warmth">Friendship warmth: %1$s</string>
+    <string name="catchup_message">Message</string>
+    <string name="catchup_more">More</string>
+    <string name="open_settings">Settings</string>
 </resources>
