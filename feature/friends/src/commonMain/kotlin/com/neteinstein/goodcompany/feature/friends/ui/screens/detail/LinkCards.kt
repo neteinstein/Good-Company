@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.usecase.of
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
 import com.neteinstein.goodcompany.core.ui.l10n.linkCategoryLabel
@@ -65,7 +66,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.link_remind_anniver
 import com.neteinstein.goodcompany.feature.friends.resources.link_remove
 import com.neteinstein.goodcompany.feature.friends.resources.link_row_since
 import com.neteinstein.goodcompany.feature.friends.resources.link_row_years
-import com.neteinstein.goodcompany.feature.friends.resources.link_save
 import com.neteinstein.goodcompany.feature.friends.resources.link_search
 import com.neteinstein.goodcompany.feature.friends.resources.link_sheet_edit_title
 import com.neteinstein.goodcompany.feature.friends.resources.link_sheet_title
@@ -141,21 +141,32 @@ internal fun LinkSheet(
     var picking by remember { mutableStateOf<DateField?>(null) }
     val firstName = friend.displayName.substringBefore(' ')
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    val draft = other?.let { LinkEdit(it.id, role, startedOn, endedOn, remind, pronouns, editing?.link?.id) }
+    val save = { draft?.let(onSave) ?: Unit }
+    // Closing the sheet saves it once a person is picked (#64); an edit that changed nothing just closes.
+    val changed = editing == null ||
+        editing.role != role ||
+        editing.link.startedOn != startedOn ||
+        editing.link.endedOn != endedOn ||
+        editing.link.remindAnniversary != remind ||
+        editing.person.pronouns != pronouns
+    ModalBottomSheet(onDismissRequest = { if (draft != null && changed) save() else onDismiss() }) {
+        SaveSheetHeader(
+            if (editing == null) {
+                stringResource(Res.string.link_sheet_title, firstName)
+            } else {
+                stringResource(Res.string.link_sheet_edit_title, firstName, editing.person.displayName.substringBefore(' '))
+            },
+            onSave = save,
+            saveEnabled = draft != null,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val picked = other
-            Text(
-                if (editing == null) {
-                    stringResource(Res.string.link_sheet_title, firstName)
-                } else {
-                    stringResource(Res.string.link_sheet_edit_title, firstName, editing.person.displayName.substringBefore(' '))
-                },
-                style = MaterialTheme.typography.titleLarge,
-            )
             if (picked == null) {
                 PersonPicker(others, query, onQuery = { query = it }) {
                     other = it
@@ -216,13 +227,7 @@ internal fun LinkSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (editing != null) TextButton(onClick = { onRemove(editing.link.id) }) { Text(stringResource(Res.string.link_remove)) }
-                Spacer(Modifier.weight(1f))
-                Button(onClick = {
-                    onSave(LinkEdit(picked.id, role, startedOn, endedOn, remind, pronouns, editing?.link?.id))
-                }) { Text(stringResource(Res.string.link_save)) }
-            }
+            if (editing != null) TextButton(onClick = { onRemove(editing.link.id) }) { Text(stringResource(Res.string.link_remove)) }
         }
     }
     when (picking) {
@@ -262,10 +267,11 @@ private const val MAX_MATCHES = 8
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun RelationToMeSheet(friend: Friend, onDismiss: () -> Unit, onSave: (LinkType?, Pronouns?) -> Unit) {
-    var relation by remember { mutableStateOf(friend.relationToMe) }
+    val relation = friend.relationToMe
     var pronouns by remember { mutableStateOf(friend.pronouns) }
     val firstName = friend.displayName.substringBefore(' ')
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // Choosing a relation saves it and closes (#64); closing after changing only the words saves those.
+    ModalBottomSheet(onDismissRequest = { if (pronouns != friend.pronouns) onSave(relation, pronouns) else onDismiss() }) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
@@ -283,7 +289,7 @@ internal fun RelationToMeSheet(friend: Friend, onDismiss: () -> Unit, onSave: (L
                 Text(linkCategoryLabel(category), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     LinkType.of(category).forEach { t ->
-                        FilterChip(relation == t, { relation = if (relation == t) null else t }, label = { Text(linkWord(t, pronouns)) })
+                        FilterChip(relation == t, { onSave(if (relation == t) null else t, pronouns) }, label = { Text(linkWord(t, pronouns)) })
                     }
                 }
             }
@@ -292,10 +298,8 @@ internal fun RelationToMeSheet(friend: Friend, onDismiss: () -> Unit, onSave: (L
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (relation != null) {
                 TextButton(onClick = { onSave(null, pronouns) }) { Text(stringResource(Res.string.relation_to_me_clear)) }
-                Spacer(Modifier.weight(1f))
-                Button(onClick = { onSave(relation, pronouns) }) { Text(stringResource(CoreRes.string.save)) }
             }
         }
     }

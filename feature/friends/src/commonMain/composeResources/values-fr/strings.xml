@@ -472,7 +472,6 @@
     <string name="link_ended_value">Fini · %1$s</string>
     <string name="link_remind_anniversary">Me rappeler leur anniversaire</string>
     <string name="link_preview">La page de %1$s affichera %2$s · %3$s.</string>
-    <string name="link_save">Enregistrer le lien</string>
     <string name="link_remove">Retirer le lien</string>
     <string name="msg_link_removed">Lien retiré</string>
     <string name="link_row_since">ensemble depuis %1$s</string>
@@ -483,6 +482,7 @@
     <string name="relation_to_me_clear">Aucun lien</string>
     <string name="add_as_person">Ajouter comme personne</string>
     <string name="msg_added_as_person">%1$s a maintenant sa propre page</string>
+    <string name="msg_saved">Enregistré</string>
     <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
     <string name="detail_edit_name">Modifier le nom</string>
     <string name="photo_sheet_title">Photo de %1$s</string>

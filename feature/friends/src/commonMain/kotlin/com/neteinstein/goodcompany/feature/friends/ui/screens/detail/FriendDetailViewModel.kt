@@ -134,6 +134,9 @@ sealed interface FriendDetailMessage {
 
     /** A kid was added as a person of their own (F9). */
     data class KidAdded(val name: String) : FriendDetailMessage
+
+    /** A choice or a sheet saved on its own (no Save tap, #64); offered with "Undo". */
+    data object Saved : FriendDetailMessage
 }
 
 /** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
@@ -169,6 +172,26 @@ data class RelativeEdit(
     val note: String = "",
     val notifyBirthday: Boolean = true,
 )
+
+/**
+ * What a save-on-choice (or save-on-close) change replaced, kept for "Undo" (decision "Pickers · save without a Save
+ * button", issue #64). Each one restores only what that save touched.
+ */
+sealed interface SavedEdit {
+    data class BirthdayBefore(val birthday: Birthday?, val notify: Boolean) : SavedEdit
+
+    /** [previous] null = the relative was new. */
+    data class RelativeBefore(val id: String, val previous: Relative?) : SavedEdit
+
+    data class GiftBefore(val gift: Gift) : SavedEdit
+
+    data class KidAdded(val id: FriendId) : SavedEdit
+
+    data class RelationToMeBefore(val relation: LinkType?, val pronouns: Pronouns?) : SavedEdit
+
+    /** [previous] null = the link was new; [other]'s pronouns are set from the same sheet. */
+    data class LinkBefore(val savedId: String, val previous: PersonLink?, val other: FriendId, val otherPronouns: Pronouns?) : SavedEdit
+}
 
 /** A deleted "More about" line and where it was, kept for "Undo". */
 data class RemovedCustomField(val field: CustomField, val index: Int)
@@ -222,6 +245,8 @@ data class FriendDetailUiState(
     val links: List<LinkedPerson> = emptyList(),
     /** Link just removed, offered for undo. */
     val undoLink: PersonLink? = null,
+    /** A change that saved without a Save tap (#64), offered for undo. */
+    val undoSave: SavedEdit? = null,
     /** The shared tag list (F16) the tag editors suggest from. */
     val tags: List<Tag> = emptyList(),
 )
@@ -295,6 +320,53 @@ class FriendDetailViewModel(
 
     private fun say(message: FriendDetailMessage) = local.update { it.copy(message = message) }
 
+    /** Like [edit], then "Saved" with Undo; [before] records what the change replaces. Nothing changed, nothing said. */
+    private fun editWithUndo(before: (Friend) -> SavedEdit, transform: (Friend) -> Friend) {
+        viewModelScope.launch {
+            var undo: SavedEdit? = null
+            updateFriend(friendId) { f ->
+                val next = transform(f)
+                if (next != f) undo = before(f)
+                next
+            }
+            undo?.let { saved -> local.update { it.copy(undoSave = saved, message = FriendDetailMessage.Saved) } }
+        }
+    }
+
+    private fun offerUndo(saved: SavedEdit, message: FriendDetailMessage = FriendDetailMessage.Saved) =
+        local.update { it.copy(undoSave = saved, message = message) }
+
+    /** Undo for anything that saved on its own (#64). */
+    fun onUndoSave() {
+        val undo = local.value.undoSave ?: return
+        local.update { it.copy(undoSave = null) }
+        viewModelScope.launch {
+            when (undo) {
+                is SavedEdit.BirthdayBefore -> updateFriend(friendId) { it.copy(birthday = undo.birthday, notifyBirthday = undo.notify) }
+                is SavedEdit.RelativeBefore -> updateFriend(friendId) { f ->
+                    val previous = undo.previous
+                    f.copy(
+                        relatives = if (previous == null) {
+                            f.relatives.filterNot { it.id == undo.id }
+                        } else {
+                            f.relatives.map { if (it.id == undo.id) previous else it }
+                        },
+                    )
+                }
+                is SavedEdit.GiftBefore -> updateFriend(friendId) { f ->
+                    f.copy(gifts = f.gifts.map { if (it.id == undo.gift.id) undo.gift else it })
+                }
+                is SavedEdit.KidAdded -> deleteFriend(undo.id)
+                is SavedEdit.RelationToMeBefore -> links.setRelationToMe(friendId, undo.relation, undo.pronouns)
+                is SavedEdit.LinkBefore -> {
+                    val previous = undo.previous
+                    if (previous == null) links.delete(undo.savedId) else links.restore(previous)
+                    links.setPronouns(undo.other, undo.otherPronouns)
+                }
+            }
+        }
+    }
+
     fun onToggleClose() {
         viewModelScope.launch { setRealFriend.toggle(friendId) }
     }
@@ -334,7 +406,9 @@ class FriendDetailViewModel(
     }
 
     /** The birthday sheet: day and month, an optional year (F4), and the reminder switch (on by default, F10). */
-    fun onSaveBirthday(birthday: Birthday?, notify: Boolean) = edit { f -> f.copy(birthday = birthday, notifyBirthday = notify) }
+    fun onSaveBirthday(birthday: Birthday?, notify: Boolean) = editWithUndo(
+        before = { f -> SavedEdit.BirthdayBefore(f.birthday, f.notifyBirthday) },
+    ) { f -> f.copy(birthday = birthday, notifyBirthday = notify) }
 
     // --- Name (F19) -------------------------------------------------------------------------------------------------
 
@@ -389,7 +463,7 @@ class FriendDetailViewModel(
             note = edit.note.trim(),
             notifyBirthday = edit.notifyBirthday,
         )
-        edit { f ->
+        editWithUndo(before = { f -> SavedEdit.RelativeBefore(relative.id, f.relatives.firstOrNull { it.id == relative.id }) }) { f ->
             val existing = f.relatives.firstOrNull { it.id == relative.id }
             f.copy(
                 relatives = if (existing != null) {
@@ -416,9 +490,12 @@ class FriendDetailViewModel(
     /** Saves a link from this page: [LinkEdit.other] is this friend's [LinkEdit.role]. */
     fun onSaveLink(edit: LinkEdit) {
         if (edit.other == friendId) return
+        val current = state.value
+        val previous = edit.id?.let { id -> current.links.firstOrNull { it.link.id == id }?.link }
+        val otherPronouns = (current.links.map { it.person } + current.detail?.others.orEmpty()).firstOrNull { it.id == edit.other }?.pronouns
         viewModelScope.launch {
             links.setPronouns(edit.other, edit.otherPronouns)
-            links.save(
+            val saved = links.save(
                 LinkDraft(
                     from = friendId,
                     to = edit.other,
@@ -429,6 +506,9 @@ class FriendDetailViewModel(
                     id = edit.id,
                 ),
             )
+            if (saved != previous || otherPronouns != edit.otherPronouns) {
+                offerUndo(SavedEdit.LinkBefore(saved.id, previous, edit.other, otherPronouns))
+            }
         }
     }
 
@@ -449,7 +529,13 @@ class FriendDetailViewModel(
 
     /** "Rui is your…" (F6): null [relation] clears it. */
     fun onSaveRelationToMe(relation: LinkType?, pronouns: Pronouns?) {
-        viewModelScope.launch { links.setRelationToMe(friendId, relation, pronouns) }
+        val friend = state.value.detail?.friend
+        viewModelScope.launch {
+            links.setRelationToMe(friendId, relation, pronouns)
+            if (friend != null && (friend.relationToMe != relation || friend.pronouns != pronouns)) {
+                offerUndo(SavedEdit.RelationToMeBefore(friend.relationToMe, friend.pronouns))
+            }
+        }
     }
 
     // --- Tastes by kind (food, drink, interests) ---------------------------------------------------------------------
@@ -529,7 +615,9 @@ class FriendDetailViewModel(
     fun onAddKid(draft: KidDraft) {
         if (draft.name.isBlank()) return
         viewModelScope.launch {
-            links.addKid(friendId, draft)?.let { say(FriendDetailMessage.KidAdded(draft.name.trim().substringBefore(' '))) }
+            links.addKid(friendId, draft)?.let { kid ->
+                offerUndo(SavedEdit.KidAdded(kid), FriendDetailMessage.KidAdded(draft.name.trim().substringBefore(' ')))
+            }
         }
     }
 
@@ -609,7 +697,9 @@ class FriendDetailViewModel(
 
     fun onMarkGiftGiven(id: String, occasion: GiftOccasion?) {
         val today = clock.today()
-        edit { f -> f.copy(gifts = f.gifts.map { if (it.id == id) it.copy(givenOn = today, occasion = occasion) else it }) }
+        editWithUndo(before = { f -> SavedEdit.GiftBefore(f.gifts.first { it.id == id }) }) { f ->
+            f.copy(gifts = f.gifts.map { if (it.id == id) it.copy(givenOn = today, occasion = occasion) else it })
+        }
     }
 
     fun onSuggestGifts() {
@@ -814,6 +904,6 @@ class FriendDetailViewModel(
     }
 
     fun onMessageShown() = local.update {
-        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null)
+        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null, undoSave = null)
     }
 }

@@ -130,11 +130,13 @@ fun GiftDialog(onDismiss: () -> Unit, onSave: (title: String, note: String) -> U
     )
 }
 
-/** "Mark as given": asks for the occasion so the gift history reads well. */
+/**
+ * "Mark as given": asks for the occasion so the gift history reads well. Choosing one marks the gift given at once
+ * (#64); "Mark as given" records it without an occasion. The screen offers Undo.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GiftGivenDialog(gift: Gift, onDismiss: () -> Unit, onConfirm: (GiftOccasion?) -> Unit) {
-    var occasion by remember { mutableStateOf<GiftOccasion?>(GiftOccasion.BIRTHDAY) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.CardGiftcard, null) },
@@ -144,20 +146,12 @@ fun GiftGivenDialog(gift: Gift, onDismiss: () -> Unit, onConfirm: (GiftOccasion?
                 Text(stringResource(Res.string.gifts_given_title))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     GiftOccasion.entries.forEach { o ->
-                        FilterChip(occasion == o, {
-                            occasion = if (occasion ==
-                                o
-                            ) {
-                                null
-                            } else {
-                                o
-                            }
-                        }, label = { Text(occasionLabel(o)) })
+                        FilterChip(selected = false, onClick = { onConfirm(o) }, label = { Text(occasionLabel(o)) })
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(occasion) }) { Text(stringResource(Res.string.gifts_mark_given)) } },
+        confirmButton = { TextButton(onClick = { onConfirm(null) }) { Text(stringResource(Res.string.gifts_mark_given)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )
 }

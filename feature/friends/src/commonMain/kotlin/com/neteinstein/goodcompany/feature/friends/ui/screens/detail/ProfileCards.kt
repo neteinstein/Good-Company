@@ -75,6 +75,7 @@ import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.format.longLabel
@@ -500,21 +501,41 @@ internal fun FamilySheet(
     var showInList by remember { mutableStateOf(parentIsFamily) }
     var birthday by remember { mutableStateOf(BirthdayDraft.of(relative?.birthday)) }
     val isNew = editing == FamilyEditing.New
+    val valid = name.isNotBlank() && birthday.isValid(latestYear)
+    val save = {
+        val date = birthday.toBirthday(latestYear)
+        val current = relation
+        if (current == null) {
+            onAddKid(KidDraft(name = name, birthday = date, likes = likes, showInMyList = showInList, notifyBirthday = notify))
+        } else {
+            onSaveRelative(RelativeEdit(relative?.id, current, name, date, likes, note, notify))
+        }
+    }
+    // Closing the sheet saves it when valid (#64); an edit that changed nothing just closes.
+    val changed = relative == null ||
+        relative.relation != relation ||
+        relative.name != name.trim() ||
+        relative.birthday != birthday.toBirthday(latestYear) ||
+        relative.likes != likes ||
+        relative.note != note.trim() ||
+        relative.notifyBirthday != notify
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = { if (valid && changed) save() else onDismiss() }) {
+        SaveSheetHeader(
+            when {
+                !isNew -> stringResource(Res.string.family_edit_title, name)
+                relation == null -> stringResource(Res.string.kid_add_title, firstName)
+                else -> stringResource(Res.string.family_add_title, firstName)
+            },
+            onSave = save,
+            saveEnabled = valid,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                when {
-                    !isNew -> stringResource(Res.string.family_edit_title, name)
-                    relation == null -> stringResource(Res.string.kid_add_title, firstName)
-                    else -> stringResource(Res.string.family_add_title, firstName)
-                },
-                style = MaterialTheme.typography.titleLarge,
-            )
             // A kid becomes a person with their own page; a relative stays a name inside this friend.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(Relation.PARTNER, null, Relation.PARENT, Relation.SIBLING, Relation.PET, Relation.OTHER)
@@ -539,8 +560,7 @@ internal fun FamilySheet(
                 onRemove = { likes = likes - it },
                 catalog = tags,
             )
-            val current = relation
-            if (current != null) {
+            if (relation != null) {
                 OutlinedTextField(note, {
                     note = it
                 }, label = { Text(stringResource(Res.string.family_note)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -562,26 +582,6 @@ internal fun FamilySheet(
                 Text(stringResource(Res.string.family_notify), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                 Switch(checked = notify, onCheckedChange = { notify = it })
             }
-            Button(
-                onClick = {
-                    val date = birthday.toBirthday(latestYear)
-                    if (current == null) {
-                        onAddKid(
-                            KidDraft(
-                                name = name,
-                                birthday = date,
-                                likes = likes,
-                                showInMyList = showInList,
-                                notifyBirthday = notify,
-                            ),
-                        )
-                    } else {
-                        onSaveRelative(RelativeEdit(relative?.id, current, name, date, likes, note, notify))
-                    }
-                },
-                enabled = name.isNotBlank() && birthday.isValid(latestYear),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(CoreRes.string.save)) }
         }
     }
 }

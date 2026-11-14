@@ -199,7 +199,7 @@ before changing that area**, and put new area-specific notes in that skill, not 
 12. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
     insets. Don't add hard-coded status-bar padding.
 13. **Design system first.** Reuse `core:ui` building blocks (`ScreenHeader`, `SectionCard`, `QuickAction`, `ProgressRing`,
-    `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`) and theme tokens
+    `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`, `SaveSheetHeader`) and theme tokens
     (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
     (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an
     **Undo** snackbar (`showUndo`, hosted by `AppSnackbarHost`: never call `showSnackbar` directly); primary actions get haptics.

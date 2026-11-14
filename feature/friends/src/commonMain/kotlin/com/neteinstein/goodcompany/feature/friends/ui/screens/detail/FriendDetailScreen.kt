@@ -262,6 +262,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
 import com.neteinstein.goodcompany.feature.friends.resources.msg_link_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
+import com.neteinstein.goodcompany.feature.friends.resources.msg_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
 import com.neteinstein.goodcompany.feature.friends.resources.news_hint
 import com.neteinstein.goodcompany.feature.friends.resources.news_title
@@ -464,6 +465,7 @@ fun FriendDetailScreen(
             onSaveLink = viewModel::onSaveLink,
             onRemoveLink = viewModel::onRemoveLink,
             onUndoRemoveLink = viewModel::onUndoRemoveLink,
+            onUndoSave = viewModel::onUndoSave,
             onSaveRelationToMe = viewModel::onSaveRelationToMe,
             onAddRelativeAsPerson = viewModel::onAddRelativeAsPerson,
             onGenerateIdeas = viewModel::onGenerateIdeas,
@@ -518,6 +520,8 @@ data class FriendDetailActions(
     val onSaveLink: (LinkEdit) -> Unit = {},
     val onRemoveLink: (String) -> Unit = {},
     val onUndoRemoveLink: () -> Unit = {},
+    /** Undo for a choice or sheet that saved on its own (#64). */
+    val onUndoSave: () -> Unit = {},
     val onSaveRelationToMe: (LinkType?, Pronouns?) -> Unit = { _, _ -> },
     val onAddRelativeAsPerson: (String) -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
@@ -625,6 +629,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
     is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
     is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
+    FriendDetailMessage.Saved -> getString(Res.string.msg_saved)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -676,10 +681,12 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null
+        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null ||
+            state.undoSave != null
         val result = snackbar.showMessage(message.text(), if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
+                state.undoSave != null -> actions.onUndoSave()
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
                 state.undoLink != null -> actions.onUndoRemoveLink()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
