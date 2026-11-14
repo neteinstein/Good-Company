@@ -14,6 +14,8 @@ canonical; the "Decisions" table records later owner decisions (e.g. *never read
 - Don't reword, "clean up" or extend the brief. Don't invent features, copy or data that aren't in it.
 - When behaviour and the brief disagree, the brief wins unless a dated Decision overrides it.
 - New product decisions go into the Decisions table, with a date.
+- **Don't read the whole Decisions table.** Read the verbatim brief (short), then use the "Index by area" at
+  the top of the file to read only the rows for the area you're changing. Skip rows marked *superseded*.
 - The brief came from the request that created this repo; no external spreadsheet or design doc exists,
   so there are no origin links to fetch.
 
@@ -88,8 +90,10 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
 - Each Compose module has its own `src/commonMain/composeResources/values*/strings.xml` and a generated
   `<module namespace>.resources.Res` (e.g. `com.neteinstein.goodcompany.feature.friends.resources.Res`). Shared words,
   dates, notification text, sample data and AI errors live in `:core:ui` (import its `Res` as `CoreRes` in features).
-- When you add an English string, add it to all four translations in the same change. Plurals: Romanian needs
-  `one`/`few`/`other`; the others `one`/`other`. Use typographic apostrophes (’), not `\'`.
+- Every English string has all four translations in the same PR. While building, write English only. Once the
+  wording has settled, add the translations in one pass at the end (`add-strings`). `python3 scripts/check-strings.py`
+  lists missing and extra keys and fails when any exist. Plurals: Romanian needs `one`/`few`/`other`; the others
+  `one`/`other`. Use typographic apostrophes (’), not `\'`.
 - Domain code never formats text: it emits structured data (`NotificationContent`, `AiFailure.Reason`, `SampleTexts`
   via `SampleTextsProvider`) that `:core:ui` renders (`ResourceNotificationRenderer`, `aiErrorText`,
   `SampleTextsFromResources`). AI requests carry `LanguageProvider.languageTag()` so Claude answers in the UI language.
@@ -122,6 +126,28 @@ Use Conventional Commits: `feat(friends): …`, `fix(data): …`, `docs(agents):
 The scope is the module or area.
 
 ## Build & verify
+
+### While iterating: the fast loop
+
+Gradle runs on this repo cost minutes, so run the smallest task that proves the change. Don't run the full suite
+after every edit.
+
+```bash
+./gradlew :core:domain:testAndroidHostTest            # one module's tests (swap in the module you touched)
+./gradlew :feature:friends:testAndroidHostTest --tests '*FriendDetailViewModelTest*'   # one test class
+./gradlew :feature:friends:compileAndroidMain         # compile one module, no tests
+```
+
+- Test the modules you changed plus `:composeApp` if you touched Koin or navigation (`AppModuleTest`).
+- Run `./gradlew spotlessApply` once at the end, not between edits.
+- Write English strings while building and fill in the translations once at the end (see "Strings and languages").
+  `scripts/check-strings.py` lists what's missing.
+- **Before you push** (once): `./gradlew testDebugUnitTest koverVerify spotlessCheck`. Leave Android Lint, the
+  release APK and the iOS and web builds to CI unless you changed manifests, `iosApp/`, `expect`/`actual` code or a
+  platform source set. When you did, compile that platform (e.g. `:composeApp:compileKotlinIosSimulatorArm64`).
+- Prefer working in an existing worktree over cutting a fresh one: a new checkout starts with a cold build.
+
+### Everything (what CI runs)
 
 ```bash
 ./gradlew testDebugUnitTest                 # all unit tests (JVM)
@@ -206,8 +232,10 @@ before changing that area**, and put new area-specific notes in that skill, not 
 14. **Sample data & launch options.** `SampleData` (domain) builds a demo set of friends whose ids all start with `sample-`
     (Load/Remove use cases; Settings → Your data). The web build reads URL options (`?demo&tab=…&friend=…&theme=…`)
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
-15. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
-    `capture-screenshots` skill and look at every image. Never hand-edit or fake them.
+15. **Screenshots are real renders.** `docs/screenshots/` is refreshed in its own `docs(screenshots)` PR with
+    the `capture-screenshots` skill, after a batch of UI changes has merged. It is not part of each feature PR. In a
+    feature PR, list the screens that changed under "Screenshots to refresh" in the description. Look at every image
+    when you do refresh them, and never hand-edit or fake them.
 16. **Notification budget.** Catch-up nudges go only through `NudgePolicy` in `NotificationPlanner`; birthdays, events,
     reminders and plans are never throttled. Details in `area-notifications-widgets`.
 17. **Google Drive backup.** Scope `drive.file` only, one file, never the API key. Details in `area-backup-sync`.
