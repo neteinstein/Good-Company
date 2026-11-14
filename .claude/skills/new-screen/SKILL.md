@@ -71,6 +71,8 @@ and assert on state, on the message **type**, and on the fake repositories (`g.f
 
 ## 6. Finish
 
-Strings in five languages (`add-strings`). `./gradlew spotlessApply testDebugUnitTest koverVerify :androidApp:lintDebug`.
-Visible change → refresh screenshots (`capture-screenshots`) and look at them. If the screen belongs to an area with a
+Translations in one pass now that the English wording is final (`add-strings`; `python3 scripts/check-strings.py`
+must pass). Then `./gradlew spotlessApply testDebugUnitTest koverVerify` once. Add `:androidApp:lintDebug` only if you
+touched a manifest or Android `res/`. Visible change → list the screen under "Screenshots to refresh" in the PR. The
+images are refreshed in a separate `docs(screenshots)` PR (gotcha 15). If the screen belongs to an area with a
 skill (`area-*`), follow its rules and add anything new you learned to it.

@@ -8,6 +8,46 @@
 > A decision replaced by a later one stays in the table, marked *superseded* (or *partly superseded*) with a
 > pointer to the newer one, so the history stays readable.
 
+## Index by area
+
+Read the verbatim brief below, then only the Decisions rows for your area. Rows are named by date and their bold
+title. *(old)* = superseded; read the newer row it points to. *(part)* = partly superseded. A row can sit under
+more than one area. When you add a Decision row, add it here too.
+
+- **Contacts & import** (skill `area-contacts`): 11-06 SMS are never read · 11-06 Call log only in sideload ·
+  11-06 Web build has no address book · 11-07 Contact picker *(old → D2)* · 11-07 Contact picker, several at once ·
+  11-08 Sideload adds people with the picker *(part → D2)* · 11-08 The contact picker picks people ·
+  11-08 Contact write-back · 11-13 Friends show their contact photo *(part → F14)* · 11-13 Add a photo *(old → F14)* ·
+  11-13 D2 · 11-13 F15 · 11-13 Full friend profile · emails and write-back · 11-14 Import · iOS no longer imports… ·
+  11-14 Import · contact list order · 11-14 Import · where the list ships · 11-14 Import · "Pick from contacts"…
+- **People, closeness, circles, links, kids** (`area-people`): 11-07 Circles with default rhythms *(old → D1 and
+  "everyone has a closeness")* · 11-07 Saved groups *(part → D1)* · 11-13 D1 *(part → F20)* · 11-13 F4 · F5 *(old)* ·
+  F6 · F7 · F9 · F10 · F14 · F16 · F18 · F19 · 11-13 Full friend profile · tastes · 11-14 Circles · reminder off by
+  default · Circles · one member · Circles · Home filter remembered · Shared tags (F16) · Links · gender-neutral ·
+  Links · rules as built · Friend page basics · Kids are people · Automatic kinship · Closeness · four levels ·
+  Friend page · circles as chips · F5 merge · People tab · search first · Circles tab · only the circles ·
+  Circles · a page for each circle · People · everyone has a closeness
+- **Logging, timeline, places, calendar, plans** (`area-logging`): 11-07 Warmth score · 11-07 Plans *(part → D3)* ·
+  11-07 Pause · 11-08 Catch-up story · 11-13 D3 · F2 · F3 · F11 · F13 · F20 · 11-14 Timeline · what counts as what ·
+  Timeline · remote contact · Timeline · one "Log" sheet · Plans · recurring and circle plans · Calendar suggestions ·
+  as built · Calendar suggestions · notification · Activities in Settings · "We met" outside the app ·
+  Catch-up · never-logged people · Catch-up · last-seen answers · Catch-up · last-seen date stays hidden
+- **Notifications, widgets, shortcuts** (`area-notifications-widgets`): 11-07 Snooze and "Called" · 11-07 Catch-up
+  nudges have a budget · 11-07 Privacy options · 11-07 Android widget · 11-07 Owner answers to the follow-up questions
+  *(part → D4)* · 11-08 iOS widget · 11-13 D7 · 11-14 App-icon shortcuts · what they offer · App-icon shortcuts · privacy
+- **AI** (`area-ai`): 11-06 "AI token" · 11-06 Weekly job · 11-07 Messages are drafted, never sent · 11-07 Occasions
+  and offline talking points *(part → F1)* · 11-13 F1 · 11-14 AI switch (F1 as built)
+- **Sharing & gifts** (`area-sharing-gifts`): 11-07 Saved groups (gift ideas & history) · 11-08 Social networks: share
+  in *(part → D6, C1)* · 11-08 Shipped: share into the app, blogs & feeds *(part → D6, C1)* · 11-13 D6 *(part → F12,
+  F17)* · C1 · F8 · F12 · F17 · 11-14 Share · shared photos · Share · iOS keeps the thumbnail only · Share · the type
+  is guessed · Share · circles and gift ideas · Gift lists (F8 as built)
+- **Backup, data, privacy, updates** (`area-backup-sync`, `persistence-change`): 11-06 WhatsApp / Messenger: import ·
+  11-07 Backup *(part → D4, D5)* · 11-07 Google Drive backup *(old → D4, D5)* · 11-08 Sideload updates itself
+  *(part → D8)* · 11-13 App data moves to SQLite · 11-13 D4 · D5 · D8
+- **Layout, navigation, UI rules**: 11-07 Languages · 11-08 iOS keeps pace · 11-13 C2 · 11-14 Home · no floating
+  button · Snackbars · always go away · Pickers · save without a Save button · Layout · four tabs · Settings · your
+  photo · Circles and Plans tabs *(part → Circles tab · only the circles)*
+
 ## Brief (verbatim, 2026-11-06)
 
 * Call it Good Company: Think of it as a CRM for friends. It fetches data from Contacts and uses that as it's main database, but can also have internal app database.
