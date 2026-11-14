@@ -217,6 +217,27 @@ interface CalendarDecisionRepository {
     suspend fun delete(key: String)
 }
 
+/**
+ * Your own photo (issue #71): one small thumbnail like a [ContactPhoto], shown in every tab header, at the centre of the
+ * network map and on your year in review. It is in backups, and never written to contacts or sent to the AI.
+ */
+interface MyPhotoRepository {
+    /** Null while none is set. */
+    val photo: Flow<ContactPhoto?>
+
+    /** Sets (or replaces) the photo; null removes it. */
+    suspend fun set(photo: ContactPhoto?)
+
+    companion object {
+        /** No photo, for callers built without the store. */
+        val None: MyPhotoRepository = object : MyPhotoRepository {
+            override val photo: Flow<ContactPhoto?> = flowOf(null)
+
+            override suspend fun set(photo: ContactPhoto?) = Unit
+        }
+    }
+}
+
 /** Gift lists per occasion (F8). Part of the backup. */
 interface GiftListRepository {
     val lists: Flow<List<GiftList>>

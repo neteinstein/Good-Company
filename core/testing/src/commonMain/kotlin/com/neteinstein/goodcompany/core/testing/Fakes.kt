@@ -51,6 +51,7 @@ import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRequest
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
+import com.neteinstein.goodcompany.core.domain.repository.MyPhotoRepository
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
@@ -311,6 +312,7 @@ class FakeBackupRepository(
     private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
     private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
     private val giftLists: FakeGiftListRepository = FakeGiftListRepository(),
+    private val myPhoto: FakeMyPhotoRepository = FakeMyPhotoRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
@@ -330,6 +332,7 @@ class FakeBackupRepository(
         settings = settings.settings.value,
         calendarDecisions = calendarDecisions.decisions.value,
         giftLists = giftLists.state.value,
+        myPhoto = myPhoto.photo.value,
     )
 
     override suspend fun restore(backup: Backup) {
@@ -346,7 +349,17 @@ class FakeBackupRepository(
         backup.plans.forEach { plans.upsert(it) }
         calendarDecisions.decisions.value = backup.calendarDecisions
         giftLists.state.value = backup.giftLists
+        myPhoto.photo.value = backup.myPhoto
         settings.update { backup.settings }
+    }
+}
+
+/** Your own photo (issue #71), in memory. */
+class FakeMyPhotoRepository(initial: ContactPhoto? = null) : MyPhotoRepository {
+    override val photo = MutableStateFlow(initial)
+
+    override suspend fun set(photo: ContactPhoto?) {
+        this.photo.value = photo
     }
 }
 

@@ -183,4 +183,11 @@
     <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd șase, celelalte sunt la Mai mult. Trage pentru a reordona.</string>
     <string name="activities_move_up">Mută în sus</string>
     <string name="activities_move_down">Mută în jos</string>
+    <!-- Your photo (issue #71) -->
+    <string name="my_photo">Fotografia ta</string>
+    <string name="my_photo_hint">Apare în partea de sus a fiecărei file, în centrul rețelei tale și în anul tău în prietenie. Nu ajunge niciodată la contactele tale sau la AI.</string>
+    <string name="my_photo_choose">Alege o fotografie</string>
+    <string name="my_photo_change">Schimbă</string>
+    <string name="msg_my_photo_unreadable">Imaginea nu a putut fi citită. Încearcă un JPEG sau PNG.</string>
+    <string name="msg_my_photo_removed">Fotografie eliminată</string>
 </resources>

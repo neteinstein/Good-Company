@@ -39,10 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -53,6 +57,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,8 +69,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.NetworkNode
 import com.neteinstein.goodcompany.core.domain.usecase.Point
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.LocalMyPhoto
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
+import com.neteinstein.goodcompany.core.ui.components.rememberPhotoBitmap
 import com.neteinstein.goodcompany.core.ui.resources.back
 import com.neteinstein.goodcompany.feature.review.resources.Res
 import com.neteinstein.goodcompany.feature.review.resources.network_description
@@ -83,6 +91,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @Composable
@@ -170,6 +179,8 @@ private fun NetworkCanvas(state: NetworkMapUiState, onOpenFriend: (FriendId) -> 
     )
     val labelColor = scheme.onSurface
     val meLabel = stringResource(Res.string.network_you)
+    // Your photo (issue #71) at the centre, else "You" on the primary colour.
+    val myPhoto = rememberPhotoBitmap(LocalMyPhoto.current)
     val description = pluralStringResource(Res.plurals.network_description, nodes.size, nodes.size)
     val measurer = rememberTextMeasurer()
     val localDensity = LocalDensity.current
@@ -246,8 +257,18 @@ private fun NetworkCanvas(state: NetworkMapUiState, onOpenFriend: (FriendId) -> 
         val me = at(NetworkGraph.ME) ?: return@Canvas
         val meR = ME_RADIUS_DP * unit
         drawCircle(scheme.primary, meR, me)
-        drawCircle(scheme.surface, meR - 3.dp.toPx() * scale, me, style = Stroke(2.dp.toPx() * scale))
-        drawCentred(measurer, meLabel, me, TextStyle(color = scheme.onPrimary, fontSize = (meR / density / 2.4f).sp, fontWeight = FontWeight.Bold))
+        if (myPhoto != null) {
+            drawPhoto(myPhoto, me, meR - 3.dp.toPx() * scale)
+            if (showLabels) drawCentred(measurer, meLabel, me + Offset(0f, meR + 10.dp.toPx()), TextStyle(color = labelColor, fontSize = 12.sp))
+        } else {
+            drawCircle(scheme.surface, meR - 3.dp.toPx() * scale, me, style = Stroke(2.dp.toPx() * scale))
+            drawCentred(
+                measurer,
+                meLabel,
+                me,
+                TextStyle(color = scheme.onPrimary, fontSize = (meR / density / 2.4f).sp, fontWeight = FontWeight.Bold),
+            )
+        }
     }
 }
 
@@ -256,6 +277,24 @@ private fun fitScale(points: Collection<Point>, width: Float, height: Float): Fl
     val extent = points.maxOfOrNull { max(kotlin.math.abs(it.x), kotlin.math.abs(it.y)) }?.toFloat() ?: 0f
     val half = min(width, height) / 2f - 40f
     return if (extent <= 0f || half <= 0f) 1f else (half / extent).coerceIn(0.2f, 1.5f)
+}
+
+/** [image] centre-cropped to a square and clipped to a circle of [radius] around [centre]. */
+private fun DrawScope.drawPhoto(image: ImageBitmap, centre: Offset, radius: Float) {
+    if (radius <= 0f) return
+    val side = min(image.width, image.height)
+    val src = IntOffset((image.width - side) / 2, (image.height - side) / 2)
+    val d = (radius * 2).roundToInt()
+    val path = Path().apply { addOval(Rect(centre, radius)) }
+    clipPath(path) {
+        drawImage(
+            image,
+            srcOffset = src,
+            srcSize = IntSize(side, side),
+            dstOffset = IntOffset((centre.x - radius).roundToInt(), (centre.y - radius).roundToInt()),
+            dstSize = IntSize(d, d),
+        )
+    }
 }
 
 private fun DrawScope.drawCentred(measurer: androidx.compose.ui.text.TextMeasurer, text: String, at: Offset, style: TextStyle) {

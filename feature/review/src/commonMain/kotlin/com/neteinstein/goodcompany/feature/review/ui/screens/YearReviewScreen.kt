@@ -2,7 +2,9 @@ package com.neteinstein.goodcompany.feature.review.ui.screens
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,8 +56,10 @@ import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.LocalMyPhoto
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
+import com.neteinstein.goodcompany.core.ui.components.rememberPhotoBitmap
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthLong
@@ -192,12 +197,30 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
     LazyColumn(contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item(key = "hero") {
             Story(OnColorGradients.Hero, index = 0) {
+                // Your photo (issue #71) next to the year, when you have one.
+                val myPhoto = rememberPhotoBitmap(LocalMyPhoto.current)
                 Text(
                     stringResource(Res.string.hero_kicker).uppercase(),
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White.copy(alpha = 0.85f),
                 )
-                Text(r.year.toString(), style = MaterialTheme.typography.displayLarge, color = Color.White, fontWeight = FontWeight.ExtraBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        r.year.toString(),
+                        style = MaterialTheme.typography.displayLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (myPhoto != null) {
+                        Image(
+                            myPhoto,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp).border(2.dp, Color.White, CircleShape).padding(2.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     AnimatedNumber(r.meetups, style = MaterialTheme.typography.displayMedium.copy(color = Color.White, fontWeight = FontWeight.Bold))

@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +61,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
+import com.neteinstein.goodcompany.core.ui.components.LocalMyPhoto
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
@@ -99,7 +101,9 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                     transitionSpec = { (fadeIn(tween(400)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(250)) },
                 ) { done ->
                     if (done) {
-                        AppScaffold(launch, aiEnabled = state.settings.aiEnabled)
+                        CompositionLocalProvider(LocalMyPhoto provides state.myPhoto) {
+                            AppScaffold(launch, aiEnabled = state.settings.aiEnabled)
+                        }
                     } else {
                         OnboardingScreen(
                             onDone = {},

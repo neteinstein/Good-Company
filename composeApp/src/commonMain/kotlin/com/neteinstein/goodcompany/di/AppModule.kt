@@ -26,6 +26,7 @@ import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlMyPhotoRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
@@ -54,6 +55,7 @@ import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.KinshipVocabulary
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
+import com.neteinstein.goodcompany.core.domain.repository.MyPhotoRepository
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
@@ -135,6 +137,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
@@ -160,6 +163,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFromGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveGiftFromListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
@@ -191,6 +195,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
@@ -312,6 +317,7 @@ val appModule = module {
     singleOf(::SqlBackupRepository) bind BackupRepository::class
     singleOf(::SqlCalendarDecisionRepository) bind CalendarDecisionRepository::class
     singleOf(::SqlGiftListRepository) bind GiftListRepository::class
+    singleOf(::SqlMyPhotoRepository) bind MyPhotoRepository::class
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -405,6 +411,9 @@ val appModule = module {
     factoryOf(::ImportContactsFileUseCase)
     factoryOf(::SetFriendPhotoUseCase)
     factoryOf(::RemoveFriendPhotoUseCase)
+    factoryOf(::ObserveMyPhotoUseCase)
+    factoryOf(::SetMyPhotoUseCase)
+    factoryOf(::RemoveMyPhotoUseCase)
     factoryOf(::RenameFriendUseCase)
     factoryOf(::DraftBirthdayMessageUseCase)
     factoryOf(::SuggestGiftsUseCase)

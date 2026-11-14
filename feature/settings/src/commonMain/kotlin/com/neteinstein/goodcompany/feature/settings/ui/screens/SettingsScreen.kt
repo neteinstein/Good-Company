@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.settings.ui.screens
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -16,11 +17,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.Label
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CloudUpload
@@ -61,6 +64,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -75,8 +79,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -84,14 +90,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
+import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.rememberPhotoBitmap
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
@@ -105,6 +115,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberAppUpdater
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberGoogleDriveAuthorizer
+import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
@@ -114,6 +125,7 @@ import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
+import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.feature.settings.resources.Res
 import com.neteinstein.goodcompany.feature.settings.resources.activities
 import com.neteinstein.goodcompany.feature.settings.resources.activities_count
@@ -177,6 +189,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_unauthor
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_lock_failed
+import com.neteinstein.goodcompany.feature.settings.resources.msg_my_photo_removed
+import com.neteinstein.goodcompany.feature.settings.resources.msg_my_photo_unreadable
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_off
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_on
 import com.neteinstein.goodcompany.feature.settings.resources.msg_sample_added
@@ -185,6 +199,10 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_update_failed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_update_permission
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_result
+import com.neteinstein.goodcompany.feature.settings.resources.my_photo
+import com.neteinstein.goodcompany.feature.settings.resources.my_photo_change
+import com.neteinstein.goodcompany.feature.settings.resources.my_photo_choose
+import com.neteinstein.goodcompany.feature.settings.resources.my_photo_hint
 import com.neteinstein.goodcompany.feature.settings.resources.pings_at
 import com.neteinstein.goodcompany.feature.settings.resources.places
 import com.neteinstein.goodcompany.feature.settings.resources.places_row_hint
@@ -266,6 +284,8 @@ suspend fun SettingsMessage.text(): String = when (this) {
     SettingsMessage.LockFailed -> getString(Res.string.msg_lock_failed)
     SettingsMessage.UpdateNeedsPermission -> getString(Res.string.msg_update_permission)
     SettingsMessage.UpdateFailed -> getString(Res.string.msg_update_failed)
+    SettingsMessage.MyPhotoUnreadable -> getString(Res.string.msg_my_photo_unreadable)
+    SettingsMessage.MyPhotoRemoved -> getString(Res.string.msg_my_photo_removed)
 }
 
 @Composable
@@ -300,6 +320,12 @@ fun SettingsScreen(
         if (capabilities.hasSelfUpdate) viewModel.onCheckForUpdate(updater.installedVersionCode)
     }
     LaunchedEffect(state.export) { state.export?.let { saveFile.save(it.name, it.content) } }
+    // Your photo (issue #71): a picked picture goes through the friend-photo crop editor (F14) first; one the picker
+    // couldn't read goes straight on, so the ViewModel can say so.
+    var cropping by remember { mutableStateOf<ByteArray?>(null) }
+    val pickPhoto = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) cropping = image else viewModel.onMyPhotoPicked(image)
+    }
     SettingsContent(
         state = state,
         capabilities = capabilities,
@@ -307,6 +333,9 @@ fun SettingsScreen(
         notificationsAllowed = notificationsAllowed,
         appVersion = appVersion,
         actions = SettingsActions(
+            onChooseMyPhoto = pickPhoto,
+            onRemoveMyPhoto = viewModel::onRemoveMyPhoto,
+            onUndoRemoveMyPhoto = viewModel::onUndoRemoveMyPhoto,
             onSaveApiKey = viewModel::onSaveApiKey,
             onClearApiKey = viewModel::onClearApiKey,
             onAiEnabledChange = viewModel::onAiEnabledChange,
@@ -366,10 +395,20 @@ fun SettingsScreen(
             },
         ),
     )
+    cropping?.let { image ->
+        PhotoCropDialog(image, onDismiss = { cropping = null }, onCropped = { cropped ->
+            cropping = null
+            viewModel.onMyPhotoPicked(cropped)
+        })
+    }
 }
 
 data class SettingsActions(
     val onBack: (() -> Unit)? = null,
+    /** Your photo (issue #71): opens the gallery, then the crop editor. */
+    val onChooseMyPhoto: () -> Unit = {},
+    val onRemoveMyPhoto: () -> Unit = {},
+    val onUndoRemoveMyPhoto: () -> Unit = {},
     val onSaveApiKey: (String) -> Unit = {},
     val onClearApiKey: () -> Unit = {},
     val onAiEnabledChange: (Boolean) -> Unit = {},
@@ -420,8 +459,14 @@ fun SettingsContent(
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let {
-            snackbar.showMessage(it.text())
-            actions.onMessageShown()
+            if (it == SettingsMessage.MyPhotoRemoved) {
+                val undo = snackbar.showUndo(it.text(), getString(CoreRes.string.undo))
+                actions.onMessageShown()
+                if (undo == SnackbarResult.ActionPerformed) actions.onUndoRemoveMyPhoto()
+            } else {
+                snackbar.showMessage(it.text())
+                actions.onMessageShown()
+            }
         }
     }
     val s = state.settings
@@ -432,6 +477,8 @@ fun SettingsContent(
                 title = stringResource(Res.string.title),
                 navigation = actions.onBack?.let { back -> { HeaderBackButton(back) } },
             )
+
+            MyPhotoCard(state.myPhoto, onChoose = actions.onChooseMyPhoto, onRemove = actions.onRemoveMyPhoto)
 
             SectionCard(stringResource(Res.string.appearance), icon = Icons.Rounded.Palette) {
                 val modes = listOf(
@@ -898,4 +945,32 @@ private fun AiDetails(state: SettingsUiState, actions: SettingsActions) {
         s.weeklyIdeasEnabled,
         actions.onWeeklyIdeasChange,
     )
+}
+
+/** The first card (issue #71): your photo, with Change / Remove (or "Choose a photo" while there is none). */
+@Composable
+private fun MyPhotoCard(photo: ContactPhoto?, onChoose: () -> Unit, onRemove: () -> Unit) {
+    val image = rememberPhotoBitmap(photo)
+    SectionCard(stringResource(Res.string.my_photo), icon = Icons.Rounded.AccountCircle) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (image != null) {
+                Image(image, contentDescription = null, modifier = Modifier.size(64.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+            } else {
+                Icon(Icons.Rounded.AccountCircle, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.width(16.dp))
+            Text(
+                stringResource(Res.string.my_photo_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = onChoose) {
+                Text(stringResource(if (photo != null) Res.string.my_photo_change else Res.string.my_photo_choose))
+            }
+            if (photo != null) OutlinedButton(onClick = onRemove) { Text(stringResource(CoreRes.string.remove)) }
+        }
+    }
 }

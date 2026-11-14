@@ -182,4 +182,11 @@
     <string name="activities_hint">What the log sheet offers when you met someone. The ones you use most come first, the rest in this order; six show, the others are behind More. Drag to reorder.</string>
     <string name="activities_move_up">Move up</string>
     <string name="activities_move_down">Move down</string>
+    <!-- Your photo (issue #71) -->
+    <string name="my_photo">Your photo</string>
+    <string name="my_photo_hint">Shown at the top of every tab, at the centre of your network and on your year in review. Never sent to your contacts or the AI.</string>
+    <string name="my_photo_choose">Choose a photo</string>
+    <string name="my_photo_change">Change</string>
+    <string name="msg_my_photo_unreadable">Couldn’t read that picture. Try a JPEG or PNG.</string>
+    <string name="msg_my_photo_removed">Photo removed</string>
 </resources>

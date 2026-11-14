@@ -46,6 +46,7 @@ internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
 internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
+internal val MY_PHOTO_TABLES = arrayOf("my_photo")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
     groupBy(key).mapValues { (_, rows) -> rows.map { FriendId(friendId(it)) } }
@@ -435,4 +436,13 @@ internal suspend fun GoodCompanyDatabase.readCalendarDecisions(): List<CalendarD
 
 internal suspend fun GoodCompanyDatabase.writeCalendarDecision(decision: CalendarDecision) {
     calendarDecisionQueries.upsertDecision(decision.key, decision.kind.name, decision.decidedAt.toColumn())
+}
+
+// --- Your photo (issue #71) ---
+
+internal suspend fun GoodCompanyDatabase.readMyPhoto(): ContactPhoto? =
+    myPhotoQueries.get().awaitAsOneOrNull()?.takeIf { it.isNotBlank() }?.let(::ContactPhoto)
+
+internal suspend fun GoodCompanyDatabase.writeMyPhoto(photo: ContactPhoto?) {
+    if (photo == null) myPhotoQueries.clear() else myPhotoQueries.put(photo.base64)
 }
