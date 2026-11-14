@@ -69,6 +69,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `SavedEdit` (only what that save touched) for the "Saved · Undo" snackbar (`onUndoSave`). `LocalDatePickerDialog`
   picks on the day tap, with no OK.
 
+- **A person's page (issue #90).** View mode vs. edit mode (`editing`, screen state in `FriendDetailContent`, nothing
+  stored; Back leaves edit mode first via `NavigationBackHandler`) and three tabs (`PersonTab`, always opens on Summary).
+  Which card lives on which tab, and which show, is pure code in `detail/PersonPage.kt` (`PersonCard`,
+  `ProfileSections.shown/missing`, tested in `PersonPageTest`): add a card there, not only in the composable, or the
+  "+N"/"Complete…" scrolling lands on the wrong item. The family around the photo is `FamilyAround.of(friend, links)`
+  (domain; it uses `LinkedPerson.role`, so the inverse is already applied) drawn by `FamilyRing` (`:core:ui`): parents
+  and step-parents above, current romances beside (no exes), kids and step-kids below the name, at most four then "+N";
+  siblings stay in the Family card. Circle chips have no ×: leaving a circle is an untick in `CircleSheet`. Message is
+  one sheet (`MessageOptions`, preferred first); the preferred channel and "Related to you?" are set only in edit mode.
 - **Everyone has a closeness; no hearts (issue #86).** `Friend.closeness` is non-null, default `ACQUAINTANCE`: every
   way in (contact sync, picker, list, .vcf, Add friend, share-to-new-friend) starts there. "Real friend"
   (`Friend.isCloseFriend`) is derived: `closeness.isRealFriend` (every level but Acquaintances). The `is_close_friend`

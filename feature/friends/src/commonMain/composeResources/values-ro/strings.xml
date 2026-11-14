@@ -40,14 +40,12 @@
     <string name="msg_call_logged_short">Apel înregistrat — următorul memento peste o săptămână</string>
     <string name="detail_missing">Acest prieten nu mai există.</string>
     <string name="detail_back">Înapoi</string>
-    <string name="detail_remove_friend">Elimină prietenul</string>
     <string name="detail_add_birthday">Adaugă ziua de naștere</string>
     <string name="detail_add_photo">Adaugă o fotografie</string>
     <string name="detail_birthday_turns">%1$s · împlinește %2$d ani</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Văzut %1$s</string>
     <string name="detail_orphaned">Nu mai e în contacte</string>
-    <string name="qa_together">Împreună</string>
     <string name="qa_call">Sună</string>
     <string name="qa_text">SMS</string>
     <string name="qa_whatsapp">WhatsApp</string>
@@ -58,7 +56,6 @@
     <string name="birthday_send_wishes">Trimite urări</string>
     <string name="wish_title">Urări pentru %1$s</string>
     <string name="wish_gift_hint">Idei de cadou: %1$s</string>
-    <string name="touch_title">Păstrați legătura</string>
     <string name="touch_last_together">Împreună ultima dată %1$s</string>
     <string name="touch_never">Nicio întâlnire înregistrată încă</string>
     <string name="touch_pick">Alege apropierea sau cât de des ai vrea să vă vedeți — îți vom aminti.</string>
@@ -119,7 +116,6 @@
         <item quantity="few">%1$s · memento cu %2$d zile înainte</item>
         <item quantity="other">%1$s · memento cu %2$d de zile înainte</item>
     </plurals>
-    <string name="ideas_title">Subiecte de discuție</string>
     <string name="ideas_find">Găsește idei</string>
     <string name="ideas_setup">Configurează AI</string>
     <string name="ideas_hint_ai">Știri și subiecte de discuție potrivite cu ce adoră %1$s.</string>
@@ -182,7 +178,6 @@
     <string name="touch_paused">Mementourile sunt pe pauză.</string>
     <string name="touch_resume">Reia</string>
     <string name="plans_add">Planifică</string>
-    <string name="plans_empty">Nimic planificat. Alege o zi și îți amintim — apoi te întrebăm dacă a avut loc.</string>
     <string name="occasions_title">Companie bună pentru</string>
     <string name="occasions_hint">Folosit de „Cine e liber pentru…?” în fila Împreună.</string>
     <string name="topics_from_notes">Din ce știi deja</string>
@@ -342,7 +337,6 @@
     <string name="story_fresh_interest">Interes nou</string>
     <string name="timeline_title">Cronologie</string>
     <string name="timeline_screen_title">Cronologia lui %1$s</string>
-    <string name="timeline_see_all">Vezi tot</string>
     <string name="timeline_empty">Nimic încă. Atinge + ca să notezi o întâlnire, un apel, un mesaj sau o notă.</string>
     <string name="timeline_filter_empty">Nimic cu acest filtru.</string>
     <string name="timeline_log">Notează</string>
@@ -502,9 +496,33 @@
         <item quantity="other">%1$d se răcesc: %2$s</item>
     </plurals>
     <!-- Circles on a person's page (issue #70) -->
-    <string name="circles_add">Cerc</string>
     <string name="circles_sheet_title">Cercuri pentru %1$s</string>
     <string name="circles_new_with">Cerc nou cu %1$s</string>
-    <string name="circles_remove">Scoate din %1$s</string>
-    <string name="msg_removed_from_circle">Nu mai e în %1$s</string>
+    <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
+    <string name="qa_message">Mesaj</string>
+    <string name="qa_we_met">Ne-am văzut</string>
+    <string name="message_sheet_title">Mesaj pentru %1$s</string>
+    <string name="tab_summary">Rezumat</string>
+    <string name="tab_about">Despre</string>
+    <string name="tab_history">Istoric</string>
+    <string name="editing_title">Editezi: %1$s</string>
+    <string name="edit_done">Gata</string>
+    <string name="edit_person">Editează: %1$s</string>
+    <string name="detail_more_options">Mai multe opțiuni</string>
+    <string name="remove_person">Elimină: %1$s</string>
+    <string name="complete_title">Completează profilul lui %1$s</string>
+    <string name="complete_about">Despre</string>
+    <string name="complete_more">Mai multe despre</string>
+    <string name="complete_occasions">Companie bună pentru</string>
+    <string name="complete_family">Familie</string>
+    <string name="complete_moments">Momente importante</string>
+    <string name="complete_gifts">Idei de cadouri</string>
+    <string name="complete_saved">Salvate</string>
+    <string name="complete_feeds">Blog sau flux</string>
+    <string name="circles_edit">Cercuri</string>
+    <string name="tastes_add_title">Adaugă la pasiunile lui %1$s</string>
+    <string name="coming_up_title">Urmează</string>
+    <string name="talk_title">De vorbit</string>
+    <string name="news_add">Adaugă o noutate</string>
+    <string name="relation_to_me_pick">Atinge ca să alegi (soră, văr…)</string>
 </resources>
