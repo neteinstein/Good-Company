@@ -6,7 +6,7 @@
 CREATE TABLE gift_list (
     id TEXT NOT NULL PRIMARY KEY,
     title TEXT NOT NULL,
-    occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    occasion TEXT,
     occasion_date TEXT,
     created_at INTEGER NOT NULL
 );
@@ -25,7 +25,7 @@ CREATE TABLE gift_list_item (
     list_id TEXT NOT NULL,
     friend_id TEXT NOT NULL,
     gift_id TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'TO_BUY' CHECK (status IN ('TO_BUY', 'BOUGHT', 'GIVEN')),
+    status TEXT NOT NULL DEFAULT 'TO_BUY',
     position INTEGER NOT NULL,
     PRIMARY KEY (list_id, friend_id, gift_id),
     FOREIGN KEY (list_id, friend_id) REFERENCES gift_list_entry(list_id, friend_id) ON DELETE CASCADE

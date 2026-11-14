@@ -21,6 +21,7 @@ internal suspend fun GoodCompanyDatabase.readGiftLists(): List<GiftList> {
             title = row.title,
             occasionDate = row.occasion_date?.toLocalDate(),
             createdAt = row.created_at.toInstant(),
+            // Unknown occasion → none.
             occasion = GiftOccasion.entries.firstOrNull { it.name == row.occasion },
             entries = entries[row.id].orEmpty().map { e ->
                 GiftListEntry(

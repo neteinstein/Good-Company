@@ -10,7 +10,7 @@ CREATE TABLE plan (
     date TEXT NOT NULL,
     place TEXT,
     idea_id TEXT REFERENCES idea(id) ON DELETE SET NULL,
-    status TEXT NOT NULL CHECK (status IN ('PLANNED', 'HAPPENED', 'SKIPPED')),
+    status TEXT NOT NULL,
     created_at INTEGER NOT NULL,
     circle_id TEXT,
     activity TEXT,

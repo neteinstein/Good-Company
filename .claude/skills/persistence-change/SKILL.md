@@ -19,7 +19,8 @@ Paths below are relative to `core/data/src/commonMain/` unless they say otherwis
 | A user preference | a column on `user_preferences` (`DB/UserPreferences.sq`) + `AppSettings` |
 | A new field on an existing thing | a column (nullable or with a default) |
 | A new thing / a list hanging off one | a new table |
-| A wider `CHECK` on an existing column | rebuild the table in the migration (see `14.sqm`, `person_link`) |
+| A new value in an enum column (closeness, link type, status…) | **no migration**: enum columns have no `CHECK` since `16.sqm` (issue #72). Give the mapper's fallback a thought |
+| Any other `CHECK` change, or dropping a constraint | rebuild the table in a migration (see below) |
 
 ## 2. Schema
 
@@ -67,6 +68,18 @@ Paths below are relative to `core/data/src/commonMain/` unless they say otherwis
 
 - Flags are `INTEGER` 0/1, converted in the mapper (the web driver can't read SQLite booleans).
 - A `CHECK` naming a column added by `ALTER TABLE … ADD COLUMN` breaks SQLDelight's parser: validate in the mapper.
+- **Enums are `TEXT` with no `CHECK`** (issue #72). Write the name; read with `enumOrNull<E>(…)` (`db/Columns.kt`), never
+  `valueOf`, and put the fallback for an unknown name next to the call (e.g. closeness → not set, relation → other,
+  interaction type → row skipped but kept). A newer build or backup can always store a value this build doesn't know.
+  `0/1` flags and ranges keep their `CHECK`s. History: `3.sqm`, `4.sqm` and `14.sqm` rebuilt tables just to widen an
+  enum `CHECK`; `16.sqm` removed them all.
+- **Rebuilding a table runs with foreign keys on**: Android, iOS and the web worker all migrate inside a transaction,
+  where `PRAGMA foreign_keys = OFF` is a silent no-op. So `DROP TABLE friend` (or any parent) cascades into every child
+  table (`ON DELETE SET NULL` too), and SQLite refuses the drop ("no such table") while a child of it also references
+  another table that is already dropped. `16.sqm` is the pattern: copy every table that could lose a row into a
+  constraint-free `keep_*` table (`CREATE TABLE … AS SELECT *`), drop children first, recreate, refill parents first
+  (`DELETE` then insert for tables that weren't dropped), drop the copies. SQLDelight doesn't know `rowid` on the copies.
+  Test it with child rows in every table and foreign keys on (`EnumColumnsMigrationTest`).
 - A column called `value` is generated as `value_`.
 - No foreign key to rows that a parent's save rewrites (e.g. `gift_list_item.gift_id`): skip dangling rows when reading.
 - Another branch may take the same migration number before you merge: see the `refresh-branch` skill.

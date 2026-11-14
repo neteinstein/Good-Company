@@ -136,11 +136,12 @@ internal suspend fun GoodCompanyDatabase.writeReminder(reminder: DomainReminder)
 
 internal suspend fun GoodCompanyDatabase.readIdeas(): List<DomainIdea> {
     val friends = ideaQueries.allIdeaFriends().awaitAsList().friendIdsBy({ it.idea_id }, { it.friend_id })
-    return ideaQueries.allIdeas().awaitAsList().map { row ->
+    // An idea of an unknown kind is skipped (and kept in the table).
+    return ideaQueries.allIdeas().awaitAsList().mapNotNull { row ->
         DomainIdea(
             id = row.id,
             friendIds = friends[row.id].orEmpty(),
-            kind = IdeaKind.valueOf(row.kind),
+            kind = enumOrNull<IdeaKind>(row.kind) ?: return@mapNotNull null,
             title = row.title,
             description = row.description,
             url = row.url,
@@ -191,7 +192,8 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             date = row.date.toLocalDate(),
             place = row.place,
             ideaId = row.idea_id,
-            status = PlanStatus.valueOf(row.status),
+            // Unknown status → planned.
+            status = enumOrNull<PlanStatus>(row.status) ?: PlanStatus.PLANNED,
             createdAt = row.created_at.toInstant(),
             circleId = row.circle_id,
             activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } },
@@ -263,14 +265,15 @@ internal suspend fun GoodCompanyDatabase.writeGroup(group: DomainGroup) {
 // --- Interactions and chat lines ---
 
 internal suspend fun GoodCompanyDatabase.readInteractions(): List<DomainInteraction> =
-    interactionQueries.allInteractions().awaitAsList().map {
+    // An interaction of an unknown type or source is skipped (and kept in the table).
+    interactionQueries.allInteractions().awaitAsList().mapNotNull {
         DomainInteraction(
             friendId = FriendId(it.friend_id),
-            type = InteractionType.valueOf(it.type),
+            type = enumOrNull<InteractionType>(it.type) ?: return@mapNotNull null,
             at = it.at.toInstant(),
             id = it.id,
             note = it.note,
-            source = InteractionSource.valueOf(it.source),
+            source = enumOrNull<InteractionSource>(it.source) ?: return@mapNotNull null,
             durationSeconds = it.duration_seconds?.toInt(),
             batchId = it.batch_id,
             messageCount = it.message_count?.toInt(),
@@ -286,21 +289,23 @@ internal suspend fun GoodCompanyDatabase.writeJournal(entry: DomainJournalEntry)
 }
 
 internal suspend fun GoodCompanyDatabase.readAttachments(): List<DomainAttachment> =
-    attachmentQueries.allAttachments().awaitAsList().map { row ->
+    // An attachment of an unknown kind is skipped (and kept in the table); an unknown photo platform reads as no photo,
+    // an unknown interaction type as none.
+    attachmentQueries.allAttachments().awaitAsList().mapNotNull { row ->
         DomainAttachment(
             id = row.id,
             friendId = row.friend_id?.let(::FriendId),
             circleId = row.circle_id,
-            kind = AttachmentKind.valueOf(row.kind),
+            kind = enumOrNull<AttachmentKind>(row.kind) ?: return@mapNotNull null,
             text = row.text,
             url = row.url,
             title = row.title,
-            photoRef = row.photo_platform?.let { p -> row.photo_ref?.let { PhotoRef(PhotoPlatform.valueOf(p), it) } },
+            photoRef = enumOrNull<PhotoPlatform>(row.photo_platform)?.let { p -> row.photo_ref?.let { PhotoRef(p, it) } },
             thumbnail = row.thumbnail?.let(::ContactPhoto),
             caption = row.caption,
             at = row.at.toInstant(),
             countsAsInteraction = row.counts_as_interaction.toFlag(),
-            interactionType = row.interaction_type?.let(InteractionType::valueOf),
+            interactionType = enumOrNull<InteractionType>(row.interaction_type),
             logId = row.log_id,
             createdAt = row.created_at.toInstant(),
         )
@@ -422,6 +427,7 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
 }
 
 internal suspend fun GoodCompanyDatabase.readCalendarDecisions(): List<CalendarDecision> =
+    // A decision of an unknown kind is skipped (and kept in the table).
     calendarDecisionQueries.allDecisions().awaitAsList().mapNotNull { row ->
         // An unknown kind (from a newer app) is skipped rather than failing the whole list.
         CalendarDecisionKind.entries.firstOrNull { it.name == row.kind }?.let { CalendarDecision(row.key, it, row.decided_at.toInstant()) }

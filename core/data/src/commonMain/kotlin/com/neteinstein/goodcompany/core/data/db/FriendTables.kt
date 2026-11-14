@@ -39,6 +39,9 @@ private const val FOOD = "FOOD"
 private const val DRINK = "DRINK"
 private const val INTEREST = "INTEREST"
 
+/** A stored taste kind; an unknown one (from a newer build) reads as a like. */
+private fun tasteKind(stored: String): String = stored.takeIf { it in setOf(LIKE, DISLIKE, FOOD, DRINK, INTEREST) } ?: LIKE
+
 /** `yyyy-mm-dd`, or `yyyy-mm` when only the month is known. */
 internal fun MetInfo.onColumn(): String? = on?.let { if (dayKnown) it.toString() else it.toString().take(7) }
 
@@ -68,7 +71,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
 
     return q.allFriends().awaitAsList().map { row ->
         val id = row.id
-        val friendTastes = tastes[id].orEmpty()
+        val friendTastes = tastes[id].orEmpty().map { it.copy(kind = tasteKind(it.kind)) }
         val likes = friendTastes.filter { it.kind == LIKE }
         val food = friendTastes.filter { it.kind == FOOD }
         val drinks = friendTastes.filter { it.kind == DRINK }
@@ -90,7 +93,8 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             meetEveryDays = row.meet_every_days?.toInt(),
             suggestEvents = row.suggest_events.toFlag(),
             isOrphaned = row.is_orphaned.toFlag(),
-            closeness = row.circle?.let(Closeness::valueOf),
+            // Unknown closeness → not set.
+            closeness = enumOrNull<Closeness>(row.circle),
             snoozedUntil = row.snoozed_until?.toLocalDate(),
             gifts = gifts[id].orEmpty().map {
                 DomainGift(
@@ -99,14 +103,16 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
                     it.note,
                     null,
                     it.given_on?.toLocalDate(),
-                    it.occasion?.let(GiftOccasion::valueOf),
+                    // Unknown occasion → none.
+                    enumOrNull<GiftOccasion>(it.occasion),
                     it.url,
                     it.price,
                 )
             },
             catchUpPaused = row.catch_up_paused.toFlag(),
             contactCountsAsCatchUp = row.contact_counts_as_catch_up.toFlag(),
-            occasions = occasions[id].orEmpty().map { Occasion.valueOf(it.occasion) },
+            // Unknown occasions are left out.
+            occasions = occasions[id].orEmpty().mapNotNull { enumOrNull<Occasion>(it.occasion) },
             lifeUpdates = updates[id].orEmpty().map { LifeUpdate(it.id, it.text, it.added_at.toInstant()) },
             likesAddedAt = likes.mapNotNull { like -> like.added_at?.let { like.taste to it.toInstant() } }.toMap(),
             feeds = feeds[id].orEmpty().map { feed ->
@@ -130,7 +136,8 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             relatives = relatives[id].orEmpty().map { r ->
                 DomainRelative(
                     id = r.id,
-                    relation = Relation.valueOf(r.relation),
+                    // Unknown relation → other.
+                    relation = enumOrNull<Relation>(r.relation) ?: Relation.OTHER,
                     name = r.name,
                     birthday = birthdayOf(r.birthday_month, r.birthday_day, r.birthday_year),
                     likes = relativeLikes[id to r.id].orEmpty().map { it.liked },
