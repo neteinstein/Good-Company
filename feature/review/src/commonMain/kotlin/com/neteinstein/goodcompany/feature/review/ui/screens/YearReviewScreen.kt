@@ -29,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,10 +50,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
 import com.neteinstein.goodcompany.core.domain.usecase.YearInReview
 import com.neteinstein.goodcompany.core.ui.components.AnimatedNumber
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
@@ -150,11 +151,11 @@ fun YearReviewContent(
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.copied) {
         if (state.copied) {
-            snackbar.showSnackbar(getString(Res.string.copied))
+            snackbar.showMessage(getString(Res.string.copied))
             onCopiedShown()
         }
     }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         val r = state.review
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {

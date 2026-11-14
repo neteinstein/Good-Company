@@ -43,7 +43,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -74,6 +73,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.RankedFriend
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LinkCard
@@ -83,6 +83,7 @@ import com.neteinstein.goodcompany.core.ui.components.QuotedText
 import com.neteinstein.goodcompany.core.ui.components.attachmentKindLabel
 import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.logKindLabel
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.share_add_typed
@@ -181,12 +182,12 @@ fun ShareToFriendContent(state: ShareUiState, actions: ShareActions) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let {
-            snackbar.showSnackbar(it.text())
+            snackbar.showMessage(it.text())
             actions.onMessageShown()
         }
     }
     val target = state.target
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()).imePadding()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (target == null) {

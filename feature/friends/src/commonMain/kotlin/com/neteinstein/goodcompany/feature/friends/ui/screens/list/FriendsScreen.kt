@@ -59,7 +59,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
@@ -84,11 +83,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
@@ -342,14 +343,14 @@ fun FriendsContent(
     var menuOpen by remember { mutableStateOf(false) }
     LaunchedEffect(state.message) {
         state.message?.let {
-            snackbar.showSnackbar(it.text())
+            snackbar.showMessage(it.text())
             actions.onMessageShown()
         }
     }
     val isEmpty = !state.isLoading && state.totalCount == 0
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { AppSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),

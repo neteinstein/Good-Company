@@ -44,7 +44,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -69,6 +68,7 @@ import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.isBuiltIn
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -78,6 +78,7 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
@@ -262,9 +263,9 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(
+        val result = snackbar.showMessage(
             message.text(),
-            actionLabel = if (state.recentlyDeleted != null ||
+            if (state.recentlyDeleted != null ||
                 state.recentlyDeletedGroup != null
             ) {
                 undo
@@ -275,7 +276,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
         if (result == SnackbarResult.ActionPerformed) actions.onUndoDelete()
         actions.onMessageShown()
     }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp),

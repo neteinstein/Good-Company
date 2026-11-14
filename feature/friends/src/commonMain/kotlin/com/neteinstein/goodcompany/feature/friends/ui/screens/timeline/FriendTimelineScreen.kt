@@ -29,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
@@ -51,9 +50,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.TimelineEntryRow
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -143,11 +144,11 @@ fun FriendTimelineContent(state: FriendTimelineUiState, actions: FriendTimelineA
     val undoLabel = stringResource(CoreRes.string.coreUndo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message.text(), actionLabel = if (state.undo != null) undoLabel else null)
+        val result = snackbar.showMessage(message.text(), if (state.undo != null) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) actions.onUndoDelete()
         actions.onMessageShown()
     }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         ContentWidth {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
                 item(key = "header") { Header(state, actions) }

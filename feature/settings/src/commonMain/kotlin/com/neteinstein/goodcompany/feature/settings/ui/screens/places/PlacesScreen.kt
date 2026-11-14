@@ -30,8 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -51,7 +49,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.PlaceSummary
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.resources.back
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.delete
@@ -114,17 +114,16 @@ fun PlacesContent(state: PlacesUiState, actions: PlacesActions) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(
+        val result = snackbar.showMessage(
             message.text(),
-            actionLabel = if (message is PlacesMessage.Deleted) getString(CoreRes.string.undo) else null,
-            duration = SnackbarDuration.Short,
+            if (message is PlacesMessage.Deleted) getString(CoreRes.string.undo) else null,
         )
         actions.onMessageShown()
         if (result == SnackbarResult.ActionPerformed) actions.onUndoDelete()
     }
     var renaming by rememberSaveable { mutableStateOf<String?>(null) }
     var merging by rememberSaveable { mutableStateOf<String?>(null) }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = actions.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(CoreRes.string.back)) }

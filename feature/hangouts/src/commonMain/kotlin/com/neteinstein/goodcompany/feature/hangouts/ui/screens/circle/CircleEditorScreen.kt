@@ -33,8 +33,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -57,11 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleColorSwatch
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.PeoplePicker
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
+import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
@@ -147,7 +147,7 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
     val undo = stringResource(CoreRes.string.undoLabel)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message.text(), actionLabel = undo, duration = SnackbarDuration.Short)
+        val result = snackbar.showUndo(message.text(), undo)
         if (result == SnackbarResult.ActionPerformed) actions.onUndoDelete() else actions.onMessageShown()
     }
     val palette = circlePalette(state.color)
@@ -172,7 +172,7 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { AppSnackbarHost(snackbar) },
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Button(

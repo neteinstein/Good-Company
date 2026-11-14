@@ -202,7 +202,7 @@ before changing that area**, and put new area-specific notes in that skill, not 
     `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`) and theme tokens
     (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
     (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an
-    **Undo** snackbar; primary actions get haptics.
+    **Undo** snackbar (`showUndo`, hosted by `AppSnackbarHost`: never call `showSnackbar` directly); primary actions get haptics.
 14. **Sample data & launch options.** `SampleData` (domain) builds a demo set of friends whose ids all start with `sample-`
     (Load/Remove use cases; Settings → Your data). The web build reads URL options (`?demo&tab=…&friend=…&theme=…`)
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.

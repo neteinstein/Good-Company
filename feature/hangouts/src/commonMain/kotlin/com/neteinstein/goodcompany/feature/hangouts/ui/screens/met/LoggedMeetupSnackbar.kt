@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.screens.met
 
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -9,7 +8,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.namesList
+import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_logged_with
@@ -30,8 +31,8 @@ fun LoggedMeetupSnackbar(modifier: Modifier = Modifier, viewModel: LoggedMeetupV
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(meetup) {
         if (meetup == null || text == null) return@LaunchedEffect
-        val result = host.showSnackbar(text, actionLabel = undo)
+        val result = host.showUndo(text, undo)
         if (result == SnackbarResult.ActionPerformed) viewModel.onUndo(meetup) else viewModel.onShown(meetup)
     }
-    SnackbarHost(host, modifier)
+    AppSnackbarHost(host, modifier)
 }
