@@ -44,7 +44,7 @@ core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by eve
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
 feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI),
                       friend timeline, the "Log" sheet destination
-feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?"
+feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?", gift lists
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
@@ -423,6 +423,19 @@ Seen in practice:
     nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
     `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed
     kinship only. Reuse that use case for any other "my nieces" picker.
+
+36. **Gift lists (issue #42, F8, F17).** A `GiftList` (title, optional `occasionDate`, `occasion` = the `GiftOccasion` a
+    gift given from it is recorded as) has `GiftListEntry`s (a person, an optional `budget`) whose `GiftListItem`s point at
+    that person's own `Gift`s by id with a `GiftStatus` (to buy → bought → given → to buy). There is no second gift store:
+    a gift added on a list is an idea on the person's page, and "given" sets `Gift.givenOn` / `occasion` there
+    (`AdvanceGiftStatusUseCase`; moving on from given makes it an idea again). Tables `gift_list`, `gift_list_entry`,
+    `gift_list_item` (migration `15.sqm`, in `Backup.giftLists`, in `SampleData`); a list is saved whole (delete + insert),
+    and `gift_id` has no foreign key because a friend's gift rows are rewritten on every save, so items whose gift is gone
+    are skipped when read. Prices are free text: `GiftPrices.parse` reads a number where it can and `GiftTotals` says when
+    a sum is partial; never guess a currency. "Duplicate" keeps people and budgets a year on, with no items. Adding people
+    takes a whole circle or a search that understands kinship (`ParseKinshipQueryUseCase`, #41). AI ideas reuse
+    `SuggestGiftsUseCase` and show only with `usableAiKey` (gotcha 33). Screens: `GiftListsRoute` / `GiftListRoute(id)` in
+    `:feature:hangouts` (Together tab row, plus "Gift lists" on a friend's gift card).
 
 ## Skills
 

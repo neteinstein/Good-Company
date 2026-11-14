@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GiftList
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -214,4 +215,29 @@ interface CalendarDecisionRepository {
     suspend fun upsert(decision: CalendarDecision)
 
     suspend fun delete(key: String)
+}
+
+/** Gift lists per occasion (F8). Part of the backup. */
+interface GiftListRepository {
+    val lists: Flow<List<GiftList>>
+
+    suspend fun get(id: String): GiftList?
+
+    /** Saves the whole list: its people and their items replace what was stored. */
+    suspend fun upsert(list: GiftList)
+
+    suspend fun delete(id: String)
+
+    companion object {
+        /** No lists, for callers built without the gift-list store. */
+        val None: GiftListRepository = object : GiftListRepository {
+            override val lists: Flow<List<GiftList>> = flowOf(emptyList())
+
+            override suspend fun get(id: String): GiftList? = null
+
+            override suspend fun upsert(list: GiftList) = Unit
+
+            override suspend fun delete(id: String) = Unit
+        }
+    }
 }
