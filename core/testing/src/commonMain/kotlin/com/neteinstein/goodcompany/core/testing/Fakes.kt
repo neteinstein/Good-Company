@@ -4,10 +4,13 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
+import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -29,6 +32,8 @@ import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
@@ -295,6 +300,7 @@ class FakeBackupRepository(
     private val plans: FakePlanRepository,
     private val settings: FakeSettingsRepository,
     private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
+    private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
@@ -312,6 +318,7 @@ class FakeBackupRepository(
         plans = plans.plans.value,
         places = hangouts.places.value,
         settings = settings.settings.value,
+        calendarDecisions = calendarDecisions.decisions.value,
     )
 
     override suspend fun restore(backup: Backup) {
@@ -326,7 +333,37 @@ class FakeBackupRepository(
         backup.places.forEach { hangouts.upsertPlace(it) }
         plans.plans.value.forEach { plans.delete(it.id) }
         backup.plans.forEach { plans.upsert(it) }
+        calendarDecisions.decisions.value = backup.calendarDecisions
         settings.update { backup.settings }
+    }
+}
+
+class FakeCalendarDecisionRepository(initial: List<CalendarDecision> = emptyList()) : CalendarDecisionRepository {
+    override val decisions = MutableStateFlow(initial)
+
+    override suspend fun upsert(decision: CalendarDecision) = decisions.update { list -> list.filterNot { it.key == decision.key } + decision }
+
+    override suspend fun delete(key: String) = decisions.update { list -> list.filterNot { it.key == key } }
+}
+
+/** A device calendar for tests: set [calendars], [events] and [access]; [reads] counts event reads. */
+class FakeCalendarReader(
+    var calendars: List<DeviceCalendar> = emptyList(),
+    var events: List<CalendarEvent> = emptyList(),
+    var access: Boolean = true,
+    override val isSupported: Boolean = true,
+) : CalendarReader {
+    var reads = 0
+        private set
+
+    override suspend fun hasAccess() = access
+
+    override suspend fun calendars(): List<DeviceCalendar> = if (access) calendars else emptyList()
+
+    override suspend fun events(calendarIds: Set<String>, from: Instant, to: Instant): List<CalendarEvent> {
+        reads++
+        if (!access) return emptyList()
+        return events.filter { it.calendarId in calendarIds && it.end > from && it.start < to }
     }
 }
 

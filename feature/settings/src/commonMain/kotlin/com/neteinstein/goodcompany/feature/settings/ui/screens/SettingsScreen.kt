@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
@@ -125,6 +126,10 @@ import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_off
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_on
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_web
+import com.neteinstein.goodcompany.feature.settings.resources.cal_title
 import com.neteinstein.goodcompany.feature.settings.resources.circles
 import com.neteinstein.goodcompany.feature.settings.resources.circles_hint
 import com.neteinstein.goodcompany.feature.settings.resources.digest
@@ -250,7 +255,12 @@ suspend fun SettingsMessage.text(): String = when (this) {
 }
 
 @Composable
-fun SettingsScreen(appVersion: String, onOpenPlaces: () -> Unit = {}, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(
+    appVersion: String,
+    onOpenPlaces: () -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
+    viewModel: SettingsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var notificationsAsked by remember { mutableIntStateOf(0) }
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
@@ -318,6 +328,7 @@ fun SettingsScreen(appVersion: String, onOpenPlaces: () -> Unit = {}, viewModel:
                 authorizeDrive()
             },
             onCheckForUpdate = { viewModel.onCheckForUpdate(updater.installedVersionCode) },
+            onOpenCalendar = onOpenCalendar,
             onInstallUpdate = { update ->
                 viewModel.onUpdateStarted(update)
                 scope.launch {
@@ -365,6 +376,7 @@ data class SettingsActions(
     val onInstallUpdate: (AppUpdate) -> Unit = {},
     /** Settings → Places (F11). */
     val onOpenPlaces: () -> Unit = {},
+    val onOpenCalendar: () -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -542,6 +554,29 @@ fun SettingsContent(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
+                // Calendar suggestions (D3): Android and iOS only; the web says so here.
+                ListItem(
+                    modifier = if (capabilities.hasCalendar) Modifier.clickable(onClick = actions.onOpenCalendar) else Modifier,
+                    leadingContent = { Icon(Icons.Rounded.CalendarMonth, null) },
+                    headlineContent = { Text(stringResource(Res.string.cal_title), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                when {
+                                    !capabilities.hasCalendar -> Res.string.cal_row_web
+                                    s.calendarSuggestions -> Res.string.cal_row_on
+                                    else -> Res.string.cal_row_off
+                                },
+                            ),
+                        )
+                    },
+                    trailingContent = if (capabilities.hasCalendar) {
+                        { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) }
+                    } else {
+                        null
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
             }
 
             SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {

@@ -109,6 +109,9 @@ object ShareMatcher {
 
     private fun haystack(content: SharedContent) = listOfNotNull(content.text, content.title, content.url).joinToString(" ").lowercase()
 
+    /** Whether [text] names [f] (full name, "firstlast" handle or a first name of 3+ letters). Also used by calendar matching. */
+    fun isNamedIn(f: Friend, text: String): Boolean = isMentioned(f, text.lowercase())
+
     /** By the name given in the app or the contact's (F19). */
     private fun isMentioned(f: Friend, haystack: String): Boolean =
         listOf(f.displayName, f.name).distinct().any { isMentioned(it, haystack) }

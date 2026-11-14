@@ -44,6 +44,7 @@ class AgendaViewModelTest {
         g.restoreReminder,
         g.confirmPlan,
         g.clock,
+        g.observeCalendarSuggestions,
     )
 
     @Test

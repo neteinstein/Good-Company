@@ -115,4 +115,23 @@
         <item quantity="one">%1$d rencontre</item>
         <item quantity="other">%1$d rencontres</item>
     </plurals>
+    <string name="cal_title">Suggestions du calendrier</string>
+    <string name="cal_switch">Suggérer des rencontres depuis mon calendrier</string>
+    <string name="cal_switch_hint">Après un événement avec quelqu’un que vous connaissez, l’app propose de le noter.</string>
+    <string name="cal_choose">Calendriers que l’app peut lire</string>
+    <string name="cal_none_found">Aucun calendrier sur cet appareil.</string>
+    <string name="cal_pick_hint">Cochez les calendriers à lire. Rien n’est lu avant.</string>
+    <string name="cal_privacy">Les événements sont lus uniquement sur ce téléphone. Ils ne sont jamais envoyés, jamais sauvegardés et jamais transmis à l’IA.</string>
+    <string name="cal_lookback">Quand vous l’activez, l’app regarde aussi les deux derniers mois pour les rencontres que vous n’avez pas notées.</string>
+    <string name="cal_web">Les suggestions du calendrier fonctionnent dans les apps Android et iOS. Un navigateur ne peut pas lire votre calendrier.</string>
+    <string name="cal_access_needed">L’accès au calendrier est désactivé : rien à suggérer.</string>
+    <string name="cal_allow">Autoriser l’accès au calendrier</string>
+    <string name="cal_denied">Sans accès au calendrier, rien à suggérer.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Voir %1$d suggestion</item>
+        <item quantity="other">Voir %1$d suggestions</item>
+    </plurals>
+    <string name="cal_row_on">Activé · calendriers choisis uniquement</string>
+    <string name="cal_row_off">Désactivé</string>
+    <string name="cal_row_web">Indisponible dans le navigateur</string>
 </resources>

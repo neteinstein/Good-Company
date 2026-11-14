@@ -121,4 +121,23 @@
         <item quantity="one">%1$d meetup</item>
         <item quantity="other">%1$d meetups</item>
     </plurals>
+    <string name="cal_title">Calendar suggestions</string>
+    <string name="cal_switch">Suggest meetups from my calendar</string>
+    <string name="cal_switch_hint">After an event with someone you know, the app offers to log it.</string>
+    <string name="cal_choose">Calendars the app may read</string>
+    <string name="cal_none_found">No calendars on this device.</string>
+    <string name="cal_pick_hint">Tick the calendars to read. Nothing is read until you do.</string>
+    <string name="cal_privacy">Events are read on this phone only. They are never uploaded, never put in backups and never sent to the AI.</string>
+    <string name="cal_lookback">When you turn this on, the app also looks back two months for meetups you didn’t log.</string>
+    <string name="cal_web">Calendar suggestions work in the Android and iOS apps. A browser can’t read your calendar.</string>
+    <string name="cal_access_needed">Calendar access is off, so there’s nothing to suggest.</string>
+    <string name="cal_allow">Allow calendar access</string>
+    <string name="cal_denied">Without calendar access there’s nothing to suggest.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">See %1$d suggestion</item>
+        <item quantity="other">See %1$d suggestions</item>
+    </plurals>
+    <string name="cal_row_on">On · chosen calendars only</string>
+    <string name="cal_row_off">Off</string>
+    <string name="cal_row_web">Not available in the browser</string>
 </resources>

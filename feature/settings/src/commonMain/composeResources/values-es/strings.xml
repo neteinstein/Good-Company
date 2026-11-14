@@ -115,4 +115,23 @@
         <item quantity="one">%1$d encuentro</item>
         <item quantity="other">%1$d encuentros</item>
     </plurals>
+    <string name="cal_title">Sugerencias del calendario</string>
+    <string name="cal_switch">Sugerir quedadas de mi calendario</string>
+    <string name="cal_switch_hint">Después de un evento con alguien que conoces, la app te propone registrarlo.</string>
+    <string name="cal_choose">Calendarios que la app puede leer</string>
+    <string name="cal_none_found">No hay calendarios en este dispositivo.</string>
+    <string name="cal_pick_hint">Marca los calendarios que se pueden leer. No se lee nada hasta que lo hagas.</string>
+    <string name="cal_privacy">Los eventos se leen solo en este teléfono. Nunca se suben, nunca entran en las copias de seguridad y nunca se envían a la IA.</string>
+    <string name="cal_lookback">Al activarlo, la app también revisa los dos últimos meses en busca de quedadas que no registraste.</string>
+    <string name="cal_web">Las sugerencias del calendario funcionan en las apps de Android e iOS. Un navegador no puede leer tu calendario.</string>
+    <string name="cal_access_needed">El acceso al calendario está desactivado, así que no hay nada que sugerir.</string>
+    <string name="cal_allow">Permitir acceso al calendario</string>
+    <string name="cal_denied">Sin acceso al calendario no hay nada que sugerir.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Ver %1$d sugerencia</item>
+        <item quantity="other">Ver %1$d sugerencias</item>
+    </plurals>
+    <string name="cal_row_on">Activado · solo los calendarios elegidos</string>
+    <string name="cal_row_off">Desactivado</string>
+    <string name="cal_row_web">No disponible en el navegador</string>
 </resources>

@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EventAvailable
@@ -71,6 +73,8 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_body
+import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_title
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
@@ -112,6 +116,7 @@ suspend fun AgendaMessage.text(): String = when (this) {
 fun AgendaScreen(
     onOpenFriend: (FriendId) -> Unit,
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    onOpenCalendar: () -> Unit = {},
     viewModel: AgendaViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -136,6 +141,7 @@ fun AgendaScreen(
         },
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
         onSkipPlan = viewModel::onSkipPlan,
+        onOpenCalendar = onOpenCalendar,
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
@@ -175,6 +181,7 @@ fun AgendaContent(
     onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -187,8 +194,8 @@ fun AgendaContent(
         onMessageShown()
     }
     // Index of each day's header in the lazy list, so tapping the week strip can scroll to it.
-    val dayIndex = remember(state.agendaByDay) {
-        var i = 2 // header + week strip
+    val dayIndex = remember(state.agendaByDay, state.calendarCount > 0) {
+        var i = if (state.calendarCount > 0) 3 else 2 // header + week strip (+ the calendar card)
         state.agendaByDay.associate { (day, items) -> (day to i).also { i += 1 + items.size } }
     }
     Scaffold(
@@ -216,6 +223,9 @@ fun AgendaContent(
             }
             item(key = "week") {
                 WeekStrip(state.week, state.today) { day -> dayIndex[day]?.let { scope.launch { listState.animateScrollToItem(it) } } }
+            }
+            if (state.calendarCount > 0) {
+                item(key = "calendar") { CalendarCard(state.calendarCount, onOpenCalendar) }
             }
             if (!state.isLoading && state.agenda.isEmpty()) {
                 item(key = "empty") {
@@ -327,6 +337,27 @@ private fun WeekStrip(days: List<Pair<LocalDate, Int>>, today: LocalDate, onDay:
                     if (count == 0) Box(Modifier.size(5.dp))
                 }
             }
+        }
+    }
+}
+
+/** "From your calendar · 3 meetups to log" (D3): opens the suggestions. */
+@Composable
+private fun CalendarCard(count: Int, onOpen: () -> Unit) {
+    Surface(
+        onClick = onOpen,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.calendar_card_title), style = MaterialTheme.typography.titleSmall)
+                Text(pluralStringResource(Res.plurals.calendar_card_body, count, count), style = MaterialTheme.typography.bodyMedium)
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
         }
     }
 }

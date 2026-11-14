@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Calendar suggestions (D3): opt-in, read-only, chosen calendars only. Not a Play-restricted permission. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- Optional app lock (fingerprint / face / device PIN). Normal permission, no prompt. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- No SMS permission, ever (store policy). READ_CALL_LOG only exists in src/sideload/AndroidManifest.xml. -->

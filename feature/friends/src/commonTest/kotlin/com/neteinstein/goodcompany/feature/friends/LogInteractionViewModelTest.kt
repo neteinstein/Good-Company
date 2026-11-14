@@ -15,8 +15,10 @@ import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,22 +31,44 @@ class LogInteractionViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm(ids: List<FriendId> = listOf(ana), type: String? = null, circleId: String? = null, plan: PlanOccurrence? = null) =
-        LogInteractionViewModel(
-            ids,
-            type,
-            circleId,
-            g.observeFriends,
-            g.observeActivities,
-            g.observeGroups,
-            g.observePlaceBook,
-            g.logInteraction,
-            g.currentLocation,
-            g.clock,
-            plan,
-            g.observePlans,
-            g.confirmPlan,
-        )
+    private fun vm(
+        ids: List<FriendId> = listOf(ana),
+        type: String? = null,
+        circleId: String? = null,
+        plan: PlanOccurrence? = null,
+        prefill: LogPrefill = LogPrefill(),
+    ) = LogInteractionViewModel(
+        ids,
+        type,
+        circleId,
+        g.observeFriends,
+        g.observeActivities,
+        g.observeGroups,
+        g.observePlaceBook,
+        g.logInteraction,
+        g.currentLocation,
+        g.clock,
+        plan,
+        g.observePlans,
+        g.confirmPlan,
+        prefill,
+    )
+
+    @Test
+    fun aCalendarSuggestionOpensOnItsDayWithTheGuessedActivity() = runViewModelTest {
+        val friday = g.clock.today().minus(DatePeriod(days = 4))
+        val vm = vm(listOf(rui), type = "MEETUP", prefill = LogPrefill(friday, HangoutActivity.LUNCH))
+        val state = collecting(vm.state)
+        assertEquals(friday, state.value.sheet.date)
+        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        vm.onSave()
+        val h = g.hangoutRepo.hangouts.value.single()
+        assertEquals(listOf(rui), h.friendIds)
+        assertEquals(HangoutActivity.LUNCH, h.activity)
+        // A future day is never prefilled (F2).
+        val future = vm(prefill = LogPrefill(g.clock.today().plus(DatePeriod(days = 3))))
+        assertEquals(g.clock.today(), collecting(future.state).value.sheet.date)
+    }
 
     @Test
     fun typeFromTheRoutePreselectsTheKind() = runViewModelTest {

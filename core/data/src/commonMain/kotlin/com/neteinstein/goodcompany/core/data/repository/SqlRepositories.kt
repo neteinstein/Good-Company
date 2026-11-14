@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.data.repository
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
+import com.neteinstein.goodcompany.core.data.db.CALENDAR_DECISION_TABLES
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
 import com.neteinstein.goodcompany.core.data.db.GoodCompanyDatabase
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
 import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
 import com.neteinstein.goodcompany.core.data.db.nextFriendPosition
 import com.neteinstein.goodcompany.core.data.db.readAttachments
+import com.neteinstein.goodcompany.core.data.db.readCalendarDecisions
 import com.neteinstein.goodcompany.core.data.db.readFriends
 import com.neteinstein.goodcompany.core.data.db.readGroups
 import com.neteinstein.goodcompany.core.data.db.readHangouts
@@ -32,6 +34,7 @@ import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
 import com.neteinstein.goodcompany.core.data.db.toColumn
 import com.neteinstein.goodcompany.core.data.db.writeAttachment
+import com.neteinstein.goodcompany.core.data.db.writeCalendarDecision
 import com.neteinstein.goodcompany.core.data.db.writeFriend
 import com.neteinstein.goodcompany.core.data.db.writeGroup
 import com.neteinstein.goodcompany.core.data.db.writeHangout
@@ -50,6 +53,7 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
@@ -67,6 +71,7 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -365,6 +370,10 @@ internal data class DeviceSettings(
     val appLock: Boolean = false,
     val lastOpenedAt: Instant? = null,
     val lastDriveBackupAt: Instant? = null,
+    /** Calendar suggestions (D3) belong to this device: its calendars, never in the database or a backup. */
+    val calendarSuggestions: Boolean = false,
+    val calendarIds: List<String> = emptyList(),
+    val calendarOnSince: Instant? = null,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         aiApiKey = aiApiKey,
@@ -375,6 +384,9 @@ internal data class DeviceSettings(
         appLock = appLock,
         lastOpenedAt = lastOpenedAt,
         lastDriveBackupAt = lastDriveBackupAt,
+        calendarSuggestions = calendarSuggestions,
+        calendarIds = calendarIds,
+        calendarOnSince = calendarOnSince,
     )
 
     companion object {
@@ -389,6 +401,9 @@ internal data class DeviceSettings(
             appLock = settings.appLock,
             lastOpenedAt = settings.lastOpenedAt,
             lastDriveBackupAt = settings.lastDriveBackupAt,
+            calendarSuggestions = settings.calendarSuggestions,
+            calendarIds = settings.calendarIds,
+            calendarOnSince = settings.calendarOnSince,
         )
     }
 }
@@ -421,6 +436,19 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
     internal suspend fun current(): AppSettings = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
 }
 
+/** Answers to calendar suggestions (D3), in their own table. */
+class SqlCalendarDecisionRepository(private val db: AppDatabase) : CalendarDecisionRepository {
+    override val decisions: Flow<List<CalendarDecision>> = db.observe(*CALENDAR_DECISION_TABLES) { it.readCalendarDecisions() }
+
+    override suspend fun upsert(decision: CalendarDecision) {
+        db.access { it.writeCalendarDecision(decision) }
+    }
+
+    override suspend fun delete(key: String) {
+        db.access { it.calendarDecisionQueries.deleteDecision(key) }
+    }
+}
+
 /**
  * Export / restore across every table. The snapshot is read in one transaction; a restore replaces everything in one
  * transaction (all or nothing), then the device settings. The [Backup] JSON format is unchanged.
@@ -441,6 +469,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 groups = database.readGroups(),
                 plans = database.readPlans(),
                 places = database.readPlaces(),
+                calendarDecisions = database.readCalendarDecisions(),
             )
         }
         return backup.copy(settings = settings.current())
@@ -472,6 +501,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     attachmentQueries.deleteAllAttachments()
     namedPlaceQueries.deleteAllPlaces()
     personLinkQueries.deleteAll()
+    calendarDecisionQueries.deleteAllDecisions()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -485,5 +515,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
     backup.journal.forEach { writeJournal(it) }
     backup.attachments.forEach { writeAttachment(it) } // after friends and circles, which they belong to
     backup.links.forEach { writeLink(it) } // after friends, which they link
+    backup.calendarDecisions.forEach { writeCalendarDecision(it) }
     writePreferences(backup.settings)
 }

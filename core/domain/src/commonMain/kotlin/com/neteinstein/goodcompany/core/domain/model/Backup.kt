@@ -31,6 +31,8 @@ data class Backup(
     val plans: List<Plan> = emptyList(),
     /** Named places (F11): names given to GPS spots. */
     val places: List<NamedPlace> = emptyList(),
+    /** Answers to calendar suggestions ("No", "Never for this series"): ids only, never event details (D3). */
+    val calendarDecisions: List<CalendarDecision> = emptyList(),
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {

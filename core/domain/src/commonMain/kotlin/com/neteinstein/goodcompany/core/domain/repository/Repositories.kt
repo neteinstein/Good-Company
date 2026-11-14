@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.repository
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
@@ -198,4 +199,13 @@ interface SettingsRepository {
 /** Whether what the app writes now survives a restart (false only in a web tab that got temporary storage). */
 interface StorageStatus {
     suspend fun isPersistent(): Boolean
+}
+
+/** The user's answers to calendar suggestions (D3): "No" for one occurrence, "Never" for a series. Part of the backup. */
+interface CalendarDecisionRepository {
+    val decisions: Flow<List<CalendarDecision>>
+
+    suspend fun upsert(decision: CalendarDecision)
+
+    suspend fun delete(key: String)
 }

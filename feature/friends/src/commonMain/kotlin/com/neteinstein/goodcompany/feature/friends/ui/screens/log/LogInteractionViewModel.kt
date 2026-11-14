@@ -45,6 +45,9 @@ private data class Draft(
     val circleId: String? = null,
 )
 
+/** What the sheet opens with besides people and type, e.g. from a calendar suggestion (D3): its day and an activity guess. */
+data class LogPrefill(val date: LocalDate? = null, val activity: HangoutActivity? = null)
+
 data class LogInteractionUiState(
     val sheet: LogSheetState,
     /** Saved: the sheet closes. */
@@ -59,6 +62,8 @@ data class LogInteractionUiState(
  * [plan] opens it as the answer to a plan's "Did you meet?" (issue #43): a meetup on that occurrence's day with the
  * plan's activity, place and title, its people ticked and its circle's members unticked. Saving also closes that
  * occurrence ([ConfirmPlanUseCase] without a second check-in), so a recurring plan moves on to the next one.
+ *
+ * [prefill] opens it on a calendar suggestion's day and guessed activity (D3).
  */
 class LogInteractionViewModel(
     friendIds: List<FriendId>,
@@ -74,8 +79,18 @@ class LogInteractionViewModel(
     private val plan: PlanOccurrence? = null,
     private val observePlans: ObservePlansUseCase? = null,
     private val confirmPlan: ConfirmPlanUseCase? = null,
+    prefill: LogPrefill = LogPrefill(),
 ) : ViewModel() {
-    private val draft = MutableStateFlow(Draft(LogKind.parse(type) ?: LogKind.MEETUP, friendIds.distinct(), clock.today(), circleId = circleId))
+    private val draft = MutableStateFlow(
+        Draft(
+            LogKind.parse(type) ?: LogKind.MEETUP,
+            friendIds.distinct(),
+            // Never a future date (F2).
+            prefill.date?.let { minOf(it, clock.today()) } ?: clock.today(),
+            activity = prefill.activity,
+            circleId = circleId,
+        ),
+    )
     private val done = MutableStateFlow(false)
 
     init {

@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
@@ -49,6 +50,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -91,6 +95,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
@@ -105,6 +111,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
@@ -140,11 +147,31 @@ class TestGraph(
     val scheduler = FakeNotificationScheduler()
     val language = LanguageProvider { "en" }
     val linkRepo = FakePersonLinkRepository(seeded.second, friends = friendRepo)
+    val calendarDecisionRepo = FakeCalendarDecisionRepository()
+    val calendarReader = FakeCalendarReader()
+    val observeCalendarEvents = ObserveCalendarEventsUseCase(settingsRepo, calendarReader, clock)
+    val observeCalendarSuggestions =
+        ObserveCalendarSuggestionsUseCase(observeCalendarEvents, friendRepo, hangoutRepo, calendarDecisionRepo, settingsRepo, clock)
+    val decideCalendarSuggestion = DecideCalendarSuggestionUseCase(calendarDecisionRepo, clock)
+    val undoCalendarDecision = UndoCalendarDecisionUseCase(calendarDecisionRepo)
+    val observeCalendarSettings = ObserveCalendarSettingsUseCase(settingsRepo, calendarReader)
+    val setCalendarSuggestions = SetCalendarSuggestionsUseCase(settingsRepo, clock)
+    val setCalendarChosen = SetCalendarChosenUseCase(settingsRepo)
 
     /** The stored circles plus the built-in Family circle, as the app sees them. Writes go to [groupRepo]. */
     val circles = GroupsWithFamilyCircle(groupRepo, friendRepo) { "Family" }
-    val backupRepo =
-        FakeBackupRepository(friendRepo, hangoutRepo, reminderRepo, interactionRepo, ideaRepo, groupRepo, planRepo, settingsRepo, linkRepo)
+    val backupRepo = FakeBackupRepository(
+        friendRepo,
+        hangoutRepo,
+        reminderRepo,
+        interactionRepo,
+        ideaRepo,
+        groupRepo,
+        planRepo,
+        settingsRepo,
+        linkRepo,
+        calendarDecisionRepo,
+    )
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
     val observeFriendDetail =
@@ -158,7 +185,8 @@ class TestGraph(
     val quickEntryInbox = QuickEntryInbox()
     val observeShortcuts = ObserveShortcutsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo)
     val addLifeUpdate = AddLifeUpdateUseCase(friendRepo, clock, ids)
-    val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, linkRepo, clock)
+    val observeStoryBubbles =
+        ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, linkRepo, observeCalendarEvents, calendarDecisionRepo, clock)
     val addFriend = AddFriendUseCase(friendRepo, ids)
     val deleteFriend = DeleteFriendUseCase(friendRepo)
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
@@ -250,6 +278,8 @@ class TestGraph(
         planRepo,
         interactionRepo,
         linkRepo,
+        observeCalendarEvents,
+        calendarDecisionRepo,
         scheduler,
         FakeNotificationRenderer,
         clock,

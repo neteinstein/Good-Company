@@ -50,6 +50,12 @@ sealed interface NotificationContent {
         /** The notification actions' target: this occurrence. */
         val target: String get() = PlanOccurrence(planId, occurrence).encode()
     }
+
+    /**
+     * The day's calendar summary (D3): events with friends that ended, worth logging. [eventTitle] is set when there's
+     * just one ([total] = 1). Shown on this device only.
+     */
+    data class CalendarMeetups(val names: List<String>, val eventTitle: String?, val total: Int) : NotificationContent
 }
 
 /** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */

@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -65,6 +66,8 @@ data class AgendaUiState(
     val isDraftingWish: Boolean = false,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
+    /** Past meetups from the chosen calendars waiting to be logged (D3); the "From your calendar" card shows when > 0. */
+    val calendarCount: Int = 0,
 ) {
     /** Agenda grouped by day, preserving order. */
     val agendaByDay: List<Pair<LocalDate, List<AgendaItem>>>
@@ -93,6 +96,7 @@ class AgendaViewModel(
     private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
     private val clock: AppClock,
+    observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
 
@@ -100,10 +104,11 @@ class AgendaViewModel(
         observeAgenda(),
         observeReminders(),
         observeFriends(),
-        observeSettings(),
+        combine(observeSettings(), observeCalendarSuggestions()) { settings, calendar -> settings to calendar.size },
         local,
-    ) { agenda, reminders, friends, settings, ui ->
+    ) { agenda, reminders, friends, (settings, calendarCount), ui ->
         ui.copy(
+            calendarCount = calendarCount,
             hasAiKey = settings.hasAiKey,
             agenda = agenda,
             reminders = reminders,

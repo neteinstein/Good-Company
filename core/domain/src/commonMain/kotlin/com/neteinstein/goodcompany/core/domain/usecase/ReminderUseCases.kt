@@ -1,12 +1,15 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
@@ -110,6 +113,8 @@ class KeepNotificationsScheduledUseCase(
     private val plans: PlanRepository,
     private val interactions: InteractionRepository,
     private val links: PersonLinkRepository,
+    private val calendarEvents: ObserveCalendarEventsUseCase,
+    private val calendarDecisions: CalendarDecisionRepository,
     private val scheduler: NotificationScheduler,
     private val renderer: NotificationRenderer,
     private val clock: AppClock,
@@ -121,8 +126,15 @@ class KeepNotificationsScheduledUseCase(
             reminders.reminders,
             hangouts.hangouts,
             settings.settings,
-            combine(groups.groups, plans.plans, interactions.interactions, links.links, ::Inputs),
-        ) { fs, rs, hs, s, (gs, ps, ints, ls) ->
+            combine(
+                combine(groups.groups, plans.plans, interactions.interactions, links.links, ::Inputs),
+                combine(calendarEvents(), calendarDecisions.decisions, ::CalendarInputs),
+                ::Pair,
+            ),
+        ) { fs, rs, hs, s, (inputs, cal) ->
+            val (gs, ps, ints, ls) = inputs
+            // Never sent anywhere: the calendar only shapes local notifications on this device (D3).
+            val calendar = if (s.calendarSuggestions) CalendarSuggester.candidates(cal.events, fs, hs, cal.decisions, clock.timeZone) else emptyList()
             val planned = NotificationPlanner.plan(
                 fs,
                 rs,
@@ -136,6 +148,7 @@ class KeepNotificationsScheduledUseCase(
                 interactions = ints,
                 policy = NudgePolicy.from(s),
                 links = ls,
+                calendar = calendar,
             )
             planned to s.privateNotifications
         }
@@ -151,6 +164,9 @@ class KeepNotificationsScheduledUseCase(
         const val DEBOUNCE_MS = 500L
     }
 }
+
+/** The calendar events and answers the notification schedule reads (D3, on this device only). */
+private data class CalendarInputs(val events: List<CalendarEvent>, val decisions: List<CalendarDecision>)
 
 /** The circles, plans, interactions and links both the agenda and the notification schedule are built from. */
 private data class Inputs(
