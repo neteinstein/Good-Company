@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
@@ -37,8 +38,12 @@ data class Friend(
     val suggestEvents: Boolean = false,
     /** Contact disappeared from the address book; kept because it has app data. */
     val isOrphaned: Boolean = false,
-    /** Which circle a real friend belongs to — gives a default "meet every" cadence without per-friend setup. */
-    val circle: Circle? = null,
+    /**
+     * How close a real friend is (Inner / Close / Good friends) — gives a default "meet every" cadence without
+     * per-friend setup. Stored as "circle" (its name before decision D1), so backups and the database are unchanged.
+     */
+    @SerialName("circle")
+    val closeness: Closeness? = null,
     /** Catch-up nudges are paused until this date (inclusive). */
     val snoozedUntil: LocalDate? = null,
     /** Gift ideas (not yet given) and gift history (given), for them or their kids. */
@@ -144,7 +149,7 @@ data class ImportantEvent(
  * Dunbar-style tiers for real friends. Each has a default cadence (configurable in Settings) so reminders work
  * the moment someone is marked as a real friend. A per-friend "meet every" value still overrides it.
  */
-enum class Circle { INNER, CLOSE, GOOD }
+enum class Closeness { INNER, CLOSE, GOOD }
 
 /** A gift idea ([givenOn] null) or a gift already given. [forKidId] targets one of the friend's kids. */
 @Serializable

@@ -20,7 +20,7 @@
     <string name="label_big_day">ZI IMPORTANTĂ</string>
     <string name="label_reminder">MEMENTO</string>
     <string name="label_catch_up">DE REVĂZUT</string>
-    <string name="label_group">GRUP</string>
+    <string name="label_group">CERC</string>
     <string name="row_birthday">Ziua lui/ei %1$s</string>
     <string name="row_turns">Împlinește %1$d ani</string>
     <string name="row_loves">adoră %1$s</string>
@@ -36,9 +36,9 @@
     </plurals>
     <string name="row_never">Nicio întâlnire înregistrată încă</string>
     <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d zi de când ați fost toți împreună</item>
-        <item quantity="few">%1$s · %2$d zile de când ați fost toți împreună</item>
-        <item quantity="other">%1$s · %2$d de zile de când ați fost toți împreună</item>
+        <item quantity="one">%1$s · %2$d zi de când s-a întâlnit cercul</item>
+        <item quantity="few">%1$s · %2$d zile de când s-a întâlnit cercul</item>
+        <item quantity="other">%1$s · %2$d de zile de când s-a întâlnit cercul</item>
     </plurals>
     <string name="row_send_wishes">Trimite urări</string>
     <string name="row_we_met">Ne-am văzut</string>

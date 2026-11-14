@@ -93,7 +93,7 @@ object Relationships {
     data class GroupStatus(
         val group: FriendGroup,
         val members: List<Friend>,
-        /** Last hangout that included every member. */
+        /** Last time the circle met: the newest hangout with enough of its members ([meetupQuorum]). */
         val lastTogether: Instant?,
         val daysSince: Int?,
         /** Null when the group has no cadence. */
@@ -112,7 +112,7 @@ object Relationships {
         val byId = friends.associateBy { it.id }
         return groups.map { g ->
             val members = g.memberIds.mapNotNull(byId::get)
-            val last = if (g.memberIds.isEmpty()) null else hangoutsWithAll(hangouts, g.memberIds.toSet()).firstOrNull()?.at
+            val last = lastCircleMeetup(hangouts, g.memberIds.toSet())
             val lastDate = last?.toLocalDate(zone)
             val every = g.meetEveryDays?.takeIf { it > 0 }
             val baseDue = every?.let { lastDate?.plus(it, DateTimeUnit.DAY) ?: today }
@@ -125,6 +125,23 @@ object Relationships {
                 dueDate = baseDue?.let { d -> snooze?.let { maxOf(d, it.plus(1, DateTimeUnit.DAY)) } ?: d },
             )
         }
+    }
+
+    /**
+     * How many members a hangout needs to count as the circle meeting: everyone in a circle of one or two, otherwise
+     * at least half (and never fewer than two). A group check-in ticks only who came (F20), so "every member" would
+     * almost never happen in a big circle such as a choir.
+     */
+    fun meetupQuorum(memberCount: Int): Int = when {
+        memberCount <= 2 -> memberCount
+        else -> maxOf(2, (memberCount + 1) / 2)
+    }
+
+    /** The newest hangout that counts as a meetup of a circle with [memberIds] (see [meetupQuorum]). */
+    fun lastCircleMeetup(hangouts: List<Hangout>, memberIds: Set<FriendId>): Instant? {
+        if (memberIds.isEmpty()) return null
+        val quorum = meetupQuorum(memberIds.size)
+        return hangouts.filter { h -> h.friendIds.count { it in memberIds } >= quorum }.maxOfOrNull { it.at }
     }
 
     data class MonthStats(val meetups: Int, val friendsSeen: Int, val topPlace: String?)

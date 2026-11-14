@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ private data class Draft(
     val location: GeoPoint? = null,
     val activity: HangoutActivity? = null,
     val saving: Boolean = false,
+    val circleId: String? = null,
 )
 
 data class LogInteractionUiState(
@@ -41,25 +43,35 @@ data class LogInteractionUiState(
 )
 
 /**
- * The "Log" sheet behind `LogInteractionRoute(friendIds, type)`: [type] is a [LogKind] or an InteractionType name
- * (see [LogKind.parse]); unknown or null preselects "Met". Saving goes through [LogInteractionUseCase].
+ * The "Log" sheet behind `LogInteractionRoute(friendIds, type, circleId)`: [type] is a [LogKind] or an InteractionType
+ * name (see [LogKind.parse]); unknown or null preselects "Met". [circleId] opens on that circle's members, nobody ticked
+ * (F20: you tick who came). Saving goes through [LogInteractionUseCase].
  */
 class LogInteractionViewModel(
     friendIds: List<FriendId>,
     type: String?,
+    circleId: String?,
     observeFriends: ObserveFriendsUseCase,
     observeActivities: ObserveActivitiesUseCase,
+    observeCircles: ObserveGroupsUseCase,
     private val logInteraction: LogInteractionUseCase,
     private val currentLocation: GetCurrentLocationUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
-    private val draft = MutableStateFlow(Draft(LogKind.parse(type) ?: LogKind.MEETUP, friendIds.distinct(), clock.today()))
+    private val draft = MutableStateFlow(Draft(LogKind.parse(type) ?: LogKind.MEETUP, friendIds.distinct(), clock.today(), circleId = circleId))
     private val done = MutableStateFlow(false)
 
     private fun initial() = LogInteractionUiState(LogSheetState(kind = draft.value.kind, date = draft.value.date, today = clock.today()))
 
-    val state: StateFlow<LogInteractionUiState> = combine(observeFriends(), observeActivities(), draft, done) { friends, activities, d, isDone ->
+    val state: StateFlow<LogInteractionUiState> = combine(observeFriends(), observeActivities(), observeCircles(), draft, done) {
+            friends,
+            activities,
+            circles,
+            d,
+            isDone,
+        ->
         val byId = friends.associateBy { it.friend.id }
+        val circle = circles.firstOrNull { it.group.id == d.circleId }
         LogInteractionUiState(
             sheet = LogSheetState(
                 kind = d.kind,
@@ -73,6 +85,9 @@ class LogInteractionViewModel(
                 activity = d.activity,
                 activities = activities,
                 saving = d.saving,
+                circles = circles.map { it.group }.sortedBy { it.name.lowercase() },
+                circle = circle?.group,
+                circleMembers = circle?.members.orEmpty(),
             ),
             done = isDone,
         )
@@ -81,6 +96,11 @@ class LogInteractionViewModel(
     fun onKind(kind: LogKind) = draft.update { it.copy(kind = kind) }
 
     fun onPeople(ids: List<FriendId>) = draft.update { it.copy(people = ids.distinct()) }
+
+    /** Picks a circle (null = none): its members are listed unticked; whoever is already ticked stays ticked. */
+    fun onCircle(id: String?) = draft.update { it.copy(circleId = id) }
+
+    fun onTogglePerson(id: FriendId) = draft.update { if (id in it.people) it.copy(people = it.people - id) else it.copy(people = it.people + id) }
 
     /** Future days can't be picked; they fall back to today. */
     fun onDate(date: LocalDate) = draft.update { it.copy(date = minOf(date, clock.today())) }

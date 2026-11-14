@@ -89,7 +89,7 @@
     <string name="cadence_quarterly">Quarterly</string>
     <string name="cadence_off">Off</string>
 
-    <!-- Circles -->
+    <!-- Closeness (Inner / Close / Good friends). The keys keep their old "circle_" names. -->
     <string name="circle_inner">Inner circle</string>
     <string name="circle_close">Close friends</string>
     <string name="circle_good">Good friends</string>
@@ -157,12 +157,12 @@
         <item quantity="other">It’s been %1$d days — you wanted to meet %2$s.</item>
     </plurals>
     <string name="notif_meet_body_never">You haven’t logged a meetup yet — you wanted to meet %1$s.</string>
-    <string name="notif_group_title">%1$s: get everyone together</string>
+    <string name="notif_group_title">%1$s: time to get the circle together</string>
     <plurals name="notif_group_body">
-        <item quantity="one">Last time all together was %1$d day ago.</item>
-        <item quantity="other">Last time all together was %1$d days ago.</item>
+        <item quantity="one">The circle last met %1$d day ago.</item>
+        <item quantity="other">The circle last met %1$d days ago.</item>
     </plurals>
-    <string name="notif_group_body_never">You haven’t all met up yet.</string>
+    <string name="notif_group_body_never">The circle hasn’t met up yet.</string>
     <string name="notif_action_met">We met</string>
     <string name="notif_action_called">Called</string>
     <string name="notif_action_snooze_week">Next week</string>
@@ -207,8 +207,9 @@
     <string name="sample_gift_dino_lego">LEGO dinosaur set</string>
     <string name="sample_gift_board_game">Wingspan board game</string>
     <string name="sample_gift_ceramics">Ceramics class voucher</string>
-    <string name="sample_group_board_games">Board game night</string>
-    <string name="sample_group_surf">Surf crew</string>
+    <string name="sample_circle_board_games">Board game night</string>
+    <string name="sample_circle_surf">Surf crew</string>
+    <string name="sample_circle_choir">Choir</string>
     <string name="sample_taste_jazz">Jazz</string>
     <string name="sample_taste_sushi">Sushi</string>
     <string name="sample_taste_hiking">Hiking</string>
@@ -374,4 +375,13 @@
     <string name="sample_tl_message_surf">Sent the surf trip photos</string>
     <string name="sample_tl_journal_ana">Talked about the move to Porto and Leo’s school</string>
     <string name="sample_tl_journal_rui">He wants to run a race abroad next year</string>
+    <string name="circle_color_purple">Purple</string>
+    <string name="circle_color_blue">Blue</string>
+    <string name="circle_color_teal">Teal</string>
+    <string name="circle_color_amber">Amber</string>
+    <string name="circle_color_rust">Rust</string>
+    <string name="circle_color_magenta">Magenta</string>
+    <string name="circle_color_slate">Slate</string>
+    <string name="circle_tick_who_came">Tick who came from %1$s.</string>
+    <string name="log_title_circle">Log a %1$s meetup</string>
 </resources>

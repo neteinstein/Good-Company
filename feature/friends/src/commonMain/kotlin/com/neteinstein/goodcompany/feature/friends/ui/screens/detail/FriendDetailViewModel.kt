@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -40,8 +40,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -179,7 +180,7 @@ class FriendDetailViewModel(
     private val updateFriend: UpdateFriendUseCase,
     private val deleteFriend: DeleteFriendUseCase,
     private val setRealFriend: SetRealFriendUseCase,
-    private val setCircle: SetCircleUseCase,
+    private val setCloseness: SetClosenessUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val logCall: LogCallUseCase,
     private val generateTalkingPoints: GenerateTalkingPointsUseCase,
@@ -196,6 +197,7 @@ class FriendDetailViewModel(
     private val restorePlan: RestorePlanUseCase,
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
+    private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -228,8 +230,13 @@ class FriendDetailViewModel(
         viewModelScope.launch { setRealFriend.toggle(friendId) }
     }
 
-    fun onCircleChange(circle: Circle?) {
-        viewModelScope.launch { setCircle(friendId, circle) }
+    /** A circle pill: Home is filtered by that circle (the screen then opens Home). */
+    fun onOpenCircle(groupId: String) {
+        viewModelScope.launch { setHomeCircleFilter(groupId) }
+    }
+
+    fun onClosenessChange(closeness: Closeness?) {
+        viewModelScope.launch { setCloseness(friendId, closeness) }
     }
 
     fun onToggleBirthdayNotifications() = edit { it.copy(notifyBirthday = !it.notifyBirthday) }

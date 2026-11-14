@@ -111,7 +111,7 @@
     <string name="touch_title">Mantener el contacto</string>
     <string name="touch_last_together">Os visteis por última vez %1$s</string>
     <string name="touch_never">Aún no hay encuentros registrados</string>
-    <string name="touch_pick">Elige un círculo o cada cuánto queréis veros — te lo recordaremos.</string>
+    <string name="touch_pick">Elige la cercanía o cada cuánto quieres veros — te lo recordaremos.</string>
     <string name="touch_overdue">Ha pasado un tiempo — tu objetivo es %1$s.</string>
     <plurals name="touch_goal">
         <item quantity="one">Objetivo: %1$s · falta %2$d día</item>
@@ -119,10 +119,10 @@
     </plurals>
     <string name="touch_snoozed">Pospuesto hasta el %1$s</string>
     <string name="touch_unsnooze">Reanudar</string>
-    <string name="touch_circle">Círculo</string>
+    <string name="touch_circle">Cercanía</string>
     <string name="touch_circle_none">Ninguno</string>
     <string name="touch_custom">Ritmo propio</string>
-    <string name="touch_from_circle">Según su círculo: %1$s</string>
+    <string name="touch_from_circle">Por su cercanía: %1$s</string>
     <string name="touch_called">Le llamé</string>
     <string name="warmth_title">Calidez %1$d</string>
     <string name="warmth_hint_warm">Lleváis un buen ritmo.</string>
@@ -131,7 +131,7 @@
     <string name="contact_met">Os visteis %1$s</string>
     <string name="contact_call">Llamada %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Grupos</string>
+    <string name="groups_member_of">Círculos</string>
     <string name="tastes_title">Gustos</string>
     <string name="tastes_loves">Le encanta</string>
     <string name="tastes_loves_placeholder">Añade gustos — jazz, sushi, F1…</string>
@@ -404,4 +404,10 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Videollamada %1$s</string>
     <string name="story_last_talk_title">La última vez hablasteis de…</string>
+    <string name="circle_all">Todos</string>
+    <string name="circle_az">A–Z · %1$d en %2$s</string>
+    <string name="circle_last_together">Juntos por última vez %1$s</string>
+    <string name="circle_never_together">Aún no os habéis reunido</string>
+    <string name="circle_goal">objetivo: %1$s</string>
+    <string name="circle_log_meetup">Registrar quedada: %1$s</string>
 </resources>

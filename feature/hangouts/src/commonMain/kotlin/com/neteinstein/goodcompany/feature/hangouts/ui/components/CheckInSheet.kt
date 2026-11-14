@@ -44,7 +44,9 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Place
+import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.resources.circle_tick_who_came
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_clear_location
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
@@ -57,6 +59,7 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_use_location
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_where
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInDraft
 import org.jetbrains.compose.resources.stringResource
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -82,11 +85,16 @@ fun CheckInSheet(
             Text(stringResource(Res.string.sheet_title), style = MaterialTheme.typography.headlineSmall)
             if (groups.isNotEmpty()) {
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    groups.forEach { g ->
-                        val all = g.memberIds.isNotEmpty() && draft.selected.containsAll(g.memberIds)
-                        FilterChip(selected = all, onClick = { onPickGroup(g.id) }, label = { Text("${g.emoji} ${g.name}") })
-                    }
+                    groups.forEach { g -> CircleChip(g, selected = draft.circleId == g.id, onClick = { onPickGroup(g.id) }) }
                 }
+            }
+            val circle = groups.firstOrNull { it.id == draft.circleId }
+            if (circle != null) {
+                Text(
+                    stringResource(CoreRes.string.circle_tick_who_came, circle.name),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             OutlinedTextField(
                 value = draft.query,
@@ -98,9 +106,16 @@ fun CheckInSheet(
                 shape = MaterialTheme.shapes.extraLarge,
             )
             val q = draft.query.trim().lowercase()
+            // With a circle picked, its members come first (in the circle's order), then whoever else is ticked.
+            val members = circle?.memberIds.orEmpty()
             val shown = friends
-                .filter { it.id in draft.selected || q.isEmpty() || it.name.lowercase().contains(q) }
-                .sortedWith(compareByDescending<Friend> { it.id in draft.selected }.thenByDescending { it.isCloseFriend })
+                .filter { it.id in draft.selected || it.id in members || (circle == null && (q.isEmpty() || it.name.lowercase().contains(q))) }
+                .filter { q.isEmpty() || it.name.lowercase().contains(q) || it.id in draft.selected }
+                .sortedWith(
+                    compareBy<Friend> { members.indexOf(it.id).let { i -> if (i < 0) Int.MAX_VALUE else i } }
+                        .thenByDescending { it.id in draft.selected }
+                        .thenByDescending { it.isCloseFriend },
+                )
                 .take(MAX_CHIPS)
             FlowRow(
                 Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()),

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -10,7 +11,6 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.GroupDraft
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsMessage
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.PlanDraft
@@ -42,8 +42,8 @@ class HangoutsViewModelTest {
         g.observeGroups,
         g.observeOccasionMatches,
         g.savePlan,
-        g.saveGroup,
         g.deleteGroup,
+        g.restoreGroup,
         g.snooze,
         g.checkIn,
         g.deleteHangout,
@@ -122,42 +122,43 @@ class HangoutsViewModelTest {
     }
 
     @Test
-    fun groupsCanBeCreatedCheckedInSnoozedAndDeleted() = runViewModelTest {
+    fun circlesCheckInWithNobodyTicked_snoozeAndDeleteWithUndo() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onNewGroup()
-        vm.onGroupDraftChange(GroupDraft(name = "Surf", emoji = "🏄", members = setOf(ana), meetEveryDays = 14))
-        assertFalse(state.value.groupDraft!!.canSave)
-        vm.onSaveGroup()
-        assertTrue(state.value.groups.isEmpty())
-        vm.onGroupDraftChange(state.value.groupDraft!!.copy(members = setOf(ana, rui)))
-        vm.onSaveGroup()
-        assertNull(state.value.groupDraft)
-        assertEquals(HangoutsMessage.GroupSaved("Surf"), state.value.message)
-        val group = state.value.groups.single()
-        assertTrue(group.isOverdue(g.clock.today())) // last all together Feb 1, every 14 days
+        val group = g.saveGroup(null, "Surf", "🏄", CircleColor.TEAL, listOf(ana, rui), 14)
+        val status = state.value.groups.single()
+        assertTrue(status.isOverdue(g.clock.today())) // last together Feb 1, every 14 days
 
-        vm.onEditGroup(group.group.id)
-        assertEquals("Surf", state.value.groupDraft!!.name)
-        vm.onDismissGroup()
-
-        vm.onStartCheckIn()
-        vm.onPickDraftGroup(group.group.id)
-        assertEquals(setOf(ana, rui), state.value.draft!!.selected)
-        vm.onPickDraftGroup(group.group.id)
-        assertTrue(state.value.draft!!.selected.isEmpty())
+        // F20: picking a circle lists its members with nobody ticked; picking it again goes back to everyone.
+        vm.onStartCheckIn(ana)
+        vm.onPickDraftGroup(group.id)
+        assertEquals(group.id, state.value.draft!!.circleId)
+        assertEquals(setOf(ana), state.value.draft!!.selected) // whoever was ticked stays ticked
+        vm.onPickDraftGroup(group.id)
+        assertNull(state.value.draft!!.circleId)
         vm.onDismissCheckIn()
 
-        vm.onCheckInGroup(group.group.id)
-        assertEquals(setOf(ana, rui), state.value.draft!!.selected)
+        vm.onCheckInGroup(group.id)
+        assertEquals(group.id, state.value.draft!!.circleId)
+        assertTrue(state.value.draft!!.selected.isEmpty())
+        assertFalse(state.value.draft!!.canSave)
+        vm.onToggleDraftFriend(ana)
+        vm.onToggleDraftFriend(rui)
         vm.onSaveCheckIn()
         assertFalse(state.value.groups.single().isOverdue(g.clock.today()))
+        vm.onCheckInGroup("gone")
+        assertNull(state.value.draft)
 
-        vm.onSnoozeGroup(group.group.id, SnoozeOption.ONE_WEEK)
+        vm.onSnoozeGroup(group.id, SnoozeOption.ONE_WEEK)
         assertIs<HangoutsMessage.GroupSnoozed>(state.value.message)
-        vm.onDeleteGroup(group.group.id)
+        vm.onDeleteGroup(group.id)
         assertEquals(HangoutsMessage.GroupDeleted("Surf"), state.value.message)
         assertTrue(state.value.groups.isEmpty())
+        vm.onUndoDelete()
+        assertEquals(listOf("Surf"), state.value.groups.map { it.group.name })
+        assertEquals(CircleColor.TEAL, state.value.groups.single().group.color)
+        vm.onMessageShown()
+        assertNull(state.value.recentlyDeletedGroup)
     }
 
     @Test

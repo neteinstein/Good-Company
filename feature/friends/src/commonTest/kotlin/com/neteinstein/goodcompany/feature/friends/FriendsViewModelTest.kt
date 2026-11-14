@@ -1,10 +1,12 @@
 package com.neteinstein.goodcompany.feature.friends
 
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -28,12 +30,13 @@ import kotlin.test.assertTrue
 class FriendsViewModelTest {
     private val g = TestGraph(listOf(friend("bob"), friend("ana") { copy(likes = listOf("jazz")) }))
 
-    private fun vm() = FriendsViewModel(
+    private fun vm(g: TestGraph = this.g) = FriendsViewModel(
         g.observeFriends,
         g.observeAgenda,
         g.observeMeetups,
         g.observeSettings,
         g.observeStoryBubbles,
+        g.observeGroups,
         g.importPickedContacts,
         g.syncContacts,
         g.importContactsFile,
@@ -43,8 +46,59 @@ class FriendsViewModelTest {
         g.logCall,
         g.snooze,
         g.loadSampleData,
+        g.setHomeCircleFilter,
         g.clock,
     )
+
+    @Test
+    fun aCircleFiltersEveryHomeSection_andIsRemembered() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER, meetEveryDays = 7) },
+                friend("bob") { copy(isCloseFriend = true, meetEveryDays = 7) },
+                friend("zoe"),
+            ),
+        )
+        val ana = FriendId("ana")
+        val bob = FriendId("bob")
+        g.planRepo.upsert(Plan("p1", listOf(ana), "Lunch", g.clock.today(), createdAt = g.clock.now()))
+        g.planRepo.upsert(Plan("p2", listOf(bob), "Run", g.clock.today(), createdAt = g.clock.now()))
+        val choir = g.saveGroup(null, "Choir", "🎵", CircleColor.PURPLE, listOf(ana, FriendId("zoe")), 30)
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(listOf("Choir"), state.value.circles.map { it.group.name })
+        assertNull(state.value.circle)
+        assertEquals(listOf("Ana", "Bob"), state.value.friends.map { it.friend.name }) // real friends only
+        assertEquals(setOf("ana", "bob"), state.value.catchUp.map { it.friend.id.value }.toSet())
+
+        vm.onCircleFilter(choir.id)
+        assertEquals(choir.id, state.value.circle?.group?.id)
+        // The A–Z list shows every member, whatever their closeness; every other section only members too.
+        assertEquals(listOf("Ana", "Zoe"), state.value.friends.map { it.friend.name })
+        assertEquals(listOf("ana"), state.value.catchUp.map { it.friend.id.value })
+        assertEquals(listOf("ana"), state.value.closeFriends.map { it.id.value })
+        assertEquals(listOf("ana"), state.value.stories.map { it.friend.id.value })
+        assertTrue(state.value.upcoming.isNotEmpty())
+        assertTrue(state.value.upcoming.all { item -> ana in item.friendIds })
+        assertEquals(3, state.value.totalCount) // "Everyone" still counts everyone
+
+        // Remembered: a new Home (next launch) opens on the same circle.
+        assertEquals(choir.id, g.settingsRepo.settings.first().homeCircleFilter)
+        val again = collecting(vm(g).state)
+        assertEquals(choir.id, again.value.circle?.group?.id)
+
+        // Deleting the circle puts Home back on All.
+        g.deleteGroup(choir.id)
+        assertNull(state.value.circle)
+        assertNull(g.settingsRepo.settings.first().homeCircleFilter)
+        assertEquals(listOf("Ana", "Bob"), state.value.friends.map { it.friend.name })
+
+        // A filter that points nowhere (e.g. restored from another device) reads as All.
+        g.setHomeCircleFilter("gone")
+        assertNull(state.value.circle)
+        vm.onCircleFilter(null)
+        assertNull(g.settingsRepo.settings.first().homeCircleFilter)
+    }
 
     @Test
     fun showsWhoYouAreSeeingSoonAsStories() = runViewModelTest {
@@ -66,7 +120,7 @@ class FriendsViewModelTest {
         vm.onToggleClose(FriendId("bob"))
         assertEquals(FriendFilter.CLOSE, state.value.filter)
         assertEquals(listOf("Bob"), state.value.friends.map { it.friend.name })
-        assertEquals(Circle.CLOSE, g.friendRepo.get(FriendId("bob"))!!.circle)
+        assertEquals(Closeness.CLOSE, g.friendRepo.get(FriendId("bob"))!!.closeness)
     }
 
     @Test

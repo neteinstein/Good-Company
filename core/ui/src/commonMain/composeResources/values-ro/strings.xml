@@ -180,13 +180,13 @@
         <item quantity="other">Au trecut %1$d de zile — voiai să vă vedeți %2$s.</item>
     </plurals>
     <string name="notif_meet_body_never">Nu ai înregistrat încă nicio întâlnire — voiai să vă vedeți %1$s.</string>
-    <string name="notif_group_title">%1$s: adunați-vă cu toții</string>
+    <string name="notif_group_title">%1$s: e timpul să adunați cercul</string>
     <plurals name="notif_group_body">
-        <item quantity="one">Ultima dată ați fost toți împreună acum %1$d zi.</item>
-        <item quantity="few">Ultima dată ați fost toți împreună acum %1$d zile.</item>
-        <item quantity="other">Ultima dată ați fost toți împreună acum %1$d de zile.</item>
+        <item quantity="one">Cercul s-a întâlnit acum %1$d zi.</item>
+        <item quantity="few">Cercul s-a întâlnit acum %1$d zile.</item>
+        <item quantity="other">Cercul s-a întâlnit acum %1$d de zile.</item>
     </plurals>
-    <string name="notif_group_body_never">Încă nu v-ați adunat cu toții.</string>
+    <string name="notif_group_body_never">Cercul nu s-a întâlnit încă.</string>
     <string name="notif_action_met">Ne-am văzut</string>
     <string name="notif_action_called">Am sunat</string>
     <string name="notif_action_snooze_week">Săptămâna viitoare</string>
@@ -227,8 +227,9 @@
     <string name="sample_gift_dino_lego">Set LEGO cu dinozauri</string>
     <string name="sample_gift_board_game">Jocul de societate Wingspan</string>
     <string name="sample_gift_ceramics">Voucher pentru un curs de ceramică</string>
-    <string name="sample_group_board_games">Seara de jocuri</string>
-    <string name="sample_group_surf">Gașca de surf</string>
+    <string name="sample_circle_board_games">Seara de jocuri</string>
+    <string name="sample_circle_surf">Gașca de surf</string>
+    <string name="sample_circle_choir">Cor</string>
     <string name="sample_taste_jazz">Jazz</string>
     <string name="sample_taste_sushi">Sushi</string>
     <string name="sample_taste_hiking">Drumeții</string>
@@ -396,4 +397,13 @@
     <string name="sample_tl_message_surf">Am trimis pozele din excursia de surf</string>
     <string name="sample_tl_journal_ana">Am vorbit despre mutarea la Porto și despre școala lui Leo</string>
     <string name="sample_tl_journal_rui">Vrea să alerge o cursă în străinătate anul viitor</string>
+    <string name="circle_color_purple">Mov</string>
+    <string name="circle_color_blue">Albastru</string>
+    <string name="circle_color_teal">Verde-albăstrui</string>
+    <string name="circle_color_amber">Chihlimbar</string>
+    <string name="circle_color_rust">Rugină</string>
+    <string name="circle_color_magenta">Magenta</string>
+    <string name="circle_color_slate">Ardezie</string>
+    <string name="circle_tick_who_came">Bifează cine a venit din %1$s.</string>
+    <string name="log_title_circle">Notează o întâlnire: %1$s</string>
 </resources>

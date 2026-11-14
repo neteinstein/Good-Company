@@ -2,7 +2,7 @@ package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
@@ -49,7 +49,7 @@ class FriendDetailViewModelTest {
         g.updateFriend,
         g.deleteFriend,
         g.setRealFriend,
-        g.setCircle,
+        g.setCloseness,
         g.snooze,
         g.logCall,
         g.generateTalkingPoints,
@@ -66,6 +66,7 @@ class FriendDetailViewModelTest {
         g.restorePlan,
         g.addFeed,
         g.setFriendPhoto,
+        g.setHomeCircleFilter,
         g.clock,
         g.ids,
     )
@@ -84,7 +85,7 @@ class FriendDetailViewModelTest {
         vm.onBirthdayChange(LocalDate(1990, 5, 4))
         val f = state.value.detail!!.friend
         assertTrue(f.isCloseFriend && f.notifyBirthday)
-        assertEquals(Circle.CLOSE, f.circle)
+        assertEquals(Closeness.CLOSE, f.closeness)
         assertEquals(14, f.meetEveryDays)
         assertEquals(listOf("jazz"), f.likes)
         assertEquals(listOf("crowds"), f.dislikes)
@@ -227,7 +228,7 @@ class FriendDetailViewModelTest {
     fun circleSnoozeAndCallShapeTheCatchUpRhythm() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onCircleChange(Circle.INNER)
+        vm.onClosenessChange(Closeness.INNER)
         assertEquals(7, state.value.detail!!.cadenceDays)
         assertTrue(state.value.detail!!.friend.isCloseFriend)
         vm.onSnooze(SnoozeOption.ONE_WEEK)

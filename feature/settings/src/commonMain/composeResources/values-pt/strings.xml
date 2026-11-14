@@ -9,8 +9,8 @@
     <string name="dynamic_color">Cores do fundo</string>
     <string name="dynamic_color_hint">Cor dinâmica Material You</string>
     <string name="language_note">O idioma segue o do dispositivo: English, Português, Español, Français ou Română.</string>
-    <string name="circles">Círculos</string>
-    <string name="circles_hint">Com que frequência queres ver cada círculo. O ritmo próprio na página de um amigo tem prioridade.</string>
+    <string name="circles">Proximidade</string>
+    <string name="circles_hint">Com que frequência queres estar com as pessoas de cada proximidade. O ritmo definido na página de um amigo tem prioridade.</string>
     <string name="ai">Ideias com IA</string>
     <string name="ai_hint">Usa o Claude com a tua própria chave da API da Anthropic (console.anthropic.com). A chave fica neste dispositivo e só é enviada para api.anthropic.com, com os gostos e excertos de conversa dos amigos envolvidos. O uso é cobrado na tua conta.</string>
     <string name="home_area">A tua cidade ou zona</string>
@@ -28,7 +28,7 @@
     <string name="sample_loaded">Amigos de exemplo carregados</string>
     <string name="sample">Amigos de exemplo</string>
     <string name="sample_remove_hint">Remove-os — os teus amigos ficam intactos.</string>
-    <string name="sample_add_hint">Junta um círculo de demonstração para explorar tudo.</string>
+    <string name="sample_add_hint">Adiciona amigos de demonstração para explorar todas as funcionalidades.</string>
     <string name="import_vcf">Importar ficheiro de contactos</string>
     <string name="import_vcf_hint">Uma exportação .vcf do Google Contactos, iCloud, Outlook ou do telemóvel.</string>
     <string name="import">Importar</string>

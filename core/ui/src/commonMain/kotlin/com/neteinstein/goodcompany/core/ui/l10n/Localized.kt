@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.core.ui.l10n
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.intl.Locale
 import com.neteinstein.goodcompany.core.domain.model.AiFailure
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
@@ -295,11 +295,11 @@ suspend fun aiErrorText(error: Throwable): String = getString(
 )
 
 @Composable
-fun circleLabel(circle: Circle, short: Boolean = false): String = stringResource(
-    when (circle) {
-        Circle.INNER -> if (short) Res.string.circle_inner_short else Res.string.circle_inner
-        Circle.CLOSE -> if (short) Res.string.circle_close_short else Res.string.circle_close
-        Circle.GOOD -> if (short) Res.string.circle_good_short else Res.string.circle_good
+fun closenessLabel(closeness: Closeness, short: Boolean = false): String = stringResource(
+    when (closeness) {
+        Closeness.INNER -> if (short) Res.string.circle_inner_short else Res.string.circle_inner
+        Closeness.CLOSE -> if (short) Res.string.circle_close_short else Res.string.circle_close
+        Closeness.GOOD -> if (short) Res.string.circle_good_short else Res.string.circle_good
     },
 )
 

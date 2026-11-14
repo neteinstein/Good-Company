@@ -27,7 +27,7 @@
     <string name="notifications_body">Un petit rappel pour les anniversaires, les grands jours et quand ça fait un moment.</string>
     <string name="allow">Autoriser</string>
     <string name="looking_title">Juste pour voir ?</string>
-    <string name="looking_body">Explore avec un cercle d’amis d’exemple — retire-le quand tu veux dans les Réglages.</string>
+    <string name="looking_body">Explore avec des amis d’exemple — retire-les quand tu veux depuis les Réglages.</string>
     <string name="explore_sample">Explorer avec des amis d’exemple</string>
     <string name="private_title">Privé par conception</string>
     <string name="private_body">Pas de compte, pas de serveur. Les SMS ne sont jamais lus.</string>

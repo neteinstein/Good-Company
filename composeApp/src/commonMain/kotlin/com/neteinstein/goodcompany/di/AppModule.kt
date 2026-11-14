@@ -82,6 +82,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
@@ -103,6 +104,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
@@ -112,8 +114,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetCircleUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
@@ -138,6 +141,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFrien
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -240,7 +244,7 @@ val appModule = module {
     factoryOf(::RemoveSampleDataUseCase)
     factoryOf(::HasSampleDataUseCase)
     factoryOf(::SetRealFriendUseCase)
-    factoryOf(::SetCircleUseCase)
+    factoryOf(::SetClosenessUseCase)
     factoryOf(::SnoozeCatchUpUseCase)
     factoryOf(::LogCallUseCase)
     factoryOf(::HandleNotificationActionUseCase)
@@ -252,6 +256,9 @@ val appModule = module {
     factoryOf(::ObserveGroupsUseCase)
     factoryOf(::SaveGroupUseCase)
     factoryOf(::DeleteGroupUseCase)
+    factoryOf(::RestoreGroupUseCase)
+    factoryOf(::NextCircleColorUseCase)
+    factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
     factoryOf(::BackupToDriveUseCase)
     factoryOf(::FetchDriveBackupUseCase)
@@ -288,7 +295,7 @@ val appModule = module {
             updateFriend = get(),
             deleteFriend = get(),
             setRealFriend = get(),
-            setCircle = get(),
+            setCloseness = get(),
             snooze = get(),
             logCall = get(),
             generateTalkingPoints = get(),
@@ -305,12 +312,16 @@ val appModule = module {
             restorePlan = get(),
             addFeed = get(),
             setPhoto = get(),
+            setHomeCircleFilter = get(),
             clock = get(),
             ids = get(),
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
-    viewModel { (ids: List<FriendId>, type: String?) -> LogInteractionViewModel(ids, type, get(), get(), get(), get(), get()) }
+    viewModel { (ids: List<FriendId>, type: String?, circleId: String?) ->
+        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get())
+    }
+    viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::AgendaViewModel)
     viewModelOf(::IdeasViewModel)

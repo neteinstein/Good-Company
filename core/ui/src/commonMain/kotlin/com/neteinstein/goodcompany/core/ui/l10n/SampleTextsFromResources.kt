@@ -9,6 +9,9 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_ana_notes
 import com.neteinstein.goodcompany.core.ui.resources.sample_beagle
 import com.neteinstein.goodcompany.core.ui.resources.sample_beatriz_dinner
 import com.neteinstein.goodcompany.core.ui.resources.sample_board_games_note
+import com.neteinstein.goodcompany.core.ui.resources.sample_circle_board_games
+import com.neteinstein.goodcompany.core.ui.resources.sample_circle_choir
+import com.neteinstein.goodcompany.core.ui.resources.sample_circle_surf
 import com.neteinstein.goodcompany.core.ui.resources.sample_field_football_club
 import com.neteinstein.goodcompany.core.ui.resources.sample_field_shoe_size
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_board_game
@@ -16,8 +19,6 @@ import com.neteinstein.goodcompany.core.ui.resources.sample_gift_ceramics
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_dino_lego
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_murakami
 import com.neteinstein.goodcompany.core.ui.resources.sample_gift_vinyl
-import com.neteinstein.goodcompany.core.ui.resources.sample_group_board_games
-import com.neteinstein.goodcompany.core.ui.resources.sample_group_surf
 import com.neteinstein.goodcompany.core.ui.resources.sample_idea_ceramics_body
 import com.neteinstein.goodcompany.core.ui.resources.sample_idea_ceramics_title
 import com.neteinstein.goodcompany.core.ui.resources.sample_idea_f1_body
@@ -117,8 +118,9 @@ object SampleTextsFromResources : SampleTextsProvider {
         giftDinoLego = getString(Res.string.sample_gift_dino_lego),
         giftBoardGame = getString(Res.string.sample_gift_board_game),
         giftCeramicsClass = getString(Res.string.sample_gift_ceramics),
-        groupBoardGames = getString(Res.string.sample_group_board_games),
-        groupSurf = getString(Res.string.sample_group_surf),
+        groupBoardGames = getString(Res.string.sample_circle_board_games),
+        groupSurf = getString(Res.string.sample_circle_surf),
+        groupChoir = getString(Res.string.sample_circle_choir),
         jazz = getString(Res.string.sample_taste_jazz),
         sushi = getString(Res.string.sample_taste_sushi),
         hiking = getString(Res.string.sample_taste_hiking),

@@ -21,26 +21,20 @@
     <string name="meet_due">Due %1$s · %2$s</string>
     <string name="meet_met">Met</string>
 
-    <string name="groups_title">Your groups</string>
-    <string name="groups_new">New group</string>
-    <string name="groups_hint">Board-game crew, surf buddies, the old team… Save a group to check in with everyone at once and get a nudge when it’s been a while.</string>
-    <string name="group_last_together">All together %1$s</string>
-    <string name="group_never">Not all together yet</string>
+    <string name="groups_title">Your circles</string>
+    <string name="groups_new">New circle</string>
+    <string name="groups_hint">Choir, futsal, the old team… A circle filters Home, logs a meetup with everyone at once and, if you like, reminds you when it’s been a while.</string>
+    <string name="group_last_together">Together %1$s</string>
+    <string name="group_never">Not together yet</string>
     <string name="group_overdue">Time for a get-together · %1$s</string>
     <string name="group_due">Due %1$s · %2$s</string>
     <string name="group_snoozed">Snoozed until %1$s</string>
     <string name="group_met">We met</string>
     <string name="group_edit">Edit</string>
-    <string name="group_delete">Delete group</string>
+    <string name="group_delete">Delete circle</string>
     <string name="group_snooze_week">Snooze a week</string>
     <string name="group_snooze_weekend">Remind me Saturday</string>
     <string name="group_more">More</string>
-    <string name="group_editor_new">New group</string>
-    <string name="group_editor_edit">Edit group</string>
-    <string name="group_name">Group name</string>
-    <string name="group_emoji">Emoji</string>
-    <string name="group_members">Members (at least two)</string>
-    <string name="group_rhythm">Meet up</string>
 
     <string name="review_card_title">Your %1$d in friendship</string>
     <string name="review_card_body">Who you saw most, your favourite spots and your longest streak — ready to share.</string>
@@ -64,7 +58,6 @@
 
     <string name="sheet_title">I’m with…</string>
     <string name="sheet_find">Find a friend</string>
-    <string name="sheet_groups">Groups</string>
     <string name="sheet_where">Where? (optional)</string>
     <string name="sheet_locating">Finding you…</string>
     <string name="sheet_clear_location">Clear location</string>
@@ -77,7 +70,6 @@
     <string name="msg_location_unavailable">Couldn’t get your location right now.</string>
     <string name="msg_logged_with">Logged time with %1$s ✨</string>
     <string name="msg_memory_deleted">Memory deleted</string>
-    <string name="msg_group_saved">Saved %1$s</string>
     <string name="msg_group_deleted">Deleted %1$s</string>
     <string name="msg_group_snoozed">%1$s snoozed until %2$s</string>
     <string name="free_title">Who’s free for…?</string>
@@ -89,4 +81,19 @@
         <item quantity="one">Last seen %1$d day ago</item>
         <item quantity="other">Last seen %1$d days ago</item>
     </plurals>
+    <string name="circle_editor_new">New circle</string>
+    <string name="circle_editor_edit">Edit circle</string>
+    <string name="circle_name">Name</string>
+    <string name="circle_emoji">Emoji</string>
+    <string name="circle_colour">Colour</string>
+    <string name="circle_remind">Remind me when we haven’t met</string>
+    <string name="circle_remind_on">Goal: %1$s</string>
+    <string name="circle_remind_off">Off: this circle never sends a reminder</string>
+    <plurals name="circle_members">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+    <string name="circle_members_empty">Add at least one friend.</string>
+    <string name="circle_closeness_none">No closeness set</string>
+    <string name="circle_closeness_note">Closeness is shown, not edited, here: it belongs to the person. A friend’s own rhythm never changes because of a circle.</string>
 </resources>

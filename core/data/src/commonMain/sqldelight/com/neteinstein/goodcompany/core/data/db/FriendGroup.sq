@@ -1,4 +1,5 @@
--- Saved groups ("Football crew") and their members. A friend can be in several groups.
+-- Circles (decision D1; once "saved groups", hence the table names) and their members. A friend can be in several.
+-- color is a CircleColor name; meet_every_days is the optional "remind me when we haven't met" goal.
 
 CREATE TABLE friend_group (
     id TEXT NOT NULL PRIMARY KEY,
@@ -6,7 +7,8 @@ CREATE TABLE friend_group (
     name TEXT NOT NULL,
     emoji TEXT NOT NULL,
     meet_every_days INTEGER,
-    snoozed_until TEXT
+    snoozed_until TEXT,
+    color TEXT NOT NULL DEFAULT 'PURPLE'
 );
 
 CREATE TABLE group_member (
@@ -28,12 +30,13 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM friend_group;
 
 upsert:
-INSERT INTO friend_group (id, position, name, emoji, meet_every_days, snoozed_until) VALUES ?
+INSERT INTO friend_group (id, position, name, emoji, meet_every_days, snoozed_until, color) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     name = excluded.name,
     emoji = excluded.emoji,
     meet_every_days = excluded.meet_every_days,
-    snoozed_until = excluded.snoozed_until;
+    snoozed_until = excluded.snoozed_until,
+    color = excluded.color;
 
 deleteMembers:
 DELETE FROM group_member WHERE group_id = ?;

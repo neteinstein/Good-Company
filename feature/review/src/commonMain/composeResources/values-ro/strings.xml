@@ -47,9 +47,9 @@
     </plurals>
     <string name="new_title">Fețe noi</string>
     <plurals name="new_body">
-        <item quantity="one">%1$d om s-a alăturat cercului tău</item>
-        <item quantity="few">%1$d oameni s-au alăturat cercului tău</item>
-        <item quantity="other">%1$d de oameni s-au alăturat cercului tău</item>
+        <item quantity="one">%1$d chip nou printre prietenii tăi</item>
+        <item quantity="few">%1$d chipuri noi printre prietenii tăi</item>
+        <item quantity="other">%1$d de chipuri noi printre prietenii tăi</item>
     </plurals>
     <plurals name="reminders_done">
         <item quantity="one">…și ai bifat %1$d memento ✅</item>

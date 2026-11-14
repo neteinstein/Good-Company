@@ -16,8 +16,9 @@ fun LogInteractionScreen(
     friendIds: List<FriendId>,
     type: String?,
     onClose: () -> Unit,
-    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type") {
-        parametersOf(friendIds, type)
+    circleId: String? = null,
+    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId") {
+        parametersOf(friendIds, type, circleId)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -33,6 +34,8 @@ fun LogInteractionScreen(
             onUseLocation = viewModel::onUseLocation,
             onClearLocation = viewModel::onClearLocation,
             onActivity = viewModel::onActivity,
+            onCircle = viewModel::onCircle,
+            onTogglePerson = viewModel::onTogglePerson,
             onSave = viewModel::onSave,
             onDismiss = onClose,
         ),

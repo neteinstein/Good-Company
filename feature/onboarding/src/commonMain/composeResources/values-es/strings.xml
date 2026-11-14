@@ -27,7 +27,7 @@
     <string name="notifications_body">Un aviso en los cumpleaños, los días importantes y cuando haga tiempo.</string>
     <string name="allow">Permitir</string>
     <string name="looking_title">¿Solo echando un vistazo?</string>
-    <string name="looking_body">Explora con un círculo de amigos de ejemplo — quítalo cuando quieras desde Ajustes.</string>
+    <string name="looking_body">Explora con amigos de ejemplo — puedes quitarlos cuando quieras desde Ajustes.</string>
     <string name="explore_sample">Explorar con amigos de ejemplo</string>
     <string name="private_title">Privado por diseño</string>
     <string name="private_body">Sin cuenta, sin servidor. Los SMS nunca se leen.</string>

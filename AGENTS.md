@@ -44,10 +44,10 @@ core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by eve
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
 feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI),
                       friend timeline, the "Log" sheet destination
-feature/hangouts/     "I'm with…" check-in, history, "last time with these people", catch-up rules, "Who's free for…?"
+feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?"
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
-feature/settings/     Theme, circles, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
+feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
 feature/review/       "Your year in friendship" (story cards + share)
 iosApp/               Hand-authored Xcode project: SwiftUI shell + Share Extension + "Who's next" WidgetKit widget
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
@@ -214,7 +214,7 @@ Seen in practice:
     (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
     (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an
     **Undo** snackbar; primary actions get haptics.
-14. **Sample data & launch options.** `SampleData` (domain) builds a demo circle whose ids all start with `sample-`
+14. **Sample data & launch options.** `SampleData` (domain) builds a demo set of friends whose ids all start with `sample-`
     (Load/Remove use cases; Settings → Your data). The web build reads URL options (`?demo&tab=…&friend=…&theme=…`)
     through `LaunchOptions`. It exists for demos and the screenshot pipeline; mobile builds ignore it.
 15. **Screenshots are real renders.** After a visible UI change, refresh `docs/screenshots/` with the
@@ -312,6 +312,21 @@ Seen in practice:
     `InteractionType` name). `Timeline.build` merges hangouts, interactions, journal, "What's new" and gifts given;
     the full list is `FriendTimelineRoute`, and the WhatsApp import lives in its overflow menu. Migration `4.sqm` rebuilt
     `interaction` with ids (old rows get their automatic id and a legacy source) and added the journal and hangout activity.
+27. **Closeness and circles (issue #22, D1).** Two separate ideas, mind the names. **Closeness** is the enum `Closeness`
+    (Inner / Close / Good friends, one per friend, `Friend.closeness`): it used to be `Circle` / `Friend.circle`, and it is
+    still stored as `circle` (`@SerialName("circle")`, the `friend.circle` column, the `circle_*` string keys and the
+    `*CircleDays` settings), so backups and the database didn't change. **Circles** are the free-form groups: the UI says
+    "circle", the code and tables keep `FriendGroup` / `friend_group` / `group_member` / `*Group*` use cases. A circle has an
+    emoji, a `CircleColor` (seven names; light/dark values only in `:core:ui` `circlePalette`, never ad-hoc colours) and
+    1+ members; `meetEveryDays` is the optional "Remind me when we haven't met" (null = off, the default for new circles)
+    and never touches a member's own rhythm. A circle "met" when a hangout had enough of its members
+    (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). Home is filtered by
+    `AppSettings.homeCircleFilter` (in `user_preferences`; `DeleteGroupUseCase` resets it, an unknown id reads as All):
+    every section shows only members, and the A–Z list all of them whatever their closeness. Choosing a circle anywhere
+    (check-in sheet, Log sheet, "Log a <circle> meetup" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
+    members with **nobody ticked** (F20). The editor is `CircleEditorRoute(id?)` in `:feature:hangouts`; delete has Undo
+    (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
+    `user_preferences.home_circle_filter`.
 
 ## Skills
 

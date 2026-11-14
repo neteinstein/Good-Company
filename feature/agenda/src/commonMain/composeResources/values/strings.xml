@@ -20,7 +20,7 @@
     <string name="label_big_day">BIG DAY</string>
     <string name="label_reminder">REMINDER</string>
     <string name="label_catch_up">CATCH UP</string>
-    <string name="label_group">GROUP</string>
+    <string name="label_group">CIRCLE</string>
     <string name="row_birthday">%1$s’s birthday</string>
     <string name="row_turns">Turns %1$d</string>
     <string name="row_loves">loves %1$s</string>
@@ -35,8 +35,8 @@
     </plurals>
     <string name="row_never">No meetup logged yet</string>
     <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d day since you were all together</item>
-        <item quantity="other">%1$s · %2$d days since you were all together</item>
+        <item quantity="one">%1$s · %2$d day since the circle met</item>
+        <item quantity="other">%1$s · %2$d days since the circle met</item>
     </plurals>
     <string name="row_send_wishes">Send wishes</string>
     <string name="row_we_met">We met</string>

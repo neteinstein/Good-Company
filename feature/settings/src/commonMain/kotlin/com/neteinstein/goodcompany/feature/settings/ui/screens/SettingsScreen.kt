@@ -80,14 +80,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
-import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
+import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
@@ -283,7 +283,7 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
             onHomeAreaChange = viewModel::onHomeAreaChange,
             onReminderHourChange = viewModel::onReminderHourChange,
-            onCircleDaysChange = viewModel::onCircleDaysChange,
+            onClosenessDaysChange = viewModel::onClosenessDaysChange,
             onImportContactsFile = pickVcf,
             onEnableNotifications = requestNotifications,
             onLoadSampleData = viewModel::onLoadSampleData,
@@ -339,7 +339,7 @@ data class SettingsActions(
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
     val onHomeAreaChange: (String) -> Unit = {},
     val onReminderHourChange: (Int) -> Unit = {},
-    val onCircleDaysChange: (Circle, Int) -> Unit = { _, _ -> },
+    val onClosenessDaysChange: (Closeness, Int) -> Unit = { _, _ -> },
     val onImportContactsFile: () -> Unit = {},
     val onEnableNotifications: () -> Unit = {},
     val onLoadSampleData: () -> Unit = {},
@@ -428,12 +428,12 @@ fun SettingsContent(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 listOf(
-                    Circle.INNER to s.innerCircleDays,
-                    Circle.CLOSE to s.closeCircleDays,
-                    Circle.GOOD to s.goodFriendsDays,
-                ).forEach { (circle, days) ->
+                    Closeness.INNER to s.innerCircleDays,
+                    Closeness.CLOSE to s.closeCircleDays,
+                    Closeness.GOOD to s.goodFriendsDays,
+                ).forEach { (closeness, days) ->
                     Text(
-                        circleLabel(circle),
+                        closenessLabel(closeness),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(start = 16.dp, top = 10.dp),
                     )
@@ -442,7 +442,7 @@ fun SettingsContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         (CIRCLE_OPTIONS + days).distinct().sorted().forEach { d ->
-                            FilterChip(days == d, { actions.onCircleDaysChange(circle, d) }, label = { Text(everyNDays(d)) })
+                            FilterChip(days == d, { actions.onClosenessDaysChange(closeness, d) }, label = { Text(everyNDays(d)) })
                         }
                     }
                 }

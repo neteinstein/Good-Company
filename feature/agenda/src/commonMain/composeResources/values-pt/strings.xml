@@ -19,7 +19,7 @@
     <string name="label_big_day">DIA IMPORTANTE</string>
     <string name="label_reminder">LEMBRETE</string>
     <string name="label_catch_up">PÔR A CONVERSA EM DIA</string>
-    <string name="label_group">GRUPO</string>
+    <string name="label_group">CÍRCULO</string>
     <string name="row_birthday">Aniversário de %1$s</string>
     <string name="row_turns">Faz %1$d anos</string>
     <string name="row_loves">adora %1$s</string>
@@ -34,8 +34,8 @@
     </plurals>
     <string name="row_never">Ainda sem encontros registados</string>
     <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d dia desde que estiveram todos juntos</item>
-        <item quantity="other">%1$s · %2$d dias desde que estiveram todos juntos</item>
+        <item quantity="one">%1$s · %2$d dia desde que o círculo se juntou</item>
+        <item quantity="other">%1$s · %2$d dias desde que o círculo se juntou</item>
     </plurals>
     <string name="row_send_wishes">Dar os parabéns</string>
     <string name="row_we_met">Estivemos juntos</string>

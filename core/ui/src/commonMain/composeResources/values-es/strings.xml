@@ -171,12 +171,12 @@
         <item quantity="other">Han pasado %1$d días — querías veros %2$s.</item>
     </plurals>
     <string name="notif_meet_body_never">Aún no has registrado ningún encuentro — querías veros %1$s.</string>
-    <string name="notif_group_title">%1$s: reunid a todos</string>
+    <string name="notif_group_title">%1$s: toca reunir al círculo</string>
     <plurals name="notif_group_body">
-        <item quantity="one">La última vez que estuvisteis todos juntos fue hace %1$d día.</item>
-        <item quantity="other">La última vez que estuvisteis todos juntos fue hace %1$d días.</item>
+        <item quantity="one">El círculo se reunió hace %1$d día.</item>
+        <item quantity="other">El círculo se reunió hace %1$d días.</item>
     </plurals>
-    <string name="notif_group_body_never">Todavía no os habéis juntado todos.</string>
+    <string name="notif_group_body_never">El círculo aún no se ha reunido.</string>
     <string name="notif_action_met">Nos vimos</string>
     <string name="notif_action_called">Le llamé</string>
     <string name="notif_action_snooze_week">La semana que viene</string>
@@ -217,8 +217,9 @@
     <string name="sample_gift_dino_lego">Set de LEGO de dinosaurios</string>
     <string name="sample_gift_board_game">Juego de mesa Wingspan</string>
     <string name="sample_gift_ceramics">Bono para una clase de cerámica</string>
-    <string name="sample_group_board_games">Noche de juegos</string>
-    <string name="sample_group_surf">Equipo surfero</string>
+    <string name="sample_circle_board_games">Noche de juegos</string>
+    <string name="sample_circle_surf">Equipo surfero</string>
+    <string name="sample_circle_choir">Coro</string>
     <string name="sample_taste_jazz">Jazz</string>
     <string name="sample_taste_sushi">Sushi</string>
     <string name="sample_taste_hiking">Senderismo</string>
@@ -384,4 +385,13 @@
     <string name="sample_tl_message_surf">Mandé las fotos del viaje de surf</string>
     <string name="sample_tl_journal_ana">Hablamos de la mudanza a Oporto y del colegio de Leo</string>
     <string name="sample_tl_journal_rui">Quiere correr una carrera en el extranjero el año que viene</string>
+    <string name="circle_color_purple">Morado</string>
+    <string name="circle_color_blue">Azul</string>
+    <string name="circle_color_teal">Verde azulado</string>
+    <string name="circle_color_amber">Ámbar</string>
+    <string name="circle_color_rust">Óxido</string>
+    <string name="circle_color_magenta">Magenta</string>
+    <string name="circle_color_slate">Pizarra</string>
+    <string name="circle_tick_who_came">Marca quién vino de %1$s.</string>
+    <string name="log_title_circle">Registrar quedada: %1$s</string>
 </resources>

@@ -113,7 +113,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -129,6 +129,7 @@ import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
+import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.HeartBurst
@@ -155,7 +156,7 @@ import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
-import com.neteinstein.goodcompany.core.ui.l10n.circleLabel
+import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
@@ -355,6 +356,8 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
+    onOpenCircle: (String) -> Unit = {},
+    onEditCircle: (String) -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -382,7 +385,7 @@ fun FriendDetailScreen(
             onRemoveFeed = viewModel::onRemoveFeed,
             onFeedPostToNews = viewModel::onFeedPostToNews,
             onToggleClose = viewModel::onToggleClose,
-            onCircleChange = viewModel::onCircleChange,
+            onClosenessChange = viewModel::onClosenessChange,
             onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
             onToggleSuggestEvents = viewModel::onToggleSuggestEvents,
             onMeetEveryChange = viewModel::onMeetEveryChange,
@@ -410,6 +413,11 @@ fun FriendDetailScreen(
             onPersonaliseWish = viewModel::onPersonaliseWish,
             onOpenTimeline = onOpenTimeline,
             onLog = onLog,
+            onOpenCircle = { id ->
+                viewModel.onOpenCircle(id)
+                onOpenCircle(id)
+            },
+            onEditCircle = onEditCircle,
             onAddPhoto = pickPhoto,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
@@ -454,7 +462,7 @@ data class FriendDetailActions(
     val onRemoveFeed: (String) -> Unit = {},
     val onFeedPostToNews: (String) -> Unit = {},
     val onToggleClose: () -> Unit = {},
-    val onCircleChange: (Circle?) -> Unit = {},
+    val onClosenessChange: (Closeness?) -> Unit = {},
     val onToggleBirthdayNotifications: () -> Unit = {},
     val onToggleSuggestEvents: () -> Unit = {},
     val onMeetEveryChange: (Int?) -> Unit = {},
@@ -482,6 +490,9 @@ data class FriendDetailActions(
     val onPersonaliseWish: () -> Unit = {},
     val onOpenTimeline: () -> Unit = {},
     val onLog: () -> Unit = {},
+    /** A circle pill: Home filtered by that circle. A long-press edits the circle. */
+    val onOpenCircle: (String) -> Unit = {},
+    val onEditCircle: (String) -> Unit = {},
     /** Offered only while the friend has no photo. */
     val onAddPhoto: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
@@ -1190,9 +1201,9 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
             Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilterChip(f.circle == null, { actions.onCircleChange(null) }, label = { Text(stringResource(Res.string.touch_circle_none)) })
-            Circle.entries.forEach { c ->
-                FilterChip(f.circle == c, { actions.onCircleChange(c) }, label = { Text(circleLabel(c)) })
+            FilterChip(f.closeness == null, { actions.onClosenessChange(null) }, label = { Text(stringResource(Res.string.touch_circle_none)) })
+            Closeness.entries.forEach { c ->
+                FilterChip(f.closeness == c, { actions.onClosenessChange(c) }, label = { Text(closenessLabel(c)) })
             }
         }
         Label(stringResource(Res.string.touch_custom), Icons.Rounded.Schedule)
@@ -1205,7 +1216,7 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
                 FilterChip(f.meetEveryDays == d, { actions.onMeetEveryChange(d) }, label = { Text(everyNDays(d)) })
             }
         }
-        if (detail.cadenceSource == CadenceRules.Source.CIRCLE && goal != null) {
+        if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
             Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
         }
         if (f.isCloseFriend && state.showWarmth) {
@@ -1230,7 +1241,9 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
         if (detail.groups.isNotEmpty()) {
             Label(stringResource(Res.string.groups_member_of), Icons.Rounded.Diversity3)
             FlowRow(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                detail.groups.forEach { g -> InfoPill("${g.emoji} ${g.name}") }
+                detail.groups.forEach { g ->
+                    CircleChip(g, selected = true, onClick = { actions.onOpenCircle(g.id) }, onLongClick = { actions.onEditCircle(g.id) })
+                }
             }
         }
         LastContactRow(detail.lastContactByType, state)
@@ -1438,7 +1451,7 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                 Box(Modifier.clip(CircleShape).clickable(onClick = onEditBirthday)) {
                     InfoPill(birthdayText, icon = if (f.birthday != null) Icons.Rounded.Cake else Icons.Rounded.Edit, emphasized = f.birthday != null)
                 }
-                f.circle?.takeIf { f.isCloseFriend }?.let { InfoPill(circleLabel(it), icon = Icons.Rounded.Groups) }
+                f.closeness?.takeIf { f.isCloseFriend }?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
                 state.detail?.lastSeen?.let {
                     InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
                 }

@@ -70,6 +70,7 @@ import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
@@ -115,7 +116,6 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.meet_never
 import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_body
 import com.neteinstein.goodcompany.feature.hangouts.resources.memories_empty_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_deleted
-import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_saved
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_snoozed
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_denied
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_location_unavailable
@@ -137,7 +137,6 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.times_total
 import com.neteinstein.goodcompany.feature.hangouts.resources.title
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInHero
 import com.neteinstein.goodcompany.feature.hangouts.ui.components.CheckInSheet
-import com.neteinstein.goodcompany.feature.hangouts.ui.components.GroupEditorDialog
 import kotlinx.datetime.Month
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
@@ -147,7 +146,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 @Composable
-fun HangoutsScreen(onOpenFriend: (FriendId) -> Unit, onOpenYearReview: (Int) -> Unit, viewModel: HangoutsViewModel = koinViewModel()) {
+fun HangoutsScreen(
+    onOpenFriend: (FriendId) -> Unit,
+    onOpenYearReview: (Int) -> Unit,
+    onEditCircle: (String?) -> Unit = {},
+    viewModel: HangoutsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val requestLocation = rememberPermissionRequester(AppPermission.LOCATION, viewModel::onLocationPermissionResult)
     HangoutsContent(
@@ -160,8 +164,8 @@ fun HangoutsScreen(onOpenFriend: (FriendId) -> Unit, onOpenYearReview: (Int) -> 
             onClearFilter = viewModel::onClearFilter,
             onDeleteHangout = viewModel::onDeleteHangout,
             onUndoDelete = viewModel::onUndoDelete,
-            onNewGroup = viewModel::onNewGroup,
-            onEditGroup = viewModel::onEditGroup,
+            onNewGroup = { onEditCircle(null) },
+            onEditGroup = onEditCircle,
             onCheckInGroup = viewModel::onCheckInGroup,
             onSnoozeGroup = viewModel::onSnoozeGroup,
             onDeleteGroup = viewModel::onDeleteGroup,
@@ -196,16 +200,6 @@ fun HangoutsScreen(onOpenFriend: (FriendId) -> Unit, onOpenYearReview: (Int) -> 
             onDismiss = viewModel::onDismissCheckIn,
         )
     }
-    state.groupDraft?.let { draft ->
-        GroupEditorDialog(
-            draft = draft,
-            friends = state.friends,
-            onChange = viewModel::onGroupDraftChange,
-            onSave = viewModel::onSaveGroup,
-            onDelete = draft.id?.let { id -> { viewModel.onDeleteGroup(id) } },
-            onDismiss = viewModel::onDismissGroup,
-        )
-    }
 }
 
 data class HangoutsActions(
@@ -232,7 +226,6 @@ suspend fun HangoutsMessage.text(): String = when (this) {
     HangoutsMessage.LocationUnavailable -> getString(Res.string.msg_location_unavailable)
     is HangoutsMessage.LoggedWith -> getString(Res.string.msg_logged_with, names.joinToString())
     HangoutsMessage.MemoryDeleted -> getString(Res.string.msg_memory_deleted)
-    is HangoutsMessage.GroupSaved -> getString(Res.string.msg_group_saved, name)
     is HangoutsMessage.GroupDeleted -> getString(Res.string.msg_group_deleted, name)
     is HangoutsMessage.GroupSnoozed -> getString(Res.string.msg_group_snoozed, name, until.shortLabelText())
     HangoutsMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
@@ -244,7 +237,16 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message.text(), actionLabel = if (state.recentlyDeleted != null) undo else null)
+        val result = snackbar.showSnackbar(
+            message.text(),
+            actionLabel = if (state.recentlyDeleted != null ||
+                state.recentlyDeletedGroup != null
+            ) {
+                undo
+            } else {
+                null
+            },
+        )
         if (result == SnackbarResult.ActionPerformed) actions.onUndoDelete()
         actions.onMessageShown()
     }
@@ -529,7 +531,7 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
     ) {
         Row(Modifier.padding(start = 12.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(48.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                Modifier.size(48.dp).background(circlePalette(g.color).container, CircleShape),
                 contentAlignment = Alignment.Center,
             ) { Text(g.emoji, style = MaterialTheme.typography.titleLarge) }
             Spacer(Modifier.width(12.dp))

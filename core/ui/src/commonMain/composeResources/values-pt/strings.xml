@@ -171,12 +171,12 @@
         <item quantity="other">Já passaram %1$d dias — querias encontrar-te %2$s.</item>
     </plurals>
     <string name="notif_meet_body_never">Ainda não registaste nenhum encontro — querias encontrar-te %1$s.</string>
-    <string name="notif_group_title">%1$s: juntem-se todos</string>
+    <string name="notif_group_title">%1$s: está na hora de juntar o círculo</string>
     <plurals name="notif_group_body">
-        <item quantity="one">A última vez que estiveram todos juntos foi há %1$d dia.</item>
-        <item quantity="other">A última vez que estiveram todos juntos foi há %1$d dias.</item>
+        <item quantity="one">O círculo juntou-se há %1$d dia.</item>
+        <item quantity="other">O círculo juntou-se há %1$d dias.</item>
     </plurals>
-    <string name="notif_group_body_never">Ainda não estiveram todos juntos.</string>
+    <string name="notif_group_body_never">O círculo ainda não se juntou.</string>
     <string name="notif_action_met">Estivemos juntos</string>
     <string name="notif_action_called">Liguei</string>
     <string name="notif_action_snooze_week">Próxima semana</string>
@@ -217,8 +217,9 @@
     <string name="sample_gift_dino_lego">Conjunto LEGO de dinossauros</string>
     <string name="sample_gift_board_game">Jogo de tabuleiro Wingspan</string>
     <string name="sample_gift_ceramics">Vale para aula de cerâmica</string>
-    <string name="sample_group_board_games">Noite de jogos</string>
-    <string name="sample_group_surf">Malta do surf</string>
+    <string name="sample_circle_board_games">Noite de jogos</string>
+    <string name="sample_circle_surf">Malta do surf</string>
+    <string name="sample_circle_choir">Coro</string>
     <string name="sample_taste_jazz">Jazz</string>
     <string name="sample_taste_sushi">Sushi</string>
     <string name="sample_taste_hiking">Caminhadas</string>
@@ -384,4 +385,13 @@
     <string name="sample_tl_message_surf">Enviei as fotos da viagem de surf</string>
     <string name="sample_tl_journal_ana">Falámos da mudança para o Porto e da escola do Leo</string>
     <string name="sample_tl_journal_rui">Quer correr uma prova no estrangeiro no próximo ano</string>
+    <string name="circle_color_purple">Roxo</string>
+    <string name="circle_color_blue">Azul</string>
+    <string name="circle_color_teal">Verde-azulado</string>
+    <string name="circle_color_amber">Âmbar</string>
+    <string name="circle_color_rust">Ferrugem</string>
+    <string name="circle_color_magenta">Magenta</string>
+    <string name="circle_color_slate">Ardósia</string>
+    <string name="circle_tick_who_came">Marca quem veio de %1$s.</string>
+    <string name="log_title_circle">Registar encontro: %1$s</string>
 </resources>

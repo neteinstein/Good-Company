@@ -19,7 +19,7 @@ data class AppSettings(
     val reminderHour: Int = 9,
     /** First-run onboarding completed (or skipped). */
     val onboardingDone: Boolean = false,
-    /** Default "meet every N days" per circle. */
+    /** Default "meet every N days" per closeness (Inner / Close / Good friends; stored under their old "circle" names). */
     val innerCircleDays: Int = 7,
     val closeCircleDays: Int = 30,
     val goodFriendsDays: Int = 90,
@@ -37,6 +37,8 @@ data class AppSettings(
     val lastOpenedAt: Instant? = null,
     /** When the last copy was saved to the user's Google Drive (device-specific; kept on restore). */
     val lastDriveBackupAt: Instant? = null,
+    /** The circle ([FriendGroup] id) Home is filtered by; null = All. Remembered between launches. */
+    val homeCircleFilter: String? = null,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }
