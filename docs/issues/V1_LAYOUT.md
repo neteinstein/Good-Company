@@ -5,22 +5,23 @@ network map are hidden at the end of lists or in the ⋮ menu. Mockups: [`docs/m
 (approved by the owner, with Settings kept as one scrolling page and a photo of you added). Decisions dated 2026-11-14
 in [`PRODUCT_BRIEF.md`](../PRODUCT_BRIEF.md). Base: `origin/main` @ `9b4d10e`. Issue bodies are in English, like #35–#47.
 
-**Created as issues (2026-11-14):** N1 #65 · N2 #66 · N3 #67 · N4 #68 · N5 #69 · N6 #70 · N7 #71. The issues are the live copy.
+**Created as issues (2026-11-14):** N0 #72 · N1 #65 · N2 #66 · N3 #67 · N4 #68 · N5 #69 · N6 #70 · N7 #71. The issues are the live copy.
 
 ## Order and dependencies
 
 ```
+N0  Enum columns without a CHECK                                             first of the migrations  (migration 16)
 N1  Four tabs: Today · People · Circles · Plans; Settings from the header   first (navigation shell + Today)
 N2  People tab: one list by closeness, "Your people" on top                   after N1; builds on #62
 N3  Circles tab and Plans tab                                                 after N1
-N4  Never-logged people aren't overdue; "When did you last see…?" card        independent      (migration 16)
-N5  Four closeness levels, none called "circle"                               independent      (migration 17)
+N4  Never-logged people aren't overdue; "When did you last see…?" card        independent      (migration 17)
+N5  Four closeness levels, none called "circle"                               after N0 (#72)   (no migration)
 N6  Add and remove circles from a person's page                              independent      (no migration)
 N7  Your photo                                                                independent      (migration 18)
 ```
 
-**Migrations.** N4, N5 and N7 each add a `.sqm` migration (the last on `main` is `15.sqm`). They have their numbers up
-front (16, 17, 18); merge them in that order, or renumber with the `refresh-branch` skill.
+**Migrations.** N0, N4 and N7 each add a `.sqm` migration (the last on `main` is `15.sqm`). They have their numbers up
+front (16, 17, 18); merge them in that order, or renumber with the `refresh-branch` skill. After N0, N5 needs none.
 **Overlaps.** N1–N3 move screens between feature modules and `AppNavHost`; run them one after another. #62 (Add friend
 in ⋮), #63 (snackbars) and #64 (pickers save on choice) come first or alongside: N2 builds on #62, and N4–N6 use the
 #63 Undo helper and the #64 save-on-choice rule.
@@ -33,6 +34,39 @@ in ⋮), #63 (snackbars) and #64 (pickers save on choice) come first or alongsid
 3. **"Who's free for…?"** goes to Plans; **"Last time with…"** and **Memories** go to Circles.
 
 ---
+
+## N0 (#72) · Enum columns without a CHECK: new states need no migration
+
+SQLite has no ENUM type: the enum columns are already `TEXT`, but most carry `CHECK (col IN (...))`. SQLite can't change
+a `CHECK` in place, so every new value has meant rebuilding the whole table (`3.sqm` `friend_taste`, `4.sqm`
+`interaction`, `14.sqm` `person_link`), and N5's new closeness level would be the fourth. Some columns already have no
+`CHECK` and read unknown values as null (`friend.preferred_channel`, `hangout.activity`, `plan.repeat_unit`).
+
+### What to build
+- Migration `16.sqm` rebuilds the tables whose **enum-value** `CHECK`s go: `friend.circle`, `friend_taste.kind`,
+  `friend_occasion.occasion`, `gift.occasion`, `relative.relation`, `interaction.type`, `interaction.source`,
+  `idea.kind`, `plan.status`, `attachment.kind`, `attachment.photo_platform`, `attachment.interaction_type`,
+  `person_link.type`, `gift_list.occasion`, `gift_list_item.status`, `calendar_decision.kind` (check the `.sq` files for
+  the full list). Columns, indexes, foreign keys, defaults and data stay as they are. `0/1` flags and ranges (month,
+  day, hour, `id = 1`) **keep** their `CHECK`s.
+- **Careful with `friend`:** most tables reference it with `ON DELETE CASCADE`. Rebuild it the way the earlier
+  rebuilds did (create `friend_new`, copy, drop, rename) with foreign keys off for the migration, and test that no child
+  row is lost.
+- Mappers stop using `valueOf` (8 places in `db/*Tables.kt`) and use `entries.firstOrNull { it.name == … }` with a
+  fallback chosen per column and written next to it, e.g. closeness → not set; taste kind → like; occasion → none;
+  relation → other; plan status → planned; gift item status → to buy; interaction type/source and attachment kind →
+  the row is skipped when read (and kept in the table). A newer backup restored into an older build then degrades
+  instead of failing.
+- Update the `Friend.sq` header comment ("enums TEXT with a CHECK"), the `persistence-change` skill (a new enum value
+  needs no migration; the "wider CHECK" row becomes history) and the `area-people` skill (`LinkType` note).
+- Run `generate…GoodCompanyDatabaseSchema` and commit `databases/16.db`.
+
+### Tests
+Migration test from 15 (every row survives; an unknown value can now be inserted); a mapper test per column for an
+unknown value → its fallback; `RepositoryContract` still passes for SQL and JSON.
+
+### Done when
+Adding a value to any of these enums needs no migration, and no unknown stored value can crash a read.
 
 ## N1 (#65) · Four tabs: Today · People · Circles · Plans, Settings from the header
 
@@ -116,7 +150,7 @@ Today `Relationships.meetupStatuses` makes someone with no meetup due today, so 
 - A **last-seen card** on Today asks about them one at a time: *This week · This month · A few months ago · Over a year*,
   plus **I don't know** (rhythm starts today) and **Not now** (card hidden until tomorrow). Each answer moves to the
   next person and shows an Undo snackbar (#63).
-- The answer is stored as an **approximate last-seen date** on the person (migration `16.sqm`, in backups). It only
+- The answer is stored as an **approximate last-seen date** on the person (migration `17.sqm`, in backups). It only
   starts the rhythm: it is not a hangout, doesn't count for warmth or stats and doesn't show on the timeline. A real
   meetup later wins.
 - Only people with a rhythm are asked (not Acquaintances, N5).
@@ -135,8 +169,8 @@ A fresh import shows no wall of overdue people, and answering the card puts each
 ### What to build
 - Levels **Inner · Close · Friends · Acquaintances** (PT: Íntimos · Próximos · Amigos · Conhecidos; also ES, FR, RO).
   "Circle" then only means the groups you make. Rename the `circle_inner/close/good` strings' text (keys may stay).
-- New `Closeness.ACQUAINTANCE`. Stored values stay (`INNER`, `CLOSE`, `GOOD`) plus `ACQUAINTANCE`. The `friend.circle`
-  column has `CHECK (circle IN ('INNER','CLOSE','GOOD'))`, so migration `17.sqm` rebuilds the table with the new value.
+- New `Closeness.ACQUAINTANCE`. Stored values stay (`INNER`, `CLOSE`, `GOOD`) plus `ACQUAINTANCE`. **No migration**:
+  N0 removes the `CHECK` on `friend.circle` (do N0 first).
 - Acquaintances: no catch-up rhythm by default (a default can be set in Settings), birthdays on (F10), not "real
   friends" (open point 2), not asked by the last-seen card (N4).
 - The closeness picker saves on choice (#64). Settings' closeness card lists four levels.
