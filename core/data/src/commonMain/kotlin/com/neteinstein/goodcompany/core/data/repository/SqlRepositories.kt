@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.data.db.HANGOUT_TABLES
 import com.neteinstein.goodcompany.core.data.db.IDEA_TABLES
 import com.neteinstein.goodcompany.core.data.db.INTERACTION_TABLES
 import com.neteinstein.goodcompany.core.data.db.JOURNAL_TABLES
+import com.neteinstein.goodcompany.core.data.db.LINK_TABLES
 import com.neteinstein.goodcompany.core.data.db.MESSAGE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLACE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
@@ -23,6 +24,7 @@ import com.neteinstein.goodcompany.core.data.db.readHangouts
 import com.neteinstein.goodcompany.core.data.db.readIdeas
 import com.neteinstein.goodcompany.core.data.db.readInteractions
 import com.neteinstein.goodcompany.core.data.db.readJournal
+import com.neteinstein.goodcompany.core.data.db.readLinks
 import com.neteinstein.goodcompany.core.data.db.readMessages
 import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
@@ -36,6 +38,7 @@ import com.neteinstein.goodcompany.core.data.db.writeHangout
 import com.neteinstein.goodcompany.core.data.db.writeIdea
 import com.neteinstein.goodcompany.core.data.db.writeInteraction
 import com.neteinstein.goodcompany.core.data.db.writeJournal
+import com.neteinstein.goodcompany.core.data.db.writeLink
 import com.neteinstein.goodcompany.core.data.db.writeMessage
 import com.neteinstein.goodcompany.core.data.db.writePlace
 import com.neteinstein.goodcompany.core.data.db.writePlan
@@ -47,7 +50,6 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
-import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
@@ -60,6 +62,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
@@ -70,6 +73,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -77,7 +81,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -100,21 +103,27 @@ import kotlin.time.Instant
 class SqlFriendRepository(
     private val db: AppDatabase,
     private val contacts: ContactsSource,
-    private val writer: ContactsWriter = ContactsWriter.None,
+    writer: ContactsWriter = ContactsWriter.None,
 ) : FriendRepository {
+    private val mirror = ContactMirror(writer)
+
     override val friends: Flow<List<Friend>> = db.observe(*FRIEND_TABLES) { it.readFriends() }
 
     override suspend fun get(id: FriendId): Friend? = db.access { it.readFriends() }.firstOrNull { it.id == id }
 
     override suspend fun upsert(friend: Friend) {
-        val previous = db.transaction { database ->
+        val (before, after) = db.transaction { database ->
             val friends = database.readFriends()
             val index = friends.indexOfFirst { it.id == friend.id }
             val position = if (index >= 0) index.toLong() else database.nextFriendPosition()
             database.writeFriend(friend, position)
-            friends.getOrNull(index)
+            val links = database.readLinks()
+            val people = friends.associateBy { it.id }
+            ContactMirror.Snapshot(people, links) to ContactMirror.Snapshot(people + (friend.id to friend), links)
         }
-        mirrorToContact(previous, friend)
+        // Their own contact, and the people linked to them (whose relation rows show this friend's name).
+        val linked = after.links.mapNotNullTo(mutableSetOf(friend.id)) { it.otherThan(friend.id) }
+        mirror.sync(linked, before, after)
     }
 
     // Leaves their contact alone: removing a friend from the app never takes data off it (owner decision 2026-11-08).
@@ -127,13 +136,13 @@ class SqlFriendRepository(
         val records = contacts.readContacts(withPhotos = true)
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
         if (records.isNotEmpty()) {
-            val merged = db.transaction { database ->
+            val (merged, links) = db.transaction { database ->
                 val current = database.readFriends()
                 val next = ContactMerger.merge(current, records, addNew = contacts.importsNewContacts)
                 database.replaceFriends(current, next)
-                next
+                next to database.readLinks()
             }
-            backfillContacts(merged)
+            mirror.backfill(merged, links)
         }
         return records.size
     }
@@ -142,33 +151,6 @@ class SqlFriendRepository(
 
     override suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto> =
         if (contactIds.isEmpty()) emptyMap() else contacts.readPhotos(contactIds)
-
-    private suspend fun mirrorToContact(previous: Friend?, friend: Friend) {
-        val contactId = friend.contactId ?: return
-        val card = ContactCard.from(friend)
-        val before = previous?.takeIf { it.contactId == contactId }?.let(ContactCard::from)
-        if (card == before) return
-        if (!card.isEmpty) safely { writer.write(contactId, friend.id, card) }
-    }
-
-    /** See [FriendRepositoryImpl]: details saved before the contact was writable still need to reach it. */
-    private suspend fun backfillContacts(friends: List<Friend>) {
-        friends.forEach { friend ->
-            val contactId = friend.contactId ?: return@forEach
-            val card = ContactCard.from(friend)
-            if (!friend.isOrphaned && card.hasExtras) safely { writer.write(contactId, friend.id, card) }
-        }
-    }
-
-    private suspend fun safely(block: suspend () -> Unit) {
-        try {
-            block()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // Mirroring is best effort: the app's own copy is already saved.
-        }
-    }
 }
 
 /**
@@ -323,6 +305,31 @@ class SqlGroupRepository(private val db: AppDatabase) : GroupRepository {
     }
 }
 
+/** Links between people (issue #39). Every change also refreshes both people's contacts (sideload build). */
+class SqlPersonLinkRepository(
+    private val db: AppDatabase,
+    writer: ContactsWriter = ContactsWriter.None,
+) : PersonLinkRepository {
+    private val mirror = ContactMirror(writer)
+
+    override val links: Flow<List<PersonLink>> = db.observe(*LINK_TABLES) { it.readLinks() }
+
+    override suspend fun upsert(link: PersonLink) = change(link.id) { it.writeLink(link) }
+
+    override suspend fun delete(id: String) = change(id) { it.personLinkQueries.delete(id) }
+
+    private suspend fun change(id: String, write: suspend (GoodCompanyDatabase) -> Unit) {
+        val (before, after) = db.transaction { database ->
+            val people = database.readFriends().associateBy { it.id }
+            val links = database.readLinks()
+            write(database)
+            ContactMirror.Snapshot(people, links) to ContactMirror.Snapshot(people, database.readLinks())
+        }
+        val touched = (before.links + after.links).filter { it.id == id }.flatMap { listOf(it.from, it.to) }.toSet()
+        mirror.sync(touched, before, after)
+    }
+}
+
 class SqlPlanRepository(private val db: AppDatabase) : PlanRepository {
     override val plans: Flow<List<Plan>> = db.observe(*PLAN_TABLES) { it.readPlans() }
 
@@ -422,6 +429,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
         val backup = db.transaction { database ->
             Backup(
                 friends = database.readFriends(),
+                links = database.readLinks(),
                 hangouts = database.readHangouts(),
                 reminders = database.readReminders(),
                 interactions = database.readInteractions(),
@@ -460,6 +468,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     interactionQueries.deleteAllJournal()
     attachmentQueries.deleteAllAttachments()
     namedPlaceQueries.deleteAllPlaces()
+    personLinkQueries.deleteAll()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
@@ -472,5 +481,6 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     backup.messages.forEach { writeMessage(it) }
     backup.journal.forEach { writeJournal(it) }
     backup.attachments.forEach { writeAttachment(it) } // after friends and circles, which they belong to
+    backup.links.forEach { writeLink(it) } // after friends, which they link
     writePreferences(backup.settings)
 }

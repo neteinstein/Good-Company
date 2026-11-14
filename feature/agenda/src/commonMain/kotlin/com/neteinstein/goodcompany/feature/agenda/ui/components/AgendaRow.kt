@@ -43,6 +43,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
 import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import com.neteinstein.goodcompany.core.ui.resources.plan_no
@@ -127,6 +129,14 @@ fun AgendaRow(
                 item.relative.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
             ).joinToString(" · "),
             item.friend,
+        )
+        is AgendaItem.Anniversary -> Spec(
+            Icons.Rounded.Favorite,
+            colors.primary,
+            stringResource(Res.string.label_big_day),
+            anniversaryTitle(item.first.name.substringBefore(' '), item.second.name.substringBefore(' ')),
+            item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }.orEmpty(),
+            item.first,
         )
         is AgendaItem.FriendEvent -> Spec(
             Icons.Rounded.Favorite,

@@ -30,6 +30,10 @@ CREATE TABLE friend (
     introduced_by_friend_id TEXT,
     introduced_by_name TEXT,
     preferred_channel TEXT,
+    -- Issue #39 (F6, F18): what they are to you (a LinkType name) and the words used for them (a Pronouns name).
+    -- No CHECK, like preferred_channel: unknown values read as null in the mapper.
+    relation_to_me TEXT,
+    pronouns TEXT,
     CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
 );
 
@@ -264,7 +268,8 @@ upsert:
 INSERT INTO friend (
     id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
     notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
-    job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel
+    job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel,
+    relation_to_me, pronouns
 ) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     position = excluded.position,
@@ -289,7 +294,9 @@ ON CONFLICT (id) DO UPDATE SET
     met_on = excluded.met_on,
     introduced_by_friend_id = excluded.introduced_by_friend_id,
     introduced_by_name = excluded.introduced_by_name,
-    preferred_channel = excluded.preferred_channel;
+    preferred_channel = excluded.preferred_channel,
+    relation_to_me = excluded.relation_to_me,
+    pronouns = excluded.pronouns;
 
 delete:
 DELETE FROM friend WHERE id = ?;

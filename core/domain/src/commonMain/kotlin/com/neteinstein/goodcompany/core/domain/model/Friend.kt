@@ -86,7 +86,14 @@ data class Friend(
     val interestsAddedAt: Map<String, Instant> = emptyMap(),
     /** "More about <name>": free label/value pairs ("Shoe size" → "38"). */
     val customFields: List<CustomField> = emptyList(),
+    /** What they are to you ("your sister", F6), separate from links between people. A family one puts them in Family. */
+    val relationToMe: LinkType? = null,
+    /** Which words describe them ("sister" / "brother" / "sibling"); null = the neutral word (decision F18). */
+    val pronouns: Pronouns? = null,
 ) {
+    /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
+    val isFamily: Boolean get() = relationToMe?.isFamily == true
+
     val initials: String
         get() = name.split(' ', '-')
             .filter { it.isNotBlank() }

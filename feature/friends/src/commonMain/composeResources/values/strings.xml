@@ -482,4 +482,31 @@
     <string name="saved_add_photo">Add a photo</string>
     <string name="saved_empty">Share a chat, a link or a photo to Good Company and it shows up here.</string>
     <string name="saved_removed">Removed from saved</string>
+    <!-- Links between people, relationship to me, "Add as a person" (issue #39). -->
+    <string name="links_other_title">Other links</string>
+    <string name="link_add">Link to a person</string>
+    <string name="link_sheet_title">Link %1$s to someone</string>
+    <string name="link_sheet_edit_title">%1$s and %2$s</string>
+    <string name="link_search">Who?</string>
+    <string name="link_no_people">Add another person first.</string>
+    <string name="link_change">Change</string>
+    <string name="link_is_of">%1$s is %2$s’s…</string>
+    <string name="link_words_for">Words for %1$s</string>
+    <string name="link_since">Together since</string>
+    <string name="link_since_value">Together since · %1$s</string>
+    <string name="link_ended">Ended</string>
+    <string name="link_ended_value">Ended · %1$s</string>
+    <string name="link_remind_anniversary">Remind me of their anniversary</string>
+    <string name="link_preview">%1$s’s page will show %2$s · %3$s.</string>
+    <string name="link_save">Save link</string>
+    <string name="link_remove">Remove link</string>
+    <string name="msg_link_removed">Link removed</string>
+    <string name="link_row_since">together since %1$s</string>
+    <string name="link_row_years">%1$d–%2$d</string>
+    <string name="relation_to_me_title">%1$s is your…</string>
+    <string name="relation_to_me_add">Related to you?</string>
+    <string name="relation_to_me_family_note">Everyone you mark as family is in your Family circle automatically.</string>
+    <string name="relation_to_me_clear">Not related</string>
+    <string name="add_as_person">Add as a person</string>
+    <string name="msg_added_as_person">%1$s now has their own page</string>
 </resources>

@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
+import com.neteinstein.goodcompany.core.testing.FakePersonLinkRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
@@ -48,6 +49,7 @@ class AppStartupTest {
             FakeGroupRepository(),
             FakePlanRepository(),
             interactions,
+            FakePersonLinkRepository(),
             scheduler,
             FakeNotificationRenderer,
             clock,

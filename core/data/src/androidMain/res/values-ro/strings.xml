@@ -14,4 +14,13 @@
     <string name="contact_drinks">Băuturi</string>
     <string name="contact_interests">Interese</string>
     <string name="contact_relation_sibling">Frate/soră</string>
+    <!-- Links between people written onto the contact (issue #39). -->
+    <string name="contact_relation_grandparent">Bunic sau bunică</string>
+    <string name="contact_relation_grandchild">Nepot sau nepoată</string>
+    <string name="contact_relation_aunt_uncle">Unchi sau mătușă</string>
+    <string name="contact_relation_niece_nephew">Nepot sau nepoată</string>
+    <string name="contact_relation_cousin">Văr sau verișoară</string>
+    <string name="contact_relation_in_law">Rudă prin alianță</string>
+    <string name="contact_relation_ex">Fost partener sau parteneră</string>
+    <string name="contact_relation_colleague">Coleg sau colegă</string>
 </resources>

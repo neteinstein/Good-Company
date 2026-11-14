@@ -24,6 +24,12 @@ interface NotificationRenderer {
     suspend fun privateText(): String
 }
 
+/** Names of the built-in circles, in the UI language (the domain never formats text). */
+fun interface BuiltInCircleNames {
+    /** The Family circle (F6). */
+    suspend fun family(): String
+}
+
 /** The user's UI language as a BCP-47 tag (e.g. "pt-PT"), used to ask the AI to answer in it. */
 fun interface LanguageProvider {
     fun languageTag(): String

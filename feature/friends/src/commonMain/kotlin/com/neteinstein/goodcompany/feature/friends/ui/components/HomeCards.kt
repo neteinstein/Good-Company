@@ -60,8 +60,11 @@ import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -115,6 +118,13 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
                 item.turning?.let { stringResource(Res.string.card_turns, it) },
                 item.relative.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
             ).joinToString(" · ").ifBlank { item.friend.name },
+        )
+        is AgendaItem.Anniversary -> Spec(
+            item.first,
+            Icons.Rounded.Favorite,
+            anniversaryTitle(item.first.name.substringBefore(' '), item.second.name.substringBefore(' ')),
+            item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }
+                ?: stringResource(CoreRes.string.anniversary_body),
         )
         is AgendaItem.FriendEvent -> Spec(
             item.friend,

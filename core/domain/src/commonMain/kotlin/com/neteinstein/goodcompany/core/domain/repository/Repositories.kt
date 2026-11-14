@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
@@ -133,6 +134,19 @@ interface GroupRepository {
     val groups: Flow<List<FriendGroup>>
 
     suspend fun upsert(group: FriendGroup)
+
+    suspend fun delete(id: String)
+}
+
+/**
+ * Links between people (issue #39): each stored once, shown from both sides. A link goes when either person goes.
+ * Adding or changing one also mirrors both people's links onto their contacts (sideload build, see [ContactsWriter]).
+ */
+interface PersonLinkRepository {
+    val links: Flow<List<PersonLink>>
+
+    /** Adds or replaces [link] (skipped when either person is gone). */
+    suspend fun upsert(link: PersonLink)
 
     suspend fun delete(id: String)
 }

@@ -353,7 +353,6 @@ Seen in practice:
     localised `shortcutItems()` (`startShortcutSync`, compose string `shortcut_log_meetup`); `iOSApp.swift` sets
     `UIApplication.shortcutItems` on every trip to the background and handles a pick in `QuickActionSceneDelegate`
     (cold start and running), all in the existing Swift file, so the Xcode project didn't change. Web: none.
-
 29. **Named places (issue #44, F11).** GPS only: never call a place-search, geocoding or map service. A `NamedPlace`
     (`named_place` table, migration `7.sqm`, in `Backup.places`) is a name, a point and `radiusM` (100). Meetups link to
     one through `Place.placeId` (`hangout.place_id`, no foreign key). `CheckInUseCase` resolves the place: a fix inside a
@@ -363,6 +362,14 @@ Seen in practice:
     forgets the place (meetups keep their name and link, so Undo relinks them). "Usually here with" is
     `NamedPlaces.usualPeople` (most frequent in the last 8 meetups there): chips that add on tap, never pre-ticked.
     Both sheets draw it with `MeetupPlace` (`:core:ui`); Settings → Places is `PlacesRoute` in `:feature:settings`.
+30. **Links between people (issue #39, F6, F18).** `PersonLink` (own `person_link` table, migration `8.sqm`, in backups) is
+    stored **once**: `type` is what `to` is to `from`, and `LinkType.inverse` gives the other side (`PersonLink.roleSeenBy`).
+    Types are gender-neutral; the word comes from the described person's optional `Friend.pronouns` (`linkWord` in `:core:ui`,
+    neutral word when null). `Friend.relationToMe` is separate; a family one puts them in the built-in Family circle, which
+    `GroupsWithFamilyCircle` (domain) adds in front of the stored circles (never stored, writes to it are ignored; its name
+    comes from the `BuiltInCircleNames` port). One link per pair (`SaveLinkUseCase`); anniversaries come from a current
+    romance's `startedOn` (`PersonLinks.anniversaries` → agenda + notifications). Contact write-back: `ContactMirror` builds
+    each card with its links (`ContactCard.links`), so a link change rewrites both contacts and a rename the linked ones.
 
 ## Skills
 

@@ -1,7 +1,11 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -9,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
@@ -67,6 +72,7 @@ class ObserveAgendaUseCase(
     private val groups: GroupRepository,
     private val plans: PlanRepository,
     private val interactions: InteractionRepository,
+    private val links: PersonLinkRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(): Flow<List<AgendaItem>> = combine(
@@ -74,9 +80,20 @@ class ObserveAgendaUseCase(
         reminders.reminders,
         hangouts.hangouts,
         settings.settings,
-        combine(groups.groups, plans.plans, interactions.interactions) { g, p, i -> Triple(g, p, i) },
-    ) { fs, rs, hs, s, (gs, ps, ints) ->
-        AgendaBuilder.build(fs, rs, hs, clock.today(), clock.timeZone, rules = CadenceRules.from(s), groups = gs, plans = ps, interactions = ints)
+        combine(groups.groups, plans.plans, interactions.interactions, links.links, ::Inputs),
+    ) { fs, rs, hs, s, (gs, ps, ints, ls) ->
+        AgendaBuilder.build(
+            fs,
+            rs,
+            hs,
+            clock.today(),
+            clock.timeZone,
+            rules = CadenceRules.from(s),
+            groups = gs,
+            plans = ps,
+            interactions = ints,
+            links = ls,
+        )
     }
 }
 
@@ -92,6 +109,7 @@ class KeepNotificationsScheduledUseCase(
     private val groups: GroupRepository,
     private val plans: PlanRepository,
     private val interactions: InteractionRepository,
+    private val links: PersonLinkRepository,
     private val scheduler: NotificationScheduler,
     private val renderer: NotificationRenderer,
     private val clock: AppClock,
@@ -103,8 +121,8 @@ class KeepNotificationsScheduledUseCase(
             reminders.reminders,
             hangouts.hangouts,
             settings.settings,
-            combine(groups.groups, plans.plans, interactions.interactions) { g, p, i -> Triple(g, p, i) },
-        ) { fs, rs, hs, s, (gs, ps, ints) ->
+            combine(groups.groups, plans.plans, interactions.interactions, links.links, ::Inputs),
+        ) { fs, rs, hs, s, (gs, ps, ints, ls) ->
             val planned = NotificationPlanner.plan(
                 fs,
                 rs,
@@ -117,6 +135,7 @@ class KeepNotificationsScheduledUseCase(
                 plans = ps,
                 interactions = ints,
                 policy = NudgePolicy.from(s),
+                links = ls,
             )
             planned to s.privateNotifications
         }
@@ -132,3 +151,11 @@ class KeepNotificationsScheduledUseCase(
         const val DEBOUNCE_MS = 500L
     }
 }
+
+/** The circles, plans, interactions and links both the agenda and the notification schedule are built from. */
+private data class Inputs(
+    val groups: List<FriendGroup>,
+    val plans: List<Plan>,
+    val interactions: List<Interaction>,
+    val links: List<PersonLink>,
+)

@@ -16,7 +16,9 @@ import com.neteinstein.goodcompany.core.data.source.ContactRowPlanner
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.NoteLabels
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -127,6 +129,35 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
                 FamilyRelation.OTHER ->
                     add(relationRow(r.name, Relation.TYPE_CUSTOM, context.getString(R.string.contact_relation_other)))
             }
+        }
+        // Links to other people in the app (issue #39): Android's own types where it has one (gendered ones only when the
+        // person's pronouns say so), a labelled custom relation otherwise.
+        card.links.forEach { link ->
+            val (type, label) = when (link.role) {
+                LinkType.PARENT -> when (link.pronouns) {
+                    Pronouns.SHE -> Relation.TYPE_MOTHER to null
+                    Pronouns.HE -> Relation.TYPE_FATHER to null
+                    else -> Relation.TYPE_PARENT to null
+                }
+                LinkType.CHILD -> Relation.TYPE_CHILD to null
+                LinkType.SIBLING -> when (link.pronouns) {
+                    Pronouns.SHE -> Relation.TYPE_SISTER to null
+                    Pronouns.HE -> Relation.TYPE_BROTHER to null
+                    else -> Relation.TYPE_CUSTOM to R.string.contact_relation_sibling
+                }
+                LinkType.SPOUSE -> Relation.TYPE_SPOUSE to null
+                LinkType.DATING, LinkType.PARTNER -> Relation.TYPE_PARTNER to null
+                LinkType.FRIEND -> Relation.TYPE_FRIEND to null
+                LinkType.GRANDPARENT -> Relation.TYPE_CUSTOM to R.string.contact_relation_grandparent
+                LinkType.GRANDCHILD -> Relation.TYPE_CUSTOM to R.string.contact_relation_grandchild
+                LinkType.AUNT_UNCLE -> Relation.TYPE_CUSTOM to R.string.contact_relation_aunt_uncle
+                LinkType.NIECE_NEPHEW -> Relation.TYPE_CUSTOM to R.string.contact_relation_niece_nephew
+                LinkType.COUSIN -> Relation.TYPE_CUSTOM to R.string.contact_relation_cousin
+                LinkType.IN_LAW -> Relation.TYPE_CUSTOM to R.string.contact_relation_in_law
+                LinkType.EX -> Relation.TYPE_CUSTOM to R.string.contact_relation_ex
+                LinkType.COLLEAGUE -> Relation.TYPE_CUSTOM to R.string.contact_relation_colleague
+            }
+            add(relationRow(link.name, type, label?.let(context::getString)))
         }
         card.referredBy?.let { add(relationRow(it, Relation.TYPE_REFERRED_BY)) }
         card.events.forEach { add(eventRow(Event.TYPE_CUSTOM, it.title, it.date.toString())) }

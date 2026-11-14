@@ -62,6 +62,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.isBuiltIn
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -81,6 +82,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.resources.circle_built_in
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
@@ -526,7 +528,8 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
     val overdue = status.isOverdue(state.today)
     var menu by remember { mutableStateOf(false) }
     Surface(
-        onClick = { actions.onEditGroup(g.id) },
+        // The built-in Family circle (F6) fills itself and can't be edited or deleted.
+        onClick = { if (!g.isBuiltIn) actions.onEditGroup(g.id) },
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -571,43 +574,52 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                     }
                 }
             }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
-                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.group_edit)) },
-                        leadingIcon = { Icon(Icons.Rounded.Edit, null) },
-                        onClick = {
-                            menu = false
-                            actions.onEditGroup(g.id)
-                        },
-                    )
-                    if (g.meetEveryDays != null) {
+            if (g.isBuiltIn) {
+                Text(
+                    stringResource(CoreRes.string.circle_built_in),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            } else {
+                Box {
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
+                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_snooze_weekend)) },
-                            leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                            text = { Text(stringResource(Res.string.group_edit)) },
+                            leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                             onClick = {
                                 menu = false
-                                actions.onSnoozeGroup(g.id, SnoozeOption.WEEKEND)
+                                actions.onEditGroup(g.id)
                             },
                         )
+                        if (g.meetEveryDays != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.group_snooze_weekend)) },
+                                leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                                onClick = {
+                                    menu = false
+                                    actions.onSnoozeGroup(g.id, SnoozeOption.WEEKEND)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.group_snooze_week)) },
+                                leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                                onClick = {
+                                    menu = false
+                                    actions.onSnoozeGroup(g.id, SnoozeOption.ONE_WEEK)
+                                },
+                            )
+                        }
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_snooze_week)) },
-                            leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                            text = { Text(stringResource(Res.string.group_delete)) },
+                            leadingIcon = { Icon(Icons.Rounded.Delete, null) },
                             onClick = {
                                 menu = false
-                                actions.onSnoozeGroup(g.id, SnoozeOption.ONE_WEEK)
+                                actions.onDeleteGroup(g.id)
                             },
                         )
                     }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.group_delete)) },
-                        leadingIcon = { Icon(Icons.Rounded.Delete, null) },
-                        onClick = {
-                            menu = false
-                            actions.onDeleteGroup(g.id)
-                        },
-                    )
                 }
             }
         }

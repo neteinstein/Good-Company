@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -16,7 +17,7 @@ import kotlinx.datetime.plus
 
 /**
  * Builds the "Coming up" agenda for the next [horizonDays] days:
- * birthdays (friend + kids, and relatives whose reminder is on) for friends you care about, important events, open reminders, planned meetups and
+ * birthdays (friend + kids, and relatives whose reminder is on) for friends you care about, important events, anniversaries, open reminders, planned meetups and
  * overdue catch-ups. Overdue reminders, catch-ups and unconfirmed past plans are pinned to [today] so they stay visible.
  */
 object AgendaBuilder {
@@ -33,6 +34,7 @@ object AgendaBuilder {
         groups: List<FriendGroup> = emptyList(),
         plans: List<Plan> = emptyList(),
         interactions: List<Interaction> = emptyList(),
+        links: List<PersonLink> = emptyList(),
     ): List<AgendaItem> {
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
         fun inWindow(d: LocalDate) = d in today..end
@@ -60,6 +62,12 @@ object AgendaBuilder {
                 }
             }
             friend.importantEvents.filter { inWindow(it.date) }.forEach { items += AgendaItem.FriendEvent(friend, it) }
+        }
+
+        // Anniversaries have their own switch on the link, like a relative's birthday.
+        PersonLinks.anniversaries(links, friends).forEach { (link, a, b) ->
+            val next = link.nextAnniversary(today) ?: return@forEach
+            if (inWindow(next)) items += AgendaItem.Anniversary(link, a, b, next, link.yearsOn(next))
         }
 
         val byId = friends.associateBy { it.id }
@@ -95,6 +103,7 @@ object AgendaBuilder {
         is AgendaItem.MeetupOverdue -> 0
         is AgendaItem.GroupOverdue -> 0
         is AgendaItem.FriendEvent -> 1
+        is AgendaItem.Anniversary -> 2
         is AgendaItem.FriendBirthday -> 2
         is AgendaItem.KidBirthday -> 3
         is AgendaItem.RelativeBirthday -> 3

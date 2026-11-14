@@ -16,10 +16,14 @@ import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
@@ -39,10 +43,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
@@ -114,7 +120,26 @@ sealed interface FriendDetailMessage {
 
     /** A saved attachment was removed; offered with "Undo". */
     data object AttachmentRemoved : FriendDetailMessage
+
+    /** A link to another person was removed; offered with "Undo". */
+    data object LinkRemoved : FriendDetailMessage
+
+    /** A relative became a person of their own ("Add as a person"). */
+    data class AddedAsPerson(val name: String) : FriendDetailMessage
 }
+
+/** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
+data class LinkEdit(
+    val other: FriendId,
+    val role: LinkType,
+    val startedOn: LocalDate? = null,
+    val endedOn: LocalDate? = null,
+    val remindAnniversary: Boolean = false,
+    /** The words for [other], set in the same sheet. */
+    val otherPronouns: Pronouns? = null,
+    /** The link being edited; null = a new one. */
+    val id: String? = null,
+)
 
 /** Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are). */
 data class AboutEdit(
@@ -186,6 +211,10 @@ data class FriendDetailUiState(
     val attachments: List<Attachment> = emptyList(),
     /** Attachment just removed, offered for undo. */
     val undoAttachment: Attachment? = null,
+    /** The people linked to this friend (issue #39): partners first, then exes, family and the rest. */
+    val links: List<LinkedPerson> = emptyList(),
+    /** Link just removed, offered for undo. */
+    val undoLink: PersonLink? = null,
 )
 
 class FriendDetailViewModel(
@@ -217,6 +246,7 @@ class FriendDetailViewModel(
     private val deleteAttachment: DeleteAttachmentUseCase,
     private val restoreAttachment: RestoreAttachmentUseCase,
     private val shareInbox: ShareInbox,
+    private val links: PersonLinkUseCases,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -226,11 +256,13 @@ class FriendDetailViewModel(
         observeDetail(friendId),
         observeSettings(),
         observeAttachments(friendId),
+        links.observe(friendId),
         local,
-    ) { detail, settings, attachments, ui ->
+    ) { detail, settings, attachments, linked, ui ->
         ui.copy(
             detail = detail,
             attachments = attachments,
+            links = linked,
             isLoading = false,
             notFound = detail == null,
             hasAiKey = settings.hasAiKey,
@@ -352,6 +384,55 @@ class FriendDetailViewModel(
     }
 
     fun onRemoveRelative(id: String) = edit { f -> f.copy(relatives = f.relatives.filterNot { it.id == id }) }
+
+    /** "Add as a person" (question 1): the relative gets their own page, linked to this friend. */
+    fun onAddRelativeAsPerson(relativeId: String) {
+        val name = state.value.detail?.friend?.relatives?.firstOrNull { it.id == relativeId }?.name ?: return
+        viewModelScope.launch {
+            if (links.addRelativeAsPerson(friendId, relativeId) != null) say(FriendDetailMessage.AddedAsPerson(name))
+        }
+    }
+
+    // --- Links between people and relationship to me (issue #39) ------------------------------------------------------
+
+    /** Saves a link from this page: [LinkEdit.other] is this friend's [LinkEdit.role]. */
+    fun onSaveLink(edit: LinkEdit) {
+        if (edit.other == friendId) return
+        viewModelScope.launch {
+            links.setPronouns(edit.other, edit.otherPronouns)
+            links.save(
+                LinkDraft(
+                    from = friendId,
+                    to = edit.other,
+                    type = edit.role,
+                    startedOn = edit.startedOn,
+                    endedOn = edit.endedOn,
+                    remindAnniversary = edit.remindAnniversary,
+                    id = edit.id,
+                ),
+            )
+        }
+    }
+
+    fun onRemoveLink(id: String) {
+        viewModelScope.launch {
+            val removed = links.delete(id) ?: return@launch
+            local.update { it.copy(undoLink = removed, message = FriendDetailMessage.LinkRemoved) }
+        }
+    }
+
+    fun onUndoRemoveLink() {
+        val link = local.value.undoLink ?: return
+        viewModelScope.launch {
+            links.restore(link)
+            local.update { it.copy(undoLink = null) }
+        }
+    }
+
+    /** "Rui is your…" (F6): null [relation] clears it. */
+    fun onSaveRelationToMe(relation: LinkType?, pronouns: Pronouns?) {
+        viewModelScope.launch { links.setRelationToMe(friendId, relation, pronouns) }
+    }
 
     // --- Tastes by kind (food, drink, interests) ---------------------------------------------------------------------
 
@@ -709,6 +790,6 @@ class FriendDetailViewModel(
     }
 
     fun onMessageShown() = local.update {
-        it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null, undoAttachment = null)
+        it.copy(message = null, undoHangoutId = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null)
     }
 }

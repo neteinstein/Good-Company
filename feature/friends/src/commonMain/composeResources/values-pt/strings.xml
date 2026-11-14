@@ -458,4 +458,31 @@
     <string name="saved_add_photo">Adicionar fotografia</string>
     <string name="saved_empty">Partilha uma conversa, uma ligação ou uma fotografia com o Good Company e aparece aqui.</string>
     <string name="saved_removed">Removido dos guardados</string>
+    <!-- Links between people, relationship to me, "Add as a person" (issue #39). -->
+    <string name="links_other_title">Outras ligações</string>
+    <string name="link_add">Ligar a uma pessoa</string>
+    <string name="link_sheet_title">Ligar %1$s a alguém</string>
+    <string name="link_sheet_edit_title">%1$s e %2$s</string>
+    <string name="link_search">Quem?</string>
+    <string name="link_no_people">Adiciona primeiro outra pessoa.</string>
+    <string name="link_change">Mudar</string>
+    <string name="link_is_of">%1$s, para %2$s, é…</string>
+    <string name="link_words_for">Palavras para %1$s</string>
+    <string name="link_since">Juntos desde</string>
+    <string name="link_since_value">Juntos desde · %1$s</string>
+    <string name="link_ended">Terminou</string>
+    <string name="link_ended_value">Terminou · %1$s</string>
+    <string name="link_remind_anniversary">Lembrar-me do aniversário deles</string>
+    <string name="link_preview">A página de %1$s vai mostrar %2$s · %3$s.</string>
+    <string name="link_save">Guardar ligação</string>
+    <string name="link_remove">Remover ligação</string>
+    <string name="msg_link_removed">Ligação removida</string>
+    <string name="link_row_since">juntos desde %1$s</string>
+    <string name="link_row_years">%1$d–%2$d</string>
+    <string name="relation_to_me_title">%1$s é…</string>
+    <string name="relation_to_me_add">Família tua?</string>
+    <string name="relation_to_me_family_note">Quem marcares como família fica automaticamente no teu círculo Família.</string>
+    <string name="relation_to_me_clear">Sem relação</string>
+    <string name="add_as_person">Adicionar como pessoa</string>
+    <string name="msg_added_as_person">%1$s já tem a sua própria página</string>
 </resources>

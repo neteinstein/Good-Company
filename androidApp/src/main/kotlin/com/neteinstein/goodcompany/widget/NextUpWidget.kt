@@ -139,6 +139,8 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
             is AgendaItem.KidBirthday -> context.getString(R.string.widget_kid_birthday, item.kid.name, item.parent.name.substringBefore(' '))
             // Not shown by the widget today (HomeWidget skips relatives), but kept readable if that changes.
             is AgendaItem.RelativeBirthday -> context.getString(R.string.widget_birthday, item.relative.name.substringBefore(' '))
+            // Not shown by the widget either (HomeWidget skips anniversaries).
+            is AgendaItem.Anniversary -> context.getString(R.string.widget_birthday, item.first.name.substringBefore(' '))
             is AgendaItem.FriendEvent -> context.getString(R.string.widget_event, item.friend.name.substringBefore(' '), item.event.title)
             is AgendaItem.ReminderDue -> item.reminder.title
             is AgendaItem.PlanUpcoming -> item.plan.title

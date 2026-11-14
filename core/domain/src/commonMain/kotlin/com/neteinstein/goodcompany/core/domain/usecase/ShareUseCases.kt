@@ -139,7 +139,8 @@ class ObserveShareTargetsUseCase(
         interactions.interactions,
         groups.groups,
     ) { fs, hs, ints, gs ->
-        ShareTargets(fs, Relationships.lastContact(hs, ints), gs.filter { it.memberIds.isNotEmpty() })
+        // Not the built-in Family circle: it isn't stored, so nothing can be kept on it (share to its people instead).
+        ShareTargets(fs, Relationships.lastContact(hs, ints), gs.filter { it.memberIds.isNotEmpty() && !it.isBuiltIn })
     }
 }
 
