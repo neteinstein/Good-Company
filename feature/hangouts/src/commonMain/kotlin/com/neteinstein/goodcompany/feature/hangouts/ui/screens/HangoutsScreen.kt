@@ -24,9 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.material3.Button
@@ -62,6 +64,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.isBuiltIn
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -81,6 +84,9 @@ import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.resources.circle_built_in
+import com.neteinstein.goodcompany.core.ui.resources.circle_next_plan
+import com.neteinstein.goodcompany.core.ui.resources.plan_make
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
@@ -174,6 +180,7 @@ fun HangoutsScreen(
             onMessageShown = viewModel::onMessageShown,
             onSelectOccasion = viewModel::onSelectOccasion,
             onPlanWith = viewModel::onPlanWith,
+            onPlanWithCircle = viewModel::onPlanWithCircle,
         ),
     )
     state.planDraft?.let { draft ->
@@ -182,13 +189,16 @@ fun HangoutsScreen(
             today = state.today,
             onDismiss = viewModel::onDismissPlan,
             onSave = viewModel::onSavePlan,
-            preselected = setOf(draft.friendId),
-            initialTitle = occasionLabel(draft.occasion),
+            preselected = setOfNotNull(draft.friendId),
+            initialTitle = draft.occasion?.let { occasionLabel(it) }.orEmpty(),
+            circles = state.groups.map { it.group },
+            preselectedCircle = draft.circleId,
         )
     }
     state.draft?.let { draft ->
         CheckInSheet(
             draft = draft,
+            place = state.draftPlace,
             friends = state.friends,
             groups = state.groups.map { it.group },
             onPickGroup = viewModel::onPickDraftGroup,
@@ -198,6 +208,7 @@ fun HangoutsScreen(
             onNoteChange = viewModel::onDraftNoteChange,
             onUseLocation = requestLocation,
             onClearLocation = viewModel::onClearDraftLocation,
+            onChangePlace = viewModel::onChangeDraftPlace,
             onSave = viewModel::onSaveCheckIn,
             onDismiss = viewModel::onDismissCheckIn,
         )
@@ -220,6 +231,8 @@ data class HangoutsActions(
     val onMessageShown: () -> Unit = {},
     val onSelectOccasion: (Occasion) -> Unit = {},
     val onPlanWith: (FriendId, Occasion) -> Unit = { _, _ -> },
+    /** "Plan" on a circle's card. */
+    val onPlanWithCircle: (String) -> Unit = {},
 )
 
 /** Localised snackbar text for a [HangoutsMessage]. */
@@ -381,7 +394,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                         FilterChip(
                             selected = f.id in state.filter,
                             onClick = { actions.onToggleFilter(f.id) },
-                            label = { Text(f.name.substringBefore(' ')) },
+                            label = { Text(f.displayName.substringBefore(' ')) },
                             leadingIcon = { FriendAvatar(f, size = 22.dp) },
                         )
                     }
@@ -397,7 +410,12 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                             StackedAvatars(selected, size = 40.dp)
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(selected.joinToString(" & ") { it.name.substringBefore(' ') }, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    selected.joinToString(" & ") {
+                                        it.displayName.substringBefore(' ')
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
                                 Text(
                                     state.lastTogether?.let {
                                         val ago = relativePast(it.hangout.at, state.now, state.zone)
@@ -447,7 +465,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    h.friends.joinToString { it.name.substringBefore(' ') }.ifEmpty { stringResource(Res.string.someone) },
+                                    h.friends.joinToString { it.displayName.substringBefore(' ') }.ifEmpty { stringResource(Res.string.someone) },
                                     style = MaterialTheme.typography.titleSmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -526,7 +544,8 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
     val overdue = status.isOverdue(state.today)
     var menu by remember { mutableStateOf(false) }
     Surface(
-        onClick = { actions.onEditGroup(g.id) },
+        // The built-in Family circle (F6) fills itself and can't be edited or deleted.
+        onClick = { if (!g.isBuiltIn) actions.onEditGroup(g.id) },
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -554,6 +573,24 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                     style = MaterialTheme.typography.bodySmall,
                     color = if (overdue && snoozed == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                state.circlePlans[g.id]?.let { plan ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable,
+                            null,
+                            Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            stringResource(CoreRes.string.circle_next_plan, plan.title, plan.date.shortLabel()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StackedAvatars(status.members, size = 24.dp, max = 6)
@@ -571,43 +608,60 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                     }
                 }
             }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
-                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.group_edit)) },
-                        leadingIcon = { Icon(Icons.Rounded.Edit, null) },
-                        onClick = {
-                            menu = false
-                            actions.onEditGroup(g.id)
-                        },
-                    )
-                    if (g.meetEveryDays != null) {
+            if (g.isBuiltIn) {
+                Text(
+                    stringResource(CoreRes.string.circle_built_in),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            } else {
+                Box {
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
+                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_snooze_weekend)) },
-                            leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                            text = { Text(stringResource(CoreRes.string.plan_make)) },
+                            leadingIcon = { Icon(Icons.Rounded.EventAvailable, null) },
                             onClick = {
                                 menu = false
-                                actions.onSnoozeGroup(g.id, SnoozeOption.WEEKEND)
+                                actions.onPlanWithCircle(g.id)
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.group_snooze_week)) },
-                            leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                            text = { Text(stringResource(Res.string.group_edit)) },
+                            leadingIcon = { Icon(Icons.Rounded.Edit, null) },
                             onClick = {
                                 menu = false
-                                actions.onSnoozeGroup(g.id, SnoozeOption.ONE_WEEK)
+                                actions.onEditGroup(g.id)
+                            },
+                        )
+                        if (g.meetEveryDays != null) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.group_snooze_weekend)) },
+                                leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                                onClick = {
+                                    menu = false
+                                    actions.onSnoozeGroup(g.id, SnoozeOption.WEEKEND)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(Res.string.group_snooze_week)) },
+                                leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                                onClick = {
+                                    menu = false
+                                    actions.onSnoozeGroup(g.id, SnoozeOption.ONE_WEEK)
+                                },
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.group_delete)) },
+                            leadingIcon = { Icon(Icons.Rounded.Delete, null) },
+                            onClick = {
+                                menu = false
+                                actions.onDeleteGroup(g.id)
                             },
                         )
                     }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.group_delete)) },
-                        leadingIcon = { Icon(Icons.Rounded.Delete, null) },
-                        onClick = {
-                            menu = false
-                            actions.onDeleteGroup(g.id)
-                        },
-                    )
                 }
             }
         }
@@ -641,7 +695,7 @@ private fun MeetupRow(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(friend.name, style = MaterialTheme.typography.titleSmall)
+                Text(friend.displayName, style = MaterialTheme.typography.titleSmall)
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,

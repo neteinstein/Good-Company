@@ -220,7 +220,7 @@
     <string name="prefs_real">Real friend</string>
     <string name="prefs_real_hint">Shows up first, on your home and agenda</string>
     <string name="prefs_birthday">Birthday reminders</string>
-    <string name="prefs_birthday_hint">For them and their kids</string>
+    <string name="prefs_birthday_hint">On for everyone with a birthday</string>
     <string name="prefs_events">Weekly event ideas</string>
     <string name="prefs_events_hint">AI suggests plans that match their tastes</string>
 
@@ -447,8 +447,7 @@
     <string name="choose_pick_instead">Pick from contacts</string>
     <string name="choose_no_match">No one matches</string>
     <string name="add_option_pick_body">Opens your phone’s contact picker</string>
-    <string name="add_option_list">Choose from the full list</string>
-    <string name="add_option_list_body">Tick the people you want to keep close</string>
+    <string name="add_option_list_body">Tick everyone you want from your contact list. Several at once.</string>
     <string name="add_option_list_again">Asks for contacts access again</string>
     <string name="add_option_type">Type it in</string>
     <string name="add_option_type_body">Add someone by name</string>
@@ -481,4 +480,58 @@
     <string name="saved_add_photo">Add a photo</string>
     <string name="saved_empty">Share a chat, a link or a photo to Good Company and it shows up here.</string>
     <string name="saved_removed">Removed from saved</string>
+    <!-- Links between people, relationship to me, "Add as a person" (issue #39). -->
+    <string name="links_other_title">Other links</string>
+    <string name="link_add">Link to a person</string>
+    <string name="link_sheet_title">Link %1$s to someone</string>
+    <string name="link_sheet_edit_title">%1$s and %2$s</string>
+    <string name="link_search">Who?</string>
+    <string name="link_no_people">Add another person first.</string>
+    <string name="link_change">Change</string>
+    <string name="link_is_of">%1$s is %2$s’s…</string>
+    <string name="link_words_for">Words for %1$s</string>
+    <string name="link_since">Together since</string>
+    <string name="link_since_value">Together since · %1$s</string>
+    <string name="link_ended">Ended</string>
+    <string name="link_ended_value">Ended · %1$s</string>
+    <string name="link_remind_anniversary">Remind me of their anniversary</string>
+    <string name="link_preview">%1$s’s page will show %2$s · %3$s.</string>
+    <string name="link_save">Save link</string>
+    <string name="link_remove">Remove link</string>
+    <string name="msg_link_removed">Link removed</string>
+    <string name="link_row_since">together since %1$s</string>
+    <string name="link_row_years">%1$d–%2$d</string>
+    <string name="relation_to_me_title">%1$s is your…</string>
+    <string name="relation_to_me_add">Related to you?</string>
+    <string name="relation_to_me_family_note">Everyone you mark as family is in your Family circle automatically.</string>
+    <string name="relation_to_me_clear">Not related</string>
+    <string name="add_as_person">Add as a person</string>
+    <string name="msg_added_as_person">%1$s now has their own page</string>
+    <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
+    <string name="detail_edit_name">Edit name</string>
+    <string name="photo_sheet_title">%1$s’s photo</string>
+    <string name="photo_replace">Replace photo</string>
+    <string name="photo_replace_hint">Choose a picture, then zoom and crop</string>
+    <string name="photo_adjust">Adjust crop</string>
+    <string name="photo_remove">Remove photo</string>
+    <string name="photo_remove_hint_contact">Shows the contact photo again</string>
+    <string name="photo_remove_hint_initials">Shows the initials again</string>
+    <string name="photo_contact_untouched">The contact itself is never changed.</string>
+    <string name="name_title">Name</string>
+    <string name="name_contact_hint">In your contacts: %1$s. The name you give here is used everywhere in Good Company; a contacts sync won’t change it.</string>
+    <string name="name_restore">Use the contact’s name</string>
+    <string name="birthday_title">Birthday</string>
+    <string name="birthday_year_hint">The year is optional. Without it you still get the reminder; the age shows once you add it.</string>
+    <string name="birthday_remind">Remind me of %1$s’s birthday</string>
+    <string name="birthday_remind_hint">On for everyone with a birthday. Turn it off here for one person.</string>
+    <string name="birthday_remove">Remove birthday</string>
+    <!-- Kids are people (issue #40, F9). -->
+    <string name="kid_add_title">Add %1$s’s kid</string>
+    <string name="show_in_my_list">Show in my list</string>
+    <string name="kid_show_hint_family">On because %1$s is family. Off by default for friends’ kids.</string>
+    <string name="kid_show_hint_friend">Off by default for friends’ kids: they still show on %1$s’s page and in birthdays.</string>
+    <string name="show_in_my_list_hint">Off: they still show on %1$s’s page and in birthdays.</string>
+    <string name="show_in_my_list_hint_any">Off: they still show on the pages they’re linked to and in birthdays.</string>
+    <string name="action_network">Your network</string>
+    <string name="action_people">Your people</string>
 </resources>

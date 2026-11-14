@@ -8,17 +8,23 @@ import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.db.OpenedDriver
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlSettingsRepository
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
+import com.neteinstein.goodcompany.core.domain.model.CardKid
+import com.neteinstein.goodcompany.core.domain.model.CardLink
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -29,9 +35,13 @@ import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.russhwolf.settings.MapSettings
@@ -87,6 +97,37 @@ class SqlRepositoryContractTest : RepositoryContract() {
     private val ana = FriendId("ana")
     private val rui = FriendId("rui")
 
+    // --- Calendar suggestions (D3) ---
+
+    @Test
+    fun calendarDecisions_persistAndTravelInBackupsButTheCalendarChoicesStayOnTheDevice() = runTest {
+        val s = open()
+        val decisions = SqlCalendarDecisionRepository(db)
+        val no = CalendarDecision("event:1:1700@1700", CalendarDecisionKind.NO, at(2026, 3, 1))
+        val never = CalendarDecision("series:bookclub", CalendarDecisionKind.NEVER, at(2026, 3, 2))
+        decisions.upsert(no)
+        decisions.upsert(never)
+        decisions.upsert(no.copy(decidedAt = at(2026, 3, 3)))
+        s.settings.update { it.copy(calendarSuggestions = true, calendarIds = listOf("7"), calendarOnSince = at(2026, 3, 1)) }
+
+        // A restart keeps both.
+        val again = open()
+        assertEquals(listOf("series:bookclub", "event:1:1700@1700"), SqlCalendarDecisionRepository(db).decisions.first().map { it.key })
+        val settings = again.settings.settings.first()
+        assertTrue(settings.calendarSuggestions)
+        assertEquals(listOf("7"), settings.calendarIds)
+
+        val snapshot = again.backup.snapshot()
+        assertEquals(2, snapshot.calendarDecisions.size)
+        decisions.delete(never.key)
+        assertEquals(listOf(no.key), decisions.decisions.first().map { it.key })
+
+        again.backup.restore(snapshot)
+        assertEquals(2, decisions.decisions.first().size)
+        again.backup.restore(Backup())
+        assertTrue(decisions.decisions.first().isEmpty())
+    }
+
     // --- Rules only the relational schema enforces ---
 
     @Test
@@ -118,6 +159,7 @@ class SqlRepositoryContractTest : RepositoryContract() {
     @Test
     fun referencesToThingsThatDontExist_areDroppedNotStored() = runTest {
         val s = open()
+        // An old-style gift for a kid (issue #40) isn't stored with its kid: kids are people now.
         s.friends.upsert(friend("ana") { copy(gifts = listOf(Gift("g", "Lego", forKidId = "no-such-kid"))) })
         s.hangouts.add(Hangout("h", listOf(ana, FriendId("ghost")), at(2026, 3, 1)))
         s.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "no-such-idea", createdAt = at(2026, 3, 1)))
@@ -162,5 +204,70 @@ class SqlRepositoryContractTest : RepositoryContract() {
         s.friends.delete(FriendId("f0"))
         assertTrue(s.hangouts.hangouts.first().first().friendIds.isEmpty())
         watching.cancel()
+    }
+
+    // --- Links between people (issue #39): SQL only (the JSON stores never had them) ---
+
+    @Test
+    fun links_areStoredOnce_skipUnknownPeople_goWithAPerson_andSurviveABackup() = runTest {
+        val s = open()
+        val links = SqlPersonLinkRepository(db)
+        s.friends.upsert(friend("ana") { copy(relationToMe = LinkType.SIBLING, pronouns = Pronouns.SHE) })
+        s.friends.upsert(friend("rui"))
+        val couple =
+            PersonLink(
+                "l1",
+                rui,
+                ana,
+                LinkType.DATING,
+                LocalDate(2019, 6, 1),
+                note = "met at uni",
+                remindAnniversary = true,
+                addedAt = at(2026, 3, 1),
+            )
+        links.upsert(couple)
+        links.upsert(PersonLink("ghost", rui, FriendId("ghost"), LinkType.FRIEND))
+        links.upsert(PersonLink("self", rui, rui, LinkType.FRIEND))
+        assertEquals(listOf(couple), links.links.first())
+        val ex = couple.copy(type = LinkType.EX, endedOn = LocalDate(2024, 1, 1), remindAnniversary = false)
+        links.upsert(ex)
+        assertEquals(listOf(ex), SqlPersonLinkRepository(db).links.first())
+
+        val friendAna = s.friends.get(ana)!!
+        assertEquals(LinkType.SIBLING, friendAna.relationToMe)
+        assertEquals(Pronouns.SHE, friendAna.pronouns)
+
+        val backup = s.backup.snapshot()
+        assertEquals(listOf(ex), backup.links)
+        s.friends.delete(ana)
+        assertTrue(links.links.first().isEmpty())
+        s.backup.restore(backup)
+        assertEquals(listOf(ex), links.links.first())
+        links.delete("l1")
+        assertTrue(links.links.first().isEmpty())
+    }
+
+    @Test
+    fun aLinkIsWrittenOntoBothContacts_andARenameReachesTheOtherContact() = runTest {
+        val writer = FakeContactsWriter()
+        val s = open(writer = writer)
+        val links = SqlPersonLinkRepository(db, writer)
+        s.friends.upsert(friend("ana", "Ana Silva") { copy(contactId = "c-ana", pronouns = Pronouns.SHE) })
+        s.friends.upsert(friend("rui") { copy(contactId = "c-rui") })
+        s.friends.upsert(friend("leo")) // no contact: never written
+        links.upsert(PersonLink("l1", rui, ana, LinkType.DATING))
+        links.upsert(PersonLink("l2", rui, FriendId("leo"), LinkType.CHILD))
+        // A kid is written once, as a child row, not also as a relation.
+        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE)), writer.written[rui]!!.links)
+        assertEquals(listOf(CardKid("Leo")), writer.written[rui]!!.kids)
+        assertEquals(listOf(CardLink("Rui", LinkType.DATING)), writer.written[ana]!!.links)
+        assertNull(writer.written[FriendId("leo")])
+
+        val before = writer.writes
+        links.upsert(PersonLink("l1", rui, ana, LinkType.DATING)) // nothing changed
+        assertEquals(before, writer.writes)
+
+        s.friends.upsert(s.friends.get(ana)!!.copy(name = "Ana Costa"))
+        assertEquals("Ana Costa", writer.written[rui]!!.links.first().name)
     }
 }

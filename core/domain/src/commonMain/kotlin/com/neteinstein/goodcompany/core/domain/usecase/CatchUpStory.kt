@@ -4,14 +4,17 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -135,9 +138,10 @@ object CatchUpStoryBuilder {
     private const val MAX_IDEAS = 3
     private const val MAX_ASK = 6
 
-    fun freshItems(friend: Friend): List<FreshItem> = buildList {
+    /** What's new about [friend]; a kid counts as new from when they were linked to them ([kids], F9). */
+    fun freshItems(friend: Friend, kids: List<LinkedPerson> = emptyList()): List<FreshItem> = buildList {
         friend.lifeUpdates.forEach { add(FreshItem.Update(it.text, it.addedAt)) }
-        friend.kids.forEach { kid -> kid.addedAt?.let { add(FreshItem.NewKid(kid.name, it)) } }
+        kids.forEach { kid -> kid.link.addedAt?.let { add(FreshItem.NewKid(kid.person.displayName, it)) } }
         friend.importantEvents.forEach { e -> e.addedAt?.let { add(FreshItem.NewEvent(e.title, e.date, it)) } }
         friend.likes.forEach { like -> friend.likesAddedAt[like]?.let { add(FreshItem.NewLike(like, it)) } }
         friend.food.forEach { t -> friend.foodAddedAt[t]?.let { add(FreshItem.NewTaste(t, TasteKind.FOOD, it)) } }
@@ -153,7 +157,8 @@ object CatchUpStoryBuilder {
         val friend = detail.friend
         val today = now.toLocalDate(zone)
         val since = detail.lastSeen ?: (now - FALLBACK_FRESH_DAYS.days)
-        val fresh = freshItems(friend).filter { it.addedAt > since }.take(MAX_FRESH)
+        val kids = detail.kids.map { it.person }
+        val fresh = freshItems(friend, detail.kids).filter { it.addedAt > since }.take(MAX_FRESH)
         val slides = mutableListOf<StorySlide>()
         val ask = mutableListOf<String>()
         val last = detail.hangouts.firstOrNull()
@@ -196,12 +201,12 @@ object CatchUpStoryBuilder {
             }
         }
 
-        if (friend.kids.isNotEmpty() || friend.relatives.isNotEmpty()) {
+        if (kids.isNotEmpty() || friend.relatives.isNotEmpty()) {
             slides += StorySlide.Kids(
-                friend.kids.map { kid ->
+                kids.map { kid ->
                     val next = kid.birthday?.nextOccurrence(today)
                     StoryKid(
-                        name = kid.name,
+                        name = kid.displayName,
                         age = kid.birthday?.ageOn(today),
                         nextBirthday = next,
                         birthdaySoon = next != null && today.daysUntil(next) <= KID_BIRTHDAY_SOON_DAYS,
@@ -220,7 +225,7 @@ object CatchUpStoryBuilder {
                     )
                 },
             )
-            ask += friend.kids.map { it.name }.filterNot { it in ask }
+            ask += kids.map { it.name }.filterNot { it in ask }
         }
 
         last?.let { h ->
@@ -228,7 +233,7 @@ object CatchUpStoryBuilder {
                 date = h.hangout.at.toLocalDate(zone),
                 place = h.hangout.place?.label,
                 note = h.hangout.note.trim().takeIf { it.isNotEmpty() },
-                with = h.friends.filterNot { it.id == friend.id }.map { it.name.substringBefore(' ') },
+                with = h.friends.filterNot { it.id == friend.id }.map { it.displayName.substringBefore(' ') },
             )
         }
 
@@ -278,21 +283,40 @@ class ObserveCatchUpStoryUseCase(
 /** A friend in the home "Before you meet" row. */
 data class StoryBubble(val friend: Friend, val meetingOn: LocalDate, val freshCount: Int)
 
-/** Friends you're seeing today or tomorrow, for the home stories row. */
+/**
+ * Friends you're seeing today or tomorrow, for the home stories row: planned meetups, and matched events from the
+ * chosen calendars when calendar suggestions are on (D3, "Before you meet").
+ */
 class ObserveStoryBubblesUseCase(
     private val friends: FriendRepository,
     private val plans: PlanRepository,
     private val hangouts: HangoutRepository,
+    private val links: PersonLinkRepository,
+    private val calendarEvents: ObserveCalendarEventsUseCase,
+    private val calendarDecisions: CalendarDecisionRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<List<StoryBubble>> = combine(friends.friends, plans.plans, hangouts.hangouts) { all, ps, hs ->
+    operator fun invoke(): Flow<List<StoryBubble>> = combine(
+        friends.friends,
+        plans.plans,
+        hangouts.hangouts,
+        links.links,
+        combine(calendarEvents(), calendarDecisions.decisions, ::Pair),
+    ) { all, ps, hs, ls, (events, decisions) ->
         val now = clock.now()
         val byId = all.associateBy { it.id }
         val seen = Relationships.lastSeen(hs)
-        CatchUpStoryBuilder.meetingSoon(ps, clock.today()).mapNotNull { (id, date) ->
+        val soon = (
+            CatchUpStoryBuilder.meetingSoon(ps, clock.today()) +
+                CalendarSuggester.meetingSoon(events, all, decisions, now, clock.timeZone)
+            )
+            .sortedBy { it.second }
+            .distinctBy { it.first }
+        soon.mapNotNull { (id, date) ->
             val friend = byId[id] ?: return@mapNotNull null
             val since = seen[id] ?: (now - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
-            StoryBubble(friend, date, CatchUpStoryBuilder.freshItems(friend).count { it.addedAt > since })
+            val kids = KidsAsPeople.kidsOf(id, ls, byId)
+            StoryBubble(friend, date, CatchUpStoryBuilder.freshItems(friend, kids).count { it.addedAt > since })
         }
     }
 }

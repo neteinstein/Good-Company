@@ -45,4 +45,11 @@ class BirthdayTest {
     fun invalidMonthRejected() {
         assertFailsWith<IllegalArgumentException> { Birthday(13, 1) }
     }
+
+    @Test
+    fun withoutAYear_thereIsNoAge_untilOneIsAdded() {
+        val today = LocalDate(2026, 3, 10)
+        assertNull(Birthday(3, 14).ageOn(today))
+        assertEquals(36, Birthday(3, 14).copy(year = 1990).ageOn(LocalDate(2026, 3, 14)))
+    }
 }

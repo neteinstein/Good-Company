@@ -39,6 +39,30 @@ data class AppSettings(
     val lastDriveBackupAt: Instant? = null,
     /** The circle ([FriendGroup] id) Home is filtered by; null = All. Remembered between launches. */
     val homeCircleFilter: String? = null,
+    /**
+     * Calendar suggestions (D3): off by default. Device-only like the AI key: never exported, kept on restore, and
+     * the events themselves are never stored anywhere.
+     */
+    val calendarSuggestions: Boolean = false,
+    /** The device calendars the app may read; none until the user ticks them. */
+    val calendarIds: List<String> = emptyList(),
+    /** When suggestions were last turned on: earlier events are shown under "Looking back". */
+    val calendarOnSince: Instant? = null,
+    /**
+     * Spellings of one tag the user chose to keep apart in Settings → Tags ("Keep both"), each as `Tags.signature`.
+     * Stored with the device settings (no schema change); backups carry it like the rest of the settings.
+     */
+    val keptTagSpellings: Set<String> = emptySet(),
+    /**
+     * The AI switch (F1). Off (the default) hides every AI entry point: the Ideas tab, "Things to talk about", gift and
+     * message suggestions, and the weekly job. Turned on for people who already had a key when it was introduced.
+     */
+    val aiEnabled: Boolean = false,
+    /** The activities the log sheet offers (F3), in the user's order; never empty. Defaults to all of them. */
+    val activities: List<HangoutActivity> = HangoutActivity.entries,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
+
+    /** The key to call the AI with: null while AI is off or no key is saved. Every AI use case goes through this. */
+    val usableAiKey: String? get() = aiApiKey?.takeIf { aiEnabled && it.isNotBlank() }
 }

@@ -104,4 +104,82 @@
     <string name="msg_drive_full">Your Google Drive is full.</string>
     <string name="msg_drive_offline">Couldn’t reach Google Drive. Check your connection.</string>
     <string name="msg_drive_failed">Something went wrong with Google Drive. Try again.</string>
+    <string name="places">Places</string>
+    <string name="places_row_hint">Names you gave to GPS spots</string>
+    <string name="places_intro">Places are names you gave to GPS spots. They never leave your phone and no map service is used.</string>
+    <string name="places_empty">No places yet. Check in with your location and you’ll be asked “What place is this?”.</string>
+    <string name="places_usually">usually %1$s</string>
+    <string name="places_nearby">%1$d m from “%2$s”</string>
+    <string name="places_rename">Rename</string>
+    <string name="places_merge">Merge</string>
+    <string name="places_merge_title">Merge “%1$s” into…</string>
+    <string name="places_merge_hint">Its meetups take the name of the place you pick.</string>
+    <string name="places_merged">Merged into “%1$s”</string>
+    <string name="places_deleted">“%1$s” deleted</string>
+    <string name="places_more">More for %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d meetup</item>
+        <item quantity="other">%1$d meetups</item>
+    </plurals>
+    <string name="cal_title">Calendar suggestions</string>
+    <string name="cal_switch">Suggest meetups from my calendar</string>
+    <string name="cal_switch_hint">After an event with someone you know, the app offers to log it.</string>
+    <string name="cal_choose">Calendars the app may read</string>
+    <string name="cal_none_found">No calendars on this device.</string>
+    <string name="cal_pick_hint">Tick the calendars to read. Nothing is read until you do.</string>
+    <string name="cal_privacy">Events are read on this phone only. They are never uploaded, never put in backups and never sent to the AI.</string>
+    <string name="cal_lookback">When you turn this on, the app also looks back two months for meetups you didn’t log.</string>
+    <string name="cal_web">Calendar suggestions work in the Android and iOS apps. A browser can’t read your calendar.</string>
+    <string name="cal_access_needed">Calendar access is off, so there’s nothing to suggest.</string>
+    <string name="cal_allow">Allow calendar access</string>
+    <string name="cal_denied">Without calendar access there’s nothing to suggest.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">See %1$d suggestion</item>
+        <item quantity="other">See %1$d suggestions</item>
+    </plurals>
+    <string name="cal_row_on">On · chosen calendars only</string>
+    <string name="cal_row_off">Off</string>
+    <string name="cal_row_web">Not available in the browser</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Tags</string>
+    <string name="tags_row_hint">Rename, merge or delete likes and dislikes for everyone</string>
+    <string name="tags_title">Tags</string>
+    <string name="tags_search">Search tags</string>
+    <string name="tags_same">Looks like the same tag</string>
+    <string name="tags_merge">Merge</string>
+    <string name="tags_keep_both">Keep both</string>
+    <string name="tags_empty">No tags yet. What people like and dislike shows up here.</string>
+    <string name="tags_edit">Edit “%1$s”</string>
+    <string name="tags_name">Name</string>
+    <string name="tags_will_merge">Merges with “%1$s” for everyone</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">%1$d person likes</item>
+        <item quantity="other">%1$d people like</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">%1$d person doesn’t like</item>
+        <item quantity="other">%1$d people don’t like</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d likes</item>
+        <item quantity="other">%1$d like</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d doesn’t</item>
+        <item quantity="other">%1$d don’t</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Renamed to “%1$s”</string>
+    <string name="msg_tag_merged">Merged into “%1$s”</string>
+    <string name="msg_tag_deleted">“%1$s” deleted</string>
+    <string name="ai_switch">AI features</string>
+    <string name="ai_switch_hint">Weekly plans, talking points, gift and message suggestions, using your own Anthropic key.</string>
+    <string name="ai_off_note">While this is off, nothing that needs AI is shown anywhere in the app.</string>
+    <string name="meetups">Meetups</string>
+    <string name="activities">Activities</string>
+    <string name="activities_count">%1$d of %2$d on</string>
+    <string name="activities_hint">What the log sheet offers when you met someone. The ones you use most come first, the rest in this order; six show, the others are behind More. Drag to reorder.</string>
+    <string name="activities_move_up">Move up</string>
+    <string name="activities_move_down">Move down</string>
 </resources>

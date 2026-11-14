@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
@@ -27,6 +28,9 @@ actual fun Scope.createLocationProvider(): LocationProvider = BrowserLocationPro
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = object : NotificationScheduler {
     override suspend fun replaceAll(notifications: List<RenderedNotification>) = Unit
 }
+
+/** Browsers can't read the device calendar: calendar suggestions are Android and iOS only (D3). */
+actual fun Scope.createCalendarReader(): CalendarReader = CalendarReader.None
 
 private class BrowserLocationProvider : LocationProvider {
     override suspend fun currentLocation(): GeoPoint? = withTimeoutOrNull(15_000) {

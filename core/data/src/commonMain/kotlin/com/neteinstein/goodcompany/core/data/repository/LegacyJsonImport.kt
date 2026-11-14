@@ -84,7 +84,8 @@ class LegacyJsonImport(private val settings: Settings) {
             ideas = load(Keys.IDEAS, ListSerializer(Idea.serializer()), emptyList()),
             groups = load(Keys.GROUPS, ListSerializer(FriendGroup.serializer()), emptyList()),
             plans = load(Keys.PLANS, ListSerializer(Plan.serializer()), emptyList()),
-            settings = load(Keys.SETTINGS, AppSettings.serializer(), AppSettings()),
+            // The JSON predates the AI switch (issue #37): it is on for anyone who had a key.
+            settings = load(Keys.SETTINGS, AppSettings.serializer(), AppSettings()).let { it.copy(aiEnabled = it.hasAiKey) },
         )
         val summary = "friends=${backup.friends.size} hangouts=${backup.hangouts.size} keys=${readable.size}/$present"
         return Legacy(backup, readable, hasData = readable.isNotEmpty(), summary = summary)

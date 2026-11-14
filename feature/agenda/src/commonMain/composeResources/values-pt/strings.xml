@@ -45,4 +45,21 @@
     <string name="msg_reminder_deleted">Lembrete apagado</string>
     <string name="label_plan">Plano</string>
     <string name="row_relative">%1$s (família de %2$s)</string>
+    <string name="calendar_card_title">Do teu calendário</string>
+    <plurals name="calendar_card_body">
+        <item quantity="one">%1$d encontro para registar</item>
+        <item quantity="other">%1$d encontros para registar</item>
+    </plurals>
+    <string name="cal_screen_title">Do teu calendário</string>
+    <string name="cal_looking_back">Olhando para trás</string>
+    <string name="cal_log_it">Registar</string>
+    <string name="cal_no">Não</string>
+    <string name="cal_never">Nunca para “%1$s”</string>
+    <string name="cal_matched_name">encontrado pelo nome</string>
+    <string name="cal_matched_email">convidado (email)</string>
+    <string name="cal_matched_both">encontrado pelo nome e email</string>
+    <string name="cal_empty_title">Nada para registar</string>
+    <string name="cal_empty_body">Os eventos com os teus amigos nos calendários que escolheste aparecem aqui quando terminam.</string>
+    <string name="cal_msg_no">Não volto a sugerir “%1$s”</string>
+    <string name="cal_msg_never">Sem mais sugestões para “%1$s”</string>
 </resources>

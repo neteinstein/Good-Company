@@ -9,8 +9,9 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -37,6 +38,7 @@ import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
+import com.neteinstein.goodcompany.core.testing.FakePersonLinkRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
@@ -58,10 +60,12 @@ class FriendCareUseCasesTest {
     private val ana = FriendId("ana")
     private val friends = FakeFriendRepository(
         listOf(
-            friend("ana", "Ana Silva") { copy(phoneNumbers = listOf("+351 912 345 678"), kids = listOf(Kid("leo", "Leo", likes = listOf("LEGO")))) },
+            friend("ana", "Ana Silva") { copy(phoneNumbers = listOf("+351 912 345 678")) },
             friend("rui", "Rui Costa"),
+            friend("leo", "Leo") { copy(likes = listOf("LEGO")) },
         ),
     )
+    private val links = FakePersonLinkRepository(listOf(PersonLink("l", ana, FriendId("leo"), LinkType.CHILD)), friends)
     private val groups = FakeGroupRepository()
     private val hangouts = FakeHangoutRepository()
     private val interactions = FakeInteractionRepository()
@@ -145,13 +149,19 @@ class FriendCareUseCasesTest {
         val draft = DraftBirthdayMessageUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)
         assertIs<MissingApiKeyException>(draft(ana).exceptionOrNull())
         settings.update { it.copy(aiApiKey = "k") }
+        assertIs<MissingApiKeyException>(draft(ana).exceptionOrNull()) // a key alone isn't enough while AI is off (F1)
+        assertTrue(ai.calls.isEmpty())
+        settings.update { it.copy(aiEnabled = true) }
         assertEquals("Happy birthday!", draft(ana).getOrThrow())
         assertEquals("message:ana:pt-PT", ai.calls.single())
 
         friends.upsert(friends.get(ana)!!.copy(gifts = listOf(Gift("g", "Kind of Blue"))))
-        val gifts = SuggestGiftsUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)(ana).getOrThrow()
+        val suggest = SuggestGiftsUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt, links)
+        val gifts = suggest(ana).getOrThrow()
         assertEquals(listOf("LEGO castle", "lego castle", "Vinyl"), gifts) // trims and drops ones you already have
-        SuggestGiftsUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)(ana, kidId = "leo")
+        assertEquals("gifts:ana:-:pt-PT", ai.calls.last())
+        // A kid (F9) is asked about as their parent's kid, from the kid's own page.
+        suggest(FriendId("leo"))
         assertEquals("gifts:ana:Leo:pt-PT", ai.calls.last())
     }
 

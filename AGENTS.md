@@ -48,7 +48,7 @@ feature/hangouts/     "I'm with…" check-in, history, "last time with these peo
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
-feature/review/       "Your year in friendship" (story cards + share)
+feature/review/       "Your year in friendship" (story cards + share), the network map and the "Your people" dashboard
 iosApp/               Hand-authored Xcode project: SwiftUI shell + Share Extension + "Who's next" WidgetKit widget
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
 ```
@@ -187,7 +187,7 @@ Seen in practice:
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
 8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` **and
    `REQUEST_INSTALL_PACKAGES`** (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`.
-   The sideload build (and iOS) offer the contact list with checkboxes (decision D2, `ChooseContactsRoute`, gated on
+   The sideload build (and iOS) offer the contact list with checkboxes as "Pick from contacts" (decision D2, issue #35: a refused permission falls back to the system picker; `ChooseContactsRoute`, gated on
    `PlatformCapabilities.hasContactList` = "the manifest declares READ_CONTACTS") plus the write-back (gotcha 22).
    **The Play build stays picker-only** until Google Play's `READ_CONTACTS` policy has been checked; enabling the list
    there is a manifest + CI change, no code change.
@@ -263,7 +263,7 @@ Seen in practice:
     the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
     contact the app owns (`SOURCE_ID` = `goodcompany:<friendId>`, no account, so it never syncs to Google) joined to the real
     contact with an aggregation exception. Never edit the user's own contact rows. The mirror
-    **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid/event), a changed detail
+    **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid (from CHILD links)/event), a changed detail
     updates the app's own earlier row in place (`ContactRowPlanner`, pure and tested; its `Step` has no delete), and a detail
     removed in the app, a cleared friend or a deleted friend leaves the contact as it is. The user's own contact rows are only read.
     `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false` (so does
@@ -353,6 +353,63 @@ Seen in practice:
     localised `shortcutItems()` (`startShortcutSync`, compose string `shortcut_log_meetup`); `iOSApp.swift` sets
     `UIApplication.shortcutItems` on every trip to the background and handles a pick in `QuickActionSceneDelegate`
     (cold start and running), all in the existing Swift file, so the Xcode project didn't change. Web: none.
+29. **Named places (issue #44, F11).** GPS only: never call a place-search, geocoding or map service. A `NamedPlace`
+    (`named_place` table, migration `7.sqm`, in `Backup.places`) is a name, a point and `radiusM` (100). Meetups link to
+    one through `Place.placeId` (`hangout.place_id`, no foreign key). `CheckInUseCase` resolves the place: a fix inside a
+    radius (`NamedPlaces.nearest`, haversine, the edge counts, overlaps → the nearest) with no name or that place's name
+    takes it; a new name at a fix creates a place; no name and nothing near keeps just the coordinates. Rename and merge
+    go through `HangoutRepository` (one transaction in SQL) so every linked meetup's `place_name` follows; delete only
+    forgets the place (meetups keep their name and link, so Undo relinks them). "Usually here with" is
+    `NamedPlaces.usualPeople` (most frequent in the last 8 meetups there): chips that add on tap, never pre-ticked.
+    Both sheets draw it with `MeetupPlace` (`:core:ui`); Settings → Places is `PlacesRoute` in `:feature:settings`.
+30. **Links between people (issue #39, F6, F18).** `PersonLink` (own `person_link` table, migration `8.sqm`, in backups) is
+    stored **once**: `type` is what `to` is to `from`, and `LinkType.inverse` gives the other side (`PersonLink.roleSeenBy`).
+    Types are gender-neutral; the word comes from the described person's optional `Friend.pronouns` (`linkWord` in `:core:ui`,
+    neutral word when null). `Friend.relationToMe` is separate; a family one puts them in the built-in Family circle, which
+    `GroupsWithFamilyCircle` (domain) adds in front of the stored circles (never stored, writes to it are ignored; its name
+    comes from the `BuiltInCircleNames` port). One link per pair (`SaveLinkUseCase`); anniversaries come from a current
+    romance's `startedOn` (`PersonLinks.anniversaries` → agenda + notifications). Contact write-back: `ContactMirror` builds
+    each card with its links (`ContactCard.links`), so a link change rewrites both contacts and a rename the linked ones.
+31. **Kids are people (issue #40, F9).** A kid is a `Friend` with a `LinkType.CHILD` link from the parent (`KidsAsPeople`:
+    `kidsOf` / `parentsOf` / `parentsById`); `AddKidUseCase` creates both. `Friend.kids` and `Gift.forKidId` are legacy:
+    only old backups and the old JSON store carry them, and `KidsAsPeople.convert` turns them into people (in
+    `RestoreBackupUseCase`, in `replaceAllData` so `LegacyJsonImport` too, and for `SampleData`); the database does the
+    same in SQL as migration `10.sqm` (id kept unless taken, then `<parent>-<kid>`; link id `kid-link-<id>`) and drops `kid`, `kid_like` and
+    `gift.for_kid_id`. `Friend.showInMyList` hides someone from the A–Z list only (search, circles and the parent's page
+    still show them); it defaults to `KidsAsPeople.showsByDefault(parent)` = the parent is family. Agenda and notifications
+    find a kid's parent through the links (`KidBirthday(parent, kid)`); `ContactCard.kids` comes from CHILD links, so a
+    kid is written once (not also as a relation).
+
+32. **Calendar suggestions (issue #45, D3).** Opt-in (`AppSettings.calendarSuggestions`, `calendarIds`, `calendarOnSince`:
+    device settings, stripped from exports and kept on restore). The `CalendarReader` port (`createCalendarReader()`:
+    `AndroidCalendarReader` over `CalendarContract.Instances` with `READ_CALENDAR` in the main manifest, `IosCalendarReader`
+    over EventKit full access, `CalendarReader.None` on the web) is only read through `ObserveCalendarEventsUseCase`, which
+    returns nothing while the feature is off, no calendar is ticked or access is missing. Events live in memory only:
+    never stored, never in a backup, never in an AI request. `CalendarSuggester` (pure) matches by attendee email and
+    `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
+    (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
+    friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
+    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
+    `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
+    (`:feature:agenda`, also a card on Coming up).
+33. **AI switch (issue #37, F1).** `AppSettings.aiEnabled` (default off; stored in `user_preferences.ai_enabled`, where
+    NULL means "on when a key is saved", so people who had a key before keep AI) hides everything AI. **Every AI entry
+    point checks it:** use cases take the key from `AppSettings.usableAiKey` (null while AI is off), ViewModels expose
+    `hasAiKey = settings.usableAiKey != null` (and `aiEnabled` where a section or hint shows without a key), and screens
+    show no AI button, section, hint or "set up AI" prompt while it is off. The Ideas tab is filtered by
+    `TopLevelDestination.shown(aiEnabled)`, `LaunchOptions.startDestination` sends `tab=ideas` to Home, and
+    `RunWeeklyIdeasUseCase` returns `AI_OFF` (even forced). The web option `?ai` turns it on for demos and screenshots.
+    Restoring a backup keeps this device's switch, like the key. Settings → Activities (F3) edits
+    `AppSettings.activities` (the ones on, in order, never empty; `user_preferences.activities`, NULL = all), and
+    `ObserveActivitiesUseCase` offers only those to the log sheet.
+34. **Network map and "Your people" (issue #46, I12).** Both are pure domain code in `usecase/Network.kt` and
+    `usecase/PeopleDashboard.kt`; the screens live in `:feature:review` (`NetworkMapRoute`, `PeopleDashboardRoute`, from
+    Home's menu and the year in review). Only "your people" are shown (`PeopleDashboard.isYours`: a real friend, a
+    closeness, a relation to you or a circle member; never orphans or address-book-only contacts). Edges are person links
+    (#39) plus "introduced by", never co-presence; you are the `NetworkGraph.ME` node at the origin. The layout is our own
+    deterministic Fruchterman–Reingold (`ForceLayout`, fixed iteration budget, positions cached between emissions and
+    re-run for a third of the budget), drawn in a Compose `Canvas`: no graph library. Warmth is the same `Warmth.score`;
+    with Show warmth off node size and every dashboard warmth figure go away and only counts remain.
 
 ## Skills
 

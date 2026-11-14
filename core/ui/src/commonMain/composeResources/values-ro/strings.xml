@@ -418,4 +418,153 @@
     <string name="attachment_original_gone">Originalul nu mai este în galerie</string>
     <string name="attachment_copy">Copiază</string>
     <string name="attachment_open_link">Deschide linkul</string>
+    <string name="log_locating">Te localizăm…</string>
+    <string name="place_what_is_this">Ce loc e acesta?</string>
+    <string name="place_name_hint">Dă-i un nume (opțional)</string>
+    <string name="place_first_time">%1$s · prima dată aici</string>
+    <string name="place_next_time">Data viitoare când ești la mai puțin de %1$d m, va primi acest nume.</string>
+    <string name="place_named_auto">Numit automat · ești la %1$d m</string>
+    <string name="place_change">Schimbă</string>
+    <string name="place_usually_with">De obicei aici cu</string>
+    <string name="place_add_person">Adaugă pe %1$s</string>
+    <plurals name="place_suggest_hint">
+        <item quantity="one">Din ultima ta întâlnire aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+        <item quantity="few">Din ultimele tale %1$d întâlniri aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+        <item quantity="other">Din ultimele tale %1$d de întâlniri aici. Atinge ca să adaugi; nimeni nu e adăugat singur.</item>
+    </plurals>
+    <!-- Links between people and relationship to me (issue #39). Each word has a she / he / neutral form (decision F18). -->
+    <string name="link_parent_she">Mamă</string>
+    <string name="link_parent_he">Tată</string>
+    <string name="link_parent_they">Părinte</string>
+    <string name="link_child_she">Fiică</string>
+    <string name="link_child_he">Fiu</string>
+    <string name="link_child_they">Copil</string>
+    <string name="link_sibling_she">Soră</string>
+    <string name="link_sibling_he">Frate</string>
+    <string name="link_sibling_they">Frate sau soră</string>
+    <string name="link_grandparent_she">Bunică</string>
+    <string name="link_grandparent_he">Bunic</string>
+    <string name="link_grandparent_they">Bunic sau bunică</string>
+    <string name="link_grandchild_she">Nepoată</string>
+    <string name="link_grandchild_he">Nepot</string>
+    <string name="link_grandchild_they">Nepot sau nepoată</string>
+    <string name="link_aunt_uncle_she">Mătușă</string>
+    <string name="link_aunt_uncle_he">Unchi</string>
+    <string name="link_aunt_uncle_they">Unchi sau mătușă</string>
+    <string name="link_niece_nephew_she">Nepoată</string>
+    <string name="link_niece_nephew_he">Nepot</string>
+    <string name="link_niece_nephew_they">Nepot sau nepoată</string>
+    <string name="link_cousin_she">Verișoară</string>
+    <string name="link_cousin_he">Văr</string>
+    <string name="link_cousin_they">Văr sau verișoară</string>
+    <string name="link_in_law_she">Rudă prin alianță</string>
+    <string name="link_in_law_he">Rudă prin alianță</string>
+    <string name="link_in_law_they">Rudă prin alianță</string>
+    <string name="link_dating_she">Iubită</string>
+    <string name="link_dating_he">Iubit</string>
+    <string name="link_dating_they">Iubit sau iubită</string>
+    <string name="link_spouse_she">Soție</string>
+    <string name="link_spouse_he">Soț</string>
+    <string name="link_spouse_they">Soț sau soție</string>
+    <string name="link_partner_she">Parteneră</string>
+    <string name="link_partner_he">Partener</string>
+    <string name="link_partner_they">Partener sau parteneră</string>
+    <string name="link_ex_she">Fostă parteneră</string>
+    <string name="link_ex_he">Fost partener</string>
+    <string name="link_ex_they">Fost partener sau parteneră</string>
+    <string name="link_friend_she">Prietenă</string>
+    <string name="link_friend_he">Prieten</string>
+    <string name="link_friend_they">Prieten sau prietenă</string>
+    <string name="link_colleague_she">Colegă</string>
+    <string name="link_colleague_he">Coleg</string>
+    <string name="link_colleague_they">Coleg sau colegă</string>
+    <string name="relation_to_me_she">%1$s</string>
+    <string name="relation_to_me_he">%1$s</string>
+    <string name="relation_to_me_they">%1$s</string>
+    <string name="pronouns_she">Ea</string>
+    <string name="pronouns_he">El</string>
+    <string name="pronouns_they">Neutru</string>
+    <string name="link_category_family">Familie</string>
+    <string name="link_category_romantic">Cuplu</string>
+    <string name="link_category_other">Altceva</string>
+    <string name="circle_family">Familie</string>
+    <string name="circle_built_in">Inclus</string>
+    <string name="circle_family_hint">Toți cei pe care i-ai marcat ca familie. Se completează singur din „relația cu tine”.</string>
+    <string name="anniversary_title">💞 Aniversarea lui %1$s și %2$s</string>
+    <plurals name="anniversary_years">
+        <item quantity="one">%1$d an împreună</item>
+        <item quantity="few">%1$d ani împreună</item>
+        <item quantity="other">%1$d de ani împreună</item>
+    </plurals>
+    <string name="anniversary_body">Azi e aniversarea lor — felicită-i!</string>
+    <!-- Birthday fields (F4) and the photo crop editor (F14) -->
+    <string name="birthday_day">Zi</string>
+    <string name="birthday_month">Lună</string>
+    <string name="birthday_year">An</string>
+    <string name="crop_title">Mută și scalează</string>
+    <string name="crop_hint">Ciupește pentru zoom · trage pentru a muta</string>
+    <string name="crop_use">Folosește fotografia</string>
+    <string name="kid_of">%2$s lui %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Un cerc</string>
+    <string name="plan_with_people">Persoane</string>
+    <string name="plan_activity">Activitate</string>
+    <string name="plan_repeat">Repetă</string>
+    <string name="plan_repeat_never">Niciodată</string>
+    <string name="plan_repeat_custom">Personalizat</string>
+    <string name="plan_repeat_unit_days">Zile</string>
+    <string name="plan_repeat_unit_weeks">Săptămâni</string>
+    <string name="plan_repeat_unit_months">Luni</string>
+    <string name="plan_repeat_every_label">La fiecare</string>
+    <string name="plan_repeat_forever">Până o oprești. Fiecare dată poate fi sărită separat.</string>
+    <string name="plan_repeat_until">Până pe %1$s</string>
+    <string name="plan_repeat_add_end">Adaugă o dată de final</string>
+    <string name="plan_repeat_remove_end">Fără dată de final</string>
+    <string name="plan_skip_one">Sari peste aceasta</string>
+    <string name="plan_next_after">Următoarea: %1$s</string>
+    <string name="plan_repeats">se repetă</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Sărită. Seria continuă.</string>
+    <string name="plan_make">Planifică</string>
+    <string name="circle_next_plan">Următorul: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">în fiecare săptămână</item>
+        <item quantity="few">la fiecare %1$d săptămâni</item>
+        <item quantity="other">la fiecare %1$d de săptămâni</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">în fiecare lună</item>
+        <item quantity="few">la fiecare %1$d luni</item>
+        <item quantity="other">la fiecare %1$d de luni</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d persoană</item>
+        <item quantity="few">%1$d persoane</item>
+        <item quantity="other">%1$d de persoane</item>
+    </plurals>
+    <string name="notif_calendar_one_title">Te-ai văzut azi cu %1$s?</string>
+    <string name="notif_calendar_one_body">„%1$s” era în calendarul tău. Deschide Good Company ca să notezi întâlnirea.</string>
+    <string name="notif_calendar_many_title">Din calendarul tău de azi</string>
+    <string name="notif_calendar_many_body">%1$s — deschide Good Company ca să notezi întâlnirile care au avut loc.</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_matches">Potriviri</string>
+    <string name="tags_most_used">Cele mai folosite</string>
+    <string name="tags_more">Mai multe…</string>
+    <string name="tags_add_new">Adaugă „%1$s” ca etichetă nouă</string>
+    <string name="tags_chip_count">%1$s · %2$d</string>
+    <string name="tags_people_join">%1$s · %2$s</string>
+    <string name="tags_liked_by_one">Lui %1$s îi place</string>
+    <plurals name="tags_liked_by_others">
+        <item quantity="one">Lui %1$s și încă %2$d persoane le place</item>
+        <item quantity="few">Lui %1$s și încă %2$d persoane le place</item>
+        <item quantity="other">Lui %1$s și încă %2$d de persoane le place</item>
+    </plurals>
+    <string name="tags_disliked_by_one">Lui %1$s nu</string>
+    <plurals name="tags_disliked_by_others">
+        <item quantity="one">Lui %1$s și încă %2$d persoane nu</item>
+        <item quantity="few">Lui %1$s și încă %2$d persoane nu</item>
+        <item quantity="other">Lui %1$s și încă %2$d de persoane nu</item>
+    </plurals>
 </resources>

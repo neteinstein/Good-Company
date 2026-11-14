@@ -31,23 +31,27 @@ import org.jetbrains.compose.resources.StringResource
 /**
  * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
  * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met". [circleId] opens on that circle's members, nobody ticked (F20).
- * [date] (ISO), [activity], [note] and [planId] carry what the "We met" panel had chosen ("More details").
+ * [plan] answers a plan's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`, issue #43).
+ * [note] and [place] (with [date] and [activity]) carry what the "We met" panel had chosen ("More details", issue #47).
  */
 @Serializable data class LogInteractionRoute(
     val friendIds: List<String>,
     val type: String? = null,
     val circleId: String? = null,
+    val plan: String? = null,
+    /** ISO date to open on (a calendar suggestion's day, or the panel's); null = today. */
     val date: String? = null,
+    /** A HangoutActivity name (guessed from a calendar event, or picked in the panel). */
     val activity: String? = null,
     val note: String? = null,
-    val planId: String? = null,
+    val place: String? = null,
 )
 
 /**
  * The small "We met" panel (issue #47, F2): every in-app "We met" opens it. [friendIds] or [circleId] (members listed,
- * nobody ticked, F20); [planId] answers that plan's "Did you meet?".
+ * nobody ticked, F20); [plan] answers that plan occurrence's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`).
  */
-@Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val planId: String? = null)
+@Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val plan: String? = null)
 
 /** The circle editor (decision D1); [id] null creates a circle. */
 @Serializable data class CircleEditorRoute(val id: String? = null)
@@ -69,6 +73,27 @@ import org.jetbrains.compose.resources.StringResource
 
 @Serializable data object SettingsRoute
 
+/** "Your network": the map of your people (issue #46). */
+@Serializable data object NetworkMapRoute
+
+/** "Your people": the dashboard (issue #46). */
+@Serializable data object PeopleDashboardRoute
+
+/** Settings → Places (F11). */
+@Serializable data object PlacesRoute
+
+/** Settings → Activities: what the log sheet offers, in which order (F3). */
+@Serializable data object ActivitiesRoute
+
+/** Settings → Calendar suggestions (D3). */
+@Serializable data object CalendarSettingsRoute
+
+/** "From your calendar": past meetups to log (D3). */
+@Serializable data object CalendarSuggestionsRoute
+
+/** Settings → Tags: the shared tag list (F16). */
+@Serializable data object TagsRoute
+
 /** Year in review; [year] null = the most relevant year. */
 @Serializable data class YearReviewRoute(val year: Int? = null)
 
@@ -78,4 +103,13 @@ enum class TopLevelDestination(val route: Any, val label: StringResource, val ic
     AGENDA(AgendaRoute, Res.string.nav_agenda, Icons.Outlined.Event, Icons.Rounded.Event),
     IDEAS(IdeasRoute, Res.string.nav_ideas, Icons.Outlined.AutoAwesome, Icons.Rounded.AutoAwesome),
     SETTINGS(SettingsRoute, Res.string.nav_settings, Icons.Outlined.Settings, Icons.Rounded.Settings),
+    ;
+
+    /** Ideas is AI only: it leaves the bar while AI is off (F1). */
+    fun isShown(aiEnabled: Boolean): Boolean = this != IDEAS || aiEnabled
+
+    companion object {
+        /** The tabs in the bar, given the AI switch. */
+        fun shown(aiEnabled: Boolean): List<TopLevelDestination> = entries.filter { it.isShown(aiEnabled) }
+    }
 }

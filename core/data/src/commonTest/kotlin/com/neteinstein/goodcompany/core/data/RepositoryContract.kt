@@ -33,6 +33,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
@@ -41,18 +42,22 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -128,14 +133,10 @@ abstract class RepositoryContract {
         phoneNumbers = listOf("+351 912 345 678", "21 000 0000"),
         birthday = Birthday(3, 9, 1990),
         isCloseFriend = true,
-        notifyBirthday = true,
+        notifyBirthday = false,
         likes = listOf("jazz", "sushi"),
         dislikes = listOf("cilantro"),
         notes = "Met at uni\nLoves hiking",
-        kids = listOf(
-            Kid("k1", "Maria", Birthday(5, 1, 2018), listOf("dinosaurs", "lego"), at(2026, 1, 2)),
-            Kid("k2", "João", Birthday(12, 24)),
-        ),
         importantEvents = listOf(ImportantEvent("e1", "Wedding", LocalDate(2026, 6, 20), remindDaysBefore = 7, addedAt = at(2026, 1, 3))),
         meetEveryDays = 14,
         suggestEvents = true,
@@ -143,8 +144,8 @@ abstract class RepositoryContract {
         closeness = Closeness.INNER,
         snoozedUntil = LocalDate(2026, 4, 1),
         gifts = listOf(
-            Gift("g1", "Book", "Murakami", forKidId = null, givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
-            Gift("g2", "Lego set", forKidId = "k1", url = "https://shop.example/lego", price = "€35"),
+            Gift("g1", "Book", "Murakami", givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
+            Gift("g2", "Lego set", url = "https://shop.example/lego", price = "€35"),
         ),
         catchUpPaused = true,
         contactCountsAsCatchUp = true,
@@ -187,9 +188,43 @@ abstract class RepositoryContract {
         drinksAddedAt = mapOf("Alvarinho" to at(2026, 2, 5)),
         interestsAddedAt = mapOf("trail running" to at(2026, 2, 6)),
         customFields = listOf(CustomField("f1", "Shoe size", "38"), CustomField("f2", "Club", "Benfica")),
+        relationToMe = LinkType.COUSIN,
+        pronouns = Pronouns.THEY,
+        customName = "Aninhas",
+        customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
+        showInMyList = false,
     )
 
     // --- Friends ---
+
+    @Test
+    fun updateAll_changesEveryoneAtOnce_andReturnsOnlyThoseItChanged() = runTest {
+        val writer = FakeContactsWriter()
+        val repo = open(writer = writer).friends
+        repo.upsert(friend("a") { copy(likes = listOf("sushi", "jazz"), contactId = "c-a") })
+        repo.upsert(friend("b") { copy(dislikes = listOf("Sushi")) })
+        repo.upsert(friend("c") { copy(likes = listOf("hiking")) })
+        val writesBefore = writer.writes
+
+        val before = repo.updateAll { f ->
+            f.copy(likes = f.likes.map { if (it == "sushi") "Sushi" else it })
+        }
+
+        assertEquals(listOf("a"), before.map { it.id.value })
+        assertEquals(listOf("sushi", "jazz"), before.single().likes)
+        val back = open().friends.friends.first()
+        assertEquals(listOf("a", "b", "c"), back.map { it.id.value })
+        assertEquals(listOf("Sushi", "jazz"), back[0].likes)
+        assertEquals(listOf("Sushi"), back[1].dislikes)
+        // The friend with a contact is mirrored once; nobody else is written.
+        assertEquals(writesBefore + 1, writer.writes)
+    }
+
+    @Test
+    fun keptTagSpellings_surviveARestart() = runTest {
+        open().settings.update { it.copy(keptTagSpellings = setOf("Sushi\nsushi")) }
+        assertEquals(setOf("Sushi\nsushi"), open().settings.settings.first().keptTagSpellings)
+    }
 
     @Test
     fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
@@ -319,7 +354,7 @@ abstract class RepositoryContract {
         stores.backup.restore(
             Backup(
                 friends = listOf(
-                    friend("kid") { copy(contactId = "c-kid", kids = listOf(Kid("k1", "Maria"))) },
+                    friend("kid") { copy(contactId = "c-kid", likes = listOf("Maria")) },
                     friend("bday") { copy(contactId = "c-bday", birthday = Birthday(1, 2)) },
                     friend("gone") { copy(contactId = "c-gone", notes = "x") },
                 ),
@@ -372,6 +407,40 @@ abstract class RepositoryContract {
         assertEquals(listOf(r1.copy(done = true), r2), open().reminders.reminders.first())
         s.reminders.delete("r1")
         assertEquals(listOf(r2), s.reminders.reminders.first())
+    }
+
+    @Test
+    fun namedPlaces_persist_renameAndMergeRelinkMeetups_deleteLeavesThem() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val mum = NamedPlace("mum", "Mum’s", 38.7139, -9.1394)
+        val graca = NamedPlace("graca", "Graça’s place", 38.7143, -9.1394, radiusM = 150)
+        s.hangouts.upsertPlace(mum)
+        s.hangouts.upsertPlace(graca)
+        s.hangouts.upsertPlace(mum.copy(latitude = 38.714)) // an update keeps its place in the list
+        assertEquals(listOf(mum.copy(latitude = 38.714), graca), open().hangouts.places.first())
+
+        s.hangouts.add(Hangout("h1", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7139, -9.1394, "mum")))
+        s.hangouts.add(Hangout("h2", listOf(ana), at(2026, 3, 2), Place("Graça’s place", 38.7143, -9.1394, "graca")))
+        s.hangouts.add(Hangout("h3", listOf(ana), at(2026, 3, 3), Place("Mum’s")))
+        s.hangouts.add(Hangout("h4", listOf(ana), at(2026, 3, 4), Place(placeId = "graca")))
+        assertEquals("graca", open().hangouts.hangouts.first().last().place?.placeId)
+
+        s.hangouts.renamePlace("mum", "Mum & Dad’s")
+        s.hangouts.renamePlace("nowhere", "x") // unknown: nothing changes
+        assertEquals(listOf("Mum & Dad’s", "Graça’s place", "Mum’s", null), open().hangouts.hangouts.first().map { it.place?.name })
+        assertEquals("Mum & Dad’s", open().hangouts.places.first().first().name)
+
+        s.hangouts.mergePlaces("graca", "mum")
+        val merged = open().hangouts.hangouts.first()
+        assertEquals(listOf("mum", "mum", null, "mum"), merged.map { it.place?.placeId })
+        assertEquals(listOf("Mum & Dad’s", "Mum & Dad’s", "Mum’s", "Mum & Dad’s"), merged.map { it.place?.name })
+        assertEquals(listOf(38.7143, -9.1394), merged[1].place.let { listOf(it?.latitude, it?.longitude) }) // coordinates kept
+        assertEquals(listOf("mum"), open().hangouts.places.first().map { it.id })
+
+        s.hangouts.deletePlace("mum")
+        assertTrue(open().hangouts.places.first().isEmpty())
+        assertEquals(listOf("mum", "mum", null, "mum"), open().hangouts.hangouts.first().map { it.place?.placeId })
     }
 
     @Test
@@ -597,7 +666,8 @@ abstract class RepositoryContract {
     fun exportThenRestoreOnAnotherDevice_replacesEverythingButTheApiKey() = runTest {
         val from = open()
         from.friends.upsert(richFriend())
-        from.hangouts.add(Hangout("h", listOf(ana), at(2026, 3, 1)))
+        from.hangouts.add(Hangout("h", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7, -9.1, "pl")))
+        from.hangouts.upsertPlace(NamedPlace("pl", "Mum’s", 38.7, -9.1))
         from.reminders.upsert(Reminder("r", "Tickets", listOf(ana), createdAt = at(2026, 3, 1)))
         from.interactions.addAll(listOf(Interaction(ana, InteractionType.CALL, at(2026, 3, 2))))
         from.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), fromMe = true, text = "hi")))
@@ -608,6 +678,20 @@ abstract class RepositoryContract {
         )
         from.interactions.upsertAttachment(Attachment("b", circleId = "g", kind = AttachmentKind.TEXT, text = "hi", at = at(2026, 3, 3)))
         from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "i", createdAt = at(2026, 3, 1)))
+        // A circle plan that repeats, with one date skipped (issue #43).
+        from.plans.upsert(
+            Plan(
+                "q",
+                emptyList(),
+                "Climbing",
+                LocalDate(2026, 3, 14),
+                createdAt = at(2026, 3, 1),
+                circleId = "g",
+                activity = HangoutActivity.SPORTS,
+                repeat = Repeat(15, RepeatUnit.DAY, LocalDate(2026, 3, 14), until = LocalDate(2026, 12, 31)),
+                skippedDates = listOf(LocalDate(2026, 3, 29)),
+            ),
+        )
         from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon") }
         val exported = from.backup.snapshot()
 
@@ -617,6 +701,7 @@ abstract class RepositoryContract {
         val to = open()
         to.friends.upsert(friend("zed"))
         to.hangouts.add(Hangout("old", listOf(FriendId("zed")), at(2025, 1, 1)))
+        to.hangouts.upsertPlace(NamedPlace("old-place", "Old", 1.0, 2.0))
         to.settings.update { it.copy(aiApiKey = "sk-mine") }
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
 
@@ -625,6 +710,8 @@ abstract class RepositoryContract {
         // Flows see the restored data straight away.
         assertEquals(listOf(richFriend()), to.friends.friends.first())
         assertEquals(listOf("h"), to.hangouts.hangouts.first().map { it.id })
+        assertEquals(listOf("pl"), to.hangouts.places.first().map { it.id })
+        assertEquals(LocalDate(2026, 3, 29), to.plans.plans.first().single { it.id == "q" }.skippedDates.single())
     }
 
     @Test

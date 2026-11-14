@@ -55,9 +55,6 @@
     <string name="sheet_title">Sunt cu…</string>
     <string name="sheet_find">Caută un prieten</string>
     <string name="sheet_where">Unde? (opțional)</string>
-    <string name="sheet_locating">Te localizăm…</string>
-    <string name="sheet_clear_location">Șterge locația</string>
-    <string name="sheet_use_location">Folosește locația mea</string>
     <string name="sheet_note">Notă (opțional)</string>
     <string name="sheet_pick">Alege cu cine ești</string>
     <string name="sheet_log">Înregistrează · %1$d</string>
@@ -98,6 +95,7 @@
     <string name="met_title_circle">%1$s · cine a venit?</string>
     <string name="met_more_details">Mai multe detalii</string>
     <string name="met_add_note">Adaugă o notă</string>
+    <string name="met_add_place">Adaugă un loc</string>
     <string name="met_save_on">Salvează · %1$s</string>
     <plurals name="met_log_people">
         <item quantity="one">Înregistrează %1$d persoană</item>

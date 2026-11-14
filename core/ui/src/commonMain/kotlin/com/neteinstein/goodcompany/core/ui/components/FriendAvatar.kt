@@ -71,7 +71,10 @@ fun FriendAvatar(
     }
 }
 
-/** A friend's avatar. Prefer this over passing name, initials and photo one by one. */
+/**
+ * A friend's avatar: the photo set in the app, else the contact's, else initials (F14). Prefer this over passing name,
+ * initials and photo one by one.
+ */
 @Composable
 fun FriendAvatar(
     friend: Friend,
@@ -79,7 +82,7 @@ fun FriendAvatar(
     size: Dp = 48.dp,
     highlighted: Boolean = false,
     sharedKey: String? = null,
-) = FriendAvatar(friend.name, friend.initials, modifier, size, highlighted, sharedKey, friend.photo)
+) = FriendAvatar(friend.displayName, friend.initials, modifier, size, highlighted, sharedKey, friend.avatar)
 
 /** Decoded once per photo; null (so initials show) when there's none or it isn't a readable image. */
 @Composable

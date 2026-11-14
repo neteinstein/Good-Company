@@ -19,11 +19,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.Label
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
@@ -81,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -107,8 +112,13 @@ import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.settings.resources.Res
+import com.neteinstein.goodcompany.feature.settings.resources.activities
+import com.neteinstein.goodcompany.feature.settings.resources.activities_count
 import com.neteinstein.goodcompany.feature.settings.resources.ai
 import com.neteinstein.goodcompany.feature.settings.resources.ai_hint
+import com.neteinstein.goodcompany.feature.settings.resources.ai_off_note
+import com.neteinstein.goodcompany.feature.settings.resources.ai_switch
+import com.neteinstein.goodcompany.feature.settings.resources.ai_switch_hint
 import com.neteinstein.goodcompany.feature.settings.resources.allow_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
@@ -124,6 +134,10 @@ import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_off
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_on
+import com.neteinstein.goodcompany.feature.settings.resources.cal_row_web
+import com.neteinstein.goodcompany.feature.settings.resources.cal_title
 import com.neteinstein.goodcompany.feature.settings.resources.circles
 import com.neteinstein.goodcompany.feature.settings.resources.circles_hint
 import com.neteinstein.goodcompany.feature.settings.resources.digest
@@ -145,6 +159,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
+import com.neteinstein.goodcompany.feature.settings.resources.meetups
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
@@ -168,6 +183,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_update_permiss
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.settings.resources.msg_vcf_result
 import com.neteinstein.goodcompany.feature.settings.resources.pings_at
+import com.neteinstein.goodcompany.feature.settings.resources.places
+import com.neteinstein.goodcompany.feature.settings.resources.places_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.privacy
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_base
 import com.neteinstein.goodcompany.feature.settings.resources.privacy_call_log
@@ -185,6 +202,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.sample_loaded
 import com.neteinstein.goodcompany.feature.settings.resources.sample_remove_hint
 import com.neteinstein.goodcompany.feature.settings.resources.show_warmth
 import com.neteinstein.goodcompany.feature.settings.resources.show_warmth_hint
+import com.neteinstein.goodcompany.feature.settings.resources.tags_row
+import com.neteinstein.goodcompany.feature.settings.resources.tags_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.theme_auto
 import com.neteinstein.goodcompany.feature.settings.resources.theme_dark
 import com.neteinstein.goodcompany.feature.settings.resources.theme_light
@@ -247,7 +266,14 @@ suspend fun SettingsMessage.text(): String = when (this) {
 }
 
 @Composable
-fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(
+    appVersion: String,
+    onOpenPlaces: () -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
+    onOpenTags: () -> Unit = {},
+    onOpenActivities: () -> Unit = {},
+    viewModel: SettingsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var notificationsAsked by remember { mutableIntStateOf(0) }
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
@@ -278,6 +304,8 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
         actions = SettingsActions(
             onSaveApiKey = viewModel::onSaveApiKey,
             onClearApiKey = viewModel::onClearApiKey,
+            onAiEnabledChange = viewModel::onAiEnabledChange,
+            onOpenActivities = onOpenActivities,
             onThemeChange = viewModel::onThemeChange,
             onDynamicColorChange = viewModel::onDynamicColorChange,
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
@@ -285,6 +313,8 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
             onReminderHourChange = viewModel::onReminderHourChange,
             onClosenessDaysChange = viewModel::onClosenessDaysChange,
             onImportContactsFile = pickVcf,
+            onOpenPlaces = onOpenPlaces,
+            onOpenTags = onOpenTags,
             onEnableNotifications = requestNotifications,
             onLoadSampleData = viewModel::onLoadSampleData,
             onRemoveSampleData = viewModel::onRemoveSampleData,
@@ -314,6 +344,7 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
                 authorizeDrive()
             },
             onCheckForUpdate = { viewModel.onCheckForUpdate(updater.installedVersionCode) },
+            onOpenCalendar = onOpenCalendar,
             onInstallUpdate = { update ->
                 viewModel.onUpdateStarted(update)
                 scope.launch {
@@ -334,6 +365,8 @@ fun SettingsScreen(appVersion: String, viewModel: SettingsViewModel = koinViewMo
 data class SettingsActions(
     val onSaveApiKey: (String) -> Unit = {},
     val onClearApiKey: () -> Unit = {},
+    val onAiEnabledChange: (Boolean) -> Unit = {},
+    val onOpenActivities: () -> Unit = {},
     val onThemeChange: (ThemeMode) -> Unit = {},
     val onDynamicColorChange: (Boolean) -> Unit = {},
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
@@ -341,6 +374,7 @@ data class SettingsActions(
     val onReminderHourChange: (Int) -> Unit = {},
     val onClosenessDaysChange: (Closeness, Int) -> Unit = { _, _ -> },
     val onImportContactsFile: () -> Unit = {},
+    val onOpenTags: () -> Unit = {},
     val onEnableNotifications: () -> Unit = {},
     val onLoadSampleData: () -> Unit = {},
     val onRemoveSampleData: () -> Unit = {},
@@ -359,6 +393,9 @@ data class SettingsActions(
     val onDriveRestore: () -> Unit = {},
     val onCheckForUpdate: () -> Unit = {},
     val onInstallUpdate: (AppUpdate) -> Unit = {},
+    /** Settings → Places (F11). */
+    val onOpenPlaces: () -> Unit = {},
+    val onOpenCalendar: () -> Unit = {},
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -455,33 +492,26 @@ fun SettingsContent(
             }
 
             SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
-                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ApiKeyField(state.maskedKey, actions.onSaveApiKey, actions.onClearApiKey)
+                SwitchRow(stringResource(Res.string.ai_switch), stringResource(Res.string.ai_switch_hint), s.aiEnabled, actions.onAiEnabledChange)
+                if (!s.aiEnabled) {
                     Text(
-                        stringResource(Res.string.ai_hint),
+                        stringResource(Res.string.ai_off_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    var area by rememberSaveable(s.homeArea) { mutableStateOf(s.homeArea) }
-                    OutlinedTextField(
-                        value = area,
-                        onValueChange = {
-                            area = it
-                            actions.onHomeAreaChange(it)
-                        },
-                        leadingIcon = { Icon(Icons.Rounded.Place, null) },
-                        label = { Text(stringResource(Res.string.home_area)) },
-                        placeholder = { Text(stringResource(Res.string.home_area_placeholder)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
-                SwitchRow(
-                    stringResource(Res.string.weekly_plans),
-                    stringResource(Res.string.weekly_plans_hint),
-                    s.weeklyIdeasEnabled,
-                    actions.onWeeklyIdeasChange,
+                // The key, the area and the weekly plans only show while AI is on (F1).
+                if (s.aiEnabled) AiDetails(state, actions)
+            }
+
+            SectionCard(stringResource(Res.string.meetups), icon = Icons.Rounded.FavoriteBorder) {
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenActivities),
+                    headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.activities_count, s.activities.size, HangoutActivity.entries.size)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
             }
 
@@ -536,6 +566,29 @@ fun SettingsContent(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
+                // Calendar suggestions (D3): Android and iOS only; the web says so here.
+                ListItem(
+                    modifier = if (capabilities.hasCalendar) Modifier.clickable(onClick = actions.onOpenCalendar) else Modifier,
+                    leadingContent = { Icon(Icons.Rounded.CalendarMonth, null) },
+                    headlineContent = { Text(stringResource(Res.string.cal_title), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                when {
+                                    !capabilities.hasCalendar -> Res.string.cal_row_web
+                                    s.calendarSuggestions -> Res.string.cal_row_on
+                                    else -> Res.string.cal_row_off
+                                },
+                            ),
+                        )
+                    },
+                    trailingContent = if (capabilities.hasCalendar) {
+                        { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) }
+                    } else {
+                        null
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
             }
 
             SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {
@@ -568,6 +621,22 @@ fun SettingsContent(
                     supportingContent = { Text(stringResource(Res.string.import_vcf_hint)) },
                     trailingContent = { FilledTonalButton(onClick = actions.onImportContactsFile) { Text(stringResource(Res.string.import)) } },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenPlaces),
+                    leadingContent = { Icon(Icons.Rounded.Place, null) },
+                    headlineContent = { Text(stringResource(Res.string.places), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.places_row_hint)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                ListItem(
+                    leadingContent = { Icon(Icons.AutoMirrored.Rounded.Label, null) },
+                    headlineContent = { Text(stringResource(Res.string.tags_row), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = { Text(stringResource(Res.string.tags_row_hint)) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable(onClick = actions.onOpenTags),
                 )
                 ListItem(
                     leadingContent = { Icon(Icons.Rounded.Download, null) },
@@ -773,5 +842,39 @@ private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChang
         supportingContent = { Text(subtitle) },
         trailingContent = { Switch(checked, onChange) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+/** What the AI card shows while AI is on: the key, the home area and the weekly plans. */
+@Composable
+private fun AiDetails(state: SettingsUiState, actions: SettingsActions) {
+    val s = state.settings
+    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        ApiKeyField(state.maskedKey, actions.onSaveApiKey, actions.onClearApiKey)
+        Text(
+            stringResource(Res.string.ai_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        var area by rememberSaveable(s.homeArea) { mutableStateOf(s.homeArea) }
+        OutlinedTextField(
+            value = area,
+            onValueChange = {
+                area = it
+                actions.onHomeAreaChange(it)
+            },
+            leadingIcon = { Icon(Icons.Rounded.Place, null) },
+            label = { Text(stringResource(Res.string.home_area)) },
+            placeholder = { Text(stringResource(Res.string.home_area_placeholder)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+        )
+    }
+    SwitchRow(
+        stringResource(Res.string.weekly_plans),
+        stringResource(Res.string.weekly_plans_hint),
+        s.weeklyIdeasEnabled,
+        actions.onWeeklyIdeasChange,
     )
 }

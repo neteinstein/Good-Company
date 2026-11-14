@@ -99,4 +99,88 @@
     <string name="msg_drive_full">Google Drive-ul tău este plin.</string>
     <string name="msg_drive_offline">Nu s-a putut contacta Google Drive. Verifică conexiunea.</string>
     <string name="msg_drive_failed">Ceva n-a mers cu Google Drive. Încearcă din nou.</string>
+    <string name="places">Locuri</string>
+    <string name="places_row_hint">Nume date unor puncte GPS</string>
+    <string name="places_intro">Locurile sunt nume pe care le-ai dat unor puncte GPS. Nu părăsesc niciodată telefonul și nu se folosește niciun serviciu de hărți.</string>
+    <string name="places_empty">Încă nu ai locuri. Înregistrează o întâlnire cu locația ta și te vom întreba „Ce loc e acesta?”.</string>
+    <string name="places_usually">de obicei %1$s</string>
+    <string name="places_nearby">la %1$d m de „%2$s”</string>
+    <string name="places_rename">Redenumește</string>
+    <string name="places_merge">Unește</string>
+    <string name="places_merge_title">Unește „%1$s” cu…</string>
+    <string name="places_merge_hint">Întâlnirile de acolo primesc numele locului ales.</string>
+    <string name="places_merged">Unit cu „%1$s”</string>
+    <string name="places_deleted">„%1$s” a fost șters</string>
+    <string name="places_more">Mai multe pentru %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d întâlnire</item>
+        <item quantity="few">%1$d întâlniri</item>
+        <item quantity="other">%1$d de întâlniri</item>
+    </plurals>
+    <string name="cal_title">Sugestii din calendar</string>
+    <string name="cal_switch">Sugerează întâlniri din calendarul meu</string>
+    <string name="cal_switch_hint">După un eveniment cu cineva cunoscut, aplicația îți propune să-l notezi.</string>
+    <string name="cal_choose">Calendare pe care aplicația le poate citi</string>
+    <string name="cal_none_found">Nu există calendare pe acest dispozitiv.</string>
+    <string name="cal_pick_hint">Bifează calendarele de citit. Nimic nu e citit până atunci.</string>
+    <string name="cal_privacy">Evenimentele sunt citite doar pe acest telefon. Nu sunt încărcate nicăieri, nu intră în copii de siguranță și nu sunt trimise la AI.</string>
+    <string name="cal_lookback">Când pornești asta, aplicația se uită și la ultimele două luni după întâlniri pe care nu le-ai notat.</string>
+    <string name="cal_web">Sugestiile din calendar funcționează în aplicațiile Android și iOS. Un browser nu îți poate citi calendarul.</string>
+    <string name="cal_access_needed">Accesul la calendar e oprit, deci nu e nimic de sugerat.</string>
+    <string name="cal_allow">Permite accesul la calendar</string>
+    <string name="cal_denied">Fără acces la calendar nu e nimic de sugerat.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Vezi %1$d sugestie</item>
+        <item quantity="few">Vezi %1$d sugestii</item>
+        <item quantity="other">Vezi %1$d de sugestii</item>
+    </plurals>
+    <string name="cal_row_on">Pornit · doar calendarele alese</string>
+    <string name="cal_row_off">Oprit</string>
+    <string name="cal_row_web">Indisponibil în browser</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Etichete</string>
+    <string name="tags_row_hint">Redenumește, unește sau șterge gusturile pentru toți</string>
+    <string name="tags_title">Etichete</string>
+    <string name="tags_search">Caută etichete</string>
+    <string name="tags_same">Pare aceeași etichetă</string>
+    <string name="tags_merge">Unește</string>
+    <string name="tags_keep_both">Păstrează-le pe amândouă</string>
+    <string name="tags_empty">Încă nu sunt etichete. Aici apare ce le place și ce nu le place oamenilor.</string>
+    <string name="tags_edit">Editează „%1$s”</string>
+    <string name="tags_name">Nume</string>
+    <string name="tags_will_merge">Se unește cu „%1$s” pentru toți</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">%1$d persoană o place</item>
+        <item quantity="few">%1$d persoane o plac</item>
+        <item quantity="other">%1$d de persoane o plac</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">%1$d persoană nu o place</item>
+        <item quantity="few">%1$d persoane nu o plac</item>
+        <item quantity="other">%1$d de persoane nu o plac</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d o place</item>
+        <item quantity="few">%1$d o plac</item>
+        <item quantity="other">%1$d o plac</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d nu</item>
+        <item quantity="few">%1$d nu</item>
+        <item quantity="other">%1$d nu</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Redenumită „%1$s”</string>
+    <string name="msg_tag_merged">Unită în „%1$s”</string>
+    <string name="msg_tag_deleted">„%1$s” ștearsă</string>
+    <string name="ai_switch">Funcții AI</string>
+    <string name="ai_switch_hint">Planuri săptămânale, subiecte de conversație, sugestii de cadouri și de mesaje, cu propria ta cheie Anthropic.</string>
+    <string name="ai_off_note">Cât timp e oprit, nimic din ce are nevoie de AI nu apare în aplicație.</string>
+    <string name="meetups">Întâlniri</string>
+    <string name="activities">Activități</string>
+    <string name="activities_count">%1$d din %2$d pornite</string>
+    <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd șase, celelalte sunt la Mai mult. Trage pentru a reordona.</string>
+    <string name="activities_move_up">Mută în sus</string>
+    <string name="activities_move_down">Mută în jos</string>
 </resources>

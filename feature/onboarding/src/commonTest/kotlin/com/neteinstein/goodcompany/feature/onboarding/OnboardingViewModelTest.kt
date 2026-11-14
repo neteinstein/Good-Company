@@ -45,7 +45,12 @@ class OnboardingViewModelTest {
         vm.onContactListPermissionResult(false)
         assertTrue(vm.state.value.contactListDenied)
         assertFalse(vm.state.value.contactListOpen)
+        // A refusal falls back to the system contact picker, once.
+        assertTrue(vm.state.value.pickerFallback)
+        vm.onPickerFallbackShown()
+        assertFalse(vm.state.value.pickerFallback)
         vm.onContactListPermissionResult(true)
+        assertFalse(vm.state.value.pickerFallback)
         assertTrue(vm.state.value.contactListOpen)
         assertFalse(vm.state.value.contactListDenied)
         vm.onContactListClosed(0) // went back without saving

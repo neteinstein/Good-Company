@@ -12,13 +12,18 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -27,6 +32,7 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.AboutEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.LinkEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.RelativeEdit
 import kotlinx.datetime.LocalDate
@@ -40,7 +46,7 @@ import kotlin.test.assertTrue
 class FriendDetailViewModelTest {
     private fun graph(apiKey: String? = null, withKid: Boolean = false) = TestGraph(
         listOf(friend("ana") { copy(likes = listOf("jazz"), kids = if (withKid) listOf(Kid("k1", "Leo")) else emptyList()) }),
-        settings = AppSettings(aiApiKey = apiKey),
+        settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),
     )
 
     private var g = graph()
@@ -68,27 +74,41 @@ class FriendDetailViewModelTest {
         g.restorePlan,
         g.addFeed,
         g.setFriendPhoto,
+        g.removeFriendPhoto,
+        g.renameFriend,
         g.setHomeCircleFilter,
         g.observeAttachments,
+        g.observeTags,
         g.deleteAttachment,
         g.restoreAttachment,
         g.shareInbox,
+        g.personLinks,
         g.clock,
         g.ids,
     )
+
+    @Test
+    fun aiOff_hidesTheAiSection_evenWithAKey() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana")), settings = AppSettings(aiApiKey = "sk-ant-key"))
+        val state = collecting(vm().state)
+        assertFalse(state.value.aiEnabled)
+        assertFalse(state.value.hasAiKey) // no gift or message suggestions either
+        g.settingsRepo.update { it.copy(aiEnabled = true) }
+        assertTrue(state.value.aiEnabled)
+        assertTrue(state.value.hasAiKey)
+    }
 
     @Test
     fun editsFlowBackIntoState() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onToggleClose()
-        vm.onToggleBirthdayNotifications()
         vm.onMeetEveryChange(14)
         vm.onAddLikes(listOf("jazz", "sushi"))
         vm.onAddLikes(listOf("jazz"))
         vm.onRemoveLike("sushi")
         vm.onAddDislikes(listOf("crowds"))
-        vm.onBirthdayChange(LocalDate(1990, 5, 4))
+        vm.onSaveBirthday(Birthday(5, 4, 1990), notify = true)
         val f = state.value.detail!!.friend
         assertTrue(f.isCloseFriend && f.notifyBirthday)
         assertEquals(Closeness.CLOSE, f.closeness)
@@ -104,11 +124,11 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onPhotoPicked(null)
         assertNull(state.value.message)
-        assertNull(state.value.detail!!.friend.photo)
+        assertNull(state.value.detail!!.friend.avatar)
 
         vm.onPhotoPicked(ByteArray(ContactPhoto.MAX_BYTES * 2)) // the test graph can't shrink this
         assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
-        assertNull(state.value.detail!!.friend.photo)
+        assertNull(state.value.detail!!.friend.avatar)
 
         vm.onMessageShown()
         vm.onPhotoPicked(ByteArray(0)) // what the pickers hand back for a picture they couldn't read
@@ -116,8 +136,52 @@ class FriendDetailViewModelTest {
 
         vm.onMessageShown()
         vm.onPhotoPicked(byteArrayOf(1, 2, 3))
-        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.detail!!.friend.photo)
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.detail!!.friend.customPhoto)
         assertNull(state.value.message)
+    }
+
+    @Test
+    fun aPhotoSetInTheApp_winsOverTheContactsOne_andRemovingItShowsTheContactsAgain() = runViewModelTest {
+        val contactPhoto = ContactPhoto.of(byteArrayOf(9, 9))!!
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(contactId = "c1", photo = contactPhoto))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onPhotoPicked(byteArrayOf(1, 2, 3))
+        val f = state.value.detail!!.friend
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), f.avatar)
+        assertEquals(contactPhoto, f.photo)
+
+        vm.onRemovePhoto()
+        assertNull(state.value.detail!!.friend.customPhoto)
+        assertEquals(contactPhoto, state.value.detail!!.friend.avatar)
+    }
+
+    @Test
+    fun aNameGivenInTheApp_isShown_andTheContactsNameCanComeBack() = runViewModelTest {
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(contactId = "c1"))
+        val contactName = g.friendRepo.get(FriendId("ana"))!!.name
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onRename("  Aninhas ")
+        assertEquals("Aninhas", state.value.detail!!.friend.customName)
+        assertEquals("Aninhas", state.value.detail!!.friend.displayName)
+        assertEquals(contactName, state.value.detail!!.friend.name)
+
+        vm.onRename(null)
+        assertNull(state.value.detail!!.friend.customName)
+        assertEquals(contactName, state.value.detail!!.friend.displayName)
+    }
+
+    @Test
+    fun aBirthdayWithoutAYear_isKept_andTheReminderSwitchIsSavedWithIt() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveBirthday(Birthday(3, 14), notify = false)
+        val f = state.value.detail!!.friend
+        assertEquals(Birthday(3, 14, null), f.birthday)
+        assertFalse(f.notifyBirthday)
+        vm.onSaveBirthday(null, notify = true)
+        assertNull(state.value.detail!!.friend.birthday)
     }
 
     @Test
@@ -130,21 +194,16 @@ class FriendDetailViewModelTest {
         vm.onAddLifeUpdate("  New job at a studio ")
         vm.onAddLifeUpdate(" ")
         vm.onAddLikes(listOf("jazz", "climbing"))
-        vm.onSaveKid(null, "Mia", null, emptyList())
+        vm.onAddKid(KidDraft("Mia"))
         vm.onAddEvent("Moving day", LocalDate(2026, 4, 1), 0)
         val f = state.value.detail!!.friend
         assertEquals(listOf("New job at a studio"), f.lifeUpdates.map { it.text })
         assertEquals(now, f.lifeUpdates.single().addedAt)
         // "jazz" was already there, so only the new like gets a date.
         assertEquals(mapOf("climbing" to now), f.likesAddedAt)
-        assertEquals(now, f.kids.single().addedAt)
+        assertEquals(now, state.value.detail!!.kids.single().link.addedAt)
         assertEquals(now, f.importantEvents.single().addedAt)
         assertEquals(4, state.value.freshCount)
-
-        // Editing a kid keeps when it was added.
-        g.clock.advanceBy(kotlin.time.Duration.parse("1d"))
-        vm.onSaveKid(f.kids.single().id, "Mia", null, listOf("ducks"))
-        assertEquals(now, state.value.detail!!.friend.kids.single().addedAt)
 
         vm.onRemoveLike("climbing")
         vm.onRemoveLifeUpdate(f.lifeUpdates.single().id)
@@ -175,15 +234,23 @@ class FriendDetailViewModelTest {
     }
 
     @Test
-    fun kidsAndEventsCanBeAddedEditedAndRemoved() = runViewModelTest {
+    fun kidsArePeople_andEventsCanBeAdded() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onSaveKid(null, "Leo", LocalDate(2020, 4, 1), listOf("lego"))
-        val kid = state.value.detail!!.friend.kids.single()
-        vm.onSaveKid(kid.id, "Leo", null, listOf("dinosaurs"))
-        assertEquals(listOf("dinosaurs"), state.value.detail!!.friend.kids.single().likes)
-        vm.onRemoveKid(kid.id)
-        assertTrue(state.value.detail!!.friend.kids.isEmpty())
+        vm.onAddKid(KidDraft("  "))
+        assertTrue(state.value.detail!!.kids.isEmpty())
+        vm.onAddKid(KidDraft("Leo Costa", Birthday(4, 1, 2020), listOf("lego")))
+        assertEquals(FriendDetailMessage.KidAdded("Leo"), state.value.message)
+        val kid = state.value.detail!!.kids.single().person
+        assertEquals(listOf("lego"), kid.likes)
+        assertFalse(kid.showInMyList) // Ana is a friend, not family
+
+        // On the kid's own page, "Show in my list" can be switched on.
+        val kidVm = vm(kid.id.value)
+        val kidState = collecting(kidVm.state)
+        assertEquals(listOf("Ana"), kidState.value.detail!!.parents.map { it.name })
+        kidVm.onSetShowInMyList(true)
+        assertTrue(kidState.value.detail!!.friend.showInMyList)
 
         vm.onAddEvent("Surgery", LocalDate(2026, 3, 20), 1)
         vm.onAddEvent("  ", LocalDate(2026, 3, 21), 1)
@@ -212,7 +279,7 @@ class FriendDetailViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onOpenPlanEditor(null)
-        vm.onSavePlan("Dinner", emptyList(), g.clock.today(), null)
+        vm.onSavePlan(PlanInput("Dinner", emptyList(), g.clock.today()))
         val plan = g.planRepo.plans.value.single()
         // A yes opens the "We met" panel (issue #47); the friend page only handles the no.
         vm.onConfirmPlan(plan.id, happened = false)
@@ -253,9 +320,9 @@ class FriendDetailViewModelTest {
         g = graph(withKid = true)
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onSaveGift("  ", "", null)
-        vm.onSaveGift("Vinyl", "Blue Note", null)
-        vm.onSaveGift("Dino lego", "", "k1")
+        vm.onSaveGift("  ", "")
+        vm.onSaveGift("Vinyl", "Blue Note")
+        vm.onSaveGift("Dino lego", "")
         val gifts = state.value.detail!!.friend.gifts
         assertEquals(listOf("Vinyl", "Dino lego"), gifts.map { it.title })
         vm.onMarkGiftGiven(gifts.first().id, GiftOccasion.BIRTHDAY)
@@ -269,18 +336,19 @@ class FriendDetailViewModelTest {
     @Test
     fun aiGiftSuggestionsCanBeKept() = runViewModelTest {
         g = graph(apiKey = "sk-test", withKid = true)
-        val vm = vm()
+        // Leo is a person now: ideas for him are asked with his parent's profile and kept on his own page.
+        val vm = vm("k1")
         val state = collecting(vm.state)
-        vm.onSuggestGifts("k1")
+        vm.onSuggestGifts()
         assertEquals(listOf("Vinyl", "Concert tickets"), state.value.giftSuggestions!!.ideas)
         assertEquals("gifts:ana:Leo:en", g.assistant.calls.single())
         vm.onKeepGiftSuggestion("Vinyl")
-        assertEquals("k1", state.value.detail!!.friend.gifts.single().forKidId)
+        assertEquals(listOf("Vinyl"), state.value.detail!!.friend.gifts.map { it.title })
         vm.onKeepGiftSuggestion("Concert tickets")
         assertNull(state.value.giftSuggestions)
 
         g.assistant.gifts = Result.success(listOf("Vinyl"))
-        vm.onSuggestGifts("k1")
+        vm.onSuggestGifts()
         assertEquals(FriendDetailMessage.NoNewGifts, state.value.message)
     }
 
@@ -304,7 +372,7 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onPersonaliseWish()
         assertIs<FriendDetailMessage.AiError>(state.value.message)
-        vm.onSuggestGifts(null)
+        vm.onSuggestGifts()
         assertIs<FriendDetailMessage.AiError>(state.value.message)
     }
 
@@ -334,14 +402,14 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onOpenPlanEditor(null)
         assertEquals(PlanEditing(null), state.value.planEditing)
-        vm.onSavePlan("Lunch", emptyList(), LocalDate(2026, 3, 12), "Tasca")
+        vm.onSavePlan(PlanInput("Lunch", emptyList(), LocalDate(2026, 3, 12), "Tasca"))
         assertNull(state.value.planEditing)
         assertEquals(FriendDetailMessage.PlanSaved, state.value.message)
         val plan = state.value.detail!!.plans.single()
         assertEquals(listOf(FriendId("ana")), plan.friendIds)
 
         vm.onOpenPlanEditor(plan)
-        vm.onSavePlan("Long lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 13), null)
+        vm.onSavePlan(PlanInput("Long lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 13)))
         assertEquals("Long lunch", state.value.detail!!.plans.single().title)
         assertEquals(plan.id, state.value.detail!!.plans.single().id)
 
@@ -397,7 +465,7 @@ class FriendDetailViewModelTest {
             RelativeEdit(
                 relation = Relation.PARTNER,
                 name = " Tiago ",
-                birthday = LocalDate(1988, 3, 20),
+                birthday = Birthday(3, 20, 1988),
                 likes = listOf("padel"),
                 notifyBirthday = true,
             ),
@@ -496,5 +564,59 @@ class FriendDetailViewModelTest {
         vm.onUndoRemoveAttachment()
         assertEquals(listOf("a1"), state.value.attachments.map { it.id })
         assertNull(state.value.undoAttachment)
+    }
+
+    @Test
+    fun aLinkShowsOnBothPages_withTheRightWord_andCanBeRemovedAndUndone() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui") { copy(pronouns = Pronouns.HE) }, friend("ana")))
+        val rui = vm("rui")
+        val ana = vm("ana")
+        val ruiState = collecting(rui.state)
+        val anaState = collecting(ana.state)
+
+        rui.onSaveLink(LinkEdit(FriendId("ana"), LinkType.DATING, startedOn = LocalDate(2019, 6, 1), otherPronouns = Pronouns.SHE))
+
+        val onRui = ruiState.value.links.single()
+        assertEquals(FriendId("ana"), onRui.person.id)
+        assertEquals(LinkType.DATING, onRui.role)
+        assertEquals(Pronouns.SHE, onRui.person.pronouns)
+        val onAna = anaState.value.links.single()
+        assertEquals(FriendId("rui"), onAna.person.id)
+        assertEquals(LinkType.DATING, onAna.role)
+
+        ana.onRemoveLink(onAna.link.id)
+        assertTrue(ruiState.value.links.isEmpty())
+        assertEquals(FriendDetailMessage.LinkRemoved, anaState.value.message)
+        ana.onUndoRemoveLink()
+        assertEquals(1, ruiState.value.links.size)
+        assertNull(anaState.value.undoLink)
+    }
+
+    @Test
+    fun relationToMe_andAddingARelativeAsAPerson() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui") { copy(relatives = listOf(Relative("r1", Relation.PARENT, "Graça Costa"))) }))
+        val vm = vm("rui")
+        val state = collecting(vm.state)
+
+        vm.onSaveRelationToMe(LinkType.SIBLING, Pronouns.HE)
+        assertEquals(LinkType.SIBLING, state.value.detail!!.friend.relationToMe)
+        assertEquals(Pronouns.HE, state.value.detail!!.friend.pronouns)
+
+        vm.onAddRelativeAsPerson("r1")
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+        val mother = state.value.links.single()
+        assertEquals("Graça Costa", mother.person.name)
+        assertEquals(LinkType.PARENT, mother.role)
+        assertEquals(FriendDetailMessage.AddedAsPerson("Graça Costa"), state.value.message)
+    }
+
+    @Test
+    fun theSharedTagListComesFromEveryone() = runViewModelTest {
+        g.friendRepo.upsert(friend("pedro", "Pedro").copy(likes = listOf("Sushi"), dislikes = listOf("coriander")))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val sushi = state.value.tags.first { it.name == "Sushi" }
+        assertEquals(listOf("Pedro"), sushi.likedBy)
+        assertTrue(state.value.tags.any { it.name == "coriander" && it.dislikedBy == listOf("Pedro") })
     }
 }

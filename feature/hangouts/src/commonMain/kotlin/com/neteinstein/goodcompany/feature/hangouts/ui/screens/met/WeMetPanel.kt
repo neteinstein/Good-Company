@@ -56,11 +56,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
+import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
 import com.neteinstein.goodcompany.core.ui.components.PeoplePicker
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
 import com.neteinstein.goodcompany.core.ui.components.activityLabel
@@ -70,9 +72,11 @@ import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_less
 import com.neteinstein.goodcompany.core.ui.resources.log_more
 import com.neteinstein.goodcompany.core.ui.resources.log_note_hint
+import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_note
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_place
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_log_people
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_details
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_people
@@ -92,6 +96,11 @@ data class WeMetActions(
     val onTogglePerson: (FriendId) -> Unit = {},
     val onPeople: (List<FriendId>) -> Unit = {},
     val onOpenNote: () -> Unit = {},
+    val onOpenPlace: () -> Unit = {},
+    val onPlaceName: (String) -> Unit = {},
+    val onUseLocation: () -> Unit = {},
+    val onClearLocation: () -> Unit = {},
+    val onChangePlace: () -> Unit = {},
     val onNote: (String) -> Unit = {},
     val onSave: () -> Unit = {},
     val onMoreDetails: () -> Unit = {},
@@ -106,11 +115,12 @@ data class WeMetActions(
 fun WeMetPanelScreen(
     friendIds: List<FriendId>,
     circleId: String?,
-    planId: String?,
+    /** Answering a plan's "Did you meet?" (`<planId>@<date>`, see [PlanOccurrence]). */
+    plan: String?,
     onClose: () -> Unit,
     onMoreDetails: (WeMetDetails) -> Unit,
-    viewModel: WeMetViewModel = koinViewModel(key = "met-${friendIds.joinToString { it.value }}-$circleId-$planId") {
-        parametersOf(friendIds, circleId, planId)
+    viewModel: WeMetViewModel = koinViewModel(key = "met-${friendIds.joinToString { it.value }}-$circleId-$plan") {
+        parametersOf(friendIds, circleId, plan?.let(PlanOccurrence::decode))
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -123,6 +133,11 @@ fun WeMetPanelScreen(
             onTogglePerson = viewModel::onTogglePerson,
             onPeople = viewModel::onPeople,
             onOpenNote = viewModel::onOpenNote,
+            onOpenPlace = viewModel::onOpenPlace,
+            onPlaceName = viewModel::onPlaceName,
+            onUseLocation = viewModel::onUseLocation,
+            onClearLocation = viewModel::onClearLocation,
+            onChangePlace = viewModel::onChangePlace,
             onNote = viewModel::onNote,
             onSave = viewModel::onSave,
             onMoreDetails = { onMoreDetails(viewModel.details()) },
@@ -181,6 +196,18 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                 LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
                 People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
                 Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+                if (state.placeOpen) {
+                    // The Log sheet's place field (F11): a named place recognises itself and suggests who's usually there.
+                    MeetupPlace(
+                        sheet.place,
+                        freeTextLabel = stringResource(CoreRes.string.log_place_hint),
+                        onName = actions.onPlaceName,
+                        onUseLocation = actions.onUseLocation,
+                        onClearLocation = actions.onClearLocation,
+                        onChange = actions.onChangePlace,
+                        onAddPerson = actions.onTogglePerson,
+                    )
+                }
                 if (state.noteOpen) {
                     OutlinedTextField(
                         sheet.note,
@@ -188,11 +215,11 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                         Modifier.fillMaxWidth(),
                         label = { Text(stringResource(CoreRes.string.log_note_hint)) },
                     )
-                } else {
-                    TextButton(onClick = actions.onOpenNote) {
-                        Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(Res.string.met_add_note))
+                }
+                if (!state.noteOpen || !state.placeOpen) {
+                    Row {
+                        if (!state.noteOpen) AddButton(stringResource(Res.string.met_add_note), actions.onOpenNote)
+                        if (!state.placeOpen) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
                     }
                 }
                 Button(
@@ -214,6 +241,15 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
             actions.onPeople(it)
             pickingPeople = false
         })
+    }
+}
+
+@Composable
+private fun AddButton(label: String, onClick: () -> Unit) {
+    TextButton(onClick = onClick) {
+        Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(label)
     }
 }
 
@@ -262,7 +298,7 @@ private fun PersonChip(friend: Friend, selected: Boolean, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(friend.name.substringBefore(' ')) },
+        label = { Text(friend.displayName.substringBefore(' ')) },
         leadingIcon = { FriendAvatar(friend, size = 24.dp) },
     )
 }

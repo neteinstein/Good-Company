@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
@@ -42,10 +43,17 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.components.repeatLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
+import com.neteinstein.goodcompany.core.ui.resources.plan_circle_people
 import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.resources.plan_next_after
 import com.neteinstein.goodcompany.core.ui.resources.plan_no
+import com.neteinstein.goodcompany.core.ui.resources.plan_people_count
+import com.neteinstein.goodcompany.core.ui.resources.plan_skip_one
 import com.neteinstein.goodcompany.core.ui.resources.plan_yes
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
@@ -87,8 +95,9 @@ fun AgendaRow(
     modifier: Modifier = Modifier,
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
-    onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    onConfirmPlan: (AgendaItem.PlanToConfirm, happened: Boolean) -> Unit = { _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
 ) {
     val colors = MaterialTheme.colorScheme
     data class Spec(val icon: ImageVector, val tint: Color, val label: String, val title: String, val subtitle: String?, val friend: Friend?)
@@ -97,7 +106,7 @@ fun AgendaRow(
             Icons.Rounded.Cake,
             Color(0xFFF2A100),
             stringResource(Res.string.label_birthday),
-            stringResource(Res.string.row_birthday, item.friend.name),
+            stringResource(Res.string.row_birthday, item.friend.displayName),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
                 item.friend.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
@@ -108,31 +117,39 @@ fun AgendaRow(
             Icons.Rounded.ChildCare,
             Color(0xFF00A88F),
             stringResource(Res.string.label_kid_birthday),
-            stringResource(Res.string.row_kid, item.kid.name, item.parent.name.substringBefore(' ')),
+            stringResource(Res.string.row_kid, item.kid.displayName, item.parent.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
-                (item.parent.gifts.filter { it.isIdea && it.forKidId == item.kid.id }.map { it.title } + item.kid.likes)
+                (item.kid.gifts.filter { it.isIdea }.map { it.title } + item.kid.likes)
                     .takeIf { it.isNotEmpty() }
                     ?.let { stringResource(Res.string.row_gift_idea, it.joinToString(limit = 2)) },
             ).joinToString(" · "),
-            item.parent,
+            item.kid,
         )
         is AgendaItem.RelativeBirthday -> Spec(
             Icons.Rounded.Cake,
             Color(0xFF00A88F),
             stringResource(Res.string.label_birthday),
-            stringResource(Res.string.row_relative, item.relative.name, item.friend.name.substringBefore(' ')),
+            stringResource(Res.string.row_relative, item.relative.name, item.friend.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
                 item.relative.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
             ).joinToString(" · "),
             item.friend,
         )
+        is AgendaItem.Anniversary -> Spec(
+            Icons.Rounded.Favorite,
+            colors.primary,
+            stringResource(Res.string.label_big_day),
+            anniversaryTitle(item.first.displayName.substringBefore(' '), item.second.displayName.substringBefore(' ')),
+            item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }.orEmpty(),
+            item.first,
+        )
         is AgendaItem.FriendEvent -> Spec(
             Icons.Rounded.Favorite,
             colors.primary,
             stringResource(Res.string.label_big_day),
-            stringResource(Res.string.row_ping, item.friend.name),
+            stringResource(Res.string.row_ping, item.friend.displayName),
             item.event.title,
             item.friend,
         )
@@ -143,14 +160,14 @@ fun AgendaRow(
             item.reminder.title,
             item.friends.takeIf {
                 it.isNotEmpty()
-            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
             item.friends.firstOrNull(),
         )
         is AgendaItem.MeetupOverdue -> Spec(
             Icons.Rounded.Schedule,
             colors.error,
             stringResource(Res.string.label_catch_up),
-            stringResource(Res.string.row_see, item.friend.name),
+            stringResource(Res.string.row_see, item.friend.displayName),
             item.daysSince?.let { pluralStringResource(Res.plurals.row_days_since, it, it) } ?: stringResource(Res.string.row_never),
             item.friend,
         )
@@ -159,7 +176,7 @@ fun AgendaRow(
             colors.secondary,
             stringResource(Res.string.label_group),
             "${item.group.emoji} ${item.group.name}",
-            item.members.joinToString { it.name.substringBefore(' ') }.let { names ->
+            item.members.joinToString { it.displayName.substringBefore(' ') }.let { names ->
                 item.daysSince?.let { pluralStringResource(Res.plurals.row_group_days, it, names, it) } ?: names
             },
             null,
@@ -170,9 +187,21 @@ fun AgendaRow(
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
-                item.friends.takeIf {
+                item.circle?.let { c ->
+                    stringResource(
+                        CoreRes.string.plan_circle_people,
+                        "${c.emoji} ${c.name}",
+                        pluralStringResource(CoreRes.plurals.plan_people_count, item.friends.size, item.friends.size),
+                    )
+                } ?: item.friends.takeIf {
                     it.isNotEmpty()
-                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
+                item.plan.repeat?.let { r ->
+                    listOfNotNull(
+                        repeatLabel(r),
+                        item.nextAfter?.let { stringResource(CoreRes.string.plan_next_after, it.shortLabel()) },
+                    ).joinToString(" · ")
+                },
                 item.plan.place,
             ).joinToString(" · "),
             item.friends.singleOrNull(),
@@ -183,10 +212,11 @@ fun AgendaRow(
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
-                item.plan.date.shortLabel(),
-                item.friends.takeIf {
+                item.occurrence.shortLabel(),
+                item.circle?.let { "${it.emoji} ${it.name}" },
+                item.friends.takeIf { item.circle == null }?.takeIf {
                     it.isNotEmpty()
-                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
             ).joinToString(" · "),
             item.friends.singleOrNull(),
         )
@@ -237,24 +267,38 @@ fun AgendaRow(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilledTonalButton(
-                            onClick = { onConfirmPlan(item.plan.id, true) },
+                            onClick = { onConfirmPlan(item, true) },
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                             modifier = Modifier.height(34.dp),
                         ) { Text(stringResource(CoreRes.string.plan_yes), style = MaterialTheme.typography.labelLarge) }
-                        TextButton(onClick = { onConfirmPlan(item.plan.id, false) }, modifier = Modifier.height(34.dp)) {
+                        TextButton(onClick = { onConfirmPlan(item, false) }, modifier = Modifier.height(34.dp)) {
                             Text(stringResource(CoreRes.string.plan_no), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
                 if (item is AgendaItem.PlanUpcoming) {
-                    TextButton(
-                        onClick = { onAddPlanToCalendar(item) },
-                        contentPadding = PaddingValues(horizontal = 0.dp),
-                        modifier = Modifier.height(34.dp),
-                    ) {
-                        Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(CoreRes.string.plan_add_calendar), style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TextButton(
+                            onClick = { onAddPlanToCalendar(item) },
+                            contentPadding = PaddingValues(horizontal = 0.dp),
+                            modifier = Modifier.height(34.dp),
+                        ) {
+                            Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(CoreRes.string.plan_add_calendar), style = MaterialTheme.typography.labelLarge)
+                        }
+                        // A series: take this date out and keep the rest.
+                        if (item.plan.isRecurring) {
+                            TextButton(
+                                onClick = { onSkipPlan(item) },
+                                contentPadding = PaddingValues(horizontal = 0.dp),
+                                modifier = Modifier.height(34.dp),
+                            ) {
+                                Icon(Icons.Rounded.EventBusy, null, Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(stringResource(CoreRes.string.plan_skip_one), style = MaterialTheme.typography.labelLarge)
+                            }
+                        }
                     }
                 }
                 if (item is AgendaItem.GroupOverdue && item.group.memberIds.isNotEmpty()) {

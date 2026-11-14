@@ -28,15 +28,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.InputChip
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -57,9 +54,7 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
-import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
@@ -68,7 +63,6 @@ import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.circle_tick_who_came
 import com.neteinstein.goodcompany.core.ui.resources.log_activity
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
-import com.neteinstein.goodcompany.core.ui.resources.log_clear_location
 import com.neteinstein.goodcompany.core.ui.resources.log_counts_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_journal_footer
 import com.neteinstein.goodcompany.core.ui.resources.log_journal_hint
@@ -88,7 +82,6 @@ import com.neteinstein.goodcompany.core.ui.resources.log_search
 import com.neteinstein.goodcompany.core.ui.resources.log_title
 import com.neteinstein.goodcompany.core.ui.resources.log_title_circle
 import com.neteinstein.goodcompany.core.ui.resources.log_today
-import com.neteinstein.goodcompany.core.ui.resources.log_use_location
 import com.neteinstein.goodcompany.core.ui.resources.log_yesterday
 import com.neteinstein.goodcompany.core.ui.resources.ok
 import com.neteinstein.goodcompany.core.ui.resources.save
@@ -108,8 +101,8 @@ data class LogSheetState(
     val date: LocalDate,
     val today: LocalDate,
     val note: String = "",
-    val placeName: String = "",
-    val location: GeoPoint? = null,
+    /** Meetups only: where (F11), with "Usually here with". */
+    val place: MeetupPlaceState = MeetupPlaceState(),
     val activity: HangoutActivity? = null,
     /** Most used first (F3): the first [ObserveActivitiesUseCase.SHOWN] are on show, the rest behind "More". */
     val activities: List<HangoutActivity> = HangoutActivity.entries,
@@ -135,6 +128,8 @@ data class LogSheetActions(
     val onPlaceName: (String) -> Unit = {},
     val onUseLocation: () -> Unit = {},
     val onClearLocation: () -> Unit = {},
+    /** "Change" on a place that named itself: type another name. */
+    val onChangePlace: () -> Unit = {},
     val onActivity: (HangoutActivity?) -> Unit = {},
     /** Picks a circle (null or the same one again = none). */
     val onCircle: (String?) -> Unit = {},
@@ -222,7 +217,7 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                     StackedAvatars(state.people, size = 32.dp, max = 4)
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        state.people.joinToString(", ") { it.name.substringBefore(' ') },
+                        state.people.joinToString(", ") { it.displayName.substringBefore(' ') },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -253,30 +248,15 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                             }
                         }
                     }
-                    OutlinedTextField(
-                        state.placeName,
-                        actions.onPlaceName,
-                        Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(Res.string.log_place_hint)) },
-                        singleLine = true,
+                    MeetupPlace(
+                        state.place,
+                        freeTextLabel = stringResource(Res.string.log_place_hint),
+                        onName = actions.onPlaceName,
+                        onUseLocation = actions.onUseLocation,
+                        onClearLocation = actions.onClearLocation,
+                        onChange = actions.onChangePlace,
+                        onAddPerson = actions.onTogglePerson,
                     )
-                    val location = state.location
-                    if (location != null) {
-                        InputChip(
-                            selected = true,
-                            onClick = actions.onClearLocation,
-                            label = { Text(Place(null, location.latitude, location.longitude).label.orEmpty()) },
-                            leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
-                            trailingIcon = { Icon(Icons.Rounded.Close, stringResource(Res.string.log_clear_location), Modifier.size(18.dp)) },
-                        )
-                    } else {
-                        FilterChip(
-                            selected = false,
-                            onClick = actions.onUseLocation,
-                            label = { Text(stringResource(Res.string.log_use_location)) },
-                            leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
-                        )
-                    }
                 }
                 OutlinedTextField(
                     state.note,
@@ -288,7 +268,7 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                 )
                 val hint = when {
                     state.kind == LogKind.JOURNAL -> stringResource(Res.string.log_journal_footer)
-                    else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.name.substringBefore(' ')) }
+                    else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.displayName.substringBefore(' ')) }
                 }
                 hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Button(onClick = actions.onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
@@ -326,7 +306,7 @@ private fun CircleMembers(circle: FriendGroup, members: List<Friend>, ticked: Se
                 Checkbox(on, onCheckedChange = { onToggle(f.id) })
                 FriendAvatar(f, size = 32.dp)
                 Spacer(Modifier.width(10.dp))
-                Text(f.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(f.displayName, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -371,14 +351,14 @@ fun PeoplePicker(everyone: List<Friend>, picked: List<FriendId>, onDismiss: () -
                     leadingIcon = { Icon(Icons.Rounded.Search, null) },
                     placeholder = { Text(stringResource(Res.string.log_search)) },
                 )
-                val shown = everyone.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+                val shown = everyone.filter { query.isBlank() || it.displayName.contains(query.trim(), ignoreCase = true) }
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     items(shown, key = { it.id.value }) { f ->
                         val on = f.id in chosen
                         ListItem(
                             modifier = Modifier.clickable { chosen = if (on) chosen - f.id else chosen + f.id },
                             leadingContent = { FriendAvatar(f, size = 36.dp) },
-                            headlineContent = { Text(f.name) },
+                            headlineContent = { Text(f.displayName) },
                             trailingContent = { Checkbox(on, onCheckedChange = { chosen = if (on) chosen - f.id else chosen + f.id }) },
                         )
                     }

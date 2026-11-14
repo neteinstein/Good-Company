@@ -1,0 +1,65 @@
+-- Version 10 → 11 (issue #40, F9): kids are people. Every kid becomes a friend linked to their parent as CHILD, with
+-- their birthday, its reminder from the parent's, and their likes; the gifts meant for them move to their own page.
+-- A kid keeps their id unless someone else has it (then "<parent id>-<kid id>"). KidsAsPeople.convert does the same
+-- for old backups. Friends' kids stay out of the main list; a family member's kids are in it.
+
+ALTER TABLE friend ADD COLUMN show_in_my_list INTEGER NOT NULL DEFAULT 1;
+
+ALTER TABLE kid ADD COLUMN person_id TEXT;
+
+UPDATE kid SET person_id = CASE
+    WHEN EXISTS (SELECT 1 FROM friend f WHERE f.id = kid.id)
+        OR EXISTS (SELECT 1 FROM kid k2 WHERE k2.id = kid.id AND k2.rowid < kid.rowid)
+    THEN kid.friend_id || '-' || kid.id
+    ELSE kid.id
+END;
+
+INSERT INTO friend (
+    id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
+    notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
+    show_in_my_list
+)
+SELECT
+    k.person_id,
+    (SELECT coalesce(max(position), 0) FROM friend) + k.rowid,
+    k.name, NULL, k.birthday_month, k.birthday_day, k.birthday_year, 0, p.notify_birthday,
+    '', NULL, 0, 0, NULL, NULL, 0, 0,
+    CASE WHEN p.relation_to_me IN (
+        'PARENT', 'CHILD', 'SIBLING', 'GRANDPARENT', 'GRANDCHILD', 'AUNT_UNCLE', 'NIECE_NEPHEW', 'COUSIN', 'IN_LAW'
+    ) THEN 1 ELSE 0 END
+FROM kid k JOIN friend p ON p.id = k.friend_id
+ORDER BY k.rowid;
+
+INSERT INTO friend_taste (friend_id, kind, position, taste, added_at)
+SELECT k.person_id, 'LIKE', l.position, l.liked, NULL
+FROM kid_like l JOIN kid k ON k.friend_id = l.friend_id AND k.id = l.kid_id;
+
+INSERT INTO person_link (id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at)
+SELECT 'kid-link-' || k.person_id, k.friend_id, k.person_id, 'CHILD', NULL, NULL, '', 0, k.added_at
+FROM kid k;
+
+-- The gift table loses for_kid_id (and its foreign key to kid): a kid's gift now belongs to the kid.
+CREATE TABLE gift_new (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    note TEXT NOT NULL,
+    given_on TEXT,
+    occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    url TEXT,
+    price TEXT,
+    PRIMARY KEY (friend_id, id)
+);
+
+INSERT INTO gift_new (friend_id, id, position, title, note, given_on, occasion, url, price)
+SELECT coalesce(k.person_id, g.friend_id), g.id, g.position, g.title, g.note, g.given_on, g.occasion, g.url, g.price
+FROM gift g LEFT JOIN kid k ON k.friend_id = g.friend_id AND k.id = g.for_kid_id;
+
+DROP TABLE gift;
+
+ALTER TABLE gift_new RENAME TO gift;
+
+DROP TABLE kid_like;
+
+DROP TABLE kid;

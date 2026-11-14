@@ -2,9 +2,14 @@ package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -12,6 +17,8 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,20 +35,41 @@ class LogInteractionViewModelTest {
         ids: List<FriendId> = listOf(ana),
         type: String? = null,
         circleId: String? = null,
+        plan: PlanOccurrence? = null,
         prefill: LogPrefill = LogPrefill(),
     ) = LogInteractionViewModel(
         ids,
         type,
         circleId,
+        plan,
         prefill,
         g.observeFriends,
         g.observeActivities,
         g.observeGroups,
+        g.observePlaceBook,
+        g.observePlans,
         g.logInteraction,
+        g.confirmPlan,
         g.currentLocation,
         g.loggedMeetups,
         g.clock,
     )
+
+    @Test
+    fun aCalendarSuggestionOpensOnItsDayWithTheGuessedActivity() = runViewModelTest {
+        val friday = g.clock.today().minus(DatePeriod(days = 4))
+        val vm = vm(listOf(rui), type = "MEETUP", prefill = LogPrefill(friday, HangoutActivity.LUNCH))
+        val state = collecting(vm.state)
+        assertEquals(friday, state.value.sheet.date)
+        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        vm.onSave()
+        val h = g.hangoutRepo.hangouts.value.single()
+        assertEquals(listOf(rui), h.friendIds)
+        assertEquals(HangoutActivity.LUNCH, h.activity)
+        // A future day is never prefilled (F2).
+        val future = vm(prefill = LogPrefill(g.clock.today().plus(DatePeriod(days = 3))))
+        assertEquals(g.clock.today(), collecting(future.state).value.sheet.date)
+    }
 
     @Test
     fun typeFromTheRoutePreselectsTheKind() = runViewModelTest {
@@ -67,6 +95,15 @@ class LogInteractionViewModelTest {
         assertEquals(setOf(ana, rui), h.friendIds.toSet())
         assertEquals(HangoutActivity.COFFEE, h.activity)
         assertEquals("catch-up", h.note)
+    }
+
+    @Test
+    fun theSheetOffersOnlyTheActivitiesTurnedOnInSettings() = runViewModelTest {
+        g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.WALK, HangoutActivity.COFFEE)) }
+        val state = collecting(vm().state)
+        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), state.value.sheet.activities)
+        g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.TRIP)) }
+        assertEquals(listOf(HangoutActivity.TRIP), state.value.sheet.activities)
     }
 
     @Test
@@ -117,9 +154,54 @@ class LogInteractionViewModelTest {
         val state = collecting(vm.state)
         vm.onUseLocation()
         vm.onClearLocation()
-        assertNull(state.value.sheet.location)
+        assertNull(state.value.sheet.place.location)
         vm.onKind(LogKind.EMAIL)
         assertEquals(LogKind.EMAIL, state.value.sheet.kind)
+    }
+
+    @Test
+    fun atANamedPlace_itNamesItself_andSuggestsTheUsualPeopleWithoutTickingThem() = runViewModelTest {
+        val home = GeoPoint(38.7139, -9.1394)
+        g.location.point = home
+        // First time: "What place is this?"
+        val first = vm(ids = listOf(ana, rui))
+        val firstState = collecting(first.state)
+        first.onUseLocation()
+        assertEquals(home, firstState.value.sheet.place.location)
+        assertTrue(firstState.value.sheet.place.firstTimeHere)
+        assertNull(firstState.value.sheet.place.match)
+        first.onPlaceName("Inês’s house")
+        first.onSave()
+        assertTrue(firstState.value.done)
+
+        // Second time, a few metres away: named by itself; Rui is suggested, not ticked.
+        g.location.point = GeoPoint(38.71392, -9.1394)
+        val second = vm(ids = listOf(ana))
+        val state = collecting(second.state)
+        second.onUseLocation()
+        val place = state.value.sheet.place
+        assertEquals("Inês’s house", place.match?.place?.name)
+        assertEquals(listOf(rui), place.suggested.map { it.id })
+        assertEquals(1, place.suggestedFrom)
+        assertEquals(listOf(ana), state.value.sheet.people.map { it.id })
+        second.onTogglePerson(rui) // tapping the suggestion adds them
+        assertTrue(state.value.sheet.place.suggested.isEmpty())
+        second.onSave()
+        val saved = g.hangoutRepo.hangouts.value.last()
+        assertEquals("Inês’s house", saved.place?.name)
+        assertEquals(1, g.hangoutRepo.places.value.size)
+
+        // "Change": somewhere else nearby gets its own name.
+        val third = vm(ids = listOf(ana))
+        val thirdState = collecting(third.state)
+        third.onUseLocation()
+        third.onChangePlace()
+        assertNull(thirdState.value.sheet.place.match)
+        assertTrue(thirdState.value.sheet.place.suggested.isEmpty())
+        third.onPlaceName("Café downstairs")
+        third.onSave()
+        assertEquals("Café downstairs", g.hangoutRepo.hangouts.value.last().place?.name)
+        assertEquals(2, g.hangoutRepo.places.value.size)
     }
 
     @Test
@@ -144,24 +226,53 @@ class LogInteractionViewModelTest {
     }
 
     @Test
+    fun didYouMeetOnACirclePlan_opensAGroupCheckIn_withNobodyTicked_andMovesTheSeriesOn() = runViewModelTest {
+        val circle = g.saveGroup(null, "Climbing crowd", "🧗", CircleColor.TEAL, listOf(ana, rui), null)
+        val start = LocalDate(2026, 3, 1)
+        val plan = g.savePlan.save(
+            null,
+            PlanInput(
+                "Climbing at Fábrica",
+                emptyList(),
+                start,
+                place = "Fábrica",
+                circleId = circle.id,
+                activity = HangoutActivity.SPORTS,
+                repeat = Repeat(15, RepeatUnit.DAY, start),
+            ),
+        )
+        val vm = vm(ids = emptyList(), type = "MEETUP", plan = PlanOccurrence(plan.id, start))
+        val state = collecting(vm.state)
+        val sheet = state.value.sheet
+        assertEquals("Climbing crowd", sheet.circle?.name)
+        assertEquals(listOf(ana, rui), sheet.circleMembers.map { it.id })
+        assertTrue(sheet.people.isEmpty(), "nobody is ticked to start with")
+        assertEquals(HangoutActivity.SPORTS, sheet.activity)
+        assertEquals(start, sheet.date)
+        assertEquals("Fábrica", sheet.place.name)
+        assertFalse(sheet.canSave)
+
+        vm.onTogglePerson(rui)
+        vm.onSave()
+        assertTrue(state.value.done)
+        val h = g.hangoutRepo.hangouts.value.single()
+        assertEquals(listOf(rui), h.friendIds)
+        assertEquals(HangoutActivity.SPORTS, h.activity)
+        assertEquals(LocalDate(2026, 3, 16), g.planRepo.plans.value.single().date, "the series moves on")
+    }
+
+    @Test
     fun moreDetailsCarriesWhatThePanelHadChosen() = runViewModelTest {
         val friday = g.clock.today().plus(DatePeriod(days = -8))
-        val vm = vm(prefill = LogPrefill(date = friday.toString(), activity = "LUNCH", note = "Her new job"))
+        val vm = vm(prefill = LogPrefill(date = friday, activity = HangoutActivity.LUNCH, note = "Her new job", place = "Time Out"))
         val state = collecting(vm.state)
         assertEquals(friday, state.value.sheet.date)
         assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
         assertEquals("Her new job", state.value.sheet.note)
+        assertEquals("Time Out", state.value.sheet.place.name)
         vm.onSave()
         assertEquals(HangoutActivity.LUNCH, g.hangoutRepo.hangouts.value.single().activity)
         // A meetup saved from the sheet gets the app-wide "Logged time with … · Undo" snackbar.
         assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
-    }
-
-    @Test
-    fun aBrokenOrFuturePrefillFallsBackToToday() = runViewModelTest {
-        val today = g.clock.today()
-        assertEquals(today, collecting(vm(prefill = LogPrefill(date = "nonsense", activity = "nope")).state).value.sheet.date)
-        val future = today.plus(DatePeriod(days = 2)).toString()
-        assertEquals(today, collecting(vm(prefill = LogPrefill(date = future)).state).value.sheet.date)
     }
 }

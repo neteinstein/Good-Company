@@ -37,8 +37,10 @@ object HomeWidget {
         is AgendaItem.FriendBirthday, is AgendaItem.KidBirthday, is AgendaItem.FriendEvent,
         is AgendaItem.ReminderDue, is AgendaItem.PlanUpcoming,
         -> true
-        // Relatives' birthdays stay in the app: the widgets have no wording for them yet.
-        is AgendaItem.MeetupOverdue, is AgendaItem.GroupOverdue, is AgendaItem.PlanToConfirm, is AgendaItem.RelativeBirthday -> false
+        // Relatives' birthdays and anniversaries stay in the app: the widgets have no wording for them yet.
+        is AgendaItem.MeetupOverdue, is AgendaItem.GroupOverdue, is AgendaItem.PlanToConfirm, is AgendaItem.RelativeBirthday,
+        is AgendaItem.Anniversary,
+        -> false
     }
 }
 
@@ -87,16 +89,16 @@ data class WidgetSnapshot(
             if (summary.isPrivate) return WidgetSnapshot(isPrivate = true)
             fun first(name: String) = name.substringBefore(' ')
             val next = when (val item = summary.next) {
-                is AgendaItem.FriendBirthday -> Next(Kind.BIRTHDAY, name = first(item.friend.name), date = item.date)
-                is AgendaItem.KidBirthday -> Next(Kind.KID_BIRTHDAY, name = first(item.parent.name), kidName = item.kid.name, date = item.date)
-                is AgendaItem.FriendEvent -> Next(Kind.EVENT, name = first(item.friend.name), title = item.event.title, date = item.date)
+                is AgendaItem.FriendBirthday -> Next(Kind.BIRTHDAY, name = first(item.friend.displayName), date = item.date)
+                is AgendaItem.KidBirthday -> Next(Kind.KID_BIRTHDAY, name = first(item.parent.displayName), kidName = item.kid.name, date = item.date)
+                is AgendaItem.FriendEvent -> Next(Kind.EVENT, name = first(item.friend.displayName), title = item.event.title, date = item.date)
                 is AgendaItem.PlanUpcoming -> Next(Kind.PLAN, title = item.plan.title, date = item.date)
                 is AgendaItem.ReminderDue -> Next(Kind.REMINDER, title = item.reminder.title, date = item.date)
                 else -> null
             }
             return WidgetSnapshot(
                 next = next,
-                catchUp = summary.catchUp?.let { CatchUp(it.friend.id.value, first(it.friend.name), it.friend.photo?.base64) },
+                catchUp = summary.catchUp?.let { CatchUp(it.friend.id.value, first(it.friend.displayName), it.friend.avatar?.base64) },
             )
         }
     }

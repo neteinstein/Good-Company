@@ -73,4 +73,46 @@
         <item quantity="one">%1$d message or email</item>
         <item quantity="other">%1$d messages and emails</item>
     </plurals>
+    <string name="network_title">Your network</string>
+    <string name="network_you">You</string>
+    <string name="network_empty_title">Nobody on your map yet</string>
+    <string name="network_empty_body">Mark real friends, add circles or link people to each other, and they’ll show up around you.</string>
+    <string name="network_legend_family">Family</string>
+    <string name="network_legend_partner">Partner</string>
+    <string name="network_legend_friend">Friend</string>
+    <string name="network_legend_introduced">Introduced</string>
+    <string name="people_title">Your people</string>
+    <string name="people_avg_warmth">average warmth</string>
+    <string name="people_by_circle">Warmth by circle</string>
+    <string name="people_circles">Your circles</string>
+    <string name="people_by_closeness">By closeness</string>
+    <string name="people_trend">Last 90 days</string>
+    <string name="people_trend_caption">Average warmth, week by week</string>
+    <string name="people_trend_up">+%1$d vs 90 days ago</string>
+    <string name="people_trend_down">−%1$d vs 90 days ago</string>
+    <string name="people_trend_flat">Same as 90 days ago</string>
+    <string name="people_cooling">Cooling</string>
+    <string name="people_cooling_row">Warmth %1$d → %2$d</string>
+    <string name="people_circle_cooling">Cooling: down %1$d in a month</string>
+    <string name="people_per_month">Meetups per month</string>
+    <string name="people_never">Never logged</string>
+    <string name="people_never_hint">Added but no meetup, call or message yet</string>
+    <string name="people_warmth_off">With “Show warmth” off, the warmth figures and the “Cooling” card are hidden; counts stay.</string>
+    <string name="people_empty">Mark real friends or add circles to see your people here.</string>
+    <plurals name="network_description">
+        <item quantity="one">Map of %1$d person around you</item>
+        <item quantity="other">Map of %1$d people around you</item>
+    </plurals>
+    <plurals name="people_meetups_90">
+        <item quantity="one">meetup in the last 90 days</item>
+        <item quantity="other">meetups in the last 90 days</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">person</item>
+        <item quantity="other">people</item>
+    </plurals>
+    <plurals name="people_members">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
 </resources>

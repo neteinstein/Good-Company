@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
@@ -26,6 +27,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
+import com.neteinstein.goodcompany.core.testing.FakeCalendarDecisionRepository
+import com.neteinstein.goodcompany.core.testing.FakeCalendarReader
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
@@ -35,6 +38,7 @@ import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
+import com.neteinstein.goodcompany.core.testing.FakePersonLinkRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
@@ -75,7 +79,7 @@ class UseCasesTest {
     @Test
     fun observeFriends_sortsCloseFirstAndFlagsOverdue() = runTest {
         hangouts.add(Hangout("h", listOf(FriendId("bob")), at(2026, 3, 1)))
-        val list = ObserveFriendsUseCase(friends, hangouts, interactions, settings, clock)().first()
+        val list = ObserveFriendsUseCase(friends, hangouts, interactions, settings, FakePersonLinkRepository(), clock)().first()
         assertEquals(listOf("ana", "bob", "cat"), list.map { it.friend.id.value })
         assertTrue(list[0].meetupOverdue)
         assertEquals(at(2026, 3, 1), list[1].lastSeen)
@@ -149,6 +153,7 @@ class UseCasesTest {
             settings,
             FakeGroupRepository(),
             FakePlanRepository(),
+            FakePersonLinkRepository(),
             clock,
         )(FriendId("ana")).first()!!
         assertEquals(at(2026, 3, 1), detail.lastSeen)
@@ -164,6 +169,7 @@ class UseCasesTest {
                 settings,
                 FakeGroupRepository(),
                 FakePlanRepository(),
+                FakePersonLinkRepository(),
                 clock,
             )(FriendId("nope")).first(),
         )
@@ -189,7 +195,7 @@ class UseCasesTest {
 
     @Test
     fun talkingPoints_storeIdeasForTheFriend() = runTest {
-        settings.update { it.copy(aiApiKey = "sk-test") }
+        settings.update { it.copy(aiApiKey = "sk-test", aiEnabled = true) }
         generator.result = Result.success(
             listOf(
                 GeneratedIdea(emptyList(), "news", "Jazz fest lineup", "Big names announced", "https://example.com", null),
@@ -223,8 +229,13 @@ class UseCasesTest {
                 ),
                 clock, ids,
             )
-        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY), useCase())
+        // AI off (the default): the job never runs, not even forced, whatever the key (F1).
         settings.update { it.copy(aiApiKey = "k") }
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.AI_OFF), useCase())
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.AI_OFF), useCase(force = true))
+        settings.update { it.copy(aiApiKey = null, aiEnabled = true) }
+        assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY), useCase())
+        settings.update { it.copy(aiApiKey = "k", aiEnabled = true) }
         assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN), useCase())
 
         friends.upsert(friends.get(FriendId("ana"))!!.copy(suggestEvents = true))
@@ -245,7 +256,7 @@ class UseCasesTest {
 
     @Test
     fun weeklyIdeas_failureDoesNotAdvanceLastRun() = runTest {
-        settings.update { AppSettings(aiApiKey = "k", homeArea = "Lisbon") }
+        settings.update { AppSettings(aiApiKey = "k", homeArea = "Lisbon", aiEnabled = true) }
         friends.upsert(friends.get(FriendId("ana"))!!.copy(suggestEvents = true))
         generator.result = Result.failure(RuntimeException("boom"))
         val useCase =
@@ -268,6 +279,9 @@ class UseCasesTest {
                     FakeGroupRepository(),
                     FakePlanRepository(),
                     FakeInteractionRepository(),
+                    FakePersonLinkRepository(),
+                    ObserveCalendarEventsUseCase(settings, FakeCalendarReader(), clock),
+                    FakeCalendarDecisionRepository(),
                     scheduler,
                     FakeNotificationRenderer,
                     clock,

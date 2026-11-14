@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.photoOf
@@ -89,7 +90,7 @@ object ShareMatcher {
             compareBy<RankedFriend> { it.reason?.ordinal?.let { o -> minOf(o, ShareReason.SEEN_TODAY.ordinal) } ?: Int.MAX_VALUE }
                 .thenByDescending { if (it.reason == ShareReason.SEEN_TODAY || it.reason == ShareReason.RECENT) lastContact[it.friend.id] else null }
                 .thenByDescending { it.friend.isCloseFriend }
-                .thenBy { it.friend.name.lowercase() },
+                .thenBy { it.friend.displayName.lowercase() },
         )
     }
 
@@ -108,9 +109,16 @@ object ShareMatcher {
 
     private fun haystack(content: SharedContent) = listOfNotNull(content.text, content.title, content.url).joinToString(" ").lowercase()
 
-    private fun isMentioned(f: Friend, haystack: String): Boolean {
+    /** Whether [text] names [f] (full name, "firstlast" handle or a first name of 3+ letters). Also used by calendar matching. */
+    fun isNamedIn(f: Friend, text: String): Boolean = isMentioned(f, text.lowercase())
+
+    /** By the name given in the app or the contact's (F19). */
+    private fun isMentioned(f: Friend, haystack: String): Boolean =
+        listOf(f.displayName, f.name).distinct().any { isMentioned(it, haystack) }
+
+    private fun isMentioned(name: String, haystack: String): Boolean {
         if (haystack.isBlank()) return false
-        val full = f.name.lowercase().trim()
+        val full = name.lowercase().trim()
         val first = full.substringBefore(' ')
         return full in haystack ||
             (full.contains(' ') && full.replace(" ", "") in haystack) ||
@@ -139,7 +147,8 @@ class ObserveShareTargetsUseCase(
         interactions.interactions,
         groups.groups,
     ) { fs, hs, ints, gs ->
-        ShareTargets(fs, Relationships.lastContact(hs, ints), gs.filter { it.memberIds.isNotEmpty() })
+        // Not the built-in Family circle: it isn't stored, so nothing can be kept on it (share to its people instead).
+        ShareTargets(fs, Relationships.lastContact(hs, ints), gs.filter { it.memberIds.isNotEmpty() && !it.isBuiltIn })
     }
 }
 
@@ -361,10 +370,11 @@ class SuggestUpdateFromSharedUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     /** The suggested line, or null when the AI found nothing about them in what was shared. */
     suspend operator fun invoke(id: FriendId, content: SharedContent): Result<String?> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
         val text = listOfNotNull(
             content.title?.trim()?.takeIf { it.isNotEmpty() },
@@ -377,7 +387,7 @@ class SuggestUpdateFromSharedUseCase(
             .ifEmpty { null }
         return assistant.lifeUpdateFromShared(
             key,
-            IdeaMapper.profile(friend, interactions, hangouts),
+            IdeaMapper.profile(friend, interactions, hangouts, links, friends),
             text,
             content.image,
             language.languageTag(),

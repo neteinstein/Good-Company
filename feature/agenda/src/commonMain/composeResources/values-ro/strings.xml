@@ -48,4 +48,22 @@
     <string name="msg_reminder_deleted">Memento șters</string>
     <string name="label_plan">Plan</string>
     <string name="row_relative">%1$s (familia lui/ei %2$s)</string>
+    <string name="calendar_card_title">Din calendarul tău</string>
+    <plurals name="calendar_card_body">
+        <item quantity="one">%1$d întâlnire de notat</item>
+        <item quantity="few">%1$d întâlniri de notat</item>
+        <item quantity="other">%1$d de întâlniri de notat</item>
+    </plurals>
+    <string name="cal_screen_title">Din calendarul tău</string>
+    <string name="cal_looking_back">Privind înapoi</string>
+    <string name="cal_log_it">Notează</string>
+    <string name="cal_no">Nu</string>
+    <string name="cal_never">Niciodată pentru „%1$s”</string>
+    <string name="cal_matched_name">găsit după nume</string>
+    <string name="cal_matched_email">invitat (email)</string>
+    <string name="cal_matched_both">găsit după nume și email</string>
+    <string name="cal_empty_title">Nimic de notat</string>
+    <string name="cal_empty_body">Evenimentele cu prietenii tăi din calendarele alese apar aici după ce se termină.</string>
+    <string name="cal_msg_no">Nu mai sugerez „%1$s”</string>
+    <string name="cal_msg_never">Gata cu sugestiile pentru „%1$s”</string>
 </resources>

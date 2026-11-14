@@ -406,4 +406,146 @@
     <string name="attachment_original_gone">El original ya no está en tu galería</string>
     <string name="attachment_copy">Copiar</string>
     <string name="attachment_open_link">Abrir enlace</string>
+    <string name="log_locating">Buscando tu ubicación…</string>
+    <string name="place_what_is_this">¿Qué lugar es este?</string>
+    <string name="place_name_hint">Ponle nombre (opcional)</string>
+    <string name="place_first_time">%1$s · primera vez aquí</string>
+    <string name="place_next_time">La próxima vez que estés a menos de %1$d m, tendrá este nombre.</string>
+    <string name="place_named_auto">Nombre automático · estás a %1$d m</string>
+    <string name="place_change">Cambiar</string>
+    <string name="place_usually_with">Sueles estar aquí con</string>
+    <string name="place_add_person">Añadir a %1$s</string>
+    <plurals name="place_suggest_hint">
+        <item quantity="one">De tu último encuentro aquí. Toca para añadir; nadie se añade solo.</item>
+        <item quantity="other">De tus últimos %1$d encuentros aquí. Toca para añadir; nadie se añade solo.</item>
+    </plurals>
+    <!-- Links between people and relationship to me (issue #39). Each word has a she / he / neutral form (decision F18). -->
+    <string name="link_parent_she">Madre</string>
+    <string name="link_parent_he">Padre</string>
+    <string name="link_parent_they">Madre o padre</string>
+    <string name="link_child_she">Hija</string>
+    <string name="link_child_he">Hijo</string>
+    <string name="link_child_they">Hija o hijo</string>
+    <string name="link_sibling_she">Hermana</string>
+    <string name="link_sibling_he">Hermano</string>
+    <string name="link_sibling_they">Hermana o hermano</string>
+    <string name="link_grandparent_she">Abuela</string>
+    <string name="link_grandparent_he">Abuelo</string>
+    <string name="link_grandparent_they">Abuela o abuelo</string>
+    <string name="link_grandchild_she">Nieta</string>
+    <string name="link_grandchild_he">Nieto</string>
+    <string name="link_grandchild_they">Nieta o nieto</string>
+    <string name="link_aunt_uncle_she">Tía</string>
+    <string name="link_aunt_uncle_he">Tío</string>
+    <string name="link_aunt_uncle_they">Tía o tío</string>
+    <string name="link_niece_nephew_she">Sobrina</string>
+    <string name="link_niece_nephew_he">Sobrino</string>
+    <string name="link_niece_nephew_they">Sobrina o sobrino</string>
+    <string name="link_cousin_she">Prima</string>
+    <string name="link_cousin_he">Primo</string>
+    <string name="link_cousin_they">Prima o primo</string>
+    <string name="link_in_law_she">Familia política</string>
+    <string name="link_in_law_he">Familia política</string>
+    <string name="link_in_law_they">Familia política</string>
+    <string name="link_dating_she">Novia</string>
+    <string name="link_dating_he">Novio</string>
+    <string name="link_dating_they">Novia o novio</string>
+    <string name="link_spouse_she">Esposa</string>
+    <string name="link_spouse_he">Esposo</string>
+    <string name="link_spouse_they">Cónyuge</string>
+    <string name="link_partner_she">Pareja</string>
+    <string name="link_partner_he">Pareja</string>
+    <string name="link_partner_they">Pareja</string>
+    <string name="link_ex_she">Ex</string>
+    <string name="link_ex_he">Ex</string>
+    <string name="link_ex_they">Ex</string>
+    <string name="link_friend_she">Amiga</string>
+    <string name="link_friend_he">Amigo</string>
+    <string name="link_friend_they">Amiga o amigo</string>
+    <string name="link_colleague_she">Compañera</string>
+    <string name="link_colleague_he">Compañero</string>
+    <string name="link_colleague_they">Compañera o compañero</string>
+    <string name="relation_to_me_she">Tu %1$s</string>
+    <string name="relation_to_me_he">Tu %1$s</string>
+    <string name="relation_to_me_they">Tu %1$s</string>
+    <string name="pronouns_she">Ella</string>
+    <string name="pronouns_he">Él</string>
+    <string name="pronouns_they">Neutro</string>
+    <string name="link_category_family">Familia</string>
+    <string name="link_category_romantic">Pareja</string>
+    <string name="link_category_other">Otro</string>
+    <string name="circle_family">Familia</string>
+    <string name="circle_built_in">Integrado</string>
+    <string name="circle_family_hint">Todas las personas que marcaste como familia. Se llena a partir de “relación contigo”.</string>
+    <string name="anniversary_title">💞 Aniversario de %1$s y %2$s</string>
+    <plurals name="anniversary_years">
+        <item quantity="one">%1$d año juntos</item>
+        <item quantity="other">%1$d años juntos</item>
+    </plurals>
+    <string name="anniversary_body">Hoy es su aniversario: ¡felicítalos!</string>
+    <!-- Birthday fields (F4) and the photo crop editor (F14) -->
+    <string name="birthday_day">Día</string>
+    <string name="birthday_month">Mes</string>
+    <string name="birthday_year">Año</string>
+    <string name="crop_title">Mover y ajustar</string>
+    <string name="crop_hint">Pellizca para ampliar · arrastra para mover</string>
+    <string name="crop_use">Usar foto</string>
+    <string name="kid_of">%2$s de %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Un círculo</string>
+    <string name="plan_with_people">Personas</string>
+    <string name="plan_activity">Actividad</string>
+    <string name="plan_repeat">Repetir</string>
+    <string name="plan_repeat_never">Nunca</string>
+    <string name="plan_repeat_custom">Personalizar</string>
+    <string name="plan_repeat_unit_days">Días</string>
+    <string name="plan_repeat_unit_weeks">Semanas</string>
+    <string name="plan_repeat_unit_months">Meses</string>
+    <string name="plan_repeat_every_label">Cada</string>
+    <string name="plan_repeat_forever">Hasta que lo pares. Cada fecha se puede saltar por separado.</string>
+    <string name="plan_repeat_until">Hasta el %1$s</string>
+    <string name="plan_repeat_add_end">Añadir fecha de fin</string>
+    <string name="plan_repeat_remove_end">Sin fecha de fin</string>
+    <string name="plan_skip_one">Saltar esta</string>
+    <string name="plan_next_after">La siguiente: %1$s</string>
+    <string name="plan_repeats">se repite</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Saltada. La serie sigue.</string>
+    <string name="plan_make">Planear</string>
+    <string name="circle_next_plan">Próximo: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">cada semana</item>
+        <item quantity="other">cada %1$d semanas</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">cada mes</item>
+        <item quantity="other">cada %1$d meses</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
+    </plurals>
+    <string name="notif_calendar_one_title">¿Has visto a %1$s hoy?</string>
+    <string name="notif_calendar_one_body">«%1$s» estaba en tu calendario. Abre Good Company para registrarlo.</string>
+    <string name="notif_calendar_many_title">De tu calendario hoy</string>
+    <string name="notif_calendar_many_body">%1$s: abre Good Company para registrar las quedadas que hubo.</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_matches">Coincidencias</string>
+    <string name="tags_most_used">Más usadas</string>
+    <string name="tags_more">Más…</string>
+    <string name="tags_add_new">Añadir “%1$s” como etiqueta nueva</string>
+    <string name="tags_chip_count">%1$s · %2$d</string>
+    <string name="tags_people_join">%1$s · %2$s</string>
+    <string name="tags_liked_by_one">A %1$s le gusta</string>
+    <plurals name="tags_liked_by_others">
+        <item quantity="one">A %1$s y %2$d persona más les gusta</item>
+        <item quantity="other">A %1$s y %2$d personas más les gusta</item>
+    </plurals>
+    <string name="tags_disliked_by_one">A %1$s no</string>
+    <plurals name="tags_disliked_by_others">
+        <item quantity="one">A %1$s y %2$d persona más no</item>
+        <item quantity="other">A %1$s y %2$d personas más no</item>
+    </plurals>
 </resources>

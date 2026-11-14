@@ -1,0 +1,15 @@
+-- Version 7 → 8 (issue #44, F11): named places. A name given to a GPS spot (never a map or place-search result);
+-- a meetup within its radius links to it, so renaming or merging the place updates the meetup's place name too.
+
+CREATE TABLE named_place (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    radius_m INTEGER NOT NULL DEFAULT 100
+);
+
+ALTER TABLE hangout ADD COLUMN place_id TEXT;
+
+CREATE INDEX hangout_place_id ON hangout(place_id);

@@ -17,6 +17,8 @@ data class Backup(
     @EncodeDefault val version: Int = VERSION,
     val exportedAt: Instant? = null,
     val friends: List<Friend> = emptyList(),
+    /** Links between people (issue #39); missing in older backups. */
+    val links: List<PersonLink> = emptyList(),
     val hangouts: List<Hangout> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
     val interactions: List<Interaction> = emptyList(),
@@ -27,6 +29,10 @@ data class Backup(
     val ideas: List<Idea> = emptyList(),
     val groups: List<FriendGroup> = emptyList(),
     val plans: List<Plan> = emptyList(),
+    /** Named places (F11): names given to GPS spots. */
+    val places: List<NamedPlace> = emptyList(),
+    /** Answers to calendar suggestions ("No", "Never for this series"): ids only, never event details (D3). */
+    val calendarDecisions: List<CalendarDecision> = emptyList(),
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {

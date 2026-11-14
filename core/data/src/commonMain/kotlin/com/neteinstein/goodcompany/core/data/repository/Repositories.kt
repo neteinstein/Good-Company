@@ -20,6 +20,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -75,6 +76,17 @@ class FriendRepositoryImpl(
     // Deliberately leaves the copy on the contact alone: removing a friend from the app must never take data off
     // their contact (owner decision 2026-11-08).
     override suspend fun delete(id: FriendId) = store.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        var changed: List<Pair<Friend, Friend>> = emptyList()
+        store.update { list ->
+            val next = list.map(transform)
+            changed = list.zip(next).filter { (old, new) -> old != new }
+            next
+        }
+        changed.forEach { (old, new) -> mirrorToContact(old, new) }
+        return changed.map { it.first }
+    }
 
     override suspend fun syncContacts(): Int {
         val records = contacts.readContacts(withPhotos = true)
@@ -134,6 +146,35 @@ class HangoutRepositoryImpl(settings: Settings) : HangoutRepository {
     override suspend fun add(hangout: Hangout) = store.update { it + hangout }
 
     override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
+
+    private val placeStore = PersistentState(settings, Keys.PLACES, ListSerializer(NamedPlace.serializer()), emptyList())
+    override val places: Flow<List<NamedPlace>> = placeStore.flow
+
+    internal val currentPlaces: List<NamedPlace> get() = placeStore.value
+
+    internal suspend fun replaceAllPlaces(list: List<NamedPlace>) = placeStore.update { list }
+
+    override suspend fun upsertPlace(place: NamedPlace) = placeStore.update { list ->
+        if (list.any { it.id == place.id }) list.map { if (it.id == place.id) place else it } else list + place
+    }
+
+    override suspend fun deletePlace(id: String) = placeStore.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun renamePlace(id: String, name: String) {
+        val place = placeStore.value.firstOrNull { it.id == id } ?: return
+        upsertPlace(place.copy(name = name))
+        relink(id, id, name)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) {
+        val into = placeStore.value.firstOrNull { it.id == intoId } ?: return
+        relink(fromId, intoId, into.name)
+        deletePlace(fromId)
+    }
+
+    private suspend fun relink(fromId: String, toId: String, name: String) = store.update { list ->
+        list.map { h -> h.place?.takeIf { it.placeId == fromId }?.let { h.copy(place = it.copy(name = name, placeId = toId)) } ?: h }
+    }
 }
 
 class ReminderRepositoryImpl(settings: Settings) : ReminderRepository {
@@ -331,12 +372,14 @@ class BackupRepositoryImpl(
         ideas = ideas.current,
         groups = groups.current,
         plans = plans.current,
+        places = hangouts.currentPlaces,
         settings = settings.current,
     )
 
     override suspend fun restore(backup: Backup) {
         friends.replaceAll(backup.friends)
         hangouts.replaceAll(backup.hangouts)
+        hangouts.replaceAllPlaces(backup.places)
         reminders.replaceAll(backup.reminders)
         interactions.replaceAll(backup.interactions, backup.messages, backup.journal, backup.attachments)
         ideas.replaceAll(backup.ideas)

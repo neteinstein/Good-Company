@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -42,6 +43,9 @@ sealed interface AgendaMessage {
     data object PlanLogged : AgendaMessage
 
     data object PlanClosed : AgendaMessage
+
+    /** One occurrence of a recurring plan skipped; the series goes on. */
+    data object PlanSkipped : AgendaMessage
 }
 
 data class AgendaUiState(
@@ -52,6 +56,7 @@ data class AgendaUiState(
     val showReminderEditor: Boolean = false,
     val recentlyDeleted: Reminder? = null,
     val message: AgendaMessage? = null,
+    /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
     /** Friend whose birthday-wish sheet is open. */
     val wishFor: Friend? = null,
@@ -59,6 +64,8 @@ data class AgendaUiState(
     val isDraftingWish: Boolean = false,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
+    /** Past meetups from the chosen calendars waiting to be logged (D3); the "From your calendar" card shows when > 0. */
+    val calendarCount: Int = 0,
 ) {
     /** Agenda grouped by day, preserving order. */
     val agendaByDay: List<Pair<LocalDate, List<AgendaItem>>>
@@ -86,6 +93,7 @@ class AgendaViewModel(
     private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
     private val clock: AppClock,
+    observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
 
@@ -93,11 +101,12 @@ class AgendaViewModel(
         observeAgenda(),
         observeReminders(),
         observeFriends(),
-        observeSettings(),
+        combine(observeSettings(), observeCalendarSuggestions()) { settings, calendar -> settings to calendar.size },
         local,
-    ) { agenda, reminders, friends, settings, ui ->
+    ) { agenda, reminders, friends, (settings, calendarCount), ui ->
         ui.copy(
-            hasAiKey = settings.hasAiKey,
+            calendarCount = calendarCount,
+            hasAiKey = settings.usableAiKey != null,
             agenda = agenda,
             reminders = reminders,
             friends = friends.map { it.friend },
@@ -163,11 +172,22 @@ class AgendaViewModel(
         }
     }
 
-    /** "Did you meet?" answered from the agenda. A yes from the screen opens the "We met" panel instead (issue #47). */
-    fun onConfirmPlan(id: String, happened: Boolean) {
+    /**
+     * "Did you meet?" answered from the agenda, for one occurrence ([day]; the open one when null). A yes from the screen
+     * opens the "We met" panel instead (issue #47).
+     */
+    fun onConfirmPlan(id: String, happened: Boolean, day: LocalDate? = null) {
         viewModelScope.launch {
-            confirmPlan(id, happened)
+            confirmPlan(id, happened, day)
             local.update { it.copy(message = if (happened) AgendaMessage.PlanLogged else AgendaMessage.PlanClosed) }
+        }
+    }
+
+    /** "Skip this one": takes one date out of a recurring plan; the series goes on. */
+    fun onSkipPlan(item: AgendaItem.PlanUpcoming) {
+        viewModelScope.launch {
+            confirmPlan(item.plan.id, happened = false, day = item.occurrence)
+            local.update { it.copy(message = AgendaMessage.PlanSkipped) }
         }
     }
 

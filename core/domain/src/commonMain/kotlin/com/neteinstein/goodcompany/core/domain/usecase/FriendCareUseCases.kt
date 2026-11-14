@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -16,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.photoOf
@@ -95,7 +97,8 @@ class HandleNotificationActionUseCase(
 ) {
     suspend operator fun invoke(action: NotificationAction) {
         if (action.isPlan) {
-            confirmPlan(action.targetId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED)
+            val occurrence = PlanOccurrence.decode(action.targetId)
+            confirmPlan(occurrence.planId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED, day = occurrence.date)
             return
         }
         if (action.isGroup) {
@@ -252,15 +255,19 @@ class DraftBirthdayMessageUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     suspend operator fun invoke(id: FriendId): Result<String> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
-        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts), language.languageTag())
+        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts, links, friends), language.languageTag())
     }
 }
 
-/** AI gift ideas for a friend or one of their kids. Requires an API key. */
+/**
+ * AI gift ideas for someone. Requires an API key. For a kid (F9: someone with a parent among your people) the ideas
+ * are asked as before, as a gift for the parent's kid, so the prompt knows it's for a child.
+ */
 class SuggestGiftsUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
@@ -268,17 +275,18 @@ class SuggestGiftsUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
-    suspend operator fun invoke(id: FriendId, kidId: String? = null): Result<List<String>> {
-        val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
-        val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
-        val kid = friend.kids.firstOrNull { it.id == kidId }
-        val alreadyHave = friend.gifts.filter { it.forKidId == kidId }.map { it.title.lowercase() }.toSet()
+    suspend operator fun invoke(id: FriendId): Result<List<String>> {
+        val key = settings.settings.first().usableAiKey ?: return Result.failure(MissingApiKeyException())
+        val person = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
+        val parent = KidsAsPeople.parentsOf(id, links.links.first(), friends.friends.first().associateBy { it.id }).firstOrNull()
+        val alreadyHave = person.gifts.map { it.title.lowercase() }.toSet()
         return assistant.giftIdeas(
             key,
-            IdeaMapper.profile(friend, interactions, hangouts),
-            kid?.name,
-            kid?.likes.orEmpty(),
+            IdeaMapper.profile(parent ?: person, interactions, hangouts, links, friends),
+            person.name.takeIf { parent != null },
+            if (parent != null) person.likes else emptyList(),
             language.languageTag(),
         )
             .map { ideas -> ideas.map(String::trim).filter { it.isNotEmpty() && it.lowercase() !in alreadyHave }.distinct() }
@@ -290,15 +298,44 @@ class MarkIdeaProposedUseCase(private val ideas: IdeaRepository, private val clo
 }
 
 /**
- * Sets a photo the user picked from their gallery as a friend's avatar (for someone whose contact has none), shrunk
- * to thumbnail size. Returns false when the picture can't be read; the friend is then left as they were. A later
- * contacts sync only replaces it if the contact gets a photo of its own.
+ * Sets a photo the user picked (and cropped) as a friend's avatar, shrunk to thumbnail size (F14). It is the app's own
+ * [Friend.customPhoto], so it wins over the contact's photo and a contacts sync never replaces it. Returns false when
+ * the picture can't be read; the friend is then left as they were.
  */
 class SetFriendPhotoUseCase(private val friends: FriendRepository, private val photos: PhotoShrinker) {
     suspend operator fun invoke(id: FriendId, image: ByteArray?): Boolean {
         val friend = friends.get(id) ?: return false
         val photo = photos.photoOf(image) ?: return false
-        friends.upsert(friend.copy(photo = photo))
+        friends.upsert(friend.copy(customPhoto = photo))
+        return true
+    }
+}
+
+/** Removes the photo set in the app (F14): the contact's photo, or the initials, show again. The contact is never touched. */
+class RemoveFriendPhotoUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(id: FriendId) {
+        val friend = friends.get(id) ?: return
+        if (friend.customPhoto != null) friends.upsert(friend.copy(customPhoto = null))
+    }
+}
+
+/**
+ * Renames a friend (F19). For someone from contacts the new name is kept as [Friend.customName], which wins over the
+ * contact's name and survives a sync; giving them the contact's name again (or a blank one) clears it, which is how
+ * "Use the contact's name" works. A friend without a contact simply gets the new [Friend.name]. Returns false when
+ * there is nothing to save (no such friend, or a blank name for someone without a contact).
+ */
+class RenameFriendUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(id: FriendId, newName: String?): Boolean {
+        val friend = friends.get(id) ?: return false
+        val trimmed = newName?.trim().orEmpty()
+        val renamed = if (friend.contactId == null) {
+            if (trimmed.isEmpty()) return false
+            friend.copy(name = trimmed, customName = null)
+        } else {
+            friend.copy(customName = trimmed.takeIf { it.isNotEmpty() && it != friend.name })
+        }
+        if (renamed != friend) friends.upsert(renamed)
         return true
     }
 }

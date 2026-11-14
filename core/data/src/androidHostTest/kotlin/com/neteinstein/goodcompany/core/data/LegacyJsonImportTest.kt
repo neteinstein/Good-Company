@@ -118,8 +118,10 @@ class LegacyJsonImportTest {
         assertEquals(legacy.ideas, moved.ideas)
         assertEquals(legacy.groups, moved.groups)
         assertEquals(legacy.plans.sortedBy { it.id }, moved.plans.sortedBy { it.id })
-        assertEquals(legacy.settings, moved.settings)
-        assertEquals(legacy.settings, sql.settings.settings.first())
+        // The JSON predates the AI switch: it comes on because a key was saved (issue #37).
+        val expected = legacy.settings.copy(aiEnabled = true)
+        assertEquals(expected, moved.settings)
+        assertEquals(expected, sql.settings.settings.first())
 
         legacyKeys.forEach { assertFalse(settings.hasKey(it), "$it should be deleted") }
         assertNotNull(sql.db.meta(LegacyJsonImport.KEY_IMPORTED))

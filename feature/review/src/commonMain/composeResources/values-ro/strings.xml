@@ -77,4 +77,50 @@
         <item quantity="few">%1$d mesaje și e-mailuri</item>
         <item quantity="other">%1$d de mesaje și e-mailuri</item>
     </plurals>
+    <string name="network_title">Rețeaua ta</string>
+    <string name="network_you">Tu</string>
+    <string name="network_empty_title">Încă nu e nimeni pe hartă</string>
+    <string name="network_empty_body">Marchează prietenii adevărați, creează cercuri sau leagă oameni între ei și vor apărea în jurul tău.</string>
+    <string name="network_legend_family">Familie</string>
+    <string name="network_legend_partner">Partener</string>
+    <string name="network_legend_friend">Prieten</string>
+    <string name="network_legend_introduced">Prezentat</string>
+    <string name="people_title">Oamenii tăi</string>
+    <string name="people_avg_warmth">căldură medie</string>
+    <string name="people_by_circle">Căldura pe cercuri</string>
+    <string name="people_circles">Cercurile tale</string>
+    <string name="people_by_closeness">După apropiere</string>
+    <string name="people_trend">Ultimele 90 de zile</string>
+    <string name="people_trend_caption">Căldura medie, săptămână cu săptămână</string>
+    <string name="people_trend_up">+%1$d față de acum 90 de zile</string>
+    <string name="people_trend_down">−%1$d față de acum 90 de zile</string>
+    <string name="people_trend_flat">La fel ca acum 90 de zile</string>
+    <string name="people_cooling">Se răcesc</string>
+    <string name="people_cooling_row">Căldură %1$d → %2$d</string>
+    <string name="people_circle_cooling">Se răcește: −%1$d într-o lună</string>
+    <string name="people_per_month">Întâlniri pe lună</string>
+    <string name="people_never">Niciodată înregistrați</string>
+    <string name="people_never_hint">Adăugați, dar fără întâlniri, apeluri sau mesaje încă</string>
+    <string name="people_warmth_off">Cu „Arată căldura” oprit, cifrele de căldură și cardul „Se răcesc” sunt ascunse; numărătorile rămân.</string>
+    <string name="people_empty">Marchează prietenii adevărați sau creează cercuri ca să-ți vezi oamenii aici.</string>
+    <plurals name="network_description">
+        <item quantity="one">Hartă cu %1$d persoană în jurul tău</item>
+        <item quantity="few">Hartă cu %1$d persoane în jurul tău</item>
+        <item quantity="other">Hartă cu %1$d de persoane în jurul tău</item>
+    </plurals>
+    <plurals name="people_meetups_90">
+        <item quantity="one">întâlnire în ultimele 90 de zile</item>
+        <item quantity="few">întâlniri în ultimele 90 de zile</item>
+        <item quantity="other">de întâlniri în ultimele 90 de zile</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">persoană</item>
+        <item quantity="few">persoane</item>
+        <item quantity="other">de persoane</item>
+    </plurals>
+    <plurals name="people_members">
+        <item quantity="one">%1$d persoană</item>
+        <item quantity="few">%1$d persoane</item>
+        <item quantity="other">%1$d de persoane</item>
+    </plurals>
 </resources>

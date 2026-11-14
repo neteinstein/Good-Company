@@ -5,6 +5,9 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.testing.Fixtures
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -23,7 +26,7 @@ import kotlin.test.assertTrue
 class AgendaViewModelTest {
     private fun graph(apiKey: String? = null) = TestGraph(
         listOf(friend("ana") { copy(isCloseFriend = true, birthday = Birthday(3, 12)) }, friend("rui")),
-        settings = AppSettings(aiApiKey = apiKey),
+        settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),
     )
 
     private var g = graph()
@@ -40,6 +43,7 @@ class AgendaViewModelTest {
         g.restoreReminder,
         g.confirmPlan,
         g.clock,
+        g.observeCalendarSuggestions,
     )
 
     @Test
@@ -124,5 +128,27 @@ class AgendaViewModelTest {
         vm.onConfirmPlan(next.id, happened = false)
         assertEquals(AgendaMessage.PlanClosed, state.value.message)
         assertEquals(1, g.hangoutRepo.hangouts.value.size)
+    }
+
+    @Test
+    fun aRecurringPlanShowsEachDate_andSkippingOneKeepsTheSeries() = runViewModelTest {
+        val start = LocalDate(2026, 3, 14)
+        g.savePlan(null, "Climbing", listOf(FriendId("ana")), start, repeat = Repeat(15, RepeatUnit.DAY, start))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val dates = state.value.agenda.filterIsInstance<AgendaItem.PlanUpcoming>().map { it.occurrence }
+        assertEquals(listOf(start, LocalDate(2026, 3, 29), LocalDate(2026, 4, 13)), dates.take(3))
+        val second = state.value.agenda.filterIsInstance<AgendaItem.PlanUpcoming>()[1]
+        vm.onSkipPlan(second)
+        assertEquals(AgendaMessage.PlanSkipped, state.value.message)
+        val after = state.value.agenda.filterIsInstance<AgendaItem.PlanUpcoming>().map { it.occurrence }
+        assertEquals(listOf(start, LocalDate(2026, 4, 13)), after.take(2))
+
+        // "Did you meet?" for a past occurrence of a series.
+        g.clock.instant = Fixtures.at(2026, 3, 16)
+        val ask = collecting(vm().state).value.agenda.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        vm.onConfirmPlan(ask.plan.id, happened = true, day = ask.occurrence)
+        assertEquals(1, g.hangoutRepo.hangouts.value.size)
+        assertEquals(LocalDate(2026, 4, 13), g.planRepo.plans.value.single().date)
     }
 }

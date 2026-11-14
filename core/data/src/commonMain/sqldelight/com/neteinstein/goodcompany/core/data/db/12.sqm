@@ -1,0 +1,8 @@
+-- Version 12 → 13 (issue #45, decision D3): the answers to calendar suggestions ("No" for one occurrence, "Never" for a
+-- repeating event). Only keys made of calendar ids are stored, never event titles or times; events stay in the calendar.
+
+CREATE TABLE calendar_decision (
+    key TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('NO', 'NEVER')),
+    decided_at INTEGER NOT NULL
+);

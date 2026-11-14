@@ -1,0 +1,34 @@
+-- Named places (F11): names given to GPS spots. Never sent anywhere. Meetups point at one with hangout.place_id
+-- (no foreign key: deleting a place leaves its meetups' names and links alone, so an undo links them again).
+
+CREATE TABLE named_place (
+    id TEXT NOT NULL PRIMARY KEY,
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    radius_m INTEGER NOT NULL DEFAULT 100
+);
+
+allPlaces:
+SELECT * FROM named_place ORDER BY position;
+
+nextPlacePosition:
+SELECT coalesce(max(position), -1) + 1 FROM named_place;
+
+upsertPlace:
+INSERT INTO named_place (id, position, name, latitude, longitude, radius_m) VALUES ?
+ON CONFLICT (id) DO UPDATE SET
+    name = excluded.name,
+    latitude = excluded.latitude,
+    longitude = excluded.longitude,
+    radius_m = excluded.radius_m;
+
+placeById:
+SELECT * FROM named_place WHERE id = ?;
+
+deletePlace:
+DELETE FROM named_place WHERE id = ?;
+
+deleteAllPlaces:
+DELETE FROM named_place;

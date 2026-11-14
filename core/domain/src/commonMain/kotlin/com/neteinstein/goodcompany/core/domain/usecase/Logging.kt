@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
@@ -10,17 +11,18 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
-import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
+import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -64,13 +66,14 @@ data class LogRequest(
     /** Contacts only: where the log came from (the share screen passes [InteractionSource.SHARE]). */
     val source: InteractionSource = InteractionSource.MANUAL,
     val durationSeconds: Int? = null,
-    /** Meetups only: the plan this answers ("Did you meet?" → yes). It is closed as happened. */
-    val planId: String? = null,
 )
 
 /** What a log wrote, so the caller can show it or undo it. */
 sealed interface LogResult {
-    /** [plan] is the plan this meetup answered, as it was before it was closed (Undo puts it back). */
+    /**
+     * [plan] is the plan this meetup answered ("Did you meet?"), as it was before that occurrence was closed: Undo
+     * puts it back. Set by the sheet that closed it, not by [LogInteractionUseCase].
+     */
     data class Met(val hangout: Hangout, val plan: Plan? = null) : LogResult
 
     data class Contacts(val interactions: List<Interaction>) : LogResult
@@ -85,7 +88,6 @@ sealed interface LogResult {
 class LogInteractionUseCase(
     private val checkIn: CheckInUseCase,
     private val interactions: InteractionRepository,
-    private val plans: PlanRepository,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
@@ -95,12 +97,9 @@ class LogInteractionUseCase(
         val at = instantFor(request.date)
         val note = request.note.trim()
         return when (val kind = request.kind) {
-            LogKind.MEETUP -> {
-                val hangout = checkIn(people, request.placeName, request.location, note, at, request.activity)
-                val plan = request.planId?.let { id -> plans.plans.first().firstOrNull { it.id == id && it.status == PlanStatus.PLANNED } }
-                plan?.let { plans.upsert(it.copy(status = PlanStatus.HAPPENED)) }
-                LogResult.Met(hangout, plan)
-            }
+            LogKind.MEETUP -> LogResult.Met(
+                checkIn(people, request.placeName, request.location, note, at, request.activity),
+            )
             LogKind.JOURNAL -> {
                 require(note.isNotEmpty()) { "A journal entry needs text" }
                 val entries = people.map { JournalEntry(ids.next(), it, at, note) }
@@ -158,19 +157,30 @@ class UndoLogUseCase(
 }
 
 /**
- * The meetup activities in the order the log sheet shows them (F3): the most used first (ties keep the default
- * order), so the first six are the ones on show and the rest sit behind "More".
+ * The meetup activities in the order the log sheet shows them (F3): only the ones turned on in Settings
+ * ([AppSettings.activities]), the most used first (ties keep the user's order), so the first six are the ones on show
+ * and the rest sit behind "More". An old meetup whose activity is now off keeps it; it just isn't offered.
  */
-class ObserveActivitiesUseCase(private val hangouts: HangoutRepository) {
-    operator fun invoke(): Flow<List<HangoutActivity>> = hangouts.hangouts.map { hs -> ranked(hs) }
+class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private val settings: SettingsRepository) {
+    operator fun invoke(): Flow<List<HangoutActivity>> =
+        combine(hangouts.hangouts, settings.settings.map { it.activities }.distinctUntilChanged()) { hs, enabled -> ranked(hs, enabled) }
 
     companion object {
         const val SHOWN = 6
 
-        fun ranked(hangouts: List<Hangout>): List<HangoutActivity> {
+        fun ranked(hangouts: List<Hangout>, enabled: List<HangoutActivity> = HangoutActivity.entries): List<HangoutActivity> {
             val counts = hangouts.mapNotNull { it.activity }.groupingBy { it }.eachCount()
-            return HangoutActivity.entries.sortedByDescending { counts[it] ?: 0 }
+            return enabled.distinct().sortedByDescending { counts[it] ?: 0 }
         }
+    }
+}
+
+/** Saves the activities the log sheet offers, in this order (F3). Ignored when it would leave none. */
+class SetActivitiesUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(activities: List<HangoutActivity>) {
+        val list = activities.distinct()
+        if (list.isEmpty()) return
+        settings.update { it.copy(activities = list) }
     }
 }
 

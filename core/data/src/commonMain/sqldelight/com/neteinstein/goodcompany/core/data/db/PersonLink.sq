@@ -1,0 +1,47 @@
+-- Links between people (issue #39, F6, F18). Each link is stored once and shown from both sides: `type` (a LinkType
+-- name) is what to_friend_id is to from_friend_id. Romantic links may have started_on (an anniversary, reminded when
+-- remind_anniversary is 1) and ended_on (an ex). A link goes with either person.
+
+CREATE TABLE person_link (
+    id TEXT NOT NULL PRIMARY KEY,
+    from_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    to_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN (
+        'PARENT', 'CHILD', 'SIBLING', 'GRANDPARENT', 'GRANDCHILD', 'AUNT_UNCLE', 'NIECE_NEPHEW', 'COUSIN', 'IN_LAW',
+        'DATING', 'SPOUSE', 'PARTNER', 'EX', 'FRIEND', 'COLLEAGUE'
+    )),
+    started_on TEXT,
+    ended_on TEXT,
+    note TEXT NOT NULL DEFAULT '',
+    remind_anniversary INTEGER NOT NULL DEFAULT 0 CHECK (remind_anniversary IN (0, 1)),
+    added_at INTEGER,
+    CHECK (from_friend_id <> to_friend_id)
+);
+
+CREATE INDEX person_link_from ON person_link(from_friend_id);
+
+CREATE INDEX person_link_to ON person_link(to_friend_id);
+
+allLinks:
+SELECT * FROM person_link ORDER BY rowid;
+
+-- Skipped when either person is missing (like a circle member).
+upsert:
+INSERT INTO person_link (id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at)
+SELECT :id, :fromId, :toId, :type, :startedOn, :endedOn, :note, :remindAnniversary, :addedAt
+WHERE EXISTS (SELECT 1 FROM friend WHERE id = :fromId) AND EXISTS (SELECT 1 FROM friend WHERE id = :toId)
+ON CONFLICT (id) DO UPDATE SET
+    from_friend_id = excluded.from_friend_id,
+    to_friend_id = excluded.to_friend_id,
+    type = excluded.type,
+    started_on = excluded.started_on,
+    ended_on = excluded.ended_on,
+    note = excluded.note,
+    remind_anniversary = excluded.remind_anniversary,
+    added_at = excluded.added_at;
+
+delete:
+DELETE FROM person_link WHERE id = ?;
+
+deleteAll:
+DELETE FROM person_link;

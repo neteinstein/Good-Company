@@ -103,7 +103,7 @@ suspend fun IdeasMessage.text(): String = when (this) {
         when (reason) {
             WeeklyIdeasOutcome.Reason.NO_API_KEY -> Res.string.msg_no_key
             WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN -> Res.string.msg_no_friends
-            WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
+            WeeklyIdeasOutcome.Reason.AI_OFF, WeeklyIdeasOutcome.Reason.DISABLED, WeeklyIdeasOutcome.Reason.NOT_DUE -> Res.string.msg_nothing
         },
     )
     IdeasMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
@@ -134,7 +134,7 @@ fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinView
         )
     }
     state.proposing?.let { card ->
-        val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+        val names = friendNames(card.friends.map { it.displayName.substringBefore(' ') })
         SendMessageSheet(
             title = stringResource(Res.string.propose_title, names),
             suggestion = proposalText(card),
@@ -159,7 +159,7 @@ fun friendNames(names: List<String>): String = when (names.size) {
 @Composable
 fun proposalText(card: IdeaCard): String {
     val idea = card.idea
-    val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+    val names = friendNames(card.friends.map { it.displayName.substringBefore(' ') })
     val what = listOfNotNull(idea.title, idea.whenText?.let { "($it)" }).joinToString(" ")
     val base = if (idea.kind ==
         IdeaKind.EVENT

@@ -60,8 +60,11 @@ import com.neteinstein.goodcompany.core.ui.components.ProgressRing
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
+import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -95,17 +98,17 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
         is AgendaItem.FriendBirthday -> Spec(
             item.friend,
             Icons.Rounded.Cake,
-            stringResource(Res.string.card_birthday, item.friend.name.substringBefore(' ')),
+            stringResource(Res.string.card_birthday, item.friend.displayName.substringBefore(' ')),
             item.turning?.let { stringResource(Res.string.card_turns, it) } ?: stringResource(Res.string.card_say_hi),
         )
         is AgendaItem.KidBirthday -> Spec(
-            item.parent,
+            item.kid,
             Icons.Rounded.ChildCare,
-            stringResource(Res.string.card_birthday, item.kid.name),
+            stringResource(Res.string.card_birthday, item.kid.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.card_turns, it) },
                 item.kid.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
-            ).joinToString(" · ").ifBlank { item.parent.name },
+            ).joinToString(" · ").ifBlank { item.parent.displayName },
         )
         is AgendaItem.RelativeBirthday -> Spec(
             item.friend,
@@ -114,37 +117,44 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.card_turns, it) },
                 item.relative.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
-            ).joinToString(" · ").ifBlank { item.friend.name },
+            ).joinToString(" · ").ifBlank { item.friend.displayName },
+        )
+        is AgendaItem.Anniversary -> Spec(
+            item.first,
+            Icons.Rounded.Favorite,
+            anniversaryTitle(item.first.displayName.substringBefore(' '), item.second.displayName.substringBefore(' ')),
+            item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }
+                ?: stringResource(CoreRes.string.anniversary_body),
         )
         is AgendaItem.FriendEvent -> Spec(
             item.friend,
             Icons.Rounded.Favorite,
             item.event.title,
-            stringResource(Res.string.card_ping, item.friend.name.substringBefore(' ')),
+            stringResource(Res.string.card_ping, item.friend.displayName.substringBefore(' ')),
         )
         is AgendaItem.ReminderDue -> Spec(
             item.friends.firstOrNull(),
             Icons.Rounded.Alarm,
             item.reminder.title,
-            item.friends.joinToString { it.name.substringBefore(' ') }.ifBlank { stringResource(Res.string.card_reminder) },
+            item.friends.joinToString { it.displayName.substringBefore(' ') }.ifBlank { stringResource(Res.string.card_reminder) },
         )
         is AgendaItem.MeetupOverdue -> Spec(
             item.friend,
             Icons.Rounded.Schedule,
-            stringResource(Res.string.card_see, item.friend.name),
+            stringResource(Res.string.card_see, item.friend.displayName),
             stringResource(Res.string.card_overdue),
         )
         is AgendaItem.GroupOverdue -> Spec(
             item.members.firstOrNull(),
             Icons.Rounded.Groups,
             "${item.group.emoji} ${item.group.name}",
-            item.members.joinToString { it.name.substringBefore(' ') },
+            item.members.joinToString { it.displayName.substringBefore(' ') },
         )
         is AgendaItem.PlanUpcoming -> Spec(
             item.friends.firstOrNull(),
             Icons.Rounded.EventAvailable,
             item.plan.title,
-            item.friends.joinToString { it.name.substringBefore(' ') },
+            item.circle?.let { "${it.emoji} ${it.name}" } ?: item.friends.joinToString { it.displayName.substringBefore(' ') },
         )
         is AgendaItem.PlanToConfirm -> Spec(
             item.friends.firstOrNull(),
@@ -153,7 +163,7 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             stringResource(CoreRes.string.plan_did_you_meet),
         )
     }
-    val (start, end) = spec.friend?.let { avatarColors(it.name) } ?: (OnColorGradients.BrandRed to OnColorGradients.Violet)
+    val (start, end) = spec.friend?.let { avatarColors(it.displayName) } ?: (OnColorGradients.BrandRed to OnColorGradients.Violet)
     Box(
         modifier
             .width(196.dp)
@@ -215,7 +225,7 @@ fun CatchUpCard(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(f.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(f.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     status.daysSinceLastSeen?.let { pluralStringResource(Res.plurals.catch_up_days, it, it, everyNDays(status.cadenceDays)) }
                         ?: stringResource(Res.string.catch_up_never),
@@ -279,7 +289,7 @@ fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Uni
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(f.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(f.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level)),
                     style = MaterialTheme.typography.bodySmall,
@@ -301,7 +311,7 @@ fun PersonChip(friend: Friend, onClick: () -> Unit, modifier: Modifier = Modifie
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         FriendAvatar(friend, size = 60.dp, highlighted = true)
-        Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(friend.displayName.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -312,7 +322,7 @@ fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, 
     val ring = if (bubble.freshCount > 0) {
         listOf(Color(0xFFF2A100), Color(0xFFE5574F), Color(0xFFD81B60))
     } else {
-        avatarColors(friend.name).let { (a, b) -> listOf(a, b) }
+        avatarColors(friend.displayName).let { (a, b) -> listOf(a, b) }
     }
     Column(
         modifier.width(80.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onClick).padding(vertical = 6.dp),
@@ -326,7 +336,7 @@ fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, 
         ) {
             FriendAvatar(friend, size = 58.dp)
         }
-        Text(friend.name.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(friend.displayName.substringBefore(' '), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(
             relativeDay(bubble.meetingOn, today),
             style = MaterialTheme.typography.labelSmall,

@@ -27,6 +27,9 @@ import com.neteinstein.goodcompany.core.ui.resources.ai_error_refused
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_too_slow
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_truncated
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_unavailable
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_title
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.circle_close
 import com.neteinstein.goodcompany.core.ui.resources.circle_close_short
 import com.neteinstein.goodcompany.core.ui.resources.circle_good
@@ -45,6 +48,10 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_weekend
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body_age
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_event_soon_body
@@ -130,6 +137,11 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 c.age?.let { getString(Res.string.notif_kid_body_age, it) } ?: getString(Res.string.notif_kid_body),
                 emptyList(),
             )
+            is NotificationContent.Anniversary -> Triple(
+                getString(Res.string.anniversary_title, c.firstName, c.secondName),
+                c.years?.takeIf { it > 0 }?.let { getPluralString(Res.plurals.anniversary_years, it, it) } ?: getString(Res.string.anniversary_body),
+                emptyList(),
+            )
             is NotificationContent.EventToday -> Triple(
                 getString(Res.string.notif_event_today_title, c.friendName),
                 getString(Res.string.notif_event_today_body, c.title),
@@ -201,17 +213,35 @@ object ResourceNotificationRenderer : NotificationRenderer {
             is NotificationContent.PlanFollowUp -> Triple(
                 getString(Res.string.notif_plan_ask_title, namesText(c.withNames, c.withNames.size)),
                 getString(Res.string.notif_plan_ask_body, c.title),
-                listOf(
+                // A circle plan asks who came in the app (tap the notification); only "No" works from here.
+                listOfNotNull(
                     RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.planId),
+                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.target),
                         getString(Res.string.notif_action_plan_yes),
-                    ),
+                    ).takeUnless { c.isCircle },
                     RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.planId),
+                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.target),
                         getString(Res.string.notif_action_plan_no),
                     ),
                 ),
             )
+            // On this device only (D3). No quick actions: "Log it" needs the log sheet, so a tap opens the app.
+            is NotificationContent.CalendarMeetups -> {
+                val single = c.eventTitle?.takeIf { c.total == 1 }
+                if (single != null) {
+                    Triple(
+                        getString(Res.string.notif_calendar_one_title, namesText(c.names, c.names.size)),
+                        getString(Res.string.notif_calendar_one_body, single),
+                        emptyList(),
+                    )
+                } else {
+                    Triple(
+                        getString(Res.string.notif_calendar_many_title),
+                        getString(Res.string.notif_calendar_many_body, namesText(c.names, c.names.size)),
+                        emptyList(),
+                    )
+                }
+            }
         }
         return RenderedNotification(notification.id, notification.at, title, body, actions)
     }

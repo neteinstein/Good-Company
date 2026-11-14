@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -43,6 +44,7 @@ sealed interface IdeasMessage {
 data class IdeasUiState(
     val ideas: List<IdeaCard> = emptyList(),
     val kindFilter: IdeaKind? = null,
+    /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
     val weeklyEnabled: Boolean = true,
     val optedInFriends: Int = 0,
@@ -76,7 +78,7 @@ class IdeasViewModel(
         val byId = friends.associate { it.friend.id to it.friend }
         ui.copy(
             ideas = ideas.filter { ui.kindFilter == null || it.kind == ui.kindFilter }.map { IdeaCard(it, it.friendIds.mapNotNull(byId::get)) },
-            hasAiKey = settings.hasAiKey,
+            hasAiKey = settings.usableAiKey != null,
             weeklyEnabled = settings.weeklyIdeasEnabled,
             optedInFriends = friends.count { it.friend.suggestEvents },
             lastRunAt = settings.lastIdeasRunAt,
@@ -122,11 +124,11 @@ class IdeasViewModel(
 
     fun onDismissPlan() = local.update { it.copy(planning = null) }
 
-    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
+    fun onSavePlan(input: PlanInput) {
         val card = local.value.planning ?: return
-        if (title.isBlank()) return
+        if (input.title.isBlank()) return
         viewModelScope.launch {
-            savePlan(null, title, friendIds.ifEmpty { card.idea.friendIds }, date, place, ideaId = card.idea.id)
+            savePlan.save(null, input.copy(friendIds = input.friendIds.ifEmpty { card.idea.friendIds }), ideaId = card.idea.id)
             local.update { it.copy(planning = null, message = IdeasMessage.PlanSaved) }
         }
     }

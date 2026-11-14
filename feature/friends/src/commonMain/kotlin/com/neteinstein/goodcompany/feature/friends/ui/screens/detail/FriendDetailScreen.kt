@@ -41,7 +41,6 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
@@ -116,21 +115,28 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkCategory
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
@@ -138,6 +144,7 @@ import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.PlanRow
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
@@ -162,6 +169,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
+import com.neteinstein.goodcompany.core.ui.l10n.relationToMeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.platform.OpenedPhoto
@@ -177,6 +185,7 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
+import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.plans_title
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.remove_item
@@ -205,6 +214,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.detail_back
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
+import com.neteinstein.goodcompany.feature.friends.resources.detail_edit_name
 import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_remove_friend
@@ -213,7 +223,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.feeds_hint
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_no_posts
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_title
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_to_news
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_kid
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_hint
@@ -221,7 +230,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.gifts_ideas
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_none_found
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest_for
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggestions
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_title
 import com.neteinstein.goodcompany.feature.friends.resources.groups_member_of
@@ -233,15 +241,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_no_ai
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_open
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_setup
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_title
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday_turns
-import com.neteinstein.goodcompany.feature.friends.resources.kids_hint
-import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
-import com.neteinstein.goodcompany.feature.friends.resources.kids_remove
-import com.neteinstein.goodcompany.feature.friends.resources.kids_title
 import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
 import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.moments_title
+import com.neteinstein.goodcompany.feature.friends.resources.msg_added_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
@@ -253,6 +256,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_field_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
+import com.neteinstein.goodcompany.feature.friends.resources.msg_link_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
@@ -262,6 +266,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_hint
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_title
+import com.neteinstein.goodcompany.feature.friends.resources.photo_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.plans_add
 import com.neteinstein.goodcompany.feature.friends.resources.plans_empty
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
@@ -281,9 +286,13 @@ import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
 import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_together
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
+import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_add
 import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint_any
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import com.neteinstein.goodcompany.feature.friends.resources.story_cta
@@ -339,7 +348,6 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.AddFeedDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
-import com.neteinstein.goodcompany.feature.friends.ui.components.KidDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -363,14 +371,20 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
-    /** "Together" and a plan's "Did you meet?" yes open the small "We met" panel (issue #47); the plan id, or null. */
-    onWeMet: (planId: String?) -> Unit = {},
+    /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
+    onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    /** "Together" opens the small "We met" panel (issue #47). */
+    onWeMet: () -> Unit = {},
     onOpenCircle: (String) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val pickPhoto = rememberImagePicker(onPicked = viewModel::onPhotoPicked)
+    // F14: a picked picture goes through the crop editor first; one the picker couldn't read goes straight on (it says so).
+    var cropping by remember { mutableStateOf<ByteArray?>(null) }
+    val pickPhoto = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) cropping = image else viewModel.onPhotoPicked(image)
+    }
     val pickSavedPhoto = rememberGalleryPhotoPicker { picked ->
         picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
     }
@@ -405,14 +419,15 @@ fun FriendDetailScreen(
             onSnooze = viewModel::onSnooze,
             onClearSnooze = viewModel::onClearSnooze,
             onCalled = viewModel::onCalled,
-            onBirthdayChange = viewModel::onBirthdayChange,
+            onSaveBirthday = viewModel::onSaveBirthday,
+            onRename = viewModel::onRename,
             onAddLikes = viewModel::onAddLikes,
             onRemoveLike = viewModel::onRemoveLike,
             onAddDislikes = viewModel::onAddDislikes,
             onRemoveDislike = viewModel::onRemoveDislike,
             onNotesChange = viewModel::onNotesChange,
-            onSaveKid = viewModel::onSaveKid,
-            onRemoveKid = viewModel::onRemoveKid,
+            onAddKid = viewModel::onAddKid,
+            onSetShowInMyList = viewModel::onSetShowInMyList,
             onAddEvent = viewModel::onAddEvent,
             onRemoveEvent = viewModel::onRemoveEvent,
             onSaveGift = viewModel::onSaveGift,
@@ -432,14 +447,21 @@ fun FriendDetailScreen(
             },
             onEditCircle = onEditCircle,
             onAddPhoto = pickPhoto,
+            onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
+            onRemovePhoto = viewModel::onRemovePhoto,
             onAddSavedPhoto = pickSavedPhoto,
             onOpenOriginal = photoOpener::open,
             onRemoveAttachment = viewModel::onRemoveAttachment,
             onUndoRemoveAttachment = viewModel::onUndoRemoveAttachment,
+            onSaveLink = viewModel::onSaveLink,
+            onRemoveLink = viewModel::onRemoveLink,
+            onUndoRemoveLink = viewModel::onUndoRemoveLink,
+            onSaveRelationToMe = viewModel::onSaveRelationToMe,
+            onAddRelativeAsPerson = viewModel::onAddRelativeAsPerson,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
-            onWeMet = { onWeMet(null) },
+            onWeMet = onWeMet,
             onOpenReminderEditor = viewModel::onOpenReminderEditor,
             onDismissReminderEditor = viewModel::onDismissReminderEditor,
             onSaveReminder = viewModel::onSaveReminder,
@@ -450,12 +472,20 @@ fun FriendDetailScreen(
             onOpenPlanEditor = viewModel::onOpenPlanEditor,
             onDismissPlanEditor = viewModel::onDismissPlanEditor,
             onSavePlan = viewModel::onSavePlan,
-            onConfirmPlan = { id, happened -> if (happened) onWeMet(id) else viewModel.onConfirmPlan(id, false) },
+            onConfirmPlan = viewModel::onConfirmPlan,
+            onSkipPlan = viewModel::onSkipPlan,
+            onLogPlan = onLogPlan,
             onCancelPlan = viewModel::onCancelPlan,
             onUndoCancelPlan = viewModel::onUndoCancelPlan,
-            onAddPlanToCalendar = { plan, friends -> addToCalendar(plan.calendarEntry(friends)) },
+            onAddPlanToCalendar = { plan, friends, circle -> addToCalendar(plan.calendarEntry(friends, circle = circle)) },
         ),
     )
+    cropping?.let { image ->
+        PhotoCropDialog(image, onDismiss = { cropping = null }, onCropped = { cropped ->
+            cropping = null
+            viewModel.onPhotoPicked(cropped)
+        })
+    }
 }
 
 /** All UI events of the detail screen, so the content composable stays previewable. */
@@ -477,6 +507,11 @@ data class FriendDetailActions(
     val onOpenOriginal: suspend (PhotoRef) -> OpenedPhoto = { OpenedPhoto.Unavailable },
     val onRemoveAttachment: (Attachment) -> Unit = {},
     val onUndoRemoveAttachment: () -> Unit = {},
+    val onSaveLink: (LinkEdit) -> Unit = {},
+    val onRemoveLink: (String) -> Unit = {},
+    val onUndoRemoveLink: () -> Unit = {},
+    val onSaveRelationToMe: (LinkType?, Pronouns?) -> Unit = { _, _ -> },
+    val onAddRelativeAsPerson: (String) -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
     val onRemoveLifeUpdate: (String) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
@@ -490,20 +525,23 @@ data class FriendDetailActions(
     val onSnooze: (SnoozeOption) -> Unit = {},
     val onClearSnooze: () -> Unit = {},
     val onCalled: () -> Unit = {},
-    val onBirthdayChange: (LocalDate?) -> Unit = {},
+    /** The birthday sheet: the birthday (year optional, F4) and the reminder switch (F10). */
+    val onSaveBirthday: (Birthday?, notify: Boolean) -> Unit = { _, _ -> },
+    /** F19: the name given in the app; null goes back to the contact's name. */
+    val onRename: (String?) -> Unit = {},
     val onAddLikes: (List<String>) -> Unit = {},
     val onRemoveLike: (String) -> Unit = {},
     val onAddDislikes: (List<String>) -> Unit = {},
     val onRemoveDislike: (String) -> Unit = {},
     val onNotesChange: (String) -> Unit = {},
-    val onSaveKid: (id: String?, name: String, birthday: LocalDate?, likes: List<String>) -> Unit = { _, _, _, _ -> },
-    val onRemoveKid: (String) -> Unit = {},
+    val onAddKid: (KidDraft) -> Unit = {},
+    val onSetShowInMyList: (Boolean) -> Unit = {},
     val onAddEvent: (String, LocalDate, Int) -> Unit = { _, _, _ -> },
     val onRemoveEvent: (String) -> Unit = {},
-    val onSaveGift: (title: String, note: String, forKidId: String?) -> Unit = { _, _, _ -> },
+    val onSaveGift: (title: String, note: String) -> Unit = { _, _ -> },
     val onRemoveGift: (String) -> Unit = {},
     val onMarkGiftGiven: (String, GiftOccasion?) -> Unit = { _, _ -> },
-    val onSuggestGifts: (kidId: String?) -> Unit = {},
+    val onSuggestGifts: () -> Unit = {},
     val onKeepGiftSuggestion: (String) -> Unit = {},
     val onDismissGiftSuggestions: () -> Unit = {},
     val onOpenWish: () -> Unit = {},
@@ -514,8 +552,12 @@ data class FriendDetailActions(
     /** A circle pill: Home filtered by that circle. A long-press edits the circle. */
     val onOpenCircle: (String) -> Unit = {},
     val onEditCircle: (String) -> Unit = {},
-    /** Offered only while the friend has no photo. */
+    /** Picks a picture for the avatar (then the crop editor), offered for everyone (F14). */
     val onAddPhoto: () -> Unit = {},
+    /** Crops the photo shown again. */
+    val onAdjustCrop: () -> Unit = {},
+    /** Removes the photo set in the app. */
+    val onRemovePhoto: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
@@ -530,11 +572,14 @@ data class FriendDetailActions(
     val onToggleOccasion: (Occasion) -> Unit = {},
     val onOpenPlanEditor: (Plan?) -> Unit = {},
     val onDismissPlanEditor: () -> Unit = {},
-    val onSavePlan: (String, List<FriendId>, LocalDate, String?) -> Unit = { _, _, _, _ -> },
+    val onSavePlan: (PlanInput) -> Unit = {},
     val onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    val onSkipPlan: (Plan) -> Unit = {},
+    /** "Yes" on a circle plan: open the Log sheet to tick who came (F20). */
+    val onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     val onCancelPlan: (Plan) -> Unit = {},
     val onUndoCancelPlan: () -> Unit = {},
-    val onAddPlanToCalendar: (Plan, List<Friend>) -> Unit = { _, _ -> },
+    val onAddPlanToCalendar: (Plan, List<Friend>, FriendGroup?) -> Unit = { _, _, _ -> },
 )
 
 private val RHYTHMS = listOf(7, 14, 30, 90)
@@ -557,6 +602,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
     FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    FriendDetailMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
     is FriendDetailMessage.FeedAdded -> getString(Res.string.msg_feed_added, title)
     FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
     FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
@@ -564,6 +610,9 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
+    FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
+    is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
+    is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -571,6 +620,9 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
 fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions) {
     val snackbar = remember { SnackbarHostState() }
     var familyEditing by remember { mutableStateOf<FamilyEditing?>(null) }
+    var addingLink by rememberSaveable { mutableStateOf(false) }
+    var linkEditing by remember { mutableStateOf<LinkedPerson?>(null) }
+    var editingRelationToMe by rememberSaveable { mutableStateOf(false) }
     var editingAbout by rememberSaveable { mutableStateOf(false) }
     var fieldEditing by remember { mutableStateOf<CustomField?>(null) }
     var addingField by rememberSaveable { mutableStateOf(false) }
@@ -581,6 +633,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     LaunchedEffect(state.feedAdded) { addingFeed = false }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
+    var editingName by rememberSaveable { mutableStateOf(false) }
+    var photoOptions by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var seeAllSaved by rememberSaveable { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<AttachmentView?>(null) }
@@ -610,11 +664,12 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null
+        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
+                state.undoLink != null -> actions.onUndoRemoveLink()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
                 state.undoPlan != null -> actions.onUndoCancelPlan()
             }
@@ -631,15 +686,26 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             return@Scaffold
         }
         val f = detail.friend
-        val firstName = f.name.substringBefore(' ')
+        val firstName = f.displayName.substringBefore(' ')
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
-            item(key = "hero") { Hero(f, state, actions, onEditBirthday = { pickBirthday = true }, onDelete = { confirmDelete = true }) }
+            item(key = "hero") {
+                Hero(
+                    f,
+                    state,
+                    actions,
+                    onEditBirthday = { pickBirthday = true },
+                    onEditName = { editingName = true },
+                    onPhoto = { if (f.avatar == null) actions.onAddPhoto() else photoOptions = true },
+                    onDelete = { confirmDelete = true },
+                    onEditRelationToMe = { editingRelationToMe = true },
+                )
+            }
 
             item(key = "about") { AboutCard(f, detail.others, onEdit = { editingAbout = true }, onOpenFriend = actions.onOpenFriend) }
 
             item(key = "story") {
                 val meeting = detail.plans.firstOrNull { it.date >= state.today && state.today.daysUntil(it.date) <= 1 }?.date
-                StoryCta(f.name, meeting, state.today, state.freshCount, actions.onOpenStory)
+                StoryCta(f.displayName, meeting, state.today, state.freshCount, actions.onOpenStory)
             }
 
             val nextBirthday = f.birthday?.nextOccurrence(state.today)
@@ -695,14 +761,20 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
                     detail.plans.forEach { plan ->
                         val with = plan.friendIds.mapNotNull(people::get)
+                        val circle = detail.groups.firstOrNull { it.id == plan.circleId }
                         PlanRow(
                             plan = plan,
                             friends = with.filterNot { it.id == f.id },
                             today = state.today,
-                            onConfirm = { happened -> actions.onConfirmPlan(plan.id, happened) },
-                            onAddToCalendar = { actions.onAddPlanToCalendar(plan, with) },
+                            onConfirm = { happened ->
+                                // A yes opens the "We met" panel (issue #47): a person plan as well as a circle plan.
+                                if (happened) actions.onLogPlan(plan.id, plan.date) else actions.onConfirmPlan(plan.id, false)
+                            },
+                            onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
                             onChange = { actions.onOpenPlanEditor(plan) },
                             onCancel = { actions.onCancelPlan(plan) },
+                            circle = circle,
+                            onSkip = { actions.onSkipPlan(plan) },
                         )
                     }
                 }
@@ -716,6 +788,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_food_placeholder),
                         { actions.onAddTastes(TasteKind.FOOD, it) },
                         { actions.onRemoveTaste(TasteKind.FOOD, it) },
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_drink), Icons.Rounded.LocalCafe)
                     TagEditor(
@@ -723,6 +796,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_drink_placeholder),
                         { actions.onAddTastes(TasteKind.DRINK, it) },
                         { actions.onRemoveTaste(TasteKind.DRINK, it) },
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_doesnt_like), Icons.Rounded.ThumbDown)
                     TagEditor(
@@ -731,6 +805,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         actions.onAddDislikes,
                         actions.onRemoveDislike,
                         chipColor = MaterialTheme.colorScheme.errorContainer,
+                        catalog = state.tags,
                     )
                     Label(stringResource(Res.string.tastes_interests), Icons.Rounded.Interests)
                     TagEditor(
@@ -738,10 +813,17 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         stringResource(Res.string.tastes_interests_placeholder),
                         { actions.onAddTastes(TasteKind.INTEREST, it) },
                         { actions.onRemoveTaste(TasteKind.INTEREST, it) },
+                        catalog = state.tags,
                     )
                     // Everything stored as a like before the groups existed lives here, so nothing is lost or guessed.
                     Label(stringResource(Res.string.tastes_other_likes), Icons.Rounded.ThumbUp)
-                    TagEditor(f.likes, stringResource(Res.string.tastes_loves_placeholder), actions.onAddLikes, actions.onRemoveLike)
+                    TagEditor(
+                        f.likes,
+                        stringResource(Res.string.tastes_loves_placeholder),
+                        actions.onAddLikes,
+                        actions.onRemoveLike,
+                        catalog = state.tags,
+                    )
                 }
             }
 
@@ -770,11 +852,18 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     f,
                     state.today,
                     onAdd = { familyEditing = FamilyEditing.New },
-                    onEditKid = { familyEditing = FamilyEditing.EditKid(it) },
                     onEditRelative = { familyEditing = FamilyEditing.EditRelative(it) },
-                    onRemoveKid = actions.onRemoveKid,
                     onRemoveRelative = actions.onRemoveRelative,
+                    links = state.links,
+                    onOpenPerson = actions.onOpenFriend,
+                    onEditLink = { linkEditing = it },
+                    onAddLink = { addingLink = true },
+                    onAddAsPerson = actions.onAddRelativeAsPerson,
                 )
+            }
+
+            item(key = "links-other") {
+                OtherLinksCard(state.links.filter { it.role.category == LinkCategory.OTHER }, actions.onOpenFriend, onEdit = { linkEditing = it })
             }
 
             item(key = "moments") {
@@ -807,37 +896,46 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 }
             }
 
-            item(key = "ideas") {
-                SectionCard(
-                    stringResource(Res.string.ideas_title),
-                    icon = Icons.Rounded.AutoAwesome,
-                    action = {
-                        AnimatedContent(state.isGenerating) { busy ->
-                            if (busy) {
-                                CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
-                            } else {
-                                TextButton(onClick = if (state.hasAiKey) actions.onGenerateIdeas else actions.onOpenSettings) {
-                                    Text(stringResource(if (state.hasAiKey) Res.string.ideas_find else Res.string.ideas_setup))
+            if (state.aiEnabled) {
+                item(key = "ideas") {
+                    SectionCard(
+                        stringResource(Res.string.ideas_title),
+                        icon = Icons.Rounded.AutoAwesome,
+                        action = {
+                            AnimatedContent(state.isGenerating) { busy ->
+                                if (busy) {
+                                    CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
+                                } else {
+                                    TextButton(onClick = if (state.hasAiKey) actions.onGenerateIdeas else actions.onOpenSettings) {
+                                        Text(stringResource(if (state.hasAiKey) Res.string.ideas_find else Res.string.ideas_setup))
+                                    }
                                 }
                             }
+                        },
+                    ) {
+                        if (detail.topics.isNotEmpty()) {
+                            Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+                            detail.topics.forEach { TopicRow(topicText(it)) }
+                            if (detail.ideas.isNotEmpty()) Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome)
                         }
-                    },
-                ) {
-                    if (detail.topics.isNotEmpty()) {
-                        Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+                        if (detail.ideas.isEmpty()) {
+                            Hint(
+                                when {
+                                    !state.hasAiKey -> stringResource(Res.string.ideas_hint_no_ai)
+                                    detail.messageCount > 0 -> stringResource(Res.string.ideas_hint_ai_chats, firstName)
+                                    else -> stringResource(Res.string.ideas_hint_ai, firstName)
+                                },
+                            )
+                        }
+                        detail.ideas.take(5).forEach { IdeaRow(it, actions.onDismissIdea) }
+                    }
+                }
+            } else if (detail.topics.isNotEmpty()) {
+                // AI off (F1): the topics from notes need no AI, so they stay; nothing else of the AI card does.
+                item(key = "topics") {
+                    SectionCard(stringResource(Res.string.topics_from_notes), icon = Icons.Rounded.Lightbulb) {
                         detail.topics.forEach { TopicRow(topicText(it)) }
-                        if (detail.ideas.isNotEmpty()) Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome)
                     }
-                    if (detail.ideas.isEmpty()) {
-                        Hint(
-                            when {
-                                !state.hasAiKey -> stringResource(Res.string.ideas_hint_no_ai)
-                                detail.messageCount > 0 -> stringResource(Res.string.ideas_hint_ai_chats, firstName)
-                                else -> stringResource(Res.string.ideas_hint_ai, firstName)
-                            },
-                        )
-                    }
-                    detail.ideas.take(5).forEach { IdeaRow(it, actions.onDismissIdea) }
                 }
             }
 
@@ -896,6 +994,16 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "prefs") {
                 SectionCard(stringResource(Res.string.prefs_title), icon = Icons.Rounded.Tune) {
+                    // F9: a kid can be kept out of the main list (they stay on their parent's page and in birthdays).
+                    val parent = detail.parents.firstOrNull()
+                    if (parent != null || !f.showInMyList) {
+                        ToggleRow(
+                            stringResource(Res.string.show_in_my_list),
+                            parent?.let { stringResource(Res.string.show_in_my_list_hint, it.name.substringBefore(' ')) }
+                                ?: stringResource(Res.string.show_in_my_list_hint_any),
+                            f.showInMyList,
+                        ) { actions.onSetShowInMyList(!f.showInMyList) }
+                    }
                     ToggleRow(
                         stringResource(Res.string.prefs_real),
                         stringResource(Res.string.prefs_real_hint),
@@ -908,12 +1016,14 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         f.notifyBirthday,
                         actions.onToggleBirthdayNotifications,
                     )
-                    ToggleRow(
-                        stringResource(Res.string.prefs_events),
-                        stringResource(Res.string.prefs_events_hint),
-                        f.suggestEvents,
-                        actions.onToggleSuggestEvents,
-                    )
+                    if (state.aiEnabled) {
+                        ToggleRow(
+                            stringResource(Res.string.prefs_events),
+                            stringResource(Res.string.prefs_events_hint),
+                            f.suggestEvents,
+                            actions.onToggleSuggestEvents,
+                        )
+                    }
                     ToggleRow(
                         stringResource(Res.string.prefs_contact_counts),
                         stringResource(Res.string.prefs_contact_counts_hint),
@@ -930,19 +1040,49 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             }
         }
 
+        if (addingLink || linkEditing != null) {
+            val linked = state.links.mapTo(HashSet()) { it.person.id }
+            LinkSheet(
+                friend = f,
+                others = detail.others.filter { it.id !in linked },
+                editing = linkEditing,
+                onDismiss = {
+                    addingLink = false
+                    linkEditing = null
+                },
+                onSave = {
+                    actions.onSaveLink(it)
+                    addingLink = false
+                    linkEditing = null
+                },
+                onRemove = {
+                    actions.onRemoveLink(it)
+                    linkEditing = null
+                },
+            )
+        }
+        if (editingRelationToMe) {
+            RelationToMeSheet(f, onDismiss = { editingRelationToMe = false }) { relation, pronouns ->
+                actions.onSaveRelationToMe(relation, pronouns)
+                editingRelationToMe = false
+            }
+        }
         familyEditing?.let { editing ->
             FamilySheet(
                 firstName = firstName,
                 editing = editing,
+                latestYear = state.today.year,
                 onDismiss = { familyEditing = null },
-                onSaveKid = { id, name, birthday, likes ->
-                    actions.onSaveKid(id, name, birthday, likes)
+                onAddKid = {
+                    actions.onAddKid(it)
                     familyEditing = null
                 },
+                parentIsFamily = f.isFamily,
                 onSaveRelative = {
                     actions.onSaveRelative(it)
                     familyEditing = null
                 },
+                tags = state.tags,
             )
         }
         if (editingAbout) {
@@ -983,8 +1123,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             }
         }
         if (addingGift) {
-            GiftDialog(f, onDismiss = { addingGift = false }) { title, note, kidId ->
-                actions.onSaveGift(title, note, kidId)
+            GiftDialog(onDismiss = { addingGift = false }) { title, note ->
+                actions.onSaveGift(title, note)
                 addingGift = false
             }
         }
@@ -1017,8 +1157,26 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             )
         }
         if (pickBirthday) {
-            val initial = f.birthday?.let { LocalDate(it.year ?: 1990, Month(it.month), it.day) }
-            LocalDatePickerDialog(initial, onDismiss = { pickBirthday = false }, onPicked = actions.onBirthdayChange)
+            BirthdaySheet(f, latestYear = state.today.year, onSave = actions.onSaveBirthday, onDismiss = { pickBirthday = false })
+        }
+        if (editingName) NameDialog(f, onSave = actions.onRename, onDismiss = { editingName = false })
+        if (photoOptions) {
+            PhotoOptionsSheet(
+                f,
+                onReplace = {
+                    photoOptions = false
+                    actions.onAddPhoto()
+                },
+                onAdjust = {
+                    photoOptions = false
+                    actions.onAdjustCrop()
+                },
+                onRemove = {
+                    photoOptions = false
+                    actions.onRemovePhoto()
+                },
+                onDismiss = { photoOptions = false },
+            )
         }
         if (state.showReminderEditor) {
             val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).distinctBy { it.id }
@@ -1039,10 +1197,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onSave = actions.onSavePlan,
                 preselected = setOf(f.id),
                 initial = editing.plan,
+                circles = detail.groups,
             )
         }
         if (state.showWish) {
-            val ideas = f.gifts.filter { it.isIdea && it.forKidId == null }
+            val ideas = f.gifts.filter { it.isIdea }
             SendMessageSheet(
                 title = stringResource(Res.string.wish_title, firstName),
                 suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
@@ -1068,7 +1227,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
                 icon = { Icon(Icons.Rounded.Delete, null) },
-                title = { Text(stringResource(Res.string.delete_title, f.name)) },
+                title = { Text(stringResource(Res.string.delete_title, f.displayName)) },
                 text = { Text(stringResource(if (f.contactId != null) Res.string.delete_body_contact else Res.string.delete_body)) },
                 confirmButton = {
                     TextButton(onClick = {
@@ -1340,7 +1499,6 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
     ) {
         val ideas = f.gifts.filter { it.isIdea }
         val given = f.gifts.filterNot { it.isIdea }.sortedByDescending { it.givenOn }
-        val kidName = { id: String? -> f.kids.firstOrNull { it.id == id }?.name }
         if (f.gifts.isEmpty()) Hint(stringResource(Res.string.gifts_hint))
         if (ideas.isNotEmpty()) Label(stringResource(Res.string.gifts_ideas), Icons.Rounded.AutoAwesome)
         ideas.forEach { gift ->
@@ -1350,9 +1508,8 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
-                    val sub = listOfNotNull(kidName(gift.forKidId)?.let { stringResource(Res.string.gifts_for_kid, it) }, gift.note.ifBlank { null })
-                    if (sub.isNotEmpty()) {
-                        Text(sub.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (gift.note.isNotBlank()) {
+                        Text(gift.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 IconButton(onClick = { onGive(gift) }) {
@@ -1372,11 +1529,8 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
                     val date = gift.givenOn?.let { if (isFarDate(it, state.today)) it.shortLabel() else relativeDay(it, state.today) }.orEmpty()
-                    val parts = listOfNotNull(
-                        gift.occasion?.let { stringResource(Res.string.gifts_given_on, occasionLabel(it), date) } ?: date,
-                        kidName(gift.forKidId)?.let { stringResource(Res.string.gifts_for_kid, it) },
-                    )
-                    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val line = gift.occasion?.let { stringResource(Res.string.gifts_given_on, occasionLabel(it), date) } ?: date
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = {
                     actions.onRemoveGift(gift.id)
@@ -1391,7 +1545,7 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
             ) {
                 val busy = state.suggestingGiftsFor
                 AssistChip(
-                    onClick = { actions.onSuggestGifts(null) },
+                    onClick = actions.onSuggestGifts,
                     enabled = busy == null,
                     label = { Text(stringResource(Res.string.gifts_suggest)) },
                     leadingIcon = {
@@ -1404,22 +1558,6 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                         }
                     },
                 )
-                f.kids.forEach { kid ->
-                    AssistChip(
-                        onClick = { actions.onSuggestGifts(kid.id) },
-                        enabled = busy == null,
-                        label = { Text(stringResource(Res.string.gifts_suggest_for, kid.name)) },
-                        leadingIcon = {
-                            if (busy ==
-                                kid.id
-                            ) {
-                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Rounded.ChildCare, null, Modifier.size(18.dp))
-                            }
-                        },
-                    )
-                }
             }
         }
         AnimatedVisibility(state.giftSuggestions != null) {
@@ -1446,8 +1584,17 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onEditBirthday: () -> Unit, onDelete: () -> Unit) {
-    val (start, end) = avatarColors(f.name)
+private fun Hero(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onEditBirthday: () -> Unit,
+    onEditName: () -> Unit,
+    onPhoto: () -> Unit,
+    onDelete: () -> Unit,
+    onEditRelationToMe: () -> Unit,
+) {
+    val (start, end) = avatarColors(f.displayName)
     val uri = LocalUriHandler.current
     val haptics = LocalHapticFeedback.current
     val phone = f.phoneNumbers.firstOrNull()
@@ -1481,38 +1628,45 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                     Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
                 }
             }
-            if (f.photo == null) {
-                // No contact photo: the avatar (and its badge) lets you pick one from the gallery.
-                val addPhoto = stringResource(Res.string.detail_add_photo)
-                Box {
-                    FriendAvatar(
-                        f,
-                        size = 112.dp,
-                        highlighted = f.isCloseFriend,
-                        sharedKey = "avatar-${f.id.value}",
-                        modifier = Modifier.clip(CircleShape).clickable(onClickLabel = addPhoto, onClick = actions.onAddPhoto),
-                    )
-                    Surface(
-                        onClick = actions.onAddPhoto,
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
-                        modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
-                    ) {
-                        Icon(Icons.Rounded.AddAPhoto, contentDescription = addPhoto, modifier = Modifier.padding(7.dp))
-                    }
-                }
+            // F14: the avatar (and its camera badge) is always tappable: pick a photo, or replace, crop or remove it.
+            val photoLabel = if (f.avatar == null) {
+                stringResource(Res.string.detail_add_photo)
             } else {
-                FriendAvatar(f, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+                stringResource(Res.string.photo_sheet_title, f.displayName.substringBefore(' '))
+            }
+            Box {
+                FriendAvatar(
+                    f,
+                    size = 112.dp,
+                    highlighted = f.isCloseFriend,
+                    sharedKey = "avatar-${f.id.value}",
+                    modifier = Modifier.clip(CircleShape).clickable(onClickLabel = photoLabel, onClick = onPhoto),
+                )
+                Surface(
+                    onClick = onPhoto,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
+                ) {
+                    Icon(Icons.Rounded.AddAPhoto, contentDescription = photoLabel, modifier = Modifier.padding(7.dp))
+                }
             }
             Spacer(Modifier.height(12.dp))
-            Text(
-                f.name,
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
+            // F19: the pencil edits the name shown everywhere in the app.
+            Row(
+                Modifier.padding(horizontal = 24.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onEditName),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(f.displayName, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = stringResource(Res.string.detail_edit_name),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 6.dp).size(18.dp),
+                )
+            }
             Spacer(Modifier.height(8.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -1530,6 +1684,15 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                 } ?: stringResource(Res.string.detail_add_birthday)
                 Box(Modifier.clip(CircleShape).clickable(onClick = onEditBirthday)) {
                     InfoPill(birthdayText, icon = if (f.birthday != null) Icons.Rounded.Cake else Icons.Rounded.Edit, emphasized = f.birthday != null)
+                }
+                // "Your brother" (F6); tapping it (or "Related to you?") opens the "is your…" sheet.
+                Box(Modifier.clip(CircleShape).clickable(onClick = onEditRelationToMe)) {
+                    val relation = relationToMeLabel(f)
+                    InfoPill(
+                        relation ?: stringResource(Res.string.relation_to_me_add),
+                        icon = if (relation != null) Icons.Rounded.FavoriteBorder else Icons.Rounded.Edit,
+                        emphasized = relation != null,
+                    )
                 }
                 f.closeness?.takeIf { f.isCloseFriend }?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
                 state.detail?.lastSeen?.let {

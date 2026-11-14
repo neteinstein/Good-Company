@@ -4,10 +4,13 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
+import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -16,8 +19,10 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -27,6 +32,8 @@ import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
@@ -44,14 +51,18 @@ import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -94,6 +105,13 @@ class FakeFriendRepository(
 
     override suspend fun delete(id: FriendId) = state.update { list -> list.filterNot { it.id == id } }
 
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        val before = state.value
+        val after = before.map(transform)
+        state.value = after
+        return before.filterIndexed { i, f -> after[i] != f }
+    }
+
     override suspend fun syncContacts(): Int {
         state.update { ContactMerger.merge(it, contacts, addNew = importsNewContacts) }
         return contacts.size
@@ -130,13 +148,37 @@ class FakeContactsWriter : ContactsWriter {
     }
 }
 
-class FakeHangoutRepository(initial: List<Hangout> = emptyList()) : HangoutRepository {
+class FakeHangoutRepository(initial: List<Hangout> = emptyList(), places: List<NamedPlace> = emptyList()) : HangoutRepository {
     private val state = MutableStateFlow(initial)
     override val hangouts: StateFlow<List<Hangout>> = state
+    private val placeState = MutableStateFlow(places)
+    override val places: StateFlow<List<NamedPlace>> = placeState
 
     override suspend fun add(hangout: Hangout) = state.update { it + hangout }
 
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertPlace(place: NamedPlace) = placeState.update { list ->
+        if (list.any { it.id == place.id }) list.map { if (it.id == place.id) place else it } else list + place
+    }
+
+    override suspend fun deletePlace(id: String) = placeState.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun renamePlace(id: String, name: String) {
+        val place = placeState.value.firstOrNull { it.id == id } ?: return
+        upsertPlace(place.copy(name = name))
+        relink(id, id, name)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) {
+        val into = placeState.value.firstOrNull { it.id == intoId } ?: return
+        relink(fromId, intoId, into.name)
+        deletePlace(fromId)
+    }
+
+    private fun relink(fromId: String, toId: String, name: String) = state.update { list ->
+        list.map { h -> h.place?.takeIf { it.placeId == fromId }?.let { h.copy(place = it.copy(name = name, placeId = toId)) } ?: h }
+    }
 }
 
 class FakeReminderRepository(initial: List<Reminder> = emptyList()) : ReminderRepository {
@@ -219,6 +261,30 @@ class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepos
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
 }
 
+/** Links between people; like the real one, a link to someone who isn't in [friends] (when given) is skipped. */
+class FakePersonLinkRepository(
+    initial: List<PersonLink> = emptyList(),
+    private val friends: FakeFriendRepository? = null,
+) : PersonLinkRepository {
+    private val state = MutableStateFlow(initial)
+
+    // Like the database's cascade: a link goes when either person goes.
+    override val links: Flow<List<PersonLink>> = friends?.let { repo ->
+        combine(state, repo.friends) { ls, fs ->
+            val ids = fs.mapTo(HashSet()) { it.id }
+            ls.filter { it.from in ids && it.to in ids }
+        }
+    } ?: state
+
+    override suspend fun upsert(link: PersonLink) {
+        if (link.from == link.to) return
+        friends?.friends?.value?.let { fs -> if (fs.none { it.id == link.from } || fs.none { it.id == link.to }) return }
+        state.update { list -> if (list.any { it.id == link.id }) list.map { if (it.id == link.id) link else it } else list + link }
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
 class FakePlanRepository(initial: List<Plan> = emptyList()) : PlanRepository {
     private val state = MutableStateFlow(initial)
     override val plans: StateFlow<List<Plan>> = state
@@ -240,11 +306,14 @@ class FakeBackupRepository(
     private val groups: FakeGroupRepository,
     private val plans: FakePlanRepository,
     private val settings: FakeSettingsRepository,
+    private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
+    private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
     override suspend fun snapshot() = Backup(
         friends = friends.friends.value,
+        links = links.links.first(),
         hangouts = hangouts.hangouts.value,
         reminders = reminders.reminders.value,
         interactions = interactions.interactions.value,
@@ -254,18 +323,54 @@ class FakeBackupRepository(
         ideas = ideas.ideas.value,
         groups = groups.groups.value,
         plans = plans.plans.value,
+        places = hangouts.places.value,
         settings = settings.settings.value,
+        calendarDecisions = calendarDecisions.decisions.value,
     )
 
     override suspend fun restore(backup: Backup) {
         restored = backup
         friends.friends.value.forEach { friends.delete(it.id) }
         backup.friends.forEach { friends.upsert(it) }
+        links.links.first().forEach { links.delete(it.id) }
+        backup.links.forEach { links.upsert(it) }
         hangouts.hangouts.value.forEach { hangouts.delete(it.id) }
         backup.hangouts.forEach { hangouts.add(it) }
+        hangouts.places.value.forEach { hangouts.deletePlace(it.id) }
+        backup.places.forEach { hangouts.upsertPlace(it) }
         plans.plans.value.forEach { plans.delete(it.id) }
         backup.plans.forEach { plans.upsert(it) }
+        calendarDecisions.decisions.value = backup.calendarDecisions
         settings.update { backup.settings }
+    }
+}
+
+class FakeCalendarDecisionRepository(initial: List<CalendarDecision> = emptyList()) : CalendarDecisionRepository {
+    override val decisions = MutableStateFlow(initial)
+
+    override suspend fun upsert(decision: CalendarDecision) = decisions.update { list -> list.filterNot { it.key == decision.key } + decision }
+
+    override suspend fun delete(key: String) = decisions.update { list -> list.filterNot { it.key == key } }
+}
+
+/** A device calendar for tests: set [calendars], [events] and [access]; [reads] counts event reads. */
+class FakeCalendarReader(
+    var calendars: List<DeviceCalendar> = emptyList(),
+    var events: List<CalendarEvent> = emptyList(),
+    var access: Boolean = true,
+    override val isSupported: Boolean = true,
+) : CalendarReader {
+    var reads = 0
+        private set
+
+    override suspend fun hasAccess() = access
+
+    override suspend fun calendars(): List<DeviceCalendar> = if (access) calendars else emptyList()
+
+    override suspend fun events(calendarIds: Set<String>, from: Instant, to: Instant): List<CalendarEvent> {
+        reads++
+        if (!access) return emptyList()
+        return events.filter { it.calendarId in calendarIds && it.end > from && it.start < to }
     }
 }
 

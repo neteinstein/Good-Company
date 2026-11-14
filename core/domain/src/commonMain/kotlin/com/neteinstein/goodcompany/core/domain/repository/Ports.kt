@@ -1,10 +1,13 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
+import kotlin.time.Instant
 
 /** Current position, if the platform and the user allow it. */
 interface LocationProvider {
@@ -22,6 +25,12 @@ interface NotificationRenderer {
 
     /** Neutral text shown on the lock screen when notifications are private ("You have a reminder"). */
     suspend fun privateText(): String
+}
+
+/** Names of the built-in circles, in the UI language (the domain never formats text). */
+fun interface BuiltInCircleNames {
+    /** The Family circle (F6). */
+    suspend fun family(): String
 }
 
 /** The user's UI language as a BCP-47 tag (e.g. "pt-PT"), used to ask the AI to answer in it. */
@@ -110,7 +119,7 @@ data class GeneratedIdea(
 )
 
 /** A backup file in the user's own cloud storage (Google Drive). */
-data class CloudBackupInfo(val id: String, val modifiedAt: kotlin.time.Instant?)
+data class CloudBackupInfo(val id: String, val modifiedAt: Instant?)
 
 /** Why a cloud backup call failed, so the UI can say something useful. */
 class CloudBackupFailure(val reason: Reason, detail: String? = null) : Exception(detail ?: reason.name) {
@@ -166,4 +175,37 @@ suspend fun PhotoShrinker.photoOf(image: ByteArray?): ContactPhoto? {
     if (image == null || image.isEmpty()) return null
     if (image.size <= ContactPhoto.MAX_BYTES) return ContactPhoto.of(image)
     return ContactPhoto.of(runCatching { shrink(image) }.getOrNull())
+}
+
+/**
+ * Reads the device calendars (decision D3): Android `CalendarContract` (READ_CALENDAR), iOS EventKit (full access).
+ * Never used unless the user turned calendar suggestions on; what it returns stays on the device. The web has none.
+ */
+interface CalendarReader {
+    /** False where the platform can't read calendars (the web). */
+    val isSupported: Boolean
+
+    /** Whether the app may read calendars right now (the permission was granted). */
+    suspend fun hasAccess(): Boolean
+
+    /** Every calendar on the device; empty without access. */
+    suspend fun calendars(): List<DeviceCalendar>
+
+    /** Occurrences from the given calendars overlapping [from, to); empty without access. */
+    suspend fun events(
+        calendarIds: Set<String>,
+        from: Instant,
+        to: Instant,
+    ): List<CalendarEvent>
+
+    object None : CalendarReader {
+        override val isSupported = false
+
+        override suspend fun hasAccess() = false
+
+        override suspend fun calendars() = emptyList<DeviceCalendar>()
+
+        override suspend fun events(calendarIds: Set<String>, from: Instant, to: Instant) =
+            emptyList<CalendarEvent>()
+    }
 }

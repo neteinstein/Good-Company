@@ -14,12 +14,15 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
@@ -37,10 +40,17 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
+import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
@@ -53,6 +63,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -95,6 +106,9 @@ sealed interface FriendDetailMessage {
 
     data object PlanClosed : FriendDetailMessage
 
+    /** One occurrence of a recurring plan skipped; the series goes on. */
+    data object PlanSkipped : FriendDetailMessage
+
     data class FeedAdded(val title: String) : FriendDetailMessage
 
     data object FeedNotFound : FriendDetailMessage
@@ -111,7 +125,29 @@ sealed interface FriendDetailMessage {
 
     /** A saved attachment was removed; offered with "Undo". */
     data object AttachmentRemoved : FriendDetailMessage
+
+    /** A link to another person was removed; offered with "Undo". */
+    data object LinkRemoved : FriendDetailMessage
+
+    /** A relative became a person of their own ("Add as a person"). */
+    data class AddedAsPerson(val name: String) : FriendDetailMessage
+
+    /** A kid was added as a person of their own (F9). */
+    data class KidAdded(val name: String) : FriendDetailMessage
 }
+
+/** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
+data class LinkEdit(
+    val other: FriendId,
+    val role: LinkType,
+    val startedOn: LocalDate? = null,
+    val endedOn: LocalDate? = null,
+    val remindAnniversary: Boolean = false,
+    /** The words for [other], set in the same sheet. */
+    val otherPronouns: Pronouns? = null,
+    /** The link being edited; null = a new one. */
+    val id: String? = null,
+)
 
 /** Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are). */
 data class AboutEdit(
@@ -128,7 +164,7 @@ data class RelativeEdit(
     val id: String? = null,
     val relation: Relation,
     val name: String,
-    val birthday: LocalDate? = null,
+    val birthday: Birthday? = null,
     val likes: List<String> = emptyList(),
     val note: String = "",
     val notifyBirthday: Boolean = true,
@@ -139,19 +175,22 @@ data class RemovedCustomField(val field: CustomField, val index: Int)
 
 data class PlanEditing(val plan: Plan?)
 
-/** Who the AI gift suggestions are for: the friend (kidId = null) or one of their kids. */
-data class GiftSuggestions(val kidId: String?, val ideas: List<String>)
+/** AI gift ideas waiting to be kept or dismissed. A kid's are asked on the kid's own page (F9). */
+data class GiftSuggestions(val ideas: List<String>)
 
 data class FriendDetailUiState(
     val detail: FriendDetail? = null,
     val isLoading: Boolean = true,
     val notFound: Boolean = false,
+    /** The AI switch (F1): off hides "Things to talk about" (the topics from notes stay) and every AI button. */
+    val aiEnabled: Boolean = false,
+    /** AI is on and a key is saved. */
     val hasAiKey: Boolean = false,
     val isGenerating: Boolean = false,
     val message: FriendDetailMessage? = null,
     val deleted: Boolean = false,
     val showReminderEditor: Boolean = false,
-    /** Kid id (or "" for the friend) whose gift ideas the AI is working on. */
+    /** "" while the AI is working on gift ideas, null otherwise. */
     val suggestingGiftsFor: String? = null,
     val giftSuggestions: GiftSuggestions? = null,
     val showWish: Boolean = false,
@@ -179,6 +218,12 @@ data class FriendDetailUiState(
     val attachments: List<Attachment> = emptyList(),
     /** Attachment just removed, offered for undo. */
     val undoAttachment: Attachment? = null,
+    /** The people linked to this friend (issue #39): partners first, then exes, family and the rest. */
+    val links: List<LinkedPerson> = emptyList(),
+    /** Link just removed, offered for undo. */
+    val undoLink: PersonLink? = null,
+    /** The shared tag list (F16) the tag editors suggest from. */
+    val tags: List<Tag> = emptyList(),
 )
 
 class FriendDetailViewModel(
@@ -203,11 +248,15 @@ class FriendDetailViewModel(
     private val restorePlan: RestorePlanUseCase,
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
+    private val removePhoto: RemoveFriendPhotoUseCase,
+    private val renameFriend: RenameFriendUseCase,
     private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
     observeAttachments: ObserveAttachmentsUseCase,
+    observeTags: ObserveTagsUseCase,
     private val deleteAttachment: DeleteAttachmentUseCase,
     private val restoreAttachment: RestoreAttachmentUseCase,
     private val shareInbox: ShareInbox,
+    private val links: PersonLinkUseCases,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) : ViewModel() {
@@ -217,18 +266,22 @@ class FriendDetailViewModel(
         observeDetail(friendId),
         observeSettings(),
         observeAttachments(friendId),
+        links.observe(friendId).combine(observeTags()) { linked, tags -> linked to tags },
         local,
-    ) { detail, settings, attachments, ui ->
+    ) { detail, settings, attachments, (linked, tags), ui ->
         ui.copy(
             detail = detail,
             attachments = attachments,
+            links = linked,
+            tags = tags,
             isLoading = false,
             notFound = detail == null,
-            hasAiKey = settings.hasAiKey,
+            aiEnabled = settings.aiEnabled,
+            hasAiKey = settings.usableAiKey != null,
             showWarmth = settings.showWarmth,
             freshCount = detail?.let { d ->
                 val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
-                CatchUpStoryBuilder.freshItems(d.friend).count { it.addedAt > since }
+                CatchUpStoryBuilder.freshItems(d.friend, d.kids).count { it.addedAt > since }
             } ?: 0,
             now = clock.now(),
             today = clock.today(),
@@ -280,8 +333,14 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onBirthdayChange(date: LocalDate?) = edit { f ->
-        f.copy(birthday = date?.let { Birthday(it.month.ordinal + 1, it.day, it.year) })
+    /** The birthday sheet: day and month, an optional year (F4), and the reminder switch (on by default, F10). */
+    fun onSaveBirthday(birthday: Birthday?, notify: Boolean) = edit { f -> f.copy(birthday = birthday, notifyBirthday = notify) }
+
+    // --- Name (F19) -------------------------------------------------------------------------------------------------
+
+    /** Saves the name given in the app; null (or the contact's own name) goes back to the contact's name. */
+    fun onRename(name: String?) {
+        viewModelScope.launch { renameFriend(friendId, name) }
     }
 
     fun onAddLikes(values: List<String>) {
@@ -325,7 +384,7 @@ class FriendDetailViewModel(
             id = edit.id ?: ids.next(),
             relation = edit.relation,
             name = edit.name.trim(),
-            birthday = edit.birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
+            birthday = edit.birthday,
             likes = edit.likes,
             note = edit.note.trim(),
             notifyBirthday = edit.notifyBirthday,
@@ -343,6 +402,55 @@ class FriendDetailViewModel(
     }
 
     fun onRemoveRelative(id: String) = edit { f -> f.copy(relatives = f.relatives.filterNot { it.id == id }) }
+
+    /** "Add as a person" (question 1): the relative gets their own page, linked to this friend. */
+    fun onAddRelativeAsPerson(relativeId: String) {
+        val name = state.value.detail?.friend?.relatives?.firstOrNull { it.id == relativeId }?.name ?: return
+        viewModelScope.launch {
+            if (links.addRelativeAsPerson(friendId, relativeId) != null) say(FriendDetailMessage.AddedAsPerson(name))
+        }
+    }
+
+    // --- Links between people and relationship to me (issue #39) ------------------------------------------------------
+
+    /** Saves a link from this page: [LinkEdit.other] is this friend's [LinkEdit.role]. */
+    fun onSaveLink(edit: LinkEdit) {
+        if (edit.other == friendId) return
+        viewModelScope.launch {
+            links.setPronouns(edit.other, edit.otherPronouns)
+            links.save(
+                LinkDraft(
+                    from = friendId,
+                    to = edit.other,
+                    type = edit.role,
+                    startedOn = edit.startedOn,
+                    endedOn = edit.endedOn,
+                    remindAnniversary = edit.remindAnniversary,
+                    id = edit.id,
+                ),
+            )
+        }
+    }
+
+    fun onRemoveLink(id: String) {
+        viewModelScope.launch {
+            val removed = links.delete(id) ?: return@launch
+            local.update { it.copy(undoLink = removed, message = FriendDetailMessage.LinkRemoved) }
+        }
+    }
+
+    fun onUndoRemoveLink() {
+        val link = local.value.undoLink ?: return
+        viewModelScope.launch {
+            links.restore(link)
+            local.update { it.copy(undoLink = null) }
+        }
+    }
+
+    /** "Rui is your…" (F6): null [relation] clears it. */
+    fun onSaveRelationToMe(relation: LinkType?, pronouns: Pronouns?) {
+        viewModelScope.launch { links.setRelationToMe(friendId, relation, pronouns) }
+    }
 
     // --- Tastes by kind (food, drink, interests) ---------------------------------------------------------------------
 
@@ -414,28 +522,21 @@ class FriendDetailViewModel(
         local.update { it.copy(undoCustomField = null) }
     }
 
-    fun onSaveKid(id: String?, name: String, birthday: LocalDate?, likes: List<String>) {
-        if (name.isBlank()) return
-        val now = clock.now()
-        val kid = Kid(
-            id = id ?: ids.next(),
-            name = name.trim(),
-            birthday = birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
-            likes = likes,
-        )
-        edit { f ->
-            val existing = f.kids.firstOrNull { it.id == kid.id }
-            f.copy(
-                kids = if (existing != null) {
-                    f.kids.map { if (it.id == kid.id) kid.copy(addedAt = existing.addedAt) else it }
-                } else {
-                    f.kids + kid.copy(addedAt = now)
-                },
-            )
+    /**
+     * "Add <name>'s kid" (F9): the kid becomes a person with their own page and birthday reminder, linked to this
+     * friend. Removing them later removes the link (with Undo) from the Family card; the person stays.
+     */
+    fun onAddKid(draft: KidDraft) {
+        if (draft.name.isBlank()) return
+        viewModelScope.launch {
+            links.addKid(friendId, draft)?.let { say(FriendDetailMessage.KidAdded(draft.name.trim().substringBefore(' '))) }
         }
     }
 
-    fun onRemoveKid(id: String) = edit { f -> f.copy(kids = f.kids.filterNot { it.id == id }) }
+    /** "Show in my list" (F9) for this person. */
+    fun onSetShowInMyList(show: Boolean) {
+        viewModelScope.launch { links.setShowInMyList(friendId, show) }
+    }
 
     fun onAddEvent(title: String, date: LocalDate, remindDaysBefore: Int) {
         if (title.isBlank()) return
@@ -487,9 +588,9 @@ class FriendDetailViewModel(
 
     // --- Gifts ---------------------------------------------------------------------------------------------------
 
-    fun onSaveGift(title: String, note: String, forKidId: String?) {
+    fun onSaveGift(title: String, note: String) {
         if (title.isBlank()) return
-        val gift = Gift(ids.next(), title.trim(), note.trim(), forKidId)
+        val gift = Gift(ids.next(), title.trim(), note.trim())
         edit { f -> f.copy(gifts = f.gifts + gift) }
     }
 
@@ -500,17 +601,17 @@ class FriendDetailViewModel(
         edit { f -> f.copy(gifts = f.gifts.map { if (it.id == id) it.copy(givenOn = today, occasion = occasion) else it }) }
     }
 
-    fun onSuggestGifts(kidId: String?) {
+    fun onSuggestGifts() {
         if (local.value.suggestingGiftsFor != null) return
         viewModelScope.launch {
-            local.update { it.copy(suggestingGiftsFor = kidId.orEmpty(), giftSuggestions = null) }
-            val result = suggestGifts(friendId, kidId)
+            local.update { it.copy(suggestingGiftsFor = "", giftSuggestions = null) }
+            val result = suggestGifts(friendId)
             local.update {
                 result.fold(
                     { ideas ->
                         it.copy(
                             suggestingGiftsFor = null,
-                            giftSuggestions = GiftSuggestions(kidId, ideas).takeIf { ideas.isNotEmpty() },
+                            giftSuggestions = GiftSuggestions(ideas).takeIf { ideas.isNotEmpty() },
                             message = if (ideas.isEmpty()) FriendDetailMessage.NoNewGifts else it.message,
                         )
                     },
@@ -523,7 +624,7 @@ class FriendDetailViewModel(
     /** Keeps one AI suggestion as a gift idea. */
     fun onKeepGiftSuggestion(title: String) {
         val suggestions = local.value.giftSuggestions ?: return
-        onSaveGift(title, "", suggestions.kidId)
+        onSaveGift(title, "")
         local.update {
             val rest = suggestions.ideas - title
             it.copy(giftSuggestions = if (rest.isEmpty()) null else suggestions.copy(ideas = rest))
@@ -554,12 +655,20 @@ class FriendDetailViewModel(
 
     // --- Photo ------------------------------------------------------------------------------------------------------
 
-    /** A picture picked from the gallery for someone without a contact photo; null when the picker was cancelled. */
+    /**
+     * A picture picked from the gallery and cropped (F14), kept as the photo set in the app; null when the picker was
+     * cancelled, empty when the picture couldn't be read.
+     */
     fun onPhotoPicked(image: ByteArray?) {
         if (image == null) return
         viewModelScope.launch {
             if (!setPhoto(friendId, image)) say(FriendDetailMessage.PhotoUnreadable)
         }
+    }
+
+    /** Removes the photo set in the app: the contact's photo, or the initials, show again. */
+    fun onRemovePhoto() {
+        viewModelScope.launch { removePhoto(friendId) }
     }
 
     // --- Chats and AI talking points -----------------------------------------------------------------------------
@@ -621,12 +730,22 @@ class FriendDetailViewModel(
 
     fun onDismissPlanEditor() = local.update { it.copy(planEditing = null) }
 
-    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
-        if (title.isBlank()) return
+    /** Saves the editor's plan; with neither people nor a circle picked, it's with this friend. */
+    fun onSavePlan(input: PlanInput) {
+        if (input.title.isBlank()) return
         val editing = local.value.planEditing?.plan
+        val withSomeone = if (input.friendIds.isEmpty() && input.circleId == null) input.copy(friendIds = listOf(friendId)) else input
         viewModelScope.launch {
-            savePlan(editing?.id, title, friendIds.ifEmpty { listOf(friendId) }, date, place)
+            savePlan.save(editing?.id, withSomeone)
             local.update { it.copy(planEditing = null, message = FriendDetailMessage.PlanSaved) }
+        }
+    }
+
+    /** "Skip this one": the open occurrence of a recurring plan; the series goes on. */
+    fun onSkipPlan(plan: Plan) {
+        viewModelScope.launch {
+            confirmPlan(plan.id, happened = false, day = plan.date)
+            say(FriendDetailMessage.PlanSkipped)
         }
     }
 
@@ -684,6 +803,6 @@ class FriendDetailViewModel(
     }
 
     fun onMessageShown() = local.update {
-        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null)
+        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null)
     }
 }

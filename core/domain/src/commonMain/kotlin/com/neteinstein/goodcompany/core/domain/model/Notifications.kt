@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
 /** What a notification is about. Text is rendered (and localised) later by a [NotificationRenderer]. */
@@ -10,6 +11,9 @@ sealed interface NotificationContent {
 
     /** A relative whose birthday reminder is on ([Relative.notifyBirthday]). */
     data class RelativeBirthday(val relativeName: String, val friendName: String, val relation: Relation, val age: Int?) : NotificationContent
+
+    /** A couple's anniversary (issue #39): [years] together on the day. */
+    data class Anniversary(val firstName: String, val secondName: String, val years: Int?) : NotificationContent
 
     data class EventToday(val friendName: String, val title: String) : NotificationContent
 
@@ -24,11 +28,34 @@ sealed interface NotificationContent {
     /** The weekly catch-up note: a few names worth reaching out to (instead of one notification per friend). */
     data class CatchUpDigest(val names: List<String>, val total: Int) : NotificationContent
 
-    /** A planned meetup is today. */
-    data class PlanToday(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
+    /** A planned meetup is today. [occurrence] is set for a recurring plan (the day of this occurrence). */
+    data class PlanToday(
+        val planId: String,
+        val title: String,
+        val withNames: List<String>,
+        val occurrence: LocalDate? = null,
+    ) : NotificationContent
 
-    /** The day after a plan: "Did you meet?" — answered with quick actions. */
-    data class PlanFollowUp(val planId: String, val title: String, val withNames: List<String>) : NotificationContent
+    /**
+     * The day after a plan: "Did you meet?" — answered with quick actions. A circle plan ([isCircle]) can't be logged
+     * from the notification (you tick who came in the app), so it only offers "We didn't go".
+     */
+    data class PlanFollowUp(
+        val planId: String,
+        val title: String,
+        val withNames: List<String>,
+        val occurrence: LocalDate? = null,
+        val isCircle: Boolean = false,
+    ) : NotificationContent {
+        /** The notification actions' target: this occurrence. */
+        val target: String get() = PlanOccurrence(planId, occurrence).encode()
+    }
+
+    /**
+     * The day's calendar summary (D3): events with friends that ended, worth logging. [eventTitle] is set when there's
+     * just one ([total] = 1). Shown on this device only.
+     */
+    data class CalendarMeetups(val names: List<String>, val eventTitle: String?, val total: Int) : NotificationContent
 }
 
 /** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */

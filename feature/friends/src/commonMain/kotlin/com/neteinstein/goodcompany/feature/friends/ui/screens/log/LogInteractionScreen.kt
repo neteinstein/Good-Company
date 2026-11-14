@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.ui.components.LogInteractionSheet
 import com.neteinstein.goodcompany.core.ui.components.LogSheetActions
 import org.koin.compose.viewmodel.koinViewModel
@@ -17,9 +18,11 @@ fun LogInteractionScreen(
     type: String?,
     onClose: () -> Unit,
     circleId: String? = null,
+    /** Answering a plan's "Did you meet?" (`<planId>@<date>`, see [PlanOccurrence]). */
+    plan: String? = null,
     prefill: LogPrefill = LogPrefill(),
-    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId-$prefill") {
-        parametersOf(friendIds, type, circleId, prefill)
+    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId-$plan-$prefill") {
+        parametersOf(friendIds, type, circleId, plan?.let(PlanOccurrence::decode), prefill)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -34,6 +37,7 @@ fun LogInteractionScreen(
             onPlaceName = viewModel::onPlaceName,
             onUseLocation = viewModel::onUseLocation,
             onClearLocation = viewModel::onClearLocation,
+            onChangePlace = viewModel::onChangePlace,
             onActivity = viewModel::onActivity,
             onCircle = viewModel::onCircle,
             onTogglePerson = viewModel::onTogglePerson,

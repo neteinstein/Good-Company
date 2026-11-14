@@ -70,7 +70,6 @@ import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScree
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
-import com.neteinstein.goodcompany.ui.navigation.FriendsRoute
 import com.neteinstein.goodcompany.ui.navigation.LogInteractionRoute
 import com.neteinstein.goodcompany.ui.navigation.ShareRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
@@ -99,7 +98,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                     transitionSpec = { (fadeIn(tween(400)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(250)) },
                 ) { done ->
                     if (done) {
-                        AppScaffold(launch)
+                        AppScaffold(launch, aiEnabled = state.settings.aiEnabled)
                     } else {
                         OnboardingScreen(
                             onDone = {},
@@ -130,13 +129,15 @@ private fun TemporaryStorageBanner() {
 }
 
 @Composable
-private fun AppScaffold(launch: LaunchOptions) {
+private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
+    val tabs = TopLevelDestination.shown(aiEnabled)
     val navController = rememberNavController()
     val entry by navController.currentBackStackEntryAsState()
     val current = entry?.destination
     val selected = TopLevelDestination.entries.firstOrNull { d -> current?.hierarchy?.any { it.hasRoute(d.route::class) } == true }
     val showChrome = selected != null
-    val start = launch.startTab?.route ?: FriendsRoute
+    // Chosen once: `tab=ideas` opens Home while AI is off (F1).
+    val start = remember { launch.startDestination(aiEnabled).route }
     LaunchedEffect(launch.openFriendId) { launch.openFriendId?.let { navController.navigate(FriendDetailRoute(it)) } }
     LaunchedEffect(launch.openStoryFriendId) { launch.openStoryFriendId?.let { navController.navigate(CatchUpStoryRoute(it)) } }
     LaunchedEffect(launch.showReview) { if (launch.showReview) navController.navigate(YearReviewRoute()) }
@@ -160,7 +161,7 @@ private fun AppScaffold(launch: LaunchOptions) {
             Row {
                 NavigationRail(Modifier.fillMaxHeight(), header = { AppMark() }) {
                     Spacer(Modifier.weight(1f))
-                    TopLevelDestination.entries.forEach { d ->
+                    tabs.forEach { d ->
                         NavigationRailItem(
                             selected = d == selected,
                             onClick = { navController.navigateTopLevel(d) },
@@ -183,7 +184,7 @@ private fun AppScaffold(launch: LaunchOptions) {
                 bottomBar = {
                     AnimatedVisibility(showChrome, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
                         NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                            TopLevelDestination.entries.forEach { d ->
+                            tabs.forEach { d ->
                                 NavigationBarItem(
                                     selected = d == selected,
                                     onClick = { navController.navigateTopLevel(d) },

@@ -106,7 +106,7 @@ fun IdeaCardView(
                     StackedAvatars(card.friends, size = 30.dp)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(card.friends.joinToString { it.name.substringBefore(' ') }, style = MaterialTheme.typography.labelLarge)
+                        Text(card.friends.joinToString { it.displayName.substringBefore(' ') }, style = MaterialTheme.typography.labelLarge)
                         idea.whenText?.let {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Rounded.Schedule, null, Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -124,7 +124,7 @@ fun IdeaCardView(
                     }
                 }
                 if (card.friends.isNotEmpty() && idea.kind != IdeaKind.TALKING_POINT) {
-                    val names = friendNames(card.friends.map { it.name.substringBefore(' ') })
+                    val names = friendNames(card.friends.map { it.displayName.substringBefore(' ') })
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = onPropose) {
                             Icon(Icons.AutoMirrored.Rounded.Send, null, Modifier.size(16.dp))

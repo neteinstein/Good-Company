@@ -14,4 +14,13 @@
     <string name="contact_drinks">Bebidas</string>
     <string name="contact_interests">Interesses</string>
     <string name="contact_relation_sibling">Irmão/irmã</string>
+    <!-- Links between people written onto the contact (issue #39). -->
+    <string name="contact_relation_grandparent">Avó ou avô</string>
+    <string name="contact_relation_grandchild">Neta ou neto</string>
+    <string name="contact_relation_aunt_uncle">Tia ou tio</string>
+    <string name="contact_relation_niece_nephew">Sobrinha ou sobrinho</string>
+    <string name="contact_relation_cousin">Prima ou primo</string>
+    <string name="contact_relation_in_law">Família por afinidade</string>
+    <string name="contact_relation_ex">Ex</string>
+    <string name="contact_relation_colleague">Colega</string>
 </resources>

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CardGiftcard
-import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.RssFeed
@@ -30,13 +29,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.format.longLabel
-import com.neteinstein.goodcompany.core.ui.format.parseTags
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
@@ -51,67 +47,16 @@ import com.neteinstein.goodcompany.feature.friends.resources.event_what
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_add_title
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_follow
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_url
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_for
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_them
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_title
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_idea_label
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_new
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_note_label
-import com.neteinstein.goodcompany.feature.friends.resources.kid_add
-import com.neteinstein.goodcompany.feature.friends.resources.kid_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.kid_edit
-import com.neteinstein.goodcompany.feature.friends.resources.kid_likes
-import com.neteinstein.goodcompany.feature.friends.resources.kid_name
-import com.neteinstein.goodcompany.feature.friends.resources.kid_set_birthday
 import com.neteinstein.goodcompany.feature.friends.resources.news_dialog_title
 import com.neteinstein.goodcompany.feature.friends.resources.news_placeholder
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.stringResource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
-
-@Composable
-fun KidDialog(
-    kid: Kid?,
-    onDismiss: () -> Unit,
-    onSave: (name: String, birthday: LocalDate?, likes: List<String>) -> Unit,
-) {
-    var name by remember { mutableStateOf(kid?.name.orEmpty()) }
-    var likes by remember { mutableStateOf(kid?.likes?.joinToString().orEmpty()) }
-    var birthday by remember {
-        mutableStateOf(kid?.birthday?.let { b -> LocalDate(b.year ?: 2020, Month(b.month), b.day) })
-    }
-    var pickDate by remember { mutableStateOf(false) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Rounded.ChildCare, null) },
-        title = { Text(if (kid == null) stringResource(Res.string.kid_add) else stringResource(Res.string.kid_edit, kid.name)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(name, {
-                    name = it
-                }, label = { Text(stringResource(Res.string.kid_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedButton(onClick = { pickDate = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(birthday?.let { stringResource(Res.string.kid_birthday, it.longLabel()) } ?: stringResource(Res.string.kid_set_birthday))
-                }
-                OutlinedTextField(
-                    likes,
-                    { likes = it },
-                    label = { Text(stringResource(Res.string.kid_likes)) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                onSave(name, birthday, parseTags(likes))
-            }, enabled = name.isNotBlank()) { Text(stringResource(CoreRes.string.save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
-    )
-    if (pickDate) LocalDatePickerDialog(birthday, onDismiss = { pickDate = false }, onPicked = { birthday = it })
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -159,13 +104,11 @@ fun ImportantEventDialog(
     if (pickDate) LocalDatePickerDialog(date, onDismiss = { pickDate = false }, onPicked = { date = it })
 }
 
-/** New gift idea, optionally for one of the friend's kids. */
-@OptIn(ExperimentalLayoutApi::class)
+/** New gift idea. A kid's gift ideas go on the kid's own page (F9). */
 @Composable
-fun GiftDialog(friend: Friend, onDismiss: () -> Unit, onSave: (title: String, note: String, forKidId: String?) -> Unit) {
+fun GiftDialog(onDismiss: () -> Unit, onSave: (title: String, note: String) -> Unit) {
     var title by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
-    var kidId by remember { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.CardGiftcard, null) },
@@ -178,19 +121,10 @@ fun GiftDialog(friend: Friend, onDismiss: () -> Unit, onSave: (title: String, no
                 OutlinedTextField(note, {
                     note = it
                 }, label = { Text(stringResource(Res.string.gifts_note_label)) }, modifier = Modifier.fillMaxWidth())
-                if (friend.kids.isNotEmpty()) {
-                    Text(stringResource(Res.string.gifts_for))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(kidId == null, {
-                            kidId = null
-                        }, label = { Text(stringResource(Res.string.gifts_for_them, friend.name.substringBefore(' '))) })
-                        friend.kids.forEach { kid -> FilterChip(kidId == kid.id, { kidId = kid.id }, label = { Text(kid.name) }) }
-                    }
-                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(title, note, kidId) }, enabled = title.isNotBlank()) { Text(stringResource(CoreRes.string.save)) }
+            TextButton(onClick = { onSave(title, note) }, enabled = title.isNotBlank()) { Text(stringResource(CoreRes.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )

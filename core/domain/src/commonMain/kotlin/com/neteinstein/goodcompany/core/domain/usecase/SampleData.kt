@@ -27,6 +27,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Relation
@@ -37,6 +38,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -165,6 +167,8 @@ object SampleData {
         val plans: List<Plan> = emptyList(),
         val interactions: List<Interaction> = emptyList(),
         val journal: List<JournalEntry> = emptyList(),
+        /** Links between the sample people: each sample kid is a person linked to their parent (F9). */
+        val links: List<PersonLink> = emptyList(),
     )
 
     fun build(clock: AppClock, t: SampleTexts = SampleTexts()): Bundle {
@@ -217,7 +221,7 @@ object SampleData {
             Friend(
                 id = id("rui"), name = "Rui Costa", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
-                likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste), dislikes = listOf(t.earlyMornings),
+                likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste, t.jazz), dislikes = listOf(t.earlyMornings),
                 job = t.ruiJob, livesIn = "Alvalade, Lisboa",
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-rui", t.newsRuiMove, now - 3.days)),
                 // Film titles are proper nouns; checkedAt = now so the demo never fetches.
@@ -256,7 +260,9 @@ object SampleData {
                 closeness = Closeness.INNER,
                 phoneNumbers = listOf("+351 915 777 888"),
                 birthday = bday(88, 35),
-                likes = listOf(t.football, t.bbq, t.surfing),
+                likes = listOf(t.football, t.bbq, t.surfing, t.craftBeer),
+                // Overlapping tags (F16): one person's like can be another's dislike.
+                dislikes = listOf(t.sushi),
                 occasions = listOf(Occasion.WEEKDAY_LUNCH, Occasion.OUTDOORS, Occasion.SPORTS),
             ),
             Friend(
@@ -265,7 +271,7 @@ object SampleData {
                 ),
                 name = "Sofia Martins", isCloseFriend = true, closeness = Closeness.INNER, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 916 123 456"), birthday = bday(0, 29), meetEveryDays = 21,
-                likes = listOf(t.photography, t.travel, t.specialtyCoffee), dislikes = listOf(t.spicyFood),
+                likes = listOf(t.photography, t.travel, t.specialtyCoffee, t.hiking), dislikes = listOf(t.spicyFood, t.cilantro),
                 occasions = listOf(Occasion.COFFEE, Occasion.WEEKDAY_LUNCH),
             ),
             Friend(
@@ -274,7 +280,7 @@ object SampleData {
                 isCloseFriend = true,
                 closeness = Closeness.GOOD,
                 birthday = bday(57, 40),
-                likes = listOf(t.theatre, t.cooking, t.wine),
+                likes = listOf(t.theatre, t.cooking, t.wine, t.sushi),
                 kids = listOf(Kid(PREFIX + "clara", "Clara", bday(12, 10), listOf("Harry Potter", t.ballet))),
             ),
             Friend(id = id("joao"), name = "João Pereira", contactId = PREFIX + "c-joao", phoneNumbers = listOf("+351 917 000 111")),
@@ -367,7 +373,9 @@ object SampleData {
             JournalEntry(PREFIX + "j1", id("ana"), at(-3, 22), t.journalAnaPorto),
             JournalEntry(PREFIX + "j2", id("rui"), at(-10, 22), t.journalRuiRace),
         )
-        return Bundle(friends, hangouts, reminders, ideas, groups, plans, interactions, journal)
+        // The sample kids are written as before and become people the same way old data does (F9).
+        val (people, links) = KidsAsPeople.convert(friends, emptyList())
+        return Bundle(people, hangouts, reminders, ideas, groups, plans, interactions, journal, links)
     }
 
     fun isSample(id: String) = id.startsWith(PREFIX)
@@ -384,10 +392,12 @@ class LoadSampleDataUseCase(
     private val interactions: InteractionRepository,
     private val clock: AppClock,
     private val texts: SampleTextsProvider = SampleTextsProvider { SampleTexts() },
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     suspend operator fun invoke() {
         val bundle = SampleData.build(clock, texts.texts())
         bundle.friends.forEach { friends.upsert(it) }
+        bundle.links.forEach { links.upsert(it) }
         val existingHangouts = hangouts.hangouts.first().map { it.id }.toSet()
         bundle.hangouts.filterNot { it.id in existingHangouts }.forEach { hangouts.add(it) }
         bundle.reminders.forEach { reminders.upsert(it) }

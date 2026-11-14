@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Email
@@ -55,22 +56,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Introducer
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
+import com.neteinstein.goodcompany.core.domain.usecase.PersonLinks
+import com.neteinstein.goodcompany.core.domain.usecase.Tag
+import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
+import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
-import com.neteinstein.goodcompany.core.ui.format.parseTags
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.relationLabel
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -102,6 +110,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_bad
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_hint
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_none
 import com.neteinstein.goodcompany.feature.friends.resources.about_title
+import com.neteinstein.goodcompany.feature.friends.resources.add_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.channel_call
 import com.neteinstein.goodcompany.feature.friends.resources.channel_email
 import com.neteinstein.goodcompany.feature.friends.resources.channel_sms
@@ -119,6 +128,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.family_note
 import com.neteinstein.goodcompany.feature.friends.resources.family_notify
 import com.neteinstein.goodcompany.feature.friends.resources.family_remove
 import com.neteinstein.goodcompany.feature.friends.resources.family_title
+import com.neteinstein.goodcompany.feature.friends.resources.kid_add_title
+import com.neteinstein.goodcompany.feature.friends.resources.kid_show_hint_family
+import com.neteinstein.goodcompany.feature.friends.resources.kid_show_hint_friend
+import com.neteinstein.goodcompany.feature.friends.resources.link_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_edit
 import com.neteinstein.goodcompany.feature.friends.resources.more_hint
@@ -126,6 +139,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.more_label
 import com.neteinstein.goodcompany.feature.friends.resources.more_new
 import com.neteinstein.goodcompany.feature.friends.resources.more_title
 import com.neteinstein.goodcompany.feature.friends.resources.more_value
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.stringResource
@@ -157,7 +171,7 @@ internal fun channelIcon(channel: ContactChannel): ImageVector = when (channel) 
 /** The "About <name>" card: one line per detail, each hidden when empty. */
 @Composable
 internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOpenFriend: (FriendId) -> Unit) {
-    val firstName = f.name.substringBefore(' ')
+    val firstName = f.displayName.substringBefore(' ')
     SectionCard(
         stringResource(Res.string.about_title, firstName),
         icon = Icons.Rounded.People,
@@ -179,7 +193,7 @@ internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOp
                 headlineContent = { Text(headline, style = MaterialTheme.typography.titleSmall) },
                 supportingContent = {
                     if (introducer != null) {
-                        val text = stringResource(Res.string.about_introduced_by_line, linked?.name ?: introducer.name)
+                        val text = stringResource(Res.string.about_introduced_by_line, linked?.displayName ?: introducer.name)
                         if (linked != null) {
                             Text(
                                 text,
@@ -255,7 +269,7 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.People, null) },
-        title = { Text(stringResource(Res.string.about_title, f.name.substringBefore(' '))) },
+        title = { Text(stringResource(Res.string.about_title, f.displayName.substringBefore(' '))) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(job, {
@@ -301,15 +315,15 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
                 )
                 val query = introducerName.trim()
                 if (query.isNotEmpty() && introducerId == null) {
-                    val matches = others.filter { it.name.contains(query, ignoreCase = true) && !it.isOrphaned }.take(4)
+                    val matches = others.filter { it.displayName.contains(query, ignoreCase = true) && !it.isOrphaned }.take(4)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         matches.forEach { other ->
                             SuggestionChip(
                                 onClick = {
-                                    introducerName = other.name
+                                    introducerName = other.displayName
                                     introducerId = other.id
                                 },
-                                label = { Text(other.name) },
+                                label = { Text(other.displayName) },
                                 icon = { FriendAvatar(other, size = 18.dp) },
                             )
                         }
@@ -379,49 +393,51 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
 
 // --- Family -----------------------------------------------------------------------------------------------------------
 
-/** Kids and the other relatives in one card. */
+/** Partners, kids (people of their own, F9), other family links and the relatives named inside this friend. */
 @Composable
 internal fun FamilyCard(
     f: Friend,
     today: LocalDate,
     onAdd: () -> Unit,
-    onEditKid: (Kid) -> Unit,
     onEditRelative: (Relative) -> Unit,
-    onRemoveKid: (String) -> Unit,
     onRemoveRelative: (String) -> Unit,
+    links: List<LinkedPerson> = emptyList(),
+    onOpenPerson: (FriendId) -> Unit = {},
+    onEditLink: (LinkedPerson) -> Unit = {},
+    onAddLink: () -> Unit = {},
+    onAddAsPerson: (String) -> Unit = {},
 ) {
+    // Partners first (F18), then exes, then kids and family; friends and colleagues have their own card.
+    val romantic = links.filter { it.role.isRomantic }
+    val kids = links.filter { it.role == LinkType.CHILD }
+    val family = links.filter { it.role.isFamily && it.role != LinkType.CHILD }
     SectionCard(
         stringResource(Res.string.family_title),
         icon = Icons.Rounded.People,
         action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
     ) {
-        if (f.kids.isEmpty() && f.relatives.isEmpty()) Hint(stringResource(Res.string.family_hint))
-        f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative) }
-        f.kids.forEach { kid ->
-            ListItem(
-                modifier = Modifier.clickable { onEditKid(kid) },
-                leadingContent = { FriendAvatar(kid.name, kid.name.take(1).uppercase(), size = 44.dp) },
-                headlineContent = { Text(kid.name, style = MaterialTheme.typography.titleSmall) },
-                supportingContent = {
-                    val parts = listOfNotNull(
-                        stringResource(CoreRes.string.relation_kid),
-                        kid.birthday?.let { stringResource(Res.string.family_birthday_line, relativeDay(it.nextOccurrence(today), today)) },
-                        kid.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.family_likes_line, it.joinToString()) },
-                    )
-                    Text(parts.joinToString(" · "))
-                },
-                trailingContent = {
-                    IconButton(onClick = { onRemoveKid(kid.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, kid.name)) }
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
+        if (f.relatives.isEmpty() && romantic.isEmpty() && kids.isEmpty() && family.isEmpty()) Hint(stringResource(Res.string.family_hint))
+        romantic.forEach { LinkRow(it, onOpenPerson, onEditLink) }
+        f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
+        kids.forEach { LinkRow(it, onOpenPerson, onEditLink) }
+        family.forEach { LinkRow(it, onOpenPerson, onEditLink) }
+        f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
+        TextButton(onClick = onAddLink, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(Res.string.link_add))
         }
-        f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative) }
     }
 }
 
 @Composable
-private fun RelativeRow(r: Relative, today: LocalDate, onEdit: (Relative) -> Unit, onRemove: (String) -> Unit) {
+private fun RelativeRow(
+    r: Relative,
+    today: LocalDate,
+    onEdit: (Relative) -> Unit,
+    onRemove: (String) -> Unit,
+    onAddAsPerson: (String) -> Unit,
+) {
     ListItem(
         modifier = Modifier.clickable { onEdit(r) },
         leadingContent = {
@@ -439,45 +455,50 @@ private fun RelativeRow(r: Relative, today: LocalDate, onEdit: (Relative) -> Uni
             Text(parts.joinToString(" · "))
         },
         trailingContent = {
-            IconButton(onClick = { onRemove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // A relative who is only a name can become a person with their own page (question 1).
+                if (PersonLinks.typeFor(r.relation) != null) {
+                    TextButton(onClick = { onAddAsPerson(r.id) }) { Text(stringResource(Res.string.add_as_person)) }
+                }
+                IconButton(onClick = { onRemove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) }
+            }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }
 
-/** What the family sheet edits: a kid (today's model) or a relative. */
+/** What the family sheet edits: something new (a kid or a relative) or a relative. A kid is edited on their own page. */
 internal sealed interface FamilyEditing {
     data object New : FamilyEditing
-
-    data class EditKid(val kid: Kid) : FamilyEditing
 
     data class EditRelative(val relative: Relative) : FamilyEditing
 }
 
 /**
- * "Add to <name>'s family": one sheet for every relation. Choosing Kid saves a [Kid] exactly as before; the others are
- * [Relative]s, whose birthday reminder is off unless switched on here.
+ * "Add to <name>'s family": one sheet for every relation. Choosing Kid adds a person of their own (F9), linked to this
+ * friend, who shows in your list when [parentIsFamily]; the others are [Relative]s named inside this friend.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun FamilySheet(
     firstName: String,
     editing: FamilyEditing,
+    latestYear: Int,
     onDismiss: () -> Unit,
-    onSaveKid: (id: String?, name: String, birthday: LocalDate?, likes: List<String>) -> Unit,
+    onAddKid: (KidDraft) -> Unit,
     onSaveRelative: (RelativeEdit) -> Unit,
+    parentIsFamily: Boolean = false,
+    tags: List<Tag> = emptyList(),
 ) {
-    val kid = (editing as? FamilyEditing.EditKid)?.kid
     val relative = (editing as? FamilyEditing.EditRelative)?.relative
     // null relation = Kid.
-    var relation by remember { mutableStateOf(relative?.relation ?: if (kid != null) null else Relation.PARTNER) }
-    var name by remember { mutableStateOf(kid?.name ?: relative?.name.orEmpty()) }
-    var likes by remember { mutableStateOf((kid?.likes ?: relative?.likes).orEmpty().joinToString()) }
+    var relation by remember { mutableStateOf<Relation?>(relative?.relation ?: Relation.PARTNER) }
+    var name by remember { mutableStateOf(relative?.name.orEmpty()) }
+    var likes by remember { mutableStateOf(relative?.likes.orEmpty()) }
     var note by remember { mutableStateOf(relative?.note.orEmpty()) }
     var notify by remember { mutableStateOf(relative?.notifyBirthday ?: true) }
-    val initialBirthday = (kid?.birthday ?: relative?.birthday)?.let { b -> LocalDate(b.year ?: 2000, Month(b.month), b.day) }
-    var birthday by remember { mutableStateOf(initialBirthday) }
-    var pickDate by remember { mutableStateOf(false) }
+    var showInList by remember { mutableStateOf(parentIsFamily) }
+    var birthday by remember { mutableStateOf(BirthdayDraft.of(relative?.birthday)) }
     val isNew = editing == FamilyEditing.New
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -487,59 +508,82 @@ internal fun FamilySheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                if (isNew) stringResource(Res.string.family_add_title, firstName) else stringResource(Res.string.family_edit_title, name),
+                when {
+                    !isNew -> stringResource(Res.string.family_edit_title, name)
+                    relation == null -> stringResource(Res.string.kid_add_title, firstName)
+                    else -> stringResource(Res.string.family_add_title, firstName)
+                },
                 style = MaterialTheme.typography.titleLarge,
             )
-            // A kid stays a kid and a relative stays a relative once saved: they live in different lists.
+            // A kid becomes a person with their own page; a relative stays a name inside this friend.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (isNew || kid == null) {
-                    listOf(Relation.PARTNER, null, Relation.PARENT, Relation.SIBLING, Relation.PET, Relation.OTHER)
-                        .filter { isNew || it != null }
-                        .forEach { r ->
-                            FilterChip(
-                                selected = relation == r,
-                                onClick = { relation = r },
-                                label = { Text(if (r == null) stringResource(CoreRes.string.relation_kid) else relationLabel(r)) },
-                            )
-                        }
-                } else {
-                    FilterChip(selected = true, onClick = {}, label = { Text(stringResource(CoreRes.string.relation_kid)) })
-                }
+                listOf(Relation.PARTNER, null, Relation.PARENT, Relation.SIBLING, Relation.PET, Relation.OTHER)
+                    .filter { isNew || it != null }
+                    .forEach { r ->
+                        FilterChip(
+                            selected = relation == r,
+                            onClick = { relation = r },
+                            label = { Text(if (r == null) stringResource(CoreRes.string.relation_kid) else relationLabel(r)) },
+                        )
+                    }
             }
             OutlinedTextField(name, {
                 name = it
             }, label = { Text(stringResource(Res.string.family_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { pickDate = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    birthday?.let { stringResource(Res.string.family_birthday_set, it.longLabel()) }
-                        ?: stringResource(Res.string.family_birthday_optional),
-                )
-            }
-            OutlinedTextField(likes, { likes = it }, label = { Text(stringResource(Res.string.family_likes)) }, modifier = Modifier.fillMaxWidth())
+            Text(stringResource(Res.string.family_birthday_optional), style = MaterialTheme.typography.labelLarge)
+            BirthdayFields(birthday, { birthday = it }, latestYear)
+            TagEditor(
+                likes,
+                stringResource(Res.string.family_likes),
+                onAdd = { likes = (likes + it).distinct() },
+                onRemove = { likes = likes - it },
+                catalog = tags,
+            )
             val current = relation
             if (current != null) {
                 OutlinedTextField(note, {
                     note = it
                 }, label = { Text(stringResource(Res.string.family_note)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            } else {
+                // F9: on for family's kids, off for friends' kids (who still show on this page and in birthdays).
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(Res.string.family_notify), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Switch(checked = notify, onCheckedChange = { notify = it })
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(Res.string.show_in_my_list), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            stringResource(if (parentIsFamily) Res.string.kid_show_hint_family else Res.string.kid_show_hint_friend, firstName),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = showInList, onCheckedChange = { showInList = it })
                 }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(Res.string.family_notify), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Switch(checked = notify, onCheckedChange = { notify = it })
             }
             Button(
                 onClick = {
+                    val date = birthday.toBirthday(latestYear)
                     if (current == null) {
-                        onSaveKid(kid?.id, name, birthday, parseTags(likes))
+                        onAddKid(
+                            KidDraft(
+                                name = name,
+                                birthday = date,
+                                likes = likes,
+                                showInMyList = showInList,
+                                notifyBirthday = notify,
+                            ),
+                        )
                     } else {
-                        onSaveRelative(RelativeEdit(relative?.id, current, name, birthday, parseTags(likes), note, notify))
+                        onSaveRelative(RelativeEdit(relative?.id, current, name, date, likes, note, notify))
                     }
                 },
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && birthday.isValid(latestYear),
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(CoreRes.string.save)) }
         }
     }
-    if (pickDate) LocalDatePickerDialog(birthday, onDismiss = { pickDate = false }, onPicked = { birthday = it })
 }
 
 // --- More about (custom fields) ---------------------------------------------------------------------------------------
@@ -547,7 +591,7 @@ internal fun FamilySheet(
 @Composable
 internal fun MoreAboutCard(f: Friend, onAdd: () -> Unit, onEdit: (CustomField) -> Unit, onRemove: (String) -> Unit) {
     SectionCard(
-        stringResource(Res.string.more_title, f.name.substringBefore(' ')),
+        stringResource(Res.string.more_title, f.displayName.substringBefore(' ')),
         icon = Icons.AutoMirrored.Rounded.List,
         action = { TextButton(onClick = onAdd) { Text(stringResource(Res.string.more_add)) } },
     ) {

@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EventAvailable
@@ -67,9 +69,12 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_body
+import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_title
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
@@ -102,17 +107,17 @@ suspend fun AgendaMessage.text(): String = when (this) {
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    AgendaMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
 }
 
-/**
- * [onCircleMet] and [onPlanMet] open the "We met" panel (issue #47) on a circle (nobody ticked) or on a plan's
- * "Did you meet?" yes; "No" just closes the plan here.
- */
 @Composable
 fun AgendaScreen(
     onOpenFriend: (FriendId) -> Unit,
+    /** "We met" on an overdue circle: the small "We met" panel, nobody ticked (issue #47, F20). */
     onCircleMet: (String) -> Unit = {},
-    onPlanMet: (String) -> Unit = {},
+    /** "Did you meet?" → yes: the "We met" panel on that occurrence (issues #43, #47). */
+    onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    onOpenCalendar: () -> Unit = {},
     viewModel: AgendaViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -127,15 +132,24 @@ fun AgendaScreen(
         onUndoDelete = viewModel::onUndoDelete,
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = onCircleMet,
-        onConfirmPlan = { id, happened -> if (happened) onPlanMet(id) else viewModel.onConfirmPlan(id, false) },
-        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends)) },
+        // A yes opens the "We met" panel on that occurrence (a circle plan asks who came, F20); a no closes it here.
+        onConfirmPlan = { item, happened ->
+            if (happened) {
+                onLogPlan(item.plan.id, item.occurrence)
+            } else {
+                viewModel.onConfirmPlan(item.plan.id, false, item.occurrence)
+            }
+        },
+        onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
+        onSkipPlan = viewModel::onSkipPlan,
+        onOpenCalendar = onOpenCalendar,
     )
     if (state.showReminderEditor) {
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
     }
     state.wishFor?.let { friend ->
-        val firstName = friend.name.substringBefore(' ')
-        val ideas = friend.gifts.filter { it.isIdea && it.forKidId == null }
+        val firstName = friend.displayName.substringBefore(' ')
+        val ideas = friend.gifts.filter { it.isIdea }
         SendMessageSheet(
             title = stringResource(Res.string.wish_title, firstName),
             suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
@@ -165,8 +179,10 @@ fun AgendaContent(
     onUndoDelete: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
-    onConfirmPlan: (String, Boolean) -> Unit = { _, _ -> },
+    onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -179,8 +195,8 @@ fun AgendaContent(
         onMessageShown()
     }
     // Index of each day's header in the lazy list, so tapping the week strip can scroll to it.
-    val dayIndex = remember(state.agendaByDay) {
-        var i = 2 // header + week strip
+    val dayIndex = remember(state.agendaByDay, state.calendarCount > 0) {
+        var i = if (state.calendarCount > 0) 3 else 2 // header + week strip (+ the calendar card)
         state.agendaByDay.associate { (day, items) -> (day to i).also { i += 1 + items.size } }
     }
     Scaffold(
@@ -209,6 +225,9 @@ fun AgendaContent(
             item(key = "week") {
                 WeekStrip(state.week, state.today) { day -> dayIndex[day]?.let { scope.launch { listState.animateScrollToItem(it) } } }
             }
+            if (state.calendarCount > 0) {
+                item(key = "calendar") { CalendarCard(state.calendarCount, onOpenCalendar) }
+            }
             if (!state.isLoading && state.agenda.isEmpty()) {
                 item(key = "empty") {
                     EmptyState(
@@ -235,6 +254,7 @@ fun AgendaContent(
                         onGroupMet = onGroupMet,
                         onConfirmPlan = onConfirmPlan,
                         onAddPlanToCalendar = onAddPlanToCalendar,
+                        onSkipPlan = onSkipPlan,
                         modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
                     )
                 }
@@ -272,7 +292,7 @@ fun AgendaContent(
                             val text = listOfNotNull(
                                 due,
                                 people.joinToString {
-                                    it.name.substringBefore(' ')
+                                    it.displayName.substringBefore(' ')
                                 }.ifBlank { null }?.let { stringResource(Res.string.reminder_with, it) },
                             ).joinToString(" · ")
                             if (text.isNotBlank()) {
@@ -318,6 +338,27 @@ private fun WeekStrip(days: List<Pair<LocalDate, Int>>, today: LocalDate, onDay:
                     if (count == 0) Box(Modifier.size(5.dp))
                 }
             }
+        }
+    }
+}
+
+/** "From your calendar · 3 meetups to log" (D3): opens the suggestions. */
+@Composable
+private fun CalendarCard(count: Int, onOpen: () -> Unit) {
+    Surface(
+        onClick = onOpen,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(Res.string.calendar_card_title), style = MaterialTheme.typography.titleSmall)
+                Text(pluralStringResource(Res.plurals.calendar_card_body, count, count), style = MaterialTheme.typography.bodyMedium)
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null)
         }
     }
 }

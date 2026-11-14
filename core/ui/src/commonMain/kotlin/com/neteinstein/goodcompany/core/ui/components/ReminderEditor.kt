@@ -91,7 +91,7 @@ fun ReminderEditor(
                         FilterChip(
                             f.id in selected,
                             { selected = if (f.id in selected) selected - f.id else selected + f.id },
-                            label = { Text(f.name.substringBefore(' ')) },
+                            label = { Text(f.displayName.substringBefore(' ')) },
                         )
                     }
                 }

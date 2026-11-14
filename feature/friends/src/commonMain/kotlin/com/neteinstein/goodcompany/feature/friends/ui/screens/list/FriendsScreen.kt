@@ -28,10 +28,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
@@ -102,12 +103,13 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.action_network
+import com.neteinstein.goodcompany.feature.friends.resources.action_people
 import com.neteinstein.goodcompany.feature.friends.resources.action_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.action_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.add_hint
 import com.neteinstein.goodcompany.feature.friends.resources.add_name
-import com.neteinstein.goodcompany.feature.friends.resources.add_option_list
 import com.neteinstein.goodcompany.feature.friends.resources.add_option_list_again
 import com.neteinstein.goodcompany.feature.friends.resources.add_option_list_body
 import com.neteinstein.goodcompany.feature.friends.resources.add_option_pick_body
@@ -195,6 +197,9 @@ fun FriendsScreen(
     /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
     chosenContacts: Int = 0,
     onChosenShown: () -> Unit = {},
+    /** "Your network" and "Your people" (issue #46), from the menu. */
+    onOpenNetwork: () -> Unit = {},
+    onOpenPeople: () -> Unit = {},
     viewModel: FriendsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -210,10 +215,17 @@ fun FriendsScreen(
     val capabilities = currentPlatformCapabilities()
     // Sideload build: ask for the contacts permission the write-back needs, then open the picker whatever the answer.
     val requestThenPick = rememberPermissionRequester(AppPermission.CONTACTS) { pickContacts() }
-    // "Choose from the full list" asks for the permission each time (it may have been refused before), then opens it.
+    // iOS and the sideload build: "Pick from contacts" asks for the permission each time (it may have been refused
+    // before), then opens the list with checkboxes; a refusal falls back to the system picker (owner decision 2026-11-14).
     val requestContactList = rememberPermissionRequester(AppPermission.CONTACTS) { granted ->
         viewModel.onContactListPermissionResult(granted)
         if (granted) onChooseContacts()
+    }
+    LaunchedEffect(state.pickerFallback) {
+        if (state.pickerFallback) {
+            viewModel.onPickerFallbackShown()
+            if (capabilities.hasContactPicker) pickContacts()
+        }
     }
     FriendsContent(
         state = state,
@@ -240,6 +252,8 @@ fun FriendsScreen(
             onCircleFilter = viewModel::onCircleFilter,
             onEditCircle = onEditCircle,
             onLogCircle = onLogCircle,
+            onOpenNetwork = onOpenNetwork,
+            onOpenPeople = onOpenPeople,
         ),
     )
 }
@@ -268,6 +282,8 @@ data class FriendsActions(
     val onEditCircle: (String) -> Unit = {},
     /** "Log a <circle> meetup" on the circle card. */
     val onLogCircle: (String) -> Unit = {},
+    val onOpenNetwork: () -> Unit = {},
+    val onOpenPeople: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [FriendsMessage]. */
@@ -370,13 +386,20 @@ fun FriendsContent(
                             Box {
                                 IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
                                 DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
-                                    if (canPickContacts) {
+                                    if (canPickContacts || AddFriendOption.CHOOSE_FROM_LIST in addOptions) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(Res.string.action_pick_contacts)) },
                                             leadingIcon = { Icon(Icons.Rounded.PersonAdd, null) },
                                             onClick = {
                                                 menuOpen = false
-                                                actions.onPickContacts()
+                                                // One way in from the contacts: the list where this build has it.
+                                                if (AddFriendOption.CHOOSE_FROM_LIST in
+                                                    addOptions
+                                                ) {
+                                                    actions.onChooseContacts()
+                                                } else {
+                                                    actions.onPickContacts()
+                                                }
                                             },
                                         )
                                     }
@@ -386,6 +409,22 @@ fun FriendsContent(
                                         onClick = {
                                             menuOpen = false
                                             actions.onImportFile()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.action_network)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Hub, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onOpenNetwork()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.action_people)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Insights, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onOpenPeople()
                                         },
                                     )
                                 }
@@ -425,7 +464,7 @@ fun FriendsContent(
                         onImportFile = actions.onImportFile,
                         onAdd = { showAdd = true },
                         onSample = actions.onExploreSample,
-                        onPickContacts = actions.onPickContacts.takeIf { canPickContacts },
+                        onPickContacts = actions.onPickContacts.takeIf { AddFriendOption.PICK_FROM_CONTACTS in addOptions },
                         onChooseContacts = actions.onChooseContacts.takeIf { AddFriendOption.CHOOSE_FROM_LIST in addOptions },
                     )
                 }
@@ -692,13 +731,13 @@ private fun Welcome(
             ),
         )
         if (onChooseContacts != null) {
-            // iOS and the Android sideload build (decision D2): the contacts with checkboxes, the picker as the alternative.
+            // iOS and the Android sideload build (decision D2, owner decision 2026-11-14): one way in, the contacts with
+            // checkboxes; a refused permission falls back to the system picker.
             Button(onClick = onChooseContacts, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Rounded.Contacts, null)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(Res.string.add_option_list))
+                Text(stringResource(Res.string.choose_pick_instead))
             }
-            onPickContacts?.let { TextButton(onClick = it) { Text(stringResource(Res.string.welcome_pick_contacts)) } }
         } else if (canSyncContacts) {
             Button(onClick = onImport, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Rounded.Contacts, null)
@@ -732,7 +771,7 @@ private fun Welcome(
     }
 }
 
-/** "Add friend": the system contact picker, the contact list with checkboxes and typing a name, as this build allows. */
+/** "Add friend": one way in from the contacts (the list with checkboxes, or the system picker) and typing a name. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddFriendSheet(options: List<AddFriendOption>, listDenied: Boolean, onDismiss: () -> Unit, onOption: (AddFriendOption) -> Unit) {
@@ -765,8 +804,8 @@ private fun AddFriendSheet(options: List<AddFriendOption>, listDenied: Boolean, 
                         Res.string.add_option_pick_body,
                     )
                     AddFriendOption.CHOOSE_FROM_LIST -> Triple(
-                        Icons.Rounded.Checklist,
-                        Res.string.add_option_list,
+                        Icons.Rounded.Contacts,
+                        Res.string.choose_pick_instead,
                         if (listDenied) Res.string.add_option_list_again else Res.string.add_option_list_body,
                     )
                     AddFriendOption.TYPE_IT_IN -> Triple(Icons.Rounded.Edit, Res.string.add_option_type, Res.string.add_option_type_body)

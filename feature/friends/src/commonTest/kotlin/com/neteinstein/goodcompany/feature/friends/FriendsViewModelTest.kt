@@ -5,6 +5,8 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -50,6 +52,23 @@ class FriendsViewModelTest {
         g.setHomeCircleFilter,
         g.clock,
     )
+
+    @Test
+    fun friendsKidsStayOutOfTheList_unlessSearchedForOrFamily() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana") { copy(kids = listOf(Kid("leo", "Leo"))) },
+                friend("rui") { copy(relationToMe = LinkType.SIBLING, kids = listOf(Kid("mia", "Mia"))) },
+            ),
+        )
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        // Rui is family, so his daughter shows; Ana's son doesn't.
+        assertEquals(listOf("Ana", "Mia", "Rui"), state.value.friends.map { it.friend.name })
+        assertEquals(listOf("Rui"), state.value.friends.single { it.friend.name == "Mia" }.parents.map { it.name })
+        vm.onQueryChange("le")
+        assertEquals(listOf("Leo"), state.value.friends.map { it.friend.name })
+    }
 
     @Test
     fun aCircleFiltersEveryHomeSection_andIsRemembered() = runViewModelTest {
@@ -243,11 +262,12 @@ class FriendsViewModelTest {
 
     @Test
     fun addFriendOptions_followTheBuild() {
-        // iOS and the Android sideload build.
+        // iOS and the Android sideload build: one "Pick from contacts" entry, the list with checkboxes (2026-11-14).
         assertEquals(
-            listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN),
+            listOf(AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN),
             addFriendOptions(hasContactPicker = true, hasContactList = true),
         )
+        assertEquals(listOf(AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN), addFriendOptions(false, true))
         // Android Play build: picker only (D2, until the READ_CONTACTS policy check).
         assertEquals(listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.TYPE_IT_IN), addFriendOptions(true, false))
         // Web.
@@ -260,8 +280,14 @@ class FriendsViewModelTest {
         val state = collecting(vm.state)
         vm.onContactListPermissionResult(false)
         assertTrue(state.value.contactListDenied)
+        // A refusal falls back to the system picker, once.
+        assertTrue(state.value.pickerFallback)
+        vm.onPickerFallbackShown()
+        assertFalse(state.value.pickerFallback)
+        assertTrue(state.value.contactListDenied)
         vm.onContactListPermissionResult(true)
         assertFalse(state.value.contactListDenied)
+        assertFalse(state.value.pickerFallback)
         vm.onContactsChosen(0)
         assertNull(state.value.message)
         vm.onContactsChosen(2)

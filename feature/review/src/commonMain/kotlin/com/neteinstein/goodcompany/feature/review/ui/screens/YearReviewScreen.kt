@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -77,6 +78,7 @@ import com.neteinstein.goodcompany.feature.review.resources.hero_meetups
 import com.neteinstein.goodcompany.feature.review.resources.hero_meetups_word
 import com.neteinstein.goodcompany.feature.review.resources.new_body
 import com.neteinstein.goodcompany.feature.review.resources.new_title
+import com.neteinstein.goodcompany.feature.review.resources.people_title
 import com.neteinstein.goodcompany.feature.review.resources.places_none
 import com.neteinstein.goodcompany.feature.review.resources.places_title
 import com.neteinstein.goodcompany.feature.review.resources.reminders_done
@@ -103,7 +105,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-fun YearReviewScreen(year: Int?, onBack: () -> Unit, viewModel: YearReviewViewModel = koinViewModel(key = "review-$year") { parametersOf(year) }) {
+fun YearReviewScreen(
+    year: Int?,
+    onBack: () -> Unit,
+    onOpenPeople: () -> Unit = {},
+    viewModel: YearReviewViewModel = koinViewModel(key = "review-$year") { parametersOf(year) },
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sharer = rememberTextSharer()
     val shareText = state.review?.takeUnless { it.isEmpty }?.let { shareText(it) }
@@ -112,6 +119,7 @@ fun YearReviewScreen(year: Int?, onBack: () -> Unit, viewModel: YearReviewViewMo
         onBack = onBack,
         onShare = shareText?.let { text -> { if (sharer.share(text) == ShareOutcome.COPIED) viewModel.onCopied() } },
         onCopiedShown = viewModel::onCopiedShown,
+        onOpenPeople = onOpenPeople,
     )
 }
 
@@ -125,14 +133,20 @@ fun shareText(r: YearInReview): String = listOfNotNull(
         pluralStringResource(Res.plurals.hero_friends, r.friendsSeen, r.friendsSeen),
     ),
     r.topFriends.takeIf { it.isNotEmpty() }?.let { top ->
-        stringResource(Res.string.share_top, top.take(3).joinToString { it.first.name.substringBefore(' ') })
+        stringResource(Res.string.share_top, top.take(3).joinToString { it.first.displayName.substringBefore(' ') })
     },
     r.topPlaces.firstOrNull()?.let { stringResource(Res.string.share_place, it.first) },
     stringResource(Res.string.share_footer),
 ).joinToString("\n")
 
 @Composable
-fun YearReviewContent(state: YearReviewUiState, onBack: () -> Unit, onShare: (() -> Unit)?, onCopiedShown: () -> Unit = {}) {
+fun YearReviewContent(
+    state: YearReviewUiState,
+    onBack: () -> Unit,
+    onShare: (() -> Unit)?,
+    onCopiedShown: () -> Unit = {},
+    onOpenPeople: () -> Unit = {},
+) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.copied) {
         if (state.copied) {
@@ -150,6 +164,7 @@ fun YearReviewContent(state: YearReviewUiState, onBack: () -> Unit, onShare: (()
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
+                IconButton(onClick = onOpenPeople) { Icon(Icons.Rounded.Insights, stringResource(Res.string.people_title)) }
                 if (onShare != null) {
                     FilledTonalButton(onClick = onShare, modifier = Modifier.padding(end = 8.dp)) {
                         Icon(Icons.Rounded.IosShare, null, Modifier.size(18.dp))
@@ -196,7 +211,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
         }
         if (r.topFriends.isNotEmpty()) {
             item(key = "top") {
-                val (a, b) = avatarColors(r.topFriends.first().first.name)
+                val (a, b) = avatarColors(r.topFriends.first().first.displayName)
                 Story(listOf(a, b), index = 1) {
                     Text(stringResource(Res.string.top_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                     Text(stringResource(Res.string.top_body), color = Color.White.copy(alpha = 0.85f))
@@ -206,7 +221,12 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                             Text("${i + 1}", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.width(28.dp))
                             FriendAvatar(friend, size = if (i == 0) 52.dp else 40.dp)
                             Spacer(Modifier.width(12.dp))
-                            Text(friend.name, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+                            Text(
+                                friend.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                modifier = Modifier.weight(1f),
+                            )
                             Text(pluralStringResource(Res.plurals.times, count, count), color = Color.White.copy(alpha = 0.9f))
                         }
                     }

@@ -98,4 +98,82 @@
     <string name="msg_drive_full">Tu Google Drive está lleno.</string>
     <string name="msg_drive_offline">No se ha podido contactar con Google Drive. Revisa la conexión.</string>
     <string name="msg_drive_failed">Algo ha fallado con Google Drive. Vuelve a intentarlo.</string>
+    <string name="places">Lugares</string>
+    <string name="places_row_hint">Nombres que diste a puntos GPS</string>
+    <string name="places_intro">Los lugares son nombres que diste a puntos GPS. Nunca salen de tu teléfono y no se usa ningún servicio de mapas.</string>
+    <string name="places_empty">Aún no hay lugares. Registra un encuentro con tu ubicación y te preguntaremos “¿Qué lugar es este?”.</string>
+    <string name="places_usually">normalmente %1$s</string>
+    <string name="places_nearby">a %1$d m de “%2$s”</string>
+    <string name="places_rename">Renombrar</string>
+    <string name="places_merge">Unir</string>
+    <string name="places_merge_title">Unir “%1$s” con…</string>
+    <string name="places_merge_hint">Sus encuentros toman el nombre del lugar que elijas.</string>
+    <string name="places_merged">Unido con “%1$s”</string>
+    <string name="places_deleted">“%1$s” eliminado</string>
+    <string name="places_more">Más opciones para %1$s</string>
+    <plurals name="places_meetups">
+        <item quantity="one">%1$d encuentro</item>
+        <item quantity="other">%1$d encuentros</item>
+    </plurals>
+    <string name="cal_title">Sugerencias del calendario</string>
+    <string name="cal_switch">Sugerir quedadas de mi calendario</string>
+    <string name="cal_switch_hint">Después de un evento con alguien que conoces, la app te propone registrarlo.</string>
+    <string name="cal_choose">Calendarios que la app puede leer</string>
+    <string name="cal_none_found">No hay calendarios en este dispositivo.</string>
+    <string name="cal_pick_hint">Marca los calendarios que se pueden leer. No se lee nada hasta que lo hagas.</string>
+    <string name="cal_privacy">Los eventos se leen solo en este teléfono. Nunca se suben, nunca entran en las copias de seguridad y nunca se envían a la IA.</string>
+    <string name="cal_lookback">Al activarlo, la app también revisa los dos últimos meses en busca de quedadas que no registraste.</string>
+    <string name="cal_web">Las sugerencias del calendario funcionan en las apps de Android e iOS. Un navegador no puede leer tu calendario.</string>
+    <string name="cal_access_needed">El acceso al calendario está desactivado, así que no hay nada que sugerir.</string>
+    <string name="cal_allow">Permitir acceso al calendario</string>
+    <string name="cal_denied">Sin acceso al calendario no hay nada que sugerir.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Ver %1$d sugerencia</item>
+        <item quantity="other">Ver %1$d sugerencias</item>
+    </plurals>
+    <string name="cal_row_on">Activado · solo los calendarios elegidos</string>
+    <string name="cal_row_off">Desactivado</string>
+    <string name="cal_row_web">No disponible en el navegador</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Etiquetas</string>
+    <string name="tags_row_hint">Renombrar, unir o borrar gustos para todos</string>
+    <string name="tags_title">Etiquetas</string>
+    <string name="tags_search">Buscar etiquetas</string>
+    <string name="tags_same">Parece la misma etiqueta</string>
+    <string name="tags_merge">Unir</string>
+    <string name="tags_keep_both">Mantener ambas</string>
+    <string name="tags_empty">Aún no hay etiquetas. Aquí aparece lo que a la gente le gusta y no le gusta.</string>
+    <string name="tags_edit">Editar “%1$s”</string>
+    <string name="tags_name">Nombre</string>
+    <string name="tags_will_merge">Se une a “%1$s” para todos</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">A %1$d persona le gusta</item>
+        <item quantity="other">A %1$d personas les gusta</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">A %1$d persona no le gusta</item>
+        <item quantity="other">A %1$d personas no les gusta</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d le gusta</item>
+        <item quantity="other">%1$d les gusta</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d no</item>
+        <item quantity="other">%1$d no</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Renombrada a “%1$s”</string>
+    <string name="msg_tag_merged">Unida en “%1$s”</string>
+    <string name="msg_tag_deleted">“%1$s” borrada</string>
+    <string name="ai_switch">Funciones de IA</string>
+    <string name="ai_switch_hint">Planes semanales, temas de conversación, sugerencias de regalos y de mensajes, con tu propia clave de Anthropic.</string>
+    <string name="ai_off_note">Mientras esté desactivado, nada que necesite IA aparece en la app.</string>
+    <string name="meetups">Quedadas</string>
+    <string name="activities">Actividades</string>
+    <string name="activities_count">%1$d de %2$d activadas</string>
+    <string name="activities_hint">Lo que ofrece el registro cuando has visto a alguien. Las que más usas salen primero, las demás en este orden; se muestran seis, el resto está en Más. Arrastra para reordenar.</string>
+    <string name="activities_move_up">Subir</string>
+    <string name="activities_move_down">Bajar</string>
 </resources>

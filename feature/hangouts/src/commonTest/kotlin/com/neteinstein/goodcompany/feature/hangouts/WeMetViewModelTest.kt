@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.hangouts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -25,15 +26,17 @@ class WeMetViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm(ids: List<FriendId> = listOf(ana), circleId: String? = null, planId: String? = null) = WeMetViewModel(
+    private fun vm(ids: List<FriendId> = listOf(ana), circleId: String? = null, plan: PlanOccurrence? = null) = WeMetViewModel(
         ids,
         circleId,
-        planId,
+        plan,
         g.observeFriends,
         g.observeActivities,
         g.observeGroups,
+        g.observePlaceBook,
         g.observePlans,
         g.logInteraction,
+        g.confirmPlan,
         g.currentLocation,
         g.loggedMeetups,
         g.clock,
@@ -135,13 +138,13 @@ class WeMetViewModelTest {
         assertEquals(HangoutActivity.DINNER, details.activity)
         assertEquals("Pasta", details.note)
         assertNull(details.circleId)
-        assertNull(details.planId)
+        assertNull(details.plan)
     }
 
     @Test
     fun aPlansDidYouMeetFillsThePanel_andSavingClosesThePlan() = runViewModelTest {
         val plan = g.savePlan(null, "Dinner at Rui’s", listOf(ana, rui), LocalDate(2026, 3, 7), "Porto")
-        val vm = vm(ids = emptyList(), planId = plan.id)
+        val vm = vm(ids = emptyList(), plan = PlanOccurrence(plan.id, plan.date))
         val state = collecting(vm.state)
         assertEquals(listOf(ana, rui), state.value.sheet.people.map { it.id })
         assertEquals(LocalDate(2026, 3, 7), state.value.sheet.date)
@@ -156,7 +159,7 @@ class WeMetViewModelTest {
     @Test
     fun undoOnTheSnackbarRemovesTheHangout_andReopensThePlan() = runViewModelTest {
         val plan = g.savePlan(null, "Lunch", listOf(ana), LocalDate(2026, 3, 6))
-        val panel = vm(planId = plan.id)
+        val panel = vm(plan = PlanOccurrence(plan.id, plan.date))
         collecting(panel.state)
         panel.onSave()
         val snackbar = LoggedMeetupViewModel(g.loggedMeetups, g.undoLog)
@@ -178,5 +181,23 @@ class WeMetViewModelTest {
         snackbar.onShown(snackbar.pending.value!!)
         assertNull(snackbar.pending.value)
         assertEquals(1, g.hangoutRepo.hangouts.value.size)
+    }
+
+    @Test
+    fun aPlaceIsCollapsedUntilAsked_andIsSavedAndCarriedToMoreDetails() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertFalse(state.value.placeOpen)
+        vm.onOpenPlace()
+        assertTrue(state.value.placeOpen)
+        vm.onPlaceName("Time Out")
+        assertEquals("Time Out", vm.details().placeName)
+        vm.onUseLocation()
+        vm.onClearLocation()
+        vm.onChangePlace()
+        assertEquals("", state.value.sheet.place.name)
+        vm.onPlaceName("Café Lisboa")
+        vm.onSave()
+        assertEquals("Café Lisboa", g.hangoutRepo.hangouts.value.single().place?.name)
     }
 }

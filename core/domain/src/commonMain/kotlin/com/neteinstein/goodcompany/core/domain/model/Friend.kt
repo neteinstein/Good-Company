@@ -15,7 +15,8 @@ value class FriendId(val value: String)
  * manually in the app ([contactId] null — the only option on the web).
  *
  * Contact-owned fields (name, phones, birthday, photo) are refreshed on every contacts sync; everything
- * else is app-owned and never overwritten by a sync.
+ * else is app-owned and never overwritten by a sync. A name or photo set in the app ([customName], [customPhoto], F19
+ * and F14) wins over the contact's: show [displayName] and [avatar], never [name] or [photo] directly.
  */
 @Serializable
 data class Friend(
@@ -26,10 +27,15 @@ data class Friend(
     val birthday: Birthday? = null,
     /** "Real friend" — promoted out of the address-book noise. */
     val isCloseFriend: Boolean = false,
-    val notifyBirthday: Boolean = false,
+    /** On by default (brief decision F10); it can be turned off for one person. */
+    val notifyBirthday: Boolean = true,
     val likes: List<String> = emptyList(),
     val dislikes: List<String> = emptyList(),
     val notes: String = "",
+    /**
+     * Only read from old backups and the old JSON store: kids are people now (F9, issue #40), linked to their parent
+     * as [LinkType.CHILD]. `KidsAsPeople.convert` turns these into people; nothing stores them any more.
+     */
     val kids: List<Kid> = emptyList(),
     val importantEvents: List<ImportantEvent> = emptyList(),
     /** "If I don't meet them in this many days, remind me." Null = no rule. */
@@ -46,7 +52,7 @@ data class Friend(
     val closeness: Closeness? = null,
     /** Catch-up nudges are paused until this date (inclusive). */
     val snoozedUntil: LocalDate? = null,
-    /** Gift ideas (not yet given) and gift history (given), for them or their kids. */
+    /** Gift ideas (not yet given) and gift history (given). A kid's gifts are on the kid's own page. */
     val gifts: List<Gift> = emptyList(),
     /** Catch-up nudges paused with no end date ("on hold"). History and birthdays are kept. */
     val catchUpPaused: Boolean = false,
@@ -74,7 +80,7 @@ data class Friend(
     val preferredChannel: ContactChannel? = null,
     /** Email addresses: [FriendEmail.fromContact] ones follow the address book, typed ones are kept. Never written back. */
     val emails: List<FriendEmail> = emptyList(),
-    /** Partner, parents, siblings, pets… Kids stay in [kids]. */
+    /** Partner, parents, siblings, pets… named inside this friend. Kids are people, linked as [LinkType.CHILD]. */
     val relatives: List<Relative> = emptyList(),
     /** Tastes by kind. [likes] holds "Other likes" and [dislikes] "Doesn't like". */
     val food: List<String> = emptyList(),
@@ -86,15 +92,40 @@ data class Friend(
     val interestsAddedAt: Map<String, Instant> = emptyMap(),
     /** "More about <name>": free label/value pairs ("Shoe size" → "38"). */
     val customFields: List<CustomField> = emptyList(),
+    /** What they are to you ("your sister", F6), separate from links between people. A family one puts them in Family. */
+    val relationToMe: LinkType? = null,
+    /** Which words describe them ("sister" / "brother" / "sibling"); null = the neutral word (decision F18). */
+    val pronouns: Pronouns? = null,
+    /** F19: the name given in the app. Wins over [name] (the contact's) and is never touched by a contacts sync. */
+    val customName: String? = null,
+    /** F14: a photo set in the app (cropped thumbnail). Wins over [photo] (the contact's), which a sync keeps updating. */
+    val customPhoto: ContactPhoto? = null,
+    /**
+     * Shown in the main A–Z list (F9). On for everyone added as a friend; for a kid it starts on when they or their
+     * parent are family, and off for friends' kids, who still show on their parent's page and in birthdays.
+     */
+    val showInMyList: Boolean = true,
 ) {
+    /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
+    val isFamily: Boolean get() = relationToMe?.isFamily == true
+
+    /** The name shown everywhere: [customName] when set, else the contact's [name]. */
+    val displayName: String
+        get() = customName?.takeIf { it.isNotBlank() } ?: name
+
+    /** The photo shown everywhere: [customPhoto] when set, else the contact's [photo]. */
+    val avatar: ContactPhoto?
+        get() = customPhoto ?: photo
+
     val initials: String
-        get() = name.split(' ', '-')
+        get() = displayName.split(' ', '-')
             .filter { it.isNotBlank() }
             .take(2)
             .joinToString("") { it.first().uppercase() }
             .ifEmpty { "?" }
 }
 
+/** A kid as the app stored them before kids became people (F9). Kept only to read old backups. */
 @Serializable
 data class Kid(
     val id: String,
@@ -151,7 +182,10 @@ data class ImportantEvent(
  */
 enum class Closeness { INNER, CLOSE, GOOD }
 
-/** A gift idea ([givenOn] null) or a gift already given. [forKidId] targets one of the friend's kids. */
+/**
+ * A gift idea ([givenOn] null) or a gift already given. [forKidId] is only read from old backups (a gift for one of
+ * the friend's kids); `KidsAsPeople.convert` moves such a gift to the kid's own page.
+ */
 @Serializable
 data class Gift(
     val id: String,
@@ -203,7 +237,7 @@ data class FriendEmail(
     val fromContact: Boolean = false,
 )
 
-/** Who a [Relative] is to the friend. Kids are [Kid]s, not relatives. */
+/** Who a [Relative] is to the friend. Kids are people of their own, not relatives. */
 enum class Relation { PARTNER, PARENT, SIBLING, PET, OTHER }
 
 /** Someone in a friend's family other than their kids (a pet counts). */

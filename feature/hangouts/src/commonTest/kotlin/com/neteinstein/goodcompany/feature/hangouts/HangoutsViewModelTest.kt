@@ -4,7 +4,10 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Place
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -41,6 +44,8 @@ class HangoutsViewModelTest {
         g.observeHistory,
         g.observeGroups,
         g.observeOccasionMatches,
+        g.observePlaceBook,
+        g.observePlans,
         g.savePlan,
         g.deleteGroup,
         g.restoreGroup,
@@ -51,6 +56,37 @@ class HangoutsViewModelTest {
         g.currentLocation,
         g.clock,
     )
+
+    @Test
+    fun checkInAtANamedPlace_namesItself_suggestsWithoutTicking_andChangeAsksAgain() = runViewModelTest {
+        val home = GeoPoint(38.7139, -9.1394)
+        g.hangoutRepo.upsertPlace(NamedPlace("ines", "Inês’s house", home.latitude, home.longitude))
+        g.hangoutRepo.add(Hangout("3", listOf(rui, FriendId("zoe")), at(2026, 3, 2), Place("Inês’s house", home.latitude, home.longitude, "ines")))
+        g.location.point = GeoPoint(38.71395, -9.1394)
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onStartCheckIn(ana)
+        vm.onLocationPermissionResult(granted = true)
+        val place = state.value.draftPlace
+        assertEquals("Inês’s house", place.match?.place?.name)
+        assertEquals(listOf("rui", "zoe"), place.suggested.map { it.id.value })
+        assertEquals(setOf(ana), state.value.draft?.selected)
+        vm.onToggleDraftFriend(rui)
+        assertEquals(listOf("zoe"), state.value.draftPlace.suggested.map { it.id.value })
+
+        vm.onChangeDraftPlace()
+        assertEquals(null, state.value.draftPlace.match)
+        assertEquals(false, state.value.draftPlace.firstTimeHere)
+        // Removing the fix and taking it again forgets "Change": the place names itself again.
+        vm.onClearDraftLocation()
+        vm.onLocationPermissionResult(granted = true)
+        assertEquals("Inês’s house", state.value.draftPlace.match?.place?.name)
+        vm.onSaveCheckIn()
+        val saved = g.hangoutRepo.hangouts.value.last()
+        assertEquals("Inês’s house", saved.place?.name)
+        assertEquals("ines", saved.place?.placeId)
+        assertEquals(setOf(ana, rui), saved.friendIds.toSet())
+    }
 
     @Test
     fun splitsOverdueAndUpcomingAndFiltersHistory() = runViewModelTest {
@@ -172,7 +208,7 @@ class HangoutsViewModelTest {
 
         vm.onPlanWith(ana, Occasion.COFFEE)
         assertEquals(PlanDraft(ana, Occasion.COFFEE), state.value.planDraft)
-        vm.onSavePlan("Coffee", emptyList(), LocalDate(2026, 3, 12), null)
+        vm.onSavePlan(PlanInput("Coffee", emptyList(), LocalDate(2026, 3, 12)))
         assertNull(state.value.planDraft)
         assertEquals(HangoutsMessage.PlanSaved, state.value.message)
         assertEquals(listOf(ana), g.planRepo.plans.value.single().friendIds)

@@ -14,21 +14,23 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 import com.neteinstein.goodcompany.core.domain.model.Friend as DomainFriend
 import com.neteinstein.goodcompany.core.domain.model.Gift as DomainGift
-import com.neteinstein.goodcompany.core.domain.model.Kid as DomainKid
 import com.neteinstein.goodcompany.core.domain.model.Relative as DomainRelative
 
 /** Tables that make up a friend. Observers of friends listen to all of them. */
 internal val FRIEND_TABLES = arrayOf(
-    "friend", "friend_phone", "friend_taste", "friend_occasion", "kid", "kid_like", "important_event", "gift",
-    "life_update", "feed", "feed_item", "friend_photo", "friend_email", "relative", "relative_like", "custom_field",
+    "friend", "friend_phone", "friend_taste", "friend_occasion", "important_event", "gift",
+    "life_update", "feed", "feed_item", "friend_photo", "friend_custom_photo",
+    "friend_email", "relative", "relative_like", "custom_field",
 )
 
 private const val LIKE = "LIKE"
@@ -52,14 +54,13 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
     val phones = q.allPhones().awaitAsList().groupBy { it.friend_id }
     val tastes = q.allTastes().awaitAsList().groupBy { it.friend_id }
     val occasions = q.allOccasions().awaitAsList().groupBy { it.friend_id }
-    val kidLikes = q.allKidLikes().awaitAsList().groupBy { it.friend_id to it.kid_id }
-    val kids = q.allKids().awaitAsList().groupBy { it.friend_id }
     val events = q.allEvents().awaitAsList().groupBy { it.friend_id }
     val gifts = q.allGifts().awaitAsList().groupBy { it.friend_id }
     val updates = q.allLifeUpdates().awaitAsList().groupBy { it.friend_id }
     val feedItems = q.allFeedItems().awaitAsList().groupBy { it.friend_id to it.feed_url }
     val feeds = q.allFeeds().awaitAsList().groupBy { it.friend_id }
     val photos = q.allPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
+    val customPhotos = q.allCustomPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val emails = q.allEmails().awaitAsList().groupBy { it.friend_id }
     val relativeLikes = q.allRelativeLikes().awaitAsList().groupBy { it.friend_id to it.relative_id }
     val relatives = q.allRelatives().awaitAsList().groupBy { it.friend_id }
@@ -83,15 +84,6 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             likes = likes.map { it.taste },
             dislikes = friendTastes.filter { it.kind == DISLIKE }.map { it.taste },
             notes = row.notes,
-            kids = kids[id].orEmpty().map { kid ->
-                DomainKid(
-                    id = kid.id,
-                    name = kid.name,
-                    birthday = birthdayOf(kid.birthday_month, kid.birthday_day, kid.birthday_year),
-                    likes = kidLikes[id to kid.id].orEmpty().map { it.liked },
-                    addedAt = kid.added_at?.toInstant(),
-                )
-            },
             importantEvents = events[id].orEmpty().map {
                 ImportantEvent(it.id, it.title, it.date.toLocalDate(), it.remind_days_before.toInt(), it.added_at?.toInstant())
             },
@@ -105,7 +97,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
                     it.id,
                     it.title,
                     it.note,
-                    it.for_kid_id,
+                    null,
                     it.given_on?.toLocalDate(),
                     it.occasion?.let(GiftOccasion::valueOf),
                     it.url,
@@ -154,6 +146,11 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             drinksAddedAt = drinks.addedAt(),
             interestsAddedAt = interests.addedAt(),
             customFields = customFields[id].orEmpty().map { CustomField(it.id, it.label, it.value_) },
+            relationToMe = LinkType.parse(row.relation_to_me),
+            pronouns = Pronouns.parse(row.pronouns),
+            customName = row.custom_name,
+            customPhoto = customPhotos[id],
+            showInMyList = row.show_in_my_list.toFlag(),
         )
     }
 }
@@ -167,8 +164,9 @@ internal suspend fun GoodCompanyDatabase.nextFriendPosition(): Long = friendQuer
  * Writes [friend] at [position]: upserts its row (never deleting it, so nothing that references it is touched) and
  * replaces its child rows. Call inside a transaction.
  *
- * Stored as the domain has it, with two exceptions the schema can't hold: a gift's `forKidId` that isn't one of this
- * friend's kids becomes null, and `likesAddedAt` keeps only entries for current likes.
+ * Stored as the domain has it, with exceptions the schema can't hold: `likesAddedAt` keeps only entries for current
+ * likes, and old-style kids ([DomainFriend.kids], a gift's `forKidId`) aren't stored: kids are people (issue #40), and
+ * [replaceAllData] converts them before writing.
  */
 internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, position: Long) {
     val q = friendQueries
@@ -199,6 +197,10 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             introduced_by_friend_id = friend.introducedBy?.friendId?.value,
             introduced_by_name = friend.introducedBy?.name,
             preferred_channel = friend.preferredChannel?.name,
+            relation_to_me = friend.relationToMe?.name,
+            pronouns = friend.pronouns?.name,
+            custom_name = friend.customName?.takeIf { it.isNotBlank() },
+            show_in_my_list = friend.showInMyList.toColumn(),
         ),
     )
     q.deleteChildren(id).await()
@@ -218,29 +220,11 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
     tastes(DRINK, friend.drinks, friend.drinksAddedAt)
     tastes(INTEREST, friend.interests, friend.interestsAddedAt)
     friend.occasions.forEachIndexed { i, occasion -> q.insertOccasion(Friend_occasion(id, occasion.name, i.toLong())) }
-    friend.kids.forEachIndexed { i, kid ->
-        q.insertKid(
-            Kid(
-                friend_id = id,
-                id = kid.id,
-                position = i.toLong(),
-                name = kid.name,
-                birthday_month = kid.birthday?.month?.toColumn(),
-                birthday_day = kid.birthday?.day?.toColumn(),
-                birthday_year = kid.birthday?.year?.toColumn(),
-                added_at = kid.addedAt?.toColumn(),
-            ),
-        )
-        kid.likes.forEachIndexed { j, like -> q.insertKidLike(Kid_like(id, kid.id, j.toLong(), like)) }
-    }
     friend.importantEvents.forEachIndexed { i, e ->
         q.insertEvent(Important_event(id, e.id, i.toLong(), e.title, e.date.toColumn(), e.remindDaysBefore.toColumn(), e.addedAt?.toColumn()))
     }
-    val kidIds = friend.kids.mapTo(HashSet()) { it.id }
     friend.gifts.forEachIndexed { i, g ->
-        q.insertGift(
-            Gift(id, g.id, i.toLong(), g.title, g.note, g.forKidId?.takeIf { it in kidIds }, g.givenOn?.toColumn(), g.occasion?.name, g.url, g.price),
-        )
+        q.insertGift(Gift(id, g.id, i.toLong(), g.title, g.note, g.givenOn?.toColumn(), g.occasion?.name, g.url, g.price))
     }
     friend.lifeUpdates.forEachIndexed { i, u -> q.insertLifeUpdate(Life_update(id, u.id, i.toLong(), u.text, u.addedAt.toColumn())) }
     friend.feeds.forEachIndexed { i, feed ->
@@ -250,6 +234,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
         }
     }
     friend.photo?.let { q.insertPhoto(Friend_photo(id, it.base64)) }
+    friend.customPhoto?.let { q.insertCustomPhoto(Friend_custom_photo(id, it.base64)) }
     friend.emails.forEachIndexed { i, e -> q.insertEmail(Friend_email(id, i.toLong(), e.address, e.fromContact.toColumn())) }
     friend.relatives.distinctBy { it.id }.forEachIndexed { i, r ->
         q.insertRelative(

@@ -35,7 +35,7 @@ class ShareToFriendViewModelTest {
             friend("rui", "Rui Costa") { copy(isCloseFriend = true, phoneNumbers = listOf("+351 912 345 678")) },
             friend("bea", "Beatriz Rocha"),
         ),
-        settings = AppSettings(aiApiKey = apiKey),
+        settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),
     )
 
     private fun vm(g: TestGraph) = ShareToFriendViewModel(

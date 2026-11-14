@@ -156,10 +156,13 @@ class BackupAndPlansTest {
         """.trimIndent()
         val to = Stores()
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
-        val ana = to.backup.snapshot().friends.single()
+        val restored = to.backup.snapshot().friends
+        val ana = restored.first { it.id.value == "ana" }
         assertEquals(listOf("jazz"), ana.likes)
         assertEquals(listOf("cilantro"), ana.dislikes)
-        assertEquals(listOf("Leo"), ana.kids.map { it.name })
+        // Kids are people now (issue #40): the old kid comes back as a person of their own, keeping their id.
+        assertTrue(ana.kids.isEmpty())
+        assertEquals("Leo", restored.single { it.id.value == "k" }.name)
         assertEquals("", ana.job)
         assertEquals(null, ana.met)
         assertEquals(emptyList(), ana.relatives)

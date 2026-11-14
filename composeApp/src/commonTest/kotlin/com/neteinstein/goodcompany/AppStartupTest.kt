@@ -2,10 +2,13 @@ package com.neteinstein.goodcompany
 
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.testing.FakeCalendarDecisionRepository
+import com.neteinstein.goodcompany.core.testing.FakeCalendarReader
 import com.neteinstein.goodcompany.core.testing.FakeFeedFetcher
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
@@ -16,6 +19,7 @@ import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationRenderer
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
+import com.neteinstein.goodcompany.core.testing.FakePersonLinkRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
@@ -48,6 +52,9 @@ class AppStartupTest {
             FakeGroupRepository(),
             FakePlanRepository(),
             interactions,
+            FakePersonLinkRepository(),
+            ObserveCalendarEventsUseCase(settings, FakeCalendarReader(), clock),
+            FakeCalendarDecisionRepository(),
             scheduler,
             FakeNotificationRenderer,
             clock,

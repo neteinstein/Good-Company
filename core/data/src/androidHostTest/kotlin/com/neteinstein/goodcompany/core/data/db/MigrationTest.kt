@@ -1,11 +1,14 @@
 package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.await
+import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -13,8 +16,15 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import java.io.File
 import java.util.Properties
 import kotlin.io.path.createTempFile
@@ -62,12 +72,13 @@ class MigrationTest {
 
         GoodCompanyDatabase.Schema.migrate(driver, 3, GoodCompanyDatabase.Schema.version).await()
         val database = GoodCompanyDatabase(driver)
-        val ana = database.readFriends().single()
+        val ana = database.readFriends().first { it.id.value == "ana" }
 
         assertEquals(listOf("jazz", "sushi"), ana.likes)
         assertEquals(listOf("cilantro"), ana.dislikes)
         assertEquals(setOf("jazz"), ana.likesAddedAt.keys)
-        assertEquals(listOf("Leo"), ana.kids.map { it.name })
+        // Since version 10 the kid is a person of their own (issue #40).
+        assertEquals("Leo", database.readFriends().single { it.id.value == "k1" }.name)
         assertEquals("Met at uni", ana.notes)
         assertEquals("", ana.job)
         assertEquals("", ana.livesIn)
@@ -80,7 +91,7 @@ class MigrationTest {
         // The rebuilt taste table takes the new kinds, and the friend round-trips with them.
         val edited = ana.copy(food = listOf("ramen"), interests = listOf("climbing"), met = MetInfo("Uni", null))
         database.writeFriend(edited, 0)
-        assertEquals(edited, database.readFriends().single())
+        assertEquals(edited, database.readFriends().first { it.id.value == "ana" })
         driver.close()
     }
 
@@ -230,5 +241,201 @@ class MigrationTest {
         database.friendQueries.delete("ana")
         assertTrue(database.readAttachments().isEmpty())
         driver.close()
+    }
+
+    @Test
+    fun version8to9_addsLinks_andFriendsStartWithNoRelationToMe() = runTest {
+        val driver = driverAt(8)
+        listOf("ana", "rui").forEachIndexed { i, id ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', NULL, 1, 0, '', 0, 0, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+
+        GoodCompanyDatabase.Schema.migrate(driver, 8, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val friends = database.readFriends()
+        assertTrue(friends.all { it.relationToMe == null && it.pronouns == null })
+        database.writeFriend(friends.first().copy(relationToMe = LinkType.SIBLING, pronouns = Pronouns.SHE), 0)
+        assertEquals(LinkType.SIBLING, database.readFriends().first().relationToMe)
+
+        val link = PersonLink("l1", FriendId("rui"), FriendId("ana"), LinkType.SPOUSE, LocalDate(2015, 7, 4), remindAnniversary = true)
+        database.writeLink(link)
+        assertEquals(listOf(link), database.readLinks())
+        // An unknown type is refused by the schema.
+        assertTrue(
+            runCatching {
+                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
+            }.isFailure,
+        )
+        database.friendQueries.delete("ana")
+        assertTrue(database.readLinks().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version9to10_turnsBirthdayRemindersOnForEveryoneWithABirthday_andAddsTheAppsNameAndPhoto() = runTest {
+        val driver = driverAt(9)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend,
+                notify_birthday, notes, suggest_events, is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana Silva', 'c1', 3, 14, NULL, 0, 0, '', 0, 0, 0, 0),
+                   ('rui', 1, 'Rui', NULL, NULL, NULL, NULL, 0, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO friend_photo VALUES ('ana', 'AQI=')", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 9, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val (ana, rui) = database.readFriends()
+        assertTrue(ana.notifyBirthday, "on for a friend with a birthday (F10)")
+        assertEquals(Birthday(3, 14, null), ana.birthday)
+        assertEquals(false, rui.notifyBirthday, "a friend without a birthday is left as they were")
+        assertNull(ana.customName)
+        assertNull(ana.customPhoto)
+
+        val mine = ContactPhoto("Aw==")
+        database.writeFriend(ana.copy(customName = "Aninhas", customPhoto = mine), 0)
+        val saved = database.readFriends().first()
+        assertEquals("Aninhas", saved.displayName)
+        assertEquals(ContactPhoto("AQI="), saved.photo)
+        assertEquals(mine, saved.avatar)
+        database.writeFriend(saved.copy(customPhoto = null), 0)
+        assertEquals(ContactPhoto("AQI="), database.readFriends().first().avatar)
+        database.friendQueries.delete("ana")
+        assertEquals(listOf("rui"), database.readFriends().map { it.id.value })
+    }
+
+    @Test
+    fun version10to11_turnsKidsIntoPeople_keepingIdsLikesAndGifts() = runTest {
+        val driver = driverAt(10)
+        suspend fun friendRow(id: String, position: Int, relation: String?, notify: Int) = driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up, relation_to_me)
+            VALUES ('$id', $position, '$id', NULL, 0, $notify, '', 0, 0, 0, 0, ${relation?.let { "'$it'" } ?: "NULL"})
+            """.trimIndent(),
+            0,
+        ).await()
+        friendRow("ana", 0, "SIBLING", 1)
+        friendRow("rui", 1, null, 0)
+        friendRow("dup", 2, null, 0)
+        // Ana (family) has Leo; Rui (a friend) has a kid whose id another person already has.
+        driver.execute(null, "INSERT INTO kid VALUES ('ana', 'leo', 0, 'Leo', 5, 1, 2018, 1700000000000)", 0).await()
+        driver.execute(null, "INSERT INTO kid_like VALUES ('ana', 'leo', 0, 'dinosaurs')", 0).await()
+        driver.execute(null, "INSERT INTO kid VALUES ('rui', 'dup', 0, 'Mia', NULL, NULL, NULL, NULL)", 0).await()
+        driver.execute(null, "INSERT INTO gift VALUES ('rui', 'g1', 0, 'Lego', '', 'dup', NULL, NULL, NULL, '€35')", 0).await()
+        driver.execute(null, "INSERT INTO gift VALUES ('rui', 'g2', 1, 'Book', '', NULL, NULL, NULL, NULL, NULL)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 10, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val people = database.readFriends().associateBy { it.id.value }
+
+        val leo = people.getValue("leo")
+        assertEquals("Leo", leo.name)
+        assertEquals(listOf("dinosaurs"), leo.likes)
+        assertEquals(2018, leo.birthday?.year)
+        assertTrue(leo.notifyBirthday) // from Ana's birthday reminder
+        assertTrue(leo.showInMyList) // Ana is family
+        val mia = people.getValue("rui-dup")
+        assertEquals("Mia", mia.name)
+        assertEquals(false, mia.showInMyList) // a friend's kid
+        assertTrue(people.getValue("ana").showInMyList && people.getValue("dup").showInMyList)
+
+        assertEquals(
+            listOf(
+                PersonLink("kid-link-leo", FriendId("ana"), FriendId("leo"), LinkType.CHILD, addedAt = Instant.fromEpochMilliseconds(1700000000000)),
+                PersonLink("kid-link-rui-dup", FriendId("rui"), FriendId("rui-dup"), LinkType.CHILD),
+            ),
+            database.readLinks(),
+        )
+        // The gift for Mia moved to her page; Rui keeps his own.
+        assertEquals(listOf(Gift("g1", "Lego", price = "€35")), mia.gifts)
+        assertEquals(listOf("Book"), people.getValue("rui").gifts.map { it.title })
+        driver.close()
+    }
+
+    @Test
+    fun version11to12_keepsPlans_andTheyCanTakeACircleAnActivityAndARepeat() = runTest {
+        val driver = driverAt(11)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO plan VALUES ('p1', 0, 'Lunch', '2026-12-01', NULL, NULL, 'PLANNED', 1000)", 0).await()
+        driver.execute(null, "INSERT INTO plan_friend VALUES ('p1', 'ana', 0)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 11, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val old = database.readPlans().single()
+        assertEquals(listOf(FriendId("ana")), old.friendIds)
+        assertNull(old.circleId)
+        assertNull(old.repeat)
+        assertNull(old.activity)
+
+        val climbing = Plan(
+            id = "p2",
+            friendIds = emptyList(),
+            title = "Climbing",
+            date = LocalDate(2026, 12, 16),
+            createdAt = Instant.fromEpochSeconds(2),
+            circleId = "crew",
+            activity = HangoutActivity.SPORTS,
+            repeat = Repeat(15, RepeatUnit.DAY, LocalDate(2026, 12, 1), until = LocalDate(2027, 6, 1)),
+            skippedDates = listOf(LocalDate(2026, 12, 31)),
+        )
+        database.writePlan(climbing)
+        assertEquals(climbing, database.readPlans().single { it.id == "p2" })
+        database.planQueries.delete("p2")
+        assertTrue(database.planQueries.allPlanSkips().awaitAsList().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version13to14_aiFollowsTheSavedKey_untilChosen_andEveryActivityStaysOn() = runTest {
+        val driver = driverAt(13)
+        driver.execute(null, "INSERT INTO user_preferences VALUES (1, 7, 30, 90, 1, 6, 9, 1, 'Lisbon', 1, 0, NULL)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 13, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+
+        // Someone who already had a key keeps AI; someone without one gets the new default (off).
+        assertTrue(database.readPreferences(AppSettings(aiApiKey = "sk-ant-key")).aiEnabled)
+        val withoutKey = database.readPreferences(AppSettings())
+        assertEquals(false, withoutKey.aiEnabled)
+        assertEquals(HangoutActivity.entries, withoutKey.activities)
+        assertEquals("Lisbon", withoutKey.homeArea)
+
+        // Once written, the switch is what the user chose, whatever the key; the activities keep their order.
+        val chosen = withoutKey.copy(aiEnabled = false, activities = listOf(HangoutActivity.WALK, HangoutActivity.COFFEE))
+        database.writePreferences(chosen)
+        val read = database.readPreferences(AppSettings(aiApiKey = "sk-ant-key"))
+        assertEquals(false, read.aiEnabled)
+        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), read.activities)
+        driver.close()
+    }
+
+    @Test
+    fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
+        assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
+        assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))
+        assertEquals(listOf(HangoutActivity.TRIP, HangoutActivity.LUNCH), activitiesFromColumn("TRIP,BOWLING,LUNCH,TRIP"))
+        assertNull(HangoutActivity.entries.toActivitiesColumn())
+        assertEquals("TRIP,LUNCH", listOf(HangoutActivity.TRIP, HangoutActivity.LUNCH).toActivitiesColumn())
     }
 }

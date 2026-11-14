@@ -1,7 +1,9 @@
 package com.neteinstein.goodcompany.core.data.repository
 
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.data.db.ATTACHMENT_TABLES
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
+import com.neteinstein.goodcompany.core.data.db.CALENDAR_DECISION_TABLES
 import com.neteinstein.goodcompany.core.data.db.FRIEND_TABLES
 import com.neteinstein.goodcompany.core.data.db.GROUP_TABLES
 import com.neteinstein.goodcompany.core.data.db.GoodCompanyDatabase
@@ -9,31 +11,39 @@ import com.neteinstein.goodcompany.core.data.db.HANGOUT_TABLES
 import com.neteinstein.goodcompany.core.data.db.IDEA_TABLES
 import com.neteinstein.goodcompany.core.data.db.INTERACTION_TABLES
 import com.neteinstein.goodcompany.core.data.db.JOURNAL_TABLES
+import com.neteinstein.goodcompany.core.data.db.LINK_TABLES
 import com.neteinstein.goodcompany.core.data.db.MESSAGE_TABLES
+import com.neteinstein.goodcompany.core.data.db.PLACE_TABLES
 import com.neteinstein.goodcompany.core.data.db.PLAN_TABLES
 import com.neteinstein.goodcompany.core.data.db.PREFERENCE_TABLES
 import com.neteinstein.goodcompany.core.data.db.REMINDER_TABLES
 import com.neteinstein.goodcompany.core.data.db.nextFriendPosition
 import com.neteinstein.goodcompany.core.data.db.readAttachments
+import com.neteinstein.goodcompany.core.data.db.readCalendarDecisions
 import com.neteinstein.goodcompany.core.data.db.readFriends
 import com.neteinstein.goodcompany.core.data.db.readGroups
 import com.neteinstein.goodcompany.core.data.db.readHangouts
 import com.neteinstein.goodcompany.core.data.db.readIdeas
 import com.neteinstein.goodcompany.core.data.db.readInteractions
 import com.neteinstein.goodcompany.core.data.db.readJournal
+import com.neteinstein.goodcompany.core.data.db.readLinks
 import com.neteinstein.goodcompany.core.data.db.readMessages
+import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
-import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
+import com.neteinstein.goodcompany.core.data.db.readStoredPreferences
 import com.neteinstein.goodcompany.core.data.db.toColumn
 import com.neteinstein.goodcompany.core.data.db.writeAttachment
+import com.neteinstein.goodcompany.core.data.db.writeCalendarDecision
 import com.neteinstein.goodcompany.core.data.db.writeFriend
 import com.neteinstein.goodcompany.core.data.db.writeGroup
 import com.neteinstein.goodcompany.core.data.db.writeHangout
 import com.neteinstein.goodcompany.core.data.db.writeIdea
 import com.neteinstein.goodcompany.core.data.db.writeInteraction
 import com.neteinstein.goodcompany.core.data.db.writeJournal
+import com.neteinstein.goodcompany.core.data.db.writeLink
 import com.neteinstein.goodcompany.core.data.db.writeMessage
+import com.neteinstein.goodcompany.core.data.db.writePlace
 import com.neteinstein.goodcompany.core.data.db.writePlan
 import com.neteinstein.goodcompany.core.data.db.writePreferences
 import com.neteinstein.goodcompany.core.data.db.writeReminder
@@ -43,7 +53,7 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
-import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
@@ -55,24 +65,28 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
+import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -95,21 +109,27 @@ import kotlin.time.Instant
 class SqlFriendRepository(
     private val db: AppDatabase,
     private val contacts: ContactsSource,
-    private val writer: ContactsWriter = ContactsWriter.None,
+    writer: ContactsWriter = ContactsWriter.None,
 ) : FriendRepository {
+    private val mirror = ContactMirror(writer)
+
     override val friends: Flow<List<Friend>> = db.observe(*FRIEND_TABLES) { it.readFriends() }
 
     override suspend fun get(id: FriendId): Friend? = db.access { it.readFriends() }.firstOrNull { it.id == id }
 
     override suspend fun upsert(friend: Friend) {
-        val previous = db.transaction { database ->
+        val (before, after) = db.transaction { database ->
             val friends = database.readFriends()
             val index = friends.indexOfFirst { it.id == friend.id }
             val position = if (index >= 0) index.toLong() else database.nextFriendPosition()
             database.writeFriend(friend, position)
-            friends.getOrNull(index)
+            val links = database.readLinks()
+            val people = friends.associateBy { it.id }
+            ContactMirror.Snapshot(people, links) to ContactMirror.Snapshot(people + (friend.id to friend), links)
         }
-        mirrorToContact(previous, friend)
+        // Their own contact, and the people linked to them (whose relation rows show this friend's name).
+        val linked = after.links.mapNotNullTo(mutableSetOf(friend.id)) { it.otherThan(friend.id) }
+        mirror.sync(linked, before, after)
     }
 
     // Leaves their contact alone: removing a friend from the app never takes data off it (owner decision 2026-11-08).
@@ -118,17 +138,30 @@ class SqlFriendRepository(
         db.access { it.friendQueries.delete(id.value) }
     }
 
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        val (changed, snapshots) = db.transaction { database ->
+            val current = database.readFriends()
+            val next = current.map(transform)
+            database.replaceFriends(current, next)
+            val links = database.readLinks()
+            current.zip(next).filter { (old, new) -> old != new } to
+                (ContactMirror.Snapshot(current.associateBy { it.id }, links) to ContactMirror.Snapshot(next.associateBy { it.id }, links))
+        }
+        mirror.sync(changed.mapTo(mutableSetOf()) { it.first.id }, snapshots.first, snapshots.second)
+        return changed.map { it.first }
+    }
+
     override suspend fun syncContacts(): Int {
         val records = contacts.readContacts(withPhotos = true)
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
         if (records.isNotEmpty()) {
-            val merged = db.transaction { database ->
+            val (merged, links) = db.transaction { database ->
                 val current = database.readFriends()
                 val next = ContactMerger.merge(current, records, addNew = contacts.importsNewContacts)
                 database.replaceFriends(current, next)
-                next
+                next to database.readLinks()
             }
-            backfillContacts(merged)
+            mirror.backfill(merged, links)
         }
         return records.size
     }
@@ -137,33 +170,6 @@ class SqlFriendRepository(
 
     override suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto> =
         if (contactIds.isEmpty()) emptyMap() else contacts.readPhotos(contactIds)
-
-    private suspend fun mirrorToContact(previous: Friend?, friend: Friend) {
-        val contactId = friend.contactId ?: return
-        val card = ContactCard.from(friend)
-        val before = previous?.takeIf { it.contactId == contactId }?.let(ContactCard::from)
-        if (card == before) return
-        if (!card.isEmpty) safely { writer.write(contactId, friend.id, card) }
-    }
-
-    /** See [FriendRepositoryImpl]: details saved before the contact was writable still need to reach it. */
-    private suspend fun backfillContacts(friends: List<Friend>) {
-        friends.forEach { friend ->
-            val contactId = friend.contactId ?: return@forEach
-            val card = ContactCard.from(friend)
-            if (!friend.isOrphaned && card.hasExtras) safely { writer.write(contactId, friend.id, card) }
-        }
-    }
-
-    private suspend fun safely(block: suspend () -> Unit) {
-        try {
-            block()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            // Mirroring is best effort: the app's own copy is already saved.
-        }
-    }
 }
 
 /**
@@ -186,6 +192,26 @@ class SqlHangoutRepository(private val db: AppDatabase) : HangoutRepository {
 
     override suspend fun delete(id: String) {
         db.access { it.hangoutQueries.delete(id) }
+    }
+
+    override val places: Flow<List<NamedPlace>> = db.observe(*PLACE_TABLES) { it.readPlaces() }
+
+    override suspend fun upsertPlace(place: NamedPlace) = db.transaction { it.writePlace(place) }
+
+    override suspend fun deletePlace(id: String) {
+        db.access { it.namedPlaceQueries.deletePlace(id) }
+    }
+
+    override suspend fun renamePlace(id: String, name: String) = db.transaction { database ->
+        val row = database.namedPlaceQueries.placeById(id).awaitAsOneOrNull() ?: return@transaction
+        database.namedPlaceQueries.upsertPlace(row.copy(name = name))
+        database.hangoutQueries.relinkPlace(toId = id, name = name, fromId = id)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) = db.transaction { database ->
+        val into = database.namedPlaceQueries.placeById(intoId).awaitAsOneOrNull() ?: return@transaction
+        database.hangoutQueries.relinkPlace(toId = intoId, name = into.name, fromId = fromId)
+        database.namedPlaceQueries.deletePlace(fromId)
     }
 }
 
@@ -298,6 +324,31 @@ class SqlGroupRepository(private val db: AppDatabase) : GroupRepository {
     }
 }
 
+/** Links between people (issue #39). Every change also refreshes both people's contacts (sideload build). */
+class SqlPersonLinkRepository(
+    private val db: AppDatabase,
+    writer: ContactsWriter = ContactsWriter.None,
+) : PersonLinkRepository {
+    private val mirror = ContactMirror(writer)
+
+    override val links: Flow<List<PersonLink>> = db.observe(*LINK_TABLES) { it.readLinks() }
+
+    override suspend fun upsert(link: PersonLink) = change(link.id) { it.writeLink(link) }
+
+    override suspend fun delete(id: String) = change(id) { it.personLinkQueries.delete(id) }
+
+    private suspend fun change(id: String, write: suspend (GoodCompanyDatabase) -> Unit) {
+        val (before, after) = db.transaction { database ->
+            val people = database.readFriends().associateBy { it.id }
+            val links = database.readLinks()
+            write(database)
+            ContactMirror.Snapshot(people, links) to ContactMirror.Snapshot(people, database.readLinks())
+        }
+        val touched = (before.links + after.links).filter { it.id == id }.flatMap { listOf(it.from, it.to) }.toSet()
+        mirror.sync(touched, before, after)
+    }
+}
+
 class SqlPlanRepository(private val db: AppDatabase) : PlanRepository {
     override val plans: Flow<List<Plan>> = db.observe(*PLAN_TABLES) { it.readPlans() }
 
@@ -332,8 +383,14 @@ internal data class DeviceSettings(
     val appLock: Boolean = false,
     val lastOpenedAt: Instant? = null,
     val lastDriveBackupAt: Instant? = null,
+    /** Calendar suggestions (D3) belong to this device: its calendars, never in the database or a backup. */
+    val calendarSuggestions: Boolean = false,
+    val calendarIds: List<String> = emptyList(),
+    val calendarOnSince: Instant? = null,
+    val keptTagSpellings: Set<String> = emptySet(),
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
+        keptTagSpellings = keptTagSpellings,
         aiApiKey = aiApiKey,
         lastIdeasRunAt = lastIdeasRunAt,
         themeMode = themeMode,
@@ -342,6 +399,9 @@ internal data class DeviceSettings(
         appLock = appLock,
         lastOpenedAt = lastOpenedAt,
         lastDriveBackupAt = lastDriveBackupAt,
+        calendarSuggestions = calendarSuggestions,
+        calendarIds = calendarIds,
+        calendarOnSince = calendarOnSince,
     )
 
     companion object {
@@ -356,6 +416,10 @@ internal data class DeviceSettings(
             appLock = settings.appLock,
             lastOpenedAt = settings.lastOpenedAt,
             lastDriveBackupAt = settings.lastDriveBackupAt,
+            calendarSuggestions = settings.calendarSuggestions,
+            calendarIds = settings.calendarIds,
+            calendarOnSince = settings.calendarOnSince,
+            keptTagSpellings = settings.keptTagSpellings,
         )
     }
 }
@@ -369,13 +433,15 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
     private val device = PersistentState(settings, DeviceSettings.KEY, DeviceSettings.serializer(), DeviceSettings())
     private val lock = Mutex()
 
+    // An unset AI switch follows the saved key, which is a device setting (issue #37). Kept as one long-lived observer:
+    // restarting it on every device change would cancel queries mid-flight, which the web driver doesn't survive.
     override val settings: Flow<AppSettings> =
-        combine(db.observe(*PREFERENCE_TABLES) { it.readPreferences(AppSettings()) }, device.flow) { preferences, device ->
-            device.applyTo(preferences)
+        combine(db.observe(*PREFERENCE_TABLES) { it.readStoredPreferences() }, device.flow) { preferences, device ->
+            preferences.withDevice(device::applyTo)
         }
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) = lock.withLock {
-        val current = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+        val current = current()
         val next = transform(current)
         if (next != current) {
             db.access { it.writePreferences(next) }
@@ -385,7 +451,20 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
 
     internal suspend fun writeDevice(settings: AppSettings) = device.update { DeviceSettings.of(settings) }
 
-    internal suspend fun current(): AppSettings = device.value.applyTo(db.access { it.readPreferences(AppSettings()) })
+    internal suspend fun current(): AppSettings = db.access { it.readStoredPreferences() }.withDevice(device.value::applyTo)
+}
+
+/** Answers to calendar suggestions (D3), in their own table. */
+class SqlCalendarDecisionRepository(private val db: AppDatabase) : CalendarDecisionRepository {
+    override val decisions: Flow<List<CalendarDecision>> = db.observe(*CALENDAR_DECISION_TABLES) { it.readCalendarDecisions() }
+
+    override suspend fun upsert(decision: CalendarDecision) {
+        db.access { it.writeCalendarDecision(decision) }
+    }
+
+    override suspend fun delete(key: String) {
+        db.access { it.calendarDecisionQueries.deleteDecision(key) }
+    }
 }
 
 /**
@@ -397,6 +476,7 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
         val backup = db.transaction { database ->
             Backup(
                 friends = database.readFriends(),
+                links = database.readLinks(),
                 hangouts = database.readHangouts(),
                 reminders = database.readReminders(),
                 interactions = database.readInteractions(),
@@ -406,6 +486,8 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
                 ideas = database.readIdeas(),
                 groups = database.readGroups(),
                 plans = database.readPlans(),
+                places = database.readPlaces(),
+                calendarDecisions = database.readCalendarDecisions(),
             )
         }
         return backup.copy(settings = settings.current())
@@ -421,7 +503,9 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
  * Replaces every table with [backup], including the user preferences from its settings (device settings are the
  * caller's job). Call inside a transaction, so a failure leaves the old data in place.
  */
-internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
+internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
+    // Kids kept the old way (an old backup, the old JSON store) come in as people (issue #40).
+    val backup = KidsAsPeople.convert(data)
     // Friends first: deleting them clears every join table, and everything else refers to them.
     friendQueries.deleteAll()
     hangoutQueries.deleteAll()
@@ -433,9 +517,13 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     interactionQueries.deleteAllMessages()
     interactionQueries.deleteAllJournal()
     attachmentQueries.deleteAllAttachments()
+    namedPlaceQueries.deleteAllPlaces()
+    personLinkQueries.deleteAll()
+    calendarDecisionQueries.deleteAllDecisions()
 
     backup.friends.forEachIndexed { i, friend -> writeFriend(friend, i.toLong()) }
     backup.ideas.forEach { writeIdea(it) } // before plans, which may point at an idea
+    backup.places.forEach { writePlace(it) }
     backup.hangouts.forEach { writeHangout(it) }
     backup.reminders.forEach { writeReminder(it) }
     backup.plans.forEach { writePlan(it) }
@@ -444,5 +532,7 @@ internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
     backup.messages.forEach { writeMessage(it) }
     backup.journal.forEach { writeJournal(it) }
     backup.attachments.forEach { writeAttachment(it) } // after friends and circles, which they belong to
+    backup.links.forEach { writeLink(it) } // after friends, which they link
+    backup.calendarDecisions.forEach { writeCalendarDecision(it) }
     writePreferences(backup.settings)
 }

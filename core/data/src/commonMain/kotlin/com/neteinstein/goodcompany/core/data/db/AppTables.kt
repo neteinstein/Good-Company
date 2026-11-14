@@ -4,6 +4,8 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -15,6 +17,8 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage as DomainMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup as DomainGroup
@@ -22,6 +26,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout as DomainHangout
 import com.neteinstein.goodcompany.core.domain.model.Idea as DomainIdea
 import com.neteinstein.goodcompany.core.domain.model.Interaction as DomainInteraction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry as DomainJournalEntry
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace as DomainNamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Plan as DomainPlan
 import com.neteinstein.goodcompany.core.domain.model.Reminder as DomainReminder
 
@@ -30,15 +35,17 @@ import com.neteinstein.goodcompany.core.domain.model.Reminder as DomainReminder
 // The `friend` table is in every observer's list because deleting a friend removes their join rows by cascade.
 
 internal val HANGOUT_TABLES = arrayOf("hangout", "hangout_friend", "friend")
+internal val PLACE_TABLES = arrayOf("named_place")
 internal val REMINDER_TABLES = arrayOf("reminder", "reminder_friend", "friend")
 internal val IDEA_TABLES = arrayOf("idea", "idea_friend", "friend")
-internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "idea", "friend")
+internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "plan_skip", "idea", "friend")
 internal val GROUP_TABLES = arrayOf("friend_group", "group_member", "friend")
 internal val INTERACTION_TABLES = arrayOf("interaction", "friend")
 internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
 internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
 internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
+internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
     groupBy(key).mapValues { (_, rows) -> rows.map { FriendId(friendId(it)) } }
@@ -48,10 +55,10 @@ private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String)
 internal suspend fun GoodCompanyDatabase.readHangouts(): List<DomainHangout> {
     val friends = hangoutQueries.allHangoutFriends().awaitAsList().friendIdsBy({ it.hangout_id }, { it.friend_id })
     return hangoutQueries.allHangouts().awaitAsList().map { row ->
-        val place = if (row.place_name == null && row.place_latitude == null && row.place_longitude == null) {
+        val place = if (row.place_name == null && row.place_latitude == null && row.place_longitude == null && row.place_id == null) {
             null
         } else {
-            Place(row.place_name, row.place_latitude, row.place_longitude)
+            Place(row.place_name, row.place_latitude, row.place_longitude, row.place_id)
         }
         val activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } }
         DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note, activity)
@@ -71,10 +78,32 @@ internal suspend fun GoodCompanyDatabase.writeHangout(hangout: DomainHangout) {
             place_longitude = hangout.place?.longitude,
             note = hangout.note,
             activity = hangout.activity?.name,
+            place_id = hangout.place?.placeId,
         ),
     )
     q.deleteFriends(hangout.id)
     hangout.friendIds.forEachIndexed { i, f -> q.insertFriend(hangout.id, f.value, i.toLong()) }
+}
+
+// --- Named places ---
+
+internal suspend fun GoodCompanyDatabase.readPlaces(): List<DomainNamedPlace> = namedPlaceQueries.allPlaces().awaitAsList().map { row ->
+    DomainNamedPlace(row.id, row.name, row.latitude, row.longitude, row.radius_m.toInt())
+}
+
+/** Adds or updates [place]; an update keeps its place in the list, a new one goes to the end. */
+internal suspend fun GoodCompanyDatabase.writePlace(place: DomainNamedPlace) {
+    val q = namedPlaceQueries
+    q.upsertPlace(
+        Named_place(
+            id = place.id,
+            position = q.nextPlacePosition().awaitAsOneOrNull() ?: 0L,
+            name = place.name,
+            latitude = place.latitude,
+            longitude = place.longitude,
+            radius_m = place.radiusM.toLong(),
+        ),
+    )
 }
 
 // --- Reminders ---
@@ -147,7 +176,14 @@ internal suspend fun GoodCompanyDatabase.writeIdea(idea: DomainIdea) {
 
 internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
     val friends = planQueries.allPlanFriends().awaitAsList().friendIdsBy({ it.plan_id }, { it.friend_id })
+    val skips = planQueries.allPlanSkips().awaitAsList().groupBy({ it.plan_id }, { it.date.toLocalDate() })
     return planQueries.allPlans().awaitAsList().map { row ->
+        val unit = row.repeat_unit?.let { u -> RepeatUnit.entries.firstOrNull { it.name == u } }
+        val repeat = if (row.repeat_every != null && row.repeat_every > 0 && unit != null && row.repeat_start != null) {
+            Repeat(row.repeat_every.toInt(), unit, row.repeat_start.toLocalDate(), row.repeat_until?.toLocalDate())
+        } else {
+            null
+        }
         DomainPlan(
             id = row.id,
             friendIds = friends[row.id].orEmpty(),
@@ -157,6 +193,10 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             ideaId = row.idea_id,
             status = PlanStatus.valueOf(row.status),
             createdAt = row.created_at.toInstant(),
+            circleId = row.circle_id,
+            activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } },
+            repeat = repeat,
+            skippedDates = if (repeat == null) emptyList() else skips[row.id].orEmpty(),
         )
     }
 }
@@ -173,9 +213,17 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
         ideaId = plan.ideaId,
         status = plan.status.name,
         createdAt = plan.createdAt.toColumn(),
+        circleId = plan.circleId,
+        activity = plan.activity?.name,
+        repeatEvery = plan.repeat?.every?.toColumn(),
+        repeatUnit = plan.repeat?.unit?.name,
+        repeatStart = plan.repeat?.start?.toColumn(),
+        repeatUntil = plan.repeat?.until?.toColumn(),
     )
     q.deleteFriends(plan.id)
     plan.friendIds.forEachIndexed { i, f -> q.insertFriend(plan.id, f.value, i.toLong()) }
+    q.deleteSkips(plan.id)
+    plan.skippedDates.forEach { q.insertSkip(plan.id, it.toColumn()) }
 }
 
 // --- Groups ---
@@ -311,10 +359,22 @@ internal suspend fun GoodCompanyDatabase.writeMessage(message: DomainMessage) {
 
 // --- User preferences (the part of AppSettings that lives in the database) ---
 
-/** The stored preferences applied onto [base]; [base] as it is when none were saved yet. */
-internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings {
-    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return base
-    return base.copy(
+/**
+ * The stored preferences, still to be put together with the device settings ([withDevice]): an AI switch never
+ * written (no row, or NULL from before migration 9) follows the API key, which lives in the device settings.
+ */
+internal class StoredPreferences(private val settings: AppSettings, private val aiEnabled: Boolean?) {
+    fun withDevice(applyDevice: (AppSettings) -> AppSettings): AppSettings =
+        applyDevice(settings).let { it.copy(aiEnabled = aiEnabled ?: it.hasAiKey) }
+}
+
+/** The stored preferences applied onto [base], which carries the device settings (the API key). */
+internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings =
+    readStoredPreferences(base).withDevice { device -> device }
+
+internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings = AppSettings()): StoredPreferences {
+    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return StoredPreferences(base, null)
+    val settings = base.copy(
         innerCircleDays = row.inner_circle_days.toInt(),
         closeCircleDays = row.close_circle_days.toInt(),
         goodFriendsDays = row.good_friends_days.toInt(),
@@ -326,8 +386,19 @@ internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): App
         showWarmth = row.show_warmth.toFlag(),
         privateNotifications = row.private_notifications.toFlag(),
         homeCircleFilter = row.home_circle_filter,
+        activities = activitiesFromColumn(row.activities),
     )
+    return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
+
+/** Comma-separated [HangoutActivity] names; unknown names are dropped, and nothing left (or NULL) means all of them. */
+internal fun activitiesFromColumn(column: String?): List<HangoutActivity> =
+    column?.split(',')?.mapNotNull { name -> HangoutActivity.entries.firstOrNull { it.name == name.trim() } }?.distinct()
+        ?.takeIf { it.isNotEmpty() }
+        ?: HangoutActivity.entries
+
+internal fun List<HangoutActivity>.toActivitiesColumn(): String? =
+    distinct().takeIf { it.isNotEmpty() && it != HangoutActivity.entries }?.joinToString(",") { it.name }
 
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
@@ -344,6 +415,18 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             show_warmth = settings.showWarmth.toColumn(),
             private_notifications = settings.privateNotifications.toColumn(),
             home_circle_filter = settings.homeCircleFilter,
+            ai_enabled = settings.aiEnabled.toColumn(),
+            activities = settings.activities.toActivitiesColumn(),
         ),
     )
+}
+
+internal suspend fun GoodCompanyDatabase.readCalendarDecisions(): List<CalendarDecision> =
+    calendarDecisionQueries.allDecisions().awaitAsList().mapNotNull { row ->
+        // An unknown kind (from a newer app) is skipped rather than failing the whole list.
+        CalendarDecisionKind.entries.firstOrNull { it.name == row.kind }?.let { CalendarDecision(row.key, it, row.decided_at.toInstant()) }
+    }
+
+internal suspend fun GoodCompanyDatabase.writeCalendarDecision(decision: CalendarDecision) {
+    calendarDecisionQueries.upsertDecision(decision.key, decision.kind.name, decision.decidedAt.toColumn())
 }

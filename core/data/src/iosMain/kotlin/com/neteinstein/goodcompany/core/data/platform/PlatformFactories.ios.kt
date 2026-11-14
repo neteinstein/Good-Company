@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.platform
 
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
@@ -18,6 +19,8 @@ actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = Commun
 actual fun Scope.createLocationProvider(): LocationProvider = IosLocationProvider()
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = IosNotificationScheduler()
+
+actual fun Scope.createCalendarReader(): CalendarReader = IosCalendarReader()
 
 /** UNUserNotificationCenter holds its delegate weakly, so keep the instance alive here. */
 private var notificationDelegate: IosNotificationDelegate? = null

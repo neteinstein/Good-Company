@@ -167,22 +167,17 @@ class TimelineAndLoggingTest {
     }
 
     @Test
-    fun aMeetupAnsweringAPlanClosesIt_andUndoPutsBothBack() = runTest {
+    fun undoingAMeetupThatAnsweredAPlanPutsThePlanBack() = runTest {
         val g = TestGraph(friends = friends)
         val plan = g.savePlan(null, "Lunch at Time Out", listOf(ana), LocalDate(2026, 3, 6))
-        val result = assertIs<LogResult.Met>(
-            g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, date = LocalDate(2026, 3, 6), planId = plan.id)),
-        )
-        assertEquals(plan, result.plan)
+        val logged = assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, date = LocalDate(2026, 3, 6))))
+        assertNull(logged.plan) // the use case never touches plans; the sheet that answered one closes it
+        g.confirmPlan(plan.id, happened = true, day = plan.date, logCheckIn = false)
         assertEquals(PlanStatus.HAPPENED, g.planRepo.plans.value.single().status)
-        assertEquals(at(2026, 3, 6), result.hangout.at)
+        assertEquals(1, g.hangoutRepo.hangouts.value.size)
 
-        // A plan already answered isn't closed again; an unknown one is ignored.
-        assertNull(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, planId = plan.id))).plan)
-        assertNull(assertIs<LogResult.Met>(g.logInteraction(LogRequest(listOf(ana), LogKind.MEETUP, planId = "gone"))).plan)
-
-        g.undoLog(result)
-        assertTrue(g.hangoutRepo.hangouts.value.none { it.id == result.hangout.id })
+        g.undoLog(logged.copy(plan = plan))
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
         assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
     }
 
@@ -295,6 +290,20 @@ class TimelineAndLoggingTest {
         )
         assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.MUSIC, HangoutActivity.LUNCH), ranked.take(3))
         assertEquals(HangoutActivity.entries.size, ranked.size)
+    }
+
+    @Test
+    fun onlyTheActivitiesTurnedOnAreOffered_mostUsedFirst_thenTheUsersOrder() = runTest {
+        val g = TestGraph(friends = friends)
+        g.hangoutRepo.add(Hangout("a", listOf(ana), at(2026, 3, 1), activity = HangoutActivity.MUSIC))
+        g.hangoutRepo.add(Hangout("b", listOf(ana), at(2026, 3, 2), activity = HangoutActivity.TRIP))
+        g.setActivities(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE, HangoutActivity.MUSIC))
+        // TRIP is off now: it isn't offered, although an old meetup still has it.
+        assertEquals(listOf(HangoutActivity.MUSIC, HangoutActivity.WALK, HangoutActivity.COFFEE), g.observeActivities().first())
+        assertEquals(HangoutActivity.TRIP, g.hangoutRepo.hangouts.value.single { it.id == "b" }.activity)
+
+        g.setActivities(emptyList()) // never none
+        assertEquals(3, g.settingsRepo.settings.value.activities.size)
     }
 
     @Test

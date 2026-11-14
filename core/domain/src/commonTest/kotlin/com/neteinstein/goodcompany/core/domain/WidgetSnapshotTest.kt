@@ -2,7 +2,6 @@ package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.HomeWidgetSummary
@@ -30,7 +29,7 @@ class WidgetSnapshotTest {
         )
         assertEquals(
             WidgetSnapshot.Next(WidgetSnapshot.Kind.KID_BIRTHDAY, name = "Ana", kidName = "Leo", date = date),
-            snap(AgendaItem.KidBirthday(ana, Kid("k", "Leo"), date, 6)).next,
+            snap(AgendaItem.KidBirthday(ana, friend("leo"), date, 6)).next,
         )
         assertEquals(
             WidgetSnapshot.Next(WidgetSnapshot.Kind.EVENT, name = "Ana", title = "Surgery", date = date),

@@ -53,9 +53,6 @@
     <string name="sheet_title">Estou com…</string>
     <string name="sheet_find">Procurar um amigo</string>
     <string name="sheet_where">Onde? (opcional)</string>
-    <string name="sheet_locating">A localizar-te…</string>
-    <string name="sheet_clear_location">Limpar localização</string>
-    <string name="sheet_use_location">Usar a minha localização</string>
     <string name="sheet_note">Nota (opcional)</string>
     <string name="sheet_pick">Escolhe com quem estás</string>
     <string name="sheet_log">Registar · %1$d</string>
@@ -94,6 +91,7 @@
     <string name="met_title_circle">%1$s · quem veio?</string>
     <string name="met_more_details">Mais detalhes</string>
     <string name="met_add_note">Adicionar uma nota</string>
+    <string name="met_add_place">Adicionar um local</string>
     <string name="met_save_on">Guardar · %1$s</string>
     <plurals name="met_log_people">
         <item quantity="one">Registar %1$d pessoa</item>

@@ -47,4 +47,21 @@
     <string name="msg_reminder_deleted">Reminder deleted</string>
     <string name="label_plan">Plan</string>
     <string name="row_relative">%1$s (%2$s’s family)</string>
+    <string name="calendar_card_title">From your calendar</string>
+    <plurals name="calendar_card_body">
+        <item quantity="one">%1$d meetup to log</item>
+        <item quantity="other">%1$d meetups to log</item>
+    </plurals>
+    <string name="cal_screen_title">From your calendar</string>
+    <string name="cal_looking_back">Looking back</string>
+    <string name="cal_log_it">Log it</string>
+    <string name="cal_no">No</string>
+    <string name="cal_never">Never for “%1$s”</string>
+    <string name="cal_matched_name">matched by name</string>
+    <string name="cal_matched_email">invited (email)</string>
+    <string name="cal_matched_both">matched by name and email</string>
+    <string name="cal_empty_title">Nothing to log</string>
+    <string name="cal_empty_body">Events with your friends in the calendars you chose show up here once they’re over.</string>
+    <string name="cal_msg_no">Won’t suggest “%1$s” again</string>
+    <string name="cal_msg_never">No more suggestions for “%1$s”</string>
 </resources>

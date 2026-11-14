@@ -9,6 +9,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.usecase.HomeWidgetSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.VCardParser
 import com.neteinstein.goodcompany.core.domain.usecase.WidgetSnapshot
@@ -161,7 +163,7 @@ class ContactPhotoTest {
     // --- Picked from the gallery ---
 
     @Test
-    fun aPickedPicture_isShrunkAndSaved_andAContactPhotoLaterReplacesIt() = runTest {
+    fun aPickedPicture_isShrunkAndSaved_andWinsOverTheContactsPhoto_untilRemoved() = runTest {
         val g = TestGraph(friends = listOf(friend("contact-1", "Ana") { copy(contactId = "1") }))
         val ana = FriendId("contact-1")
         val pick = SetFriendPhotoUseCase(g.friendRepo) { thumb.bytes() }
@@ -169,23 +171,61 @@ class ContactPhotoTest {
         assertFalse(pick(ana, null))
         assertFalse(pick(FriendId("nobody"), jpeg))
         assertFalse(SetFriendPhotoUseCase(g.friendRepo) { null }(ana, ByteArray(ContactPhoto.MAX_BYTES * 2)))
-        assertNull(g.friendRepo.get(ana)!!.photo)
+        assertNull(g.friendRepo.get(ana)!!.avatar)
 
         assertTrue(pick(ana, ByteArray(ContactPhoto.MAX_BYTES * 2)))
-        assertEquals(thumb, g.friendRepo.get(ana)!!.photo)
+        assertEquals(thumb, g.friendRepo.get(ana)!!.customPhoto)
 
-        // A sync where the contact still has no photo keeps it; once the contact gets one, that one wins.
-        val kept = ContactMerger.merge(g.friendRepo.friends.value, listOf(ContactRecord("1", "Ana", emptyList(), null)), addNew = false)
-        assertEquals(thumb, kept.single().photo)
-        val replaced = ContactMerger.merge(kept, listOf(ContactRecord("1", "Ana", emptyList(), null, otherThumb)), addNew = false)
-        assertEquals(otherThumb, replaced.single().photo)
+        // F14: a sync only ever updates the contact's photo; the one set in the app stays in front.
+        val synced = ContactMerger.merge(g.friendRepo.friends.value, listOf(ContactRecord("1", "Ana", emptyList(), null, otherThumb)), addNew = false)
+        assertEquals(otherThumb, synced.single().photo)
+        assertEquals(thumb, synced.single().avatar)
+        g.friendRepo.upsert(synced.single())
+
+        // Removing it shows the contact's photo again; removing again changes nothing.
+        val remove = RemoveFriendPhotoUseCase(g.friendRepo)
+        remove(ana)
+        assertNull(g.friendRepo.get(ana)!!.customPhoto)
+        assertEquals(otherThumb, g.friendRepo.get(ana)!!.avatar)
+        remove(ana)
+        remove(FriendId("nobody"))
+        assertEquals(otherThumb, g.friendRepo.get(ana)!!.avatar)
+    }
+
+    // --- Name (F19) ---
+
+    @Test
+    fun aNameGivenInTheApp_winsForAContactFriend_andRenamesAManualOne() = runTest {
+        val g = TestGraph(
+            friends = listOf(friend("contact-1", "Ana Silva") { copy(contactId = "1") }, friend("manual-1", "Rui")),
+        )
+        val rename = RenameFriendUseCase(g.friendRepo)
+        val ana = FriendId("contact-1")
+        assertTrue(rename(ana, " Aninhas "))
+        assertEquals("Aninhas", g.friendRepo.get(ana)!!.displayName)
+        assertEquals("Ana Silva", g.friendRepo.get(ana)!!.name)
+        // The contact's own name (or a blank one) clears the app's name.
+        assertTrue(rename(ana, "Ana Silva"))
+        assertNull(g.friendRepo.get(ana)!!.customName)
+        rename(ana, "Aninhas")
+        assertTrue(rename(ana, null))
+        assertNull(g.friendRepo.get(ana)!!.customName)
+
+        val rui = FriendId("manual-1")
+        assertTrue(rename(rui, "Rui Costa"))
+        assertEquals("Rui Costa", g.friendRepo.get(rui)!!.name)
+        assertNull(g.friendRepo.get(rui)!!.customName)
+        assertFalse(rename(rui, " "))
+        assertFalse(rename(FriendId("nobody"), "X"))
+        assertEquals("Rui Costa", g.friendRepo.get(rui)!!.displayName)
     }
 
     // --- Widget ---
 
     @Test
     fun theWidget_getsThePhoto_butNotWhenPrivate() {
-        val ana = friend("ana", "Ana Silva") { copy(photo = thumb) }
+        // The photo set in the app wins (F14), under the same privacy rule.
+        val ana = friend("ana", "Ana Silva") { copy(photo = otherThumb, customPhoto = thumb) }
         val due = Relationships.MeetupStatus(ana, lastSeenDate = null, dueDate = LocalDate(2026, 3, 1), daysSinceLastSeen = null, cadenceDays = 14)
         val today = LocalDate(2026, 3, 10)
         val shown = WidgetSnapshot.from(HomeWidgetSummary(null, due, isPrivate = false, today))

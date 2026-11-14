@@ -28,9 +28,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
@@ -44,7 +48,14 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapScreen
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashboardScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
+import kotlinx.datetime.LocalDate
 
 const val APP_VERSION = "1.0.0"
 
@@ -57,11 +68,14 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
     val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
-    val editCircle: (String?) -> Unit = { navController.navigate(CircleEditorRoute(it)) }
+    // The built-in Family circle (F6) has no editor: it fills itself from "relationship to me".
+    val editCircle: (String?) -> Unit = { if (it != FamilyCircle.ID) navController.navigate(CircleEditorRoute(it)) }
     // Every in-app "We met" opens the small panel (issue #47); the widget and notification still log today directly.
     val weMet: (FriendId) -> Unit = { navController.navigate(WeMetRoute(friendIds = listOf(it.value))) }
     val circleMet: (String) -> Unit = { navController.navigate(WeMetRoute(circleId = it)) }
-    val planMet: (String) -> Unit = { navController.navigate(WeMetRoute(planId = it)) }
+    // "Did you meet?" → yes: the panel on that occurrence's day with the plan's people and activity; a circle plan lists
+    // its members unticked (F20, issue #43).
+    val logPlan: (String, LocalDate) -> Unit = { planId, day -> navController.navigate(WeMetRoute(plan = PlanOccurrence(planId, day).encode())) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
@@ -83,6 +97,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
+                    onOpenNetwork = { navController.navigate(NetworkMapRoute) },
+                    onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
                 )
             }
             composable<ChooseContactsRoute>(
@@ -111,9 +127,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
-                        onWeMet = { planId ->
-                            navController.navigate(if (planId != null) WeMetRoute(planId = planId) else WeMetRoute(friendIds = listOf(id)))
-                        },
+                        onLogPlan = logPlan,
+                        onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
                         onEditCircle = editCircle,
@@ -137,7 +152,13 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     friendIds = route.friendIds.map(::FriendId),
                     type = route.type,
                     circleId = route.circleId,
-                    prefill = LogPrefill(route.date, route.activity, route.note, route.planId),
+                    plan = route.plan,
+                    prefill = LogPrefill(
+                        date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                        activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
+                        note = route.note,
+                        place = route.place,
+                    ),
                     onClose = { navController.popBackStack() },
                 )
             }
@@ -146,7 +167,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 WeMetPanelScreen(
                     friendIds = route.friendIds.map(::FriendId),
                     circleId = route.circleId,
-                    planId = route.planId,
+                    plan = route.plan,
                     onClose = { navController.popBackStack() },
                     onMoreDetails = { d ->
                         // The full Log sheet takes the panel's place, with everything chosen so far.
@@ -158,7 +179,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                                 date = d.date.toString(),
                                 activity = d.activity?.name,
                                 note = d.note.ifEmpty { null },
-                                planId = d.planId,
+                                plan = d.plan?.encode(),
+                                place = d.placeName.ifEmpty { null },
                             ),
                         ) { popUpTo<WeMetRoute> { inclusive = true } }
                     },
@@ -216,15 +238,86 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                 )
             }
             sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
-                AgendaScreen(onOpenFriend = openFriend, onCircleMet = circleMet, onPlanMet = planMet)
+                AgendaScreen(
+                    onOpenFriend = openFriend,
+                    onCircleMet = circleMet,
+                    onLogPlan = logPlan,
+                    onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
+                )
             }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
-            composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION) }
+            composable<SettingsRoute> {
+                SettingsScreen(
+                    appVersion = APP_VERSION,
+                    onOpenPlaces = { navController.navigate(PlacesRoute) },
+                    onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
+                    onOpenTags = { navController.navigate(TagsRoute) },
+                    onOpenActivities = { navController.navigate(ActivitiesRoute) },
+                )
+            }
+            composable<PlacesRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                PlacesScreen(onBack = { navController.popBackStack() })
+            }
+            composable<CalendarSettingsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                CalendarSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSuggestions = { navController.navigate(CalendarSuggestionsRoute) },
+                )
+            }
+            composable<CalendarSuggestionsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                CalendarSuggestionsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLog = { s ->
+                        navController.navigate(
+                            LogInteractionRoute(
+                                friendIds = s.friends.map { it.id.value },
+                                type = LogKind.MEETUP.name,
+                                date = s.date.toString(),
+                                activity = s.activity?.name,
+                            ),
+                        )
+                    },
+                )
+            }
+            composable<ActivitiesRoute> { ActivitiesScreen(onBack = { navController.popBackStack() }) }
             composable<YearReviewRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
             ) { entry ->
-                YearReviewScreen(year = entry.toRoute<YearReviewRoute>().year, onBack = { navController.popBackStack() })
+                YearReviewScreen(
+                    year = entry.toRoute<YearReviewRoute>().year,
+                    onBack = { navController.popBackStack() },
+                    onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
+                )
+            }
+            composable<NetworkMapRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                NetworkMapScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    onOpenDashboard = { navController.navigate(PeopleDashboardRoute) { launchSingleTop = true } },
+                )
+            }
+            composable<PeopleDashboardRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                PeopleDashboardScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    onOpenMap = { navController.navigate(NetworkMapRoute) { launchSingleTop = true } },
+                )
             }
         }
     }

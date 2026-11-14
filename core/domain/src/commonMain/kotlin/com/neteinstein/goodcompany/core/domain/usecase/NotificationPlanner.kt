@@ -6,7 +6,9 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -21,6 +23,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
@@ -29,8 +32,8 @@ import kotlin.time.Instant
  * Text is not decided here — each notification carries [NotificationContent] that the UI layer renders
  * in the user's language.
  *
- * Only friends with `notifyBirthday` get birthday pings (theirs and their kids'); a relative's birthday pings only
- * when that relative's own `notifyBirthday` is on; important events,
+ * Only people with `notifyBirthday` get birthday pings (a kid has their own, F9); a relative's birthday pings only
+ * when that relative's own `notifyBirthday` is on, an anniversary when its link's reminder is on; important events,
  * reminders and plans always notify. Catch-up nudges (friend and group rhythms) are budgeted by [NudgePolicy]:
  * gathered into one weekly digest, or at most one a day, and they quieten down (then stop) when the app isn't
  * being opened. Paused friends never get one.
@@ -43,6 +46,10 @@ object NotificationPlanner {
 
     /** Names spelled out in the weekly digest ("Ana, Rui and 3 more"). */
     const val DIGEST_NAMES = 3
+
+    /** The calendar summary comes at this hour, or a little after the day's last matched event ends. */
+    const val CALENDAR_HOUR = 20
+    const val CALENDAR_DELAY_MINUTES = 30
 
     private class CatchUp(val dueDate: LocalDate, val name: String, val idPrefix: String, val content: NotificationContent)
 
@@ -59,6 +66,8 @@ object NotificationPlanner {
         plans: List<Plan> = emptyList(),
         interactions: List<Interaction> = emptyList(),
         policy: NudgePolicy = NudgePolicy(weeklyDigest = false),
+        links: List<PersonLink> = emptyList(),
+        calendar: List<CalendarSuggestion> = emptyList(),
     ): List<PlannedNotification> {
         val today = now.toLocalDate(zone)
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
@@ -70,16 +79,17 @@ object NotificationPlanner {
             if (at > now && day <= end) out += PlannedNotification(id, at, content)
         }
 
+        val parents = KidsAsPeople.parentsById(links, friends)
         for (f in friends) {
             if (f.notifyBirthday) {
                 f.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.name, b.ageOn(d)))
-                }
-                f.kids.forEach { kid ->
-                    kid.birthday?.let { b ->
-                        val d = b.nextOccurrence(today)
-                        add("kid:${kid.id}:$d", d, NotificationContent.KidBirthday(kid.name, f.name, b.ageOn(d), kid.likes))
+                    // A kid (F9) has their own reminder; the ping says whose kid they are (same id as before they were people).
+                    val parent = parents[f.id]?.firstOrNull()
+                    if (parent != null) {
+                        add("kid:${f.id.value}:$d", d, NotificationContent.KidBirthday(f.displayName, parent.displayName, b.ageOn(d), f.likes))
+                    } else {
+                        add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)))
                     }
                 }
             }
@@ -87,19 +97,25 @@ object NotificationPlanner {
             f.relatives.filter { it.notifyBirthday }.forEach { r ->
                 r.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.name, r.relation, b.ageOn(d)))
+                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.displayName, r.relation, b.ageOn(d)))
                 }
             }
             f.importantEvents.forEach { e ->
-                add("event:${e.id}:day", e.date, NotificationContent.EventToday(f.name, e.title))
+                add("event:${e.id}:day", e.date, NotificationContent.EventToday(f.displayName, e.title))
                 if (e.remindDaysBefore > 0) {
                     add(
                         "event:${e.id}:before",
                         e.date.minus(e.remindDaysBefore, DateTimeUnit.DAY),
-                        NotificationContent.EventSoon(f.name, e.title, e.remindDaysBefore),
+                        NotificationContent.EventSoon(f.displayName, e.title, e.remindDaysBefore),
                     )
                 }
             }
+        }
+
+        // Anniversaries (issue #39): on the day, like a birthday; never throttled.
+        PersonLinks.anniversaries(links, friends).forEach { (link, a, b) ->
+            val d = link.nextAnniversary(today) ?: return@forEach
+            add("anniversary:${link.id}:$d", d, NotificationContent.Anniversary(a.displayName, b.displayName, link.yearsOn(d)))
         }
 
         val byId = friends.associateBy { it.id }
@@ -107,32 +123,55 @@ object NotificationPlanner {
             out += PlannedNotification(
                 id = "reminder:${r.id}",
                 at = r.dueAt!!,
-                content = NotificationContent.ReminderDue(r.title, r.friendIds.mapNotNull { byId[it]?.name }),
+                content = NotificationContent.ReminderDue(r.title, r.friendIds.mapNotNull { byId[it]?.displayName }),
             )
         }
 
-        // --- Plans: a heads-up on the day, then "Did you meet?" the day after (until answered, for a week).
+        // --- Plans: a heads-up on the day of each occurrence, then "Did you meet?" the day after (until answered, for
+        // a week). Never throttled (gotcha 16). A circle plan names the circle.
+        val circlesById = groups.associateBy { it.id }
         plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
-            val names = p.friendIds.mapNotNull { byId[it]?.name }
-            add("plan:${p.id}:day", p.date, NotificationContent.PlanToday(p.id, p.title, names))
-            val firstAsk = p.date.plus(1, DateTimeUnit.DAY)
-            val lastAsk = p.date.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
-            var ask = maxOf(firstAsk, today)
-            if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
-            if (ask <= lastAsk) add("plan:${p.id}:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names))
+            val names = listOfNotNull(p.circleId?.let { circlesById[it]?.name }) + p.friendIds.mapNotNull { byId[it]?.displayName }
+            val isCircle = p.circleId != null && p.circleId in circlesById
+            p.occurrences(today.minus(FOLLOW_UP_DAYS, DateTimeUnit.DAY), end).forEach { day ->
+                val occurrence = PlanOccurrence(p.id, day.takeIf { p.isRecurring })
+                val key = occurrence.encode()
+                add("plan:$key:day", day, NotificationContent.PlanToday(p.id, p.title, names, occurrence.date))
+                val firstAsk = day.plus(1, DateTimeUnit.DAY)
+                val lastAsk = day.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
+                var ask = maxOf(firstAsk, today)
+                if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
+                if (ask <= lastAsk) {
+                    add("plan:$key:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle))
+                }
+            }
         }
 
         // --- Catch-up nudges, within a budget (see [NudgePolicy]).
         val quietness = policy.quietness(today, zone)
         if (quietness == NudgePolicy.Quietness.SILENT) return out.sortedBy { it.at }
 
+        // --- Calendar suggestions (D3): at most one summary a day, in the evening once that day's matched events are
+        // over. Within the same budget as catch-ups: silent when the app has been ignored for a long time.
+        calendar.filter { it.event.end > now }.groupBy { it.event.end.toLocalDate(zone) }.forEach { (day, items) ->
+            if (day > end) return@forEach
+            val evening = day.atTime(LocalTime(CALENDAR_HOUR, 0)).toInstant(zone)
+            val at = maxOf(evening, items.maxOf { it.event.end } + CALENDAR_DELAY_MINUTES.minutes)
+            val names = items.flatMap { s -> s.friends.map { it.name } }.distinct()
+            out += PlannedNotification(
+                "calendar:$day",
+                at,
+                NotificationContent.CalendarMeetups(names.take(DIGEST_NAMES), items.singleOrNull()?.event?.title, items.size),
+            )
+        }
+
         val catchUps = mutableListOf<CatchUp>()
         Relationships.meetupStatuses(friends, hangouts, today, zone, rules, interactions).forEach { s ->
             catchUps += CatchUp(
                 s.dueDate,
-                s.friend.name,
+                s.friend.displayName,
                 "meet:${s.friend.id.value}",
-                NotificationContent.MeetupDue(s.friend.id, s.friend.name, s.daysSinceLastSeen, s.cadenceDays),
+                NotificationContent.MeetupDue(s.friend.id, s.friend.displayName, s.daysSinceLastSeen, s.cadenceDays),
             )
         }
         Relationships.groupStatuses(groups, friends, hangouts, today, zone).forEach { s ->

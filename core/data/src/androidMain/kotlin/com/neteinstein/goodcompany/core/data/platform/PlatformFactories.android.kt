@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.platform
 
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
@@ -17,5 +18,7 @@ actual fun Scope.createCommunicationLogSource(): CommunicationLogSource = Androi
 actual fun Scope.createLocationProvider(): LocationProvider = AndroidLocationProvider(androidContext())
 
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = AndroidNotificationScheduler(androidContext())
+
+actual fun Scope.createCalendarReader(): CalendarReader = AndroidCalendarReader(androidContext())
 
 actual fun installNotificationActionHandling() = Unit

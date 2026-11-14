@@ -130,7 +130,7 @@ fun interactionIcon(type: InteractionType): ImageVector = when (type) {
 /** "Pedro", "Pedro and Rui", "Pedro, Rui and Ana" (first names). */
 @Composable
 fun namesList(friends: List<Friend>): String {
-    val names = friends.map { it.name.substringBefore(' ') }
+    val names = friends.map { it.displayName.substringBefore(' ') }
     return when (names.size) {
         0 -> ""
         1 -> names.single()

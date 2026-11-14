@@ -213,7 +213,7 @@ fun CatchUpStoryContent(
                 FriendAvatar(friend, size = 36.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(
-                    friend.name,
+                    friend.displayName,
                     color = Color.White,
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
@@ -273,7 +273,7 @@ private fun Segments(count: Int, index: Int, progress: Float) {
 
 /** Fixed, white-text-safe gradients (WCAG AA, see `ColorContrastTest`); never theme colours, which go pale in dark mode. */
 private fun slideColors(slide: StorySlide, friend: Friend): List<Color> = when (slide) {
-    is StorySlide.Intro, is StorySlide.Outro -> avatarColors(friend.name).let { (a, b) -> listOf(a, b) }
+    is StorySlide.Intro, is StorySlide.Outro -> avatarColors(friend.displayName).let { (a, b) -> listOf(a, b) }
     is StorySlide.Fresh -> OnColorGradients.Hero
     is StorySlide.BigDay -> OnColorGradients.Ideas
     is StorySlide.Birthday -> OnColorGradients.Sunset
@@ -290,13 +290,13 @@ private fun slideColors(slide: StorySlide, friend: Friend): List<Color> = when (
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ColumnScope.SlideBody(slide: StorySlide, friend: Friend, state: CatchUpStoryUiState) {
-    val firstName = friend.name.substringBefore(' ')
+    val firstName = friend.displayName.substringBefore(' ')
     when (slide) {
         is StorySlide.Intro -> {
             Box(Modifier.align(Alignment.CenterHorizontally)) { FriendAvatar(friend, size = 128.dp, highlighted = true) }
             Spacer(Modifier.height(8.dp))
             Kicker(stringResource(Res.string.story_kicker))
-            Headline(friend.name)
+            Headline(friend.displayName)
             Body(
                 slide.lastSeen?.let { seen ->
                     val base = stringResource(Res.string.story_seen, relativePast(seen, state.now, state.zone))
