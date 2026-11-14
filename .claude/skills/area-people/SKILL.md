@@ -17,6 +17,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Anything that picks "my nieces…" reuses `ParseKinshipQueryUseCase`.
 - A new `LinkType` widens the `person_link` `CHECK`: rebuild the table in a migration (`persistence-change`).
 - Circle colours come only from `circlePalette` (`:core:ui`).
+- Pickers save on choice, form sheets on close (#64): on a person's page the birthday, family and link sheets put Save
+  in `SaveSheetHeader` (above the scroll) and save when dismissed if valid and changed; a relation-to-me chip or a gift
+  occasion saves at once. Each such save goes through `FriendDetailViewModel.editWithUndo`/`offerUndo`, which keeps a
+  `SavedEdit` (only what that save touched) for the "Saved · Undo" snackbar (`onUndoSave`). `LocalDatePickerDialog`
+  picks on the day tap, with no OK.
 
 ## Reference (moved from AGENTS.md)
 

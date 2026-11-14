@@ -39,6 +39,7 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
 import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
+import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -154,7 +155,8 @@ internal fun NameDialog(f: Friend, onSave: (String?) -> Unit, onDismiss: () -> U
 
 /**
  * The birthday: day and month, an optional year (F4), and "Remind me of <name>'s birthday", on by default (F10).
- * Saving it empty removes the birthday.
+ * Saving it empty removes the birthday. Save sits at the top, and closing the sheet saves a valid change (#64); the
+ * screen offers Undo.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,13 +164,27 @@ internal fun BirthdaySheet(f: Friend, latestYear: Int, onSave: (Birthday?, Boole
     var draft by remember { mutableStateOf(BirthdayDraft.of(f.birthday)) }
     var notify by remember { mutableStateOf(f.notifyBirthday) }
     val firstName = f.displayName.substringBefore(' ')
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    val valid = draft.isValid(latestYear)
+    val save = {
+        onSave(draft.toBirthday(latestYear), notify)
+        onDismiss()
+    }
+    ModalBottomSheet(
+        onDismissRequest = {
+            if (valid && (draft.toBirthday(latestYear) != f.birthday || notify != f.notifyBirthday)) save() else onDismiss()
+        },
+    ) {
+        SaveSheetHeader(
+            stringResource(Res.string.birthday_title),
+            onSave = save,
+            saveEnabled = valid,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        )
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 16.dp).navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(stringResource(Res.string.birthday_title), style = MaterialTheme.typography.titleLarge)
             BirthdayFields(draft, { draft = it }, latestYear)
             Text(
                 stringResource(Res.string.birthday_year_hint),
@@ -184,14 +200,6 @@ internal fun BirthdaySheet(f: Friend, latestYear: Int, onSave: (Birthday?, Boole
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
-                onClick = {
-                    onSave(draft.toBirthday(latestYear), notify)
-                    onDismiss()
-                },
-                enabled = draft.isValid(latestYear),
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(CoreRes.string.save)) }
             if (f.birthday != null) {
                 TextButton(
                     onClick = {

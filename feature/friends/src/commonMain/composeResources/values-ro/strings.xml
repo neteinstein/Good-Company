@@ -487,7 +487,6 @@
     <string name="link_ended_value">S-a încheiat · %1$s</string>
     <string name="link_remind_anniversary">Amintește-mi de aniversarea lor</string>
     <string name="link_preview">Pagina lui %1$s va arăta %2$s · %3$s.</string>
-    <string name="link_save">Salvează legătura</string>
     <string name="link_remove">Elimină legătura</string>
     <string name="msg_link_removed">Legătură eliminată</string>
     <string name="link_row_since">împreună din %1$s</string>
@@ -498,6 +497,7 @@
     <string name="relation_to_me_clear">Fără legătură</string>
     <string name="add_as_person">Adaugă ca persoană</string>
     <string name="msg_added_as_person">%1$s are acum pagina sa</string>
+    <string name="msg_saved">Salvat</string>
     <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
     <string name="detail_edit_name">Editează numele</string>
     <string name="photo_sheet_title">Fotografia lui %1$s</string>

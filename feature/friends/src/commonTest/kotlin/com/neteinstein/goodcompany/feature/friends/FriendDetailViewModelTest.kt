@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
@@ -36,6 +37,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetai
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.LinkEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.RelativeEdit
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.SavedEdit
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -640,5 +642,118 @@ class FriendDetailViewModelTest {
         assertNull(miaState.value.detail!!.kinship)
         assertNull(g.friendRepo.get(FriendId("mia"))!!.relationToMe)
         assertEquals(setOf(LinkType.NIECE_NEPHEW), g.friendRepo.get(FriendId("mia"))!!.dismissedKinship)
+    }
+
+    // --- Save on choice / on close, with Undo (#64) -----------------------------------------------------------------
+
+    @Test
+    fun closingTheFamilySheet_withAValidRelative_savesIt_andUndoTakesItBack() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        // What the sheet hands over when it is swiped away with a name typed.
+        vm.onSaveRelative(RelativeEdit(relation = Relation.SIBLING, name = " Inês ", birthday = Birthday(2, 9)))
+        val added = state.value.detail!!.friend.relatives.single()
+        assertEquals("Inês", added.name)
+        assertEquals(Birthday(2, 9, null), added.birthday) // a birthday without a year (#36) still saves
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
+        assertEquals(SavedEdit.RelativeBefore(added.id, null), state.value.undoSave)
+
+        vm.onUndoSave()
+        vm.onMessageShown()
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+        assertNull(state.value.undoSave)
+    }
+
+    @Test
+    fun closingTheFamilySheet_withABlankName_savesNothing_andSaysNothing() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveRelative(RelativeEdit(relation = Relation.PARTNER, name = "  ", birthday = Birthday(1, 1)))
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+        assertNull(state.value.message)
+        assertNull(state.value.undoSave)
+    }
+
+    @Test
+    fun undoingAnEditedRelative_putsTheOldOneBack() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana") { copy(relatives = listOf(Relative("r1", Relation.PARTNER, "Tiago", note = "climbs"))) }))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveRelative(RelativeEdit(id = "r1", relation = Relation.PARTNER, name = "Tiago", note = "runs"))
+        assertEquals("runs", state.value.detail!!.friend.relatives.single().note)
+        vm.onUndoSave()
+        assertEquals("climbs", state.value.detail!!.friend.relatives.single().note)
+    }
+
+    @Test
+    fun aSavedBirthday_canBeUndone_andAnUnchangedOneSaysNothing() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveBirthday(Birthday(3, 14), notify = false)
+        assertEquals(Birthday(3, 14, null), state.value.detail!!.friend.birthday)
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
+        vm.onUndoSave()
+        vm.onMessageShown()
+        assertNull(state.value.detail!!.friend.birthday)
+        assertTrue(state.value.detail!!.friend.notifyBirthday)
+
+        vm.onSaveBirthday(null, notify = true)
+        assertNull(state.value.message)
+    }
+
+    @Test
+    fun aGiftOccasionMarksItGiven_andUndoMakesItAnIdeaAgain() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana") { copy(gifts = listOf(Gift("g1", "Book"))) }))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onMarkGiftGiven("g1", GiftOccasion.CHRISTMAS)
+        assertEquals(GiftOccasion.CHRISTMAS, state.value.detail!!.friend.gifts.single().occasion)
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
+        vm.onUndoSave()
+        assertEquals(Gift("g1", "Book"), state.value.detail!!.friend.gifts.single())
+    }
+
+    @Test
+    fun aKidAddedByMistake_isGoneAfterUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddKid(KidDraft("Mia"))
+        val kid = state.value.detail!!.kids.single().person
+        assertEquals(FriendDetailMessage.KidAdded("Mia"), state.value.message)
+        assertEquals(SavedEdit.KidAdded(kid.id), state.value.undoSave)
+        vm.onUndoSave()
+        assertTrue(state.value.detail!!.kids.isEmpty())
+        assertNull(g.friendRepo.get(kid.id))
+    }
+
+    @Test
+    fun aChosenRelationToMe_andALinkSavedOnClose_canBeUndone() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui"), friend("ana") { copy(pronouns = Pronouns.SHE) }))
+        val vm = vm("rui")
+        val state = collecting(vm.state)
+
+        vm.onSaveRelationToMe(LinkType.SIBLING, Pronouns.HE)
+        assertEquals(SavedEdit.RelationToMeBefore(null, null), state.value.undoSave)
+        vm.onUndoSave()
+        vm.onMessageShown()
+        assertNull(state.value.detail!!.friend.relationToMe)
+        assertNull(state.value.detail!!.friend.pronouns)
+
+        vm.onSaveLink(LinkEdit(FriendId("ana"), LinkType.FRIEND, otherPronouns = Pronouns.THEY))
+        assertEquals(1, state.value.links.size)
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
+        vm.onUndoSave()
+        vm.onMessageShown()
+        assertTrue(state.value.links.isEmpty())
+        assertEquals(Pronouns.SHE, g.friendRepo.get(FriendId("ana"))!!.pronouns)
+
+        // Editing a link and undoing it brings back the old one.
+        vm.onSaveLink(LinkEdit(FriendId("ana"), LinkType.FRIEND, otherPronouns = Pronouns.SHE))
+        vm.onMessageShown()
+        val link = state.value.links.single().link
+        vm.onSaveLink(LinkEdit(FriendId("ana"), LinkType.COLLEAGUE, otherPronouns = Pronouns.SHE, id = link.id))
+        assertEquals(LinkType.COLLEAGUE, state.value.links.single().role)
+        vm.onUndoSave()
+        assertEquals(link, state.value.links.single().link)
     }
 }
