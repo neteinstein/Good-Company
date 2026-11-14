@@ -120,7 +120,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
@@ -299,6 +301,8 @@ val appModule = module {
     factoryOf(::HandleNotificationActionUseCase)
     factoryOf(::ImportContactsFileUseCase)
     factoryOf(::SetFriendPhotoUseCase)
+    factoryOf(::RemoveFriendPhotoUseCase)
+    factoryOf(::RenameFriendUseCase)
     factoryOf(::DraftBirthdayMessageUseCase)
     factoryOf(::SuggestGiftsUseCase)
     factoryOf(::MarkIdeaProposedUseCase)
@@ -371,6 +375,8 @@ val appModule = module {
             restorePlan = get(),
             addFeed = get(),
             setPhoto = get(),
+            removePhoto = get(),
+            renameFriend = get(),
             setHomeCircleFilter = get(),
             observeAttachments = get(),
             deleteAttachment = get(),

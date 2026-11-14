@@ -192,7 +192,7 @@ private fun PlaceRow(summary: PlaceSummary, canMerge: Boolean, onRename: () -> U
     val details = buildList {
         add(pluralStringResource(Res.plurals.places_meetups, summary.meetups, summary.meetups))
         if (summary.usually.isNotEmpty()) {
-            add(stringResource(Res.string.places_usually, summary.usually.joinToString(", ") { it.name.substringBefore(' ') }))
+            add(stringResource(Res.string.places_usually, summary.usually.joinToString(", ") { it.displayName.substringBefore(' ') }))
         }
         summary.nearby?.let { add(stringResource(Res.string.places_nearby, it.distanceM.roundToInt(), it.place.name)) }
     }

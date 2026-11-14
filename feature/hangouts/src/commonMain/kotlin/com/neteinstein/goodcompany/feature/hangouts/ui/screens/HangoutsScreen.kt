@@ -383,7 +383,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                         FilterChip(
                             selected = f.id in state.filter,
                             onClick = { actions.onToggleFilter(f.id) },
-                            label = { Text(f.name.substringBefore(' ')) },
+                            label = { Text(f.displayName.substringBefore(' ')) },
                             leadingIcon = { FriendAvatar(f, size = 22.dp) },
                         )
                     }
@@ -399,7 +399,12 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                             StackedAvatars(selected, size = 40.dp)
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(selected.joinToString(" & ") { it.name.substringBefore(' ') }, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    selected.joinToString(" & ") {
+                                        it.displayName.substringBefore(' ')
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
                                 Text(
                                     state.lastTogether?.let {
                                         val ago = relativePast(it.hangout.at, state.now, state.zone)
@@ -449,7 +454,7 @@ fun HangoutsContent(state: HangoutsUiState, actions: HangoutsActions) {
                             Spacer(Modifier.width(14.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    h.friends.joinToString { it.name.substringBefore(' ') }.ifEmpty { stringResource(Res.string.someone) },
+                                    h.friends.joinToString { it.displayName.substringBefore(' ') }.ifEmpty { stringResource(Res.string.someone) },
                                     style = MaterialTheme.typography.titleSmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -653,7 +658,7 @@ private fun MeetupRow(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Text(friend.name, style = MaterialTheme.typography.titleSmall)
+                Text(friend.displayName, style = MaterialTheme.typography.titleSmall)
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,

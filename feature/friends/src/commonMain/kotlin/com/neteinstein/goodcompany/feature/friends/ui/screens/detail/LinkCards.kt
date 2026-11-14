@@ -89,7 +89,7 @@ internal fun LinkRow(linked: LinkedPerson, onOpen: (FriendId) -> Unit, onEdit: (
     ListItem(
         modifier = Modifier.clickable { onOpen(person.id) },
         leadingContent = { FriendAvatar(person, size = 44.dp) },
-        headlineContent = { Text(person.name, style = MaterialTheme.typography.titleSmall) },
+        headlineContent = { Text(person.displayName, style = MaterialTheme.typography.titleSmall) },
         supportingContent = {
             val start = link.startedOn
             val end = link.endedOn
@@ -139,7 +139,7 @@ internal fun LinkSheet(
     var remind by remember { mutableStateOf(editing?.link?.remindAnniversary ?: false) }
     var query by remember { mutableStateOf("") }
     var picking by remember { mutableStateOf<DateField?>(null) }
-    val firstName = friend.name.substringBefore(' ')
+    val firstName = friend.displayName.substringBefore(' ')
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -152,7 +152,7 @@ internal fun LinkSheet(
                 if (editing == null) {
                     stringResource(Res.string.link_sheet_title, firstName)
                 } else {
-                    stringResource(Res.string.link_sheet_edit_title, firstName, editing.person.name.substringBefore(' '))
+                    stringResource(Res.string.link_sheet_edit_title, firstName, editing.person.displayName.substringBefore(' '))
                 },
                 style = MaterialTheme.typography.titleLarge,
             )
@@ -169,10 +169,10 @@ internal fun LinkSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 FriendAvatar(picked, size = 32.dp)
-                Text(picked.name, Modifier.weight(1f).padding(horizontal = 10.dp), style = MaterialTheme.typography.titleSmall)
+                Text(picked.displayName, Modifier.weight(1f).padding(horizontal = 10.dp), style = MaterialTheme.typography.titleSmall)
                 if (editing == null) TextButton(onClick = { other = null }) { Text(stringResource(Res.string.link_change)) }
             }
-            val otherFirst = picked.name.substringBefore(' ')
+            val otherFirst = picked.displayName.substringBefore(' ')
 
             Text(stringResource(Res.string.link_words_for, otherFirst), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -243,11 +243,11 @@ private fun PersonPicker(others: List<Friend>, query: String, onQuery: (String) 
     }
     OutlinedTextField(query, onQuery, label = { Text(stringResource(Res.string.link_search)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
     val q = query.trim().lowercase()
-    others.filter { q.isEmpty() || it.name.lowercase().contains(q) }.take(MAX_MATCHES).forEach { f ->
+    others.filter { q.isEmpty() || it.displayName.lowercase().contains(q) }.take(MAX_MATCHES).forEach { f ->
         ListItem(
             modifier = Modifier.clickable { onPick(f) },
             leadingContent = { FriendAvatar(f, size = 36.dp) },
-            headlineContent = { Text(f.name) },
+            headlineContent = { Text(f.displayName) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
     }
@@ -264,7 +264,7 @@ private const val MAX_MATCHES = 8
 internal fun RelationToMeSheet(friend: Friend, onDismiss: () -> Unit, onSave: (LinkType?, Pronouns?) -> Unit) {
     var relation by remember { mutableStateOf(friend.relationToMe) }
     var pronouns by remember { mutableStateOf(friend.pronouns) }
-    val firstName = friend.name.substringBefore(' ')
+    val firstName = friend.displayName.substringBefore(' ')
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()

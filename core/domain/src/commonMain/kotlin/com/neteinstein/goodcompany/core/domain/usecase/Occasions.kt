@@ -41,7 +41,7 @@ object OccasionMatcher {
             .sortedWith(
                 compareByDescending<OccasionMatch> { it.catchUpDue }
                     .thenByDescending { it.daysSinceLastSeen ?: Int.MAX_VALUE }
-                    .thenBy { it.friend.name.lowercase() },
+                    .thenBy { it.friend.displayName.lowercase() },
             )
     }
 }

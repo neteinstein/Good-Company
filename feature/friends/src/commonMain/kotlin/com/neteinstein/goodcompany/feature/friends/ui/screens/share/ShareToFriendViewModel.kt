@@ -107,7 +107,7 @@ class ShareToFriendViewModel(
         ->
         val q = ui.query.trim().lowercase()
         val ranked = content?.let { ShareMatcher.rank(targets.friends, it, targets.lastContact, clock.now(), clock.timeZone) }
-            ?: targets.friends.sortedBy { it.name.lowercase() }.map { RankedFriend(it, null) }
+            ?: targets.friends.sortedBy { it.displayName.lowercase() }.map { RankedFriend(it, null) }
         val byId = targets.friends.associateBy { it.id }
         val target = when (val t = ui.target) {
             is PickedTarget.Person -> byId[t.friend.id]?.let { PickedTarget.Person(it) }
@@ -118,7 +118,7 @@ class ShareToFriendViewModel(
         }
         ui.copy(
             content = content,
-            friends = ranked.filter { q.isEmpty() || it.friend.name.lowercase().contains(q) },
+            friends = ranked.filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) },
             circles = targets.circles.filter { q.isEmpty() || it.name.lowercase().contains(q) },
             hasFriends = targets.friends.isNotEmpty(),
             target = target,
@@ -187,7 +187,7 @@ class ShareToFriendViewModel(
                 result.fold(
                     { line ->
                         if (line == null) {
-                            it.copy(isSuggesting = false, message = ShareMessage.NothingFound(person.name.substringBefore(' ')))
+                            it.copy(isSuggesting = false, message = ShareMessage.NothingFound(person.displayName.substringBefore(' ')))
                         } else {
                             it.copy(isSuggesting = false, caption = line)
                         }

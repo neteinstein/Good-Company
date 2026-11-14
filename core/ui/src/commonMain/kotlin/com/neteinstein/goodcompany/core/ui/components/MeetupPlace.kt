@@ -184,11 +184,11 @@ private fun UsualPeople(people: List<Friend>, from: Int, onAdd: (FriendId) -> Un
         Text(stringResource(Res.string.place_usually_with), style = MaterialTheme.typography.labelLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             people.forEach { f ->
-                val label = stringResource(Res.string.place_add_person, f.name)
+                val label = stringResource(Res.string.place_add_person, f.displayName)
                 InputChip(
                     selected = false,
                     onClick = { onAdd(f.id) },
-                    label = { Text(f.name.substringBefore(' ')) },
+                    label = { Text(f.displayName.substringBefore(' ')) },
                     leadingIcon = { Icon(Icons.Rounded.Add, label, Modifier.size(18.dp)) },
                     avatar = { FriendAvatar(f, size = 20.dp) },
                 )

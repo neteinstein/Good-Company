@@ -127,7 +127,7 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
         ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
     }
     state.wishFor?.let { friend ->
-        val firstName = friend.name.substringBefore(' ')
+        val firstName = friend.displayName.substringBefore(' ')
         val ideas = friend.gifts.filter { it.isIdea && it.forKidId == null }
         SendMessageSheet(
             title = stringResource(Res.string.wish_title, firstName),
@@ -265,7 +265,7 @@ fun AgendaContent(
                             val text = listOfNotNull(
                                 due,
                                 people.joinToString {
-                                    it.name.substringBefore(' ')
+                                    it.displayName.substringBefore(' ')
                                 }.ifBlank { null }?.let { stringResource(Res.string.reminder_with, it) },
                             ).joinToString(" · ")
                             if (text.isNotBlank()) {

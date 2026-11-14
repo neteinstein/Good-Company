@@ -228,7 +228,7 @@ object CatchUpStoryBuilder {
                 date = h.hangout.at.toLocalDate(zone),
                 place = h.hangout.place?.label,
                 note = h.hangout.note.trim().takeIf { it.isNotEmpty() },
-                with = h.friends.filterNot { it.id == friend.id }.map { it.name.substringBefore(' ') },
+                with = h.friends.filterNot { it.id == friend.id }.map { it.displayName.substringBefore(' ') },
             )
         }
 

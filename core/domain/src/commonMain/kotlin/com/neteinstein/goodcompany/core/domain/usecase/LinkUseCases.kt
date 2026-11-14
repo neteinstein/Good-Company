@@ -31,7 +31,7 @@ object PersonLinks {
             val other = link.otherThan(id)?.let(byId::get) ?: return@mapNotNull null
             val role = link.roleSeenBy(id) ?: return@mapNotNull null
             LinkedPerson(link, other, role)
-        }.sortedWith(compareBy<LinkedPerson> { rank(it) }.thenBy { it.role.ordinal }.thenBy { it.person.name.lowercase() })
+        }.sortedWith(compareBy<LinkedPerson> { rank(it) }.thenBy { it.role.ordinal }.thenBy { it.person.displayName.lowercase() })
     }
 
     private fun rank(p: LinkedPerson): Int = when {

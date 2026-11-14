@@ -131,7 +131,7 @@ abstract class RepositoryContract {
         phoneNumbers = listOf("+351 912 345 678", "21 000 0000"),
         birthday = Birthday(3, 9, 1990),
         isCloseFriend = true,
-        notifyBirthday = true,
+        notifyBirthday = false,
         likes = listOf("jazz", "sushi"),
         dislikes = listOf("cilantro"),
         notes = "Met at uni\nLoves hiking",
@@ -192,6 +192,8 @@ abstract class RepositoryContract {
         customFields = listOf(CustomField("f1", "Shoe size", "38"), CustomField("f2", "Club", "Benfica")),
         relationToMe = LinkType.COUSIN,
         pronouns = Pronouns.THEY,
+        customName = "Aninhas",
+        customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
     )
 
     // --- Friends ---

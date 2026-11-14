@@ -24,13 +24,21 @@ class NotificationPlannerTest {
             friend("ana") {
                 copy(notifyBirthday = true, birthday = Birthday(3, 20, 1990), kids = listOf(Kid("k", "Leo", Birthday(3, 25), listOf("lego"))))
             },
-            friend("bob") { copy(isCloseFriend = true, birthday = Birthday(3, 21)) },
+            friend("bob") { copy(isCloseFriend = true, notifyBirthday = false, birthday = Birthday(3, 21)) },
         )
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
         assertEquals(listOf("bday:ana:2026-03-20", "kid:k:2026-03-25"), planned.map { it.id })
         assertEquals(at(2026, 3, 20, 9), planned[0].at)
         assertEquals(NotificationContent.FriendBirthday("Ana", 36), planned[0].content)
         assertEquals(listOf("lego"), (planned[1].content as NotificationContent.KidBirthday).likes)
+    }
+
+    @Test
+    fun aNewFriendWithABirthday_getsAReminder_withNoAgeWithoutAYear() {
+        // F10: on by default; F4: no year, no age (the name shown is the one given in the app, F19).
+        val friends = listOf(friend("ana") { copy(birthday = Birthday(3, 14), customName = "Aninhas") })
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
+        assertEquals(NotificationContent.FriendBirthday("Aninhas", null), planned.single { it.id.startsWith("bday:ana") }.content)
     }
 
     @Test

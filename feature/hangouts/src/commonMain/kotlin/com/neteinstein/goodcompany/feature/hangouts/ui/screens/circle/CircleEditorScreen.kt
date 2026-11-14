@@ -302,7 +302,7 @@ private fun MemberRow(friend: Friend, onRemove: () -> Unit) {
         modifier = Modifier.widthIn(max = 720.dp),
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
         leadingContent = { FriendAvatar(friend, size = 36.dp) },
-        headlineContent = { Text(friend.name) },
+        headlineContent = { Text(friend.displayName) },
         supportingContent = if (closeness == null) {
             { Text(stringResource(Res.string.circle_closeness_none), style = MaterialTheme.typography.bodySmall) }
         } else {
@@ -311,7 +311,7 @@ private fun MemberRow(friend: Friend, onRemove: () -> Unit) {
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 closeness?.let { InfoPill(closenessLabel(it, short = true)) }
-                IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.removeItem, friend.name)) }
+                IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.removeItem, friend.displayName)) }
             }
         },
     )

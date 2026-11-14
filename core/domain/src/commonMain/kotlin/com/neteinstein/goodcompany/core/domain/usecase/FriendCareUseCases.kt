@@ -290,15 +290,44 @@ class MarkIdeaProposedUseCase(private val ideas: IdeaRepository, private val clo
 }
 
 /**
- * Sets a photo the user picked from their gallery as a friend's avatar (for someone whose contact has none), shrunk
- * to thumbnail size. Returns false when the picture can't be read; the friend is then left as they were. A later
- * contacts sync only replaces it if the contact gets a photo of its own.
+ * Sets a photo the user picked (and cropped) as a friend's avatar, shrunk to thumbnail size (F14). It is the app's own
+ * [Friend.customPhoto], so it wins over the contact's photo and a contacts sync never replaces it. Returns false when
+ * the picture can't be read; the friend is then left as they were.
  */
 class SetFriendPhotoUseCase(private val friends: FriendRepository, private val photos: PhotoShrinker) {
     suspend operator fun invoke(id: FriendId, image: ByteArray?): Boolean {
         val friend = friends.get(id) ?: return false
         val photo = photos.photoOf(image) ?: return false
-        friends.upsert(friend.copy(photo = photo))
+        friends.upsert(friend.copy(customPhoto = photo))
+        return true
+    }
+}
+
+/** Removes the photo set in the app (F14): the contact's photo, or the initials, show again. The contact is never touched. */
+class RemoveFriendPhotoUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(id: FriendId) {
+        val friend = friends.get(id) ?: return
+        if (friend.customPhoto != null) friends.upsert(friend.copy(customPhoto = null))
+    }
+}
+
+/**
+ * Renames a friend (F19). For someone from contacts the new name is kept as [Friend.customName], which wins over the
+ * contact's name and survives a sync; giving them the contact's name again (or a blank one) clears it, which is how
+ * "Use the contact's name" works. A friend without a contact simply gets the new [Friend.name]. Returns false when
+ * there is nothing to save (no such friend, or a blank name for someone without a contact).
+ */
+class RenameFriendUseCase(private val friends: FriendRepository) {
+    suspend operator fun invoke(id: FriendId, newName: String?): Boolean {
+        val friend = friends.get(id) ?: return false
+        val trimmed = newName?.trim().orEmpty()
+        val renamed = if (friend.contactId == null) {
+            if (trimmed.isEmpty()) return false
+            friend.copy(name = trimmed, customName = null)
+        } else {
+            friend.copy(customName = trimmed.takeIf { it.isNotEmpty() && it != friend.name })
+        }
+        if (renamed != friend) friends.upsert(renamed)
         return true
     }
 }

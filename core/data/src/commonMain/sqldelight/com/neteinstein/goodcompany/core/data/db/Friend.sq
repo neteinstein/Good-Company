@@ -34,6 +34,8 @@ CREATE TABLE friend (
     -- No CHECK, like preferred_channel: unknown values read as null in the mapper.
     relation_to_me TEXT,
     pronouns TEXT,
+    -- F19: the name given in the app; it wins over `name` (the contact's), which a contacts sync keeps updating.
+    custom_name TEXT,
     CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
 );
 
@@ -160,6 +162,13 @@ CREATE TABLE friend_photo (
     image_base64 TEXT NOT NULL
 );
 
+-- F14: a photo set in the app (a cropped thumbnail, base64 like friend_photo). It wins over the contact's photo, which
+-- stays in friend_photo and keeps following the contact.
+CREATE TABLE friend_custom_photo (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);
+
 -- Emails: from_contact ones follow the address book, typed ones are kept (ContactMerger).
 CREATE TABLE friend_email (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
@@ -243,6 +252,9 @@ SELECT * FROM feed_item ORDER BY friend_id, feed_url, position;
 allPhotos:
 SELECT * FROM friend_photo;
 
+allCustomPhotos:
+SELECT * FROM friend_custom_photo;
+
 allEmails:
 SELECT * FROM friend_email ORDER BY friend_id, position;
 
@@ -269,7 +281,7 @@ INSERT INTO friend (
     id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
     notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
     job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel,
-    relation_to_me, pronouns
+    relation_to_me, pronouns, custom_name
 ) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     position = excluded.position,
@@ -296,7 +308,8 @@ ON CONFLICT (id) DO UPDATE SET
     introduced_by_name = excluded.introduced_by_name,
     preferred_channel = excluded.preferred_channel,
     relation_to_me = excluded.relation_to_me,
-    pronouns = excluded.pronouns;
+    pronouns = excluded.pronouns,
+    custom_name = excluded.custom_name;
 
 delete:
 DELETE FROM friend WHERE id = ?;
@@ -317,6 +330,7 @@ deleteChildren {
     DELETE FROM feed_item WHERE friend_id = :friendId;
     DELETE FROM feed WHERE friend_id = :friendId;
     DELETE FROM friend_photo WHERE friend_id = :friendId;
+    DELETE FROM friend_custom_photo WHERE friend_id = :friendId;
     DELETE FROM friend_email WHERE friend_id = :friendId;
     DELETE FROM relative_like WHERE friend_id = :friendId;
     DELETE FROM relative WHERE friend_id = :friendId;
@@ -355,6 +369,9 @@ INSERT OR REPLACE INTO feed_item VALUES ?;
 
 insertPhoto:
 INSERT OR REPLACE INTO friend_photo VALUES ?;
+
+insertCustomPhoto:
+INSERT OR REPLACE INTO friend_custom_photo VALUES ?;
 
 insertEmail:
 INSERT OR REPLACE INTO friend_email VALUES ?;

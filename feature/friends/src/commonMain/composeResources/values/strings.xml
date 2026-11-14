@@ -222,7 +222,7 @@
     <string name="prefs_real">Real friend</string>
     <string name="prefs_real_hint">Shows up first, on your home and agenda</string>
     <string name="prefs_birthday">Birthday reminders</string>
-    <string name="prefs_birthday_hint">For them and their kids</string>
+    <string name="prefs_birthday_hint">On for everyone with a birthday</string>
     <string name="prefs_events">Weekly event ideas</string>
     <string name="prefs_events_hint">AI suggests plans that match their tastes</string>
 
@@ -509,4 +509,22 @@
     <string name="relation_to_me_clear">Not related</string>
     <string name="add_as_person">Add as a person</string>
     <string name="msg_added_as_person">%1$s now has their own page</string>
+    <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
+    <string name="detail_edit_name">Edit name</string>
+    <string name="photo_sheet_title">%1$s’s photo</string>
+    <string name="photo_replace">Replace photo</string>
+    <string name="photo_replace_hint">Choose a picture, then zoom and crop</string>
+    <string name="photo_adjust">Adjust crop</string>
+    <string name="photo_remove">Remove photo</string>
+    <string name="photo_remove_hint_contact">Shows the contact photo again</string>
+    <string name="photo_remove_hint_initials">Shows the initials again</string>
+    <string name="photo_contact_untouched">The contact itself is never changed.</string>
+    <string name="name_title">Name</string>
+    <string name="name_contact_hint">In your contacts: %1$s. The name you give here is used everywhere in Good Company; a contacts sync won’t change it.</string>
+    <string name="name_restore">Use the contact’s name</string>
+    <string name="birthday_title">Birthday</string>
+    <string name="birthday_year_hint">The year is optional. Without it you still get the reminder; the age shows once you add it.</string>
+    <string name="birthday_remind">Remind me of %1$s’s birthday</string>
+    <string name="birthday_remind_hint">On for everyone with a birthday. Turn it off here for one person.</string>
+    <string name="birthday_remove">Remove birthday</string>
 </resources>

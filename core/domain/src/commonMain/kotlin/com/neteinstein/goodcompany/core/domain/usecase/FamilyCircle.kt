@@ -18,7 +18,7 @@ object FamilyCircle {
     const val EMOJI = "🏡"
     val COLOR = CircleColor.RUST
 
-    fun members(friends: List<Friend>): List<Friend> = friends.filter { it.isFamily }.sortedBy { it.name.lowercase() }
+    fun members(friends: List<Friend>): List<Friend> = friends.filter { it.isFamily }.sortedBy { it.displayName.lowercase() }
 
     /** The circle, named [name]; null when nobody is marked as family. */
     fun of(friends: List<Friend>, name: String): FriendGroup? = members(friends).takeIf { it.isNotEmpty() }?.let { family ->

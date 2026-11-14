@@ -49,6 +49,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
@@ -156,7 +158,7 @@ data class RelativeEdit(
     val id: String? = null,
     val relation: Relation,
     val name: String,
-    val birthday: LocalDate? = null,
+    val birthday: Birthday? = null,
     val likes: List<String> = emptyList(),
     val note: String = "",
     val notifyBirthday: Boolean = true,
@@ -241,6 +243,8 @@ class FriendDetailViewModel(
     private val restorePlan: RestorePlanUseCase,
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
+    private val removePhoto: RemoveFriendPhotoUseCase,
+    private val renameFriend: RenameFriendUseCase,
     private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
     observeAttachments: ObserveAttachmentsUseCase,
     private val deleteAttachment: DeleteAttachmentUseCase,
@@ -321,8 +325,14 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onBirthdayChange(date: LocalDate?) = edit { f ->
-        f.copy(birthday = date?.let { Birthday(it.month.ordinal + 1, it.day, it.year) })
+    /** The birthday sheet: day and month, an optional year (F4), and the reminder switch (on by default, F10). */
+    fun onSaveBirthday(birthday: Birthday?, notify: Boolean) = edit { f -> f.copy(birthday = birthday, notifyBirthday = notify) }
+
+    // --- Name (F19) -------------------------------------------------------------------------------------------------
+
+    /** Saves the name given in the app; null (or the contact's own name) goes back to the contact's name. */
+    fun onRename(name: String?) {
+        viewModelScope.launch { renameFriend(friendId, name) }
     }
 
     fun onAddLikes(values: List<String>) {
@@ -366,7 +376,7 @@ class FriendDetailViewModel(
             id = edit.id ?: ids.next(),
             relation = edit.relation,
             name = edit.name.trim(),
-            birthday = edit.birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
+            birthday = edit.birthday,
             likes = edit.likes,
             note = edit.note.trim(),
             notifyBirthday = edit.notifyBirthday,
@@ -504,13 +514,13 @@ class FriendDetailViewModel(
         local.update { it.copy(undoCustomField = null) }
     }
 
-    fun onSaveKid(id: String?, name: String, birthday: LocalDate?, likes: List<String>) {
+    fun onSaveKid(id: String?, name: String, birthday: Birthday?, likes: List<String>) {
         if (name.isBlank()) return
         val now = clock.now()
         val kid = Kid(
             id = id ?: ids.next(),
             name = name.trim(),
-            birthday = birthday?.let { Birthday(it.month.ordinal + 1, it.day, it.year) },
+            birthday = birthday,
             likes = likes,
         )
         edit { f ->
@@ -644,12 +654,20 @@ class FriendDetailViewModel(
 
     // --- Photo ------------------------------------------------------------------------------------------------------
 
-    /** A picture picked from the gallery for someone without a contact photo; null when the picker was cancelled. */
+    /**
+     * A picture picked from the gallery and cropped (F14), kept as the photo set in the app; null when the picker was
+     * cancelled, empty when the picture couldn't be read.
+     */
     fun onPhotoPicked(image: ByteArray?) {
         if (image == null) return
         viewModelScope.launch {
             if (!setPhoto(friendId, image)) say(FriendDetailMessage.PhotoUnreadable)
         }
+    }
+
+    /** Removes the photo set in the app: the contact's photo, or the initials, show again. */
+    fun onRemovePhoto() {
+        viewModelScope.launch { removePhoto(friendId) }
     }
 
     // --- Chats and AI talking points -----------------------------------------------------------------------------
@@ -683,7 +701,7 @@ class FriendDetailViewModel(
     fun onTogetherNow() {
         viewModelScope.launch {
             val hangout = checkIn(listOf(friendId))
-            val name = state.value.detail?.friend?.name?.substringBefore(' ').orEmpty()
+            val name = state.value.detail?.friend?.displayName?.substringBefore(' ').orEmpty()
             local.update { it.copy(message = FriendDetailMessage.LoggedWith(name), undoHangoutId = hangout.id, celebrate = it.celebrate + 1) }
         }
     }

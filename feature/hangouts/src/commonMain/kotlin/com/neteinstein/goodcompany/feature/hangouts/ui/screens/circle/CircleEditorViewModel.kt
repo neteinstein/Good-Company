@@ -108,7 +108,7 @@ class CircleEditorViewModel(
             remind = d.remind,
             days = d.days,
             members = d.memberIds.mapNotNull { byId[it]?.friend },
-            everyone = friends.map { it.friend }.sortedBy { it.name.lowercase() },
+            everyone = friends.map { it.friend }.sortedBy { it.displayName.lowercase() },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), local.value)
 

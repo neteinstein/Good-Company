@@ -201,7 +201,7 @@
     <string name="prefs_real">Vrai ami</string>
     <string name="prefs_real_hint">Apparaît en premier, sur l’accueil et dans l’agenda</string>
     <string name="prefs_birthday">Rappels d’anniversaire</string>
-    <string name="prefs_birthday_hint">Pour lui ou elle et ses enfants</string>
+    <string name="prefs_birthday_hint">Activé pour tous ceux qui ont un anniversaire</string>
     <string name="prefs_events">Idées de sorties chaque semaine</string>
     <string name="prefs_events_hint">L’IA propose des sorties qui correspondent à ses goûts</string>
     <string name="delete_title">Retirer %1$s ?</string>
@@ -485,4 +485,22 @@
     <string name="relation_to_me_clear">Aucun lien</string>
     <string name="add_as_person">Ajouter comme personne</string>
     <string name="msg_added_as_person">%1$s a maintenant sa propre page</string>
+    <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
+    <string name="detail_edit_name">Modifier le nom</string>
+    <string name="photo_sheet_title">Photo de %1$s</string>
+    <string name="photo_replace">Remplacer la photo</string>
+    <string name="photo_replace_hint">Choisissez une image, puis zoomez et recadrez</string>
+    <string name="photo_adjust">Ajuster le recadrage</string>
+    <string name="photo_remove">Supprimer la photo</string>
+    <string name="photo_remove_hint_contact">Affiche à nouveau la photo du contact</string>
+    <string name="photo_remove_hint_initials">Affiche à nouveau les initiales</string>
+    <string name="photo_contact_untouched">Le contact lui-même n’est jamais modifié.</string>
+    <string name="name_title">Nom</string>
+    <string name="name_contact_hint">Dans vos contacts : %1$s. Le nom que vous donnez ici est utilisé partout dans Good Company ; une synchronisation des contacts ne le modifiera pas.</string>
+    <string name="name_restore">Utiliser le nom du contact</string>
+    <string name="birthday_title">Anniversaire</string>
+    <string name="birthday_year_hint">L’année est facultative. Sans elle, vous recevez quand même le rappel ; l’âge s’affiche dès que vous l’ajoutez.</string>
+    <string name="birthday_remind">Me rappeler l’anniversaire de %1$s</string>
+    <string name="birthday_remind_hint">Activé pour tous ceux qui ont un anniversaire. Désactivez-le ici pour une personne.</string>
+    <string name="birthday_remove">Supprimer l’anniversaire</string>
 </resources>

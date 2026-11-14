@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -70,5 +71,26 @@ class ContactMergerTest {
             ),
         )
         assertEquals(1, merged.size)
+    }
+
+    @Test
+    fun aNameAndPhotoSetInTheApp_surviveASync_whileTheContactsKeepUpdating() {
+        val mine = ContactPhoto.of(byteArrayOf(1))!!
+        val theirs = ContactPhoto.of(byteArrayOf(2))!!
+        val existing = friend("contact-1", "Ana Silva") { copy(contactId = "1", customName = "Aninhas", customPhoto = mine) }
+        val ana = ContactMerger.merge(listOf(existing), listOf(ContactRecord("1", "Ana S. Silva", emptyList(), null, photo = theirs))).single()
+        assertEquals("Ana S. Silva", ana.name)
+        assertEquals("Aninhas", ana.customName)
+        assertEquals("Aninhas", ana.displayName)
+        assertEquals(theirs, ana.photo)
+        assertEquals(mine, ana.avatar)
+    }
+
+    @Test
+    fun aNameOrPhotoSetInTheApp_keepsAVanishedContact_butTheDefaultBirthdayReminderDoesNot() {
+        val renamed = friend("contact-1") { copy(contactId = "1", customName = "Aninhas") }
+        val plain = friend("contact-2") { copy(contactId = "2", notifyBirthday = true) }
+        val merged = ContactMerger.merge(listOf(renamed, plain), emptyList())
+        assertEquals(listOf("contact-1"), merged.map { it.id.value })
     }
 }

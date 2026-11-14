@@ -110,7 +110,7 @@ fun PlanEditor(
                             FilterChip(
                                 f.id in selected,
                                 { selected = if (f.id in selected) selected - f.id else selected + f.id },
-                                label = { Text(f.name.substringBefore(' ')) },
+                                label = { Text(f.displayName.substringBefore(' ')) },
                             )
                         }
                 }
@@ -170,7 +170,7 @@ fun PlanRow(
                 Text(plan.title, style = MaterialTheme.typography.titleSmall)
                 val details = listOfNotNull(
                     friends.takeIf { showNames && it.isNotEmpty() }?.let { fs ->
-                        stringResource(Res.string.plan_with_names, fs.joinToString { it.name.substringBefore(' ') })
+                        stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
                     },
                     plan.place,
                 )
@@ -233,7 +233,7 @@ fun PlanRow(
 
 /** What "Add to calendar" hands to the system. */
 fun Plan.calendarEntry(friends: List<Friend>): CalendarEntry =
-    CalendarEntry(title = title, date = date, location = place, notes = friends.joinToString { it.name }.ifBlank { null })
+    CalendarEntry(title = title, date = date, location = place, notes = friends.joinToString { it.displayName }.ifBlank { null })
 
 private const val DEFAULT_DAYS_AHEAD = 3
 private const val MAX_CHIPS = 40

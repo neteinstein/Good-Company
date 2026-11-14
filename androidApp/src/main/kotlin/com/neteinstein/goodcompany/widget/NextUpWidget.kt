@@ -110,7 +110,7 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
             next?.let { views.setTextViewText(R.id.widget_next_when, whenText(context, summary, it)) }
 
             val catchUp = summary.catchUp
-            val photo = catchUp?.friend?.photo?.let { PhotoBitmaps.round(it, PHOTO_PX) }
+            val photo = catchUp?.friend?.avatar?.let { PhotoBitmaps.round(it, PHOTO_PX) }
             if (photo == null) {
                 views.setViewVisibility(R.id.widget_catch_up_photo, View.GONE)
             } else {
@@ -121,7 +121,7 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
                 views.setTextViewText(R.id.widget_catch_up, context.getString(R.string.widget_caught_up))
                 views.setViewVisibility(R.id.widget_met, View.GONE)
             } else {
-                views.setTextViewText(R.id.widget_catch_up, context.getString(R.string.widget_see, catchUp.friend.name.substringBefore(' ')))
+                views.setTextViewText(R.id.widget_catch_up, context.getString(R.string.widget_see, catchUp.friend.displayName.substringBefore(' ')))
                 views.setViewVisibility(R.id.widget_met, View.VISIBLE)
                 val met = Intent(context, NextUpWidget::class.java)
                     .setAction(ACTION_MET)
@@ -135,17 +135,17 @@ class NextUpWidget : AppWidgetProvider(), KoinComponent {
         }
 
         private fun title(context: Context, item: AgendaItem): String = when (item) {
-            is AgendaItem.FriendBirthday -> context.getString(R.string.widget_birthday, item.friend.name.substringBefore(' '))
-            is AgendaItem.KidBirthday -> context.getString(R.string.widget_kid_birthday, item.kid.name, item.parent.name.substringBefore(' '))
+            is AgendaItem.FriendBirthday -> context.getString(R.string.widget_birthday, item.friend.displayName.substringBefore(' '))
+            is AgendaItem.KidBirthday -> context.getString(R.string.widget_kid_birthday, item.kid.name, item.parent.displayName.substringBefore(' '))
             // Not shown by the widget today (HomeWidget skips relatives), but kept readable if that changes.
             is AgendaItem.RelativeBirthday -> context.getString(R.string.widget_birthday, item.relative.name.substringBefore(' '))
             // Not shown by the widget either (HomeWidget skips anniversaries).
-            is AgendaItem.Anniversary -> context.getString(R.string.widget_birthday, item.first.name.substringBefore(' '))
-            is AgendaItem.FriendEvent -> context.getString(R.string.widget_event, item.friend.name.substringBefore(' '), item.event.title)
+            is AgendaItem.Anniversary -> context.getString(R.string.widget_birthday, item.first.displayName.substringBefore(' '))
+            is AgendaItem.FriendEvent -> context.getString(R.string.widget_event, item.friend.displayName.substringBefore(' '), item.event.title)
             is AgendaItem.ReminderDue -> item.reminder.title
             is AgendaItem.PlanUpcoming -> item.plan.title
             is AgendaItem.PlanToConfirm -> item.plan.title
-            is AgendaItem.MeetupOverdue -> context.getString(R.string.widget_see, item.friend.name.substringBefore(' '))
+            is AgendaItem.MeetupOverdue -> context.getString(R.string.widget_see, item.friend.displayName.substringBefore(' '))
             is AgendaItem.GroupOverdue -> item.group.name
         }
 

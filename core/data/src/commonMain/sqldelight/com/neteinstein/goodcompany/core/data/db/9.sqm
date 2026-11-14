@@ -1,0 +1,12 @@
+-- Version 9 → 10 (issue #36). F10: birthday reminders are on by default, so they're turned on for every friend who has a
+-- birthday (the per-person switch stays). F19: a name given in the app wins over the contact's. F14: a photo set in the
+-- app wins over the contact's, in its own table like friend_photo.
+
+UPDATE friend SET notify_birthday = 1 WHERE birthday_month IS NOT NULL;
+
+ALTER TABLE friend ADD COLUMN custom_name TEXT;
+
+CREATE TABLE friend_custom_photo (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);
