@@ -249,11 +249,12 @@ class FriendsViewModelTest {
 
     @Test
     fun addFriendOptions_followTheBuild() {
-        // iOS and the Android sideload build.
+        // iOS and the Android sideload build: one "Pick from contacts" entry, the list with checkboxes (2026-11-14).
         assertEquals(
-            listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN),
+            listOf(AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN),
             addFriendOptions(hasContactPicker = true, hasContactList = true),
         )
+        assertEquals(listOf(AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN), addFriendOptions(false, true))
         // Android Play build: picker only (D2, until the READ_CONTACTS policy check).
         assertEquals(listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.TYPE_IT_IN), addFriendOptions(true, false))
         // Web.
@@ -266,8 +267,14 @@ class FriendsViewModelTest {
         val state = collecting(vm.state)
         vm.onContactListPermissionResult(false)
         assertTrue(state.value.contactListDenied)
+        // A refusal falls back to the system picker, once.
+        assertTrue(state.value.pickerFallback)
+        vm.onPickerFallbackShown()
+        assertFalse(state.value.pickerFallback)
+        assertTrue(state.value.contactListDenied)
         vm.onContactListPermissionResult(true)
         assertFalse(state.value.contactListDenied)
+        assertFalse(state.value.pickerFallback)
         vm.onContactsChosen(0)
         assertNull(state.value.message)
         vm.onContactsChosen(2)

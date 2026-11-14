@@ -449,8 +449,7 @@
     <string name="choose_pick_instead">Pick from contacts</string>
     <string name="choose_no_match">No one matches</string>
     <string name="add_option_pick_body">Opens your phone’s contact picker</string>
-    <string name="add_option_list">Choose from the full list</string>
-    <string name="add_option_list_body">Tick the people you want to keep close</string>
+    <string name="add_option_list_body">Tick everyone you want from your contact list. Several at once.</string>
     <string name="add_option_list_again">Asks for contacts access again</string>
     <string name="add_option_type">Type it in</string>
     <string name="add_option_type_body">Add someone by name</string>

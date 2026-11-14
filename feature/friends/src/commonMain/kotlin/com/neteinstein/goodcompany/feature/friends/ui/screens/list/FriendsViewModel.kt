@@ -56,16 +56,24 @@ data class WeekSummary(val birthdays: Int, val bigDays: Int, val catchUps: Int) 
     val isEmpty get() = birthdays == 0 && bigDays == 0 && catchUps == 0
 }
 
-/** The ways "Add friend" offers to add someone, in the order the sheet shows them. */
+/**
+ * The ways "Add friend" offers to add someone, in the order the sheet shows them. Both contact options are titled
+ * "Pick from contacts": [PICK_FROM_CONTACTS] opens the system contact picker, [CHOOSE_FROM_LIST] the contact list with
+ * checkboxes (asking for the contacts permission first).
+ */
 enum class AddFriendOption { PICK_FROM_CONTACTS, CHOOSE_FROM_LIST, TYPE_IT_IN }
 
 /**
- * What "Add friend" offers on this build: the system contact picker where there is one, the contact list with
- * checkboxes only where the app may read contacts (iOS, Android sideload; decision D2), and typing a name everywhere.
+ * What "Add friend" offers on this build, with one way in from the phone's contacts (owner decision 2026-11-14):
+ * the contact list with checkboxes where the app may read contacts (iOS, Android sideload; decision D2), otherwise the
+ * system contact picker where there is one (Android Play build), and typing a name everywhere. Where the list is
+ * offered, a refused permission falls back to the picker (see [FriendsUiState.pickerFallback]).
  */
 fun addFriendOptions(hasContactPicker: Boolean, hasContactList: Boolean): List<AddFriendOption> = buildList {
-    if (hasContactPicker) add(AddFriendOption.PICK_FROM_CONTACTS)
-    if (hasContactList) add(AddFriendOption.CHOOSE_FROM_LIST)
+    when {
+        hasContactList -> add(AddFriendOption.CHOOSE_FROM_LIST)
+        hasContactPicker -> add(AddFriendOption.PICK_FROM_CONTACTS)
+    }
     add(AddFriendOption.TYPE_IT_IN)
 }
 
@@ -122,8 +130,10 @@ data class FriendsUiState(
     val circles: List<Relationships.GroupStatus> = emptyList(),
     /** The circle Home is filtered by (remembered between launches); null = All. Every section shows only its members. */
     val circle: Relationships.GroupStatus? = null,
-    /** "Choose from the full list" was refused the contacts permission: the add sheet explains and keeps the picker. */
+    /** "Pick from contacts" was refused the contacts permission: the add sheet explains it. */
     val contactListDenied: Boolean = false,
+    /** The contact list was refused just now, so the screen opens the system contact picker instead, once. */
+    val pickerFallback: Boolean = false,
 ) {
     val isSearching: Boolean get() = query.isNotBlank()
 }
@@ -282,8 +292,14 @@ class FriendsViewModel(
         }
     }
 
-    /** "Choose from the full list" asked for the contacts permission. The screen opens the list when [granted]. */
-    fun onContactListPermissionResult(granted: Boolean) = local.update { it.copy(contactListDenied = !granted) }
+    /**
+     * "Pick from contacts" asked for the contacts permission. The screen opens the list when [granted]; when refused,
+     * it opens the system contact picker instead ([FriendsUiState.pickerFallback], cleared by [onPickerFallbackShown]).
+     */
+    fun onContactListPermissionResult(granted: Boolean) = local.update { it.copy(contactListDenied = !granted, pickerFallback = !granted) }
+
+    /** The screen opened the system contact picker after a refused contact list. */
+    fun onPickerFallbackShown() = local.update { it.copy(pickerFallback = false) }
 
     /** People were saved from the contact list. */
     fun onContactsChosen(added: Int) {

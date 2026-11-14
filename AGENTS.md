@@ -187,7 +187,7 @@ Seen in practice:
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
 8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` **and
    `REQUEST_INSTALL_PACKAGES`** (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`.
-   The sideload build (and iOS) offer the contact list with checkboxes (decision D2, `ChooseContactsRoute`, gated on
+   The sideload build (and iOS) offer the contact list with checkboxes as "Pick from contacts" (decision D2, issue #35: a refused permission falls back to the system picker; `ChooseContactsRoute`, gated on
    `PlatformCapabilities.hasContactList` = "the manifest declares READ_CONTACTS") plus the write-back (gotcha 22).
    **The Play build stays picker-only** until Google Play's `READ_CONTACTS` policy has been checked; enabling the list
    there is a manifest + CI change, no code change.
