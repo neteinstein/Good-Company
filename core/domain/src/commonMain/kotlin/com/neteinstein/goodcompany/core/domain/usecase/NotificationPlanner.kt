@@ -119,11 +119,14 @@ object NotificationPlanner {
         }
 
         val byId = friends.associateBy { it.id }
+        val circleNames = groups.associateBy({ it.id }, { it.name })
         reminders.filter { !it.done && it.dueAt != null && it.dueAt > now }.forEach { r ->
+            // A circle reminder (issue #88) names the circle rather than every member, like a circle plan.
+            val names = listOfNotNull(r.circleId?.let(circleNames::get)) + r.friendIds.mapNotNull { byId[it]?.displayName }
             out += PlannedNotification(
                 id = "reminder:${r.id}",
                 at = r.dueAt!!,
-                content = NotificationContent.ReminderDue(r.title, r.friendIds.mapNotNull { byId[it]?.displayName }),
+                content = NotificationContent.ReminderDue(r.title, names),
             )
         }
 

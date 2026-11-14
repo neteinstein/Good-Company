@@ -26,7 +26,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.cancel
@@ -52,8 +54,16 @@ private val HOURS = listOf(
     21 to Res.string.reminder_night,
 )
 
+/** What the reminder editor hands back; [circleId] is the circle it belongs to (issue #88), if any. */
+data class ReminderDraft(
+    val title: String,
+    val friendIds: List<FriendId>,
+    val date: LocalDate?,
+    val hour: Int,
+    val circleId: String? = null,
+)
+
 /** "Remind me to book tickets for X to go with Y." */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ReminderEditor(
     friends: List<Friend>,
@@ -62,11 +72,61 @@ fun ReminderEditor(
     onSave: (title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) -> Unit,
     preselected: Set<FriendId> = emptySet(),
     initialTitle: String = "",
+) = ReminderEditorDialog(
+    friends = friends,
+    today = today,
+    onDismiss = onDismiss,
+    onSave = { onSave(it.title, it.friendIds, it.date, it.hour) },
+    preselected = preselected,
+    initialTitle = initialTitle,
+)
+
+/**
+ * The reminder editor on a circle's page (issue #88): [circle] is picked (its chip can be tapped off), and [initial]
+ * fills it in to change an existing reminder ([initialDate] / [initialHour] are its due time, null date = none).
+ */
+@Composable
+fun CircleReminderEditor(
+    friends: List<Friend>,
+    today: LocalDate,
+    circle: FriendGroup,
+    onDismiss: () -> Unit,
+    onSave: (ReminderDraft) -> Unit,
+    initial: Reminder? = null,
+    initialDate: LocalDate? = today,
+    initialHour: Int = DEFAULT_HOUR,
+) = ReminderEditorDialog(
+    friends = friends,
+    today = today,
+    onDismiss = onDismiss,
+    onSave = onSave,
+    preselected = initial?.friendIds?.toSet().orEmpty(),
+    initialTitle = initial?.title.orEmpty(),
+    circle = circle,
+    initialCircle = initial?.let { it.circleId == circle.id } ?: true,
+    initialDate = if (initial == null) today else initialDate,
+    initialHour = initialHour,
+)
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ReminderEditorDialog(
+    friends: List<Friend>,
+    today: LocalDate,
+    onDismiss: () -> Unit,
+    onSave: (ReminderDraft) -> Unit,
+    preselected: Set<FriendId> = emptySet(),
+    initialTitle: String = "",
+    circle: FriendGroup? = null,
+    initialCircle: Boolean = circle != null,
+    initialDate: LocalDate? = today,
+    initialHour: Int = DEFAULT_HOUR,
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var selected by remember { mutableStateOf(preselected) }
-    var date by remember { mutableStateOf<LocalDate?>(today) }
-    var hour by remember { mutableStateOf(18) }
+    var withCircle by remember { mutableStateOf(initialCircle) }
+    var date by remember { mutableStateOf(initialDate) }
+    var hour by remember { mutableStateOf(initialHour) }
     var pickDate by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -82,6 +142,15 @@ fun ReminderEditor(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(stringResource(Res.string.reminder_with), style = MaterialTheme.typography.labelLarge)
+                if (circle != null) {
+                    // A reminder on a circle's page belongs to the circle (issue #88): its members, now and later.
+                    FilterChip(
+                        withCircle,
+                        { withCircle = !withCircle },
+                        label = { Text("${circle.emoji} ${circle.name}") },
+                        leadingIcon = { CircleDot(circle.color) },
+                    )
+                }
                 FlowRow(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     friends.sortedWith(
                         compareByDescending<Friend> {
@@ -111,10 +180,13 @@ fun ReminderEditor(
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(title, selected.toList(), date, hour)
+                onSave(ReminderDraft(title, selected.toList(), date, hour, circle?.id?.takeIf { withCircle }))
             }, enabled = title.isNotBlank()) { Text(stringResource(Res.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date ?: today, onDismiss = { pickDate = false }, onPicked = { date = it })
 }
+
+/** The time a new reminder starts at (evening). */
+const val DEFAULT_HOUR = 18

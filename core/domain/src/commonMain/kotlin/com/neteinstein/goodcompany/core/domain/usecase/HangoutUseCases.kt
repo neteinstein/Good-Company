@@ -73,18 +73,6 @@ class GetCurrentLocationUseCase(private val location: LocationProvider) {
     suspend operator fun invoke(): GeoPoint? = runCatching { location.currentLocation() }.getOrNull()
 }
 
-/** Hangout history, optionally narrowed to those that included **all** of the given friends. */
-class ObserveHangoutHistoryUseCase(
-    private val friends: FriendRepository,
-    private val hangouts: HangoutRepository,
-) {
-    operator fun invoke(withAll: Flow<Set<FriendId>>): Flow<List<HangoutWithFriends>> =
-        combine(friends.friends, hangouts.hangouts, withAll) { fs, hs, filter ->
-            val byId = fs.associateBy { it.id }
-            Relationships.hangoutsWithAll(hs, filter).map { h -> HangoutWithFriends(h, h.friendIds.mapNotNull(byId::get)) }
-        }
-}
-
 /** "Meet every N days" rules and how each one is doing, soonest due first. */
 class ObserveMeetupStatusUseCase(
     private val friends: FriendRepository,

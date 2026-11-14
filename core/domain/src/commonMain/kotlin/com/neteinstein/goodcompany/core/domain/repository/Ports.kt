@@ -186,6 +186,36 @@ fun interface PhotoShrinker {
     }
 }
 
+/**
+ * Makes a picture small enough for a circle's cover (issue #88): at most [ContactPhoto.COVER_MAX_SIDE_PX] on its long
+ * side, as JPEG within [ContactPhoto.COVER_MAX_BYTES]. Implemented in `:core:ui` with the same codec as [PhotoShrinker].
+ */
+fun interface CoverShrinker {
+    /** The shrunk image, or null when [image] can't be decoded. */
+    suspend fun shrink(image: ByteArray): ByteArray?
+
+    companion object {
+        val None = CoverShrinker { it }
+    }
+}
+
+/** The demo circle's cover photo (issue #88): an original image bundled with the app, so the sample shows a cover. */
+fun interface SampleCoverSource {
+    /** The cover, or null when it can't be read. */
+    suspend fun cover(): ContactPhoto?
+
+    companion object {
+        val None = SampleCoverSource { null }
+    }
+}
+
+/** A cover from [image], shrunk first when it's too large to keep as it is. */
+suspend fun CoverShrinker.coverOf(image: ByteArray?): ContactPhoto? {
+    if (image == null || image.isEmpty()) return null
+    if (image.size <= ContactPhoto.COVER_MAX_BYTES) return ContactPhoto.cover(image)
+    return ContactPhoto.cover(runCatching { shrink(image) }.getOrNull())
+}
+
 /** A [ContactPhoto] from [image], shrunk first when it's too large to keep as it is. */
 suspend fun PhotoShrinker.photoOf(image: ByteArray?): ContactPhoto? {
     if (image == null || image.isEmpty()) return null

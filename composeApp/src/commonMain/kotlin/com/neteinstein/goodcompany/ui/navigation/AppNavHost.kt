@@ -53,6 +53,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeScre
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
@@ -69,6 +70,7 @@ const val APP_VERSION = "1.0.0"
 
 /** Saved-state key: how many people "Choose friends" added, read by Home. */
 private const val CONTACTS_ADDED = "contacts_added"
+private const val DELETE_CIRCLE = "delete_circle"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -88,6 +90,8 @@ fun AppNavHost(
     // Every in-app "We met" opens the small panel (issue #47); the widget and notification still log today directly.
     val weMet: (FriendId) -> Unit = { navController.navigate(WeMetRoute(friendIds = listOf(it.value))) }
     val circleMet: (String) -> Unit = { navController.navigate(WeMetRoute(circleId = it)) }
+    // Every circle has a page (issue #88), the built-in Family circle too.
+    val openCircle: (String) -> Unit = { navController.navigate(CirclePageRoute(it)) { launchSingleTop = true } }
     // "Did you meet?" → yes: the panel on that occurrence's day with the plan's people and activity; a circle plan lists
     // its members unticked (F20, issue #43).
     val logPlan: (String, LocalDate) -> Unit = { planId, day -> navController.navigate(WeMetRoute(plan = PlanOccurrence(planId, day).encode())) }
@@ -143,8 +147,8 @@ fun AppNavHost(
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
                         onLogPlan = logPlan,
                         onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
-                        // The friend page already set Home's circle filter; Home shows it.
-                        onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
+                        // A circle chip opens that circle's page (issue #88).
+                        onOpenCircle = openCircle,
                         onNewCircle = { navController.navigate(CircleEditorRoute(withFriend = id)) },
                         onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
                     )
@@ -249,12 +253,41 @@ fun AppNavHost(
                     },
                 )
             }
-            sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) {
+            sharedComposable<HangoutsRoute>(this@SharedTransitionLayout) { entry ->
+                // A circle deleted from its page (issue #88) is deleted here, so the tab offers the Undo.
+                val pendingDelete by entry.savedStateHandle.getStateFlow<String?>(DELETE_CIRCLE, null).collectAsStateWithLifecycle()
                 HangoutsScreen(
-                    onOpenFriend = openFriend,
+                    onOpenCircle = openCircle,
                     onEditCircle = editCircle,
                     onCircleMet = circleMet,
                     onOpenSettings = openSettings,
+                    pendingDelete = pendingDelete,
+                    onPendingDeleteHandled = { entry.savedStateHandle[DELETE_CIRCLE] = null },
+                )
+            }
+            composable<CirclePageRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) { entry ->
+                val id = entry.toRoute<CirclePageRoute>().id
+                CirclePageScreen(
+                    circleId = id,
+                    onBack = { navController.popBackStack() },
+                    onOpenFriend = openFriend,
+                    onWeMet = circleMet,
+                    onEdit = { editCircle(it) },
+                    onDelete = { circle ->
+                        // "Delete" goes back to the Circles tab, which deletes the circle and offers Undo.
+                        val tabBelow = runCatching { navController.getBackStackEntry<HangoutsRoute>() }.isSuccess
+                        if (tabBelow) {
+                            navController.popBackStack<HangoutsRoute>(inclusive = false)
+                        } else {
+                            navController.popBackStack()
+                            navController.navigateTopLevel(TopLevelDestination.CIRCLES)
+                        }
+                        runCatching { navController.getBackStackEntry<HangoutsRoute>() }.getOrNull()
+                            ?.savedStateHandle?.set(DELETE_CIRCLE, circle)
+                    },
                 )
             }
             sharedComposable<TodayRoute>(this@SharedTransitionLayout) {

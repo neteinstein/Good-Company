@@ -37,13 +37,6 @@ object Relationships {
         return result
     }
 
-    /**
-     * Hangouts that included **all** of [friendIds], newest first.
-     * "When was the last time I was with Ana *and* Rui?"
-     */
-    fun hangoutsWithAll(hangouts: List<Hangout>, friendIds: Set<FriendId>): List<Hangout> =
-        hangouts.filter { h -> friendIds.all { it in h.friendIds } }.sortedByDescending { it.at }
-
     data class MeetupStatus(
         val friend: Friend,
         val lastSeenDate: LocalDate?,

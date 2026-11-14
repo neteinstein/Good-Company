@@ -20,6 +20,7 @@ import com.neteinstein.goodcompany.core.data.platform.createNotificationSchedule
 import com.neteinstein.goodcompany.core.data.repository.LegacyJsonImport
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlCircleCoverRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGiftListRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
@@ -42,8 +43,10 @@ import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.BuiltInCircleNames
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
+import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.CoverShrinker
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
@@ -62,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
+import com.neteinstein.goodcompany.core.domain.repository.SampleCoverSource
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.StorageStatus
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
@@ -78,6 +82,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
@@ -96,6 +101,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -126,12 +132,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCirclePageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
@@ -217,7 +223,9 @@ import com.neteinstein.goodcompany.core.ui.l10n.CircleNamesFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.ComposeLanguageProvider
 import com.neteinstein.goodcompany.core.ui.l10n.KinshipWordsFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
+import com.neteinstein.goodcompany.core.ui.l10n.SampleCoverFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
+import com.neteinstein.goodcompany.core.ui.platform.createCoverShrinker
 import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
@@ -238,6 +246,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListVie
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
@@ -282,6 +291,7 @@ val appModule = module {
     single<ContactsWriter> { createContactsWriter() }
     single<CommunicationLogSource> { createCommunicationLogSource() }
     single<PhotoShrinker> { createPhotoShrinker() }
+    single<CoverShrinker> { createCoverShrinker() }
     single<LocationProvider> { createLocationProvider() }
     single<NotificationScheduler> { createNotificationScheduler() }
     single<CalendarReader> { createCalendarReader() }
@@ -299,6 +309,7 @@ val appModule = module {
     single<NotificationRenderer> { ResourceNotificationRenderer }
     single<LanguageProvider> { ComposeLanguageProvider }
     single<SampleTextsProvider> { SampleTextsFromResources }
+    single<SampleCoverSource> { SampleCoverFromResources }
     single<BuiltInCircleNames> { CircleNamesFromResources }
     single<KinshipVocabulary> { KinshipWordsFromResources }
 
@@ -310,7 +321,8 @@ val appModule = module {
     singleOf(::SqlIdeaRepository) bind IdeaRepository::class
     singleOf(::SqlSettingsRepository) bind SettingsRepository::class
     // Circles as the app sees them: the stored ones plus the built-in Family circle (F6).
-    single<GroupRepository> { GroupsWithFamilyCircle(SqlGroupRepository(get()), get(), get()) }
+    singleOf(::SqlCircleCoverRepository) bind CircleCoverRepository::class
+    single<GroupRepository> { GroupsWithFamilyCircle(SqlGroupRepository(get()), friends = get(), covers = get(), names = get()) }
     singleOf(::SqlPersonLinkRepository) bind PersonLinkRepository::class
     singleOf(::SqlPlanRepository) bind PlanRepository::class
     singleOf(::SqlBackupRepository) bind BackupRepository::class
@@ -379,13 +391,13 @@ val appModule = module {
     factoryOf(::RestorePlaceUseCase)
     factoryOf(::MergePlacesUseCase)
     factoryOf(::GetCurrentLocationUseCase)
-    factoryOf(::ObserveHangoutHistoryUseCase)
     factoryOf(::ObserveMeetupStatusUseCase)
     factoryOf(::ObserveLastSeenCardUseCase)
     factoryOf(::AnswerLastSeenUseCase)
     factoryOf(::HideLastSeenCardUseCase)
     factoryOf(::ObserveRemindersUseCase)
     factoryOf(::AddReminderUseCase)
+    factoryOf(::EditReminderUseCase)
     factoryOf(::SetReminderDoneUseCase)
     factoryOf(::DeleteReminderUseCase)
     factoryOf(::RestoreReminderUseCase)
@@ -418,8 +430,11 @@ val appModule = module {
     factoryOf(::MarkIdeaProposedUseCase)
     factoryOf(::ObserveGroupsUseCase)
     factoryOf(::SaveGroupUseCase)
-    factoryOf(::DeleteGroupUseCase)
-    factoryOf(::RestoreGroupUseCase)
+    // Explicit: their cover store has a default (None) that must not be picked here (issue #88).
+    factory { DeleteGroupUseCase(get(), get(), covers = get()) }
+    factory { RestoreGroupUseCase(get(), covers = get()) }
+    factoryOf(::CircleCoverUseCases)
+    factoryOf(::ObserveCirclePageUseCase)
     factoryOf(::SetCircleMemberUseCase)
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
@@ -493,7 +508,6 @@ val appModule = module {
             setPhoto = get(),
             removePhoto = get(),
             renameFriend = get(),
-            setHomeCircleFilter = get(),
             setCircleMember = get(),
             restoreGroup = get(),
             observeAttachments = get(),
@@ -511,7 +525,8 @@ val appModule = module {
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
         LogInteractionViewModel(ids, type, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: String) -> CirclePageViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::GiftListsViewModel)
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)

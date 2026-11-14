@@ -1,0 +1,11 @@
+-- Version 20 → 21 (issue #88): a circle's page. A reminder can belong to a circle (reminder.circle_id, no foreign key,
+-- like plan.circle_id: a deleted circle reads as none), and a circle can have a cover photo (circle_cover, keyed by
+-- circle id with no foreign key so the built-in Family circle can have one and Undo on a delete can put it back).
+-- Covers are base64 TEXT like my_photo and friend photos (the web driver reads TEXT everywhere).
+
+ALTER TABLE reminder ADD COLUMN circle_id TEXT;
+
+CREATE TABLE circle_cover (
+    circle_id TEXT NOT NULL PRIMARY KEY,
+    image_base64 TEXT NOT NULL
+);

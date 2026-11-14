@@ -23,8 +23,29 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   sheet lists `FriendDetail.allCircles` (stored circles only, never Family). `CircleEditorRoute(withFriend = id)`
   opens a new circle with that person in.
 - The Circles tab (issue #67) is `HangoutsScreen`/`HangoutsViewModel` behind `HangoutsRoute` (route names kept): circle
-  cards last met first (never met last), Family among them, then "Last time with…" and memories. `CheckInSheetHost`
-  (Today's "I'm with…") shares that ViewModel. "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).
+  cards last met first (never met last), Family among them; a tap opens the circle's page (since #88 there is no
+  "Last time with…" or memories list on the tab). `CheckInSheetHost` (Today's "I'm with…") shares that ViewModel.
+  "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).
+- **A circle's page (issue #88)** is `CirclePageRoute(id)` → `CirclePageScreen`/`CirclePageViewModel`
+  (`:feature:hangouts`, `page/`), built by `ObserveCirclePageUseCase` / `CirclePages` (domain, pure): status, "Coming up"
+  (the circle's `PLANNED` plans and its reminders not done, undated last) and the timeline (meetups that reach
+  `meetupQuorum` with **today's** members, everyone who came listed members first; shares saved to the circle, one
+  logged as a meetup shown on it once). Family has a page too (no Edit, no delete). It emits null when the circle is
+  gone and the page closes. Delete from the page pops back to the tab and hands the id over (`DELETE_CIRCLE` on the
+  tab's `savedStateHandle`), so the tab's snackbar offers Undo. Circle chips on a person's page open it. Tapping a
+  meetup does nothing (there is no meetup screen); a long press deletes it with Undo.
+- **Circle reminders (#88).** `Reminder.circleId` (column `reminder.circle_id`, migration `20.sqm`, no foreign key)
+  makes a reminder belong to a circle: `Reminder.peopleIds(circles)` is its own people plus the circle's **current**
+  members (so someone who joins later sees it), used by the agenda, a member's page and notifications. A deleted
+  circle's reminder keeps only its own people. `CircleReminderEditor` (`:core:ui`) is the editor with the circle chip.
+- **Circle covers (#88).** `circle_cover(circle_id, image_base64)` (migration `20.sqm`, `Backup.circleCovers`), a TEXT
+  base64 JPEG like `my_photo` (≤ 1080 px long side, ≤ 200 KB: `ContactPhoto.cover`, `createCoverShrinker()`), cropped
+  wide with `PhotoCropDialog(shape = CropShape.WIDE)`. `FriendGroup.cover` is `@Transient`, joined in by
+  `GroupsWithFamilyCircle` from `CircleCoverRepository` (so Family can have one); writes go through
+  `CircleCoverUseCases`. `CircleBackdrop` (`:core:ui`) draws the cover under a veil in the circle's accent. Deleting a
+  circle takes its cover and Undo (`RestoreGroupUseCase`) puts it back. The sample surf circle
+  (`SampleData.COVER_CIRCLE_ID`) gets `files/sample_circle_cover.jpg` (`SampleCoverFromResources`, an original
+  drawing, not a photo); removing the sample removes sample covers only.
 - The People tab (`FriendsViewModel`, issues #66 and #86, F5): header → search field → "Your people" → one row of
   circle chips (`AllChip` "All · N" + `CircleChip`s, both in `:core:ui`, same size) → the list grouped by
   `Closeness.entries`, each heading with its count ("Close · 9"). No closeness filter chips, no folding, no circle card
