@@ -1,45 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="greeting_morning">Bună dimineața</string>
-    <string name="greeting_afternoon">Bună ziua</string>
-    <string name="greeting_evening">Bună seara</string>
-    <string name="home_title">Oamenii tăi</string>
-    <string name="home_quiet_week">O săptămână liniștită — momentul potrivit să suni pe cineva ☕</string>
-    <plurals name="week_birthdays">
-        <item quantity="one">%1$d zi de naștere</item>
-        <item quantity="few">%1$d zile de naștere</item>
-        <item quantity="other">%1$d de zile de naștere</item>
-    </plurals>
-    <plurals name="week_big_days">
-        <item quantity="one">%1$d zi importantă</item>
-        <item quantity="few">%1$d zile importante</item>
-        <item quantity="other">%1$d de zile importante</item>
-    </plurals>
-    <plurals name="week_catch_up">
-        <item quantity="one">%1$d om de revăzut</item>
-        <item quantity="few">%1$d oameni de revăzut</item>
-        <item quantity="other">%1$d de oameni de revăzut</item>
-    </plurals>
-    <string name="week_suffix">%1$s săptămâna asta</string>
     <string name="action_search">Caută</string>
     <string name="action_close_search">Închide căutarea</string>
     <string name="action_sync_contacts">Sincronizează contactele</string>
     <string name="action_import_vcf">Importă fișier de contacte (.vcf)</string>
     <string name="action_more">Mai mult</string>
     <string name="search_placeholder">Caută nume sau pasiuni — „jazz”, „F1”…</string>
-    <string name="section_coming_up">Urmează</string>
-    <string name="section_catch_up">E timpul să vă revedeți</string>
-    <string name="section_drifting">Vă îndepărtați</string>
-    <string name="section_drifting_hint">Ați fost mai apropiați. Un mesaj scurt face minuni.</string>
-    <string name="section_real_friends">Prieteni adevărați · %1$d</string>
-    <string name="filter_real_friends">Prieteni adevărați</string>
-    <string name="filter_everyone">Toți · %1$d</string>
-    <string name="sort_by">Sortează</string>
     <string name="sort_name">A–Z</string>
-    <string name="sort_warmth">Întâi cei care au nevoie de atenție</string>
     <string name="no_matches_title">Niciun rezultat</string>
     <string name="no_matches_search">Nimeni nu se numește și nu e pasionat de „%1$s”.</string>
-    <string name="no_matches_close">Atinge ♥ la cineva din Toți ca să devină prieten adevărat.</string>
     <string name="action_add_friend">Adaugă prieten</string>
     <string name="welcome_title">Cine sunt oamenii tăi?</string>
     <string name="welcome_message_contacts">Importă-ți contactele și atinge ♥ la prietenii adevărați — sau adaugă pe cineva manual.</string>
@@ -59,19 +28,9 @@
     <string name="row_mark_real">Marchează ca prieten adevărat</string>
     <string name="row_unmark_real">Nu mai e prieten adevărat</string>
     <string name="row_warmth">Căldura prieteniei: %1$s</string>
-    <string name="card_birthday">Ziua lui/ei %1$s</string>
-    <string name="card_turns">Împlinește %1$d ani</string>
-    <string name="card_say_hi">Urează-i la mulți ani!</string>
-    <string name="card_loves">adoră %1$s</string>
-    <string name="card_ping">Scrie-i lui/ei %1$s</string>
-    <string name="card_reminder">Memento</string>
-    <string name="card_see">Vezi-l/o pe %1$s</string>
-    <string name="card_overdue">Merită un salut</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Amână o săptămână</string>
     <string name="snooze_weekend">Amintește-mi sâmbătă</string>
-    <string name="msg_call_logged">Apel cu %1$s înregistrat — următorul memento peste o săptămână</string>
-    <string name="msg_snoozed">%1$s amânat până pe %2$s</string>
     <string name="msg_contacts_denied">Fără acces la contacte poți adăuga prieteni manual.</string>
     <string name="msg_synced">%1$d contacte sincronizate</string>
     <string name="msg_synced_calls">%1$d contacte sincronizate · %2$d apeluri potrivite</string>
@@ -239,7 +198,6 @@
         <item quantity="other">%1$d de prieteni adăugați</item>
     </plurals>
     <!-- Catch-up story -->
-    <string name="section_before_you_meet">Înainte să vă vedeți</string>
     <string name="story_cta">Pune-te la curent cu %1$s</string>
     <string name="story_cta_hint">O poveste scurtă despre viața sa, cele mai noi întâi</string>
     <string name="story_meeting_today">Te vezi cu %1$s azi</string>
@@ -406,7 +364,6 @@
     <string name="contact_video">Apel video %1$s</string>
     <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
     <string name="circle_all">Toți</string>
-    <string name="circle_az">A–Z · %1$d în %2$s</string>
     <string name="circle_last_together">Ultima dată împreună %1$s</string>
     <string name="circle_never_together">Încă nu v-ați adunat</string>
     <string name="circle_goal">obiectiv: %1$s</string>
@@ -532,4 +489,26 @@
         <item quantity="other">%1$d de persoane pot fi din familie</item>
     </plurals>
     <string name="gift_lists_link">Liste de cadouri</string>
+    <!-- People tab (issue #66) -->
+    <string name="people_title">Oameni</string>
+    <string name="people_open">Deschide</string>
+    <string name="people_all">Toți %1$d</string>
+    <string name="people_level_count">%1$s %2$d</string>
+    <string name="people_not_set">Nedefinit</string>
+    <string name="people_empty">Încă nu e nimeni aici.</string>
+    <plurals name="people_card_count">
+        <item quantity="one">persoană</item>
+        <item quantity="few">persoane</item>
+        <item quantity="other">de persoane</item>
+    </plurals>
+    <plurals name="people_card_meetups">
+        <item quantity="one">întâlnire în 90 de zile</item>
+        <item quantity="few">întâlniri în 90 de zile</item>
+        <item quantity="other">de întâlniri în 90 de zile</item>
+    </plurals>
+    <plurals name="people_card_cooling">
+        <item quantity="one">%1$d se răcește: %2$s</item>
+        <item quantity="few">%1$d se răcesc: %2$s</item>
+        <item quantity="other">%1$d se răcesc: %2$s</item>
+    </plurals>
 </resources>

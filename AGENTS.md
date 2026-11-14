@@ -42,7 +42,7 @@ core/data/            Repository implementations, JSON persistence, platform dat
 core/ui/              Design system: theme (light/dark/dynamic), shared components, formatters, UI platform hooks.
 core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by every module's commonTest.
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
-feature/friends/      Home (coming up, catch up, real friends, A–Z) + friend page (quick actions, tastes, kids, events, plans, AI),
+feature/friends/      People tab (one list by closeness, "Your people" card) + friend page (quick actions, tastes, kids, events, plans, AI),
                       friend timeline, the "Log" sheet destination
 feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?", gift lists
 feature/agenda/       Today (the first tab: check-in, the next 7 days, catch-ups) + "Everything coming up" (birthdays, kids, events, overdue meetups) + reminders

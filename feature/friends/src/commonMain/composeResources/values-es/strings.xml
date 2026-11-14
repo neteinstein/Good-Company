@@ -1,42 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="greeting_morning">Buenos días</string>
-    <string name="greeting_afternoon">Buenas tardes</string>
-    <string name="greeting_evening">Buenas noches</string>
-    <string name="home_title">Tu gente</string>
-    <string name="home_quiet_week">Semana tranquila — buen momento para llamar a alguien ☕</string>
-    <plurals name="week_birthdays">
-        <item quantity="one">%1$d cumpleaños</item>
-        <item quantity="other">%1$d cumpleaños</item>
-    </plurals>
-    <plurals name="week_big_days">
-        <item quantity="one">%1$d día importante</item>
-        <item quantity="other">%1$d días importantes</item>
-    </plurals>
-    <plurals name="week_catch_up">
-        <item quantity="one">%1$d persona con quien ponerte al día</item>
-        <item quantity="other">%1$d personas con quienes ponerte al día</item>
-    </plurals>
-    <string name="week_suffix">%1$s esta semana</string>
     <string name="action_search">Buscar</string>
     <string name="action_close_search">Cerrar búsqueda</string>
     <string name="action_sync_contacts">Sincronizar contactos</string>
     <string name="action_import_vcf">Importar archivo de contactos (.vcf)</string>
     <string name="action_more">Más</string>
     <string name="search_placeholder">Busca nombres o gustos — “jazz”, “F1”…</string>
-    <string name="section_coming_up">Próximamente</string>
-    <string name="section_catch_up">Hora de ponerse al día</string>
-    <string name="section_drifting">Os estáis distanciando</string>
-    <string name="section_drifting_hint">Antes estabais más unidos. Un mensaje rápido ayuda mucho.</string>
-    <string name="section_real_friends">Amigos de verdad · %1$d</string>
-    <string name="filter_real_friends">Amigos de verdad</string>
-    <string name="filter_everyone">Todos · %1$d</string>
-    <string name="sort_by">Ordenar</string>
     <string name="sort_name">A–Z</string>
-    <string name="sort_warmth">Primero los que necesitan atención</string>
     <string name="no_matches_title">Sin resultados</string>
     <string name="no_matches_search">Nadie se llama ni le gusta “%1$s”.</string>
-    <string name="no_matches_close">Toca ♥ en alguien de Todos para que sea amigo de verdad.</string>
     <string name="action_add_friend">Añadir amigo</string>
     <string name="welcome_title">¿Quién es tu gente?</string>
     <string name="welcome_message_contacts">Importa tus contactos y toca ♥ en los que son amigos de verdad — o añade a alguien a mano.</string>
@@ -56,19 +28,9 @@
     <string name="row_mark_real">Marcar como amigo de verdad</string>
     <string name="row_unmark_real">Desmarcar amigo de verdad</string>
     <string name="row_warmth">Calidez de la amistad: %1$s</string>
-    <string name="card_birthday">Cumpleaños de %1$s</string>
-    <string name="card_turns">Cumple %1$d</string>
-    <string name="card_say_hi">¡Felicítale!</string>
-    <string name="card_loves">le encanta %1$s</string>
-    <string name="card_ping">Escribe a %1$s</string>
-    <string name="card_reminder">Recordatorio</string>
-    <string name="card_see">Ver a %1$s</string>
-    <string name="card_overdue">Merece un hola</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Posponer una semana</string>
     <string name="snooze_weekend">Recuérdamelo el sábado</string>
-    <string name="msg_call_logged">Llamada con %1$s registrada — próximo aviso en una semana</string>
-    <string name="msg_snoozed">%1$s pospuesto hasta el %2$s</string>
     <string name="msg_contacts_denied">Sin acceso a los contactos puedes añadir amigos a mano.</string>
     <string name="msg_synced">%1$d contactos sincronizados</string>
     <string name="msg_synced_calls">%1$d contactos sincronizados · %2$d llamadas asociadas</string>
@@ -230,7 +192,6 @@
         <item quantity="other">%1$d amigos añadidos</item>
     </plurals>
     <!-- Catch-up story -->
-    <string name="section_before_you_meet">Antes de veros</string>
     <string name="story_cta">Ponte al día con %1$s</string>
     <string name="story_cta_hint">Una historia rápida de su vida, lo más nuevo primero</string>
     <string name="story_meeting_today">Hoy ves a %1$s</string>
@@ -394,7 +355,6 @@
     <string name="contact_video">Videollamada %1$s</string>
     <string name="story_last_talk_title">La última vez hablasteis de…</string>
     <string name="circle_all">Todos</string>
-    <string name="circle_az">A–Z · %1$d en %2$s</string>
     <string name="circle_last_together">Juntos por última vez %1$s</string>
     <string name="circle_never_together">Aún no os habéis reunido</string>
     <string name="circle_goal">objetivo: %1$s</string>
@@ -517,4 +477,23 @@
         <item quantity="other">%1$d personas pueden ser de tu familia</item>
     </plurals>
     <string name="gift_lists_link">Listas de regalos</string>
+    <!-- People tab (issue #66) -->
+    <string name="people_title">Personas</string>
+    <string name="people_open">Abrir</string>
+    <string name="people_all">Todos %1$d</string>
+    <string name="people_level_count">%1$s %2$d</string>
+    <string name="people_not_set">Sin definir</string>
+    <string name="people_empty">Aún no hay nadie aquí.</string>
+    <plurals name="people_card_count">
+        <item quantity="one">persona</item>
+        <item quantity="other">personas</item>
+    </plurals>
+    <plurals name="people_card_meetups">
+        <item quantity="one">encuentro en 90 días</item>
+        <item quantity="other">encuentros en 90 días</item>
+    </plurals>
+    <plurals name="people_card_cooling">
+        <item quantity="one">%1$d enfriándose: %2$s</item>
+        <item quantity="other">%1$d enfriándose: %2$s</item>
+    </plurals>
 </resources>

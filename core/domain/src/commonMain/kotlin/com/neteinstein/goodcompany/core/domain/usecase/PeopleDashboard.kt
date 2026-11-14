@@ -85,6 +85,8 @@ data class PeopleDashboard(
             settings: AppSettings,
             today: LocalDate,
             zone: TimeZone,
+            /** False skips the week-by-week [trend] (the People tab's summary card only needs counts and who's cooling). */
+            withTrend: Boolean = true,
         ): PeopleDashboard {
             val inCircles = circles.flatMapTo(HashSet()) { it.memberIds }
             val people = friends.filter { isYours(it, it.id in inCircles) }
@@ -115,7 +117,7 @@ data class PeopleDashboard(
                 if (members.isEmpty()) null else ClosenessWarmth(c, members.size, if (show) avg(members.mapNotNull { now[it.id] }) else null)
             }
 
-            val trend = if (show && people.isNotEmpty()) {
+            val trend = if (withTrend && show && people.isNotEmpty()) {
                 (TREND_WEEKS downTo 0).map { w ->
                     val day = today.minus(w * 7, DateTimeUnit.DAY)
                     people.map { warmthOn(it, day) }.average().roundToInt()
@@ -167,8 +169,9 @@ class ObservePeopleDashboardUseCase(
     private val settings: SettingsRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<PeopleDashboard> =
+    /** [withTrend] false leaves [PeopleDashboard.trend] empty, for the People tab's summary card. */
+    operator fun invoke(withTrend: Boolean = true): Flow<PeopleDashboard> =
         combine(friends.friends, groups.groups, hangouts.hangouts, interactions.interactions, settings.settings) { fs, gs, hs, ints, s ->
-            PeopleDashboard.build(fs, gs, hs, ints, s, clock.today(), clock.timeZone)
+            PeopleDashboard.build(fs, gs, hs, ints, s, clock.today(), clock.timeZone, withTrend)
         }
 }

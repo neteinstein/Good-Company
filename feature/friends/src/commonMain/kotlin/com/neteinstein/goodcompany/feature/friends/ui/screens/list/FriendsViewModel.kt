@@ -2,37 +2,29 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkType
-import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
-import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,23 +35,32 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-enum class FriendFilter { CLOSE, ALL }
+/** How the People list is ordered: grouped by closeness (the default, F5) or A–Z from the ⋮ menu. */
+enum class PeopleSort { CLOSENESS, NAME }
 
-enum class FriendSort { NAME, WARMTH }
+/** The closeness chips above the list: everyone, or one level ([closeness] null = "not set"). */
+sealed interface PeopleFilter {
+    data object All : PeopleFilter
 
-enum class Greeting { MORNING, AFTERNOON, EVENING }
-
-/** What's happening this week, for the header subtitle. */
-data class WeekSummary(val birthdays: Int, val bigDays: Int, val catchUps: Int) {
-    val isEmpty get() = birthdays == 0 && bigDays == 0 && catchUps == 0
+    data class Level(val closeness: Closeness?) : PeopleFilter
 }
+
+/** A heading in the People list: a closeness level (null = not set) or, sorted A–Z, a first letter. */
+sealed interface PeopleSection {
+    data class Level(val closeness: Closeness?) : PeopleSection
+
+    data class Letter(val letter: Char) : PeopleSection
+}
+
+/** One closeness chip: the level (null = not set) and how many people it holds. */
+data class LevelCount(val closeness: Closeness?, val count: Int)
+
+/** The "Your people" card on top of People (issue #66): a summary of the dashboard. */
+data class YourPeopleSummary(val people: Int, val meetupsLast90Days: Int, val cooling: List<Friend>)
 
 /**
  * The ways "Add friend" offers to add someone, in the order the sheet shows them. Both contact options are titled
@@ -84,10 +85,6 @@ fun addFriendOptions(hasContactPicker: Boolean, hasContactList: Boolean): List<A
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface FriendsMessage {
-    data class CallLogged(val name: String) : FriendsMessage
-
-    data class Snoozed(val name: String, val until: LocalDate) : FriendsMessage
-
     data object ContactsDenied : FriendsMessage
 
     data class Synced(val contacts: Int, val calls: Int) : FriendsMessage
@@ -104,34 +101,31 @@ sealed interface FriendsMessage {
 }
 
 data class FriendsUiState(
+    /** Who the list shows, in order (every section's people, one after another). */
     val friends: List<FriendSummary> = emptyList(),
-    /** [friends] grouped by first letter for the A–Z list (one untitled section when sorted by warmth). */
-    val sections: List<Pair<Char?, List<FriendSummary>>> = emptyList(),
-    val closeFriends: List<Friend> = emptyList(),
-    /** Agenda items in the next two weeks — the home "Coming up" carousel. */
-    val upcoming: List<AgendaItem> = emptyList(),
-    /** "Before you meet": friends you're seeing today or tomorrow, each with a catch-up story. */
-    val stories: List<StoryBubble> = emptyList(),
-    val catchUp: List<Relationships.MeetupStatus> = emptyList(),
-    /** Real friends whose warmth is fading and who aren't already in [catchUp]. */
-    val drifting: List<FriendSummary> = emptyList(),
+    /** [friends] under their headings: by closeness (Inner first, "not set" last), or by first letter when sorted A–Z. */
+    val sections: List<Pair<PeopleSection, List<FriendSummary>>> = emptyList(),
+    /** The closeness chips, in order, with how many people each holds (only levels somebody is in). */
+    val levels: List<LevelCount> = emptyList(),
+    /** How many people the "All" chip counts (the list before a level is picked). */
+    val listedCount: Int = 0,
+    /** "Your people" on top; null until the first numbers arrive. */
+    val yourPeople: YourPeopleSummary? = null,
     val totalCount: Int = 0,
     val query: String = "",
-    val filter: FriendFilter = FriendFilter.CLOSE,
-    val sort: FriendSort = FriendSort.NAME,
+    val filter: PeopleFilter = PeopleFilter.All,
+    val sort: PeopleSort = PeopleSort.CLOSENESS,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
-    val greeting: Greeting = Greeting.MORNING,
-    val week: WeekSummary = WeekSummary(0, 0, 0),
     val message: FriendsMessage? = null,
-    /** Warmth dots and "Drifting apart" (off in Settings = softer view). */
+    /** Warmth dots and "who's cooling" (off in Settings = softer view). */
     val showWarmth: Boolean = true,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
     /** Every circle, A–Z, for the chip row under the header. */
     val circles: List<Relationships.GroupStatus> = emptyList(),
-    /** The circle Home is filtered by (remembered between launches); null = All. Every section shows only its members. */
+    /** The circle People is filtered by (remembered between launches); null = All. The list shows only its members. */
     val circle: Relationships.GroupStatus? = null,
     /** "Pick from contacts" was refused the contacts permission: the add sheet explains it. */
     val contactListDenied: Boolean = false,
@@ -145,20 +139,20 @@ data class FriendsUiState(
     val isSearching: Boolean get() = query.isNotBlank()
 }
 
+/**
+ * The People tab (issue #66, F5): one list of everyone grouped by closeness (or A–Z), closeness chips with counts, the
+ * circle filter, and "Your people" on top.
+ */
 class FriendsViewModel(
     observeFriends: ObserveFriendsUseCase,
-    observeAgenda: ObserveAgendaUseCase,
-    observeMeetups: ObserveMeetupStatusUseCase,
     observeSettings: ObserveSettingsUseCase,
-    observeStories: ObserveStoryBubblesUseCase,
     observeCircles: ObserveGroupsUseCase,
+    observeDashboard: ObservePeopleDashboardUseCase,
     private val importPickedContacts: ImportPickedContactsUseCase,
     private val syncContacts: SyncContactsUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
     private val addFriend: AddFriendUseCase,
     private val setRealFriend: SetRealFriendUseCase,
-    private val logCall: LogCallUseCase,
-    private val snooze: SnoozeCatchUpUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
     private val setCircleFilter: SetHomeCircleFilterUseCase,
     observeKinship: ObserveKinshipProposalsUseCase,
@@ -172,7 +166,6 @@ class FriendsViewModel(
 
     private data class Extras(
         val settings: AppSettings,
-        val stories: List<StoryBubble>,
         val circles: List<Relationships.GroupStatus>,
         val proposals: Int,
         val kinship: Pair<String, Set<LinkType>?>,
@@ -180,66 +173,46 @@ class FriendsViewModel(
 
     val state: StateFlow<FriendsUiState> = combine(
         observeFriends(),
-        observeAgenda(),
-        observeMeetups(),
-        combine(observeSettings(), observeStories(), observeCircles(), observeKinship(), kinshipQuery) { settings, stories, circles, proposals, kin ->
-            Extras(settings, stories, circles, proposals.size, kin)
+        // The card only needs counts and who's cooling, not the 13-week trend.
+        observeDashboard(withTrend = false).map { d -> YourPeopleSummary(d.people, d.meetupsLast90Days, d.cooling.map { it.friend }) },
+        combine(observeSettings(), observeCircles(), observeKinship(), kinshipQuery) { settings, circles, proposals, kin ->
+            Extras(settings, circles, proposals.size, kin)
         },
         local,
-    ) { everyone, fullAgenda, allMeetups, (settings, allStories, circles, proposals, kin), ui ->
-        val today = clock.today()
+    ) { everyone, yourPeople, (settings, circles, proposals, kin), ui ->
         val q = ui.query.trim().lowercase()
         // A deleted circle (or one from another device's backup) reads as All.
         val circle = circles.firstOrNull { it.group.id == settings.homeCircleFilter }
         val members = circle?.group?.memberIds?.toSet()
-        fun FriendId.inCircle() = members == null || this in members
-        val all = everyone.filter { it.friend.id.inCircle() }
-        val agenda = fullAgenda.filter { item ->
-            members == null || if (item is AgendaItem.GroupOverdue) item.group.id == circle?.group?.id else item.friendIds.any { it in members }
-        }
-        val meetups = allMeetups.filter { it.friend.id.inCircle() }
-        val stories = allStories.filter { it.friend.id.inCircle() }
-        // First run: nobody marked as close yet → show everyone instead of an empty list. A circle shows all its members.
-        val filter = if (ui.filter == FriendFilter.CLOSE && everyone.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
+        val all = everyone.filter { members == null || it.friend.id in members }
         // "My nieces": confirmed kinship only, whoever is hidden from the list (F7).
         val kinship = kin.second.takeIf { kin.first == ui.query }
-        val matching = if (kinship != null) {
-            all.filter { it.friend.relationToMe in kinship }
-        } else {
-            all
-                .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
-                // F9: people with "Show in my list" off (friends' kids) stay out of the list unless searched for or in a circle.
-                .filter { q.isNotEmpty() || circle != null || it.friend.showInMyList }
-                .filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
+        val searching = kinship != null || q.isNotEmpty()
+        val listed = when {
+            kinship != null -> all.filter { it.friend.relationToMe in kinship }
+            // A search looks across everyone, whatever the closeness chip.
+            q.isNotEmpty() -> all.filter { it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
+            // F9: people with "Show in my list" off (friends' kids) stay out unless searched for or in a circle.
+            else -> all.filter { circle != null || it.friend.showInMyList }
         }
-        val visible = when (ui.sort) {
-            FriendSort.NAME -> matching.sortedBy { it.friend.displayName.lowercase() }
-            FriendSort.WARMTH -> matching.sortedWith(compareBy({ it.warmth.value }, { it.friend.displayName.lowercase() }))
+        val levels = levelOrder.mapNotNull { c -> listed.count { it.friend.closeness == c }.takeIf { it > 0 }?.let { LevelCount(c, it) } }
+        // A level nobody is in any more (e.g. after a change of closeness) reads as All.
+        val filter = ui.filter.takeIf { f -> f is PeopleFilter.Level && levels.any { it.closeness == f.closeness } } ?: PeopleFilter.All
+        val shown = if (!searching && filter is PeopleFilter.Level) listed.filter { it.friend.closeness == filter.closeness } else listed
+        val byName = shown.sortedBy { it.friend.displayName.lowercase() }
+        val sections: List<Pair<PeopleSection, List<FriendSummary>>> = when (ui.sort) {
+            PeopleSort.CLOSENESS -> levelOrder.mapNotNull { c ->
+                byName.filter { it.friend.closeness == c }.takeIf { it.isNotEmpty() }?.let { PeopleSection.Level(c) to it }
+            }
+            PeopleSort.NAME -> byName.groupBy { it.friend.displayName.firstOrNull()?.uppercaseChar()?.takeIf(Char::isLetter) ?: '#' }
+                .map { (letter, people) -> PeopleSection.Letter(letter) to people }
         }
-        val catchUp = meetups.filter { it.isOverdue(today) }
-        val catchUpIds = catchUp.map { it.friend.id }.toSet()
-        val upcoming = agenda.filter { it !is AgendaItem.MeetupOverdue && it.date <= today.plus(UPCOMING_DAYS, DateTimeUnit.DAY) }
-        val week = upcoming.filter { it.date <= today.plus(6, DateTimeUnit.DAY) }
-        val hour = clock.now().toLocalDateTime(clock.timeZone).hour
         ui.copy(
-            friends = visible,
-            sections = when (ui.sort) {
-                FriendSort.NAME -> visible.groupBy<FriendSummary, Char?> {
-                    it.friend.displayName.first().uppercaseChar().takeIf(Char::isLetter) ?: '#'
-                }.toList()
-                FriendSort.WARMTH -> if (visible.isEmpty()) emptyList() else listOf(null to visible)
-            },
-            closeFriends = all.filter { it.friend.isCloseFriend }.map { it.friend },
-            upcoming = upcoming.take(8),
-            stories = stories,
-            catchUp = catchUp,
-            drifting = all
-                .filter { settings.showWarmth }
-                .filter { it.friend.isCloseFriend && !it.friend.catchUpPaused }
-                .filter { it.warmth.level == Warmth.Level.FADING && it.friend.id !in catchUpIds }
-                .filter { s -> s.friend.snoozedUntil?.let { it < today } ?: true }
-                .sortedBy { it.warmth.value }
-                .take(3),
+            friends = sections.flatMap { it.second },
+            sections = sections,
+            levels = levels,
+            listedCount = listed.size,
+            yourPeople = yourPeople,
             totalCount = everyone.size,
             circles = circles.sortedBy { it.group.name.lowercase() },
             circle = circle,
@@ -248,53 +221,27 @@ class FriendsViewModel(
             suggestedFamily = proposals,
             isLoading = false,
             filter = filter,
-            greeting = when (hour) {
-                in 5..11 -> Greeting.MORNING
-                in 12..17 -> Greeting.AFTERNOON
-                else -> Greeting.EVENING
-            },
-            week = WeekSummary(
-                birthdays = week.count { it is AgendaItem.FriendBirthday || it is AgendaItem.KidBirthday || it is AgendaItem.RelativeBirthday },
-                bigDays = week.count { it is AgendaItem.FriendEvent },
-                catchUps = catchUp.size,
-            ),
             now = clock.now(),
-            today = today,
+            today = clock.today(),
             zone = clock.timeZone,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FriendsUiState())
 
     fun onQueryChange(query: String) = local.update { it.copy(query = query) }
 
-    fun onFilterChange(filter: FriendFilter) = local.update { it.copy(filter = filter) }
+    /** A closeness chip (or All). */
+    fun onFilterChange(filter: PeopleFilter) = local.update { it.copy(filter = filter) }
 
-    fun onSortChange(sort: FriendSort) = local.update { it.copy(sort = sort) }
+    /** "A–Z" in the ⋮ menu switches between A–Z and grouped by closeness. */
+    fun onSortChange(sort: PeopleSort) = local.update { it.copy(sort = sort) }
 
-    /** Filters every Home section by a circle (null = All); remembered between launches. */
+    /** Filters the list by a circle (null = All); remembered between launches. */
     fun onCircleFilter(groupId: String?) {
         viewModelScope.launch { setCircleFilter(groupId) }
     }
 
     fun onToggleClose(id: FriendId) {
         viewModelScope.launch { setRealFriend.toggle(id) }
-    }
-
-    private fun firstName(id: FriendId): String? = state.value.friends.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
-        ?: state.value.catchUp.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
-        ?: state.value.drifting.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
-
-    fun onCalled(id: FriendId) {
-        viewModelScope.launch {
-            logCall(id)
-            local.update { it.copy(message = FriendsMessage.CallLogged(firstName(id).orEmpty())) }
-        }
-    }
-
-    fun onSnooze(id: FriendId, option: SnoozeOption) {
-        viewModelScope.launch {
-            snooze.friend(id, option)
-            local.update { it.copy(message = FriendsMessage.Snoozed(firstName(id).orEmpty(), option.until(clock.today()))) }
-        }
     }
 
     /** Called after the contacts permission prompt resolves. */
@@ -366,6 +313,7 @@ class FriendsViewModel(
     fun onMessageShown() = local.update { it.copy(message = null) }
 
     private companion object {
-        const val UPCOMING_DAYS = 14
+        /** Closeness levels from closest to furthest, then "not set" (null). */
+        val levelOrder: List<Closeness?> = Closeness.entries + null
     }
 }

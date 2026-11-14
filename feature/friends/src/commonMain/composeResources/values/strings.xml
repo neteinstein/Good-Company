@@ -1,43 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Home -->
-    <string name="greeting_morning">Good morning</string>
-    <string name="greeting_afternoon">Good afternoon</string>
-    <string name="greeting_evening">Good evening</string>
-    <string name="home_title">Your people</string>
-    <string name="home_quiet_week">All quiet this week — a good time to call someone ☕</string>
-    <plurals name="week_birthdays">
-        <item quantity="one">%1$d birthday</item>
-        <item quantity="other">%1$d birthdays</item>
-    </plurals>
-    <plurals name="week_big_days">
-        <item quantity="one">%1$d big day</item>
-        <item quantity="other">%1$d big days</item>
-    </plurals>
-    <plurals name="week_catch_up">
-        <item quantity="one">%1$d to catch up with</item>
-        <item quantity="other">%1$d to catch up with</item>
-    </plurals>
-    <string name="week_suffix">%1$s this week</string>
     <string name="action_search">Search</string>
     <string name="action_close_search">Close search</string>
     <string name="action_sync_contacts">Sync contacts</string>
     <string name="action_import_vcf">Import contacts file (.vcf)</string>
     <string name="action_more">More</string>
     <string name="search_placeholder">Search names or tastes — “jazz”, “F1”…</string>
-    <string name="section_coming_up">Coming up</string>
-    <string name="section_catch_up">Time to catch up</string>
-    <string name="section_drifting">Drifting apart</string>
-    <string name="section_drifting_hint">You used to be closer. A quick message goes a long way.</string>
-    <string name="section_real_friends">Real friends · %1$d</string>
-    <string name="filter_real_friends">Real friends</string>
-    <string name="filter_everyone">Everyone · %1$d</string>
-    <string name="sort_by">Sort</string>
     <string name="sort_name">A–Z</string>
-    <string name="sort_warmth">Needs attention first</string>
     <string name="no_matches_title">No matches</string>
     <string name="no_matches_search">Nobody called or into “%1$s”.</string>
-    <string name="no_matches_close">Tap ♥ on someone in Everyone to make them a real friend.</string>
     <string name="action_add_friend">Add friend</string>
 
     <!-- Welcome -->
@@ -63,21 +35,11 @@
     <string name="row_mark_real">Mark as real friend</string>
     <string name="row_unmark_real">Unmark real friend</string>
     <string name="row_warmth">Friendship warmth: %1$s</string>
-    <string name="card_birthday">%1$s’s birthday</string>
-    <string name="card_turns">Turns %1$d</string>
-    <string name="card_say_hi">Say hi!</string>
-    <string name="card_loves">loves %1$s</string>
-    <string name="card_ping">Ping %1$s</string>
-    <string name="card_reminder">Reminder</string>
-    <string name="card_see">See %1$s</string>
-    <string name="card_overdue">Worth a hello</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Snooze a week</string>
     <string name="snooze_weekend">Remind me Saturday</string>
 
     <!-- Messages -->
-    <string name="msg_call_logged">Call with %1$s logged — next nudge in a week</string>
-    <string name="msg_snoozed">%1$s snoozed until %2$s</string>
     <string name="msg_contacts_denied">Without contacts access you can still add friends by hand.</string>
     <string name="msg_synced">Synced %1$d contacts</string>
     <string name="msg_synced_calls">Synced %1$d contacts · %2$d calls matched</string>
@@ -254,7 +216,6 @@
         <item quantity="other">%1$d friends added</item>
     </plurals>
     <!-- Catch-up story -->
-    <string name="section_before_you_meet">Before you meet</string>
     <string name="story_cta">Catch up on %1$s</string>
     <string name="story_cta_hint">A quick story of their life, newest first</string>
     <string name="story_meeting_today">Seeing %1$s today</string>
@@ -418,7 +379,6 @@
     <string name="contact_video">Video call %1$s</string>
     <string name="story_last_talk_title">Last time you talked about…</string>
     <string name="circle_all">All</string>
-    <string name="circle_az">A–Z · %1$d in %2$s</string>
     <string name="circle_last_together">Last together %1$s</string>
     <string name="circle_never_together">Not together yet</string>
     <string name="circle_goal">goal %1$s</string>
@@ -542,4 +502,23 @@
         <item quantity="other">%1$d people may be family</item>
     </plurals>
     <string name="gift_lists_link">Gift lists</string>
+    <!-- People tab (issue #66) -->
+    <string name="people_title">People</string>
+    <string name="people_open">Open</string>
+    <string name="people_all">All %1$d</string>
+    <string name="people_level_count">%1$s %2$d</string>
+    <string name="people_not_set">Not set</string>
+    <string name="people_empty">Nobody here yet.</string>
+    <plurals name="people_card_count">
+        <item quantity="one">person</item>
+        <item quantity="other">people</item>
+    </plurals>
+    <plurals name="people_card_meetups">
+        <item quantity="one">meetup in 90 days</item>
+        <item quantity="other">meetups in 90 days</item>
+    </plurals>
+    <plurals name="people_card_cooling">
+        <item quantity="one">%1$d cooling: %2$s</item>
+        <item quantity="other">%1$d cooling: %2$s</item>
+    </plurals>
 </resources>
