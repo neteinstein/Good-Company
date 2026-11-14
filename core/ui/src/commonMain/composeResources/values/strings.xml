@@ -539,4 +539,33 @@
         <item quantity="one">%1$s and %2$d other don’t</item>
         <item quantity="other">%1$s and %2$d others don’t</item>
     </plurals>
+    <!-- Automatic kinship (issue #41, F7): step and half relations -->
+    <string name="link_step_parent_she">Stepmother</string>
+    <string name="link_step_parent_he">Stepfather</string>
+    <string name="link_step_parent_they">Step-parent</string>
+    <string name="link_step_child_she">Stepdaughter</string>
+    <string name="link_step_child_he">Stepson</string>
+    <string name="link_step_child_they">Stepchild</string>
+    <string name="link_half_sibling_she">Half-sister</string>
+    <string name="link_half_sibling_he">Half-brother</string>
+    <string name="link_half_sibling_they">Half-sibling</string>
+    <string name="link_step_sibling_she">Stepsister</string>
+    <string name="link_step_sibling_he">Stepbrother</string>
+    <string name="link_step_sibling_they">Stepsibling</string>
+    <!-- Kinship search (F7): words separated by |, matched ignoring case and accents. kin_search_my ("my") may come before or after the word; kin_search_and joins several. -->
+    <string name="kin_search_my">my</string>
+    <string name="kin_search_and">and|&amp;</string>
+    <string name="kin_search_parent">parents|parent|mothers|mother|fathers|father|mums|mum|moms|mom|dad</string>
+    <string name="kin_search_child">children|child|kids|kid|daughters|daughter|sons|son</string>
+    <string name="kin_search_sibling">siblings|sibling|sisters|sister|brothers|brother</string>
+    <string name="kin_search_grandparent">grandparents|grandparent|grandmothers|grandmother|grandfathers|grandfather|grandmas|grandma|grandpas|grandpa</string>
+    <string name="kin_search_grandchild">grandchildren|grandchild|grandkids|granddaughters|granddaughter|grandsons|grandson</string>
+    <string name="kin_search_aunt_uncle">aunts|aunt|uncles|uncle</string>
+    <string name="kin_search_niece_nephew">nieces|niece|nephews|nephew</string>
+    <string name="kin_search_cousin">cousins|cousin</string>
+    <string name="kin_search_in_law">in-laws|in-law|in laws|mothers-in-law|mother-in-law|fathers-in-law|father-in-law|sisters-in-law|sister-in-law|brothers-in-law|brother-in-law|sons-in-law|son-in-law|daughters-in-law|daughter-in-law</string>
+    <string name="kin_search_step_parent">step-parents|stepparents|step-parent|stepparent|stepmothers|stepmother|stepfathers|stepfather</string>
+    <string name="kin_search_step_child">stepchildren|stepchild|stepkids|stepdaughters|stepdaughter|stepsons|stepson</string>
+    <string name="kin_search_half_sibling">half-siblings|half-sibling|half-sisters|half-sister|half-brothers|half-brother</string>
+    <string name="kin_search_step_sibling">stepsiblings|stepsibling|stepsisters|stepsister|stepbrothers|stepbrother</string>
 </resources>

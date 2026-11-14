@@ -24,6 +24,7 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
@@ -90,6 +91,7 @@ class AppModuleTest {
         assertNotNull(koin.get<FriendsViewModel>())
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<FriendTimelineViewModel> { parametersOf(FriendId("x")) })
+        assertNotNull(koin.get<SuggestedFamilyViewModel>())
         assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL", null, null, LogPrefill()) })
         assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), null, "circle-1", null, LogPrefill()) })
         assertNotNull(

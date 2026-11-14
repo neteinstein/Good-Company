@@ -350,6 +350,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.AddFeedDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.KinshipCard
 import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -427,6 +428,8 @@ fun FriendDetailScreen(
             onNotesChange = viewModel::onNotesChange,
             onAddKid = viewModel::onAddKid,
             onSetShowInMyList = viewModel::onSetShowInMyList,
+            onConfirmKinship = viewModel::onConfirmKinship,
+            onDismissKinship = viewModel::onDismissKinship,
             onAddEvent = viewModel::onAddEvent,
             onRemoveEvent = viewModel::onRemoveEvent,
             onSaveGift = viewModel::onSaveGift,
@@ -536,6 +539,8 @@ data class FriendDetailActions(
     val onNotesChange: (String) -> Unit = {},
     val onAddKid: (KidDraft) -> Unit = {},
     val onSetShowInMyList: (Boolean) -> Unit = {},
+    val onConfirmKinship: (LinkType) -> Unit = {},
+    val onDismissKinship: () -> Unit = {},
     val onAddEvent: (String, LocalDate, Int) -> Unit = { _, _, _ -> },
     val onRemoveEvent: (String) -> Unit = {},
     val onSaveGift: (title: String, note: String) -> Unit = { _, _ -> },
@@ -702,6 +707,17 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     onDelete = { confirmDelete = true },
                     onEditRelationToMe = { editingRelationToMe = true },
                 )
+            }
+
+            detail.kinship?.let { proposal ->
+                item(key = "kinship") {
+                    KinshipCard(
+                        proposal,
+                        onConfirm = actions.onConfirmKinship,
+                        onDismiss = actions.onDismissKinship,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
             }
 
             item(key = "about") { AboutCard(f, detail.others, onEdit = { editingAbout = true }, onOpenFriend = actions.onOpenFriend) }
@@ -1001,7 +1017,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     if (parent != null || !f.showInMyList) {
                         ToggleRow(
                             stringResource(Res.string.show_in_my_list),
-                            parent?.let { stringResource(Res.string.show_in_my_list_hint, it.name.substringBefore(' ')) }
+                            parent?.let { stringResource(Res.string.show_in_my_list_hint, it.displayName.substringBefore(' ')) }
                                 ?: stringResource(Res.string.show_in_my_list_hint_any),
                             f.showInMyList,
                         ) { actions.onSetShowInMyList(!f.showInMyList) }

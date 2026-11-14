@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
@@ -619,5 +620,26 @@ class FriendDetailViewModelTest {
         val sushi = state.value.tags.first { it.name == "Sushi" }
         assertEquals(listOf("Pedro"), sushi.likedBy)
         assertTrue(state.value.tags.any { it.name == "coriander" && it.dislikedBy == listOf("Pedro") })
+    }
+
+    @Test
+    fun aKinshipProposal_isConfirmedInOneTap_orDismissedForGood() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui") { copy(relationToMe = LinkType.SIBLING) }, friend("leonor"), friend("mia")))
+        g.linkRepo.upsert(PersonLink("1", FriendId("rui"), FriendId("leonor"), LinkType.CHILD))
+        g.linkRepo.upsert(PersonLink("2", FriendId("rui"), FriendId("mia"), LinkType.CHILD))
+        val leonor = vm("leonor")
+        val state = collecting(leonor.state)
+        assertEquals(LinkType.NIECE_NEPHEW, state.value.detail!!.kinship!!.proposed)
+        leonor.onConfirmKinship(LinkType.NIECE_NEPHEW)
+        assertEquals(LinkType.NIECE_NEPHEW, g.friendRepo.get(FriendId("leonor"))!!.relationToMe)
+        assertNull(state.value.detail!!.kinship)
+
+        val mia = vm("mia")
+        val miaState = collecting(mia.state)
+        assertEquals(LinkType.NIECE_NEPHEW, miaState.value.detail!!.kinship!!.proposed)
+        mia.onDismissKinship()
+        assertNull(miaState.value.detail!!.kinship)
+        assertNull(g.friendRepo.get(FriendId("mia"))!!.relationToMe)
+        assertEquals(setOf(LinkType.NIECE_NEPHEW), g.friendRepo.get(FriendId("mia"))!!.dismissedKinship)
     }
 }

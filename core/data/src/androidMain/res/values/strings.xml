@@ -23,4 +23,8 @@
     <string name="contact_relation_in_law">In-law</string>
     <string name="contact_relation_ex">Ex</string>
     <string name="contact_relation_colleague">Colleague</string>
+    <string name="contact_relation_step_parent">Step-parent</string>
+    <string name="contact_relation_step_child">Stepchild</string>
+    <string name="contact_relation_half_sibling">Half-sibling</string>
+    <string name="contact_relation_step_sibling">Stepsibling</string>
 </resources>

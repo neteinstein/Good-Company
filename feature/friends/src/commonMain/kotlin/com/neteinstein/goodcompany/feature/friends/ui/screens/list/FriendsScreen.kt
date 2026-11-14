@@ -31,6 +31,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
@@ -61,6 +62,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -91,6 +93,7 @@ import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
+import com.neteinstein.goodcompany.core.ui.l10n.linkWord
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
 import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
@@ -134,6 +137,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.greeting_evening
 import com.neteinstein.goodcompany.feature.friends.resources.greeting_morning
 import com.neteinstein.goodcompany.feature.friends.resources.home_quiet_week
 import com.neteinstein.goodcompany.feature.friends.resources.home_title
+import com.neteinstein.goodcompany.feature.friends.resources.kin_search_empty
+import com.neteinstein.goodcompany.feature.friends.resources.kin_search_result
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged
 import com.neteinstein.goodcompany.feature.friends.resources.msg_contacts_denied
@@ -160,6 +165,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.section_real_friend
 import com.neteinstein.goodcompany.feature.friends.resources.sort_by
 import com.neteinstein.goodcompany.feature.friends.resources.sort_name
 import com.neteinstein.goodcompany.feature.friends.resources.sort_warmth
+import com.neteinstein.goodcompany.feature.friends.resources.suggested_family_count
+import com.neteinstein.goodcompany.feature.friends.resources.suggested_family_title
 import com.neteinstein.goodcompany.feature.friends.resources.week_big_days
 import com.neteinstein.goodcompany.feature.friends.resources.week_birthdays
 import com.neteinstein.goodcompany.feature.friends.resources.week_catch_up
@@ -200,6 +207,8 @@ fun FriendsScreen(
     /** "Your network" and "Your people" (issue #46), from the menu. */
     onOpenNetwork: () -> Unit = {},
     onOpenPeople: () -> Unit = {},
+    /** "Suggested family" (F7). */
+    onOpenSuggestedFamily: () -> Unit = {},
     viewModel: FriendsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -254,6 +263,7 @@ fun FriendsScreen(
             onLogCircle = onLogCircle,
             onOpenNetwork = onOpenNetwork,
             onOpenPeople = onOpenPeople,
+            onOpenSuggestedFamily = onOpenSuggestedFamily,
         ),
     )
 }
@@ -284,6 +294,7 @@ data class FriendsActions(
     val onLogCircle: (String) -> Unit = {},
     val onOpenNetwork: () -> Unit = {},
     val onOpenPeople: () -> Unit = {},
+    val onOpenSuggestedFamily: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [FriendsMessage]. */
@@ -428,6 +439,14 @@ fun FriendsContent(
                                             actions.onOpenPeople()
                                         },
                                     )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.suggested_family_title)) },
+                                        leadingIcon = { Icon(Icons.Rounded.FamilyRestroom, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onOpenSuggestedFamily()
+                                        },
+                                    )
                                 }
                             }
                         }
@@ -532,6 +551,19 @@ fun FriendsContent(
                 }
             }
 
+            if (!state.isSearching && state.circle == null && state.suggestedFamily > 0) {
+                item(key = "suggested-family") {
+                    ListItem(
+                        modifier = Modifier.clickable(onClick = actions.onOpenSuggestedFamily).padding(horizontal = 4.dp),
+                        leadingContent = { Icon(Icons.Rounded.FamilyRestroom, null, tint = MaterialTheme.colorScheme.primary) },
+                        headlineContent = { Text(stringResource(Res.string.suggested_family_title), style = MaterialTheme.typography.titleSmall) },
+                        supportingContent = {
+                            Text(pluralStringResource(Res.plurals.suggested_family_count, state.suggestedFamily, state.suggestedFamily))
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    )
+                }
+            }
             item(key = "filters") {
                 Row(
                     Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp),
@@ -539,7 +571,22 @@ fun FriendsContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     val circle = state.circle
-                    if (circle != null) {
+                    val kinship = state.kinship
+                    if (kinship != null) {
+                        // "Nieces & nephews · 3" (F7): what the search understood.
+                        SuggestionChip(
+                            onClick = {},
+                            label = {
+                                Text(
+                                    stringResource(
+                                        Res.string.kin_search_result,
+                                        kinship.map { linkWord(it, null) }.joinToString(", "),
+                                        state.friends.size,
+                                    ),
+                                )
+                            },
+                        )
+                    } else if (circle != null) {
                         // A circle shows all its members, whatever their closeness.
                         Text(
                             stringResource(Res.string.circle_az, state.friends.size, circle.group.name).uppercase(),
@@ -568,7 +615,9 @@ fun FriendsContent(
                     EmptyState(
                         icon = Icons.Rounded.Search,
                         title = stringResource(Res.string.no_matches_title),
-                        message = if (state.isSearching) {
+                        message = if (state.kinship != null) {
+                            stringResource(Res.string.kin_search_empty)
+                        } else if (state.isSearching) {
                             stringResource(Res.string.no_matches_search, state.query)
                         } else {
                             stringResource(Res.string.no_matches_close)

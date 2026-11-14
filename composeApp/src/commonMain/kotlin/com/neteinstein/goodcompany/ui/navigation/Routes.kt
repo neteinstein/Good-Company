@@ -70,6 +70,9 @@ import org.jetbrains.compose.resources.StringResource
 /** "Your people": the dashboard (issue #46). */
 @Serializable data object PeopleDashboardRoute
 
+/** "Suggested family": kinship worked out from the links, confirmed with one tap (issue #41). */
+@Serializable data object SuggestedFamilyRoute
+
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
 

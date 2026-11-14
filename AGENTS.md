@@ -411,6 +411,19 @@ Seen in practice:
     re-run for a third of the budget), drawn in a Compose `Canvas`: no graph library. Warmth is the same `Warmth.score`;
     with Show warmth off node size and every dashboard warmth figure go away and only counts remain.
 
+35. **Automatic kinship (issue #41, F7).** `KinshipResolver` (domain, `usecase/Kinship.kt`, pure) proposes what someone
+    one step from a family member is to you (`step(viaToMe, personToVia)` is the whole table: brother's daughter → niece,
+    mother's sister → aunt, partner's mother → in-law). Ambiguous cases (half/step family, a parent's child or partner,
+    in-laws through an ex) offer a choice and are **never set automatically**; two parents who share a child make them a
+    plain sibling. A proposal only changes anything when the user taps it (`ConfirmKinshipUseCase` → `relationToMe`);
+    "Not right" / "Not family" adds the offered relations to `Friend.dismissedKinship` (`friend.dismissed_kinship`,
+    comma-separated `LinkType` names), which are never offered again. `STEP_PARENT` / `STEP_CHILD` / `HALF_SIBLING` /
+    `STEP_SIBLING` are family `LinkType`s; migration `14.sqm` rebuilds `person_link` for the wider `CHECK`. Proposals show on
+    the person's page and in `SuggestedFamilyRoute` (Home menu, plus a row on Home). Home search understands "my nieces and
+    nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
+    `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed
+    kinship only. Reuse that use case for any other "my nieces" picker.
+
 ## Skills
 
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:

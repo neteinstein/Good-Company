@@ -49,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaGenerator
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.KinshipVocabulary
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
@@ -69,6 +70,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
@@ -81,6 +83,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
@@ -115,6 +118,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
@@ -132,6 +136,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
@@ -184,6 +189,7 @@ import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import com.neteinstein.goodcompany.core.ui.l10n.CircleNamesFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.ComposeLanguageProvider
+import com.neteinstein.goodcompany.core.ui.l10n.KinshipWordsFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
 import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
@@ -191,6 +197,7 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
@@ -259,6 +266,7 @@ val appModule = module {
     single<LanguageProvider> { ComposeLanguageProvider }
     single<SampleTextsProvider> { SampleTextsFromResources }
     single<BuiltInCircleNames> { CircleNamesFromResources }
+    single<KinshipVocabulary> { KinshipWordsFromResources }
 
     // --- Repositories ---
     singleOf(::SqlFriendRepository) bind FriendRepository::class
@@ -289,6 +297,10 @@ val appModule = module {
     factoryOf(::AddRelativeAsPersonUseCase)
     factoryOf(::AddKidUseCase)
     factoryOf(::SetShowInMyListUseCase)
+    factoryOf(::ObserveKinshipProposalsUseCase)
+    factoryOf(::ConfirmKinshipUseCase)
+    factoryOf(::DismissKinshipUseCase)
+    factoryOf(::ParseKinshipQueryUseCase)
     factoryOf(::PersonLinkUseCases)
     factoryOf(::ObserveTagsUseCase)
     factoryOf(::ObserveTagDuplicatesUseCase)
@@ -439,6 +451,7 @@ val appModule = module {
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
+    viewModelOf(::SuggestedFamilyViewModel)
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
         LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get(), plan, get(), get(), prefill)
     }

@@ -3,9 +3,11 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
@@ -18,9 +20,11 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
@@ -35,6 +39,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -134,6 +140,10 @@ data class FriendsUiState(
     val contactListDenied: Boolean = false,
     /** The contact list was refused just now, so the screen opens the system contact picker instead, once. */
     val pickerFallback: Boolean = false,
+    /** The search is a kinship one ("my nieces and nephews", F7): the relations asked for; null = a name search. */
+    val kinship: Set<LinkType>? = null,
+    /** How many people "Suggested family" proposes kinship for (F7). */
+    val suggestedFamily: Int = 0,
 ) {
     val isSearching: Boolean get() = query.isNotBlank()
 }
@@ -155,17 +165,32 @@ class FriendsViewModel(
     private val snooze: SnoozeCatchUpUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
     private val setCircleFilter: SetHomeCircleFilterUseCase,
+    observeKinship: ObserveKinshipProposalsUseCase,
+    private val parseKinship: ParseKinshipQueryUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendsUiState())
+
+    /** The current query with the relations it asks for (F7), worked out off the UI language's words. */
+    private val kinshipQuery = local.map { it.query }.distinctUntilChanged().map { it to parseKinship(it) }
+
+    private data class Extras(
+        val settings: AppSettings,
+        val stories: List<StoryBubble>,
+        val circles: List<Relationships.GroupStatus>,
+        val proposals: Int,
+        val kinship: Pair<String, Set<LinkType>?>,
+    )
 
     val state: StateFlow<FriendsUiState> = combine(
         observeFriends(),
         observeAgenda(),
         observeMeetups(),
-        combine(observeSettings(), observeStories(), observeCircles()) { settings, stories, circles -> Triple(settings, stories, circles) },
+        combine(observeSettings(), observeStories(), observeCircles(), observeKinship(), kinshipQuery) { settings, stories, circles, proposals, kin ->
+            Extras(settings, stories, circles, proposals.size, kin)
+        },
         local,
-    ) { everyone, fullAgenda, allMeetups, (settings, allStories, circles), ui ->
+    ) { everyone, fullAgenda, allMeetups, (settings, allStories, circles, proposals, kin), ui ->
         val today = clock.today()
         val q = ui.query.trim().lowercase()
         // A deleted circle (or one from another device's backup) reads as All.
@@ -180,11 +205,17 @@ class FriendsViewModel(
         val stories = allStories.filter { it.friend.id.inCircle() }
         // First run: nobody marked as close yet → show everyone instead of an empty list. A circle shows all its members.
         val filter = if (ui.filter == FriendFilter.CLOSE && everyone.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
-        val matching = all
-            .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
-            // F9: people with "Show in my list" off (friends' kids) stay out of the list unless searched for or in a circle.
-            .filter { q.isNotEmpty() || circle != null || it.friend.showInMyList }
-            .filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
+        // "My nieces": confirmed kinship only, whoever is hidden from the list (F7).
+        val kinship = kin.second.takeIf { kin.first == ui.query }
+        val matching = if (kinship != null) {
+            all.filter { it.friend.relationToMe in kinship }
+        } else {
+            all
+                .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
+                // F9: people with "Show in my list" off (friends' kids) stay out of the list unless searched for or in a circle.
+                .filter { q.isNotEmpty() || circle != null || it.friend.showInMyList }
+                .filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
+        }
         val visible = when (ui.sort) {
             FriendSort.NAME -> matching.sortedBy { it.friend.displayName.lowercase() }
             FriendSort.WARMTH -> matching.sortedWith(compareBy({ it.warmth.value }, { it.friend.displayName.lowercase() }))
@@ -217,6 +248,8 @@ class FriendsViewModel(
             circles = circles.sortedBy { it.group.name.lowercase() },
             circle = circle,
             showWarmth = settings.showWarmth,
+            kinship = kinship,
+            suggestedFamily = proposals,
             isLoading = false,
             filter = filter,
             greeting = when (hour) {
