@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
@@ -24,7 +25,7 @@ class AgendaBuilderTest {
     @Test
     fun includesBirthdaysOnlyForFriendsYouCareAbout() {
         val friends = listOf(
-            friend("ana") { copy(isCloseFriend = true, birthday = Birthday(3, 20, 1990)) },
+            friend("ana") { copy(closeness = Closeness.CLOSE, birthday = Birthday(3, 20, 1990)) },
             friend("bob") { copy(notifyBirthday = false, birthday = Birthday(3, 21)) },
             friend("cat") { copy(birthday = Birthday(3, 22)) }, // on by default (F10)
         )
@@ -37,7 +38,7 @@ class AgendaBuilderTest {
     fun includesKidsBirthdaysEventsAndOpenReminders() {
         val ana = friend("ana") {
             copy(
-                isCloseFriend = true,
+                closeness = Closeness.CLOSE,
                 kids = listOf(Kid("k1", "Leo", Birthday(4, 1, 2020), listOf("dinosaurs"))),
                 importantEvents = listOf(ImportantEvent("e1", "Surgery", LocalDate(2026, 3, 15))),
             )
@@ -71,7 +72,9 @@ class AgendaBuilderTest {
     fun overdueMeetupsAppearFirst() {
         val friends = listOf(
             // Answered on the last-seen card (issue #68): never-logged people with no answer aren't overdue.
-            friend("ana") { copy(meetEveryDays = 7, isCloseFriend = true, birthday = Birthday(3, 10), approxLastSeen = LocalDate(2026, 1, 1)) },
+            friend("ana") {
+                copy(meetEveryDays = 7, closeness = Closeness.CLOSE, birthday = Birthday(3, 10), approxLastSeen = LocalDate(2026, 1, 1))
+            },
         )
         val items = AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC)
         assertIs<AgendaItem.MeetupOverdue>(items[0])
@@ -80,7 +83,7 @@ class AgendaBuilderTest {
 
     @Test
     fun itemsBeyondHorizonAreExcluded() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, birthday = Birthday(12, 1)) })
+        val friends = listOf(friend("ana") { copy(closeness = Closeness.CLOSE, birthday = Birthday(12, 1)) })
         assertTrue(AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC, horizonDays = 30).isEmpty())
     }
 }

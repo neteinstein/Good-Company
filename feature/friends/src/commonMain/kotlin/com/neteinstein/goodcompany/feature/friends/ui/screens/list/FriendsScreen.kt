@@ -43,13 +43,11 @@ import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -85,20 +83,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.ui.components.AllChip
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
-import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
-import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
-import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.linkWord
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.FileKind
@@ -130,11 +124,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.choose_add_none
 import com.neteinstein.goodcompany.feature.friends.resources.choose_empty_body
 import com.neteinstein.goodcompany.feature.friends.resources.choose_only_ticked
 import com.neteinstein.goodcompany.feature.friends.resources.choose_pick_instead
-import com.neteinstein.goodcompany.feature.friends.resources.circle_all
-import com.neteinstein.goodcompany.feature.friends.resources.circle_goal
-import com.neteinstein.goodcompany.feature.friends.resources.circle_last_together
-import com.neteinstein.goodcompany.feature.friends.resources.circle_log_meetup
-import com.neteinstein.goodcompany.feature.friends.resources.circle_never_together
 import com.neteinstein.goodcompany.feature.friends.resources.kin_search_empty
 import com.neteinstein.goodcompany.feature.friends.resources.kin_search_result
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added
@@ -154,7 +143,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.people_card_count
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_meetups
 import com.neteinstein.goodcompany.feature.friends.resources.people_empty
 import com.neteinstein.goodcompany.feature.friends.resources.people_level_count
-import com.neteinstein.goodcompany.feature.friends.resources.people_not_set
 import com.neteinstein.goodcompany.feature.friends.resources.people_open
 import com.neteinstein.goodcompany.feature.friends.resources.people_title
 import com.neteinstein.goodcompany.feature.friends.resources.search_placeholder
@@ -182,7 +170,6 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 fun FriendsScreen(
     onOpenFriend: (FriendId) -> Unit,
     onEditCircle: (String) -> Unit = {},
-    onLogCircle: (String) -> Unit = {},
     /** Opens the "Choose friends" list (contacts with checkboxes). */
     onChooseContacts: () -> Unit = {},
     /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
@@ -229,20 +216,17 @@ fun FriendsScreen(
         addOptions = addFriendOptions(capabilities.hasContactPicker, capabilities.hasContactList),
         actions = FriendsActions(
             onQueryChange = viewModel::onQueryChange,
-            onFilterChange = viewModel::onFilterChange,
             onSortChange = viewModel::onSortChange,
             onSync = requestContacts,
             onImportFile = pickVcf,
             onPickContacts = if (capabilities.hasContactWriteBack) requestThenPick else pickContacts,
             onOpenFriend = onOpenFriend,
-            onToggleClose = viewModel::onToggleClose,
             onAddFriend = viewModel::onAddFriend,
             onChooseContacts = requestContactList,
             onExploreSample = viewModel::onExploreSample,
             onMessageShown = viewModel::onMessageShown,
             onCircleFilter = viewModel::onCircleFilter,
             onEditCircle = onEditCircle,
-            onLogCircle = onLogCircle,
             onOpenNetwork = onOpenNetwork,
             onOpenPeople = onOpenPeople,
             onOpenSuggestedFamily = onOpenSuggestedFamily,
@@ -253,13 +237,11 @@ fun FriendsScreen(
 
 data class FriendsActions(
     val onQueryChange: (String) -> Unit = {},
-    val onFilterChange: (PeopleFilter) -> Unit = {},
     val onSortChange: (PeopleSort) -> Unit = {},
     val onSync: () -> Unit = {},
     val onImportFile: () -> Unit = {},
     val onPickContacts: () -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
-    val onToggleClose: (FriendId) -> Unit = {},
     val onAddFriend: (String) -> Unit = {},
     /** Asks for the contacts permission, then opens the contact list with checkboxes. */
     val onChooseContacts: () -> Unit = {},
@@ -269,8 +251,6 @@ data class FriendsActions(
     val onCircleFilter: (String?) -> Unit = {},
     /** Long-press on a circle chip. */
     val onEditCircle: (String) -> Unit = {},
-    /** "Log a <circle> meetup" on the circle card. */
-    val onLogCircle: (String) -> Unit = {},
     val onOpenNetwork: () -> Unit = {},
     val onOpenPeople: () -> Unit = {},
     val onOpenSuggestedFamily: () -> Unit = {},
@@ -412,13 +392,7 @@ fun FriendsContent(
                     },
                 )
             }
-            if (!isEmpty && state.circles.isNotEmpty()) {
-                item(key = "circles") { CircleFilterRow(state, actions) }
-                state.circle?.let { c -> item(key = "circle-card") { CircleCard(c, state, actions) } }
-            }
-            item(key = "progress") {
-                AnimatedVisibility(state.isSyncing) { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) }
-            }
+            // Issue #86: search right under the header, then "Your people", the circle chips and the list.
             item(key = "search") {
                 AnimatedVisibility(searchOpen, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                     TextField(
@@ -433,6 +407,9 @@ fun FriendsContent(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
+            }
+            item(key = "progress") {
+                AnimatedVisibility(state.isSyncing) { LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) }
             }
 
             if (isEmpty) {
@@ -488,8 +465,9 @@ fun FriendsContent(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
                 }
-            } else if (!state.isSearching && state.levels.isNotEmpty()) {
-                item(key = "levels") { LevelFilterRow(state, actions.onFilterChange) }
+            } else if (!state.isSearching && state.circles.isNotEmpty()) {
+                // One row of filters: the circles. Closeness is how the list is grouped, not a second row of chips.
+                item(key = "circles") { CircleFilterRow(state, actions) }
             }
             // Not while the first load is still running: the database answers after the first frame.
             if (!state.isLoading && state.friends.isEmpty()) {
@@ -509,13 +487,18 @@ fun FriendsContent(
             }
             state.sections.forEach { (section, people) ->
                 val key = when (section) {
-                    is PeopleSection.Level -> "level-${section.closeness?.name ?: "none"}"
+                    is PeopleSection.Level -> "level-${section.closeness.name}"
                     is PeopleSection.Letter -> "letter-${section.letter}"
                 }
                 stickyHeader(key = key) {
                     Text(
                         when (section) {
-                            is PeopleSection.Level -> levelLabel(section.closeness)
+                            // "Close · 9": each heading shows its count (no folding, no filter).
+                            is PeopleSection.Level -> stringResource(
+                                Res.string.people_level_count,
+                                closenessLabel(section.closeness, short = true),
+                                people.size,
+                            )
                             is PeopleSection.Letter -> section.letter.toString()
                         },
                         style = MaterialTheme.typography.titleSmall,
@@ -534,8 +517,8 @@ fun FriendsContent(
                         today = state.today,
                         zone = state.zone,
                         onClick = { actions.onOpenFriend(summary.friend.id) },
-                        onToggleClose = { actions.onToggleClose(summary.friend.id) },
                         showWarmth = state.showWarmth,
+                        showCloseness = state.sort == PeopleSort.NAME,
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -567,12 +550,14 @@ fun FriendsContent(
     }
 }
 
-/** "All" + one chip per circle; the selected one shows its member count. A long-press edits the circle. */
+/** "All · N" + one chip per circle; the selected one shows its member count. A long-press edits the circle. */
 @Composable
 private fun CircleFilterRow(state: FriendsUiState, actions: FriendsActions) {
     LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item(key = "all") {
-            FilterChip(state.circle == null, { actions.onCircleFilter(null) }, label = { Text(stringResource(Res.string.circle_all)) })
+            AllChip(stringResource(Res.string.people_all, state.listedCount), selected = state.circle == null, onClick = {
+                actions.onCircleFilter(null)
+            })
         }
         items(state.circles, key = { it.group.id }) { c ->
             val selected = state.circle?.group?.id == c.group.id
@@ -582,67 +567,6 @@ private fun CircleFilterRow(state: FriendsUiState, actions: FriendsActions) {
                 onClick = { actions.onCircleFilter(if (selected) null else c.group.id) },
                 onLongClick = { actions.onEditCircle(c.group.id) },
                 trailing = if (selected) c.members.size.toString() else null,
-            )
-        }
-    }
-}
-
-/** The selected circle: last time together, the reminder goal and "Log a <circle> meetup". */
-@Composable
-private fun CircleCard(status: Relationships.GroupStatus, state: FriendsUiState, actions: FriendsActions) {
-    val g = status.group
-    val palette = circlePalette(g.color)
-    Surface(
-        color = palette.container,
-        contentColor = palette.onContainer,
-        shape = MaterialTheme.shapes.extraLarge,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(g.emoji, style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(g.name, style = MaterialTheme.typography.titleMedium)
-                    val last = status.lastTogether?.let { stringResource(Res.string.circle_last_together, relativePast(it, state.now, state.zone)) }
-                        ?: stringResource(Res.string.circle_never_together)
-                    val goal = g.meetEveryDays?.let { stringResource(Res.string.circle_goal, everyNDays(it)) }
-                    Text(listOfNotNull(last, goal).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = { actions.onLogCircle(g.id) },
-                colors = ButtonDefaults.buttonColors(containerColor = palette.accent, contentColor = palette.onAccent),
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-            ) { Text(stringResource(Res.string.circle_log_meetup, g.name)) }
-        }
-    }
-}
-
-/** A closeness level's name (short, as on the chips), or "Not set". */
-@Composable
-private fun levelLabel(closeness: Closeness?): String =
-    closeness?.let { closenessLabel(it, short = true) } ?: stringResource(Res.string.people_not_set)
-
-/** "All N" + one chip per closeness level somebody is in, with its count. */
-@Composable
-private fun LevelFilterRow(state: FriendsUiState, onChange: (PeopleFilter) -> Unit) {
-    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        item(key = "all") {
-            FilterChip(
-                state.filter == PeopleFilter.All,
-                { onChange(PeopleFilter.All) },
-                label = { Text(stringResource(Res.string.people_all, state.listedCount)) },
-            )
-        }
-        items(state.levels, key = { it.closeness?.name ?: "none" }) { level ->
-            val filter = PeopleFilter.Level(level.closeness)
-            val selected = state.filter == filter
-            FilterChip(
-                selected,
-                { onChange(if (selected) PeopleFilter.All else filter) },
-                label = { Text(stringResource(Res.string.people_level_count, levelLabel(level.closeness), level.count)) },
             )
         }
     }

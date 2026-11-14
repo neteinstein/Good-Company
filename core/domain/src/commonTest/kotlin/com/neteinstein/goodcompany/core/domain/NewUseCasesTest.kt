@@ -108,7 +108,7 @@ class NewUseCasesTest {
     }
 
     @Test
-    fun pickedContactsBecomeRealFriendsWithoutDuplicates() = runTest {
+    fun pickedContactsStartAsAcquaintancesWithoutDuplicates() = runTest {
         val g = graph()
         val result = g.importPickedContacts(
             listOf(
@@ -121,8 +121,8 @@ class NewUseCasesTest {
         assertEquals(1, result.added)
         assertEquals(1, result.updated)
         val carla = g.friendRepo.get(FriendId("contact-42"))!!
-        assertTrue(carla.isCloseFriend)
-        assertEquals(Closeness.CLOSE, carla.closeness)
+        assertFalse(carla.isCloseFriend)
+        assertEquals(Closeness.ACQUAINTANCE, carla.closeness)
         assertEquals("42", carla.contactId)
         val updatedAna = g.friendRepo.get(ana)!!
         assertEquals("7", updatedAna.contactId)

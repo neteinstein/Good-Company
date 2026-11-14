@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -29,7 +30,7 @@ class HangoutsViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(
         friends = listOf(
-            friend("ana") { copy(isCloseFriend = true, meetEveryDays = 7) },
+            friend("ana") { copy(closeness = Closeness.CLOSE, meetEveryDays = 7) },
             friend("rui") { copy(meetEveryDays = 60) },
             friend("zoe"),
         ),

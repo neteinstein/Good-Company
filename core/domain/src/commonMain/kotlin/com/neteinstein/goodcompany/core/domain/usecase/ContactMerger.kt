@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
@@ -61,11 +62,11 @@ object ContactMerger {
 
     /**
      * True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count,
-     * nor does the birthday reminder, which is on by default (F10).
+     * nor does the birthday reminder, which is on by default (F10), nor being an Acquaintance (everyone's level, #86).
      */
-    fun Friend.hasAppData(): Boolean = isCloseFriend || customName != null || customPhoto != null || likes.isNotEmpty() ||
+    fun Friend.hasAppData(): Boolean = closeness != Closeness.ACQUAINTANCE || customName != null || customPhoto != null || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
-        meetEveryDays != null || suggestEvents || closeness != null || gifts.isNotEmpty() || catchUpPaused ||
+        meetEveryDays != null || suggestEvents || gifts.isNotEmpty() || catchUpPaused ||
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
         preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||

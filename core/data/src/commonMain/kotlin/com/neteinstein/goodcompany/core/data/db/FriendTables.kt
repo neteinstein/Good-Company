@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.closenessFrom
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
@@ -82,7 +83,6 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             contactId = row.contact_id,
             phoneNumbers = phones[id].orEmpty().map { it.number },
             birthday = birthdayOf(row.birthday_month, row.birthday_day, row.birthday_year),
-            isCloseFriend = row.is_close_friend.toFlag(),
             notifyBirthday = row.notify_birthday.toFlag(),
             likes = likes.map { it.taste },
             dislikes = friendTastes.filter { it.kind == DISLIKE }.map { it.taste },
@@ -93,8 +93,8 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             meetEveryDays = row.meet_every_days?.toInt(),
             suggestEvents = row.suggest_events.toFlag(),
             isOrphaned = row.is_orphaned.toFlag(),
-            // Unknown closeness → not set.
-            closeness = enumOrNull<Closeness>(row.circle),
+            // A level this build doesn't know (or none, before 19.sqm) → the old "real friend" rule (issue #86).
+            closeness = closenessFrom(enumOrNull<Closeness>(row.circle), row.is_close_friend.toFlag()),
             snoozedUntil = row.snoozed_until?.toLocalDate(),
             gifts = gifts[id].orEmpty().map {
                 DomainGift(
@@ -195,7 +195,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             meet_every_days = friend.meetEveryDays?.toColumn(),
             suggest_events = friend.suggestEvents.toColumn(),
             is_orphaned = friend.isOrphaned.toColumn(),
-            circle = friend.closeness?.name,
+            circle = friend.closeness.name,
             snoozed_until = friend.snoozedUntil?.toColumn(),
             catch_up_paused = friend.catchUpPaused.toColumn(),
             contact_counts_as_catch_up = friend.contactCountsAsCatchUp.toColumn(),

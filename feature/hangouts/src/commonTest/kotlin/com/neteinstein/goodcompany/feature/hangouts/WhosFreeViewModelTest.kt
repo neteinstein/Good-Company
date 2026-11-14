@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Occasion
@@ -21,7 +22,7 @@ import kotlin.test.assertTrue
 class WhosFreeViewModelTest {
     private val ana = FriendId("ana")
     private val g = TestGraph(
-        friends = listOf(friend("ana") { copy(isCloseFriend = true, meetEveryDays = 7) }, friend("rui")),
+        friends = listOf(friend("ana") { copy(closeness = Closeness.CLOSE, meetEveryDays = 7) }, friend("rui")),
         hangouts = listOf(Hangout("1", listOf(ana), at(2026, 2, 1))),
     )
 

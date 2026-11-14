@@ -32,8 +32,6 @@
     <string name="row_added_in_app">Added in app</string>
     <string name="row_from_contacts">From contacts</string>
     <string name="row_catch_up">Catch up</string>
-    <string name="row_mark_real">Mark as real friend</string>
-    <string name="row_unmark_real">Unmark real friend</string>
     <string name="row_warmth">Friendship warmth: %1$s</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Snooze a week</string>
@@ -84,7 +82,9 @@
     <string name="touch_snoozed">Snoozed until %1$s</string>
     <string name="touch_unsnooze">Resume</string>
     <string name="touch_circle">Closeness</string>
-    <string name="touch_circle_none">None</string>
+    <string name="closeness_sheet_title">How close are you to %1$s?</string>
+    <string name="closeness_change">Change how close you are</string>
+    <string name="closeness_no_rhythm">No catch-up reminders · birthdays still on</string>
     <string name="touch_custom">Custom rhythm</string>
     <string name="touch_from_circle">From their closeness: %1$s</string>
     <string name="touch_called">Called</string>
@@ -170,8 +170,6 @@
     <string name="notes_placeholder">Partner’s name, allergies, anything worth remembering…</string>
 
     <string name="prefs_title">Preferences</string>
-    <string name="prefs_real">Real friend</string>
-    <string name="prefs_real_hint">Shows up first, on your home and agenda</string>
     <string name="prefs_birthday">Birthday reminders</string>
     <string name="prefs_birthday_hint">On for everyone with a birthday</string>
     <string name="prefs_events">Weekly event ideas</string>
@@ -377,11 +375,6 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Video call %1$s</string>
     <string name="story_last_talk_title">Last time you talked about…</string>
-    <string name="circle_all">All</string>
-    <string name="circle_last_together">Last together %1$s</string>
-    <string name="circle_never_together">Not together yet</string>
-    <string name="circle_goal">goal %1$s</string>
-    <string name="circle_log_meetup">Log a %1$s meetup</string>
     <string name="choose_title">Choose friends</string>
     <string name="choose_count">%1$d of %2$d</string>
     <string name="choose_filter_favourites">Favourites first</string>
@@ -504,9 +497,8 @@
     <!-- People tab (issue #66) -->
     <string name="people_title">People</string>
     <string name="people_open">Open</string>
-    <string name="people_all">All %1$d</string>
-    <string name="people_level_count">%1$s %2$d</string>
-    <string name="people_not_set">Not set</string>
+    <string name="people_all">All · %1$d</string>
+    <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Nobody here yet.</string>
     <plurals name="people_card_count">
         <item quantity="one">person</item>

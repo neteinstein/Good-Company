@@ -25,8 +25,6 @@
     <string name="row_added_in_app">Adicionado na app</string>
     <string name="row_from_contacts">Dos contactos</string>
     <string name="row_catch_up">Pôr a conversa em dia</string>
-    <string name="row_mark_real">Marcar como amigo a sério</string>
-    <string name="row_unmark_real">Desmarcar amigo a sério</string>
     <string name="row_warmth">Calor da amizade: %1$s</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Adiar uma semana</string>
@@ -72,7 +70,9 @@
     <string name="touch_snoozed">Adiado até %1$s</string>
     <string name="touch_unsnooze">Retomar</string>
     <string name="touch_circle">Proximidade</string>
-    <string name="touch_circle_none">Nenhum</string>
+    <string name="closeness_sheet_title">Quão próximo és de %1$s?</string>
+    <string name="closeness_change">Mudar a proximidade</string>
+    <string name="closeness_no_rhythm">Sem lembretes para pôr a conversa em dia · aniversários continuam</string>
     <string name="touch_custom">Ritmo próprio</string>
     <string name="touch_from_circle">Pela proximidade: %1$s</string>
     <string name="touch_called">Liguei</string>
@@ -149,8 +149,6 @@
     <string name="notes_title">Notas</string>
     <string name="notes_placeholder">Nome do companheiro, alergias, tudo o que vale a pena lembrar…</string>
     <string name="prefs_title">Preferências</string>
-    <string name="prefs_real">Amigo a sério</string>
-    <string name="prefs_real_hint">Aparece primeiro, no início e na agenda</string>
     <string name="prefs_birthday">Lembretes de aniversário</string>
     <string name="prefs_birthday_hint">Ativo para todos com data de aniversário</string>
     <string name="prefs_events">Ideias de eventos semanais</string>
@@ -353,11 +351,6 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Videochamada %1$s</string>
     <string name="story_last_talk_title">Da última vez falaram sobre…</string>
-    <string name="circle_all">Todos</string>
-    <string name="circle_last_together">Juntos pela última vez %1$s</string>
-    <string name="circle_never_together">Ainda não estiveram juntos</string>
-    <string name="circle_goal">objetivo: %1$s</string>
-    <string name="circle_log_meetup">Registar encontro: %1$s</string>
     <string name="choose_title">Escolher amigos</string>
     <string name="choose_count">%1$d de %2$d</string>
     <string name="choose_filter_favourites">Favoritos primeiro</string>
@@ -479,9 +472,8 @@
     <!-- People tab (issue #66) -->
     <string name="people_title">Pessoas</string>
     <string name="people_open">Abrir</string>
-    <string name="people_all">Todos %1$d</string>
-    <string name="people_level_count">%1$s %2$d</string>
-    <string name="people_not_set">Por definir</string>
+    <string name="people_all">Todos · %1$d</string>
+    <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Ainda não há ninguém aqui.</string>
     <plurals name="people_card_count">
         <item quantity="one">pessoa</item>

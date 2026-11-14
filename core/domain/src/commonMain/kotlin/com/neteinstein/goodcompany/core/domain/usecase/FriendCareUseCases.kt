@@ -25,34 +25,11 @@ import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
 import kotlinx.coroutines.flow.first
 
-/**
- * Marks/unmarks a real friend. Marking puts them in Close by default (an Acquaintance moves up to Close), so catch-up
- * reminders work with one tap; unmarking clears the closeness (their own "meet every" override, if any, is kept).
- */
-class SetRealFriendUseCase(private val friends: FriendRepository) {
-    suspend operator fun invoke(id: FriendId, real: Boolean) {
-        val f = friends.get(id) ?: return
-        friends.upsert(f.copy(isCloseFriend = real, closeness = if (real) f.closeness?.takeIf { it.isRealFriend } ?: Closeness.CLOSE else null))
-    }
-
-    suspend fun toggle(id: FriendId) {
-        val f = friends.get(id) ?: return
-        invoke(id, !f.isCloseFriend)
-    }
-}
-
 class SetClosenessUseCase(private val friends: FriendRepository) {
-    /**
-     * Inner, Close or Friends imply "real friend"; Acquaintance means not one (issue #69); null clears the level but
-     * keeps them a real friend if they were one.
-     */
-    suspend operator fun invoke(id: FriendId, closeness: Closeness?) {
+    /** Sets someone's level; "real friend" follows it (every level but Acquaintances, issue #86). */
+    suspend operator fun invoke(id: FriendId, closeness: Closeness) {
         val f = friends.get(id) ?: return
-        val real = when {
-            closeness == null -> f.isCloseFriend
-            else -> closeness.isRealFriend
-        }
-        friends.upsert(f.copy(closeness = closeness, isCloseFriend = real))
+        friends.upsert(f.copy(closeness = closeness))
     }
 }
 
@@ -146,8 +123,8 @@ class RecordAppOpenedUseCase(private val settings: SettingsRepository, private v
 data class PickedContactsResult(val added: Int, val updated: Int)
 
 /**
- * Adds people chosen in the system contact picker (no address-book permission needed). They become real friends
- * (Close circle) tied to their contact, so a later full sync merges instead of duplicating.
+ * Adds people chosen in the system contact picker (no address-book permission needed). They start as Acquaintances
+ * (issue #86) tied to their contact, so a later full sync merges instead of duplicating.
  */
 class ImportPickedContactsUseCase(private val friends: FriendRepository) {
     suspend operator fun invoke(records: List<ContactRecord>): PickedContactsResult {
@@ -167,8 +144,6 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                         birthday = r.birthday,
                         photo = r.photo,
                         emails = ContactMerger.mergeEmails(emptyList(), r.emails),
-                        isCloseFriend = true,
-                        closeness = Closeness.CLOSE,
                     ),
                 )
                 added++
@@ -181,9 +156,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     // The pickers can't always read emails, so a re-pick only adds them.
                     emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
                         .distinctBy(String::lowercase).map { FriendEmail(it, fromContact = true) },
-                    // Picking someone again keeps an Acquaintance an Acquaintance (issue #69).
-                    isCloseFriend = match.closeness?.isRealFriend ?: true,
-                    closeness = match.closeness ?: Closeness.CLOSE,
+                    // Picking someone again keeps their level (issue #86).
                     isOrphaned = false,
                 )
                 if (merged != match) {

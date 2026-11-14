@@ -66,7 +66,6 @@
         <item quantity="other">%1$d de membri</item>
     </plurals>
     <string name="circle_members_empty">Adaugă cel puțin un prieten.</string>
-    <string name="circle_closeness_none">Fără apropiere setată</string>
     <string name="circle_closeness_note">Aici apropierea doar se vede, nu se editează: ține de persoană. Ritmul unui prieten nu se schimbă niciodată din cauza unui cerc.</string>
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">Te-ai văzut cu %1$s</string>

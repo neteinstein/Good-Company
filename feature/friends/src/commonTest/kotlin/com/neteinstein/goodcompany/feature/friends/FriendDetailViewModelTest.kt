@@ -63,7 +63,6 @@ class FriendDetailViewModelTest {
         g.observeSettings,
         g.updateFriend,
         g.deleteFriend,
-        g.setRealFriend,
         g.setCloseness,
         g.snooze,
         g.logCall,
@@ -156,7 +155,7 @@ class FriendDetailViewModelTest {
     fun editsFlowBackIntoState() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onToggleClose()
+        vm.onClosenessChange(Closeness.CLOSE)
         vm.onMeetEveryChange(14)
         vm.onAddLikes(listOf("jazz", "sushi"))
         vm.onAddLikes(listOf("jazz"))

@@ -132,7 +132,6 @@ abstract class RepositoryContract {
         contactId = "c-$id",
         phoneNumbers = listOf("+351 912 345 678", "21 000 0000"),
         birthday = Birthday(3, 9, 1990),
-        isCloseFriend = true,
         notifyBirthday = false,
         likes = listOf("jazz", "sushi"),
         dislikes = listOf("cilantro"),
@@ -343,7 +342,7 @@ abstract class RepositoryContract {
         val repo = open(writer = writer).friends
         val first = friend("ana") { copy(contactId = "c-ana", likes = listOf("jazz")) }
         repo.upsert(first)
-        repo.upsert(first.copy(isCloseFriend = true, meetEveryDays = 14))
+        repo.upsert(first.copy(closeness = Closeness.CLOSE, meetEveryDays = 14))
         assertEquals(1, writer.writes)
 
         repo.upsert(first.copy(likes = listOf("jazz", "sushi")))

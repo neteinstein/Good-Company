@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.AddCircleOutline
 import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoStories
 import androidx.compose.material.icons.rounded.Cake
@@ -83,8 +86,10 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -110,6 +115,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -206,6 +212,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.chat_import
 import com.neteinstein.goodcompany.feature.friends.resources.chat_title
 import com.neteinstein.goodcompany.feature.friends.resources.circles_add
 import com.neteinstein.goodcompany.feature.friends.resources.circles_remove
+import com.neteinstein.goodcompany.feature.friends.resources.closeness_change
+import com.neteinstein.goodcompany.feature.friends.resources.closeness_no_rhythm
+import com.neteinstein.goodcompany.feature.friends.resources.closeness_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.contact_call
 import com.neteinstein.goodcompany.feature.friends.resources.contact_email
 import com.neteinstein.goodcompany.feature.friends.resources.contact_message
@@ -285,8 +294,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.prefs_events
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause_hint
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_real
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_real_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
 import com.neteinstein.goodcompany.feature.friends.resources.qa_call
 import com.neteinstein.goodcompany.feature.friends.resources.qa_email
@@ -295,8 +302,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_together
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_add
-import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
-import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint
@@ -333,7 +338,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.topics_ai
 import com.neteinstein.goodcompany.feature.friends.resources.topics_from_notes
 import com.neteinstein.goodcompany.feature.friends.resources.touch_called
 import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
-import com.neteinstein.goodcompany.feature.friends.resources.touch_circle_none
 import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
 import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_goal
@@ -422,7 +426,6 @@ fun FriendDetailScreen(
             onAddFeed = viewModel::onAddFeed,
             onRemoveFeed = viewModel::onRemoveFeed,
             onFeedPostToNews = viewModel::onFeedPostToNews,
-            onToggleClose = viewModel::onToggleClose,
             onClosenessChange = viewModel::onClosenessChange,
             onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
             onToggleSuggestEvents = viewModel::onToggleSuggestEvents,
@@ -536,8 +539,7 @@ data class FriendDetailActions(
     val onAddFeed: (String) -> Unit = {},
     val onRemoveFeed: (String) -> Unit = {},
     val onFeedPostToNews: (String) -> Unit = {},
-    val onToggleClose: () -> Unit = {},
-    val onClosenessChange: (Closeness?) -> Unit = {},
+    val onClosenessChange: (Closeness) -> Unit = {},
     val onToggleBirthdayNotifications: () -> Unit = {},
     val onToggleSuggestEvents: () -> Unit = {},
     val onMeetEveryChange: (Int?) -> Unit = {},
@@ -1050,12 +1052,6 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         ) { actions.onSetShowInMyList(!f.showInMyList) }
                     }
                     ToggleRow(
-                        stringResource(Res.string.prefs_real),
-                        stringResource(Res.string.prefs_real_hint),
-                        f.isCloseFriend,
-                        actions.onToggleClose,
-                    )
-                    ToggleRow(
                         stringResource(Res.string.prefs_birthday),
                         stringResource(Res.string.prefs_birthday_hint),
                         f.notifyBirthday,
@@ -1497,7 +1493,6 @@ private fun StayInTouch(f: Friend, state: FriendDetailUiState, actions: FriendDe
             Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            FilterChip(f.closeness == null, { actions.onClosenessChange(null) }, label = { Text(stringResource(Res.string.touch_circle_none)) })
             Closeness.entries.forEach { c ->
                 FilterChip(f.closeness == c, { actions.onClosenessChange(c) }, label = { Text(closenessLabel(c)) })
             }
@@ -1637,6 +1632,35 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
     }
 }
 
+/** "How close are you to Ana?": the four levels with their rhythm; picking one saves it (#64) and closes. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClosenessSheet(f: Friend, rules: CadenceRules, onPick: (Closeness) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 24.dp).selectableGroup()) {
+            Text(
+                stringResource(Res.string.closeness_sheet_title, f.displayName.substringBefore(' ')),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            Closeness.entries.forEach { level ->
+                val selected = f.closeness == level
+                ListItem(
+                    leadingContent = { RadioButton(selected = selected, onClick = null) },
+                    headlineContent = { Text(closenessLabel(level)) },
+                    supportingContent = {
+                        Text(rules.daysFor(level)?.let { everyNDays(it) } ?: stringResource(Res.string.closeness_no_rhythm))
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .selectable(selected = selected, role = Role.RadioButton, onClick = { onPick(level) })
+                        .padding(horizontal = 8.dp),
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Hero(
@@ -1668,18 +1692,6 @@ private fun Hero(
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(Res.string.detail_back))
                 }
                 Spacer(Modifier.weight(1f))
-                FilledTonalIconButton(
-                    onClick = actions.onToggleClose,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                        contentColor = if (f.isCloseFriend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                ) {
-                    Icon(
-                        if (f.isCloseFriend) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        stringResource(if (f.isCloseFriend) Res.string.row_unmark_real else Res.string.row_mark_real),
-                    )
-                }
                 FilledTonalIconButton(onClick = onDelete, colors = glass) {
                     Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
                 }
@@ -1723,6 +1735,31 @@ private fun Hero(
                     modifier = Modifier.padding(start = 6.dp).size(18.dp),
                 )
             }
+            // Issue #86: their level sits under the name (where the heart was) and opens the closeness picker.
+            var pickLevel by rememberSaveable { mutableStateOf(false) }
+            val changeLevel = stringResource(Res.string.closeness_change)
+            Row(
+                Modifier
+                    .padding(top = 4.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .clickable(onClickLabel = changeLevel) { pickLevel = true }
+                    .padding(start = 12.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    closenessLabel(f.closeness),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+                Icon(Icons.Rounded.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+            }
+            if (pickLevel) {
+                ClosenessSheet(f, state.cadenceRules, onPick = {
+                    pickLevel = false
+                    actions.onClosenessChange(it)
+                }, onDismiss = { pickLevel = false })
+            }
             Spacer(Modifier.height(8.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -1750,7 +1787,6 @@ private fun Hero(
                         emphasized = relation != null,
                     )
                 }
-                f.shownCloseness?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
                 state.detail?.lastSeen?.let {
                     InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
                 }

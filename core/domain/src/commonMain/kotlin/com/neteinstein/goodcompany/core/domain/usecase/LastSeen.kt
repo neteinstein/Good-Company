@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
-import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -47,9 +46,12 @@ object LastSeenQuestions {
         val seen = Relationships.lastSeen(hangouts).keys
         val contacted = interactions.mapTo(HashSet()) { it.friendId }
         return friends
-            .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && f.closeness != Closeness.ACQUAINTANCE && rules.cadenceFor(f) != null }
+            .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && rules.cadenceFor(f) != null }
+            // Acquaintances are asked only for a rhythm set on their page, never for the Settings default (#69). Since
+            // #86 everyone without a level is one, so this keeps asking whoever was asked before.
+            .filter { f -> f.isCloseFriend || f.meetEveryDays?.takeIf { it > 0 } != null }
             .filter { f -> f.id !in seen && !(f.contactCountsAsCatchUp && f.id in contacted) }
-            .sortedWith(compareBy<Friend> { it.closeness?.ordinal ?: Int.MAX_VALUE }.thenBy { it.displayName.lowercase() })
+            .sortedWith(compareBy<Friend> { it.closeness.ordinal }.thenBy { it.displayName.lowercase() })
     }
 }
 

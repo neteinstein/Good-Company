@@ -28,7 +28,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
@@ -73,15 +72,14 @@ class FriendCareUseCasesTest {
     private val snooze = SnoozeCatchUpUseCase(friends, groups, clock)
 
     @Test
-    fun markingRealFriendPutsThemInCloseCircle() = runTest {
-        val set = SetRealFriendUseCase(friends)
-        set(ana, true)
-        assertEquals(Closeness.CLOSE, friends.get(ana)!!.closeness)
+    fun realFriendFollowsTheLevel() = runTest {
+        assertEquals(Closeness.ACQUAINTANCE, friends.get(ana)!!.closeness)
         SetClosenessUseCase(friends)(ana, Closeness.INNER)
-        set.toggle(ana) // unmark
-        assertNull(friends.get(ana)!!.closeness)
+        assertEquals(Closeness.INNER, friends.get(ana)!!.closeness)
+        assertTrue(friends.get(ana)!!.isCloseFriend)
+        SetClosenessUseCase(friends)(ana, Closeness.ACQUAINTANCE)
         assertTrue(!friends.get(ana)!!.isCloseFriend)
-        SetClosenessUseCase(friends)(ana, Closeness.GOOD) // a circle implies real friend
+        SetClosenessUseCase(friends)(ana, Closeness.GOOD) // every level but Acquaintances is a real friend
         assertTrue(friends.get(ana)!!.isCloseFriend)
     }
 

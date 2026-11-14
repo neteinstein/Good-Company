@@ -25,8 +25,6 @@
     <string name="row_added_in_app">Adăugat în aplicație</string>
     <string name="row_from_contacts">Din contacte</string>
     <string name="row_catch_up">De revăzut</string>
-    <string name="row_mark_real">Marchează ca prieten adevărat</string>
-    <string name="row_unmark_real">Nu mai e prieten adevărat</string>
     <string name="row_warmth">Căldura prieteniei: %1$s</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Amână o săptămână</string>
@@ -73,7 +71,9 @@
     <string name="touch_snoozed">Amânat până pe %1$s</string>
     <string name="touch_unsnooze">Reia</string>
     <string name="touch_circle">Apropiere</string>
-    <string name="touch_circle_none">Niciunul</string>
+    <string name="closeness_sheet_title">Cât de apropiat ești de %1$s?</string>
+    <string name="closeness_change">Schimbă apropierea</string>
+    <string name="closeness_no_rhythm">Fără mementouri de revedere · zilele de naștere rămân</string>
     <string name="touch_custom">Ritm propriu</string>
     <string name="touch_from_circle">După apropiere: %1$s</string>
     <string name="touch_called">Am sunat</string>
@@ -154,8 +154,6 @@
     <string name="notes_title">Note</string>
     <string name="notes_placeholder">Numele partenerului, alergii, orice merită ținut minte…</string>
     <string name="prefs_title">Preferințe</string>
-    <string name="prefs_real">Prieten adevărat</string>
-    <string name="prefs_real_hint">Apare primul, pe ecranul principal și în agendă</string>
     <string name="prefs_birthday">Mementouri de ziua de naștere</string>
     <string name="prefs_birthday_hint">Activat pentru toți cei cu zi de naștere</string>
     <string name="prefs_events">Idei de ieșiri săptămânale</string>
@@ -362,11 +360,6 @@
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Apel video %1$s</string>
     <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
-    <string name="circle_all">Toți</string>
-    <string name="circle_last_together">Ultima dată împreună %1$s</string>
-    <string name="circle_never_together">Încă nu v-ați adunat</string>
-    <string name="circle_goal">obiectiv: %1$s</string>
-    <string name="circle_log_meetup">Notează o întâlnire: %1$s</string>
     <string name="choose_title">Alege prieteni</string>
     <string name="choose_count">%1$d din %2$d</string>
     <string name="choose_filter_favourites">Întâi favoriții</string>
@@ -491,9 +484,8 @@
     <!-- People tab (issue #66) -->
     <string name="people_title">Oameni</string>
     <string name="people_open">Deschide</string>
-    <string name="people_all">Toți %1$d</string>
-    <string name="people_level_count">%1$s %2$d</string>
-    <string name="people_not_set">Nedefinit</string>
+    <string name="people_all">Toți · %1$d</string>
+    <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Încă nu e nimeni aici.</string>
     <plurals name="people_card_count">
         <item quantity="one">persoană</item>

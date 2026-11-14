@@ -72,10 +72,11 @@ data class PeopleDashboard(
 
         /**
          * Who counts as "your people" (here and on the network map): not just someone in the address book, but a real
-         * friend, someone with a closeness or a relation to you, or a circle member. Orphaned contacts are left out.
+         * friend (a level above Acquaintances, which everyone starts as since issue #86), someone with a relation to you,
+         * or a circle member. Orphaned contacts are left out.
          */
         fun isYours(friend: Friend, inACircle: Boolean): Boolean =
-            !friend.isOrphaned && (friend.isCloseFriend || friend.closeness != null || friend.relationToMe != null || inACircle)
+            !friend.isOrphaned && (friend.isCloseFriend || friend.relationToMe != null || inACircle)
 
         fun build(
             friends: List<Friend>,

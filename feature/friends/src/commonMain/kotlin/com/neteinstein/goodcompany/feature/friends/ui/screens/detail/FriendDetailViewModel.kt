@@ -31,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -61,7 +62,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -237,6 +237,8 @@ data class FriendDetailUiState(
     val undoCustomField: RemovedCustomField? = null,
     /** Show the warmth score (off in Settings = softer view). */
     val showWarmth: Boolean = true,
+    /** Each level's default rhythm, for the closeness picker (issue #86). */
+    val cadenceRules: CadenceRules = CadenceRules(),
     /** Things added since you last met — the catch-up story leads with them. */
     val freshCount: Int = 0,
     /** Looking for a blog's feed (the add dialog stays open meanwhile). */
@@ -266,7 +268,6 @@ class FriendDetailViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val updateFriend: UpdateFriendUseCase,
     private val deleteFriend: DeleteFriendUseCase,
-    private val setRealFriend: SetRealFriendUseCase,
     private val setCloseness: SetClosenessUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val logCall: LogCallUseCase,
@@ -315,6 +316,7 @@ class FriendDetailViewModel(
             aiEnabled = settings.aiEnabled,
             hasAiKey = settings.usableAiKey != null,
             showWarmth = settings.showWarmth,
+            cadenceRules = CadenceRules.from(settings),
             freshCount = detail?.let { d ->
                 val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
                 CatchUpStoryBuilder.freshItems(d.friend, d.kids).count { it.addedAt > since }
@@ -379,10 +381,6 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onToggleClose() {
-        viewModelScope.launch { setRealFriend.toggle(friendId) }
-    }
-
     /**
      * A tick in the "+ Circle" sheet (issue #70): saves at once (#64), with Undo. The built-in Family circle isn't
      * offered (it follows relations), and writes to it are ignored anyway.
@@ -407,7 +405,8 @@ class FriendDetailViewModel(
         viewModelScope.launch { setHomeCircleFilter(groupId) }
     }
 
-    fun onClosenessChange(closeness: Closeness?) {
+    /** A level from the picker (four levels, no "not set", issue #86); saved on choice (#64). */
+    fun onClosenessChange(closeness: Closeness) {
         viewModelScope.launch { setCloseness(friendId, closeness) }
     }
 

@@ -63,7 +63,6 @@
         <item quantity="other">%1$d membros</item>
     </plurals>
     <string name="circle_members_empty">Adiciona pelo menos um amigo.</string>
-    <string name="circle_closeness_none">Sem proximidade definida</string>
     <string name="circle_closeness_note">Aqui a proximidade só se vê, não se edita: pertence à pessoa. O ritmo de cada amigo nunca muda por causa de um círculo.</string>
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">Estiveste com %1$s</string>

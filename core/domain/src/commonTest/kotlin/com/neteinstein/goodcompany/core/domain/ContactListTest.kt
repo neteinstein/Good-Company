@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -117,7 +118,7 @@ class ContactListTest {
         assertEquals(listOf(setOf("2", "5")), repo.photoRequests)
         val friends = repo.friends.value
         assertEquals(setOf("2", "5"), friends.mapNotNull { it.contactId }.toSet())
-        assertTrue(friends.all { it.photo == photo && it.isCloseFriend })
+        assertTrue(friends.all { it.photo == photo && it.closeness == Closeness.ACQUAINTANCE })
     }
 
     @Test

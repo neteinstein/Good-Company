@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
@@ -25,7 +26,7 @@ class NotificationPlannerTest {
             friend("ana") {
                 copy(notifyBirthday = true, birthday = Birthday(3, 20, 1990), kids = listOf(Kid("k", "Leo", Birthday(3, 25), listOf("lego"))))
             },
-            friend("bob") { copy(isCloseFriend = true, notifyBirthday = false, birthday = Birthday(3, 21)) },
+            friend("bob") { copy(closeness = Closeness.CLOSE, notifyBirthday = false, birthday = Birthday(3, 21)) },
         )
         // The kid becomes a person with their own reminder, on because Ana's is (F9); the ping keeps its old id.
         val (people, links) = KidsAsPeople.convert(friends, emptyList())

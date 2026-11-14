@@ -573,6 +573,52 @@ class MigrationTest {
     }
 
     @Test
+    fun version19to20_givesEveryoneACloseness_andRealFriendFollowsIt() = runTest {
+        val driver = driverAt(19)
+        // (id, level, heart) → expected level, as in the table of issue #86.
+        val rows = listOf(
+            Triple("none-heart", null, 1) to Closeness.CLOSE,
+            Triple("none", null, 0) to Closeness.ACQUAINTANCE,
+            Triple("inner", "INNER", 0) to Closeness.ACQUAINTANCE,
+            Triple("close", "CLOSE", 0) to Closeness.ACQUAINTANCE,
+            Triple("good", "GOOD", 0) to Closeness.ACQUAINTANCE,
+            Triple("inner-heart", "INNER", 1) to Closeness.INNER,
+            Triple("close-heart", "CLOSE", 1) to Closeness.CLOSE,
+            Triple("good-heart", "GOOD", 1) to Closeness.GOOD,
+            Triple("acq", "ACQUAINTANCE", 0) to Closeness.ACQUAINTANCE,
+        )
+        rows.forEachIndexed { i, (row, _) ->
+            val (id, level, heart) = row
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', $heart, 1, '', 0, 0, ${level?.let { "'$it'" } ?: "NULL"}, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+
+        GoodCompanyDatabase.Schema.migrate(driver, 19, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val read = database.readFriends().associateBy { it.id.value }
+        rows.forEach { (row, expected) ->
+            assertEquals(expected, read.getValue(row.first).closeness, row.first)
+            // The stored heart keeps its value, so birthdays and rhythms reach the same people.
+            assertEquals(row.third == 1, read.getValue(row.first).isCloseFriend, row.first)
+        }
+        val stored = driver.executeQuery(
+            null,
+            "SELECT COUNT(*) FROM friend WHERE is_close_friend <> (CASE WHEN circle = 'ACQUAINTANCE' THEN 0 ELSE 1 END) OR circle IS NULL",
+            { c -> app.cash.sqldelight.db.QueryResult.Value(c.next().value.let { c.getLong(0) }) },
+            0,
+        ).await()
+        assertEquals(0L, stored)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

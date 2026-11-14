@@ -16,7 +16,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Kinship is proposed, never set: only a tap (`ConfirmKinshipUseCase`) writes `relationToMe`.
 - Anything that picks "my nieces…" reuses `ParseKinshipQueryUseCase`.
 - A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
-  doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; unknown reads as not set).
+  doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; an unknown level reads through `closenessFrom`: Close for a real friend, else Acquaintances).
 - Circle colours come only from `circlePalette` (`:core:ui`).
 - Membership from a person's page (issue #70) goes through `SetCircleMemberUseCase` (returns the circle as it was;
   Undo = `RestoreGroupUseCase`). Taking out the last member keeps the circle empty, never deletes it. The "+ Circle"
@@ -25,24 +25,36 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - The Circles tab (issue #67) is `HangoutsScreen`/`HangoutsViewModel` behind `HangoutsRoute` (route names kept): circle
   cards last met first (never met last), Family among them, then "Last time with…" and memories. `CheckInSheetHost`
   (Today's "I'm with…") shares that ViewModel. "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).
-- The People tab (`FriendsViewModel`, issue #66, F5) groups by `Closeness.entries` then "not set" (`levelOrder`), so a
-  new level (e.g. #69's Acquaintances) gets its group and chip by being added to the enum in order; give it a label in
-  `closenessLabel`. Chips count the listed people (circle filter and F9 applied, search not); a picked level nobody is in
-  any more reads as All. The "Your people" card uses `ObservePeopleDashboardUseCase(withTrend = false)`.
+- The People tab (`FriendsViewModel`, issues #66 and #86, F5): header → search field → "Your people" → one row of
+  circle chips (`AllChip` "All · N" + `CircleChip`s, both in `:core:ui`, same size) → the list grouped by
+  `Closeness.entries`, each heading with its count ("Close · 9"). No closeness filter chips, no folding, no circle card
+  ("We met" lives on the Circles tab). A circle filters the list and keeps the grouping; "All · N" counts the list with
+  no circle. Search hides the card and chips and keeps the grouping. A–Z (⋮ menu) names each row's level in a pill. A
+  new level gets its heading by being added to the enum in order; give it a label in `closenessLabel`. The "Your
+  people" card uses `ObservePeopleDashboardUseCase(withTrend = false)`.
 - Pickers save on choice, form sheets on close (#64): on a person's page the birthday, family and link sheets put Save
   in `SaveSheetHeader` (above the scroll) and save when dismissed if valid and changed; a relation-to-me chip or a gift
   occasion saves at once. Each such save goes through `FriendDetailViewModel.editWithUndo`/`offerUndo`, which keeps a
   `SavedEdit` (only what that save touched) for the "Saved · Undo" snackbar (`onUndoSave`). `LocalDatePickerDialog`
   picks on the day tap, with no OK.
 
-- **Acquaintances (issue #69).** `Closeness.ACQUAINTANCE` is the one level with `isRealFriend == false`:
-  `SetClosenessUseCase` turns `isCloseFriend` off for it (on for the other three), `SetRealFriendUseCase` moves an
-  Acquaintance up to Close, and re-picking from contacts keeps them an Acquaintance. Show a level with
-  `Friend.shownCloseness` (a real friend's level, or Acquaintance), never `closeness.takeIf { isCloseFriend }`.
-  No rhythm unless Settings sets `AppSettings.acquaintanceDays` (a `DeviceSettings` field, exported in backups like
-  `keptTagSpellings`, so no schema change); `CadenceRules.daysFor` is nullable for that reason. They keep birthday
-  reminders (F10) and are never asked by Today's last-seen card, even with a rhythm. Labels: Inner · Close · Friends ·
-  Acquaintances; the `circle_*` string keys stay.
+- **Everyone has a closeness; no hearts (issue #86).** `Friend.closeness` is non-null, default `ACQUAINTANCE`: every
+  way in (contact sync, picker, list, .vcf, Add friend, share-to-new-friend) starts there. "Real friend"
+  (`Friend.isCloseFriend`) is derived: `closeness.isRealFriend` (every level but Acquaintances). The `is_close_friend`
+  column and the backup's `isCloseFriend` stay and are written from the level, so older builds read the same people;
+  `FriendSerializer` (a `JsonTransformingSerializer` on `Friend`) writes both and reads old JSON with `closenessFrom`,
+  the same rule as migration `19.sqm`: no level + heart → Close, no heart → Acquaintances, heart + level → unchanged.
+  There is no heart anywhere (rows, a person's page, the "Real friend" toggle) and no "Not set": the level sits under
+  the name on a person's page and opens `ClosenessSheet` (four levels with their rhythm, saved on choice).
+  `SetClosenessUseCase` takes a non-null level; `SetRealFriendUseCase` and `shownCloseness` are gone.
+  `ContactMerger.hasAppData` counts "a level above Acquaintances", never "has a level". `PeopleDashboard.isYours` is a
+  real friend, a relation to you or a circle member (an Acquaintance alone isn't yours).
+- **Acquaintances (issue #69).** No rhythm unless Settings sets `AppSettings.acquaintanceDays` (a `DeviceSettings`
+  field, exported in backups like `keptTagSpellings`, so no schema change); `CadenceRules.daysFor` is nullable for that
+  reason. They keep birthday reminders (F10). Today's last-seen card asks about an Acquaintance only for a rhythm set on
+  their page (`meetEveryDays`), never for the Settings default; since #86 the people who had no level are Acquaintances,
+  so this keeps asking whoever was asked before. Labels: Inner · Close · Friends · Acquaintances; the `circle_*` string
+  keys stay.
 
 ## Reference (moved from AGENTS.md)
 
@@ -57,7 +69,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). The People tab is filtered by
     `AppSettings.homeCircleFilter` (in `user_preferences`; `DeleteGroupUseCase` resets it, an unknown id reads as All):
     the list shows only members, whatever their closeness. Choosing a circle anywhere
-    (check-in sheet, Log sheet, "Log a <circle> meetup" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
+    (check-in sheet, Log sheet, the Circles tab's "We met" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
     members with **nobody ticked** (F20). The editor is `CircleEditorRoute(id?)` in `:feature:hangouts`; delete has Undo
     (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
     `user_preferences.home_circle_filter`.

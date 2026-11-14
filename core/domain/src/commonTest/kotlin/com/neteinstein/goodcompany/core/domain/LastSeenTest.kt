@@ -39,8 +39,8 @@ class LastSeenTest {
     fun onlyPeopleWithARhythmThatHasntStartedAreAsked_closestFirst() {
         val friends = listOf(
             friend("zed") { copy(meetEveryDays = 30) },
-            friend("good") { copy(isCloseFriend = true, closeness = Closeness.GOOD) },
-            friend("inner") { copy(isCloseFriend = true, closeness = Closeness.INNER) },
+            friend("good") { copy(closeness = Closeness.GOOD) },
+            friend("inner") { copy(closeness = Closeness.INNER) },
             friend("seen") { copy(meetEveryDays = 7) },
             friend("answered") { copy(meetEveryDays = 7, approxLastSeen = today) },
             friend("paused") { copy(meetEveryDays = 7, catchUpPaused = true) },
@@ -95,7 +95,7 @@ class LastSeenTest {
 
     @Test
     fun aFreshImportShowsNoWallOfOverduePeople() {
-        val imported = (1..40).map { friend("p$it") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) } }
+        val imported = (1..40).map { friend("p$it") { copy(closeness = Closeness.CLOSE) } }
         assertTrue(Relationships.meetupStatuses(imported, emptyList(), today, TimeZone.UTC).none { it.isOverdue(today) })
         assertEquals(40, LastSeenQuestions.pending(imported, emptyList(), emptyList(), CadenceRules()).size)
     }

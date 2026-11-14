@@ -16,8 +16,6 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.AddFriendOption
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
-import com.neteinstein.goodcompany.feature.friends.ui.screens.list.LevelCount
-import com.neteinstein.goodcompany.feature.friends.ui.screens.list.PeopleFilter
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.PeopleSection
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.PeopleSort
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.addFriendOptions
@@ -40,7 +38,6 @@ class FriendsViewModelTest {
         g.syncContacts,
         g.importContactsFile,
         g.addFriend,
-        g.setRealFriend,
         g.loadSampleData,
         g.setHomeCircleFilter,
         g.observeKinship,
@@ -69,8 +66,8 @@ class FriendsViewModelTest {
     fun aCircleFiltersTheList_andIsRemembered() = runViewModelTest {
         val g = TestGraph(
             listOf(
-                friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER, meetEveryDays = 7) },
-                friend("bob") { copy(isCloseFriend = true, meetEveryDays = 7) },
+                friend("ana") { copy(closeness = Closeness.INNER, meetEveryDays = 7) },
+                friend("bob") { copy(closeness = Closeness.CLOSE, meetEveryDays = 7) },
                 friend("zoe"),
             ),
         )
@@ -84,10 +81,13 @@ class FriendsViewModelTest {
 
         vm.onCircleFilter(choir.id)
         assertEquals(choir.id, state.value.circle?.group?.id)
-        // Only members, whatever their closeness; the chips count within the circle.
+        // Only members, whatever their closeness, still grouped by closeness; "All · N" keeps counting everyone.
         assertEquals(listOf("Ana", "Zoe"), state.value.friends.map { it.friend.name })
-        assertEquals(listOf(LevelCount(Closeness.INNER, 1), LevelCount(null, 1)), state.value.levels)
-        assertEquals(2, state.value.listedCount)
+        assertEquals(
+            listOf(PeopleSection.Level(Closeness.INNER) to 1, PeopleSection.Level(Closeness.ACQUAINTANCE) to 1),
+            state.value.sections.map { (section, people) -> section to people.size },
+        )
+        assertEquals(3, state.value.listedCount)
         assertEquals(3, state.value.totalCount)
 
         // Remembered: a new People tab (next launch) opens on the same circle.
@@ -109,7 +109,7 @@ class FriendsViewModelTest {
     }
 
     @Test
-    fun everyoneInOneList_groupedByCloseness_notSetLast() = runViewModelTest {
+    fun everyoneInOneList_groupedByCloseness_acquaintancesLast() = runViewModelTest {
         val g = TestGraph(
             listOf(
                 friend("zoe"),
@@ -128,7 +128,7 @@ class FriendsViewModelTest {
                 PeopleSection.Level(Closeness.INNER) to listOf("Eva"),
                 PeopleSection.Level(Closeness.CLOSE) to listOf("Ana", "Rui"),
                 PeopleSection.Level(Closeness.GOOD) to listOf("Bia"),
-                PeopleSection.Level(null) to listOf("Max", "Zoe"),
+                PeopleSection.Level(Closeness.ACQUAINTANCE) to listOf("Max", "Zoe"),
             ),
             s.sections.map { (section, people) -> section to people.map { it.friend.name } },
         )
@@ -137,7 +137,7 @@ class FriendsViewModelTest {
     }
 
     @Test
-    fun closenessChipsCountAndFilter_andAnEmptiedLevelFallsBackToAll() = runViewModelTest {
+    fun eachHeadingCountsItsPeople_withNoLevelFilter_andSearchKeepsTheGrouping() = runViewModelTest {
         val g = TestGraph(
             listOf(
                 friend("ana") { copy(closeness = Closeness.INNER) },
@@ -150,30 +150,34 @@ class FriendsViewModelTest {
         val vm = vm(g)
         val state = collecting(vm.state)
         assertEquals(4, state.value.listedCount)
-        // Levels nobody is in (Good) have no chip.
+        // Levels nobody is in (Friends) have no heading; the others show how many they hold.
         assertEquals(
-            listOf(LevelCount(Closeness.INNER, 1), LevelCount(Closeness.CLOSE, 2), LevelCount(null, 1)),
-            state.value.levels,
+            listOf(
+                PeopleSection.Level(Closeness.INNER) to 1,
+                PeopleSection.Level(Closeness.CLOSE) to 2,
+                PeopleSection.Level(Closeness.ACQUAINTANCE) to 1,
+            ),
+            state.value.sections.map { (section, people) -> section to people.size },
         )
 
-        vm.onFilterChange(PeopleFilter.Level(Closeness.CLOSE))
-        assertEquals(PeopleFilter.Level(Closeness.CLOSE), state.value.filter)
-        assertEquals(listOf("Bob", "Cat"), state.value.friends.map { it.friend.name })
-        assertEquals(4, state.value.listedCount) // "All" still counts everyone listed
-
-        vm.onFilterChange(PeopleFilter.Level(null))
-        assertEquals(listOf("Dan"), state.value.friends.map { it.friend.name })
-
-        // A search looks across every level.
+        // A search looks across every level and keeps the grouping.
         vm.onQueryChange("a")
-        assertEquals(listOf("Ana", "Cat", "Dan"), state.value.friends.map { it.friend.name })
+        assertEquals(
+            listOf(
+                PeopleSection.Level(Closeness.INNER) to listOf("Ana"),
+                PeopleSection.Level(Closeness.CLOSE) to listOf("Cat"),
+                PeopleSection.Level(Closeness.ACQUAINTANCE) to listOf("Dan"),
+            ),
+            state.value.sections.map { (section, people) -> section to people.map { it.friend.name } },
+        )
         vm.onQueryChange("")
 
-        // Dan gets a closeness: "not set" is empty now, so the list shows everyone again.
-        g.updateFriend(FriendId("dan")) { it.copy(closeness = Closeness.GOOD) }
-        assertEquals(PeopleFilter.All, state.value.filter)
-        assertEquals(4, state.value.friends.size)
-        assertTrue(state.value.levels.none { it.closeness == null })
+        // Dan gets a closeness: his heading moves, the counts follow.
+        g.setCloseness(FriendId("dan"), Closeness.GOOD)
+        assertEquals(
+            listOf(Closeness.INNER to 1, Closeness.CLOSE to 2, Closeness.GOOD to 1),
+            state.value.sections.map { (section, people) -> (section as PeopleSection.Level).closeness to people.size },
+        )
     }
 
     @Test
@@ -192,11 +196,11 @@ class FriendsViewModelTest {
             listOf(PeopleSection.Letter('A') to listOf("Ana"), PeopleSection.Letter('B') to listOf("Bea", "Bob")),
             state.value.sections.map { (section, people) -> section to people.map { it.friend.name } },
         )
-        // The closeness chips still filter an A–Z list.
-        vm.onFilterChange(PeopleFilter.Level(Closeness.GOOD))
-        assertEquals(listOf(PeopleSection.Letter('B') to listOf("Bob")), state.value.sections.map { (s, p) -> s to p.map { it.friend.name } })
         vm.onSortChange(PeopleSort.CLOSENESS)
-        assertEquals(listOf(PeopleSection.Level(Closeness.GOOD)), state.value.sections.map { it.first })
+        assertEquals(
+            listOf(PeopleSection.Level(Closeness.INNER), PeopleSection.Level(Closeness.GOOD), PeopleSection.Level(Closeness.ACQUAINTANCE)),
+            state.value.sections.map { it.first },
+        )
     }
 
     @Test
@@ -211,16 +215,6 @@ class FriendsViewModelTest {
         assertEquals(dashboard.meetupsLast90Days, card.meetupsLast90Days)
         assertEquals(dashboard.cooling.map { it.friend }, card.cooling)
         assertTrue(card.people > 0)
-    }
-
-    @Test
-    fun heartingSomeoneKeepsThemInTheList() = runViewModelTest {
-        val vm = vm()
-        val state = collecting(vm.state)
-        vm.onToggleClose(FriendId("bob"))
-        assertEquals(listOf("Ana", "Bob"), state.value.friends.map { it.friend.name }.sorted())
-        assertEquals(Closeness.CLOSE, g.friendRepo.get(FriendId("bob"))!!.closeness)
-        assertEquals(PeopleSection.Level(Closeness.CLOSE), state.value.sections.first().first)
     }
 
     @Test
@@ -273,17 +267,19 @@ class FriendsViewModelTest {
         vm.onAddFriend("Zoe")
         assertEquals(3, state.value.totalCount)
         assertEquals(FriendsMessage.Added("Zoe"), state.value.message)
+        // Everyone added starts as an Acquaintance (issue #86).
+        assertEquals(Closeness.ACQUAINTANCE, state.value.friends.single { it.friend.name == "Zoe" }.friend.closeness)
     }
 
     @Test
-    fun pickedContactsAreAddedAsRealFriends() = runViewModelTest {
+    fun pickedContactsAreAddedAsAcquaintances() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onContactsPicked(emptyList())
         assertNull(state.value.message)
         vm.onContactsPicked(listOf(ContactRecord("9", "Zoe Lima", listOf("+351 1"), null)))
         assertEquals(FriendsMessage.ContactsPicked(PickedContactsResult(added = 1, updated = 0)), state.value.message)
-        assertTrue(g.friendRepo.get(FriendId("contact-9"))!!.isCloseFriend)
+        assertEquals(Closeness.ACQUAINTANCE, g.friendRepo.get(FriendId("contact-9"))!!.closeness)
     }
 
     @Test

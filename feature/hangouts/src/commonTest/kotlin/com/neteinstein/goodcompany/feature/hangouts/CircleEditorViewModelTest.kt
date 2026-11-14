@@ -21,7 +21,7 @@ class CircleEditorViewModelTest {
     private val rui = FriendId("rui")
     private val g = TestGraph(
         listOf(
-            friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER, meetEveryDays = 7) },
+            friend("ana") { copy(closeness = Closeness.INNER, meetEveryDays = 7) },
             friend("rui"),
         ),
     )
@@ -98,7 +98,7 @@ class CircleEditorViewModelTest {
         assertEquals(CircleColor.MAGENTA, state.value.color)
         assertTrue(state.value.remind)
         assertEquals(30, state.value.days)
-        assertEquals(listOf(Closeness.INNER, null), state.value.members.map { it.closeness })
+        assertEquals(listOf(Closeness.INNER, Closeness.ACQUAINTANCE), state.value.members.map { it.closeness })
 
         vm.onRemoveMember(rui)
         vm.onDays(14)
