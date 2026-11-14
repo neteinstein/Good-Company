@@ -30,8 +30,8 @@ import com.neteinstein.goodcompany.core.data.db.readLinks
 import com.neteinstein.goodcompany.core.data.db.readMessages
 import com.neteinstein.goodcompany.core.data.db.readPlaces
 import com.neteinstein.goodcompany.core.data.db.readPlans
-import com.neteinstein.goodcompany.core.data.db.readPreferences
 import com.neteinstein.goodcompany.core.data.db.readReminders
+import com.neteinstein.goodcompany.core.data.db.readStoredPreferences
 import com.neteinstein.goodcompany.core.data.db.toColumn
 import com.neteinstein.goodcompany.core.data.db.writeAttachment
 import com.neteinstein.goodcompany.core.data.db.writeCalendarDecision
@@ -87,10 +87,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -434,10 +433,12 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
     private val device = PersistentState(settings, DeviceSettings.KEY, DeviceSettings.serializer(), DeviceSettings())
     private val lock = Mutex()
 
-    // The preferences are read on top of the device settings: an unset AI switch follows the saved key (issue #37).
-    @OptIn(ExperimentalCoroutinesApi::class)
+    // An unset AI switch follows the saved key, which is a device setting (issue #37). Kept as one long-lived observer:
+    // restarting it on every device change would cancel queries mid-flight, which the web driver doesn't survive.
     override val settings: Flow<AppSettings> =
-        device.flow.flatMapLatest { device -> db.observe(*PREFERENCE_TABLES) { it.readPreferences(device.applyTo(AppSettings())) } }
+        combine(db.observe(*PREFERENCE_TABLES) { it.readStoredPreferences() }, device.flow) { preferences, device ->
+            preferences.withDevice(device::applyTo)
+        }
 
     override suspend fun update(transform: (AppSettings) -> AppSettings) = lock.withLock {
         val current = current()
@@ -450,7 +451,7 @@ class SqlSettingsRepository(private val db: AppDatabase, settings: Settings) : S
 
     internal suspend fun writeDevice(settings: AppSettings) = device.update { DeviceSettings.of(settings) }
 
-    internal suspend fun current(): AppSettings = db.access { it.readPreferences(device.value.applyTo(AppSettings())) }
+    internal suspend fun current(): AppSettings = db.access { it.readStoredPreferences() }.withDevice(device.value::applyTo)
 }
 
 /** Answers to calendar suggestions (D3), in their own table. */

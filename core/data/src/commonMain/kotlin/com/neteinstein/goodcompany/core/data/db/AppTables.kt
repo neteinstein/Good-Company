@@ -360,12 +360,21 @@ internal suspend fun GoodCompanyDatabase.writeMessage(message: DomainMessage) {
 // --- User preferences (the part of AppSettings that lives in the database) ---
 
 /**
- * The stored preferences applied onto [base], which carries the device settings (the API key); [base] as it is when
- * none were saved yet. An AI switch never written (no row, or NULL from before migration 7) is on when a key is saved.
+ * The stored preferences, still to be put together with the device settings ([withDevice]): an AI switch never
+ * written (no row, or NULL from before migration 9) follows the API key, which lives in the device settings.
  */
-internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings {
-    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return base.copy(aiEnabled = base.hasAiKey)
-    return base.copy(
+internal class StoredPreferences(private val settings: AppSettings, private val aiEnabled: Boolean?) {
+    fun withDevice(applyDevice: (AppSettings) -> AppSettings): AppSettings =
+        applyDevice(settings).let { it.copy(aiEnabled = aiEnabled ?: it.hasAiKey) }
+}
+
+/** The stored preferences applied onto [base], which carries the device settings (the API key). */
+internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): AppSettings =
+    readStoredPreferences(base).withDevice { device -> device }
+
+internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings = AppSettings()): StoredPreferences {
+    val row = userPreferencesQueries.get().awaitAsOneOrNull() ?: return StoredPreferences(base, null)
+    val settings = base.copy(
         innerCircleDays = row.inner_circle_days.toInt(),
         closeCircleDays = row.close_circle_days.toInt(),
         goodFriendsDays = row.good_friends_days.toInt(),
@@ -377,9 +386,9 @@ internal suspend fun GoodCompanyDatabase.readPreferences(base: AppSettings): App
         showWarmth = row.show_warmth.toFlag(),
         privateNotifications = row.private_notifications.toFlag(),
         homeCircleFilter = row.home_circle_filter,
-        aiEnabled = row.ai_enabled?.toFlag() ?: base.hasAiKey,
         activities = activitiesFromColumn(row.activities),
     )
+    return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
 
 /** Comma-separated [HangoutActivity] names; unknown names are dropped, and nothing left (or NULL) means all of them. */
