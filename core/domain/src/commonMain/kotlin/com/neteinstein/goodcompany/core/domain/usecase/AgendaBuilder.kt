@@ -82,11 +82,17 @@ object AgendaBuilder {
             }
         }
 
+        // Every open occurrence: past ones ask "Did you meet?" (pinned to today), the rest are coming up.
+        val circlesById = groups.associateBy { it.id }
         plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
-            val with = p.friendIds.mapNotNull(byId::get)
-            when {
-                p.date < today -> items += AgendaItem.PlanToConfirm(p, with, today)
-                p.date <= end -> items += AgendaItem.PlanUpcoming(p, with)
+            val circle = p.circleId?.let(circlesById::get)
+            val with = (p.friendIds + circle?.memberIds.orEmpty()).distinct().mapNotNull(byId::get)
+            p.occurrences(minOf(p.date, today), end).forEach { day ->
+                items += if (day < today) {
+                    AgendaItem.PlanToConfirm(p, with, today, day, circle)
+                } else {
+                    AgendaItem.PlanUpcoming(p, with, day, circle)
+                }
             }
         }
 

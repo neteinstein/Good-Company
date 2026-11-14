@@ -120,6 +120,7 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
@@ -135,6 +136,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
@@ -184,6 +186,7 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
+import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.plans_title
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.remove_item
@@ -370,6 +373,7 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
+    onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     onOpenCircle: (String) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
@@ -469,9 +473,11 @@ fun FriendDetailScreen(
             onDismissPlanEditor = viewModel::onDismissPlanEditor,
             onSavePlan = viewModel::onSavePlan,
             onConfirmPlan = viewModel::onConfirmPlan,
+            onSkipPlan = viewModel::onSkipPlan,
+            onLogPlan = onLogPlan,
             onCancelPlan = viewModel::onCancelPlan,
             onUndoCancelPlan = viewModel::onUndoCancelPlan,
-            onAddPlanToCalendar = { plan, friends -> addToCalendar(plan.calendarEntry(friends)) },
+            onAddPlanToCalendar = { plan, friends, circle -> addToCalendar(plan.calendarEntry(friends, circle = circle)) },
         ),
     )
     cropping?.let { image ->
@@ -566,11 +572,14 @@ data class FriendDetailActions(
     val onToggleOccasion: (Occasion) -> Unit = {},
     val onOpenPlanEditor: (Plan?) -> Unit = {},
     val onDismissPlanEditor: () -> Unit = {},
-    val onSavePlan: (String, List<FriendId>, LocalDate, String?) -> Unit = { _, _, _, _ -> },
+    val onSavePlan: (PlanInput) -> Unit = {},
     val onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    val onSkipPlan: (Plan) -> Unit = {},
+    /** "Yes" on a circle plan: open the Log sheet to tick who came (F20). */
+    val onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     val onCancelPlan: (Plan) -> Unit = {},
     val onUndoCancelPlan: () -> Unit = {},
-    val onAddPlanToCalendar: (Plan, List<Friend>) -> Unit = { _, _ -> },
+    val onAddPlanToCalendar: (Plan, List<Friend>, FriendGroup?) -> Unit = { _, _, _ -> },
 )
 
 private val RHYTHMS = listOf(7, 14, 30, 90)
@@ -594,6 +603,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
     FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    FriendDetailMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
     is FriendDetailMessage.FeedAdded -> getString(Res.string.msg_feed_added, title)
     FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
     FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
@@ -754,14 +764,19 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
                     detail.plans.forEach { plan ->
                         val with = plan.friendIds.mapNotNull(people::get)
+                        val circle = detail.groups.firstOrNull { it.id == plan.circleId }
                         PlanRow(
                             plan = plan,
                             friends = with.filterNot { it.id == f.id },
                             today = state.today,
-                            onConfirm = { happened -> actions.onConfirmPlan(plan.id, happened) },
-                            onAddToCalendar = { actions.onAddPlanToCalendar(plan, with) },
+                            onConfirm = { happened ->
+                                if (happened && circle != null) actions.onLogPlan(plan.id, plan.date) else actions.onConfirmPlan(plan.id, happened)
+                            },
+                            onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
                             onChange = { actions.onOpenPlanEditor(plan) },
                             onCancel = { actions.onCancelPlan(plan) },
+                            circle = circle,
+                            onSkip = { actions.onSkipPlan(plan) },
                         )
                     }
                 }
@@ -1162,6 +1177,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onSave = actions.onSavePlan,
                 preselected = setOf(f.id),
                 initial = editing.plan,
+                circles = detail.groups,
             )
         }
         if (state.showWish) {

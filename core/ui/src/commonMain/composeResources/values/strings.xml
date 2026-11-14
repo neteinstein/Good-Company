@@ -482,4 +482,39 @@
     <string name="crop_use">Use photo</string>
     <!-- Kids are people (issue #40): the line under a kid’s name, "Ana’s daughter" (parent, kid word). -->
     <string name="kid_of">%1$s’s %2$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">A circle</string>
+    <string name="plan_with_people">People</string>
+    <string name="plan_activity">Activity</string>
+    <string name="plan_repeat">Repeat</string>
+    <string name="plan_repeat_never">Never</string>
+    <string name="plan_repeat_custom">Custom</string>
+    <string name="plan_repeat_unit_days">Days</string>
+    <string name="plan_repeat_unit_weeks">Weeks</string>
+    <string name="plan_repeat_unit_months">Months</string>
+    <string name="plan_repeat_every_label">Every</string>
+    <string name="plan_repeat_forever">Until you stop it. Each date can be skipped on its own.</string>
+    <string name="plan_repeat_until">Until %1$s</string>
+    <string name="plan_repeat_add_end">Add an end date</string>
+    <string name="plan_repeat_remove_end">No end date</string>
+    <string name="plan_skip_one">Skip this one</string>
+    <string name="plan_next_after">Next after this: %1$s</string>
+    <string name="plan_repeats">repeats</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Skipped. The series goes on.</string>
+    <string name="plan_make">Plan</string>
+    <string name="circle_next_plan">Next: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">every week</item>
+        <item quantity="other">every %1$d weeks</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">every month</item>
+        <item quantity="other">every %1$d months</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d person</item>
+        <item quantity="other">%1$d people</item>
+    </plurals>
 </resources>

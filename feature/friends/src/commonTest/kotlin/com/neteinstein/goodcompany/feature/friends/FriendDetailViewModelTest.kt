@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -390,14 +391,14 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onOpenPlanEditor(null)
         assertEquals(PlanEditing(null), state.value.planEditing)
-        vm.onSavePlan("Lunch", emptyList(), LocalDate(2026, 3, 12), "Tasca")
+        vm.onSavePlan(PlanInput("Lunch", emptyList(), LocalDate(2026, 3, 12), "Tasca"))
         assertNull(state.value.planEditing)
         assertEquals(FriendDetailMessage.PlanSaved, state.value.message)
         val plan = state.value.detail!!.plans.single()
         assertEquals(listOf(FriendId("ana")), plan.friendIds)
 
         vm.onOpenPlanEditor(plan)
-        vm.onSavePlan("Long lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 13), null)
+        vm.onSavePlan(PlanInput("Long lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 13)))
         assertEquals("Long lunch", state.value.detail!!.plans.single().title)
         assertEquals(plan.id, state.value.detail!!.plans.single().id)
 

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
@@ -13,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
 import com.neteinstein.goodcompany.core.ui.components.meetupPlaceState
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,6 +55,10 @@ data class LogInteractionUiState(
  * The "Log" sheet behind `LogInteractionRoute(friendIds, type, circleId)`: [type] is a [LogKind] or an InteractionType
  * name (see [LogKind.parse]); unknown or null preselects "Met". [circleId] opens on that circle's members, nobody ticked
  * (F20: you tick who came). Saving goes through [LogInteractionUseCase].
+ *
+ * [plan] opens it as the answer to a plan's "Did you meet?" (issue #43): a meetup on that occurrence's day with the
+ * plan's activity, place and title, its people ticked and its circle's members unticked. Saving also closes that
+ * occurrence ([ConfirmPlanUseCase] without a second check-in), so a recurring plan moves on to the next one.
  */
 class LogInteractionViewModel(
     friendIds: List<FriendId>,
@@ -63,9 +71,32 @@ class LogInteractionViewModel(
     private val logInteraction: LogInteractionUseCase,
     private val currentLocation: GetCurrentLocationUseCase,
     private val clock: AppClock,
+    private val plan: PlanOccurrence? = null,
+    private val observePlans: ObservePlansUseCase? = null,
+    private val confirmPlan: ConfirmPlanUseCase? = null,
 ) : ViewModel() {
     private val draft = MutableStateFlow(Draft(LogKind.parse(type) ?: LogKind.MEETUP, friendIds.distinct(), clock.today(), circleId = circleId))
     private val done = MutableStateFlow(false)
+
+    init {
+        if (plan != null && observePlans != null) {
+            viewModelScope.launch {
+                val p = observePlans().first().firstOrNull { it.id == plan.planId } ?: return@launch
+                val day = minOf(plan.date ?: p.date, clock.today())
+                draft.update {
+                    it.copy(
+                        kind = LogKind.MEETUP,
+                        people = p.friendIds,
+                        date = day,
+                        note = p.title,
+                        placeName = p.place.orEmpty(),
+                        activity = p.activity,
+                        circleId = p.circleId,
+                    )
+                }
+            }
+        }
+    }
 
     private fun initial() = LogInteractionUiState(LogSheetState(kind = draft.value.kind, date = draft.value.date, today = clock.today()))
 
@@ -160,6 +191,7 @@ class LogInteractionViewModel(
                     ),
                 )
             }.isSuccess
+            if (ok && plan != null) confirmPlan?.invoke(plan.planId, happened = true, day = plan.date, logCheckIn = false)
             draft.update { it.copy(saving = false) }
             if (ok) done.value = true
         }

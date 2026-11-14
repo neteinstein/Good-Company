@@ -49,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
@@ -105,6 +106,9 @@ sealed interface FriendDetailMessage {
     data object PlanLogged : FriendDetailMessage
 
     data object PlanClosed : FriendDetailMessage
+
+    /** One occurrence of a recurring plan skipped; the series goes on. */
+    data object PlanSkipped : FriendDetailMessage
 
     data class FeedAdded(val title: String) : FriendDetailMessage
 
@@ -742,12 +746,22 @@ class FriendDetailViewModel(
 
     fun onDismissPlanEditor() = local.update { it.copy(planEditing = null) }
 
-    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
-        if (title.isBlank()) return
+    /** Saves the editor's plan; with neither people nor a circle picked, it's with this friend. */
+    fun onSavePlan(input: PlanInput) {
+        if (input.title.isBlank()) return
         val editing = local.value.planEditing?.plan
+        val withSomeone = if (input.friendIds.isEmpty() && input.circleId == null) input.copy(friendIds = listOf(friendId)) else input
         viewModelScope.launch {
-            savePlan(editing?.id, title, friendIds.ifEmpty { listOf(friendId) }, date, place)
+            savePlan.save(editing?.id, withSomeone)
             local.update { it.copy(planEditing = null, message = FriendDetailMessage.PlanSaved) }
+        }
+    }
+
+    /** "Skip this one": the open occurrence of a recurring plan; the series goes on. */
+    fun onSkipPlan(plan: Plan) {
+        viewModelScope.launch {
+            confirmPlan(plan.id, happened = false, day = plan.date)
+            say(FriendDetailMessage.PlanSkipped)
         }
     }
 

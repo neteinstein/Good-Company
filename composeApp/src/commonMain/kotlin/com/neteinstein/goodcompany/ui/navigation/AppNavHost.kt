@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
@@ -45,6 +46,7 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
+import kotlinx.datetime.LocalDate
 
 const val APP_VERSION = "1.0.0"
 
@@ -59,6 +61,11 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
     // The built-in Family circle (F6) has no editor: it fills itself from "relationship to me".
     val editCircle: (String?) -> Unit = { if (it != FamilyCircle.ID) navController.navigate(CircleEditorRoute(it)) }
+
+    // "Did you meet?" on a circle plan: the Log sheet with the plan's activity and the circle's members unticked (F20).
+    val logPlan: (String, LocalDate) -> Unit = { planId, day ->
+        navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, plan = PlanOccurrence(planId, day).encode()))
+    }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,
@@ -107,6 +114,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                        onLogPlan = logPlan,
                         // The friend page already set Home's circle filter; Home shows it.
                         onOpenCircle = { navController.navigateTopLevel(TopLevelDestination.FRIENDS) },
                         onEditCircle = editCircle,
@@ -130,6 +138,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     friendIds = route.friendIds.map(::FriendId),
                     type = route.type,
                     circleId = route.circleId,
+                    plan = route.plan,
                     onClose = { navController.popBackStack() },
                 )
             }
@@ -183,7 +192,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onEditCircle = editCircle,
                 )
             }
-            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend) }
+            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend, onLogPlan = logPlan) }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
             composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION, onOpenPlaces = { navController.navigate(PlacesRoute) }) }
             composable<PlacesRoute>(

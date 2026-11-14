@@ -33,6 +33,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
@@ -55,6 +56,8 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
@@ -646,6 +649,20 @@ abstract class RepositoryContract {
         )
         from.interactions.upsertAttachment(Attachment("b", circleId = "g", kind = AttachmentKind.TEXT, text = "hi", at = at(2026, 3, 3)))
         from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "i", createdAt = at(2026, 3, 1)))
+        // A circle plan that repeats, with one date skipped (issue #43).
+        from.plans.upsert(
+            Plan(
+                "q",
+                emptyList(),
+                "Climbing",
+                LocalDate(2026, 3, 14),
+                createdAt = at(2026, 3, 1),
+                circleId = "g",
+                activity = HangoutActivity.SPORTS,
+                repeat = Repeat(15, RepeatUnit.DAY, LocalDate(2026, 3, 14), until = LocalDate(2026, 12, 31)),
+                skippedDates = listOf(LocalDate(2026, 3, 29)),
+            ),
+        )
         from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon") }
         val exported = from.backup.snapshot()
 
@@ -665,6 +682,7 @@ abstract class RepositoryContract {
         assertEquals(listOf(richFriend()), to.friends.friends.first())
         assertEquals(listOf("h"), to.hangouts.hangouts.first().map { it.id })
         assertEquals(listOf("pl"), to.hangouts.places.first().map { it.id })
+        assertEquals(LocalDate(2026, 3, 29), to.plans.plans.first().single { it.id == "q" }.skippedDates.single())
     }
 
     @Test

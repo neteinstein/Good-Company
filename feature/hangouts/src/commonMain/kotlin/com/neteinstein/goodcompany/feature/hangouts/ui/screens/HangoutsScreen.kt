@@ -24,9 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material.icons.rounded.Weekend
 import androidx.compose.material3.Button
@@ -83,6 +85,8 @@ import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.circle_built_in
+import com.neteinstein.goodcompany.core.ui.resources.circle_next_plan
+import com.neteinstein.goodcompany.core.ui.resources.plan_make
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
@@ -174,6 +178,7 @@ fun HangoutsScreen(
             onMessageShown = viewModel::onMessageShown,
             onSelectOccasion = viewModel::onSelectOccasion,
             onPlanWith = viewModel::onPlanWith,
+            onPlanWithCircle = viewModel::onPlanWithCircle,
         ),
     )
     state.planDraft?.let { draft ->
@@ -182,8 +187,10 @@ fun HangoutsScreen(
             today = state.today,
             onDismiss = viewModel::onDismissPlan,
             onSave = viewModel::onSavePlan,
-            preselected = setOf(draft.friendId),
-            initialTitle = occasionLabel(draft.occasion),
+            preselected = setOfNotNull(draft.friendId),
+            initialTitle = draft.occasion?.let { occasionLabel(it) }.orEmpty(),
+            circles = state.groups.map { it.group },
+            preselectedCircle = draft.circleId,
         )
     }
     state.draft?.let { draft ->
@@ -222,6 +229,8 @@ data class HangoutsActions(
     val onMessageShown: () -> Unit = {},
     val onSelectOccasion: (Occasion) -> Unit = {},
     val onPlanWith: (FriendId, Occasion) -> Unit = { _, _ -> },
+    /** "Plan" on a circle's card. */
+    val onPlanWithCircle: (String) -> Unit = {},
 )
 
 /** Localised snackbar text for a [HangoutsMessage]. */
@@ -562,6 +571,24 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                     style = MaterialTheme.typography.bodySmall,
                     color = if (overdue && snoozed == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                state.circlePlans[g.id]?.let { plan ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable,
+                            null,
+                            Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            stringResource(CoreRes.string.circle_next_plan, plan.title, plan.date.shortLabel()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StackedAvatars(status.members, size = 24.dp, max = 6)
@@ -590,6 +617,14 @@ private fun GroupCard(status: Relationships.GroupStatus, state: HangoutsUiState,
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.group_more)) }
                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(CoreRes.string.plan_make)) },
+                            leadingIcon = { Icon(Icons.Rounded.EventAvailable, null) },
+                            onClick = {
+                                menu = false
+                                actions.onPlanWithCircle(g.id)
+                            },
+                        )
                         DropdownMenuItem(
                             text = { Text(stringResource(Res.string.group_edit)) },
                             leadingIcon = { Icon(Icons.Rounded.Edit, null) },

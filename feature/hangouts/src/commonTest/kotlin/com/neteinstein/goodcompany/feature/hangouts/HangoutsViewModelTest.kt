@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -44,6 +45,7 @@ class HangoutsViewModelTest {
         g.observeGroups,
         g.observeOccasionMatches,
         g.observePlaceBook,
+        g.observePlans,
         g.savePlan,
         g.deleteGroup,
         g.restoreGroup,
@@ -209,7 +211,7 @@ class HangoutsViewModelTest {
 
         vm.onPlanWith(ana, Occasion.COFFEE)
         assertEquals(PlanDraft(ana, Occasion.COFFEE), state.value.planDraft)
-        vm.onSavePlan("Coffee", emptyList(), LocalDate(2026, 3, 12), null)
+        vm.onSavePlan(PlanInput("Coffee", emptyList(), LocalDate(2026, 3, 12)))
         assertNull(state.value.planDraft)
         assertEquals(HangoutsMessage.PlanSaved, state.value.message)
         assertEquals(listOf(ana), g.planRepo.plans.value.single().friendIds)

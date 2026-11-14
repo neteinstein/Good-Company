@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -120,15 +121,24 @@ object NotificationPlanner {
             )
         }
 
-        // --- Plans: a heads-up on the day, then "Did you meet?" the day after (until answered, for a week).
+        // --- Plans: a heads-up on the day of each occurrence, then "Did you meet?" the day after (until answered, for
+        // a week). Never throttled (gotcha 16). A circle plan names the circle.
+        val circlesById = groups.associateBy { it.id }
         plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
-            val names = p.friendIds.mapNotNull { byId[it]?.displayName }
-            add("plan:${p.id}:day", p.date, NotificationContent.PlanToday(p.id, p.title, names))
-            val firstAsk = p.date.plus(1, DateTimeUnit.DAY)
-            val lastAsk = p.date.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
-            var ask = maxOf(firstAsk, today)
-            if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
-            if (ask <= lastAsk) add("plan:${p.id}:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names))
+            val names = listOfNotNull(p.circleId?.let { circlesById[it]?.name }) + p.friendIds.mapNotNull { byId[it]?.displayName }
+            val isCircle = p.circleId != null && p.circleId in circlesById
+            p.occurrences(today.minus(FOLLOW_UP_DAYS, DateTimeUnit.DAY), end).forEach { day ->
+                val occurrence = PlanOccurrence(p.id, day.takeIf { p.isRecurring })
+                val key = occurrence.encode()
+                add("plan:$key:day", day, NotificationContent.PlanToday(p.id, p.title, names, occurrence.date))
+                val firstAsk = day.plus(1, DateTimeUnit.DAY)
+                val lastAsk = day.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
+                var ask = maxOf(firstAsk, today)
+                if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
+                if (ask <= lastAsk) {
+                    add("plan:$key:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle))
+                }
+            }
         }
 
         // --- Catch-up nudges, within a budget (see [NudgePolicy]).

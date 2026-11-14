@@ -491,4 +491,39 @@
     <string name="crop_hint">Pincez pour zoomer · faites glisser pour déplacer</string>
     <string name="crop_use">Utiliser la photo</string>
     <string name="kid_of">%2$s de %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Un cercle</string>
+    <string name="plan_with_people">Des personnes</string>
+    <string name="plan_activity">Activité</string>
+    <string name="plan_repeat">Répéter</string>
+    <string name="plan_repeat_never">Jamais</string>
+    <string name="plan_repeat_custom">Personnaliser</string>
+    <string name="plan_repeat_unit_days">Jours</string>
+    <string name="plan_repeat_unit_weeks">Semaines</string>
+    <string name="plan_repeat_unit_months">Mois</string>
+    <string name="plan_repeat_every_label">Tous les</string>
+    <string name="plan_repeat_forever">Jusqu’à ce que vous l’arrêtiez. Chaque date peut être sautée à part.</string>
+    <string name="plan_repeat_until">Jusqu’au %1$s</string>
+    <string name="plan_repeat_add_end">Ajouter une date de fin</string>
+    <string name="plan_repeat_remove_end">Sans date de fin</string>
+    <string name="plan_skip_one">Sauter celle-ci</string>
+    <string name="plan_next_after">La suivante : %1$s</string>
+    <string name="plan_repeats">se répète</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Sautée. La série continue.</string>
+    <string name="plan_make">Prévoir</string>
+    <string name="circle_next_plan">Prochain : %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">toutes les semaines</item>
+        <item quantity="other">toutes les %1$d semaines</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">tous les mois</item>
+        <item quantity="other">tous les %1$d mois</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d personne</item>
+        <item quantity="other">%1$d personnes</item>
+    </plurals>
 </resources>

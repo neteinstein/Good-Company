@@ -31,6 +31,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.update.GitHubReleaseUpdateSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
@@ -392,8 +393,8 @@ val appModule = module {
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
-    viewModel { (ids: List<FriendId>, type: String?, circleId: String?) ->
-        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get())
+    viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?) ->
+        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get(), plan, get(), get())
     }
     viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)

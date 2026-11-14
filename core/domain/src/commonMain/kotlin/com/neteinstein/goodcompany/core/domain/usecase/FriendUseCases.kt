@@ -100,7 +100,7 @@ data class FriendDetail(
     val groups: List<FriendGroup> = emptyList(),
     /** Things to bring up, from notes and dates you already have (works without an AI key). */
     val topics: List<TopicHint> = emptyList(),
-    /** Planned meetups with this friend that haven't happened yet. */
+    /** Planned meetups with this friend (or a circle they're in) that haven't happened yet. */
     val plans: List<Plan> = emptyList(),
     /** Everyone else, A–Z: who could have introduced you (the "introduced by" picker and link). */
     val others: List<Friend> = emptyList(),
@@ -159,7 +159,9 @@ class ObserveFriendDetailUseCase(
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
             topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone, kids.map { it.person }),
-            plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
+            plans = ps.filter { p ->
+                p.status == PlanStatus.PLANNED && (id in p.friendIds || gs.any { it.id == p.circleId && id in it.memberIds })
+            }.sortedBy { it.date },
             others = all.filter { it.id != id }.sortedBy { it.displayName.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
             timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone, attachments),

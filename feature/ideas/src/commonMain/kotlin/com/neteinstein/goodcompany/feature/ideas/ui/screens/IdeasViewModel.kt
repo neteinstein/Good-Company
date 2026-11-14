@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
@@ -122,11 +123,11 @@ class IdeasViewModel(
 
     fun onDismissPlan() = local.update { it.copy(planning = null) }
 
-    fun onSavePlan(title: String, friendIds: List<FriendId>, date: LocalDate, place: String?) {
+    fun onSavePlan(input: PlanInput) {
         val card = local.value.planning ?: return
-        if (title.isBlank()) return
+        if (input.title.isBlank()) return
         viewModelScope.launch {
-            savePlan(null, title, friendIds.ifEmpty { card.idea.friendIds }, date, place, ideaId = card.idea.id)
+            savePlan.save(null, input.copy(friendIds = input.friendIds.ifEmpty { card.idea.friendIds }), ideaId = card.idea.id)
             local.update { it.copy(planning = null, message = IdeasMessage.PlanSaved) }
         }
     }

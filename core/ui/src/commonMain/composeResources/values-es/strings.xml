@@ -491,4 +491,39 @@
     <string name="crop_hint">Pellizca para ampliar · arrastra para mover</string>
     <string name="crop_use">Usar foto</string>
     <string name="kid_of">%2$s de %1$s</string>
+
+    <!-- Plans with a circle, recurring plans (issue #43) -->
+    <string name="plan_with_circle">Un círculo</string>
+    <string name="plan_with_people">Personas</string>
+    <string name="plan_activity">Actividad</string>
+    <string name="plan_repeat">Repetir</string>
+    <string name="plan_repeat_never">Nunca</string>
+    <string name="plan_repeat_custom">Personalizar</string>
+    <string name="plan_repeat_unit_days">Días</string>
+    <string name="plan_repeat_unit_weeks">Semanas</string>
+    <string name="plan_repeat_unit_months">Meses</string>
+    <string name="plan_repeat_every_label">Cada</string>
+    <string name="plan_repeat_forever">Hasta que lo pares. Cada fecha se puede saltar por separado.</string>
+    <string name="plan_repeat_until">Hasta el %1$s</string>
+    <string name="plan_repeat_add_end">Añadir fecha de fin</string>
+    <string name="plan_repeat_remove_end">Sin fecha de fin</string>
+    <string name="plan_skip_one">Saltar esta</string>
+    <string name="plan_next_after">La siguiente: %1$s</string>
+    <string name="plan_repeats">se repite</string>
+    <string name="plan_circle_people">%1$s · %2$s</string>
+    <string name="plan_skipped">Saltada. La serie sigue.</string>
+    <string name="plan_make">Planear</string>
+    <string name="circle_next_plan">Próximo: %1$s, %2$s</string>
+    <plurals name="plan_every_n_weeks">
+        <item quantity="one">cada semana</item>
+        <item quantity="other">cada %1$d semanas</item>
+    </plurals>
+    <plurals name="plan_every_n_months">
+        <item quantity="one">cada mes</item>
+        <item quantity="other">cada %1$d meses</item>
+    </plurals>
+    <plurals name="plan_people_count">
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
+    </plurals>
 </resources>

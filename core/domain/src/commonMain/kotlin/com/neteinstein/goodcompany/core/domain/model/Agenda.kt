@@ -39,15 +39,32 @@ sealed interface AgendaItem {
         override val key get() = "overdue-${friend.id.value}"
     }
 
-    /** A planned meetup coming up. */
-    data class PlanUpcoming(val plan: Plan, val friends: List<Friend>) : AgendaItem {
-        override val date get() = plan.date
-        override val key get() = "plan-${plan.id}"
+    /**
+     * A planned meetup coming up: one entry per occurrence ([occurrence]) of a recurring plan. [friends] is everyone
+     * it is with (the plan's people and its [circle]'s members).
+     */
+    data class PlanUpcoming(
+        val plan: Plan,
+        val friends: List<Friend>,
+        val occurrence: LocalDate = plan.date,
+        val circle: FriendGroup? = null,
+    ) : AgendaItem {
+        override val date get() = occurrence
+        override val key get() = if (plan.isRecurring) "plan-${plan.id}-$occurrence" else "plan-${plan.id}"
+
+        /** The series' next occurrence after this one ("next after this: Dec 6"). */
+        val nextAfter: LocalDate? get() = plan.nextOccurrenceAfter(occurrence)
     }
 
-    /** A plan whose day has passed: "Did you meet?" Pinned to today until answered. */
-    data class PlanToConfirm(val plan: Plan, val friends: List<Friend>, override val date: LocalDate) : AgendaItem {
-        override val key get() = "plan-confirm-${plan.id}"
+    /** An occurrence whose day has passed: "Did you meet?" Pinned to today until answered. */
+    data class PlanToConfirm(
+        val plan: Plan,
+        val friends: List<Friend>,
+        override val date: LocalDate,
+        val occurrence: LocalDate = plan.date,
+        val circle: FriendGroup? = null,
+    ) : AgendaItem {
+        override val key get() = if (plan.isRecurring) "plan-confirm-${plan.id}-$occurrence" else "plan-confirm-${plan.id}"
     }
 
     data class GroupOverdue(val group: FriendGroup, val members: List<Friend>, val daysSince: Int?, override val date: LocalDate) : AgendaItem {
