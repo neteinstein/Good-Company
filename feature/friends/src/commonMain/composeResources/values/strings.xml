@@ -38,7 +38,7 @@
     <string name="no_matches_title">No matches</string>
     <string name="no_matches_search">Nobody called or into “%1$s”.</string>
     <string name="no_matches_close">Tap ♥ on someone in Everyone to make them a real friend.</string>
-    <string name="fab_add_friend">Add friend</string>
+    <string name="action_add_friend">Add friend</string>
 
     <!-- Welcome -->
     <string name="welcome_title">Who are your people?</string>

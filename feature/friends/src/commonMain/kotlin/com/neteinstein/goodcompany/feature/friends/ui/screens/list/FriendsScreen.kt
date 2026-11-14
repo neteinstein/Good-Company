@@ -46,7 +46,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -103,6 +102,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.action_add_friend
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
@@ -129,7 +129,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.circle_goal
 import com.neteinstein.goodcompany.feature.friends.resources.circle_last_together
 import com.neteinstein.goodcompany.feature.friends.resources.circle_log_meetup
 import com.neteinstein.goodcompany.feature.friends.resources.circle_never_together
-import com.neteinstein.goodcompany.feature.friends.resources.fab_add_friend
 import com.neteinstein.goodcompany.feature.friends.resources.filter_everyone
 import com.neteinstein.goodcompany.feature.friends.resources.filter_real_friends
 import com.neteinstein.goodcompany.feature.friends.resources.greeting_afternoon
@@ -350,20 +349,11 @@ fun FriendsContent(
     val isEmpty = !state.isLoading && state.totalCount == 0
 
     Scaffold(
-        floatingActionButton = {
-            if (!isEmpty) {
-                ExtendedFloatingActionButton(
-                    onClick = openAdd,
-                    icon = { Icon(Icons.Rounded.PersonAdd, null) },
-                    text = { Text(stringResource(Res.string.fab_add_friend)) },
-                )
-            }
-        },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 88.dp),
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
         ) {
             item(key = "header") {
                 ScreenHeader(
@@ -397,10 +387,18 @@ fun FriendsContent(
                             Box {
                                 IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.action_more)) }
                                 DropdownMenu(menuOpen, onDismissRequest = { menuOpen = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.action_add_friend)) },
+                                        leadingIcon = { Icon(Icons.Rounded.PersonAdd, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            openAdd()
+                                        },
+                                    )
                                     if (canPickContacts || AddFriendOption.CHOOSE_FROM_LIST in addOptions) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(Res.string.action_pick_contacts)) },
-                                            leadingIcon = { Icon(Icons.Rounded.PersonAdd, null) },
+                                            leadingIcon = { Icon(Icons.Rounded.Contacts, null) },
                                             onClick = {
                                                 menuOpen = false
                                                 // One way in from the contacts: the list where this build has it.

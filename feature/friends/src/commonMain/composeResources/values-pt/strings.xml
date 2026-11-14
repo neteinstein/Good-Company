@@ -37,7 +37,7 @@
     <string name="no_matches_title">Sem resultados</string>
     <string name="no_matches_search">Ninguém se chama ou gosta de “%1$s”.</string>
     <string name="no_matches_close">Toca em ♥ em alguém de Todos para o tornar amigo a sério.</string>
-    <string name="fab_add_friend">Adicionar amigo</string>
+    <string name="action_add_friend">Adicionar amigo</string>
     <string name="welcome_title">Quem é a tua gente?</string>
     <string name="welcome_message_contacts">Importa os teus contactos e toca em ♥ nos que são amigos a sério — ou adiciona alguém à mão.</string>
     <string name="welcome_message_manual">Adiciona as pessoas que importam, ou importa um ficheiro de contactos (.vcf) exportado do Google Contactos, iCloud ou do telemóvel.</string>

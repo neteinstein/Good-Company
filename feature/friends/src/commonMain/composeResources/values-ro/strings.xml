@@ -40,7 +40,7 @@
     <string name="no_matches_title">Niciun rezultat</string>
     <string name="no_matches_search">Nimeni nu se numește și nu e pasionat de „%1$s”.</string>
     <string name="no_matches_close">Atinge ♥ la cineva din Toți ca să devină prieten adevărat.</string>
-    <string name="fab_add_friend">Adaugă prieten</string>
+    <string name="action_add_friend">Adaugă prieten</string>
     <string name="welcome_title">Cine sunt oamenii tăi?</string>
     <string name="welcome_message_contacts">Importă-ți contactele și atinge ♥ la prietenii adevărați — sau adaugă pe cineva manual.</string>
     <string name="welcome_message_manual">Adaugă oamenii care contează sau importă un fișier de contacte (.vcf) exportat din Google Contacts, iCloud sau telefon.</string>
