@@ -1,0 +1,575 @@
+<title>Good Company V1 mockups</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a review sheet. One band per issue, phones side by side, notes under each phone. Colours are the app's own M3 tokens (core/ui Color.kt). */
+:root{
+  --primary:#B4372F;--on-primary:#fff;--primary-c:#FFDAD5;--on-primary-c:#410001;
+  --secondary:#3F6560;--secondary-c:#D5EBE6;--on-secondary-c:#0B2E2A;
+  --tertiary:#7A5900;--tertiary-c:#FFDEA6;--on-tertiary-c:#261900;
+  --bg:#FFF8F6;--fg:#231918;--muted:#534341;--outline:#857371;--outline-v:#D8C2BF;
+  --s-lowest:#fff;--s-low:#FFF0EE;--s:#FCEAE7;--s-high:#F6E4E2;--s-highest:#F1DEDC;
+  --scrim:rgba(35,25,24,.42);--page:#F3ECEA;--page-fg:#231918;--frame:#2a2120;
+  --font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --c-purple:linear-gradient(135deg,#7046E8,#4A2BB0);--c-blue:linear-gradient(135deg,#2B6FD6,#1A4AA0);
+  --c-amber:linear-gradient(135deg,#B8650A,#8A4A05);--c-teal:linear-gradient(135deg,#0F7A64,#0A5444);
+  --c-magenta:linear-gradient(135deg,#B0206A,#7E1048);--c-rust:linear-gradient(135deg,#C2461E,#8F2F12);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#FFB4A9;--on-primary:#690003;--primary-c:#8F1F1A;--on-primary-c:#FFDAD5;
+  --secondary:#A6CEC8;--secondary-c:#284B47;--on-secondary-c:#D5EBE6;
+  --tertiary:#F5BF48;--tertiary-c:#5C4200;--on-tertiary-c:#FFDEA6;
+  --bg:#1A1110;--fg:#F1DEDC;--muted:#D8C2BF;--outline:#A08C8A;--outline-v:#534341;
+  --s-lowest:#140C0B;--s-low:#231918;--s:#271D1C;--s-high:#322827;--s-highest:#3D3231;
+  --scrim:rgba(0,0,0,.55);--page:#110a09;--page-fg:#F1DEDC;--frame:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --primary:#FFB4A9;--on-primary:#690003;--primary-c:#8F1F1A;--on-primary-c:#FFDAD5;
+  --secondary:#A6CEC8;--secondary-c:#284B47;--on-secondary-c:#D5EBE6;
+  --tertiary:#F5BF48;--tertiary-c:#5C4200;--on-tertiary-c:#FFDEA6;
+  --bg:#1A1110;--fg:#F1DEDC;--muted:#D8C2BF;--outline:#A08C8A;--outline-v:#534341;
+  --s-lowest:#140C0B;--s-low:#231918;--s:#271D1C;--s-high:#322827;--s-highest:#3D3231;
+  --scrim:rgba(0,0,0,.55);--page:#110a09;--page-fg:#F1DEDC;--frame:#000;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--page-fg);font-family:var(--font);margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+header.top h1{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+header.top p{margin:0;max-width:68ch;line-height:1.55;color:var(--muted)}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.toc a{color:var(--on-secondary-c);background:var(--secondary-c);text-decoration:none;padding:6px 12px;border-radius:999px;font-weight:600;font-size:13px}
+section.issue{display:flex;flex-direction:column;gap:20px}
+.issue-h{display:flex;flex-direction:column;gap:6px;max-width:80ch}
+.issue-h .tag{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);font-weight:700}
+.issue-h h2{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em}
+.issue-h p{margin:0;line-height:1.55;color:var(--muted)}
+.screens{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;width:340px;max-width:100%}
+figcaption{font-size:13px;line-height:1.5;color:var(--muted)}
+figcaption b{color:var(--page-fg)}
+
+/* ---------- phone ---------- */
+.phone{width:340px;max-width:100%;height:700px;border-radius:38px;background:var(--bg);color:var(--fg);
+  border:7px solid var(--frame);position:relative;overflow:hidden;display:flex;flex-direction:column;font-size:14px;
+  box-shadow:0 18px 40px -18px rgba(60,20,15,.35)}
+.sb{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:700}
+.scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px}
+.topbar{display:flex;align-items:center;gap:12px;padding:6px 12px 6px 8px;flex:none}
+.topbar h3{margin:0;font-size:21px;font-weight:800;flex:1;letter-spacing:-.01em}
+.ib{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--s-high);flex:none}
+.ib svg,.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary)}
+.card{background:var(--s-low);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.card-h{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.card-h .badge{width:30px;height:30px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center}
+.card-h .badge svg{width:16px;height:16px}
+.card-h .more{margin-left:auto;font-size:12px;font-weight:600;color:var(--primary)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--outline-v);border-radius:10px;padding:5px 10px;font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip.on{background:var(--secondary-c);color:var(--on-secondary-c);border-color:transparent;font-weight:600}
+.chip.pill{border-radius:999px}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.nowrap{flex-wrap:nowrap;overflow:hidden}
+.kv{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:13.5px}
+.kv .ic{width:18px;height:18px;color:var(--muted);margin-top:1px}
+.kv small{display:block;color:var(--muted);font-size:12px}
+.av{width:40px;height:40px;border-radius:50%;color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px;flex:none;letter-spacing:-.02em}
+.av.sm{width:28px;height:28px;font-size:10.5px}.av.lg{width:96px;height:96px;font-size:34px;box-shadow:0 0 0 4px var(--bg),0 0 0 6.5px var(--primary)}
+.av.ring{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--primary)}
+.p{background:var(--c-purple)}.b{background:var(--c-blue)}.a{background:var(--c-amber)}.t{background:var(--c-teal)}.m{background:var(--c-magenta)}.r{background:var(--c-rust)}
+.stack{display:flex}.stack .av{box-shadow:0 0 0 2px var(--s-low)}.stack .av+.av{margin-left:-8px}
+.row{display:flex;align-items:center;gap:12px}
+.row .grow{flex:1;min-width:0}
+.row .t1{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .t2{font-size:12px;color:var(--muted)}
+.t2.red{color:var(--primary)}
+.btn{background:var(--primary);color:var(--on-primary);border-radius:999px;padding:11px 18px;font-weight:700;text-align:center;font-size:14px}
+.btn.tonal{background:var(--secondary-c);color:var(--on-secondary-c)}
+.btn.text{background:none;color:var(--primary);padding:8px 4px}
+.hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 4px;text-align:center;
+  background:linear-gradient(180deg,#C9B4F0 0%,transparent 100%);margin:0 -16px;padding-top:10px}
+.hero h4{margin:6px 0 0;font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--fg)}
+.fam{display:flex;flex-direction:column;gap:9px}
+.fam .rel{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.emo{width:28px;height:28px;border-radius:50%;background:var(--tertiary-c);display:grid;place-items:center;font-size:15px;flex:none}
+.tl{display:flex;flex-direction:column;gap:0;position:relative}
+.tl .month{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 0 6px 44px}
+.ev{display:grid;grid-template-columns:32px 1fr;gap:12px;position:relative;padding-bottom:12px}
+.ev::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--outline-v)}
+.ev:last-child::before{display:none}
+.ev .k{width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
+.ev .k svg{width:16px;height:16px}
+.k.meet{background:var(--primary);color:var(--on-primary)}
+.k.call{background:var(--secondary-c);color:var(--on-secondary-c)}
+.k.msg{background:var(--secondary-c);color:var(--on-secondary-c)}
+.k.note{background:var(--tertiary-c);color:var(--on-tertiary-c)}
+.k.gift{background:var(--primary-c);color:var(--primary)}
+.ev .body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ev .h{font-weight:600;font-size:13.5px}
+.ev .meta{font-size:12px;color:var(--muted)}
+.ev .q{font-size:12.5px;background:var(--s);border-radius:12px;padding:7px 10px;line-height:1.45}
+.src{font-size:10.5px;font-weight:600;color:var(--secondary);background:var(--secondary-c);border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:1px}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--s-low);border-radius:28px 28px 0 0;padding:10px 18px 22px;display:flex;flex-direction:column;gap:14px}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:var(--outline);margin:0 auto 2px;opacity:.6}
+.sheet h5{margin:0;font-size:19px;font-weight:800}
+.lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.field{border:1px solid var(--outline);border-radius:12px;padding:10px 12px;font-size:13.5px;display:flex;gap:8px;align-items:center}
+.field.ph{color:var(--muted)}
+.field small{position:absolute}
+.seg{display:flex;border:1px solid var(--outline);border-radius:999px;overflow:hidden}
+.seg div{flex:1;text-align:center;padding:8px 4px;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px}
+.seg div+div{border-left:1px solid var(--outline)}
+.seg .on{background:var(--secondary-c);color:var(--on-secondary-c)}
+.choice{border:1.5px solid var(--outline-v);border-radius:18px;padding:11px 12px;display:grid;grid-template-columns:22px 1fr;gap:10px}
+.choice.on{border-color:var(--primary);background:var(--primary-c);color:var(--on-primary-c)}
+.choice .t1{font-weight:700;font-size:13.5px}.choice .t2{font-size:12px;opacity:.85;line-height:1.4}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--outline);margin-top:1px}
+.choice.on .radio{border-color:var(--primary);box-shadow:inset 0 0 0 4px var(--primary-c);background:var(--primary)}
+.cb{width:22px;height:22px;border-radius:6px;border:2px solid var(--outline);flex:none;display:grid;place-items:center}
+.cb.on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+.cb svg{width:14px;height:14px;stroke-width:3}
+.nav{flex:none;display:flex;justify-content:space-around;background:var(--s);padding:8px 4px 12px}
+.nav div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted)}
+.nav .pillic{padding:4px 16px;border-radius:999px}
+.nav .on .pillic{background:var(--secondary-c);color:var(--on-secondary-c)}
+.nav .on{color:var(--fg)}
+.sticky{flex:none;padding:12px 16px 16px;background:var(--bg);border-top:1px solid var(--outline-v);display:flex;flex-direction:column;gap:8px}
+.az{font-size:12px;font-weight:700;color:var(--primary);padding:2px 0}
+.thumb{width:56px;height:56px;border-radius:14px;flex:none;background:linear-gradient(135deg,#E9A26B,#B5523B 60%,#6B2A35);position:relative;overflow:hidden}
+.thumb::after{content:"";position:absolute;left:10px;bottom:-12px;width:36px;height:36px;border-radius:50%;background:rgba(255,240,220,.55)}
+.thumb.big{width:100%;height:150px;border-radius:18px}
+.thumb.big::after{left:40%;width:110px;height:110px;bottom:-50px}
+.link{display:flex;gap:10px;align-items:center;background:var(--s);border-radius:14px;padding:8px 10px}
+.link .fav{width:34px;height:34px;border-radius:10px;background:var(--tertiary-c);display:grid;place-items:center;color:var(--on-tertiary-c);flex:none}
+.link .u{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* launcher */
+.wall{flex:1;position:relative;background:radial-gradient(120% 80% at 20% 10%,#5B3FA8,#24163F 55%,#120B1F);color:#fff;overflow:hidden}
+.wall.ios{background:radial-gradient(120% 90% at 80% 0%,#F29A6B,#B0405A 45%,#3A1A3A)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 10px;padding:22px 18px}
+.app{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:10.5px;opacity:.45}
+.app .ico{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.22)}
+.wall.ios .app .ico{border-radius:14px}
+.app.gc{opacity:1}
+.app.gc .ico{background:#FFF0EE;display:grid;place-items:center;box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.gcmark{width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 40%,#E5574F 0 38%,transparent 39%),radial-gradient(circle at 65% 60%,#00897B 0 38%,transparent 39%)}
+.pop{position:absolute;background:#FFF8F6;color:#231918;border-radius:22px;padding:6px;display:flex;flex-direction:column;box-shadow:0 14px 40px rgba(0,0,0,.4);width:230px}
+.pop .it{display:flex;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:600;border-radius:14px}
+.pop .it+.it{border-top:1px solid #F1DEDC}
+.pop .it .ic{color:#B4372F}
+.pop.ios{border-radius:14px;background:rgba(245,240,240,.92);padding:0;width:250px}
+.pop.ios .it{justify-content:space-between;border-radius:0;padding:11px 14px;font-weight:500}
+.pop.ios .it+.it{border-top:1px solid rgba(0,0,0,.12)}
+.blur{position:absolute;inset:0;backdrop-filter:blur(8px);background:rgba(20,10,20,.35)}
+.note{font-size:12px;line-height:1.45;color:var(--muted);background:var(--s);border-radius:14px;padding:10px 12px}
+.banner{display:flex;gap:10px;align-items:flex-start;background:var(--tertiary-c);color:var(--on-tertiary-c);border-radius:16px;padding:10px 12px;font-size:12.5px;line-height:1.45}
+.search{display:flex;align-items:center;gap:10px;background:var(--s-high);border-radius:999px;padding:10px 14px;color:var(--muted);font-size:13.5px}
+.hint{font-size:11.5px;color:var(--muted)}
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%}
+.sw.on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.switch{width:44px;height:26px;border-radius:999px;background:var(--primary);position:relative;flex:none}
+.switch::after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--on-primary)}
+.switch.off{background:var(--s-highest);border:2px solid var(--outline)}
+.switch.off::after{left:3px;right:auto;top:2px;width:16px;height:16px;background:var(--outline)}
+@media (max-width:420px){figure,.phone{width:100%}}
+@media (prefers-reduced-motion:no-preference){.toc a{transition:filter .15s}.toc a:hover{filter:brightness(.95)}}
+a:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+/* solo mode for PNG export: #solo-<id> shows one band */
+body.solo header.top,body.solo section.issue:not(.show){display:none}
+body.solo{padding-block:24px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m16 10 6-3v10l-6-3z"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h5"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8S10 3 7.5 4.5 9 8 12 8zm0 0s2-5 4.5-3.5S15 8 12 8z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+  <symbol id="i-work" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-handshake" viewBox="0 0 24 24"><path d="M2 12l5-5 4 2 3-2 4 1 4 4-5 5-3-1-3 3-3-1z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-9.3-9.2C1.3 7.3 3.7 4 7 4c2 0 3.6 1.2 5 3 1.4-1.8 3-3 5-3 3.3 0 5.7 3.3 4.3 6.8C19.5 15.4 12 20 12 20z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+</svg>
+
+<div class="wrap">
+<header class="top">
+  <h1>Good Company · V1 mockups</h1>
+  <p>Six pieces of the V1 scope, one band each. They use the app’s own colours, type and components, and follow the decisions dated 2026-11-13 in <code>docs/PRODUCT_BRIEF.md</code>. Sample people are the app’s demo circle. These are proposals for review, not renders of the real app.</p>
+  <nav class="toc" aria-label="Mockups">
+    <a href="#profile">1 · Full friend profile</a><a href="#timeline">2 · Timeline &amp; logging</a><a href="#circles">3 · Circles</a>
+    <a href="#shortcuts">4 · App-icon shortcuts</a><a href="#share">5 · Share → attachments</a><a href="#import">6 · Import from contacts</a>
+  </nav>
+</header>
+
+<!-- ================= 1 PROFILE ================= -->
+<section class="issue" id="profile">
+  <div class="issue-h"><span class="tag">Issue 1 · gap analysis #2–#11</span><h2>Full friend profile</h2>
+  <p>New “About” card under the quick actions: work, where they live, how you met and who introduced you, preferred channel and emails. Family grows beyond kids. Tastes are split into food, drink, doesn’t like and interests. Free custom fields at the end.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div class="hero">
+        <div class="av lg p">AS</div><h4>Ana Silva</h4>
+        <div class="chips" style="justify-content:center"><span class="chip pill on" style="background:var(--tertiary-c);color:var(--on-tertiary-c)">Nov 11 · turns 34</span><span class="chip pill on">Close friends</span></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-people"/></svg></span>About Ana<span class="more">Edit</span></div>
+        <div class="kv"><svg class="ic"><use href="#i-work"/></svg><div>Product designer at Feedzai<small>What she does</small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-pin"/></svg><div>Campo de Ourique, Lisbon<small>Lives in</small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-handshake"/></svg><div>Erasmus in Ghent · Sep 2011<small>Introduced by <b style="color:var(--primary)">Rui Costa</b></small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-chat"/></svg><div>WhatsApp <span class="src">preferred</span><small>Quick actions open this first</small></div></div>
+        <div class="kv"><svg class="ic"><use href="#i-mail"/></svg><div>ana.silva@gmail.com<small>Email · from Contacts</small></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-heart"/></svg></span>Family<span class="more">Add</span></div>
+        <div class="fam">
+          <div class="row"><div class="av sm b">TM</div><div class="grow"><div class="t1">Tiago Marques</div><div class="t2">Partner · likes padel</div></div></div>
+          <div class="row"><div class="av sm m">LS</div><div class="grow"><div class="t1">Leonor, 6</div><div class="t2">Kid · birthday Mar 2 · loves dinosaurs</div></div></div>
+          <div class="row"><span class="emo">🐕</span><div class="grow"><div class="t1">Bolacha</div><div class="t2">Dog · beagle</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div><figcaption><b>Friend page, top.</b> “About” is one card; each line hides when empty. “Introduced by” links to that friend. Emails come from Contacts or are typed in.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div class="card">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-star"/></svg></span>Tastes<span class="more">Edit</span></div>
+        <div class="lbl">Food</div><div class="chips"><span class="chip">🍣 Sushi</span><span class="chip">Pastéis de nata</span><span class="chip">Vegetarian on weekdays</span></div>
+        <div class="lbl">Drink</div><div class="chips"><span class="chip">☕ Oat flat white</span><span class="chip">Alvarinho</span></div>
+        <div class="lbl">Doesn’t like</div><div class="chips"><span class="chip">Coriander</span><span class="chip">Loud bars</span></div>
+        <div class="lbl">Interests &amp; hobbies</div><div class="chips"><span class="chip">Ceramics</span><span class="chip">Trail running</span><span class="chip">Indie films</span><span class="chip">Bossa nova</span></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-list"/></svg></span>More about Ana<span class="more">Add field</span></div>
+        <div class="kv"><span></span><div>38<small>Shoe size</small></div></div>
+        <div class="kv"><span></span><div>Allergic to cats<small>Health</small></div></div>
+        <div class="kv"><span></span><div>Benfica<small>Football club</small></div></div>
+      </div>
+      <div class="note">Existing likes/dislikes move into “Doesn’t like” and a new “Other likes” group, so nothing is lost. Talking points, the catch-up story and AI prompts read the new fields.</div>
+    </div>
+  </div><figcaption><b>Tastes and custom fields.</b> Same <code>TagEditor</code> chips, now in four groups. Custom fields are free label/value pairs the user names.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="opacity:.55">
+      <div class="card"><div class="card-h">Family</div><div class="row"><div class="av sm b">TM</div><div class="grow"><div class="t1">Tiago Marques</div></div></div></div>
+    </div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>Add to Ana’s family</h5>
+      <div class="chips"><span class="chip">Partner</span><span class="chip">Kid</span><span class="chip on">Parent</span><span class="chip">Sibling</span><span class="chip">Pet</span><span class="chip">Other</span></div>
+      <div class="field">Graça Silva</div>
+      <div class="field ph"><svg class="ic"><use href="#i-cal"/></svg>Birthday (optional)</div>
+      <div class="field ph">What they like (optional)</div>
+      <div class="row" style="font-size:13px"><div class="grow">Remind me of their birthday</div><div class="switch off"></div></div>
+      <div class="btn">Save</div>
+    </div>
+  </div><figcaption><b>Add a family member.</b> One sheet for every relation. Kids keep today’s fields and reminders; the others get an optional birthday reminder, off by default.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 2 TIMELINE ================= -->
+<section class="issue" id="timeline">
+  <div class="issue-h"><span class="tag">Issue 2 · gap analysis #15, #21, #22</span><h2>Timeline and logging</h2>
+  <p>One timeline per friend with every kind of entry: meetups (including group ones), calls, messages, emails, video calls, journal entries, What’s new and gifts. A single “Log” sheet records any of them with a dated note.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Ana’s timeline</h3><span class="ib" style="background:var(--primary);color:var(--on-primary)"><svg class="ic"><use href="#i-plus"/></svg></span></div>
+    <div class="scroll">
+      <div class="chips nowrap"><span class="chip on">All</span><span class="chip">Together</span><span class="chip">Calls</span><span class="chip">Messages</span><span class="chip">Notes</span><span class="chip">Gifts</span></div>
+      <div class="tl">
+        <div class="month">November</div>
+        <div class="ev"><span class="k meet"><svg class="ic"><use href="#i-people"/></svg></span><div class="body"><div class="h">Lunch at Time Out Market</div><div class="meta">Nov 11 · with Pedro and Rui</div><div class="q">Starting the ceramics course in January. Leonor lost her first tooth.</div></div></div>
+        <div class="ev"><span class="k call"><svg class="ic"><use href="#i-phone"/></svg></span><div class="body"><div class="h">Call · 14 min <span class="src">call log</span></div><div class="meta">Nov 8</div></div></div>
+        <div class="ev"><span class="k msg"><svg class="ic"><use href="#i-video"/></svg></span><div class="body"><div class="h">Video call</div><div class="meta">Nov 4 · planned the Gerês weekend</div></div></div>
+        <div class="ev"><span class="k note"><svg class="ic"><use href="#i-spark"/></svg></span><div class="body"><div class="h">What’s new</div><div class="meta">Nov 2</div><div class="q">Got promoted to lead designer.</div></div></div>
+        <div class="month">October</div>
+        <div class="ev"><span class="k msg"><svg class="ic"><use href="#i-mail"/></svg></span><div class="body"><div class="h">Email</div><div class="meta">Oct 27 · sent her the flat listings</div></div></div>
+        <div class="ev"><span class="k gift"><svg class="ic"><use href="#i-gift"/></svg></span><div class="body"><div class="h">Gave: ceramics workshop voucher</div><div class="meta">Oct 12 · birthday</div></div></div>
+        <div class="ev"><span class="k msg"><svg class="ic"><use href="#i-chat"/></svg></span><div class="body"><div class="h">WhatsApp chat <span class="src">imported</span></div><div class="meta">Oct 3 · 48 messages</div></div></div>
+      </div>
+    </div>
+  </div><figcaption><b>Full timeline.</b> Opens from a “Timeline” card on the friend page (which shows the last 3 entries). Group meetups appear on every member’s timeline. The source tag shows entries that came from the call log or an imported chat.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="opacity:.55"><div class="card"><div class="card-h">Timeline</div></div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>Log with Ana</h5>
+      <div class="chips">
+        <span class="chip on"><svg class="ic" style="width:14px;height:14px"><use href="#i-people"/></svg>Met</span>
+        <span class="chip"><svg class="ic" style="width:14px;height:14px"><use href="#i-phone"/></svg>Call</span>
+        <span class="chip"><svg class="ic" style="width:14px;height:14px"><use href="#i-chat"/></svg>Message</span>
+        <span class="chip"><svg class="ic" style="width:14px;height:14px"><use href="#i-mail"/></svg>Email</span>
+        <span class="chip"><svg class="ic" style="width:14px;height:14px"><use href="#i-video"/></svg>Video call</span>
+        <span class="chip"><svg class="ic" style="width:14px;height:14px"><use href="#i-book"/></svg>Journal</span>
+      </div>
+      <div class="row"><div class="stack"><div class="av sm p">AS</div><div class="av sm t">PA</div></div><div class="grow t2">Ana, Pedro</div><span class="btn text">+ Add people</span></div>
+      <div class="field"><svg class="ic"><use href="#i-cal"/></svg>Today, Nov 13</div>
+      <div class="field" style="min-height:72px;align-items:flex-start">Talked about the move to Porto and Leonor’s school.</div>
+      <div class="hint">Calls, messages and emails count as catching up only when Ana’s “Calls and chats count” switch is on.</div>
+      <div class="btn">Save</div>
+    </div>
+  </div><figcaption><b>One “Log” sheet.</b> Replaces the separate check-in and “Called” paths behind the scenes; “Together” and “Called” keep working as shortcuts that preselect a type. “Journal” is a dated note with no contact.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 3 CIRCLES ================= -->
+<section class="issue" id="circles">
+  <div class="issue-h"><span class="tag">Issue 3 · decision D1 · gap analysis #40–#45</span><h2>Circles</h2>
+  <p>Saved groups become circles: free-form, emoji and colour, several per friend. Closeness (Inner, Close, Good friends) stays one value per friend. Circles filter Home and the A–Z list, log a group meetup in one tap and can remind you when the group hasn’t met.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div><div class="eyebrow" style="text-transform:none;letter-spacing:0;font-size:13px">Good morning</div><div style="font-size:28px;font-weight:800;letter-spacing:-.02em">Your people</div></div>
+      <div class="chips nowrap">
+        <span class="chip pill">All</span>
+        <span class="chip pill on" style="background:#E7DDFB;color:#2B1766"><span class="dot" style="background:#6A45D8"></span>🎵 Choir · 16</span>
+        <span class="chip pill"><span class="dot" style="background:#0F7A64"></span>⚽ Futsal</span>
+        <span class="chip pill"><span class="dot" style="background:#C2461E"></span>🎓 Ghent</span>
+      </div>
+      <div class="card" style="background:#F1EBFD;color:#231918">
+        <div class="row"><span style="font-size:24px">🎵</span><div class="grow"><div class="t1">Choir</div><div class="t2" style="color:#534341">Last together 3 weeks ago · goal every 30 days</div></div></div>
+        <div class="btn" style="background:#6A45D8;color:#fff">Log a choir meetup</div>
+      </div>
+      <div class="eyebrow">Time to catch up</div>
+      <div class="row"><div class="av t ring">PA</div><div class="grow"><div class="t1">Pedro Almeida</div><div class="t2 red">9 days since you met · every 7</div></div><span class="chip pill">Inner</span></div>
+      <div class="eyebrow">A–Z · 16 in Choir</div>
+      <div class="az">B</div>
+      <div class="row"><div class="av b">BR</div><div class="grow"><div class="t1">Beatriz Rocha</div><div class="t2">Close friends</div></div></div>
+      <div class="az">C</div>
+      <div class="row"><div class="av a">CN</div><div class="grow"><div class="t1">Carla Nunes</div><div class="t2">No closeness set</div></div></div>
+    </div>
+    <div class="nav"><div class="on"><span class="pillic"><svg class="ic"><use href="#i-people"/></svg></span>Friends</div><div><span class="pillic"><svg class="ic"><use href="#i-people"/></svg></span>Together</div><div><span class="pillic"><svg class="ic"><use href="#i-cal"/></svg></span>Coming up</div><div><span class="pillic"><svg class="ic"><use href="#i-spark"/></svg></span>Ideas</div><div><span class="pillic"><svg class="ic"><use href="#i-gear"/></svg></span>Settings</div></div>
+  </div><figcaption><b>Home filtered by a circle.</b> The chip row sits under the header; the choice is remembered. Every Home section and the A–Z list show only that circle’s members.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Edit circle</h3><span class="btn text">Delete</span></div>
+    <div class="scroll">
+      <div class="row"><span class="emo" style="width:52px;height:52px;font-size:28px;background:#E7DDFB">🎵</span><div class="field grow">Choir</div></div>
+      <div class="lbl">Colour</div>
+      <div class="swatches"><span class="sw on" style="background:#6A45D8"></span><span class="sw" style="background:#2B6FD6"></span><span class="sw" style="background:#0F7A64"></span><span class="sw" style="background:#B8650A"></span><span class="sw" style="background:#C2461E"></span><span class="sw" style="background:#B0206A"></span><span class="sw" style="background:#5C6B73"></span></div>
+      <div class="row" style="font-size:13.5px"><div class="grow"><b>Remind me when we haven’t met</b><div class="t2">Every 30 days, all of us together</div></div><div class="switch"></div></div>
+      <div class="row"><div class="lbl grow">16 members</div><span class="btn text">+ Add</span></div>
+      <div class="row"><div class="av sm p">AS</div><div class="grow t1">Ana Silva</div><span class="chip pill on">Close</span></div>
+      <div class="row"><div class="av sm t">PA</div><div class="grow t1">Pedro Almeida</div><span class="chip pill on">Inner</span></div>
+      <div class="row"><div class="av sm b">BR</div><div class="grow t1">Beatriz Rocha</div><span class="chip pill on">Close</span></div>
+      <div class="row"><div class="av sm a">CN</div><div class="grow t1">Carla Nunes</div><span class="chip pill">—</span></div>
+      <div class="row"><div class="av sm m">SM</div><div class="grow t1">Sofia Martins</div><span class="chip pill">—</span></div>
+      <div class="note">Closeness is shown, not edited, here: it belongs to the person. A friend’s own rhythm never changes because of a circle.</div>
+    </div>
+  </div><figcaption><b>Create / edit a circle.</b> Emoji, name, one of the theme-safe colours, optional group reminder (today’s group rhythm, now off by default). Replaces today’s group editor on the Together tab (“Your groups” becomes “Your circles”) and opens from a long-press on a circle chip. Settings’ current “Circles” card (rhythm per Inner/Close/Good) is renamed “Closeness”.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="opacity:.55"><div class="card"><div class="card-h">Together</div></div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>I’m with…</h5>
+      <div class="chips"><span class="chip pill on" style="background:#E7DDFB;color:#2B1766">🎵 Choir</span><span class="chip pill">⚽ Futsal</span><span class="chip pill">🎓 Ghent</span></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av sm p">AS</div><div class="grow t1">Ana Silva</div></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av sm t">PA</div><div class="grow t1">Pedro Almeida</div></div>
+      <div class="row"><span class="cb"></span><div class="av sm b">BR</div><div class="grow t1">Beatriz Rocha</div><span class="t2">didn’t come</span></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av sm a">CN</div><div class="grow t1">Carla Nunes</div></div>
+      <div class="hint">+ 12 more from Choir, all ticked</div>
+      <div class="btn">Log for 15 people</div>
+    </div>
+  </div><figcaption><b>One-tap group log.</b> Tapping a circle ticks all its members; untick whoever didn’t come. The meetup lands on each member’s timeline (issue 2).</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 4 SHORTCUTS ================= -->
+<section class="issue" id="shortcuts">
+  <div class="issue-h"><span class="tag">Issue 4 · gap analysis #23 · decision D7</span><h2>App-icon shortcuts</h2>
+  <p>Long-press the app icon to log fast: “Log a meetup” plus the three people you were with most recently, with their photo or initials. Each opens the log sheet already filled in.</p></div>
+  <div class="screens">
+  <figure><div class="phone" style="background:#120B1F">
+    <div class="sb" style="color:#fff"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="wall">
+      <div class="grid">
+        <div class="app"><span class="ico"></span>Maps</div><div class="app"><span class="ico"></span>Photos</div><div class="app"><span class="ico"></span>Clock</div><div class="app"><span class="ico"></span>Files</div>
+        <div class="app"><span class="ico"></span>Chrome</div><div class="app"><span class="ico"></span>Gmail</div><div class="app"><span class="ico"></span>Camera</div><div class="app"><span class="ico"></span>Music</div>
+        <div class="app"><span class="ico"></span>Phone</div><div class="app gc"><span class="ico"><span class="gcmark"></span></span>Good Company</div><div class="app"><span class="ico"></span>Keep</div><div class="app"><span class="ico"></span>Calendar</div>
+      </div>
+      <div class="blur" style="clip-path:polygon(0 0,100% 0,100% 100%,0 100%);opacity:.0"></div>
+      <div class="pop" style="left:60px;top:300px">
+        <div class="it"><svg class="ic"><use href="#i-people"/></svg>Log a meetup</div>
+        <div class="it"><div class="av sm p">AS</div>Ana Silva</div>
+        <div class="it"><div class="av sm t">PA</div>Pedro Almeida</div>
+        <div class="it"><div class="av sm m">RC</div>Rui Costa</div>
+      </div>
+    </div>
+  </div><figcaption><b>Android.</b> Dynamic shortcuts (<code>ShortcutManagerCompat</code>), avatar bitmaps as icons; people can also be pinned to the home screen. Hidden names when app lock or private notifications are on (show “Log a meetup” only).</figcaption></figure>
+
+  <figure><div class="phone" style="background:#3A1A3A">
+    <div class="sb" style="color:#fff"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="wall ios">
+      <div class="grid">
+        <div class="app"><span class="ico"></span>Maps</div><div class="app"><span class="ico"></span>Photos</div><div class="app"><span class="ico"></span>Clock</div><div class="app"><span class="ico"></span>Notes</div>
+        <div class="app gc"><span class="ico" style="border-radius:14px"><span class="gcmark"></span></span>Good Company</div><div class="app"><span class="ico"></span>Mail</div><div class="app"><span class="ico"></span>Camera</div><div class="app"><span class="ico"></span>Music</div>
+      </div>
+      <div class="blur" style="z-index:0"></div>
+      <div class="app gc" style="position:absolute;left:18px;top:22px;width:62px;z-index:1"><span class="ico" style="border-radius:14px"><span class="gcmark"></span></span></div>
+      <div class="pop ios" style="left:18px;top:108px;z-index:1">
+        <div class="it">Log a meetup<svg class="ic"><use href="#i-people"/></svg></div>
+        <div class="it">Ana Silva<div class="av sm p">AS</div></div>
+        <div class="it">Pedro Almeida<div class="av sm t">PA</div></div>
+        <div class="it">Rui Costa<div class="av sm m">RC</div></div>
+        <div class="it" style="border-top:6px solid rgba(0,0,0,.08)">Edit Home Screen<svg class="ic"><use href="#i-edit"/></svg></div>
+      </div>
+    </div>
+  </div><figcaption><b>iOS.</b> Dynamic <code>UIApplicationShortcutItem</code>s set from Swift on each app background; contact icons via <code>UIApplicationShortcutIcon(contact:)</code> or a template icon. Routed into Kotlin like the widget’s <code>goodcompany://met/&lt;id&gt;</code>.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="opacity:.55"><div style="font-size:28px;font-weight:800">Your people</div></div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div><h5>Log with Ana</h5>
+      <div class="chips"><span class="chip on">Met</span><span class="chip">Call</span><span class="chip">Message</span><span class="chip">Email</span><span class="chip">Video call</span></div>
+      <div class="row"><div class="stack"><div class="av sm p">AS</div></div><div class="grow t2">Ana Silva</div><span class="btn text">+ Add people</span></div>
+      <div class="field"><svg class="ic"><use href="#i-cal"/></svg>Today, Nov 13</div>
+      <div class="field ph"><svg class="ic"><use href="#i-pin"/></svg>Where? (use my location)</div>
+      <div class="field ph" style="min-height:60px;align-items:flex-start">What did you talk about?</div>
+      <div class="btn">Save</div>
+    </div>
+  </div><figcaption><b>What a shortcut opens.</b> A person shortcut opens the log sheet for them; “Log a meetup” opens it with nobody picked. If the app is locked, the lock screen comes first.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 5 SHARE ================= -->
+<section class="issue" id="share">
+  <div class="issue-h"><span class="tag">Issue 5 · decisions D6, C1</span><h2>Share → Good Company saves attachments</h2>
+  <p>Shared text is kept whole, a link as address and title (never fetched), a photo as a gallery reference plus a small thumbnail. On confirm the user says whether it counts as an interaction or is just an idea or note.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib" style="background:none"><svg class="ic"><use href="#i-x"/></svg></span><h3>Save to a friend</h3></div>
+    <div class="scroll">
+      <div class="row" style="background:var(--s-high);border-radius:20px;padding:10px"><span class="thumb"></span><div class="grow"><div class="t1">Photo from Gallery</div><div class="t2">IMG_2381.jpg · Nov 13, 13:02</div></div></div>
+      <div style="font-weight:700">Who is this about?</div>
+      <div class="search"><svg class="ic"><use href="#i-search"/></svg>Search friends</div>
+      <div class="row"><div class="av m ring">RC</div><div class="grow"><div class="t1">Rui Costa</div><div class="t2 red">Number in the shared text</div></div></div>
+      <div class="row"><div class="av p">AS</div><div class="grow"><div class="t1">Ana Silva</div><div class="t2">Seen today</div></div></div>
+      <div class="row"><div class="av t">PA</div><div class="grow"><div class="t1">Pedro Almeida</div><div class="t2">Recent</div></div></div>
+      <div class="row"><div class="av b">BR</div><div class="grow"><div class="t1">Beatriz Rocha</div></div></div>
+      <div class="row"><div class="av a">CN</div><div class="grow"><div class="t1">Carla Nunes</div></div></div>
+      <div class="note">No face recognition (C1): matches come from a name or phone number in the shared content, then recent people, then A–Z.</div>
+    </div>
+  </div><figcaption><b>Step 1 · who.</b> Today’s screen, with two more reasons to rank someone first: a phone number in the content and recent contact.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib" style="background:none"><svg class="ic"><use href="#i-back"/></svg></span><h3>Save for Rui</h3></div>
+    <div class="scroll">
+      <div class="thumb big"></div>
+      <div class="lbl">How should this count?</div>
+      <div class="choice on"><span class="radio"></span><div><div class="t1">Counts as an interaction</div><div class="t2">Adds it to the timeline and updates when you last spoke</div></div></div>
+      <div class="choice"><span class="radio"></span><div><div class="t1">Just an idea or note</div><div class="t2">Kept on Rui’s page; last contact stays as it is</div></div></div>
+      <div class="chips"><span class="chip on">Met</span><span class="chip">Message</span><span class="chip">Call</span><span class="chip">Email</span></div>
+      <div class="field"><svg class="ic"><use href="#i-cal"/></svg>Today, Nov 13</div>
+      <div class="field">Lunch at Cervejaria Ramiro 🦐</div>
+    </div>
+    <div class="sticky"><div class="btn">Save</div></div>
+  </div><figcaption><b>Step 2 · confirm.</b> Type and date are guessed (photo → met, chat text → message, link → note) and editable. With an AI key, Claude can still suggest the caption.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll">
+      <div class="row" style="padding-top:6px"><div class="av lg m" style="width:56px;height:56px;font-size:20px">RC</div><div class="grow"><div style="font-size:20px;font-weight:800">Rui Costa</div><div class="t2">Seen today</div></div></div>
+      <div class="card">
+        <div class="card-h"><span class="badge"><svg class="ic"><use href="#i-share"/></svg></span>Saved for Rui<span class="more">See all</span></div>
+        <div class="row"><span class="thumb"></span><div class="grow"><div class="t1">Lunch at Cervejaria Ramiro 🦐</div><div class="t2">Photo · counted as met · today</div></div></div>
+        <div class="link"><span class="fav"><svg class="ic"><use href="#i-link"/></svg></span><div class="grow" style="min-width:0"><div class="t1" style="font-size:13px">Gerês trail: Trilho da Preguiça</div><div class="u">wikiloc.com/trails/…/882193</div></div></div>
+        <div class="row" style="align-items:flex-start"><span class="emo" style="background:var(--secondary-c);color:var(--on-secondary-c)"><svg class="ic" style="width:15px;height:15px"><use href="#i-chat"/></svg></span><div class="grow"><div class="q" style="font-size:12.5px;background:var(--s);border-radius:12px;padding:7px 10px;line-height:1.45">“Ok so the job in Porto is confirmed, moving in March 😅 need help with the van”</div><div class="t2" style="margin-top:4px">Chat text · counted as a message · Nov 10</div></div></div>
+      </div>
+      <div class="note">A photo whose gallery item was deleted keeps its thumbnail and shows “Original no longer in your gallery”. Attachments are in the backup (thumbnail and reference, never the full photo).</div>
+    </div>
+  </div><figcaption><b>On the friend page.</b> “Saved for Rui” lists attachments, newest first; interactions also show on the timeline. Tapping a photo opens it from the gallery.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 6 IMPORT ================= -->
+<section class="issue" id="import">
+  <div class="issue-h"><span class="tag">Issue 6 · decision D2</span><h2>Import from the contact list</h2>
+  <p>On first use, with the contacts permission, the app lists the phone’s contacts with checkboxes. Only ticked people become friends. Refusing the permission falls back to today’s system contact picker. Play policy for <code>READ_CONTACTS</code> must be checked first.</p></div>
+  <div class="screens">
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="scroll" style="justify-content:center;gap:18px;padding:24px 22px">
+      <div style="display:flex;justify-content:center"><div class="stack"><div class="av p" style="width:56px;height:56px">AS</div><div class="av t" style="width:56px;height:56px">PA</div><div class="av m" style="width:56px;height:56px">RC</div></div></div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-.02em;text-align:center;text-wrap:balance">Who are your people?</div>
+      <div style="text-align:center;line-height:1.55;color:var(--muted)">We’ll show your contacts so you can tick the friends you want to keep close. Only the people you tick are saved in Good Company. Everyone else stays in your address book, untouched.</div>
+      <div class="row note"><svg class="ic"><use href="#i-lock"/></svg><div class="grow">Your contacts are read on this phone only and never uploaded.</div></div>
+      <div class="btn">Show my contacts</div>
+      <div class="btn text" style="text-align:center">Pick people one by one instead</div>
+    </div>
+  </div><figcaption><b>Permission primer.</b> Replaces the onboarding “pick friends” step. The secondary button opens the system picker without asking for the permission.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib" style="background:none"><svg class="ic"><use href="#i-back"/></svg></span><h3>Choose friends</h3><span class="t2" style="font-weight:700;color:var(--primary)">5 of 412</span></div>
+    <div class="scroll">
+      <div class="search"><svg class="ic"><use href="#i-search"/></svg>Search 412 contacts</div>
+      <div class="chips nowrap"><span class="chip pill on">Favourites first</span><span class="chip pill">With birthday</span><span class="chip pill">Show all</span></div>
+      <div class="eyebrow">Favourites</div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av p">AS</div><div class="grow"><div class="t1">Ana Silva</div><div class="t2">Birthday Nov 11</div></div></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av t">PA</div><div class="grow"><div class="t1">Pedro Almeida</div><div class="t2">+351 912 …</div></div></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av m">RC</div><div class="grow"><div class="t1">Rui Costa</div></div></div>
+      <div class="az">A</div>
+      <div class="row"><span class="cb"></span><div class="av r">AC</div><div class="grow"><div class="t1">Afonso Canalizador</div></div></div>
+      <div class="row"><span class="cb on"><svg class="ic"><use href="#i-check"/></svg></span><div class="av b">BR</div><div class="grow"><div class="t1">Beatriz Rocha</div><div class="t2">Birthday Feb 2</div></div></div>
+      <div class="row"><span class="cb"></span><div class="av a">CD</div><div class="grow"><div class="t1">Clínica Dentária</div></div></div>
+    </div>
+    <div class="sticky"><div class="btn">Add 5 friends</div></div>
+  </div><figcaption><b>Contact list with checkboxes.</b> Starred/favourite contacts first, then A–Z. Photos and birthdays come along (issue #15 already reads them). Nothing is ticked by default.</figcaption></figure>
+
+  <figure><div class="phone">
+    <div class="sb"><span>9:41</span><span>●●● 5G</span></div>
+    <div class="topbar"><span class="ib"><svg class="ic"><use href="#i-back"/></svg></span><h3>Add friends</h3></div>
+    <div class="scroll">
+      <div class="banner"><svg class="ic"><use href="#i-lock"/></svg><div>Contacts access is off, so we can’t show the list. You can still pick people one at a time.</div></div>
+      <div class="card">
+        <div class="row"><span class="badge" style="width:40px;height:40px;border-radius:50%;background:var(--primary-c);color:var(--primary);display:grid;place-items:center"><svg class="ic"><use href="#i-people"/></svg></span><div class="grow"><div class="t1">Pick from contacts</div><div class="t2">Opens your phone’s contact picker</div></div></div>
+        <div class="row"><span class="badge" style="width:40px;height:40px;border-radius:50%;background:var(--secondary-c);color:var(--on-secondary-c);display:grid;place-items:center"><svg class="ic"><use href="#i-check"/></svg></span><div class="grow"><div class="t1">Choose from the full list</div><div class="t2">Asks for contacts access again</div></div></div>
+        <div class="row"><span class="badge" style="width:40px;height:40px;border-radius:50%;background:var(--tertiary-c);color:var(--on-tertiary-c);display:grid;place-items:center"><svg class="ic"><use href="#i-edit"/></svg></span><div class="grow"><div class="t1">Type it in</div><div class="t2">Name and birthday by hand</div></div></div>
+      </div>
+      <div class="note">“Add friend” on Home opens this same sheet later. The list never imports anyone on its own, and a later sync still only refreshes friends already linked to a contact.</div>
+    </div>
+  </div><figcaption><b>Fallback and later use.</b> When the permission is refused (or on the web, which keeps .vcf import), the picker stays. The same choice appears behind “Add friend”.</figcaption></figure>
+  </div>
+</section>
+</div>
+<script>
+(function(){function apply(){var h=location.hash.replace('#','');var solo=h.indexOf('solo-')===0;document.body.classList.toggle('solo',solo);if(solo)document.documentElement.setAttribute('data-theme','light');
+document.querySelectorAll('section.issue').forEach(function(s){s.classList.toggle('show',solo&&s.id===h.slice(5));});}
+window.addEventListener('hashchange',apply);apply();})();
+</script>
