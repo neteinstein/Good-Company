@@ -28,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
@@ -56,7 +57,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
     val openFriend: (FriendId) -> Unit = { navController.navigate(FriendDetailRoute(it.value)) }
     val openStory: (FriendId) -> Unit = { navController.navigate(CatchUpStoryRoute(it.value)) }
     val openSettings: () -> Unit = { navController.navigateTopLevel(TopLevelDestination.SETTINGS) }
-    val editCircle: (String?) -> Unit = { navController.navigate(CircleEditorRoute(it)) }
+    // The built-in Family circle (F6) has no editor: it fills itself from "relationship to me".
+    val editCircle: (String?) -> Unit = { if (it != FamilyCircle.ID) navController.navigate(CircleEditorRoute(it)) }
     SharedTransitionLayout(modifier) {
         NavHost(
             navController = navController,

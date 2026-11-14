@@ -126,9 +126,13 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkCategory
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -163,6 +167,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
+import com.neteinstein.goodcompany.core.ui.l10n.relationToMeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.core.ui.platform.OpenedPhoto
@@ -243,6 +248,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.kids_title
 import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
 import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.moments_title
+import com.neteinstein.goodcompany.feature.friends.resources.msg_added_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
@@ -254,6 +260,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_field_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_found
 import com.neteinstein.goodcompany.feature.friends.resources.msg_ideas_none
+import com.neteinstein.goodcompany.feature.friends.resources.msg_link_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_logged_with
 import com.neteinstein.goodcompany.feature.friends.resources.msg_photo_unreadable
 import com.neteinstein.goodcompany.feature.friends.resources.msg_reminder_saved
@@ -283,6 +290,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
 import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_together
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
+import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_add
 import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
@@ -436,6 +444,11 @@ fun FriendDetailScreen(
             onOpenOriginal = photoOpener::open,
             onRemoveAttachment = viewModel::onRemoveAttachment,
             onUndoRemoveAttachment = viewModel::onUndoRemoveAttachment,
+            onSaveLink = viewModel::onSaveLink,
+            onRemoveLink = viewModel::onRemoveLink,
+            onUndoRemoveLink = viewModel::onUndoRemoveLink,
+            onSaveRelationToMe = viewModel::onSaveRelationToMe,
+            onAddRelativeAsPerson = viewModel::onAddRelativeAsPerson,
             onGenerateIdeas = viewModel::onGenerateIdeas,
             onDismissIdea = viewModel::onDismissIdea,
             onDelete = viewModel::onDelete,
@@ -478,6 +491,11 @@ data class FriendDetailActions(
     val onOpenOriginal: suspend (PhotoRef) -> OpenedPhoto = { OpenedPhoto.Unavailable },
     val onRemoveAttachment: (Attachment) -> Unit = {},
     val onUndoRemoveAttachment: () -> Unit = {},
+    val onSaveLink: (LinkEdit) -> Unit = {},
+    val onRemoveLink: (String) -> Unit = {},
+    val onUndoRemoveLink: () -> Unit = {},
+    val onSaveRelationToMe: (LinkType?, Pronouns?) -> Unit = { _, _ -> },
+    val onAddRelativeAsPerson: (String) -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
     val onRemoveLifeUpdate: (String) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
@@ -566,6 +584,8 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
+    FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
+    is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -573,6 +593,9 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
 fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions) {
     val snackbar = remember { SnackbarHostState() }
     var familyEditing by remember { mutableStateOf<FamilyEditing?>(null) }
+    var addingLink by rememberSaveable { mutableStateOf(false) }
+    var linkEditing by remember { mutableStateOf<LinkedPerson?>(null) }
+    var editingRelationToMe by rememberSaveable { mutableStateOf(false) }
     var editingAbout by rememberSaveable { mutableStateOf(false) }
     var fieldEditing by remember { mutableStateOf<CustomField?>(null) }
     var addingField by rememberSaveable { mutableStateOf(false) }
@@ -612,11 +635,13 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     val undoLabel = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null
+        val undoable = state.undoHangoutId != null || state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null ||
+            state.undoLink != null
         val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
+                state.undoLink != null -> actions.onUndoRemoveLink()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
                 state.undoPlan != null -> actions.onUndoCancelPlan()
                 else -> actions.onUndoTogether()
@@ -636,7 +661,16 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         val f = detail.friend
         val firstName = f.name.substringBefore(' ')
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
-            item(key = "hero") { Hero(f, state, actions, onEditBirthday = { pickBirthday = true }, onDelete = { confirmDelete = true }) }
+            item(key = "hero") {
+                Hero(
+                    f,
+                    state,
+                    actions,
+                    onEditBirthday = { pickBirthday = true },
+                    onDelete = { confirmDelete = true },
+                    onEditRelationToMe = { editingRelationToMe = true },
+                )
+            }
 
             item(key = "about") { AboutCard(f, detail.others, onEdit = { editingAbout = true }, onOpenFriend = actions.onOpenFriend) }
 
@@ -777,7 +811,16 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     onEditRelative = { familyEditing = FamilyEditing.EditRelative(it) },
                     onRemoveKid = actions.onRemoveKid,
                     onRemoveRelative = actions.onRemoveRelative,
+                    links = state.links,
+                    onOpenPerson = actions.onOpenFriend,
+                    onEditLink = { linkEditing = it },
+                    onAddLink = { addingLink = true },
+                    onAddAsPerson = actions.onAddRelativeAsPerson,
                 )
+            }
+
+            item(key = "links-other") {
+                OtherLinksCard(state.links.filter { it.role.category == LinkCategory.OTHER }, actions.onOpenFriend, onEdit = { linkEditing = it })
             }
 
             item(key = "moments") {
@@ -933,6 +976,33 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             }
         }
 
+        if (addingLink || linkEditing != null) {
+            val linked = state.links.mapTo(HashSet()) { it.person.id }
+            LinkSheet(
+                friend = f,
+                others = detail.others.filter { it.id !in linked },
+                editing = linkEditing,
+                onDismiss = {
+                    addingLink = false
+                    linkEditing = null
+                },
+                onSave = {
+                    actions.onSaveLink(it)
+                    addingLink = false
+                    linkEditing = null
+                },
+                onRemove = {
+                    actions.onRemoveLink(it)
+                    linkEditing = null
+                },
+            )
+        }
+        if (editingRelationToMe) {
+            RelationToMeSheet(f, onDismiss = { editingRelationToMe = false }) { relation, pronouns ->
+                actions.onSaveRelationToMe(relation, pronouns)
+                editingRelationToMe = false
+            }
+        }
         familyEditing?.let { editing ->
             FamilySheet(
                 firstName = firstName,
@@ -1449,7 +1519,14 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onEditBirthday: () -> Unit, onDelete: () -> Unit) {
+private fun Hero(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onEditBirthday: () -> Unit,
+    onDelete: () -> Unit,
+    onEditRelationToMe: () -> Unit,
+) {
     val (start, end) = avatarColors(f.name)
     val uri = LocalUriHandler.current
     val haptics = LocalHapticFeedback.current
@@ -1533,6 +1610,15 @@ private fun Hero(f: Friend, state: FriendDetailUiState, actions: FriendDetailAct
                 } ?: stringResource(Res.string.detail_add_birthday)
                 Box(Modifier.clip(CircleShape).clickable(onClick = onEditBirthday)) {
                     InfoPill(birthdayText, icon = if (f.birthday != null) Icons.Rounded.Cake else Icons.Rounded.Edit, emphasized = f.birthday != null)
+                }
+                // "Your brother" (F6); tapping it (or "Related to you?") opens the "is your…" sheet.
+                Box(Modifier.clip(CircleShape).clickable(onClick = onEditRelationToMe)) {
+                    val relation = relationToMeLabel(f)
+                    InfoPill(
+                        relation ?: stringResource(Res.string.relation_to_me_add),
+                        icon = if (relation != null) Icons.Rounded.FavoriteBorder else Icons.Rounded.Edit,
+                        emphasized = relation != null,
+                    )
                 }
                 f.closeness?.takeIf { f.isCloseFriend }?.let { InfoPill(closenessLabel(it), icon = Icons.Rounded.Groups) }
                 state.detail?.lastSeen?.let {

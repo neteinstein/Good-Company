@@ -20,6 +20,11 @@ sealed interface AgendaItem {
         override val key get() = "relative-${friend.id.value}-${relative.id}-$date"
     }
 
+    /** A couple's anniversary (issue #39): a current romantic link with a start date and its reminder on. */
+    data class Anniversary(val link: PersonLink, val first: Friend, val second: Friend, override val date: LocalDate, val years: Int?) : AgendaItem {
+        override val key get() = "anniversary-${link.id}-$date"
+    }
+
     data class FriendEvent(val friend: Friend, val event: ImportantEvent) : AgendaItem {
         override val date get() = event.date
         override val key get() = "event-${event.id}"
@@ -56,6 +61,7 @@ val AgendaItem.friendIds: Set<FriendId>
         is AgendaItem.KidBirthday -> setOf(parent.id)
         is AgendaItem.RelativeBirthday -> setOf(friend.id)
         is AgendaItem.FriendEvent -> setOf(friend.id)
+        is AgendaItem.Anniversary -> setOf(first.id, second.id)
         is AgendaItem.ReminderDue -> friends.mapTo(mutableSetOf()) { it.id }
         is AgendaItem.MeetupOverdue -> setOf(friend.id)
         is AgendaItem.PlanUpcoming -> friends.mapTo(mutableSetOf()) { it.id }

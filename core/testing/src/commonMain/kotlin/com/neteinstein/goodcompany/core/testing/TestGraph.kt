@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
@@ -27,6 +29,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.GroupsWithFamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
@@ -51,6 +54,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePersonLinksUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
@@ -61,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
@@ -70,6 +75,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreHangoutUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
@@ -77,13 +83,16 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
@@ -119,10 +128,15 @@ class TestGraph(
     val location = FakeLocationProvider()
     val scheduler = FakeNotificationScheduler()
     val language = LanguageProvider { "en" }
-    val backupRepo = FakeBackupRepository(friendRepo, hangoutRepo, reminderRepo, interactionRepo, ideaRepo, groupRepo, planRepo, settingsRepo)
+    val linkRepo = FakePersonLinkRepository(friends = friendRepo)
+
+    /** The stored circles plus the built-in Family circle, as the app sees them. Writes go to [groupRepo]. */
+    val circles = GroupsWithFamilyCircle(groupRepo, friendRepo) { "Family" }
+    val backupRepo =
+        FakeBackupRepository(friendRepo, hangoutRepo, reminderRepo, interactionRepo, ideaRepo, groupRepo, planRepo, settingsRepo, linkRepo)
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
-    val observeFriendDetail = ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, groupRepo, planRepo, clock)
+    val observeFriendDetail = ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, circles, planRepo, clock)
     val updateFriend = UpdateFriendUseCase(friendRepo)
     val observeCatchUpStory = ObserveCatchUpStoryUseCase(observeFriendDetail, reminderRepo, clock)
     val feedFetcher = FakeFeedFetcher()
@@ -143,7 +157,7 @@ class TestGraph(
     val setFriendPhoto = SetFriendPhotoUseCase(friendRepo, PhotoShrinker.None)
     val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCloseness = SetClosenessUseCase(friendRepo)
-    val snooze = SnoozeCatchUpUseCase(friendRepo, groupRepo, clock)
+    val snooze = SnoozeCatchUpUseCase(friendRepo, circles, clock)
     val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
     val observePlaceBook = ObservePlaceBookUseCase(hangoutRepo)
@@ -157,10 +171,10 @@ class TestGraph(
 
     /** Turns any picture into its first 16 bytes, so a test can tell a thumbnail from the shared image. */
     val thumbnailShrinker = PhotoShrinker { it.copyOf(minOf(it.size, 16)) }
-    val saveShared = SaveSharedUseCase(friendRepo, groupRepo, interactionRepo, logInteraction, thumbnailShrinker, clock, ids)
+    val saveShared = SaveSharedUseCase(friendRepo, circles, interactionRepo, logInteraction, thumbnailShrinker, clock, ids)
     val undoSaveShare = UndoSaveShareUseCase(friendRepo, interactionRepo, undoLog)
-    val observeShareTargets = ObserveShareTargetsUseCase(friendRepo, hangoutRepo, interactionRepo, groupRepo)
-    val observeAttachments = ObserveAttachmentsUseCase(interactionRepo, groupRepo)
+    val observeShareTargets = ObserveShareTargetsUseCase(friendRepo, hangoutRepo, interactionRepo, circles)
+    val observeAttachments = ObserveAttachmentsUseCase(interactionRepo, circles)
     val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)
     val restoreAttachment = RestoreAttachmentUseCase(interactionRepo)
     val observeActivities = ObserveActivitiesUseCase(hangoutRepo)
@@ -174,7 +188,7 @@ class TestGraph(
     val cancelPlan = CancelPlanUseCase(planRepo)
     val restorePlan = RestorePlanUseCase(planRepo)
     val observePlans = ObservePlansUseCase(planRepo)
-    val handleNotificationAction = HandleNotificationActionUseCase(checkIn, logCall, snooze, groupRepo, confirmPlan)
+    val handleNotificationAction = HandleNotificationActionUseCase(checkIn, logCall, snooze, circles, confirmPlan)
     val setCatchUpPaused = SetCatchUpPausedUseCase(friendRepo)
     val recordAppOpened = RecordAppOpenedUseCase(settingsRepo, clock)
     val importPickedContacts = ImportPickedContactsUseCase(friendRepo)
@@ -189,11 +203,11 @@ class TestGraph(
     val observeHistory = ObserveHangoutHistoryUseCase(friendRepo, hangoutRepo)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeOccasionMatches = ObserveOccasionMatchesUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
-    val observeGroups = ObserveGroupsUseCase(groupRepo, friendRepo, hangoutRepo, clock)
-    val saveGroup = SaveGroupUseCase(groupRepo, ids)
-    val deleteGroup = DeleteGroupUseCase(groupRepo, settingsRepo)
-    val restoreGroup = RestoreGroupUseCase(groupRepo)
-    val nextCircleColor = NextCircleColorUseCase(groupRepo)
+    val observeGroups = ObserveGroupsUseCase(circles, friendRepo, hangoutRepo, clock)
+    val saveGroup = SaveGroupUseCase(circles, ids)
+    val deleteGroup = DeleteGroupUseCase(circles, settingsRepo)
+    val restoreGroup = RestoreGroupUseCase(circles)
+    val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)
@@ -211,24 +225,33 @@ class TestGraph(
     val setReminderDone = SetReminderDoneUseCase(reminderRepo)
     val deleteReminder = DeleteReminderUseCase(reminderRepo)
     val restoreReminder = RestoreReminderUseCase(reminderRepo)
-    val observeAgenda = ObserveAgendaUseCase(friendRepo, reminderRepo, hangoutRepo, settingsRepo, groupRepo, planRepo, interactionRepo, clock)
+    val observeAgenda = ObserveAgendaUseCase(friendRepo, reminderRepo, hangoutRepo, settingsRepo, circles, planRepo, interactionRepo, linkRepo, clock)
     val keepNotificationsScheduled = KeepNotificationsScheduledUseCase(
         friendRepo,
         reminderRepo,
         hangoutRepo,
         settingsRepo,
-        groupRepo,
+        circles,
         planRepo,
         interactionRepo,
+        linkRepo,
         scheduler,
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, interactionRepo, clock)
-    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, groupRepo, planRepo, interactionRepo)
+    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, clock)
+    val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val updateSource = FakeAppUpdateSource()
     val checkForUpdate = CheckForUpdateUseCase(updateSource)
+    val observePersonLinks = ObservePersonLinksUseCase(linkRepo, friendRepo)
+    val saveLink = SaveLinkUseCase(linkRepo, clock, ids)
+    val deleteLink = DeleteLinkUseCase(linkRepo)
+    val restoreLink = RestoreLinkUseCase(linkRepo)
+    val setRelationToMe = SetRelationToMeUseCase(friendRepo)
+    val setPronouns = SetPronounsUseCase(friendRepo)
+    val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, clock, ids)
+    val personLinks = PersonLinkUseCases(observePersonLinks, saveLink, deleteLink, restoreLink, setRelationToMe, setPronouns, addRelativeAsPerson)
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)
 }

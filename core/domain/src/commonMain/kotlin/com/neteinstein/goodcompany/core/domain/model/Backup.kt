@@ -17,6 +17,8 @@ data class Backup(
     @EncodeDefault val version: Int = VERSION,
     val exportedAt: Instant? = null,
     val friends: List<Friend> = emptyList(),
+    /** Links between people (issue #39); missing in older backups. */
+    val links: List<PersonLink> = emptyList(),
     val hangouts: List<Hangout> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
     val interactions: List<Interaction> = emptyList(),

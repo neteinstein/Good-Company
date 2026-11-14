@@ -13,8 +13,12 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import java.io.File
 import java.util.Properties
 import kotlin.io.path.createTempFile
@@ -229,6 +233,42 @@ class MigrationTest {
         assertEquals(listOf(mine), database.readAttachments())
         database.friendQueries.delete("ana")
         assertTrue(database.readAttachments().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version8to9_addsLinks_andFriendsStartWithNoRelationToMe() = runTest {
+        val driver = driverAt(8)
+        listOf("ana", "rui").forEachIndexed { i, id ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', NULL, 1, 0, '', 0, 0, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+
+        GoodCompanyDatabase.Schema.migrate(driver, 8, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val friends = database.readFriends()
+        assertTrue(friends.all { it.relationToMe == null && it.pronouns == null })
+        database.writeFriend(friends.first().copy(relationToMe = LinkType.SIBLING, pronouns = Pronouns.SHE), 0)
+        assertEquals(LinkType.SIBLING, database.readFriends().first().relationToMe)
+
+        val link = PersonLink("l1", FriendId("rui"), FriendId("ana"), LinkType.SPOUSE, LocalDate(2015, 7, 4), remindAnniversary = true)
+        database.writeLink(link)
+        assertEquals(listOf(link), database.readLinks())
+        // An unknown type is refused by the schema.
+        assertTrue(
+            runCatching {
+                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
+            }.isFailure,
+        )
+        database.friendQueries.delete("ana")
+        assertTrue(database.readLinks().isEmpty())
         driver.close()
     }
 }

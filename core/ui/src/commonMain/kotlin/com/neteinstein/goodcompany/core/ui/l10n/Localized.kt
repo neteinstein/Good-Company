@@ -27,6 +27,9 @@ import com.neteinstein.goodcompany.core.ui.resources.ai_error_refused
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_too_slow
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_truncated
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_unavailable
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_title
+import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.circle_close
 import com.neteinstein.goodcompany.core.ui.resources.circle_close_short
 import com.neteinstein.goodcompany.core.ui.resources.circle_good
@@ -128,6 +131,11 @@ object ResourceNotificationRenderer : NotificationRenderer {
             is NotificationContent.RelativeBirthday -> Triple(
                 getString(Res.string.notif_relative_title, c.relativeName, c.friendName),
                 c.age?.let { getString(Res.string.notif_kid_body_age, it) } ?: getString(Res.string.notif_kid_body),
+                emptyList(),
+            )
+            is NotificationContent.Anniversary -> Triple(
+                getString(Res.string.anniversary_title, c.firstName, c.secondName),
+                c.years?.takeIf { it > 0 }?.let { getPluralString(Res.plurals.anniversary_years, it, it) } ?: getString(Res.string.anniversary_body),
                 emptyList(),
             )
             is NotificationContent.EventToday -> Triple(

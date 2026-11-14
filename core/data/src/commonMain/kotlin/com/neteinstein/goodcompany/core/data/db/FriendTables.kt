@@ -14,8 +14,10 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import kotlinx.datetime.LocalDate
@@ -154,6 +156,8 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             drinksAddedAt = drinks.addedAt(),
             interestsAddedAt = interests.addedAt(),
             customFields = customFields[id].orEmpty().map { CustomField(it.id, it.label, it.value_) },
+            relationToMe = LinkType.parse(row.relation_to_me),
+            pronouns = Pronouns.parse(row.pronouns),
         )
     }
 }
@@ -199,6 +203,8 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             introduced_by_friend_id = friend.introducedBy?.friendId?.value,
             introduced_by_name = friend.introducedBy?.name,
             preferred_channel = friend.preferredChannel?.name,
+            relation_to_me = friend.relationToMe?.name,
+            pronouns = friend.pronouns?.name,
         ),
     )
     q.deleteChildren(id).await()

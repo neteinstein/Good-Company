@@ -458,4 +458,31 @@
     <string name="saved_add_photo">Ajouter une photo</string>
     <string name="saved_empty">Partagez une discussion, un lien ou une photo avec Good Company et ils apparaîtront ici.</string>
     <string name="saved_removed">Retiré des éléments enregistrés</string>
+    <!-- Links between people, relationship to me, "Add as a person" (issue #39). -->
+    <string name="links_other_title">Autres liens</string>
+    <string name="link_add">Lier à une personne</string>
+    <string name="link_sheet_title">Lier %1$s à quelqu’un</string>
+    <string name="link_sheet_edit_title">%1$s et %2$s</string>
+    <string name="link_search">Qui ?</string>
+    <string name="link_no_people">Ajoutez d’abord une autre personne.</string>
+    <string name="link_change">Changer</string>
+    <string name="link_is_of">%1$s, pour %2$s, est…</string>
+    <string name="link_words_for">Mots pour %1$s</string>
+    <string name="link_since">Ensemble depuis</string>
+    <string name="link_since_value">Ensemble depuis · %1$s</string>
+    <string name="link_ended">Fini</string>
+    <string name="link_ended_value">Fini · %1$s</string>
+    <string name="link_remind_anniversary">Me rappeler leur anniversaire</string>
+    <string name="link_preview">La page de %1$s affichera %2$s · %3$s.</string>
+    <string name="link_save">Enregistrer le lien</string>
+    <string name="link_remove">Retirer le lien</string>
+    <string name="msg_link_removed">Lien retiré</string>
+    <string name="link_row_since">ensemble depuis %1$s</string>
+    <string name="link_row_years">%1$d–%2$d</string>
+    <string name="relation_to_me_title">%1$s est votre…</string>
+    <string name="relation_to_me_add">Un lien avec vous ?</string>
+    <string name="relation_to_me_family_note">Toute personne marquée comme famille rejoint automatiquement votre cercle Famille.</string>
+    <string name="relation_to_me_clear">Aucun lien</string>
+    <string name="add_as_person">Ajouter comme personne</string>
+    <string name="msg_added_as_person">%1$s a maintenant sa propre page</string>
 </resources>

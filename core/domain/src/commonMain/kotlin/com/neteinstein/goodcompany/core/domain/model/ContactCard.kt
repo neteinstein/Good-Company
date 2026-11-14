@@ -22,6 +22,8 @@ data class ContactCard(
     val dislikes: List<String> = emptyList(),
     /** Partner, parents, siblings, pets… (written as contact relations). */
     val relatives: List<CardRelative> = emptyList(),
+    /** Links to other people in the app (issue #39), written as contact relations like [relatives]. */
+    val links: List<CardLink> = emptyList(),
     /** Who introduced you (a "referred by" relation). */
     val referredBy: String? = null,
     val job: String = "",
@@ -40,7 +42,7 @@ data class ContactCard(
     /** Anything beyond name and birthday: those two normally come *from* the contact, not the other way round. */
     val hasExtras: Boolean
         get() = kids.isNotEmpty() || events.isNotEmpty() || notes.isNotBlank() || likes.isNotEmpty() || dislikes.isNotEmpty() ||
-            relatives.isNotEmpty() || referredBy != null || job.isNotBlank() || livesIn.isNotBlank() || met != null ||
+            relatives.isNotEmpty() || links.isNotEmpty() || referredBy != null || job.isNotBlank() || livesIn.isNotBlank() || met != null ||
             food.isNotEmpty() || drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty()
 
     /**
@@ -72,7 +74,11 @@ data class ContactCard(
     private fun List<String>.labelled(label: String): String? = takeIf { it.isNotEmpty() }?.let { "$label: ${it.joinToString(", ")}" }
 
     companion object {
-        fun from(friend: Friend): ContactCard = ContactCard(
+        /**
+         * The card for [friend]. [links] may be every link on file: only [friend]'s are used, each written with the other
+         * person's name from [people] and what they are to [friend] (a link to someone not in [people] is left out).
+         */
+        fun from(friend: Friend, links: List<PersonLink> = emptyList(), people: Map<FriendId, Friend> = emptyMap()): ContactCard = ContactCard(
             name = friend.name,
             birthday = friend.birthday,
             kids = friend.kids.mapNotNull { kid -> kid.name.trim().takeIf { it.isNotEmpty() }?.let { CardKid(it, kid.birthday) } },
@@ -81,6 +87,11 @@ data class ContactCard(
             likes = friend.likes.map(String::trim).filter(String::isNotEmpty),
             dislikes = friend.dislikes.map(String::trim).filter(String::isNotEmpty),
             relatives = friend.relatives.mapNotNull { r -> r.name.trim().takeIf { it.isNotEmpty() }?.let { CardRelative(it, r.relation) } },
+            links = links.mapNotNull { link ->
+                val other = link.otherThan(friend.id)?.let(people::get) ?: return@mapNotNull null
+                val role = link.roleSeenBy(friend.id) ?: return@mapNotNull null
+                other.name.trim().takeIf { it.isNotEmpty() }?.let { CardLink(it, role, other.pronouns) }
+            },
             referredBy = friend.introducedBy?.name?.trim()?.takeIf { it.isNotEmpty() },
             job = friend.job.trim(),
             livesIn = friend.livesIn.trim(),
@@ -96,6 +107,9 @@ data class ContactCard(
         )
     }
 }
+
+/** A linked person, as the contact can show them: a name, what they are to the friend and the words for them. */
+data class CardLink(val name: String, val role: LinkType, val pronouns: Pronouns? = null)
 
 /** A relative, as the contact can show them: a name and how they're related. */
 data class CardRelative(val name: String, val relation: Relation)

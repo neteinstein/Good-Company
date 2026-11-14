@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.List
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Email
@@ -61,9 +62,11 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.usecase.PersonLinks
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
@@ -102,6 +105,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_bad
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_hint
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_none
 import com.neteinstein.goodcompany.feature.friends.resources.about_title
+import com.neteinstein.goodcompany.feature.friends.resources.add_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.channel_call
 import com.neteinstein.goodcompany.feature.friends.resources.channel_email
 import com.neteinstein.goodcompany.feature.friends.resources.channel_sms
@@ -119,6 +123,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.family_note
 import com.neteinstein.goodcompany.feature.friends.resources.family_notify
 import com.neteinstein.goodcompany.feature.friends.resources.family_remove
 import com.neteinstein.goodcompany.feature.friends.resources.family_title
+import com.neteinstein.goodcompany.feature.friends.resources.link_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_edit
 import com.neteinstein.goodcompany.feature.friends.resources.more_hint
@@ -389,14 +394,23 @@ internal fun FamilyCard(
     onEditRelative: (Relative) -> Unit,
     onRemoveKid: (String) -> Unit,
     onRemoveRelative: (String) -> Unit,
+    links: List<LinkedPerson> = emptyList(),
+    onOpenPerson: (FriendId) -> Unit = {},
+    onEditLink: (LinkedPerson) -> Unit = {},
+    onAddLink: () -> Unit = {},
+    onAddAsPerson: (String) -> Unit = {},
 ) {
+    // Partners first (F18), then exes, then kids and family; friends and colleagues have their own card.
+    val romantic = links.filter { it.role.isRomantic }
+    val family = links.filter { it.role.isFamily }
     SectionCard(
         stringResource(Res.string.family_title),
         icon = Icons.Rounded.People,
         action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
     ) {
-        if (f.kids.isEmpty() && f.relatives.isEmpty()) Hint(stringResource(Res.string.family_hint))
-        f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative) }
+        if (f.kids.isEmpty() && f.relatives.isEmpty() && romantic.isEmpty() && family.isEmpty()) Hint(stringResource(Res.string.family_hint))
+        romantic.forEach { LinkRow(it, onOpenPerson, onEditLink) }
+        f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
         f.kids.forEach { kid ->
             ListItem(
                 modifier = Modifier.clickable { onEditKid(kid) },
@@ -416,12 +430,24 @@ internal fun FamilyCard(
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
         }
-        f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative) }
+        family.forEach { LinkRow(it, onOpenPerson, onEditLink) }
+        f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
+        TextButton(onClick = onAddLink, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(stringResource(Res.string.link_add))
+        }
     }
 }
 
 @Composable
-private fun RelativeRow(r: Relative, today: LocalDate, onEdit: (Relative) -> Unit, onRemove: (String) -> Unit) {
+private fun RelativeRow(
+    r: Relative,
+    today: LocalDate,
+    onEdit: (Relative) -> Unit,
+    onRemove: (String) -> Unit,
+    onAddAsPerson: (String) -> Unit,
+) {
     ListItem(
         modifier = Modifier.clickable { onEdit(r) },
         leadingContent = {
@@ -439,7 +465,13 @@ private fun RelativeRow(r: Relative, today: LocalDate, onEdit: (Relative) -> Uni
             Text(parts.joinToString(" · "))
         },
         trailingContent = {
-            IconButton(onClick = { onRemove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // A relative who is only a name can become a person with their own page (question 1).
+                if (PersonLinks.typeFor(r.relation) != null) {
+                    TextButton(onClick = { onAddAsPerson(r.id) }) { Text(stringResource(Res.string.add_as_person)) }
+                }
+                IconButton(onClick = { onRemove(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, r.name)) }
+            }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )

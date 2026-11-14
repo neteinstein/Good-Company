@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -45,14 +46,18 @@ import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -244,6 +249,30 @@ class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepos
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
 }
 
+/** Links between people; like the real one, a link to someone who isn't in [friends] (when given) is skipped. */
+class FakePersonLinkRepository(
+    initial: List<PersonLink> = emptyList(),
+    private val friends: FakeFriendRepository? = null,
+) : PersonLinkRepository {
+    private val state = MutableStateFlow(initial)
+
+    // Like the database's cascade: a link goes when either person goes.
+    override val links: Flow<List<PersonLink>> = friends?.let { repo ->
+        combine(state, repo.friends) { ls, fs ->
+            val ids = fs.mapTo(HashSet()) { it.id }
+            ls.filter { it.from in ids && it.to in ids }
+        }
+    } ?: state
+
+    override suspend fun upsert(link: PersonLink) {
+        if (link.from == link.to) return
+        friends?.friends?.value?.let { fs -> if (fs.none { it.id == link.from } || fs.none { it.id == link.to }) return }
+        state.update { list -> if (list.any { it.id == link.id }) list.map { if (it.id == link.id) link else it } else list + link }
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
 class FakePlanRepository(initial: List<Plan> = emptyList()) : PlanRepository {
     private val state = MutableStateFlow(initial)
     override val plans: StateFlow<List<Plan>> = state
@@ -265,11 +294,13 @@ class FakeBackupRepository(
     private val groups: FakeGroupRepository,
     private val plans: FakePlanRepository,
     private val settings: FakeSettingsRepository,
+    private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
     override suspend fun snapshot() = Backup(
         friends = friends.friends.value,
+        links = links.links.first(),
         hangouts = hangouts.hangouts.value,
         reminders = reminders.reminders.value,
         interactions = interactions.interactions.value,
@@ -287,6 +318,8 @@ class FakeBackupRepository(
         restored = backup
         friends.friends.value.forEach { friends.delete(it.id) }
         backup.friends.forEach { friends.upsert(it) }
+        links.links.first().forEach { links.delete(it.id) }
+        backup.links.forEach { links.upsert(it) }
         hangouts.hangouts.value.forEach { hangouts.delete(it.id) }
         backup.hangouts.forEach { hangouts.add(it) }
         hangouts.places.value.forEach { hangouts.deletePlace(it.id) }

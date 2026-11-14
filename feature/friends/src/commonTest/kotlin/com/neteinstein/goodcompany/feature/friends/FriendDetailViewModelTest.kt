@@ -12,11 +12,14 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -27,6 +30,7 @@ import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.AboutEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.LinkEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.RelativeEdit
 import kotlinx.datetime.LocalDate
@@ -75,6 +79,7 @@ class FriendDetailViewModelTest {
         g.deleteAttachment,
         g.restoreAttachment,
         g.shareInbox,
+        g.personLinks,
         g.clock,
         g.ids,
     )
@@ -497,5 +502,49 @@ class FriendDetailViewModelTest {
         vm.onUndoRemoveAttachment()
         assertEquals(listOf("a1"), state.value.attachments.map { it.id })
         assertNull(state.value.undoAttachment)
+    }
+
+    @Test
+    fun aLinkShowsOnBothPages_withTheRightWord_andCanBeRemovedAndUndone() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui") { copy(pronouns = Pronouns.HE) }, friend("ana")))
+        val rui = vm("rui")
+        val ana = vm("ana")
+        val ruiState = collecting(rui.state)
+        val anaState = collecting(ana.state)
+
+        rui.onSaveLink(LinkEdit(FriendId("ana"), LinkType.DATING, startedOn = LocalDate(2019, 6, 1), otherPronouns = Pronouns.SHE))
+
+        val onRui = ruiState.value.links.single()
+        assertEquals(FriendId("ana"), onRui.person.id)
+        assertEquals(LinkType.DATING, onRui.role)
+        assertEquals(Pronouns.SHE, onRui.person.pronouns)
+        val onAna = anaState.value.links.single()
+        assertEquals(FriendId("rui"), onAna.person.id)
+        assertEquals(LinkType.DATING, onAna.role)
+
+        ana.onRemoveLink(onAna.link.id)
+        assertTrue(ruiState.value.links.isEmpty())
+        assertEquals(FriendDetailMessage.LinkRemoved, anaState.value.message)
+        ana.onUndoRemoveLink()
+        assertEquals(1, ruiState.value.links.size)
+        assertNull(anaState.value.undoLink)
+    }
+
+    @Test
+    fun relationToMe_andAddingARelativeAsAPerson() = runViewModelTest {
+        g = TestGraph(listOf(friend("rui") { copy(relatives = listOf(Relative("r1", Relation.PARENT, "Graça Costa"))) }))
+        val vm = vm("rui")
+        val state = collecting(vm.state)
+
+        vm.onSaveRelationToMe(LinkType.SIBLING, Pronouns.HE)
+        assertEquals(LinkType.SIBLING, state.value.detail!!.friend.relationToMe)
+        assertEquals(Pronouns.HE, state.value.detail!!.friend.pronouns)
+
+        vm.onAddRelativeAsPerson("r1")
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+        val mother = state.value.links.single()
+        assertEquals("Graça Costa", mother.person.name)
+        assertEquals(LinkType.PARENT, mother.role)
+        assertEquals(FriendDetailMessage.AddedAsPerson("Graça Costa"), state.value.message)
     }
 }

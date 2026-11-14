@@ -13,12 +13,14 @@ import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlSettingsRepository
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CardLink
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -29,9 +31,13 @@ import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.russhwolf.settings.MapSettings
@@ -162,5 +168,68 @@ class SqlRepositoryContractTest : RepositoryContract() {
         s.friends.delete(FriendId("f0"))
         assertTrue(s.hangouts.hangouts.first().first().friendIds.isEmpty())
         watching.cancel()
+    }
+
+    // --- Links between people (issue #39): SQL only (the JSON stores never had them) ---
+
+    @Test
+    fun links_areStoredOnce_skipUnknownPeople_goWithAPerson_andSurviveABackup() = runTest {
+        val s = open()
+        val links = SqlPersonLinkRepository(db)
+        s.friends.upsert(friend("ana") { copy(relationToMe = LinkType.SIBLING, pronouns = Pronouns.SHE) })
+        s.friends.upsert(friend("rui"))
+        val couple =
+            PersonLink(
+                "l1",
+                rui,
+                ana,
+                LinkType.DATING,
+                LocalDate(2019, 6, 1),
+                note = "met at uni",
+                remindAnniversary = true,
+                addedAt = at(2026, 3, 1),
+            )
+        links.upsert(couple)
+        links.upsert(PersonLink("ghost", rui, FriendId("ghost"), LinkType.FRIEND))
+        links.upsert(PersonLink("self", rui, rui, LinkType.FRIEND))
+        assertEquals(listOf(couple), links.links.first())
+        val ex = couple.copy(type = LinkType.EX, endedOn = LocalDate(2024, 1, 1), remindAnniversary = false)
+        links.upsert(ex)
+        assertEquals(listOf(ex), SqlPersonLinkRepository(db).links.first())
+
+        val friendAna = s.friends.get(ana)!!
+        assertEquals(LinkType.SIBLING, friendAna.relationToMe)
+        assertEquals(Pronouns.SHE, friendAna.pronouns)
+
+        val backup = s.backup.snapshot()
+        assertEquals(listOf(ex), backup.links)
+        s.friends.delete(ana)
+        assertTrue(links.links.first().isEmpty())
+        s.backup.restore(backup)
+        assertEquals(listOf(ex), links.links.first())
+        links.delete("l1")
+        assertTrue(links.links.first().isEmpty())
+    }
+
+    @Test
+    fun aLinkIsWrittenOntoBothContacts_andARenameReachesTheOtherContact() = runTest {
+        val writer = FakeContactsWriter()
+        val s = open(writer = writer)
+        val links = SqlPersonLinkRepository(db, writer)
+        s.friends.upsert(friend("ana", "Ana Silva") { copy(contactId = "c-ana", pronouns = Pronouns.SHE) })
+        s.friends.upsert(friend("rui") { copy(contactId = "c-rui") })
+        s.friends.upsert(friend("leo")) // no contact: never written
+        links.upsert(PersonLink("l1", rui, ana, LinkType.DATING))
+        links.upsert(PersonLink("l2", rui, FriendId("leo"), LinkType.CHILD))
+        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE), CardLink("Leo", LinkType.CHILD)), writer.written[rui]!!.links)
+        assertEquals(listOf(CardLink("Rui", LinkType.DATING)), writer.written[ana]!!.links)
+        assertNull(writer.written[FriendId("leo")])
+
+        val before = writer.writes
+        links.upsert(PersonLink("l1", rui, ana, LinkType.DATING)) // nothing changed
+        assertEquals(before, writer.writes)
+
+        s.friends.upsert(s.friends.get(ana)!!.copy(name = "Ana Costa"))
+        assertEquals("Ana Costa", writer.written[rui]!!.links.first().name)
     }
 }

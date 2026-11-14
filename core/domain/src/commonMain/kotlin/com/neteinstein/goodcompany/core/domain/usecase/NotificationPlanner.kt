@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
@@ -30,7 +31,7 @@ import kotlin.time.Instant
  * in the user's language.
  *
  * Only friends with `notifyBirthday` get birthday pings (theirs and their kids'); a relative's birthday pings only
- * when that relative's own `notifyBirthday` is on; important events,
+ * when that relative's own `notifyBirthday` is on, an anniversary when its link's reminder is on; important events,
  * reminders and plans always notify. Catch-up nudges (friend and group rhythms) are budgeted by [NudgePolicy]:
  * gathered into one weekly digest, or at most one a day, and they quieten down (then stop) when the app isn't
  * being opened. Paused friends never get one.
@@ -59,6 +60,7 @@ object NotificationPlanner {
         plans: List<Plan> = emptyList(),
         interactions: List<Interaction> = emptyList(),
         policy: NudgePolicy = NudgePolicy(weeklyDigest = false),
+        links: List<PersonLink> = emptyList(),
     ): List<PlannedNotification> {
         val today = now.toLocalDate(zone)
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
@@ -100,6 +102,12 @@ object NotificationPlanner {
                     )
                 }
             }
+        }
+
+        // Anniversaries (issue #39): on the day, like a birthday; never throttled.
+        PersonLinks.anniversaries(links, friends).forEach { (link, a, b) ->
+            val d = link.nextAnniversary(today) ?: return@forEach
+            add("anniversary:${link.id}:$d", d, NotificationContent.Anniversary(a.name, b.name, link.yearsOn(d)))
         }
 
         val byId = friends.associateBy { it.id }

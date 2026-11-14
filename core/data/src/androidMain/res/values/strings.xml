@@ -14,4 +14,13 @@
     <string name="contact_drinks">Drinks</string>
     <string name="contact_interests">Interests</string>
     <string name="contact_relation_sibling">Sibling</string>
+    <!-- Links between people written onto the contact (issue #39). -->
+    <string name="contact_relation_grandparent">Grandparent</string>
+    <string name="contact_relation_grandchild">Grandchild</string>
+    <string name="contact_relation_aunt_uncle">Aunt or uncle</string>
+    <string name="contact_relation_niece_nephew">Niece or nephew</string>
+    <string name="contact_relation_cousin">Cousin</string>
+    <string name="contact_relation_in_law">In-law</string>
+    <string name="contact_relation_ex">Ex</string>
+    <string name="contact_relation_colleague">Colleague</string>
 </resources>

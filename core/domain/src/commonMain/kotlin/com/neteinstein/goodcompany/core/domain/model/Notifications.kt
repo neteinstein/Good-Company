@@ -11,6 +11,9 @@ sealed interface NotificationContent {
     /** A relative whose birthday reminder is on ([Relative.notifyBirthday]). */
     data class RelativeBirthday(val relativeName: String, val friendName: String, val relation: Relation, val age: Int?) : NotificationContent
 
+    /** A couple's anniversary (issue #39): [years] together on the day. */
+    data class Anniversary(val firstName: String, val secondName: String, val years: Int?) : NotificationContent
+
     data class EventToday(val friendName: String, val title: String) : NotificationContent
 
     data class EventSoon(val friendName: String, val title: String, val daysBefore: Int) : NotificationContent

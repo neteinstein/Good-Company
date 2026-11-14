@@ -458,4 +458,31 @@
     <string name="saved_add_photo">Añadir una foto</string>
     <string name="saved_empty">Comparte un chat, un enlace o una foto con Good Company y aparecerá aquí.</string>
     <string name="saved_removed">Eliminado de guardados</string>
+    <!-- Links between people, relationship to me, "Add as a person" (issue #39). -->
+    <string name="links_other_title">Otros vínculos</string>
+    <string name="link_add">Vincular con una persona</string>
+    <string name="link_sheet_title">Vincular a %1$s con alguien</string>
+    <string name="link_sheet_edit_title">%1$s y %2$s</string>
+    <string name="link_search">¿Quién?</string>
+    <string name="link_no_people">Primero añade a otra persona.</string>
+    <string name="link_change">Cambiar</string>
+    <string name="link_is_of">%1$s, para %2$s, es…</string>
+    <string name="link_words_for">Palabras para %1$s</string>
+    <string name="link_since">Juntos desde</string>
+    <string name="link_since_value">Juntos desde · %1$s</string>
+    <string name="link_ended">Terminó</string>
+    <string name="link_ended_value">Terminó · %1$s</string>
+    <string name="link_remind_anniversary">Recordarme su aniversario</string>
+    <string name="link_preview">La página de %1$s mostrará %2$s · %3$s.</string>
+    <string name="link_save">Guardar vínculo</string>
+    <string name="link_remove">Quitar vínculo</string>
+    <string name="msg_link_removed">Vínculo quitado</string>
+    <string name="link_row_since">juntos desde %1$s</string>
+    <string name="link_row_years">%1$d–%2$d</string>
+    <string name="relation_to_me_title">%1$s es tu…</string>
+    <string name="relation_to_me_add">¿Es familia tuya?</string>
+    <string name="relation_to_me_family_note">Quien marques como familia está automáticamente en tu círculo Familia.</string>
+    <string name="relation_to_me_clear">Sin relación</string>
+    <string name="add_as_person">Añadir como persona</string>
+    <string name="msg_added_as_person">%1$s ya tiene su propia página</string>
 </resources>

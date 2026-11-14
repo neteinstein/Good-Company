@@ -37,8 +37,10 @@ object HomeWidget {
         is AgendaItem.FriendBirthday, is AgendaItem.KidBirthday, is AgendaItem.FriendEvent,
         is AgendaItem.ReminderDue, is AgendaItem.PlanUpcoming,
         -> true
-        // Relatives' birthdays stay in the app: the widgets have no wording for them yet.
-        is AgendaItem.MeetupOverdue, is AgendaItem.GroupOverdue, is AgendaItem.PlanToConfirm, is AgendaItem.RelativeBirthday -> false
+        // Relatives' birthdays and anniversaries stay in the app: the widgets have no wording for them yet.
+        is AgendaItem.MeetupOverdue, is AgendaItem.GroupOverdue, is AgendaItem.PlanToConfirm, is AgendaItem.RelativeBirthday,
+        is AgendaItem.Anniversary,
+        -> false
     }
 }
 
