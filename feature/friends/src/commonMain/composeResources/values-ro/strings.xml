@@ -423,4 +423,35 @@
     <string name="circle_never_together">Încă nu v-ați adunat</string>
     <string name="circle_goal">obiectiv: %1$s</string>
     <string name="circle_log_meetup">Notează o întâlnire: %1$s</string>
+    <string name="choose_title">Alege prieteni</string>
+    <string name="choose_count">%1$d din %2$d</string>
+    <string name="choose_filter_favourites">Întâi favoriții</string>
+    <string name="choose_filter_birthday">Cu zi de naștere</string>
+    <string name="choose_filter_all">Arată tot</string>
+    <string name="choose_favourites">Favoriți</string>
+    <string name="choose_birthday">Ziua de naștere: %1$s</string>
+    <string name="choose_already_friend">Deja în Good Company</string>
+    <string name="choose_add_none">Adaugă prieteni</string>
+    <string name="choose_only_ticked">Doar persoanele pe care le bifezi sunt salvate în Good Company. Toți ceilalți rămân neatinși în agenda ta.</string>
+    <string name="choose_on_device">Contactele tale sunt citite doar pe acest telefon și nu sunt încărcate nicăieri.</string>
+    <string name="choose_empty_title">Niciun contact de afișat</string>
+    <string name="choose_empty_body">Accesul la contacte este oprit, așa că nu putem afișa lista. Poți alege în continuare persoane una câte una.</string>
+    <string name="choose_pick_instead">Alege din contacte</string>
+    <string name="choose_no_match">Nimeni nu se potrivește</string>
+    <string name="add_option_pick_body">Deschide selectorul de contacte al telefonului</string>
+    <string name="add_option_list">Alege din lista completă</string>
+    <string name="add_option_list_body">Bifează persoanele pe care vrei să le ții aproape</string>
+    <string name="add_option_list_again">Cere din nou accesul la contacte</string>
+    <string name="add_option_type">Scrie de mână</string>
+    <string name="add_option_type_body">Adaugă pe cineva după nume</string>
+    <plurals name="choose_search">
+        <item quantity="one">Caută în %1$d contact</item>
+        <item quantity="few">Caută în %1$d contacte</item>
+        <item quantity="other">Caută în %1$d de contacte</item>
+    </plurals>
+    <plurals name="choose_add">
+        <item quantity="one">Adaugă %1$d prieten</item>
+        <item quantity="few">Adaugă %1$d prieteni</item>
+        <item quantity="other">Adaugă %1$d de prieteni</item>
+    </plurals>
 </resources>

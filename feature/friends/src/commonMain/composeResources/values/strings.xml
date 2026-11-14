@@ -434,4 +434,33 @@
     <string name="circle_never_together">Not together yet</string>
     <string name="circle_goal">goal %1$s</string>
     <string name="circle_log_meetup">Log a %1$s meetup</string>
+    <string name="choose_title">Choose friends</string>
+    <string name="choose_count">%1$d of %2$d</string>
+    <string name="choose_filter_favourites">Favourites first</string>
+    <string name="choose_filter_birthday">With birthday</string>
+    <string name="choose_filter_all">Show all</string>
+    <string name="choose_favourites">Favourites</string>
+    <string name="choose_birthday">Birthday %1$s</string>
+    <string name="choose_already_friend">Already in Good Company</string>
+    <string name="choose_add_none">Add friends</string>
+    <string name="choose_only_ticked">Only the people you tick are saved in Good Company. Everyone else stays in your address book, untouched.</string>
+    <string name="choose_on_device">Your contacts are read on this phone only and never uploaded.</string>
+    <string name="choose_empty_title">No contacts to show</string>
+    <string name="choose_empty_body">Contacts access is off, so we can’t show the list. You can still pick people one at a time.</string>
+    <string name="choose_pick_instead">Pick from contacts</string>
+    <string name="choose_no_match">No one matches</string>
+    <string name="add_option_pick_body">Opens your phone’s contact picker</string>
+    <string name="add_option_list">Choose from the full list</string>
+    <string name="add_option_list_body">Tick the people you want to keep close</string>
+    <string name="add_option_list_again">Asks for contacts access again</string>
+    <string name="add_option_type">Type it in</string>
+    <string name="add_option_type_body">Add someone by name</string>
+    <plurals name="choose_search">
+        <item quantity="one">Search %1$d contact</item>
+        <item quantity="other">Search %1$d contacts</item>
+    </plurals>
+    <plurals name="choose_add">
+        <item quantity="one">Add %1$d friend</item>
+        <item quantity="other">Add %1$d friends</item>
+    </plurals>
 </resources>

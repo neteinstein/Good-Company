@@ -40,6 +40,12 @@ data class PlatformCapabilities(
     val hasSelfUpdate: Boolean = false,
     /** Birthday, kids, events and notes are also written onto the friend's contact (Android sideload build only). */
     val hasContactWriteBack: Boolean = false,
+    /**
+     * The phone's contacts can be listed with checkboxes to choose friends (decision D2): iOS, and Android only where
+     * the manifest declares READ_CONTACTS (the sideload build). The Play build stays picker-only until Google Play's
+     * READ_CONTACTS policy has been checked; turning it on there is a manifest + CI change.
+     */
+    val hasContactList: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities

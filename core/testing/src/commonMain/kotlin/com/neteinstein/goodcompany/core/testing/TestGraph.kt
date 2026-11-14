@@ -31,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
@@ -64,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
@@ -149,6 +151,8 @@ class TestGraph(
     val setCatchUpPaused = SetCatchUpPausedUseCase(friendRepo)
     val recordAppOpened = RecordAppOpenedUseCase(settingsRepo, clock)
     val importPickedContacts = ImportPickedContactsUseCase(friendRepo)
+    val listContacts = ListContactsUseCase(friendRepo)
+    val saveChosenContacts = SaveChosenContactsUseCase(friendRepo, importPickedContacts)
     val exportBackup = ExportBackupUseCase(backupRepo, clock)
     val restoreBackup = RestoreBackupUseCase(backupRepo)
     val cloudStore = FakeCloudBackupStore()

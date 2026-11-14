@@ -12,16 +12,6 @@
     <string name="start_empty">Începe cu o listă goală</string>
     <string name="setup_title">Să pregătim totul</string>
     <string name="setup_body">Totul e opțional și poți schimba mai târziu din Setări.</string>
-    <string name="contacts_title">Adu-ți contactele</string>
-    <plurals name="contacts_imported">
-        <item quantity="one">%1$d contact importat. Atinge ♥ la prietenii adevărați.</item>
-        <item quantity="few">%1$d contacte importate. Atinge ♥ la prietenii adevărați.</item>
-        <item quantity="other">%1$d de contacte importate. Atinge ♥ la prietenii adevărați.</item>
-    </plurals>
-    <string name="contacts_denied">Nicio problemă — poți adăuga prieteni manual.</string>
-    <string name="contacts_body">Citim nume, numere de telefon și zile de naștere. Nimic nu pleacă de pe dispozitiv.</string>
-    <string name="contacts_body_write">Citim nume, numere de telefon și zile de naștere și salvăm pe fiecare contact zilele de naștere, copiii, evenimentele și notele pe care le adaugi aici. Nimic nu pleacă de pe dispozitiv.</string>
-    <string name="import">Importă</string>
     <string name="notifications_title">Mementouri pentru zile de naștere și întâlniri</string>
     <string name="notifications_on">Totul e gata — îți vom aminti la momentul potrivit.</string>
     <string name="notifications_off">Mementourile sunt dezactivate. Le poți activa din Setări.</string>
@@ -42,4 +32,10 @@
         <item quantity="few">%1$d prieteni adăugați. Alegi altul?</item>
         <item quantity="other">%1$d de prieteni adăugați. Alegi altul?</item>
     </plurals>
+    <string name="primer_title">Cine sunt oamenii tăi?</string>
+    <string name="primer_body">Îți arătăm contactele ca să bifezi prietenii pe care vrei să-i ții aproape. Doar persoanele pe care le bifezi sunt salvate în Good Company. Toți ceilalți rămân neatinși în agenda ta.</string>
+    <string name="primer_on_device">Contactele tale sunt citite doar pe acest telefon și nu sunt încărcate nicăieri.</string>
+    <string name="primer_show">Arată-mi contactele</string>
+    <string name="primer_pick_instead">Alege mai degrabă persoane una câte una</string>
+    <string name="primer_denied">Accesul la contacte este oprit, așa că nu putem afișa lista. Poți alege în continuare persoane una câte una.</string>
 </resources>

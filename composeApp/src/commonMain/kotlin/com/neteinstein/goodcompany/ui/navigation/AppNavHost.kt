@@ -15,8 +15,11 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -27,6 +30,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
@@ -40,6 +44,9 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 
 const val APP_VERSION = "1.0.0"
+
+/** Saved-state key: how many people "Choose friends" added, read by Home. */
+private const val CONTACTS_ADDED = "contacts_added"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -57,12 +64,29 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
             popEnterTransition = { fadeIn(tween(220)) },
             popExitTransition = { fadeOut(tween(160)) + scaleOut(targetScale = 0.98f) },
         ) {
-            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) {
+            sharedComposable<FriendsRoute>(this@SharedTransitionLayout) { entry ->
+                // How many people "Choose friends" just added, handed back for Home's snackbar.
+                val chosen by entry.savedStateHandle.getStateFlow(CONTACTS_ADDED, 0).collectAsStateWithLifecycle()
                 FriendsScreen(
                     onOpenFriend = openFriend,
                     onOpenStory = openStory,
                     onEditCircle = editCircle,
                     onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
+                    onChooseContacts = { navController.navigate(ChooseContactsRoute) },
+                    chosenContacts = chosen,
+                    onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
+                )
+            }
+            composable<ChooseContactsRoute>(
+                enterTransition = { slideInVertically { it / 4 } + fadeIn() },
+                popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
+            ) {
+                ChooseContactsScreen(
+                    onBack = { navController.popBackStack(ChooseContactsRoute, inclusive = true) },
+                    onDone = { added ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set(CONTACTS_ADDED, added)
+                        navController.popBackStack(ChooseContactsRoute, inclusive = true)
+                    },
                 )
             }
             composable<FriendDetailRoute>(
@@ -163,8 +187,8 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
 @OptIn(ExperimentalSharedTransitionApi::class)
 private inline fun <reified T : Any> NavGraphBuilder.sharedComposable(
     shared: SharedTransitionScope,
-    crossinline content: @Composable () -> Unit,
-) = composable<T> { ProvideSharedElements(shared, this) { content() } }
+    crossinline content: @Composable (NavBackStackEntry) -> Unit,
+) = composable<T> { entry -> ProvideSharedElements(shared, this) { content(entry) } }
 
 /** Bridges navigation's AnimatedContentScope to the feature-agnostic [LocalSharedElement] hook. */
 @OptIn(ExperimentalSharedTransitionApi::class)

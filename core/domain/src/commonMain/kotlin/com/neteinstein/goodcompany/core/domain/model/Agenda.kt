@@ -73,4 +73,6 @@ data class ContactRecord(
     val photo: ContactPhoto? = null,
     /** Email addresses, in the contact's order. */
     val emails: List<String> = emptyList(),
+    /** A favourite in the address book (Android `STARRED`; iOS has no favourites API, so always false there). */
+    val starred: Boolean = false,
 )

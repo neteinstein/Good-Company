@@ -12,15 +12,6 @@
     <string name="start_empty">Start with an empty list</string>
     <string name="setup_title">Let’s set you up</string>
     <string name="setup_body">Everything is optional and you can change it later in Settings.</string>
-    <string name="contacts_title">Bring in your contacts</string>
-    <plurals name="contacts_imported">
-        <item quantity="one">%1$d contact imported. Tap ♥ on the real friends.</item>
-        <item quantity="other">%1$d contacts imported. Tap ♥ on the real friends.</item>
-    </plurals>
-    <string name="contacts_denied">No problem — you can add friends by hand.</string>
-    <string name="contacts_body">We read names, phone numbers and birthdays. Nothing leaves your device.</string>
-    <string name="contacts_body_write">We read names, phone numbers and birthdays, and save the birthdays, kids, events and notes you add here onto each contact. Nothing leaves your device.</string>
-    <string name="import">Import</string>
     <string name="notifications_title">Birthday &amp; check-in reminders</string>
     <string name="notifications_on">You’re all set — we’ll nudge you at the right time.</string>
     <string name="notifications_off">Reminders are off. You can turn them on in Settings.</string>
@@ -40,4 +31,10 @@
         <item quantity="one">%1$d friend added. Pick another?</item>
         <item quantity="other">%1$d friends added. Pick another?</item>
     </plurals>
+    <string name="primer_title">Who are your people?</string>
+    <string name="primer_body">We’ll show your contacts so you can tick the friends you want to keep close. Only the people you tick are saved in Good Company. Everyone else stays in your address book, untouched.</string>
+    <string name="primer_on_device">Your contacts are read on this phone only and never uploaded.</string>
+    <string name="primer_show">Show my contacts</string>
+    <string name="primer_pick_instead">Pick people one by one instead</string>
+    <string name="primer_denied">Contacts access is off, so we can’t show the list. You can still pick people one at a time.</string>
 </resources>

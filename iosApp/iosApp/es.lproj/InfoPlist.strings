@@ -1,4 +1,4 @@
 /* Localised permission prompts. Keep in sync with Info.plist. */
-"NSContactsUsageDescription" = "Good Company lee tus contactos para crear tu lista de amigos y conocer sus cumpleaños. Nada sale de tu dispositivo.";
+"NSContactsUsageDescription" = "Good Company muestra tus contactos para que elijas a tus amigos. Solo se guardan en la app las personas que elijas. Nada sale de tu dispositivo.";
 "NSLocationWhenInUseUsageDescription" = "Solo se usa cuando tocas “Usar mi ubicación”, para recordar dónde os visteis y sugerir planes cercanos.";
 "NSFaceIDUsageDescription" = "Solo se usa si activas el bloqueo de la app, para que tus notas sobre tus amigos sigan siendo privadas.";

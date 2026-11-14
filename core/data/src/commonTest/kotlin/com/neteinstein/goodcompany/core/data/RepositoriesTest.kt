@@ -34,7 +34,7 @@ class RepositoriesTest {
     private val settings = MapSettings()
 
     private class StubContacts(var records: List<ContactRecord>, override val importsNewContacts: Boolean = true) : ContactsSource {
-        override suspend fun readContacts() = records
+        override suspend fun readContacts(withPhotos: Boolean) = records
     }
 
     @Test

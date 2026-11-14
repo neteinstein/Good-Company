@@ -78,6 +78,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
@@ -113,6 +114,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
+import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
@@ -136,6 +138,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
 import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
@@ -273,6 +276,8 @@ val appModule = module {
     factoryOf(::SetCatchUpPausedUseCase)
     factoryOf(::RecordAppOpenedUseCase)
     factoryOf(::ImportPickedContactsUseCase)
+    factoryOf(::ListContactsUseCase)
+    factoryOf(::SaveChosenContactsUseCase)
     factoryOf(::ObserveOccasionMatchesUseCase)
     factoryOf(::ExportBackupUseCase)
     factoryOf(::RestoreBackupUseCase)
@@ -291,6 +296,7 @@ val appModule = module {
     viewModelOf(::AppViewModel)
     viewModelOf(::OnboardingViewModel)
     viewModelOf(::FriendsViewModel)
+    viewModelOf(::ChooseContactsViewModel)
     viewModel { (id: FriendId) ->
         FriendDetailViewModel(
             friendId = id,

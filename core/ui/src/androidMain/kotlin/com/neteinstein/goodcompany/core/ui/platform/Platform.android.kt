@@ -52,9 +52,9 @@ import kotlinx.datetime.plus
 
 actual val platformCapabilities = PlatformCapabilities(
     name = "Android",
-    // People are always added with the system contact picker, never by importing the whole address book, so the
-    // "import address book" UI is off in every Android build. The sideload build's READ/WRITE_CONTACTS are only for
-    // the write-back (hasContactWriteBack).
+    // People are never added by importing the whole address book, so the "import address book" UI is off in every
+    // Android build. The sideload build's READ/WRITE_CONTACTS give it the contact list with checkboxes
+    // (hasContactList) and the write-back (hasContactWriteBack); the Play build only has the system contact picker.
     hasAddressBook = false,
     hasCallLog = true,
     hasBackgroundNotifications = true,
@@ -84,6 +84,7 @@ actual fun currentPlatformCapabilities(): PlatformCapabilities {
             hasSelfUpdate = context.declares(Manifest.permission.REQUEST_INSTALL_PACKAGES),
             hasContactWriteBack = context.declares(Manifest.permission.READ_CONTACTS) &&
                 context.declares(Manifest.permission.WRITE_CONTACTS),
+            hasContactList = context.declares(Manifest.permission.READ_CONTACTS),
         )
     }
 }

@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -78,6 +79,8 @@ class SequentialIds(private val prefix: String = "id") : IdGenerator {
 class FakeFriendRepository(
     initial: List<Friend> = emptyList(),
     var contacts: List<ContactRecord> = emptyList(),
+    /** Like `ContactsSource.importsNewContacts`: false where a sync only refreshes friends already linked to a contact. */
+    var importsNewContacts: Boolean = true,
 ) : FriendRepository {
     private val state = MutableStateFlow(initial)
     override val friends: StateFlow<List<Friend>> = state
@@ -91,8 +94,24 @@ class FakeFriendRepository(
     override suspend fun delete(id: FriendId) = state.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun syncContacts(): Int {
-        state.update { ContactMerger.merge(it, contacts) }
+        state.update { ContactMerger.merge(it, contacts, addNew = importsNewContacts) }
         return contacts.size
+    }
+
+    /** Every [readContacts] call, with its `withPhotos` flag. */
+    val contactReads = mutableListOf<Boolean>()
+
+    /** The contact ids asked for in [contactPhotos]. */
+    val photoRequests = mutableListOf<Set<String>>()
+
+    override suspend fun readContacts(withPhotos: Boolean): List<ContactRecord> {
+        contactReads += withPhotos
+        return if (withPhotos) contacts else contacts.map { it.copy(photo = null) }
+    }
+
+    override suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto> {
+        photoRequests += contactIds
+        return contacts.filter { it.contactId in contactIds }.mapNotNull { r -> r.photo?.let { r.contactId to it } }.toMap()
     }
 }
 

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Place
@@ -57,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.ui.components.BlobBackground
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
@@ -66,15 +69,9 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.feature.onboarding.resources.Res
 import com.neteinstein.goodcompany.feature.onboarding.resources.allow
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_body_write
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_denied
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_imported
 import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_picked
-import com.neteinstein.goodcompany.feature.onboarding.resources.contacts_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.done
 import com.neteinstein.goodcompany.feature.onboarding.resources.explore_sample
-import com.neteinstein.goodcompany.feature.onboarding.resources.import
 import com.neteinstein.goodcompany.feature.onboarding.resources.lets_go
 import com.neteinstein.goodcompany.feature.onboarding.resources.looking_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.looking_title
@@ -93,6 +90,12 @@ import com.neteinstein.goodcompany.feature.onboarding.resources.pick
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick_body_write
 import com.neteinstein.goodcompany.feature.onboarding.resources.pick_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_denied
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_on_device
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_pick_instead
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_show
+import com.neteinstein.goodcompany.feature.onboarding.resources.primer_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
@@ -129,32 +132,50 @@ private val PAGES = listOf(
     ),
 )
 
+/**
+ * First run. [contactList] draws the "Choose friends" list (it lives in another feature module, so the app passes it
+ * in); it is shown full screen once the contacts permission is granted and reports how many people it added.
+ */
 @Composable
-fun OnboardingScreen(onDone: () -> Unit, viewModel: OnboardingViewModel = koinViewModel()) {
+fun OnboardingScreen(
+    onDone: () -> Unit,
+    contactList: @Composable (onClose: (added: Int) -> Unit) -> Unit = { it(0) },
+    viewModel: OnboardingViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
+    val requestContactList = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactListPermissionResult)
     val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS, viewModel::onNotificationsPermissionResult)
     LaunchedEffect(state.finished) { if (state.finished) onDone() }
     val capabilities = currentPlatformCapabilities()
+    // The picker needs no permission: "Pick people one by one instead" never asks for it (decision D2).
     val pickContact = rememberContactPicker(onPicked = viewModel::onContactsPicked)
-    // Sideload build: ask for the contacts permission the write-back needs, then open the picker whatever the answer.
-    val requestThenPick = rememberPermissionRequester(AppPermission.CONTACTS) { pickContact() }
     OnboardingContent(
         state = state,
         capabilities = capabilities,
-        onImportContacts = requestContacts,
-        onPickContacts = if (capabilities.hasContactWriteBack) requestThenPick else pickContact,
+        onShowContacts = requestContactList,
+        onPickContacts = pickContact,
         onAllowNotifications = requestNotifications,
         onExploreSample = viewModel::onExploreWithSample,
         onFinish = viewModel::onFinish,
     )
+    if (state.contactListOpen) {
+        // A dialog, so the system back gesture closes the list instead of leaving onboarding.
+        Dialog(
+            onDismissRequest = { viewModel.onContactListClosed(0) },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                contactList(viewModel::onContactListClosed)
+            }
+        }
+    }
 }
 
 @Composable
 fun OnboardingContent(
     state: OnboardingUiState,
     capabilities: PlatformCapabilities,
-    onImportContacts: () -> Unit,
+    onShowContacts: () -> Unit,
     onAllowNotifications: () -> Unit,
     onExploreSample: () -> Unit,
     onFinish: () -> Unit,
@@ -182,7 +203,7 @@ fun OnboardingContent(
                 ) {
                     IntroPage(PAGES[page])
                 } else {
-                    SetupPage(state, capabilities, onImportContacts, onAllowNotifications, onExploreSample, onPickContacts)
+                    SetupPage(state, capabilities, onShowContacts, onAllowNotifications, onExploreSample, onPickContacts)
                 }
             }
             Dots(pager.currentPage, pageCount)
@@ -228,7 +249,7 @@ private fun IntroPage(page: Page) {
 private fun SetupPage(
     state: OnboardingUiState,
     capabilities: PlatformCapabilities,
-    onImportContacts: () -> Unit,
+    onShowContacts: () -> Unit,
     onAllowNotifications: () -> Unit,
     onExploreSample: () -> Unit,
     onPickContacts: () -> Unit,
@@ -244,21 +265,9 @@ private fun SetupPage(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        if (capabilities.hasAddressBook) {
-            SetupItem(
-                icon = Icons.Rounded.Contacts,
-                title = stringResource(Res.string.contacts_title),
-                body = when {
-                    state.contactsImported != null -> state.contactsImported.let { pluralStringResource(Res.plurals.contacts_imported, it, it) }
-                    state.contactsDenied -> stringResource(Res.string.contacts_denied)
-                    capabilities.hasContactWriteBack -> stringResource(Res.string.contacts_body_write)
-                    else -> stringResource(Res.string.contacts_body)
-                },
-                done = state.contactsImported != null,
-                action = stringResource(Res.string.import),
-                busy = state.isWorking && state.contactsImported == null,
-                onClick = onImportContacts,
-            )
+        if (capabilities.hasContactList) {
+            // iOS and the Android sideload build: the contacts with checkboxes, the picker as the alternative (D2).
+            ContactsPrimer(state, onShowContacts, onPickContacts)
         } else if (capabilities.hasContactPicker) {
             // Play build: no address-book access, people are picked one by one (the app only sees those).
             SetupItem(
@@ -308,6 +317,52 @@ private fun SetupPage(
             supportingContent = { Text(stringResource(Res.string.private_body)) },
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0f)),
         )
+    }
+}
+
+@Composable
+private fun ContactsPrimer(state: OnboardingUiState, onShowContacts: () -> Unit, onPickContacts: () -> Unit) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow) {
+        Column(
+            Modifier.fillMaxWidth().padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(Modifier.size(56.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(Icons.Rounded.Diversity3, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Text(stringResource(Res.string.primer_title), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            Text(
+                stringResource(if (state.contactListDenied) Res.string.primer_denied else Res.string.primer_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            if (state.contactsPicked > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Check, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        pluralStringResource(Res.plurals.contacts_picked, state.contactsPicked, state.contactsPicked),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Lock, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(Res.string.primer_on_device),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Button(onClick = onShowContacts, enabled = !state.isWorking, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Text(stringResource(Res.string.primer_show))
+            }
+            TextButton(onClick = onPickContacts) { Text(stringResource(Res.string.primer_pick_instead)) }
+        }
     }
 }
 

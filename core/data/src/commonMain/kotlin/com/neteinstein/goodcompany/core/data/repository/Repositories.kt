@@ -8,6 +8,8 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -74,7 +76,7 @@ class FriendRepositoryImpl(
     override suspend fun delete(id: FriendId) = store.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun syncContacts(): Int {
-        val records = contacts.readContacts()
+        val records = contacts.readContacts(withPhotos = true)
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
         if (records.isNotEmpty()) {
             store.update { ContactMerger.merge(it, records, addNew = contacts.importsNewContacts) }
@@ -82,6 +84,11 @@ class FriendRepositoryImpl(
         }
         return records.size
     }
+
+    override suspend fun readContacts(withPhotos: Boolean): List<ContactRecord> = contacts.readContacts(withPhotos)
+
+    override suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto> =
+        if (contactIds.isEmpty()) emptyMap() else contacts.readPhotos(contactIds)
 
     private suspend fun mirrorToContact(previous: Friend?, friend: Friend) {
         val contactId = friend.contactId ?: return

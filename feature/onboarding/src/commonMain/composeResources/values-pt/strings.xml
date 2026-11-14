@@ -12,15 +12,6 @@
     <string name="start_empty">Começar com a lista vazia</string>
     <string name="setup_title">Vamos preparar tudo</string>
     <string name="setup_body">Tudo é opcional e podes mudar mais tarde nas Definições.</string>
-    <string name="contacts_title">Traz os teus contactos</string>
-    <plurals name="contacts_imported">
-        <item quantity="one">%1$d contacto importado. Toca em ♥ nos amigos a sério.</item>
-        <item quantity="other">%1$d contactos importados. Toca em ♥ nos amigos a sério.</item>
-    </plurals>
-    <string name="contacts_denied">Sem problema — podes adicionar amigos à mão.</string>
-    <string name="contacts_body">Lemos nomes, números e aniversários. Nada sai do teu dispositivo.</string>
-    <string name="contacts_body_write">Lemos nomes, números e aniversários, e guardamos no contacto os aniversários, filhos, eventos e notas que acrescentares aqui. Nada sai do teu dispositivo.</string>
-    <string name="import">Importar</string>
     <string name="notifications_title">Lembretes de aniversários e encontros</string>
     <string name="notifications_on">Está tudo pronto — vamos lembrar-te na hora certa.</string>
     <string name="notifications_off">Os lembretes estão desligados. Podes ligá-los nas Definições.</string>
@@ -40,4 +31,10 @@
         <item quantity="one">%1$d amigo adicionado. Escolher outro?</item>
         <item quantity="other">%1$d amigos adicionados. Escolher outro?</item>
     </plurals>
+    <string name="primer_title">Quem são as tuas pessoas?</string>
+    <string name="primer_body">Vamos mostrar os teus contactos para marcares os amigos que queres manter por perto. Só as pessoas que marcares ficam guardadas no Good Company. Todas as outras ficam na tua agenda, intactas.</string>
+    <string name="primer_on_device">Os teus contactos são lidos só neste telemóvel e nunca são enviados.</string>
+    <string name="primer_show">Mostrar os meus contactos</string>
+    <string name="primer_pick_instead">Prefiro escolher pessoas uma a uma</string>
+    <string name="primer_denied">O acesso aos contactos está desligado, por isso não podemos mostrar a lista. Podes escolher pessoas uma a uma.</string>
 </resources>

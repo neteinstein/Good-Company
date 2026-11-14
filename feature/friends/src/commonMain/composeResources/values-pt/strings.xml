@@ -410,4 +410,33 @@
     <string name="circle_never_together">Ainda não estiveram juntos</string>
     <string name="circle_goal">objetivo: %1$s</string>
     <string name="circle_log_meetup">Registar encontro: %1$s</string>
+    <string name="choose_title">Escolher amigos</string>
+    <string name="choose_count">%1$d de %2$d</string>
+    <string name="choose_filter_favourites">Favoritos primeiro</string>
+    <string name="choose_filter_birthday">Com aniversário</string>
+    <string name="choose_filter_all">Mostrar todos</string>
+    <string name="choose_favourites">Favoritos</string>
+    <string name="choose_birthday">Aniversário a %1$s</string>
+    <string name="choose_already_friend">Já está no Good Company</string>
+    <string name="choose_add_none">Adicionar amigos</string>
+    <string name="choose_only_ticked">Só as pessoas que marcares ficam guardadas no Good Company. Todas as outras ficam na tua agenda, intactas.</string>
+    <string name="choose_on_device">Os teus contactos são lidos só neste telemóvel e nunca são enviados.</string>
+    <string name="choose_empty_title">Sem contactos para mostrar</string>
+    <string name="choose_empty_body">O acesso aos contactos está desligado, por isso não podemos mostrar a lista. Podes escolher pessoas uma a uma.</string>
+    <string name="choose_pick_instead">Escolher dos contactos</string>
+    <string name="choose_no_match">Ninguém corresponde</string>
+    <string name="add_option_pick_body">Abre o seletor de contactos do telemóvel</string>
+    <string name="add_option_list">Escolher da lista completa</string>
+    <string name="add_option_list_body">Marca as pessoas que queres manter por perto</string>
+    <string name="add_option_list_again">Volta a pedir acesso aos contactos</string>
+    <string name="add_option_type">Escrever à mão</string>
+    <string name="add_option_type_body">Adicionar alguém pelo nome</string>
+    <plurals name="choose_search">
+        <item quantity="one">Pesquisar %1$d contacto</item>
+        <item quantity="other">Pesquisar %1$d contactos</item>
+    </plurals>
+    <plurals name="choose_add">
+        <item quantity="one">Adicionar %1$d amigo</item>
+        <item quantity="other">Adicionar %1$d amigos</item>
+    </plurals>
 </resources>
