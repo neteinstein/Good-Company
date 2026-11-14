@@ -48,6 +48,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
@@ -64,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -224,6 +226,8 @@ data class FriendDetailUiState(
     val links: List<LinkedPerson> = emptyList(),
     /** Link just removed, offered for undo. */
     val undoLink: PersonLink? = null,
+    /** The shared tag list (F16) the tag editors suggest from. */
+    val tags: List<Tag> = emptyList(),
 )
 
 class FriendDetailViewModel(
@@ -254,6 +258,7 @@ class FriendDetailViewModel(
     private val renameFriend: RenameFriendUseCase,
     private val setHomeCircleFilter: SetHomeCircleFilterUseCase,
     observeAttachments: ObserveAttachmentsUseCase,
+    observeTags: ObserveTagsUseCase,
     private val deleteAttachment: DeleteAttachmentUseCase,
     private val restoreAttachment: RestoreAttachmentUseCase,
     private val shareInbox: ShareInbox,
@@ -267,13 +272,14 @@ class FriendDetailViewModel(
         observeDetail(friendId),
         observeSettings(),
         observeAttachments(friendId),
-        links.observe(friendId),
+        links.observe(friendId).combine(observeTags()) { linked, tags -> linked to tags },
         local,
-    ) { detail, settings, attachments, linked, ui ->
+    ) { detail, settings, attachments, (linked, tags), ui ->
         ui.copy(
             detail = detail,
             attachments = attachments,
             links = linked,
+            tags = tags,
             isLoading = false,
             notFound = detail == null,
             hasAiKey = settings.hasAiKey,

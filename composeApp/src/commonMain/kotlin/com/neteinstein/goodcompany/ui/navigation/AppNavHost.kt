@@ -50,6 +50,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
 
 const val APP_VERSION = "1.0.0"
@@ -213,6 +214,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     appVersion = APP_VERSION,
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
+                    onOpenTags = { navController.navigate(TagsRoute) },
                 )
             }
             composable<PlacesRoute>(

@@ -31,6 +31,12 @@ interface FriendRepository {
 
     suspend fun delete(id: FriendId)
 
+    /**
+     * Applies [transform] to every friend in one transaction (shared tags: rename, merge, delete, F16) and returns the
+     * friends that changed, as they were before. Friends it returns unchanged are not written.
+     */
+    suspend fun updateAll(transform: (Friend) -> Friend): List<Friend>
+
     /** Pulls the device address book and merges it into the friend list. Returns the number of contacts seen. */
     suspend fun syncContacts(): Int
 

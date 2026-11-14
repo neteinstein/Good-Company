@@ -137,4 +137,41 @@
     <string name="cal_row_on">Pornit · doar calendarele alese</string>
     <string name="cal_row_off">Oprit</string>
     <string name="cal_row_web">Indisponibil în browser</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_row">Etichete</string>
+    <string name="tags_row_hint">Redenumește, unește sau șterge gusturile pentru toți</string>
+    <string name="tags_title">Etichete</string>
+    <string name="tags_search">Caută etichete</string>
+    <string name="tags_same">Pare aceeași etichetă</string>
+    <string name="tags_merge">Unește</string>
+    <string name="tags_keep_both">Păstrează-le pe amândouă</string>
+    <string name="tags_empty">Încă nu sunt etichete. Aici apare ce le place și ce nu le place oamenilor.</string>
+    <string name="tags_edit">Editează „%1$s”</string>
+    <string name="tags_name">Nume</string>
+    <string name="tags_will_merge">Se unește cu „%1$s” pentru toți</string>
+    <plurals name="tags_people_like">
+        <item quantity="one">%1$d persoană o place</item>
+        <item quantity="few">%1$d persoane o plac</item>
+        <item quantity="other">%1$d de persoane o plac</item>
+    </plurals>
+    <plurals name="tags_people_dislike">
+        <item quantity="one">%1$d persoană nu o place</item>
+        <item quantity="few">%1$d persoane nu o plac</item>
+        <item quantity="other">%1$d de persoane nu o plac</item>
+    </plurals>
+    <plurals name="tags_like_short">
+        <item quantity="one">%1$d o place</item>
+        <item quantity="few">%1$d o plac</item>
+        <item quantity="other">%1$d o plac</item>
+    </plurals>
+    <plurals name="tags_dislike_short">
+        <item quantity="one">%1$d nu</item>
+        <item quantity="few">%1$d nu</item>
+        <item quantity="other">%1$d nu</item>
+    </plurals>
+    <string name="tags_both">%1$s · %2$s</string>
+    <string name="msg_tag_renamed">Redenumită „%1$s”</string>
+    <string name="msg_tag_merged">Unită în „%1$s”</string>
+    <string name="msg_tag_deleted">„%1$s” ștearsă</string>
 </resources>

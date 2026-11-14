@@ -530,4 +530,22 @@
     <string name="notif_calendar_one_body">“%1$s” estava no teu calendário. Abre o Good Company para o registar.</string>
     <string name="notif_calendar_many_title">Do teu calendário hoje</string>
     <string name="notif_calendar_many_body">%1$s — abre o Good Company para registar os encontros que aconteceram.</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_matches">Correspondências</string>
+    <string name="tags_most_used">Mais usadas</string>
+    <string name="tags_more">Mais…</string>
+    <string name="tags_add_new">Adicionar “%1$s” como nova etiqueta</string>
+    <string name="tags_chip_count">%1$s · %2$d</string>
+    <string name="tags_people_join">%1$s · %2$s</string>
+    <string name="tags_liked_by_one">%1$s gosta</string>
+    <plurals name="tags_liked_by_others">
+        <item quantity="one">%1$s e mais %2$d pessoa gostam</item>
+        <item quantity="other">%1$s e mais %2$d pessoas gostam</item>
+    </plurals>
+    <string name="tags_disliked_by_one">%1$s não gosta</string>
+    <plurals name="tags_disliked_by_others">
+        <item quantity="one">%1$s e mais %2$d pessoa não gostam</item>
+        <item quantity="other">%1$s e mais %2$d pessoas não gostam</item>
+    </plurals>
 </resources>

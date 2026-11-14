@@ -69,15 +69,16 @@ import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinks
+import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
 import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
-import com.neteinstein.goodcompany.core.ui.format.parseTags
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.relationLabel
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -487,12 +488,13 @@ internal fun FamilySheet(
     onAddKid: (KidDraft) -> Unit,
     onSaveRelative: (RelativeEdit) -> Unit,
     parentIsFamily: Boolean = false,
+    tags: List<Tag> = emptyList(),
 ) {
     val relative = (editing as? FamilyEditing.EditRelative)?.relative
     // null relation = Kid.
     var relation by remember { mutableStateOf<Relation?>(relative?.relation ?: Relation.PARTNER) }
     var name by remember { mutableStateOf(relative?.name.orEmpty()) }
-    var likes by remember { mutableStateOf(relative?.likes.orEmpty().joinToString()) }
+    var likes by remember { mutableStateOf(relative?.likes.orEmpty()) }
     var note by remember { mutableStateOf(relative?.note.orEmpty()) }
     var notify by remember { mutableStateOf(relative?.notifyBirthday ?: true) }
     var showInList by remember { mutableStateOf(parentIsFamily) }
@@ -530,7 +532,13 @@ internal fun FamilySheet(
             }, label = { Text(stringResource(Res.string.family_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
             Text(stringResource(Res.string.family_birthday_optional), style = MaterialTheme.typography.labelLarge)
             BirthdayFields(birthday, { birthday = it }, latestYear)
-            OutlinedTextField(likes, { likes = it }, label = { Text(stringResource(Res.string.family_likes)) }, modifier = Modifier.fillMaxWidth())
+            TagEditor(
+                likes,
+                stringResource(Res.string.family_likes),
+                onAdd = { likes = (likes + it).distinct() },
+                onRemove = { likes = likes - it },
+                catalog = tags,
+            )
             val current = relation
             if (current != null) {
                 OutlinedTextField(note, {
@@ -562,13 +570,13 @@ internal fun FamilySheet(
                             KidDraft(
                                 name = name,
                                 birthday = date,
-                                likes = parseTags(likes),
+                                likes = likes,
                                 showInMyList = showInList,
                                 notifyBirthday = notify,
                             ),
                         )
                     } else {
-                        onSaveRelative(RelativeEdit(relative?.id, current, name, date, parseTags(likes), note, notify))
+                        onSaveRelative(RelativeEdit(relative?.id, current, name, date, likes, note, notify))
                     }
                 },
                 enabled = name.isNotBlank() && birthday.isValid(latestYear),

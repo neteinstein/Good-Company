@@ -77,6 +77,17 @@ class FriendRepositoryImpl(
     // their contact (owner decision 2026-11-08).
     override suspend fun delete(id: FriendId) = store.update { list -> list.filterNot { it.id == id } }
 
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        var changed: List<Pair<Friend, Friend>> = emptyList()
+        store.update { list ->
+            val next = list.map(transform)
+            changed = list.zip(next).filter { (old, new) -> old != new }
+            next
+        }
+        changed.forEach { (old, new) -> mirrorToContact(old, new) }
+        return changed.map { it.first }
+    }
+
     override suspend fun syncContacts(): Int {
         val records = contacts.readContacts(withPhotos = true)
         // An empty read means "no permission / no address book": never wipe existing friends because of it.

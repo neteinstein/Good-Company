@@ -73,6 +73,9 @@ import org.jetbrains.compose.resources.StringResource
 /** "From your calendar": past meetups to log (D3). */
 @Serializable data object CalendarSuggestionsRoute
 
+/** Settings → Tags: the shared tag list (F16). */
+@Serializable data object TagsRoute
+
 /** Year in review; [year] null = the most relevant year. */
 @Serializable data class YearReviewRoute(val year: Int? = null)
 

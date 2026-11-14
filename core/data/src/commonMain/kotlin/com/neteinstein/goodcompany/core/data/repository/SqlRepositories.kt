@@ -138,6 +138,19 @@ class SqlFriendRepository(
         db.access { it.friendQueries.delete(id.value) }
     }
 
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        val (changed, snapshots) = db.transaction { database ->
+            val current = database.readFriends()
+            val next = current.map(transform)
+            database.replaceFriends(current, next)
+            val links = database.readLinks()
+            current.zip(next).filter { (old, new) -> old != new } to
+                (ContactMirror.Snapshot(current.associateBy { it.id }, links) to ContactMirror.Snapshot(next.associateBy { it.id }, links))
+        }
+        mirror.sync(changed.mapTo(mutableSetOf()) { it.first.id }, snapshots.first, snapshots.second)
+        return changed.map { it.first }
+    }
+
     override suspend fun syncContacts(): Int {
         val records = contacts.readContacts(withPhotos = true)
         // An empty read means "no permission / no address book": never wipe existing friends because of it.
@@ -374,8 +387,10 @@ internal data class DeviceSettings(
     val calendarSuggestions: Boolean = false,
     val calendarIds: List<String> = emptyList(),
     val calendarOnSince: Instant? = null,
+    val keptTagSpellings: Set<String> = emptySet(),
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
+        keptTagSpellings = keptTagSpellings,
         aiApiKey = aiApiKey,
         lastIdeasRunAt = lastIdeasRunAt,
         themeMode = themeMode,
@@ -404,6 +419,7 @@ internal data class DeviceSettings(
             calendarSuggestions = settings.calendarSuggestions,
             calendarIds = settings.calendarIds,
             calendarOnSince = settings.calendarOnSince,
+            keptTagSpellings = settings.keptTagSpellings,
         )
     }
 }

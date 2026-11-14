@@ -105,6 +105,13 @@ class FakeFriendRepository(
 
     override suspend fun delete(id: FriendId) = state.update { list -> list.filterNot { it.id == id } }
 
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        val before = state.value
+        val after = before.map(transform)
+        state.value = after
+        return before.filterIndexed { i, f -> after[i] != f }
+    }
+
     override suspend fun syncContacts(): Int {
         state.update { ContactMerger.merge(it, contacts, addNew = importsNewContacts) }
         return contacts.size

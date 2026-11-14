@@ -547,4 +547,24 @@
     <string name="notif_calendar_one_body">„%1$s” era în calendarul tău. Deschide Good Company ca să notezi întâlnirea.</string>
     <string name="notif_calendar_many_title">Din calendarul tău de azi</string>
     <string name="notif_calendar_many_body">%1$s — deschide Good Company ca să notezi întâlnirile care au avut loc.</string>
+
+    <!-- Shared tags (F16) -->
+    <string name="tags_matches">Potriviri</string>
+    <string name="tags_most_used">Cele mai folosite</string>
+    <string name="tags_more">Mai multe…</string>
+    <string name="tags_add_new">Adaugă „%1$s” ca etichetă nouă</string>
+    <string name="tags_chip_count">%1$s · %2$d</string>
+    <string name="tags_people_join">%1$s · %2$s</string>
+    <string name="tags_liked_by_one">Lui %1$s îi place</string>
+    <plurals name="tags_liked_by_others">
+        <item quantity="one">Lui %1$s și încă %2$d persoane le place</item>
+        <item quantity="few">Lui %1$s și încă %2$d persoane le place</item>
+        <item quantity="other">Lui %1$s și încă %2$d de persoane le place</item>
+    </plurals>
+    <string name="tags_disliked_by_one">Lui %1$s nu</string>
+    <plurals name="tags_disliked_by_others">
+        <item quantity="one">Lui %1$s și încă %2$d persoane nu</item>
+        <item quantity="few">Lui %1$s și încă %2$d persoane nu</item>
+        <item quantity="other">Lui %1$s și încă %2$d de persoane nu</item>
+    </plurals>
 </resources>

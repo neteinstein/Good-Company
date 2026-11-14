@@ -37,6 +37,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +101,7 @@ class AppModuleTest {
         assertNotNull(koin.get<PlacesViewModel>())
         assertNotNull(koin.get<CalendarSettingsViewModel>())
         assertNotNull(koin.get<CalendarSuggestionsViewModel>())
+        assertNotNull(koin.get<TagsViewModel>())
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
         assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
         assertNotNull(koin.get<ApplyLaunchOptions>())

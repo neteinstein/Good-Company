@@ -80,6 +80,7 @@ class FriendDetailViewModelTest {
         g.renameFriend,
         g.setHomeCircleFilter,
         g.observeAttachments,
+        g.observeTags,
         g.deleteAttachment,
         g.restoreAttachment,
         g.shareInbox,
@@ -597,5 +598,15 @@ class FriendDetailViewModelTest {
         assertEquals("Graça Costa", mother.person.name)
         assertEquals(LinkType.PARENT, mother.role)
         assertEquals(FriendDetailMessage.AddedAsPerson("Graça Costa"), state.value.message)
+    }
+
+    @Test
+    fun theSharedTagListComesFromEveryone() = runViewModelTest {
+        g.friendRepo.upsert(friend("pedro", "Pedro").copy(likes = listOf("Sushi"), dislikes = listOf("coriander")))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val sushi = state.value.tags.first { it.name == "Sushi" }
+        assertEquals(listOf("Pedro"), sushi.likedBy)
+        assertTrue(state.value.tags.any { it.name == "coriander" && it.dislikedBy == listOf("Pedro") })
     }
 }
