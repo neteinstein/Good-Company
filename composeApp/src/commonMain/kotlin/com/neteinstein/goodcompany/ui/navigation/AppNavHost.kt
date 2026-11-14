@@ -37,6 +37,7 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
@@ -96,6 +97,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },
                     onOpenNetwork = { navController.navigate(NetworkMapRoute) },
                     onOpenPeople = { navController.navigate(PeopleDashboardRoute) },
+                    onOpenSuggestedFamily = { navController.navigate(SuggestedFamilyRoute) { launchSingleTop = true } },
                 )
             }
             composable<ChooseContactsRoute>(
@@ -286,6 +288,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onOpenFriend = openFriend,
                     onOpenMap = { navController.navigate(NetworkMapRoute) { launchSingleTop = true } },
                 )
+            }
+            composable<SuggestedFamilyRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                SuggestedFamilyScreen(onBack = { navController.popBackStack() }, onOpenFriend = openFriend)
             }
         }
     }

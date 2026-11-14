@@ -23,4 +23,8 @@
     <string name="contact_relation_in_law">Rudă prin alianță</string>
     <string name="contact_relation_ex">Fost partener sau parteneră</string>
     <string name="contact_relation_colleague">Coleg sau colegă</string>
+    <string name="contact_relation_step_parent">Părinte vitreg</string>
+    <string name="contact_relation_step_child">Copil vitreg</string>
+    <string name="contact_relation_half_sibling">Frate sau soră vitregă</string>
+    <string name="contact_relation_step_sibling">Frate sau soră prin alianță</string>
 </resources>

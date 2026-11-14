@@ -193,6 +193,7 @@ abstract class RepositoryContract {
         customName = "Aninhas",
         customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
         showInMyList = false,
+        dismissedKinship = setOf(LinkType.NIECE_NEPHEW, LinkType.STEP_SIBLING),
     )
 
     // --- Friends ---

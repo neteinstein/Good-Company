@@ -8,7 +8,8 @@ CREATE TABLE person_link (
     to_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     type TEXT NOT NULL CHECK (type IN (
         'PARENT', 'CHILD', 'SIBLING', 'GRANDPARENT', 'GRANDCHILD', 'AUNT_UNCLE', 'NIECE_NEPHEW', 'COUSIN', 'IN_LAW',
-        'DATING', 'SPOUSE', 'PARTNER', 'EX', 'FRIEND', 'COLLEAGUE'
+        'DATING', 'SPOUSE', 'PARTNER', 'EX', 'FRIEND', 'COLLEAGUE',
+        'STEP_PARENT', 'STEP_CHILD', 'HALF_SIBLING', 'STEP_SIBLING'
     )),
     started_on TEXT,
     ended_on TEXT,

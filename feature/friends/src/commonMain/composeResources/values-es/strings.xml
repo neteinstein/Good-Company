@@ -511,4 +511,19 @@
     <string name="show_in_my_list_hint_any">Desactivado: sigue en las páginas a las que está vinculado y en los cumpleaños.</string>
     <string name="action_network">Tu red</string>
     <string name="action_people">Tu gente</string>
+    <!-- Automatic kinship (issue #41, F7): proposals, Suggested family and the kinship search -->
+    <string name="kinship_title">%1$s es %2$s</string>
+    <string name="kinship_because">%1$s, y %2$s es %3$s.</string>
+    <string name="kinship_ask_title">¿Qué relación tienes con %1$s?</string>
+    <string name="kinship_yes">Sí, %1$s</string>
+    <string name="kinship_not_right">No es así</string>
+    <string name="kinship_not_family">No es familia</string>
+    <string name="suggested_family_title">Familia sugerida</string>
+    <string name="suggested_family_empty">No hay sugerencias por ahora. Salen de los vínculos entre tus familiares y otras personas.</string>
+    <string name="kin_search_result">%1$s · %2$d</string>
+    <string name="kin_search_empty">Aún nadie con ese parentesco. Confírmalo en su página o en Familia sugerida.</string>
+    <plurals name="suggested_family_count">
+        <item quantity="one">%1$d persona puede ser de tu familia</item>
+        <item quantity="other">%1$d personas pueden ser de tu familia</item>
+    </plurals>
 </resources>

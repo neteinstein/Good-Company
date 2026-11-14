@@ -431,6 +431,61 @@ class MigrationTest {
     }
 
     @Test
+    fun version14to15_keepsLinks_remembersDismissedKinship_andTakesStepAndHalfFamily() = runTest {
+        val driver = driverAt(14)
+        listOf("ana", "rui", "duarte").forEachIndexed { i, id ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', NULL, 1, 0, '', 0, 0, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+        driver.execute(
+            null,
+            "INSERT INTO person_link VALUES ('l1', 'rui', 'ana', 'SPOUSE', '2015-07-04', NULL, 'wedding', 1, 1700000000000)",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 14, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val spouse = PersonLink(
+            "l1",
+            FriendId("rui"),
+            FriendId("ana"),
+            LinkType.SPOUSE,
+            LocalDate(2015, 7, 4),
+            note = "wedding",
+            remindAnniversary = true,
+            addedAt = Instant.fromEpochMilliseconds(1700000000000),
+        )
+        assertEquals(listOf(spouse), database.readLinks())
+        assertTrue(database.readFriends().all { it.dismissedKinship.isEmpty() })
+
+        // The new family types are accepted; anything unknown still isn't.
+        val half = PersonLink("l2", FriendId("ana"), FriendId("duarte"), LinkType.HALF_SIBLING)
+        database.writeLink(half)
+        assertEquals(listOf(spouse, half), database.readLinks())
+        assertTrue(
+            runCatching {
+                driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('x', 'ana', 'rui', 'BOSS')", 0).await()
+            }.isFailure,
+        )
+        val duarte = database.readFriends().first { it.id.value == "duarte" }
+        database.writeFriend(duarte.copy(relationToMe = LinkType.STEP_SIBLING, dismissedKinship = setOf(LinkType.SIBLING, LinkType.HALF_SIBLING)), 2)
+        val saved = database.readFriends().first { it.id.value == "duarte" }
+        assertEquals(LinkType.STEP_SIBLING, saved.relationToMe)
+        assertEquals(setOf(LinkType.SIBLING, LinkType.HALF_SIBLING), saved.dismissedKinship)
+        // Links still go with either person.
+        database.friendQueries.delete("ana")
+        assertTrue(database.readLinks().isEmpty())
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

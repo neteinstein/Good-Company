@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import kotlin.time.Instant
@@ -31,6 +32,21 @@ interface NotificationRenderer {
 fun interface BuiltInCircleNames {
     /** The Family circle (F6). */
     suspend fun family(): String
+}
+
+/**
+ * The words of a kinship search in the UI language (F7): [possessives] ("my"), [connectors] ("and") and, per
+ * relation, the words that ask for it ("nieces", "nephews"…). They live in `:core:ui` resources, never in domain code.
+ */
+data class KinshipWords(
+    val possessives: List<String> = emptyList(),
+    val connectors: List<String> = emptyList(),
+    val words: Map<LinkType, List<String>> = emptyMap(),
+)
+
+/** Supplies [KinshipWords] for the current UI language. */
+fun interface KinshipVocabulary {
+    suspend fun words(): KinshipWords
 }
 
 /** The user's UI language as a BCP-47 tag (e.g. "pt-PT"), used to ask the AI to answer in it. */

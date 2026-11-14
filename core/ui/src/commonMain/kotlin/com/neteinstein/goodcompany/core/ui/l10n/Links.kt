@@ -6,12 +6,29 @@ import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.repository.BuiltInCircleNames
+import com.neteinstein.goodcompany.core.domain.repository.KinshipVocabulary
+import com.neteinstein.goodcompany.core.domain.repository.KinshipWords
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_title
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.circle_family
 import com.neteinstein.goodcompany.core.ui.resources.kid_of
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_and
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_aunt_uncle
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_child
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_cousin
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_grandchild
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_grandparent
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_half_sibling
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_in_law
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_my
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_niece_nephew
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_parent
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_sibling
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_step_child
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_step_parent
+import com.neteinstein.goodcompany.core.ui.resources.kin_search_step_sibling
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_he
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_she
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_they
@@ -42,6 +59,9 @@ import com.neteinstein.goodcompany.core.ui.resources.link_grandchild_they
 import com.neteinstein.goodcompany.core.ui.resources.link_grandparent_he
 import com.neteinstein.goodcompany.core.ui.resources.link_grandparent_she
 import com.neteinstein.goodcompany.core.ui.resources.link_grandparent_they
+import com.neteinstein.goodcompany.core.ui.resources.link_half_sibling_he
+import com.neteinstein.goodcompany.core.ui.resources.link_half_sibling_she
+import com.neteinstein.goodcompany.core.ui.resources.link_half_sibling_they
 import com.neteinstein.goodcompany.core.ui.resources.link_in_law_he
 import com.neteinstein.goodcompany.core.ui.resources.link_in_law_she
 import com.neteinstein.goodcompany.core.ui.resources.link_in_law_they
@@ -60,6 +80,15 @@ import com.neteinstein.goodcompany.core.ui.resources.link_sibling_they
 import com.neteinstein.goodcompany.core.ui.resources.link_spouse_he
 import com.neteinstein.goodcompany.core.ui.resources.link_spouse_she
 import com.neteinstein.goodcompany.core.ui.resources.link_spouse_they
+import com.neteinstein.goodcompany.core.ui.resources.link_step_child_he
+import com.neteinstein.goodcompany.core.ui.resources.link_step_child_she
+import com.neteinstein.goodcompany.core.ui.resources.link_step_child_they
+import com.neteinstein.goodcompany.core.ui.resources.link_step_parent_he
+import com.neteinstein.goodcompany.core.ui.resources.link_step_parent_she
+import com.neteinstein.goodcompany.core.ui.resources.link_step_parent_they
+import com.neteinstein.goodcompany.core.ui.resources.link_step_sibling_he
+import com.neteinstein.goodcompany.core.ui.resources.link_step_sibling_she
+import com.neteinstein.goodcompany.core.ui.resources.link_step_sibling_they
 import com.neteinstein.goodcompany.core.ui.resources.pronouns_he
 import com.neteinstein.goodcompany.core.ui.resources.pronouns_she
 import com.neteinstein.goodcompany.core.ui.resources.pronouns_they
@@ -91,6 +120,10 @@ fun linkWordRes(type: LinkType, pronouns: Pronouns?): StringResource {
         LinkType.EX -> Triple(Res.string.link_ex_she, Res.string.link_ex_he, Res.string.link_ex_they)
         LinkType.FRIEND -> Triple(Res.string.link_friend_she, Res.string.link_friend_he, Res.string.link_friend_they)
         LinkType.COLLEAGUE -> Triple(Res.string.link_colleague_she, Res.string.link_colleague_he, Res.string.link_colleague_they)
+        LinkType.STEP_PARENT -> Triple(Res.string.link_step_parent_she, Res.string.link_step_parent_he, Res.string.link_step_parent_they)
+        LinkType.STEP_CHILD -> Triple(Res.string.link_step_child_she, Res.string.link_step_child_he, Res.string.link_step_child_they)
+        LinkType.HALF_SIBLING -> Triple(Res.string.link_half_sibling_she, Res.string.link_half_sibling_he, Res.string.link_half_sibling_they)
+        LinkType.STEP_SIBLING -> Triple(Res.string.link_step_sibling_she, Res.string.link_step_sibling_he, Res.string.link_step_sibling_they)
     }
     return when (pronouns) {
         Pronouns.SHE -> she
@@ -106,14 +139,17 @@ suspend fun linkWordText(type: LinkType, pronouns: Pronouns?): String = getStrin
 
 /** "Your brother": what [friend] is to you, or null when that isn't set. */
 @Composable
-fun relationToMeLabel(friend: Friend): String? {
-    val type = friend.relationToMe ?: return null
-    val format = when (friend.pronouns) {
+fun relationToMeLabel(friend: Friend): String? = friend.relationToMe?.let { relationToMeText(it, friend.pronouns) }
+
+/** "Your niece": [type] as what someone with [pronouns] is to you (F7 proposals use it before it's set). */
+@Composable
+fun relationToMeText(type: LinkType, pronouns: Pronouns?): String {
+    val format = when (pronouns) {
         Pronouns.SHE -> Res.string.relation_to_me_she
         Pronouns.HE -> Res.string.relation_to_me_he
         Pronouns.THEY, null -> Res.string.relation_to_me_they
     }
-    return stringResource(format, linkWord(type, friend.pronouns).lowercase()).replaceFirstChar { it.uppercase() }
+    return stringResource(format, linkWord(type, pronouns).lowercase()).replaceFirstChar { it.uppercase() }
 }
 
 @Composable
@@ -134,10 +170,13 @@ fun linkCategoryLabel(category: LinkCategory): String = stringResource(
     },
 )
 
-/** "Ana’s daughter" (F9): the line under a kid's name, from their parent's first name and their own pronouns. */
+/**
+ * "Ana’s daughter" (F9): the line under a kid's name, from their parent's first name and their own pronouns. With
+ * another [role] it reads the same way for any relation ("Rui’s mother", F7).
+ */
 @Composable
-fun kidOfLabel(kid: Friend, parent: Friend): String =
-    stringResource(Res.string.kid_of, parent.displayName.substringBefore(' '), linkWord(LinkType.CHILD, kid.pronouns).lowercase())
+fun kidOfLabel(kid: Friend, parent: Friend, role: LinkType = LinkType.CHILD): String =
+    stringResource(Res.string.kid_of, parent.displayName.substringBefore(' '), linkWord(role, kid.pronouns).lowercase())
         .replaceFirstChar { it.uppercase() }
 
 /** "💞 Ana & Rui’s anniversary". */
@@ -147,4 +186,33 @@ fun anniversaryTitle(first: String, second: String): String = stringResource(Res
 /** The built-in circles' names from string resources. */
 object CircleNamesFromResources : BuiltInCircleNames {
     override suspend fun family(): String = getString(Res.string.circle_family)
+}
+
+/** The kinship search words (F7) from this module's resources, in the UI language. Used for the Home search. */
+object KinshipWordsFromResources : KinshipVocabulary {
+    private fun split(text: String) = text.split('|').map { it.trim() }.filter { it.isNotEmpty() }
+
+    override suspend fun words(): KinshipWords = KinshipWords(
+        possessives = split(getString(Res.string.kin_search_my)),
+        connectors = split(getString(Res.string.kin_search_and)),
+        words = LinkType.entries.mapNotNull { type -> kinSearchRes(type)?.let { type to split(getString(it)) } }.toMap(),
+    )
+
+    /** The search words for a family relation; null for the others (romantic links, friends, colleagues). */
+    fun kinSearchRes(type: LinkType): StringResource? = when (type) {
+        LinkType.PARENT -> Res.string.kin_search_parent
+        LinkType.CHILD -> Res.string.kin_search_child
+        LinkType.SIBLING -> Res.string.kin_search_sibling
+        LinkType.GRANDPARENT -> Res.string.kin_search_grandparent
+        LinkType.GRANDCHILD -> Res.string.kin_search_grandchild
+        LinkType.AUNT_UNCLE -> Res.string.kin_search_aunt_uncle
+        LinkType.NIECE_NEPHEW -> Res.string.kin_search_niece_nephew
+        LinkType.COUSIN -> Res.string.kin_search_cousin
+        LinkType.IN_LAW -> Res.string.kin_search_in_law
+        LinkType.STEP_PARENT -> Res.string.kin_search_step_parent
+        LinkType.STEP_CHILD -> Res.string.kin_search_step_child
+        LinkType.HALF_SIBLING -> Res.string.kin_search_half_sibling
+        LinkType.STEP_SIBLING -> Res.string.kin_search_step_sibling
+        LinkType.DATING, LinkType.SPOUSE, LinkType.PARTNER, LinkType.EX, LinkType.FRIEND, LinkType.COLLEAGUE -> null
+    }
 }

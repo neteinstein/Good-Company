@@ -548,4 +548,33 @@
         <item quantity="one">%1$s et %2$d autre personne n’aiment pas</item>
         <item quantity="other">%1$s et %2$d autres personnes n’aiment pas</item>
     </plurals>
+    <!-- Automatic kinship (issue #41, F7): step and half relations -->
+    <string name="link_step_parent_she">Belle-mère</string>
+    <string name="link_step_parent_he">Beau-père</string>
+    <string name="link_step_parent_they">Beau-parent</string>
+    <string name="link_step_child_she">Belle-fille</string>
+    <string name="link_step_child_he">Beau-fils</string>
+    <string name="link_step_child_they">Beau-fils ou belle-fille</string>
+    <string name="link_half_sibling_she">Demi-sœur</string>
+    <string name="link_half_sibling_he">Demi-frère</string>
+    <string name="link_half_sibling_they">Demi-frère ou demi-sœur</string>
+    <string name="link_step_sibling_she">Quasi-sœur</string>
+    <string name="link_step_sibling_he">Quasi-frère</string>
+    <string name="link_step_sibling_they">Quasi-frère ou quasi-sœur</string>
+    <!-- Kinship search (F7): words separated by |, matched ignoring case and accents. kin_search_my ("my") may come before or after the word; kin_search_and joins several. -->
+    <string name="kin_search_my">mes|mon|ma</string>
+    <string name="kin_search_and">et|&amp;</string>
+    <string name="kin_search_parent">parents|parent|mères|mère|pères|père|maman|papa</string>
+    <string name="kin_search_child">enfants|enfant|filles|fille|fils</string>
+    <string name="kin_search_sibling">frères|frère|sœurs|sœur</string>
+    <string name="kin_search_grandparent">grands-parents|grand-parent|grands-mères|grand-mère|grands-pères|grand-père|mamie|papi</string>
+    <string name="kin_search_grandchild">petits-enfants|petit-enfant|petites-filles|petite-fille|petits-fils|petit-fils</string>
+    <string name="kin_search_aunt_uncle">tantes|tante|oncles|oncle</string>
+    <string name="kin_search_niece_nephew">nièces|nièce|neveux|neveu</string>
+    <string name="kin_search_cousin">cousins|cousin|cousines|cousine</string>
+    <string name="kin_search_in_law">beaux-parents|belle-famille|belles-sœurs|belle-sœur|beaux-frères|beau-frère|gendres|gendre|brus|bru</string>
+    <string name="kin_search_step_parent">belles-mères|belle-mère|beaux-pères|beau-père</string>
+    <string name="kin_search_step_child">beaux-enfants|belles-filles|belle-fille|beaux-fils|beau-fils</string>
+    <string name="kin_search_half_sibling">demi-frères|demi-frère|demi-sœurs|demi-sœur</string>
+    <string name="kin_search_step_sibling">quasi-frères|quasi-frère|quasi-sœurs|quasi-sœur</string>
 </resources>

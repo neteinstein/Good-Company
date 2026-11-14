@@ -1,0 +1,38 @@
+-- Version 14 → 15 (issue #41, F7): automatic kinship. Kinship suggestions answered "Not right" are remembered per
+-- person, and links can be step-parent / step-child / half-sibling / step-sibling, so person_link is rebuilt with the
+-- wider CHECK (SQLite can't change a CHECK in place).
+
+ALTER TABLE friend ADD COLUMN dismissed_kinship TEXT NOT NULL DEFAULT '';
+
+CREATE TABLE person_link_new (
+    id TEXT NOT NULL PRIMARY KEY,
+    from_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    to_friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN (
+        'PARENT', 'CHILD', 'SIBLING', 'GRANDPARENT', 'GRANDCHILD', 'AUNT_UNCLE', 'NIECE_NEPHEW', 'COUSIN', 'IN_LAW',
+        'DATING', 'SPOUSE', 'PARTNER', 'EX', 'FRIEND', 'COLLEAGUE',
+        'STEP_PARENT', 'STEP_CHILD', 'HALF_SIBLING', 'STEP_SIBLING'
+    )),
+    started_on TEXT,
+    ended_on TEXT,
+    note TEXT NOT NULL DEFAULT '',
+    remind_anniversary INTEGER NOT NULL DEFAULT 0 CHECK (remind_anniversary IN (0, 1)),
+    added_at INTEGER,
+    CHECK (from_friend_id <> to_friend_id)
+);
+
+INSERT INTO person_link_new (id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at)
+SELECT id, from_friend_id, to_friend_id, type, started_on, ended_on, note, remind_anniversary, added_at
+FROM person_link ORDER BY rowid;
+
+DROP INDEX person_link_from;
+
+DROP INDEX person_link_to;
+
+DROP TABLE person_link;
+
+ALTER TABLE person_link_new RENAME TO person_link;
+
+CREATE INDEX person_link_from ON person_link(from_friend_id);
+
+CREATE INDEX person_link_to ON person_link(to_friend_id);

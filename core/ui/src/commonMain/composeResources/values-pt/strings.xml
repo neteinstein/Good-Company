@@ -548,4 +548,33 @@
         <item quantity="one">%1$s e mais %2$d pessoa não gostam</item>
         <item quantity="other">%1$s e mais %2$d pessoas não gostam</item>
     </plurals>
+    <!-- Automatic kinship (issue #41, F7): step and half relations -->
+    <string name="link_step_parent_she">Madrasta</string>
+    <string name="link_step_parent_he">Padrasto</string>
+    <string name="link_step_parent_they">Madrasta ou padrasto</string>
+    <string name="link_step_child_she">Enteada</string>
+    <string name="link_step_child_he">Enteado</string>
+    <string name="link_step_child_they">Enteada ou enteado</string>
+    <string name="link_half_sibling_she">Meia-irmã</string>
+    <string name="link_half_sibling_he">Meio-irmão</string>
+    <string name="link_half_sibling_they">Meia-irmã ou meio-irmão</string>
+    <string name="link_step_sibling_she">Irmã por afinidade</string>
+    <string name="link_step_sibling_he">Irmão por afinidade</string>
+    <string name="link_step_sibling_they">Irmã ou irmão por afinidade</string>
+    <!-- Kinship search (F7): words separated by |, matched ignoring case and accents. kin_search_my ("my") may come before or after the word; kin_search_and joins several. -->
+    <string name="kin_search_my">os meus|as minhas|o meu|a minha|meus|minhas|meu|minha</string>
+    <string name="kin_search_and">e|&amp;</string>
+    <string name="kin_search_parent">pais|pai|mães|mãe</string>
+    <string name="kin_search_child">filhos|filho|filhas|filha|miúdos</string>
+    <string name="kin_search_sibling">irmãos|irmão|irmãs|irmã</string>
+    <string name="kin_search_grandparent">avós|avô|avó|avôs</string>
+    <string name="kin_search_grandchild">netos|neto|netas|neta</string>
+    <string name="kin_search_aunt_uncle">tios|tio|tias|tia</string>
+    <string name="kin_search_niece_nephew">sobrinhos|sobrinho|sobrinhas|sobrinha</string>
+    <string name="kin_search_cousin">primos|primo|primas|prima</string>
+    <string name="kin_search_in_law">cunhados|cunhado|cunhadas|cunhada|sogros|sogro|sogras|sogra|genros|genro|noras|nora</string>
+    <string name="kin_search_step_parent">padrastos|padrasto|madrastas|madrasta</string>
+    <string name="kin_search_step_child">enteados|enteado|enteadas|enteada</string>
+    <string name="kin_search_half_sibling">meios-irmãos|meio-irmão|meias-irmãs|meia-irmã</string>
+    <string name="kin_search_step_sibling">irmãos por afinidade|irmão por afinidade|irmãs por afinidade|irmã por afinidade</string>
 </resources>

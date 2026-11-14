@@ -128,7 +128,7 @@ class PersonLinksTest {
 
     @Test
     fun linkTypesGroupByCategory() {
-        assertEquals(9, LinkType.of(LinkCategory.FAMILY).size)
+        assertEquals(13, LinkType.of(LinkCategory.FAMILY).size)
         assertEquals(listOf(LinkType.DATING, LinkType.SPOUSE, LinkType.PARTNER, LinkType.EX), LinkType.of(LinkCategory.ROMANTIC))
         assertEquals(listOf(LinkType.FRIEND, LinkType.COLLEAGUE), LinkType.of(LinkCategory.OTHER))
         assertNull(LinkType.parse("COWORKER"))

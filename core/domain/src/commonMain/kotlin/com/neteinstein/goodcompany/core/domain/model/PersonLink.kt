@@ -19,8 +19,20 @@ enum class LinkCategory { FAMILY, ROMANTIC, OTHER }
  */
 enum class LinkType(val category: LinkCategory) {
     PARENT(LinkCategory.FAMILY),
+
+    /** A parent's partner who isn't your parent (F7). */
+    STEP_PARENT(LinkCategory.FAMILY),
     CHILD(LinkCategory.FAMILY),
+
+    /** A partner's child who isn't yours (F7). */
+    STEP_CHILD(LinkCategory.FAMILY),
     SIBLING(LinkCategory.FAMILY),
+
+    /** A sibling through one shared parent (F7). */
+    HALF_SIBLING(LinkCategory.FAMILY),
+
+    /** A step-parent's child (F7). */
+    STEP_SIBLING(LinkCategory.FAMILY),
     GRANDPARENT(LinkCategory.FAMILY),
     GRANDCHILD(LinkCategory.FAMILY),
 
@@ -53,6 +65,8 @@ enum class LinkType(val category: LinkCategory) {
         get() = when (this) {
             PARENT -> CHILD
             CHILD -> PARENT
+            STEP_PARENT -> STEP_CHILD
+            STEP_CHILD -> STEP_PARENT
             GRANDPARENT -> GRANDCHILD
             GRANDCHILD -> GRANDPARENT
             AUNT_UNCLE -> NIECE_NEPHEW

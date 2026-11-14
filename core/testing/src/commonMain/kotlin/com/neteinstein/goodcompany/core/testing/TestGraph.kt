@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
@@ -28,6 +29,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
@@ -61,6 +63,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
@@ -78,6 +81,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
@@ -317,6 +321,10 @@ class TestGraph(
     val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, clock, ids)
     val addKid = AddKidUseCase(friendRepo, linkRepo, clock, ids)
     val setShowInMyList = SetShowInMyListUseCase(friendRepo)
+    val observeKinship = ObserveKinshipProposalsUseCase(friendRepo, linkRepo)
+    val confirmKinship = ConfirmKinshipUseCase(friendRepo)
+    val dismissKinship = DismissKinshipUseCase(friendRepo)
+    val parseKinshipQuery = ParseKinshipQueryUseCase { EnglishKinshipWords }
     val personLinks = PersonLinkUseCases(
         observePersonLinks,
         saveLink,
@@ -327,6 +335,8 @@ class TestGraph(
         addRelativeAsPerson,
         addKid,
         setShowInMyList,
+        confirmKinship,
+        dismissKinship,
     )
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)

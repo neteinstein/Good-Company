@@ -202,4 +202,6 @@ class PersonLinkUseCases(
     val addRelativeAsPerson: AddRelativeAsPersonUseCase,
     val addKid: AddKidUseCase,
     val setShowInMyList: SetShowInMyListUseCase,
+    val confirmKinship: ConfirmKinshipUseCase,
+    val dismissKinship: DismissKinshipUseCase,
 )
