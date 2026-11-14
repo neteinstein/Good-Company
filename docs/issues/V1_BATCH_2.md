@@ -2,6 +2,9 @@
 
 18 backlog items → **13 issues**. Base: `origin/main` @ `86e8fd1`. Issue bodies are in English, like #20–#25.
 
+**Created as issues (2026-11-14):** I1 #35 · I2 #36 · I3 #37 · I4 #38 · I5 #39 · I6 #40 · I7 #41 · I8 #42 · I9 #43 ·
+I10 #44 · I11 #45 · I12 #46 · I13 #47. The issues are the live copy; this file is the plan they came from.
+
 ## Order and dependencies
 
 ```
