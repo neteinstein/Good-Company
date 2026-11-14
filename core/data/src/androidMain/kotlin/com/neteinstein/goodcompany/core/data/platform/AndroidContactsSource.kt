@@ -15,20 +15,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal class AndroidContactsSource(private val context: Context) : ContactsSource {
-    // READ_CONTACTS exists only in the sideload build, for the contact write-back. People are still added with the
-    // system contact picker, so a sync must never turn the whole address book into friends.
+    // READ_CONTACTS exists only in the sideload build (the contact list with checkboxes and the write-back). People are
+    // chosen one by one (that list or the system contact picker), so a sync must never turn the whole address book
+    // into friends.
     override val importsNewContacts: Boolean = false
 
-    override suspend fun readContacts(): List<ContactRecord> = withContext(Dispatchers.IO) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            return@withContext emptyList()
-        }
+    override suspend fun readContacts(withPhotos: Boolean): List<ContactRecord> = withContext(Dispatchers.IO) {
+        if (!canRead()) return@withContext emptyList()
         val resolver = context.contentResolver
         val names = LinkedHashMap<String, String>()
+        val starred = HashSet<String>()
         val photoIds = HashMap<String, Long>()
         resolver.query(
             ContactsContract.Contacts.CONTENT_URI,
-            arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY, ContactsContract.Contacts.PHOTO_ID),
+            arrayOf(
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY,
+                ContactsContract.Contacts.PHOTO_ID,
+                ContactsContract.Contacts.STARRED,
+            ),
             null,
             null,
             "${ContactsContract.Contacts.DISPLAY_NAME_PRIMARY} ASC",
@@ -38,9 +43,10 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
                 val id = c.getString(0)
                 names[id] = name
                 if (!c.isNull(2)) photoIds[id] = c.getLong(2)
+                if (c.getInt(3) != 0) starred += id
             }
         }
-        val photos = readThumbnails(resolver, photoIds)
+        val photos = if (withPhotos) readThumbnails(resolver, photoIds) else emptyMap()
 
         val phones = HashMap<String, MutableList<String>>()
         resolver.query(
@@ -91,8 +97,36 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
         val mirrorOnly = mirrorOnlyContactIds(resolver)
         names.filterKeys {
             it !in mirrorOnly
-        }.map { (id, name) -> ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id], emails[id].orEmpty()) }
+        }.map { (id, name) ->
+            ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id], emails[id].orEmpty(), starred = id in starred)
+        }
     }
+
+    /** Only the people saved from the contact list: their photo ids, then their thumbnails. */
+    override suspend fun readPhotos(contactIds: Set<String>): Map<String, ContactPhoto> = withContext(Dispatchers.IO) {
+        if (contactIds.isEmpty() || !canRead()) return@withContext emptyMap()
+        val resolver = context.contentResolver
+        val photoIds = HashMap<String, Long>()
+        contactIds.chunked(MAX_QUERY_ARGS).forEach { chunk ->
+            runCatching {
+                resolver.query(
+                    ContactsContract.Contacts.CONTENT_URI,
+                    arrayOf(ContactsContract.Contacts._ID, ContactsContract.Contacts.PHOTO_ID),
+                    "${ContactsContract.Contacts._ID} IN (${chunk.joinToString(",") { "?" }})",
+                    chunk.toTypedArray(),
+                    null,
+                )?.use { c ->
+                    while (c.moveToNext()) {
+                        if (!c.isNull(1)) photoIds[c.getString(0)] = c.getLong(1)
+                    }
+                }
+            }
+        }
+        readThumbnails(resolver, photoIds)
+    }
+
+    private fun canRead(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
 
     /**
      * Each contact's primary photo as the thumbnail the provider keeps in the data row (about 96 px), read in a few

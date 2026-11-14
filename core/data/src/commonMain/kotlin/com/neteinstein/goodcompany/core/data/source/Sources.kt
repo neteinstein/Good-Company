@@ -1,17 +1,27 @@
 package com.neteinstein.goodcompany.core.data.source
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import kotlin.time.Instant
 
 /** The device address book. Returns an empty list when unavailable (web) or not permitted. */
 fun interface ContactsSource {
-    suspend fun readContacts(): List<ContactRecord>
+    /** [withPhotos] false skips the thumbnails (the "Choose friends" list reads thousands of contacts). */
+    suspend fun readContacts(withPhotos: Boolean): List<ContactRecord>
+
+    /** The thumbnails of just these contacts. The default reads everything; platforms override it with a narrow query. */
+    suspend fun readPhotos(contactIds: Set<String>): Map<String, ContactPhoto> = if (contactIds.isEmpty()) {
+        emptyMap()
+    } else {
+        readContacts(withPhotos = true).filter { it.contactId in contactIds }.mapNotNull { r -> r.photo?.let { r.contactId to it } }.toMap()
+    }
 
     /**
-     * Whether a sync may add every contact it reads as a friend. False where people are added one by one with the
-     * system contact picker (Android): the sync then only refreshes friends that already have a contact.
+     * Whether a sync may add every contact it reads as a friend. False on Android and iOS, where people are chosen
+     * (the contact list with checkboxes or the system contact picker): the sync then only refreshes friends that
+     * already have a contact.
      */
     val importsNewContacts: Boolean get() = true
 }

@@ -74,6 +74,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasDynamicColor = false,
     smsBodySeparator = "&",
     hasContactPicker = true,
+    hasContactList = true,
     hasGoogleDrive = googleDriveClientId != null,
 )
 

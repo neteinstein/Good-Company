@@ -12,15 +12,6 @@
     <string name="start_empty">Empezar con la lista vacía</string>
     <string name="setup_title">Vamos a prepararlo todo</string>
     <string name="setup_body">Todo es opcional y puedes cambiarlo luego en Ajustes.</string>
-    <string name="contacts_title">Trae tus contactos</string>
-    <plurals name="contacts_imported">
-        <item quantity="one">%1$d contacto importado. Toca ♥ en los amigos de verdad.</item>
-        <item quantity="other">%1$d contactos importados. Toca ♥ en los amigos de verdad.</item>
-    </plurals>
-    <string name="contacts_denied">No pasa nada — puedes añadir amigos a mano.</string>
-    <string name="contacts_body">Leemos nombres, teléfonos y cumpleaños. Nada sale de tu dispositivo.</string>
-    <string name="contacts_body_write">Leemos nombres, teléfonos y cumpleaños, y guardamos en cada contacto los cumpleaños, hijos, eventos y notas que añadas aquí. Nada sale de tu dispositivo.</string>
-    <string name="import">Importar</string>
     <string name="notifications_title">Avisos de cumpleaños y quedadas</string>
     <string name="notifications_on">Todo listo — te avisaremos en el momento justo.</string>
     <string name="notifications_off">Los avisos están desactivados. Puedes activarlos en Ajustes.</string>
@@ -40,4 +31,10 @@
         <item quantity="one">%1$d amigo añadido. ¿Elegir otro?</item>
         <item quantity="other">%1$d amigos añadidos. ¿Elegir otro?</item>
     </plurals>
+    <string name="primer_title">¿Quiénes son tu gente?</string>
+    <string name="primer_body">Te mostraremos tus contactos para que marques a los amigos que quieres tener cerca. Solo se guardan en Good Company las personas que marques. Las demás se quedan en tu agenda, intactas.</string>
+    <string name="primer_on_device">Tus contactos se leen solo en este teléfono y nunca se suben.</string>
+    <string name="primer_show">Mostrar mis contactos</string>
+    <string name="primer_pick_instead">Prefiero elegir personas de una en una</string>
+    <string name="primer_denied">El acceso a los contactos está desactivado, así que no podemos mostrar la lista. Aún puedes elegir personas de una en una.</string>
 </resources>

@@ -3,9 +3,11 @@
     Sideload-only additions, never in the Play build:
     - READ_CALL_LOG is a Google Play *restricted* permission (default dialer apps only). Used to match calls
       with friends' phone numbers.
+    - READ_CONTACTS: the contact list with checkboxes (decision D2): the user ticks who to add and only those are
+      saved; the system contact picker stays as the alternative. The app does not bulk-import the address book.
+      The Play build stays picker-only until Google Play's READ_CONTACTS policy has been checked.
     - READ_CONTACTS + WRITE_CONTACTS: mirror what the app knows about a friend (birthday, kids, events, notes) onto
-      their contact, so it can be read in the Contacts app (owner decision 2026-11-08). People are still *added* with
-      the system contact picker, exactly as in the Play build; the app does not bulk-import the address book.
+      their contact, so it can be read in the Contacts app (owner decision 2026-11-08).
     - REQUEST_INSTALL_PACKAGES + the FileProvider below let Settings → "App updates" download a newer sideload build
       and hand it to Android's installer. Google Play restricts that permission too.
 -->

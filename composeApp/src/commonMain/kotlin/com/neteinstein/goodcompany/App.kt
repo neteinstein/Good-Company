@@ -64,6 +64,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
+import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
@@ -96,7 +97,14 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                     targetState = state.settings.onboardingDone,
                     transitionSpec = { (fadeIn(tween(400)) + scaleIn(initialScale = 0.96f)) togetherWith fadeOut(tween(250)) },
                 ) { done ->
-                    if (done) AppScaffold(launch) else OnboardingScreen(onDone = {})
+                    if (done) {
+                        AppScaffold(launch)
+                    } else {
+                        OnboardingScreen(
+                            onDone = {},
+                            contactList = { onClose -> ChooseContactsScreen(onBack = { onClose(0) }, onDone = onClose) },
+                        )
+                    }
                 }
                 if (state.settings.appLock) AppLock()
             }

@@ -1,4 +1,4 @@
 /* Localised permission prompts. Keep in sync with Info.plist. */
-"NSContactsUsageDescription" = "Good Company citește contactele ca să-ți creeze lista de prieteni și să afle zilele lor de naștere. Nimic nu pleacă de pe dispozitiv.";
+"NSContactsUsageDescription" = "Good Company îți arată contactele ca să-ți alegi prietenii. Doar persoanele pe care le alegi sunt salvate în aplicație. Nimic nu pleacă de pe dispozitiv.";
 "NSLocationWhenInUseUsageDescription" = "Folosită doar când atingi „Folosește locația mea”, ca să ții minte unde v-ați văzut și să sugereze evenimente din apropiere.";
 "NSFaceIDUsageDescription" = "Folosit doar dacă activezi blocarea aplicației, ca notițele tale despre prieteni să rămână private.";

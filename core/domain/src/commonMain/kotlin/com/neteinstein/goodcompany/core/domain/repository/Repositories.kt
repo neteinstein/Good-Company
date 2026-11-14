@@ -3,6 +3,8 @@ package com.neteinstein.goodcompany.core.domain.repository
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -26,6 +28,15 @@ interface FriendRepository {
 
     /** Pulls the device address book and merges it into the friend list. Returns the number of contacts seen. */
     suspend fun syncContacts(): Int
+
+    /**
+     * Reads the device address book without changing any friend (the "Choose friends" list). Empty when there is no
+     * address book or no permission. [withPhotos] false skips the thumbnails, which are heavy for thousands of contacts.
+     */
+    suspend fun readContacts(withPhotos: Boolean = false): List<ContactRecord>
+
+    /** The thumbnails of just these contacts (those without one are left out). */
+    suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto>
 }
 
 /**

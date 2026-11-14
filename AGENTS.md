@@ -186,9 +186,11 @@ Seen in practice:
    `androidApp/google-services.json.ci` (a placeholder) for build validation; real builds use the `GOOGLE_SERVICES_JSON`
    secret. Without the file, the Google Services plugin is skipped and `FirebaseApp.initializeApp` is a no-op.
 8. **Store policy.** Never add SMS permissions. `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` **and
-   `REQUEST_INSTALL_PACKAGES`** (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`:
-   people are added through the system contact picker in both Android builds, and the sideload build's contacts
-   permissions exist only for the write-back (see gotcha 22).
+   `REQUEST_INSTALL_PACKAGES`** (Settings → "App updates") belong only in `androidApp/src/sideload/AndroidManifest.xml`.
+   The sideload build (and iOS) offer the contact list with checkboxes (decision D2, `ChooseContactsRoute`, gated on
+   `PlatformCapabilities.hasContactList` = "the manifest declares READ_CONTACTS") plus the write-back (gotcha 22).
+   **The Play build stays picker-only** until Google Play's `READ_CONTACTS` policy has been checked; enabling the list
+   there is a manifest + CI change, no code change.
    CI fails if the Play `release` APK declares SMS, call-log, contacts, install-packages or AD_ID permissions. iOS needs usage strings in
    `Info.plist` and an entry in `PrivacyInfo.xcprivacy` for any newly used API.
 9. **Persisted data.** App data lives in SQLite (gotcha 24); the `.sq` files are the schema. Adding a nullable column
@@ -254,9 +256,11 @@ Seen in practice:
     **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid/event), a changed detail
     updates the app's own earlier row in place (`ContactRowPlanner`, pure and tested; its `Step` has no delete), and a detail
     removed in the app, a cleared friend or a deleted friend leaves the contact as it is. The user's own contact rows are only read.
-    `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false`: people are added with
-    the system contact picker (UI asks for READ/WRITE_CONTACTS right before opening it, `hasContactWriteBack`), and a sync only
-    refreshes friends that already have a `contactId`, never importing the whole address book. New data that fits on a contact goes into
+    `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false` (so does
+    `IosContactsSource` since D2): people are chosen in the contact list with checkboxes (`ListContactsUseCase` reads without
+    photos, `SaveChosenContactsUseCase` reads `ContactsSource.readPhotos` for the ticked people only, then
+    `ImportPickedContactsUseCase`) or with the system contact picker, and a sync only refreshes friends that already have a
+    `contactId`, never importing the whole address book. `ContactRecord.starred` is Android's `STARRED` (iOS has none). New data that fits on a contact goes into
     `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
     `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
     What is written (issue #20): relatives as `Relation` rows (partner → `TYPE_PARTNER`, parent → `TYPE_PARENT`; sibling, pet

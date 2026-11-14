@@ -410,4 +410,33 @@
     <string name="circle_never_together">Pas encore réunis</string>
     <string name="circle_goal">objectif : %1$s</string>
     <string name="circle_log_meetup">Noter une sortie : %1$s</string>
+    <string name="choose_title">Choisir des amis</string>
+    <string name="choose_count">%1$d sur %2$d</string>
+    <string name="choose_filter_favourites">Favoris d’abord</string>
+    <string name="choose_filter_birthday">Avec anniversaire</string>
+    <string name="choose_filter_all">Tout afficher</string>
+    <string name="choose_favourites">Favoris</string>
+    <string name="choose_birthday">Anniversaire le %1$s</string>
+    <string name="choose_already_friend">Déjà dans Good Company</string>
+    <string name="choose_add_none">Ajouter des amis</string>
+    <string name="choose_only_ticked">Seules les personnes que tu coches sont enregistrées dans Good Company. Les autres restent dans ton carnet d’adresses, intactes.</string>
+    <string name="choose_on_device">Tes contacts sont lus uniquement sur ce téléphone et ne sont jamais envoyés.</string>
+    <string name="choose_empty_title">Aucun contact à afficher</string>
+    <string name="choose_empty_body">L’accès aux contacts est désactivé, on ne peut donc pas afficher la liste. Tu peux toujours choisir les personnes une par une.</string>
+    <string name="choose_pick_instead">Choisir dans les contacts</string>
+    <string name="choose_no_match">Personne ne correspond</string>
+    <string name="add_option_pick_body">Ouvre le sélecteur de contacts du téléphone</string>
+    <string name="add_option_list">Choisir dans la liste complète</string>
+    <string name="add_option_list_body">Coche les personnes que tu veux garder proches</string>
+    <string name="add_option_list_again">Redemande l’accès aux contacts</string>
+    <string name="add_option_type">Le saisir à la main</string>
+    <string name="add_option_type_body">Ajouter quelqu’un par son nom</string>
+    <plurals name="choose_search">
+        <item quantity="one">Rechercher parmi %1$d contact</item>
+        <item quantity="other">Rechercher parmi %1$d contacts</item>
+    </plurals>
+    <plurals name="choose_add">
+        <item quantity="one">Ajouter %1$d ami</item>
+        <item quantity="other">Ajouter %1$d amis</item>
+    </plurals>
 </resources>

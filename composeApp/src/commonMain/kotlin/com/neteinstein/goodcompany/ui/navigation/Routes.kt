@@ -37,6 +37,9 @@ import org.jetbrains.compose.resources.StringResource
 /** The circle editor (decision D1); [id] null creates a circle. */
 @Serializable data class CircleEditorRoute(val id: String? = null)
 
+/** "Choose friends": the phone's contacts with checkboxes (decision D2; iOS and the Android sideload build). */
+@Serializable data object ChooseContactsRoute
+
 /** "Save to a friend" for something shared into the app (see ShareInbox). */
 @Serializable data object ShareRoute
 

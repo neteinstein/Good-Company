@@ -56,6 +56,19 @@ data class WeekSummary(val birthdays: Int, val bigDays: Int, val catchUps: Int) 
     val isEmpty get() = birthdays == 0 && bigDays == 0 && catchUps == 0
 }
 
+/** The ways "Add friend" offers to add someone, in the order the sheet shows them. */
+enum class AddFriendOption { PICK_FROM_CONTACTS, CHOOSE_FROM_LIST, TYPE_IT_IN }
+
+/**
+ * What "Add friend" offers on this build: the system contact picker where there is one, the contact list with
+ * checkboxes only where the app may read contacts (iOS, Android sideload; decision D2), and typing a name everywhere.
+ */
+fun addFriendOptions(hasContactPicker: Boolean, hasContactList: Boolean): List<AddFriendOption> = buildList {
+    if (hasContactPicker) add(AddFriendOption.PICK_FROM_CONTACTS)
+    if (hasContactList) add(AddFriendOption.CHOOSE_FROM_LIST)
+    add(AddFriendOption.TYPE_IT_IN)
+}
+
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface FriendsMessage {
     data class LoggedWith(val name: String?) : FriendsMessage
@@ -109,6 +122,8 @@ data class FriendsUiState(
     val circles: List<Relationships.GroupStatus> = emptyList(),
     /** The circle Home is filtered by (remembered between launches); null = All. Every section shows only its members. */
     val circle: Relationships.GroupStatus? = null,
+    /** "Choose from the full list" was refused the contacts permission: the add sheet explains and keeps the picker. */
+    val contactListDenied: Boolean = false,
 ) {
     val isSearching: Boolean get() = query.isNotBlank()
 }
@@ -265,6 +280,14 @@ class FriendsViewModel(
                 )
             }
         }
+    }
+
+    /** "Choose from the full list" asked for the contacts permission. The screen opens the list when [granted]. */
+    fun onContactListPermissionResult(granted: Boolean) = local.update { it.copy(contactListDenied = !granted) }
+
+    /** People were saved from the contact list. */
+    fun onContactsChosen(added: Int) {
+        if (added > 0) local.update { it.copy(message = FriendsMessage.ContactsPicked(PickedContactsResult(added, 0))) }
     }
 
     /** A .vcf file picked by the user (the address-book path on the web). */

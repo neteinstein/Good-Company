@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
 import com.neteinstein.goodcompany.di.appModule
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
@@ -90,6 +91,7 @@ class AppModuleTest {
         assertNotNull(koin.get<ApplyLaunchOptions>())
         assertNotNull(koin.get<CatchUpStoryViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<ShareToFriendViewModel>())
+        assertNotNull(koin.get<ChooseContactsViewModel>())
         assertNotNull(koin.get<ObserveShortcutsUseCase>())
         assertSame(koin.get<QuickEntryInbox>(), koin.get<QuickEntryInbox>())
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(null) })

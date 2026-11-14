@@ -4,7 +4,6 @@ import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleData
-import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
@@ -27,7 +26,6 @@ class OnboardingViewModelTest {
     private val settings = FakeSettingsRepository()
     private fun vm() = OnboardingViewModel(
         UpdateSettingsUseCase(settings),
-        SyncContactsUseCase(friends, FakeInteractionRepository()),
         ImportPickedContactsUseCase(friends),
         LoadSampleDataUseCase(
             friends,
@@ -42,13 +40,23 @@ class OnboardingViewModelTest {
     )
 
     @Test
-    fun importContactsThenFinish() = runViewModelTest {
+    fun theContactListOpensOnlyWithThePermission_andCountsWhoItAdded() = runViewModelTest {
         val vm = vm()
-        vm.onContactsPermissionResult(false)
-        assertTrue(vm.state.value.contactsDenied)
-        vm.onContactsPermissionResult(true)
-        assertEquals(1, vm.state.value.contactsImported)
+        vm.onContactListPermissionResult(false)
+        assertTrue(vm.state.value.contactListDenied)
+        assertFalse(vm.state.value.contactListOpen)
+        vm.onContactListPermissionResult(true)
+        assertTrue(vm.state.value.contactListOpen)
+        assertFalse(vm.state.value.contactListDenied)
+        vm.onContactListClosed(0) // went back without saving
+        assertFalse(vm.state.value.contactListOpen)
+        assertFalse(vm.state.value.hasPeople)
+        vm.onContactListPermissionResult(true)
+        vm.onContactListClosed(3)
+        assertEquals(3, vm.state.value.contactsPicked)
         assertTrue(vm.state.value.hasPeople)
+        // Onboarding never imports the address book by itself (D2): only the people chosen are friends.
+        assertTrue(friends.friends.value.isEmpty())
         vm.onNotificationsPermissionResult(true)
         vm.onFinish()
         assertTrue(vm.state.value.finished)

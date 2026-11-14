@@ -14,11 +14,13 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.feature.friends.ui.screens.list.AddFriendOption
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendFilter
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendSort
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.Greeting
+import com.neteinstein.goodcompany.feature.friends.ui.screens.list.addFriendOptions
 import kotlinx.coroutines.flow.first
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -243,5 +245,32 @@ class FriendsViewModelTest {
         g.settingsRepo.update { it.copy(showWarmth = false) }
         assertFalse(state.value.showWarmth)
         assertTrue(state.value.drifting.isEmpty())
+    }
+
+    @Test
+    fun addFriendOptions_followTheBuild() {
+        // iOS and the Android sideload build.
+        assertEquals(
+            listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.CHOOSE_FROM_LIST, AddFriendOption.TYPE_IT_IN),
+            addFriendOptions(hasContactPicker = true, hasContactList = true),
+        )
+        // Android Play build: picker only (D2, until the READ_CONTACTS policy check).
+        assertEquals(listOf(AddFriendOption.PICK_FROM_CONTACTS, AddFriendOption.TYPE_IT_IN), addFriendOptions(true, false))
+        // Web.
+        assertEquals(listOf(AddFriendOption.TYPE_IT_IN), addFriendOptions(false, false))
+    }
+
+    @Test
+    fun aRefusedContactList_isRemembered_andSavedPeopleAreReported() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onContactListPermissionResult(false)
+        assertTrue(state.value.contactListDenied)
+        vm.onContactListPermissionResult(true)
+        assertFalse(state.value.contactListDenied)
+        vm.onContactsChosen(0)
+        assertNull(state.value.message)
+        vm.onContactsChosen(2)
+        assertEquals(FriendsMessage.ContactsPicked(PickedContactsResult(2, 0)), state.value.message)
     }
 }

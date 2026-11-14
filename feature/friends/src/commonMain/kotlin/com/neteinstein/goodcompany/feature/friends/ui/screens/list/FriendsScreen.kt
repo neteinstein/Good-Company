@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +23,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Search
@@ -38,6 +43,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -45,7 +51,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -98,7 +107,17 @@ import com.neteinstein.goodcompany.feature.friends.resources.action_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.add_hint
 import com.neteinstein.goodcompany.feature.friends.resources.add_name
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_list
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_list_again
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_list_body
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_pick_body
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_type
+import com.neteinstein.goodcompany.feature.friends.resources.add_option_type_body
 import com.neteinstein.goodcompany.feature.friends.resources.add_title
+import com.neteinstein.goodcompany.feature.friends.resources.choose_add_none
+import com.neteinstein.goodcompany.feature.friends.resources.choose_empty_body
+import com.neteinstein.goodcompany.feature.friends.resources.choose_only_ticked
+import com.neteinstein.goodcompany.feature.friends.resources.choose_pick_instead
 import com.neteinstein.goodcompany.feature.friends.resources.circle_all
 import com.neteinstein.goodcompany.feature.friends.resources.circle_az
 import com.neteinstein.goodcompany.feature.friends.resources.circle_goal
@@ -171,19 +190,36 @@ fun FriendsScreen(
     onOpenStory: (FriendId) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     onLogCircle: (String) -> Unit = {},
+    /** Opens the "Choose friends" list (contacts with checkboxes). */
+    onChooseContacts: () -> Unit = {},
+    /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
+    chosenContacts: Int = 0,
+    onChosenShown: () -> Unit = {},
     viewModel: FriendsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(chosenContacts) {
+        if (chosenContacts > 0) {
+            viewModel.onContactsChosen(chosenContacts)
+            onChosenShown()
+        }
+    }
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickContacts = rememberContactPicker(onPicked = viewModel::onContactsPicked)
     val capabilities = currentPlatformCapabilities()
     // Sideload build: ask for the contacts permission the write-back needs, then open the picker whatever the answer.
     val requestThenPick = rememberPermissionRequester(AppPermission.CONTACTS) { pickContacts() }
+    // "Choose from the full list" asks for the permission each time (it may have been refused before), then opens it.
+    val requestContactList = rememberPermissionRequester(AppPermission.CONTACTS) { granted ->
+        viewModel.onContactListPermissionResult(granted)
+        if (granted) onChooseContacts()
+    }
     FriendsContent(
         state = state,
         canSyncContacts = capabilities.hasAddressBook,
         canPickContacts = capabilities.hasContactPicker,
+        addOptions = addFriendOptions(capabilities.hasContactPicker, capabilities.hasContactList),
         actions = FriendsActions(
             onQueryChange = viewModel::onQueryChange,
             onFilterChange = viewModel::onFilterChange,
@@ -198,6 +234,7 @@ fun FriendsScreen(
             onCalled = viewModel::onCalled,
             onSnooze = viewModel::onSnooze,
             onAddFriend = viewModel::onAddFriend,
+            onChooseContacts = requestContactList,
             onExploreSample = viewModel::onExploreSample,
             onMessageShown = viewModel::onMessageShown,
             onCircleFilter = viewModel::onCircleFilter,
@@ -221,6 +258,8 @@ data class FriendsActions(
     val onCalled: (FriendId) -> Unit = {},
     val onSnooze: (FriendId, SnoozeOption) -> Unit = { _, _ -> },
     val onAddFriend: (String) -> Unit = {},
+    /** Asks for the contacts permission, then opens the contact list with checkboxes. */
+    val onChooseContacts: () -> Unit = {},
     val onExploreSample: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
     /** Filters Home by a circle (null = All). */
@@ -262,9 +301,18 @@ private fun weekSummaryText(week: WeekSummary): String? {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: FriendsActions, canPickContacts: Boolean = false) {
+fun FriendsContent(
+    state: FriendsUiState,
+    canSyncContacts: Boolean,
+    actions: FriendsActions,
+    canPickContacts: Boolean = false,
+    addOptions: List<AddFriendOption> = listOf(AddFriendOption.TYPE_IT_IN),
+) {
     val snackbar = remember { SnackbarHostState() }
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    var showAddSheet by rememberSaveable { mutableStateOf(false) }
+    // Only "Type it in" (the web): straight to the name dialog, as before.
+    val openAdd = { if (addOptions == listOf(AddFriendOption.TYPE_IT_IN)) showAdd = true else showAddSheet = true }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     LaunchedEffect(state.message) {
@@ -279,7 +327,7 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
         floatingActionButton = {
             if (!isEmpty) {
                 ExtendedFloatingActionButton(
-                    onClick = { showAdd = true },
+                    onClick = openAdd,
                     icon = { Icon(Icons.Rounded.PersonAdd, null) },
                     text = { Text(stringResource(Res.string.fab_add_friend)) },
                 )
@@ -372,9 +420,15 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
 
             if (isEmpty) {
                 item(key = "welcome") {
-                    Welcome(canSyncContacts, actions.onSync, actions.onImportFile, {
-                        showAdd = true
-                    }, actions.onExploreSample, actions.onPickContacts.takeIf { canPickContacts })
+                    Welcome(
+                        canSyncContacts = canSyncContacts,
+                        onImport = actions.onSync,
+                        onImportFile = actions.onImportFile,
+                        onAdd = { showAdd = true },
+                        onSample = actions.onExploreSample,
+                        onPickContacts = actions.onPickContacts.takeIf { canPickContacts },
+                        onChooseContacts = actions.onChooseContacts.takeIf { AddFriendOption.CHOOSE_FROM_LIST in addOptions },
+                    )
                 }
                 return@LazyColumn
             }
@@ -513,6 +567,22 @@ fun FriendsContent(state: FriendsUiState, canSyncContacts: Boolean, actions: Fri
         }
     }
 
+    if (showAddSheet) {
+        AddFriendSheet(
+            options = addOptions,
+            listDenied = state.contactListDenied,
+            onDismiss = { showAddSheet = false },
+            onOption = { option ->
+                showAddSheet = false
+                when (option) {
+                    AddFriendOption.PICK_FROM_CONTACTS -> actions.onPickContacts()
+                    AddFriendOption.CHOOSE_FROM_LIST -> actions.onChooseContacts()
+                    AddFriendOption.TYPE_IT_IN -> showAdd = true
+                }
+            },
+        )
+    }
+
     if (showAdd) {
         AddFriendDialog(onDismiss = { showAdd = false }, onAdd = {
             actions.onAddFriend(it)
@@ -608,14 +678,29 @@ private fun Welcome(
     onAdd: () -> Unit,
     onSample: () -> Unit,
     onPickContacts: (() -> Unit)? = null,
+    onChooseContacts: (() -> Unit)? = null,
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         EmptyState(
             icon = Icons.Rounded.Contacts,
             title = stringResource(Res.string.welcome_title),
-            message = stringResource(if (canSyncContacts) Res.string.welcome_message_contacts else Res.string.welcome_message_manual),
+            message = stringResource(
+                when {
+                    onChooseContacts != null -> Res.string.choose_only_ticked
+                    canSyncContacts -> Res.string.welcome_message_contacts
+                    else -> Res.string.welcome_message_manual
+                },
+            ),
         )
-        if (canSyncContacts) {
+        if (onChooseContacts != null) {
+            // iOS and the Android sideload build (decision D2): the contacts with checkboxes, the picker as the alternative.
+            Button(onClick = onChooseContacts, modifier = Modifier.fillMaxWidth().height(52.dp)) {
+                Icon(Icons.Rounded.Contacts, null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(Res.string.add_option_list))
+            }
+            onPickContacts?.let { TextButton(onClick = it) { Text(stringResource(Res.string.welcome_pick_contacts)) } }
+        } else if (canSyncContacts) {
             Button(onClick = onImport, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Rounded.Contacts, null)
                 Spacer(Modifier.width(8.dp))
@@ -645,6 +730,62 @@ private fun Welcome(
             TextButton(onClick = onImportFile) { Text(stringResource(Res.string.welcome_import_vcf)) }
         }
         Box(Modifier.height(24.dp))
+    }
+}
+
+/** "Add friend": the system contact picker, the contact list with checkboxes and typing a name, as this build allows. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddFriendSheet(options: List<AddFriendOption>, listDenied: Boolean, onDismiss: () -> Unit, onOption: (AddFriendOption) -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+            Text(
+                stringResource(Res.string.choose_add_none),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            if (listDenied && AddFriendOption.CHOOSE_FROM_LIST in options) {
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Lock, null)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(Res.string.choose_empty_body), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+            options.forEach { option ->
+                val (icon, title, body) = when (option) {
+                    AddFriendOption.PICK_FROM_CONTACTS -> Triple(
+                        Icons.Rounded.Contacts,
+                        Res.string.choose_pick_instead,
+                        Res.string.add_option_pick_body,
+                    )
+                    AddFriendOption.CHOOSE_FROM_LIST -> Triple(
+                        Icons.Rounded.Checklist,
+                        Res.string.add_option_list,
+                        if (listDenied) Res.string.add_option_list_again else Res.string.add_option_list_body,
+                    )
+                    AddFriendOption.TYPE_IT_IN -> Triple(Icons.Rounded.Edit, Res.string.add_option_type, Res.string.add_option_type_body)
+                }
+                ListItem(
+                    leadingContent = {
+                        Box(
+                            Modifier.size(44.dp).background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer) }
+                    },
+                    headlineContent = { Text(stringResource(title)) },
+                    supportingContent = { Text(stringResource(body)) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable { onOption(option) }.padding(horizontal = 8.dp),
+                )
+            }
+        }
     }
 }
 

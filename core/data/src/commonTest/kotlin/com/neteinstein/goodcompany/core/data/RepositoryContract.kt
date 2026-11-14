@@ -110,7 +110,7 @@ abstract class RepositoryContract {
     ): Stores
 
     private class StubContacts(var records: List<ContactRecord>, override val importsNewContacts: Boolean = true) : ContactsSource {
-        override suspend fun readContacts() = records
+        override suspend fun readContacts(withPhotos: Boolean) = records
     }
 
     private val ana = FriendId("ana")
@@ -218,6 +218,20 @@ abstract class RepositoryContract {
         repo.delete(rui)
         assertEquals(listOf("ana", "eva"), repo.friends.first().map { it.id.value })
         assertNull(repo.get(rui))
+    }
+
+    @Test
+    fun readingTheContactList_changesNoFriend_andPhotosComeOnlyForTheAsked() = runTest {
+        val photo = ContactPhoto.of(byteArrayOf(4, 5, 6))!!
+        val contacts = StubContacts(
+            listOf(ContactRecord("1", "Ana", emptyList(), null, photo), ContactRecord("2", "Rui", emptyList(), null, photo)),
+            importsNewContacts = false,
+        )
+        val repo = open(contacts).friends
+        assertEquals(listOf("Ana", "Rui"), repo.readContacts().map { it.name })
+        assertTrue(repo.friends.first().isEmpty())
+        assertEquals(mapOf("2" to photo), repo.contactPhotos(setOf("2", "nobody")))
+        assertTrue(repo.contactPhotos(emptySet()).isEmpty())
     }
 
     @Test

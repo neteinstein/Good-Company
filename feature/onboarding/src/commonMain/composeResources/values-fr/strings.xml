@@ -12,15 +12,6 @@
     <string name="start_empty">Commencer avec une liste vide</string>
     <string name="setup_title">On s’installe</string>
     <string name="setup_body">Tout est facultatif et modifiable plus tard dans les Réglages.</string>
-    <string name="contacts_title">Importe tes contacts</string>
-    <plurals name="contacts_imported">
-        <item quantity="one">%1$d contact importé. Touche ♥ sur tes vrais amis.</item>
-        <item quantity="other">%1$d contacts importés. Touche ♥ sur tes vrais amis.</item>
-    </plurals>
-    <string name="contacts_denied">Pas de souci — tu peux ajouter tes amis à la main.</string>
-    <string name="contacts_body">On lit les noms, numéros et anniversaires. Rien ne quitte ton appareil.</string>
-    <string name="contacts_body_write">On lit les noms, numéros et anniversaires, et on enregistre sur chaque contact les anniversaires, enfants, événements et notes que tu ajoutes ici. Rien ne quitte ton appareil.</string>
-    <string name="import">Importer</string>
     <string name="notifications_title">Rappels d’anniversaires et de retrouvailles</string>
     <string name="notifications_on">Tout est prêt — on te préviendra au bon moment.</string>
     <string name="notifications_off">Les rappels sont désactivés. Tu peux les activer dans les Réglages.</string>
@@ -40,4 +31,10 @@
         <item quantity="one">%1$d ami ajouté. En choisir un autre ?</item>
         <item quantity="other">%1$d amis ajoutés. En choisir un autre ?</item>
     </plurals>
+    <string name="primer_title">Qui sont tes proches ?</string>
+    <string name="primer_body">On va afficher tes contacts pour que tu coches les amis que tu veux garder proches. Seules les personnes que tu coches sont enregistrées dans Good Company. Les autres restent dans ton carnet d’adresses, intactes.</string>
+    <string name="primer_on_device">Tes contacts sont lus uniquement sur ce téléphone et ne sont jamais envoyés.</string>
+    <string name="primer_show">Afficher mes contacts</string>
+    <string name="primer_pick_instead">Choisir plutôt les personnes une par une</string>
+    <string name="primer_denied">L’accès aux contacts est désactivé, on ne peut donc pas afficher la liste. Tu peux toujours choisir les personnes une par une.</string>
 </resources>

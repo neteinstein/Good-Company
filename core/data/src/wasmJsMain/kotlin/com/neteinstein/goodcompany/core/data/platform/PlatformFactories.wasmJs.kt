@@ -14,7 +14,7 @@ import kotlin.coroutines.resume
 
 /** Browsers have no address book API (outside Android Chrome's picker) — friends are added manually on the web. */
 actual fun Scope.createContactsSource(): ContactsSource = object : ContactsSource {
-    override suspend fun readContacts() = emptyList<com.neteinstein.goodcompany.core.domain.model.ContactRecord>()
+    override suspend fun readContacts(withPhotos: Boolean) = emptyList<com.neteinstein.goodcompany.core.domain.model.ContactRecord>()
 }
 
 actual fun Scope.createContactsWriter(): ContactsWriter = ContactsWriter.None
