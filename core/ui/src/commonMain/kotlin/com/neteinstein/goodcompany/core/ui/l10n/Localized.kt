@@ -48,6 +48,10 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_weekend
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body_age
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_event_soon_body
@@ -221,6 +225,23 @@ object ResourceNotificationRenderer : NotificationRenderer {
                     ),
                 ),
             )
+            // On this device only (D3). No quick actions: "Log it" needs the log sheet, so a tap opens the app.
+            is NotificationContent.CalendarMeetups -> {
+                val single = c.eventTitle?.takeIf { c.total == 1 }
+                if (single != null) {
+                    Triple(
+                        getString(Res.string.notif_calendar_one_title, namesText(c.names, c.names.size)),
+                        getString(Res.string.notif_calendar_one_body, single),
+                        emptyList(),
+                    )
+                } else {
+                    Triple(
+                        getString(Res.string.notif_calendar_many_title),
+                        getString(Res.string.notif_calendar_many_body, namesText(c.names, c.names.size)),
+                        emptyList(),
+                    )
+                }
+            }
         }
         return RenderedNotification(notification.id, notification.at, title, body, actions)
     }

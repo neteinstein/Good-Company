@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
 import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.feeds.KtorFeedFetcher
+import com.neteinstein.goodcompany.core.data.platform.createCalendarReader
 import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsWriter
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
 import com.neteinstein.goodcompany.core.data.repository.LegacyJsonImport
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
@@ -36,6 +38,8 @@ import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.BuiltInCircleNames
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
@@ -66,6 +70,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
@@ -98,6 +103,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -142,6 +150,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
@@ -156,6 +166,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
@@ -168,10 +179,12 @@ import com.neteinstein.goodcompany.core.ui.l10n.ResourceNotificationRenderer
 import com.neteinstein.goodcompany.core.ui.l10n.SampleTextsFromResources
 import com.neteinstein.goodcompany.core.ui.platform.createPhotoShrinker
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
@@ -181,6 +194,7 @@ import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
@@ -217,6 +231,7 @@ val appModule = module {
     single<PhotoShrinker> { createPhotoShrinker() }
     single<LocationProvider> { createLocationProvider() }
     single<NotificationScheduler> { createNotificationScheduler() }
+    single<CalendarReader> { createCalendarReader() }
     single { AnthropicClient(get()) }
     single<IdeaGenerator> { AnthropicIdeaGenerator(get()) }
     single<AiAssistant> { AnthropicAssistant(get()) }
@@ -244,6 +259,7 @@ val appModule = module {
     singleOf(::SqlPersonLinkRepository) bind PersonLinkRepository::class
     singleOf(::SqlPlanRepository) bind PlanRepository::class
     singleOf(::SqlBackupRepository) bind BackupRepository::class
+    singleOf(::SqlCalendarDecisionRepository) bind CalendarDecisionRepository::class
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
@@ -337,6 +353,13 @@ val appModule = module {
     factoryOf(::ObserveShortcutsUseCase)
     factoryOf(::ObserveCatchUpStoryUseCase)
     factoryOf(::ObserveStoryBubblesUseCase)
+    factoryOf(::ObserveCalendarEventsUseCase)
+    factoryOf(::ObserveCalendarSuggestionsUseCase)
+    factoryOf(::DecideCalendarSuggestionUseCase)
+    factoryOf(::UndoCalendarDecisionUseCase)
+    factoryOf(::ObserveCalendarSettingsUseCase)
+    factoryOf(::SetCalendarSuggestionsUseCase)
+    factoryOf(::SetCalendarChosenUseCase)
     factoryOf(::AddFeedUseCase)
     factoryOf(::RefreshFeedsUseCase)
     factoryOf(::AddLifeUpdateUseCase)
@@ -393,12 +416,14 @@ val appModule = module {
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
-    viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?) ->
-        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get(), plan, get(), get())
+    viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
+        LogInteractionViewModel(ids, type, circleId, get(), get(), get(), get(), get(), get(), get(), plan, get(), get(), prefill)
     }
     viewModel { (id: String?) -> CircleEditorViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::AgendaViewModel)
+    viewModelOf(::CalendarSuggestionsViewModel)
+    viewModelOf(::CalendarSettingsViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::SettingsViewModel)
     viewModelOf(::PlacesViewModel)

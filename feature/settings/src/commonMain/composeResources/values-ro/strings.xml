@@ -117,4 +117,24 @@
         <item quantity="few">%1$d întâlniri</item>
         <item quantity="other">%1$d de întâlniri</item>
     </plurals>
+    <string name="cal_title">Sugestii din calendar</string>
+    <string name="cal_switch">Sugerează întâlniri din calendarul meu</string>
+    <string name="cal_switch_hint">După un eveniment cu cineva cunoscut, aplicația îți propune să-l notezi.</string>
+    <string name="cal_choose">Calendare pe care aplicația le poate citi</string>
+    <string name="cal_none_found">Nu există calendare pe acest dispozitiv.</string>
+    <string name="cal_pick_hint">Bifează calendarele de citit. Nimic nu e citit până atunci.</string>
+    <string name="cal_privacy">Evenimentele sunt citite doar pe acest telefon. Nu sunt încărcate nicăieri, nu intră în copii de siguranță și nu sunt trimise la AI.</string>
+    <string name="cal_lookback">Când pornești asta, aplicația se uită și la ultimele două luni după întâlniri pe care nu le-ai notat.</string>
+    <string name="cal_web">Sugestiile din calendar funcționează în aplicațiile Android și iOS. Un browser nu îți poate citi calendarul.</string>
+    <string name="cal_access_needed">Accesul la calendar e oprit, deci nu e nimic de sugerat.</string>
+    <string name="cal_allow">Permite accesul la calendar</string>
+    <string name="cal_denied">Fără acces la calendar nu e nimic de sugerat.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Vezi %1$d sugestie</item>
+        <item quantity="few">Vezi %1$d sugestii</item>
+        <item quantity="other">Vezi %1$d de sugestii</item>
+    </plurals>
+    <string name="cal_row_on">Pornit · doar calendarele alese</string>
+    <string name="cal_row_off">Oprit</string>
+    <string name="cal_row_web">Indisponibil în browser</string>
 </resources>

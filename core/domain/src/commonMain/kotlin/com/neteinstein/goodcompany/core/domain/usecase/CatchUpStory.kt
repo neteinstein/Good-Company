@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
+import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
@@ -282,19 +283,36 @@ class ObserveCatchUpStoryUseCase(
 /** A friend in the home "Before you meet" row. */
 data class StoryBubble(val friend: Friend, val meetingOn: LocalDate, val freshCount: Int)
 
-/** Friends you're seeing today or tomorrow, for the home stories row. */
+/**
+ * Friends you're seeing today or tomorrow, for the home stories row: planned meetups, and matched events from the
+ * chosen calendars when calendar suggestions are on (D3, "Before you meet").
+ */
 class ObserveStoryBubblesUseCase(
     private val friends: FriendRepository,
     private val plans: PlanRepository,
     private val hangouts: HangoutRepository,
     private val links: PersonLinkRepository,
+    private val calendarEvents: ObserveCalendarEventsUseCase,
+    private val calendarDecisions: CalendarDecisionRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<List<StoryBubble>> = combine(friends.friends, plans.plans, hangouts.hangouts, links.links) { all, ps, hs, ls ->
+    operator fun invoke(): Flow<List<StoryBubble>> = combine(
+        friends.friends,
+        plans.plans,
+        hangouts.hangouts,
+        links.links,
+        combine(calendarEvents(), calendarDecisions.decisions, ::Pair),
+    ) { all, ps, hs, ls, (events, decisions) ->
         val now = clock.now()
         val byId = all.associateBy { it.id }
         val seen = Relationships.lastSeen(hs)
-        CatchUpStoryBuilder.meetingSoon(ps, clock.today()).mapNotNull { (id, date) ->
+        val soon = (
+            CatchUpStoryBuilder.meetingSoon(ps, clock.today()) +
+                CalendarSuggester.meetingSoon(events, all, decisions, now, clock.timeZone)
+            )
+            .sortedBy { it.second }
+            .distinctBy { it.first }
+        soon.mapNotNull { (id, date) ->
             val friend = byId[id] ?: return@mapNotNull null
             val since = seen[id] ?: (now - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
             val kids = KidsAsPeople.kidsOf(id, ls, byId)

@@ -3,3 +3,4 @@
 "NSLocationWhenInUseUsageDescription" = "Usada apenas quando tocas em “Usar a minha localização”, para lembrar onde estiveram e sugerir eventos perto de ti.";
 "NSFaceIDUsageDescription" = "Usado apenas se ativares o bloqueio da app, para que as tuas notas sobre amigos fiquem privadas.";
 "NSPhotoLibraryUsageDescription" = "Usado só para abrir o original de uma foto que guardaste para um amigo. A Good Company guarda uma cópia pequena e uma referência, nunca a própria foto.";
+"NSCalendarsFullAccessUsageDescription" = "Só se ligares as sugestões do calendário: os eventos dos calendários que escolheres são lidos neste dispositivo para sugerir registar encontros com amigos. Nunca são enviados, nunca entram em cópias de segurança e nunca vão para a IA.";

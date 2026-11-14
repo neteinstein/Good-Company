@@ -77,6 +77,8 @@
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used only to open the original of a photo you saved to a friend. Good Company keeps a small copy and a reference, never the photo itself.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Only if you turn on calendar suggestions: events in the calendars you choose are read on this device to suggest logging meetups with friends. They are never uploaded, never backed up and never sent to the AI.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Good Company shows your contacts so you can choose your friends. Only the people you choose are saved in the app. Nothing leaves your device.</string>
 	<key>NSFaceIDUsageDescription</key>

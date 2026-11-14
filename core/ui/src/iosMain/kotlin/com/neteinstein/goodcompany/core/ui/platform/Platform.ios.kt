@@ -76,6 +76,7 @@ actual val platformCapabilities = PlatformCapabilities(
     hasContactPicker = true,
     hasContactList = true,
     hasGoogleDrive = googleDriveClientId != null,
+    hasCalendar = true,
 )
 
 @Composable
@@ -98,6 +99,8 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
             // CLLocationManager prompts on first use inside the location provider itself.
             AppPermission.LOCATION -> report(true)
             AppPermission.CALL_LOG -> report(false)
+            // Calendar suggestions (D3) need full access to read past events (iOS 17+).
+            AppPermission.CALENDAR -> EKEventStore().requestFullAccessToEventsWithCompletion { granted, _ -> report(granted) }
         }
     }
 }

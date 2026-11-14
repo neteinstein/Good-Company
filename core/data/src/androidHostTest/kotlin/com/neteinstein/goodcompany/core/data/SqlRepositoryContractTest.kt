@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.data.db.AppDatabase
 import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.db.OpenedDriver
 import com.neteinstein.goodcompany.core.data.repository.SqlBackupRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlCalendarDecisionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlFriendRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlGroupRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
@@ -20,6 +21,8 @@ import com.neteinstein.goodcompany.core.data.repository.SqlSettingsRepository
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CardKid
 import com.neteinstein.goodcompany.core.domain.model.CardLink
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
@@ -93,6 +96,37 @@ class SqlRepositoryContractTest : RepositoryContract() {
 
     private val ana = FriendId("ana")
     private val rui = FriendId("rui")
+
+    // --- Calendar suggestions (D3) ---
+
+    @Test
+    fun calendarDecisions_persistAndTravelInBackupsButTheCalendarChoicesStayOnTheDevice() = runTest {
+        val s = open()
+        val decisions = SqlCalendarDecisionRepository(db)
+        val no = CalendarDecision("event:1:1700@1700", CalendarDecisionKind.NO, at(2026, 3, 1))
+        val never = CalendarDecision("series:bookclub", CalendarDecisionKind.NEVER, at(2026, 3, 2))
+        decisions.upsert(no)
+        decisions.upsert(never)
+        decisions.upsert(no.copy(decidedAt = at(2026, 3, 3)))
+        s.settings.update { it.copy(calendarSuggestions = true, calendarIds = listOf("7"), calendarOnSince = at(2026, 3, 1)) }
+
+        // A restart keeps both.
+        val again = open()
+        assertEquals(listOf("series:bookclub", "event:1:1700@1700"), SqlCalendarDecisionRepository(db).decisions.first().map { it.key })
+        val settings = again.settings.settings.first()
+        assertTrue(settings.calendarSuggestions)
+        assertEquals(listOf("7"), settings.calendarIds)
+
+        val snapshot = again.backup.snapshot()
+        assertEquals(2, snapshot.calendarDecisions.size)
+        decisions.delete(never.key)
+        assertEquals(listOf(no.key), decisions.decisions.first().map { it.key })
+
+        again.backup.restore(snapshot)
+        assertEquals(2, decisions.decisions.first().size)
+        again.backup.restore(Backup())
+        assertTrue(decisions.decisions.first().isEmpty())
+    }
 
     // --- Rules only the relational schema enforces ---
 

@@ -64,6 +64,7 @@ actual val platformCapabilities = PlatformCapabilities(
     // authorizer reports NotConfigured and the Settings row explains it.
     hasGoogleDrive = true,
     hasHomeWidget = true,
+    hasCalendar = true,
 )
 
 private fun AppPermission.manifestPermissions(): Array<String> = when (this) {
@@ -72,6 +73,7 @@ private fun AppPermission.manifestPermissions(): Array<String> = when (this) {
     AppPermission.LOCATION -> arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
     AppPermission.NOTIFICATIONS -> arrayOf(Manifest.permission.POST_NOTIFICATIONS)
     AppPermission.CALL_LOG -> arrayOf(Manifest.permission.READ_CALL_LOG)
+    AppPermission.CALENDAR -> arrayOf(Manifest.permission.READ_CALENDAR)
 }
 
 @Composable

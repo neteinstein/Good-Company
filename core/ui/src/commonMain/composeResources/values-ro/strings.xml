@@ -543,4 +543,8 @@
         <item quantity="few">%1$d persoane</item>
         <item quantity="other">%1$d de persoane</item>
     </plurals>
+    <string name="notif_calendar_one_title">Te-ai văzut azi cu %1$s?</string>
+    <string name="notif_calendar_one_body">„%1$s” era în calendarul tău. Deschide Good Company ca să notezi întâlnirea.</string>
+    <string name="notif_calendar_many_title">Din calendarul tău de azi</string>
+    <string name="notif_calendar_many_body">%1$s — deschide Good Company ca să notezi întâlnirile care au avut loc.</string>
 </resources>

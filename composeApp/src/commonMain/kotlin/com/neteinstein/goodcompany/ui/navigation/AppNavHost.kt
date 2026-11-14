@@ -28,15 +28,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
@@ -45,6 +48,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import kotlinx.datetime.LocalDate
 
@@ -139,6 +143,10 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     type = route.type,
                     circleId = route.circleId,
                     plan = route.plan,
+                    prefill = LogPrefill(
+                        date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                        activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
+                    ),
                     onClose = { navController.popBackStack() },
                 )
             }
@@ -192,14 +200,53 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                     onEditCircle = editCircle,
                 )
             }
-            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) { AgendaScreen(onOpenFriend = openFriend, onLogPlan = logPlan) }
+            sharedComposable<AgendaRoute>(this@SharedTransitionLayout) {
+                AgendaScreen(
+                    onOpenFriend = openFriend,
+                    onLogPlan = logPlan,
+                    onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
+                )
+            }
             composable<IdeasRoute> { IdeasScreen(onOpenSettings = openSettings) }
-            composable<SettingsRoute> { SettingsScreen(appVersion = APP_VERSION, onOpenPlaces = { navController.navigate(PlacesRoute) }) }
+            composable<SettingsRoute> {
+                SettingsScreen(
+                    appVersion = APP_VERSION,
+                    onOpenPlaces = { navController.navigate(PlacesRoute) },
+                    onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
+                )
+            }
             composable<PlacesRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
             ) {
                 PlacesScreen(onBack = { navController.popBackStack() })
+            }
+            composable<CalendarSettingsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                CalendarSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenSuggestions = { navController.navigate(CalendarSuggestionsRoute) },
+                )
+            }
+            composable<CalendarSuggestionsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                CalendarSuggestionsScreen(
+                    onBack = { navController.popBackStack() },
+                    onLog = { s ->
+                        navController.navigate(
+                            LogInteractionRoute(
+                                friendIds = s.friends.map { it.id.value },
+                                type = LogKind.MEETUP.name,
+                                date = s.date.toString(),
+                                activity = s.activity?.name,
+                            ),
+                        )
+                    },
+                )
             }
             composable<YearReviewRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },

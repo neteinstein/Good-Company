@@ -1,0 +1,21 @@
+-- Answers to calendar suggestions (decision D3). key is "event:<occurrence id>@<start epoch seconds>" for a "No"
+-- and "series:<series id>" for "Never for this series"; kind is the CalendarDecisionKind name. Part of the backup.
+-- Events themselves are never stored.
+
+CREATE TABLE calendar_decision (
+    key TEXT NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('NO', 'NEVER')),
+    decided_at INTEGER NOT NULL
+);
+
+allDecisions:
+SELECT * FROM calendar_decision ORDER BY decided_at, key;
+
+upsertDecision:
+INSERT OR REPLACE INTO calendar_decision (key, kind, decided_at) VALUES (?, ?, ?);
+
+deleteDecision:
+DELETE FROM calendar_decision WHERE key = ?;
+
+deleteAllDecisions:
+DELETE FROM calendar_decision;

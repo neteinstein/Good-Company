@@ -3,3 +3,4 @@
 "NSLocationWhenInUseUsageDescription" = "Used only when you tap “Use my location” to remember where you met, and to suggest events nearby.";
 "NSFaceIDUsageDescription" = "Used only if you turn on the app lock, so your notes about friends stay private.";
 "NSPhotoLibraryUsageDescription" = "Used only to open the original of a photo you saved to a friend. Good Company keeps a small copy and a reference, never the photo itself.";
+"NSCalendarsFullAccessUsageDescription" = "Only if you turn on calendar suggestions: events in the calendars you choose are read on this device to suggest logging meetups with friends. They are never uploaded, never backed up and never sent to the AI.";

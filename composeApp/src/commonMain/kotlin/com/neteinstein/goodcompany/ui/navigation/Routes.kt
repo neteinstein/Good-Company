@@ -38,6 +38,10 @@ import org.jetbrains.compose.resources.StringResource
     val type: String? = null,
     val circleId: String? = null,
     val plan: String? = null,
+    /** ISO date to open on (a calendar suggestion's day); null = today. */
+    val date: String? = null,
+    /** A HangoutActivity name guessed from a calendar event. */
+    val activity: String? = null,
 )
 
 /** The circle editor (decision D1); [id] null creates a circle. */
@@ -62,6 +66,12 @@ import org.jetbrains.compose.resources.StringResource
 
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
+
+/** Settings → Calendar suggestions (D3). */
+@Serializable data object CalendarSettingsRoute
+
+/** "From your calendar": past meetups to log (D3). */
+@Serializable data object CalendarSuggestionsRoute
 
 /** Year in review; [year] null = the most relevant year. */
 @Serializable data class YearReviewRoute(val year: Int? = null)

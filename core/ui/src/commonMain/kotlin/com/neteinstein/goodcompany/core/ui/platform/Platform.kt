@@ -20,7 +20,7 @@ import kotlinx.datetime.LocalDate
  * "add to calendar", the device lock (biometrics / PIN) and wallpaper-based dynamic colour.
  */
 
-enum class AppPermission { CONTACTS, LOCATION, NOTIFICATIONS, CALL_LOG }
+enum class AppPermission { CONTACTS, LOCATION, NOTIFICATIONS, CALL_LOG, CALENDAR }
 
 /** What this platform can do, so the UI can adapt copy and hide impossible actions. */
 data class PlatformCapabilities(
@@ -47,6 +47,8 @@ data class PlatformCapabilities(
      * READ_CONTACTS policy has been checked; turning it on there is a manifest + CI change.
      */
     val hasContactList: Boolean = false,
+    /** The device calendar can be read for calendar suggestions (D3): Android and iOS, not the web. */
+    val hasCalendar: Boolean = false,
 )
 
 expect val platformCapabilities: PlatformCapabilities

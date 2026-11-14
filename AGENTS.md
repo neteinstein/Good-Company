@@ -380,6 +380,19 @@ Seen in practice:
     find a kid's parent through the links (`KidBirthday(parent, kid)`); `ContactCard.kids` comes from CHILD links, so a
     kid is written once (not also as a relation).
 
+32. **Calendar suggestions (issue #45, D3).** Opt-in (`AppSettings.calendarSuggestions`, `calendarIds`, `calendarOnSince`:
+    device settings, stripped from exports and kept on restore). The `CalendarReader` port (`createCalendarReader()`:
+    `AndroidCalendarReader` over `CalendarContract.Instances` with `READ_CALENDAR` in the main manifest, `IosCalendarReader`
+    over EventKit full access, `CalendarReader.None` on the web) is only read through `ObserveCalendarEventsUseCase`, which
+    returns nothing while the feature is off, no calendar is ticked or access is missing. Events live in memory only:
+    never stored, never in a backup, never in an AI request. `CalendarSuggester` (pure) matches by attendee email and
+    `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
+    (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
+    friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
+    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
+    `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
+    (`:feature:agenda`, also a card on Coming up).
+
 ## Skills
 
 Recurring tasks are packaged as Claude Code skills in `.claude/skills/`:

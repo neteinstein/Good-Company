@@ -23,6 +23,7 @@ import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
@@ -46,6 +47,10 @@ object NotificationPlanner {
     /** Names spelled out in the weekly digest ("Ana, Rui and 3 more"). */
     const val DIGEST_NAMES = 3
 
+    /** The calendar summary comes at this hour, or a little after the day's last matched event ends. */
+    const val CALENDAR_HOUR = 20
+    const val CALENDAR_DELAY_MINUTES = 30
+
     private class CatchUp(val dueDate: LocalDate, val name: String, val idPrefix: String, val content: NotificationContent)
 
     fun plan(
@@ -62,6 +67,7 @@ object NotificationPlanner {
         interactions: List<Interaction> = emptyList(),
         policy: NudgePolicy = NudgePolicy(weeklyDigest = false),
         links: List<PersonLink> = emptyList(),
+        calendar: List<CalendarSuggestion> = emptyList(),
     ): List<PlannedNotification> {
         val today = now.toLocalDate(zone)
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
@@ -144,6 +150,20 @@ object NotificationPlanner {
         // --- Catch-up nudges, within a budget (see [NudgePolicy]).
         val quietness = policy.quietness(today, zone)
         if (quietness == NudgePolicy.Quietness.SILENT) return out.sortedBy { it.at }
+
+        // --- Calendar suggestions (D3): at most one summary a day, in the evening once that day's matched events are
+        // over. Within the same budget as catch-ups: silent when the app has been ignored for a long time.
+        calendar.filter { it.event.end > now }.groupBy { it.event.end.toLocalDate(zone) }.forEach { (day, items) ->
+            if (day > end) return@forEach
+            val evening = day.atTime(LocalTime(CALENDAR_HOUR, 0)).toInstant(zone)
+            val at = maxOf(evening, items.maxOf { it.event.end } + CALENDAR_DELAY_MINUTES.minutes)
+            val names = items.flatMap { s -> s.friends.map { it.name } }.distinct()
+            out += PlannedNotification(
+                "calendar:$day",
+                at,
+                NotificationContent.CalendarMeetups(names.take(DIGEST_NAMES), items.singleOrNull()?.event?.title, items.size),
+            )
+        }
 
         val catchUps = mutableListOf<CatchUp>()
         Relationships.meetupStatuses(friends, hangouts, today, zone, rules, interactions).forEach { s ->

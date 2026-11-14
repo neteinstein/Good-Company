@@ -39,6 +39,15 @@ data class AppSettings(
     val lastDriveBackupAt: Instant? = null,
     /** The circle ([FriendGroup] id) Home is filtered by; null = All. Remembered between launches. */
     val homeCircleFilter: String? = null,
+    /**
+     * Calendar suggestions (D3): off by default. Device-only like the AI key: never exported, kept on restore, and
+     * the events themselves are never stored anywhere.
+     */
+    val calendarSuggestions: Boolean = false,
+    /** The device calendars the app may read; none until the user ticks them. */
+    val calendarIds: List<String> = emptyList(),
+    /** When suggestions were last turned on: earlier events are shown under "Looking back". */
+    val calendarOnSince: Instant? = null,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 }

@@ -20,8 +20,9 @@ fun LogInteractionScreen(
     circleId: String? = null,
     /** Answering a plan's "Did you meet?" (`<planId>@<date>`, see [PlanOccurrence]). */
     plan: String? = null,
-    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId-$plan") {
-        parametersOf(friendIds, type, circleId, plan?.let(PlanOccurrence::decode))
+    prefill: LogPrefill = LogPrefill(),
+    viewModel: LogInteractionViewModel = koinViewModel(key = "log-${friendIds.joinToString { it.value }}-$type-$circleId-$plan-$prefill") {
+        parametersOf(friendIds, type, circleId, plan?.let(PlanOccurrence::decode), prefill)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

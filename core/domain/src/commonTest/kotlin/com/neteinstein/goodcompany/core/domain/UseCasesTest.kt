@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseCase
@@ -26,6 +27,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.WeeklyIdeasOutcome
+import com.neteinstein.goodcompany.core.testing.FakeCalendarDecisionRepository
+import com.neteinstein.goodcompany.core.testing.FakeCalendarReader
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
@@ -272,6 +275,8 @@ class UseCasesTest {
                     FakePlanRepository(),
                     FakeInteractionRepository(),
                     FakePersonLinkRepository(),
+                    ObserveCalendarEventsUseCase(settings, FakeCalendarReader(), clock),
+                    FakeCalendarDecisionRepository(),
                     scheduler,
                     FakeNotificationRenderer,
                     clock,

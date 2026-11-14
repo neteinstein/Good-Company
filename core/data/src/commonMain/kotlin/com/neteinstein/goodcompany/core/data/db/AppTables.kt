@@ -4,6 +4,8 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -43,6 +45,7 @@ internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
 internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
 internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
+internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
     groupBy(key).mapValues { (_, rows) -> rows.map { FriendId(friendId(it)) } }
@@ -391,4 +394,14 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             home_circle_filter = settings.homeCircleFilter,
         ),
     )
+}
+
+internal suspend fun GoodCompanyDatabase.readCalendarDecisions(): List<CalendarDecision> =
+    calendarDecisionQueries.allDecisions().awaitAsList().mapNotNull { row ->
+        // An unknown kind (from a newer app) is skipped rather than failing the whole list.
+        CalendarDecisionKind.entries.firstOrNull { it.name == row.kind }?.let { CalendarDecision(row.key, it, row.decided_at.toInstant()) }
+    }
+
+internal suspend fun GoodCompanyDatabase.writeCalendarDecision(decision: CalendarDecision) {
+    calendarDecisionQueries.upsertDecision(decision.key, decision.kind.name, decision.decidedAt.toColumn())
 }

@@ -526,4 +526,8 @@
         <item quantity="one">%1$d persona</item>
         <item quantity="other">%1$d personas</item>
     </plurals>
+    <string name="notif_calendar_one_title">¿Has visto a %1$s hoy?</string>
+    <string name="notif_calendar_one_body">«%1$s» estaba en tu calendario. Abre Good Company para registrarlo.</string>
+    <string name="notif_calendar_many_title">De tu calendario hoy</string>
+    <string name="notif_calendar_many_body">%1$s: abre Good Company para registrar las quedadas que hubo.</string>
 </resources>

@@ -115,4 +115,23 @@
         <item quantity="one">%1$d encontro</item>
         <item quantity="other">%1$d encontros</item>
     </plurals>
+    <string name="cal_title">Sugestões do calendário</string>
+    <string name="cal_switch">Sugerir encontros do meu calendário</string>
+    <string name="cal_switch_hint">Depois de um evento com alguém que conheces, a app propõe registá-lo.</string>
+    <string name="cal_choose">Calendários que a app pode ler</string>
+    <string name="cal_none_found">Não há calendários neste dispositivo.</string>
+    <string name="cal_pick_hint">Marca os calendários a ler. Nada é lido até o fazeres.</string>
+    <string name="cal_privacy">Os eventos são lidos só neste telemóvel. Nunca são enviados, nunca entram em cópias de segurança e nunca vão para a IA.</string>
+    <string name="cal_lookback">Quando ligas isto, a app também procura nos últimos dois meses encontros que não registaste.</string>
+    <string name="cal_web">As sugestões do calendário funcionam nas apps Android e iOS. Um browser não consegue ler o teu calendário.</string>
+    <string name="cal_access_needed">O acesso ao calendário está desligado, por isso não há nada para sugerir.</string>
+    <string name="cal_allow">Permitir acesso ao calendário</string>
+    <string name="cal_denied">Sem acesso ao calendário não há nada para sugerir.</string>
+    <plurals name="cal_see_suggestions">
+        <item quantity="one">Ver %1$d sugestão</item>
+        <item quantity="other">Ver %1$d sugestões</item>
+    </plurals>
+    <string name="cal_row_on">Ligado · só os calendários escolhidos</string>
+    <string name="cal_row_off">Desligado</string>
+    <string name="cal_row_web">Não disponível no browser</string>
 </resources>

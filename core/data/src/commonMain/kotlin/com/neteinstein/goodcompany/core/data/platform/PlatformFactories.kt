@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.data.platform
 import com.neteinstein.goodcompany.core.data.db.DatabaseDriverFactory
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
@@ -27,6 +28,9 @@ expect fun Scope.createContactsWriter(): ContactsWriter
 expect fun Scope.createLocationProvider(): LocationProvider
 
 expect fun Scope.createNotificationScheduler(): NotificationScheduler
+
+/** Reads the device calendars for calendar suggestions (D3): Android CalendarContract, iOS EventKit, none on the web. */
+expect fun Scope.createCalendarReader(): CalendarReader
 
 /**
  * SQLite driver per platform: Android `AndroidSqliteDriver`, iOS `NativeSqliteDriver`, web `WebWorkerDriver` over our
