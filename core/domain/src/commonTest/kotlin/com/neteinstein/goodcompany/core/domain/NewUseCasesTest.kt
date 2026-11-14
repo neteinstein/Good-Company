@@ -9,7 +9,6 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Place
@@ -200,15 +199,16 @@ class NewUseCasesTest {
                     ImportantEvent("e2", "Job interview", LocalDate(2026, 3, 12)),
                     ImportantEvent("e3", "Old thing", LocalDate(2025, 12, 1)),
                 ),
-                kids = listOf(Kid("k", "Leo", Birthday(3, 25, 2020)), Kid("m", "Mia", Birthday(9, 1))),
             )
         }
+        // Kids are people linked to Ana (F9); the topics get them from the links.
+        val kids = listOf(friend("k", "Leo") { copy(birthday = Birthday(3, 25, 2020)) }, friend("m", "Mia") { copy(birthday = Birthday(9, 1)) })
         val hangouts = listOf(
             Hangout("1", listOf(FriendId("ana")), at(2026, 3, 1), Place("Hot Clube"), note = "She's moving to Porto"),
             Hangout("2", listOf(FriendId("ana")), at(2026, 2, 1), note = " "),
             Hangout("3", listOf(FriendId("bob")), at(2026, 3, 2), note = "Not hers"),
         )
-        val topics = OfflineTopics.build(ana, hangouts, today, zone)
+        val topics = OfflineTopics.build(ana, hangouts, today, zone, kids)
         assertEquals(OfflineTopics.MAX, topics.size)
         assertEquals(TopicHint.EventFollowUp("Job interview", LocalDate(2026, 3, 12), isPast = false), topics[0])
         assertEquals(TopicHint.EventFollowUp("Knee surgery", LocalDate(2026, 3, 6), isPast = true), topics[1])

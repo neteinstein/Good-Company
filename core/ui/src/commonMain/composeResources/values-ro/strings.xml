@@ -504,4 +504,5 @@
     <string name="crop_title">Mută și scalează</string>
     <string name="crop_hint">Ciupește pentru zoom · trage pentru a muta</string>
     <string name="crop_use">Folosește fotografia</string>
+    <string name="kid_of">%2$s lui %1$s</string>
 </resources>

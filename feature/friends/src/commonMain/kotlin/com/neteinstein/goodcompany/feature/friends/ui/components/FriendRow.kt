@@ -33,6 +33,8 @@ import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
+import com.neteinstein.goodcompany.core.ui.l10n.kidOfLabel
+import com.neteinstein.goodcompany.core.ui.l10n.linkWord
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.row_added_in_app
@@ -79,7 +81,11 @@ fun FriendRow(
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(f.displayName, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val subtitle = summary.lastContact?.let { stringResource(Res.string.row_last_in_touch, relativePast(it, now, zone)) }
+            // F9: a kid's line says who they are ("Niece · Ana’s daughter") rather than when you were last in touch.
+            val kidOf = summary.parents.firstOrNull()?.let { parent ->
+                listOfNotNull(f.relationToMe?.let { linkWord(it, f.pronouns) }, kidOfLabel(f, parent)).joinToString(" · ")
+            }
+            val subtitle = kidOf ?: summary.lastContact?.let { stringResource(Res.string.row_last_in_touch, relativePast(it, now, zone)) }
                 ?: f.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_likes, it.joinToString(limit = 3)) }
                 ?: stringResource(if (f.contactId == null) Res.string.row_added_in_app else Res.string.row_from_contacts)
             Text(

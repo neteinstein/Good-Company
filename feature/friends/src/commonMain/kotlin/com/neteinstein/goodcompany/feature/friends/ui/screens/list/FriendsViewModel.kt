@@ -182,6 +182,8 @@ class FriendsViewModel(
         val filter = if (ui.filter == FriendFilter.CLOSE && everyone.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
         val matching = all
             .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
+            // F9: people with "Show in my list" off (friends' kids) stay out of the list unless searched for or in a circle.
+            .filter { q.isNotEmpty() || circle != null || it.friend.showInMyList }
             .filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
         val visible = when (ui.sort) {
             FriendSort.NAME -> matching.sortedBy { it.friend.displayName.lowercase() }

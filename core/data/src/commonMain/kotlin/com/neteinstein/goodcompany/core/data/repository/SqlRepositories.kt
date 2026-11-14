@@ -78,6 +78,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
+import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.russhwolf.settings.Settings
@@ -455,7 +456,9 @@ class SqlBackupRepository(private val db: AppDatabase, private val settings: Sql
  * Replaces every table with [backup], including the user preferences from its settings (device settings are the
  * caller's job). Call inside a transaction, so a failure leaves the old data in place.
  */
-internal suspend fun GoodCompanyDatabase.replaceAllData(backup: Backup) {
+internal suspend fun GoodCompanyDatabase.replaceAllData(data: Backup) {
+    // Kids kept the old way (an old backup, the old JSON store) come in as people (issue #40).
+    val backup = KidsAsPeople.convert(data)
     // Friends first: deleting them clears every join table, and everything else refers to them.
     friendQueries.deleteAll()
     hangoutQueries.deleteAll()

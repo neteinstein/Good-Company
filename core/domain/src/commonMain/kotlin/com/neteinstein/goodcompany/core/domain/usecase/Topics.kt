@@ -45,9 +45,9 @@ object OfflineTopics {
 
     /**
      * Up to [MAX] hints, most timely first: recent big days and what's coming up, notes from your last meetups,
-     * kids' and relatives' birthdays, newly added interests, then a couple of their tastes (rotating weekly so the list doesn't feel static).
+     * [kids]' (F9: people linked as their child) and relatives' birthdays, newly added interests, then a couple of their tastes (rotating weekly so the list doesn't feel static).
      */
-    fun build(friend: Friend, hangouts: List<Hangout>, today: LocalDate, zone: TimeZone): List<TopicHint> {
+    fun build(friend: Friend, hangouts: List<Hangout>, today: LocalDate, zone: TimeZone, kids: List<Friend> = emptyList()): List<TopicHint> {
         val out = mutableListOf<TopicHint>()
         friend.importantEvents
             .filter { it.date in today.minus(EVENT_PAST_DAYS, DateTimeUnit.DAY)..today.plus(EVENT_SOON_DAYS, DateTimeUnit.DAY) }
@@ -57,7 +57,7 @@ object OfflineTopics {
             .sortedByDescending { it.at }
             .take(NOTES)
             .forEach { h -> out += TopicHint.FromNote(h.note.trim(), h.at.toLocalDate(zone), h.place?.label) }
-        friend.kids.forEach { kid ->
+        kids.forEach { kid ->
             val b = kid.birthday ?: return@forEach
             val next = b.nextOccurrence(today)
             if (today.daysUntil(next) <= KID_BIRTHDAY_DAYS) out += TopicHint.KidBirthday(kid.name, next, b.ageOn(next))

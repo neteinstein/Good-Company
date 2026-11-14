@@ -12,6 +12,8 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -19,6 +21,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -39,6 +42,8 @@ data class FriendSummary(
     val meetupOverdue: Boolean,
     val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
     val cadenceDays: Int? = null,
+    /** Their parents among your people (F9): a kid's row says whose kid they are. */
+    val parents: List<Friend> = emptyList(),
 )
 
 /** Friends sorted close-friends-first, then alphabetically, with last-seen/contact info attached. */
@@ -47,6 +52,7 @@ class ObserveFriendsUseCase(
     private val hangouts: HangoutRepository,
     private val interactions: InteractionRepository,
     private val settings: SettingsRepository,
+    private val links: PersonLinkRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(): Flow<List<FriendSummary>> = combine(
@@ -54,7 +60,9 @@ class ObserveFriendsUseCase(
         hangouts.hangouts,
         interactions.interactions,
         settings.settings,
-    ) { all, hs, ints, s ->
+        links.links,
+    ) { all, hs, ints, s, ls ->
+        val parents = KidsAsPeople.parentsById(ls, all)
         val today = clock.today()
         val rules = CadenceRules.from(s)
         val seen = Relationships.lastSeen(hs)
@@ -71,6 +79,7 @@ class ObserveFriendsUseCase(
                 meetupOverdue = f.id in overdue,
                 warmth = Warmth.score(f, hs, ints, cadence, today, clock.timeZone),
                 cadenceDays = cadence,
+                parents = parents[f.id].orEmpty(),
             )
         }.sortedWith(compareByDescending<FriendSummary> { it.friend.isCloseFriend }.thenBy { it.friend.displayName.lowercase() })
     }
@@ -101,6 +110,10 @@ data class FriendDetail(
     val timeline: List<TimelineEntry> = emptyList(),
     /** The newest journal entry: "last time you talked about…". */
     val lastJournal: JournalEntry? = null,
+    /** Their kids (F9): people linked to them as their child, in the order they were added. */
+    val kids: List<LinkedPerson> = emptyList(),
+    /** Their parents among your people (F9): set for a kid, whose page then offers "Show in my list". */
+    val parents: List<Friend> = emptyList(),
 )
 
 class ObserveFriendDetailUseCase(
@@ -111,6 +124,7 @@ class ObserveFriendDetailUseCase(
     private val settings: SettingsRepository,
     private val groups: GroupRepository,
     private val plans: PlanRepository,
+    private val links: PersonLinkRepository,
     private val clock: AppClock,
 ) {
     operator fun invoke(id: FriendId): Flow<FriendDetail?> = combine(
@@ -123,11 +137,12 @@ class ObserveFriendDetailUseCase(
             settings.settings,
             groups.groups,
             plans.plans,
-            combine(interactions.journal, interactions.attachments, ::Pair),
-        ) { i, s, g, p, ja -> Extras(i, s, g, p, ja.first, ja.second) },
-    ) { all, hs, ints, msgs, (ideaList, s, gs, ps, journal, attachments) ->
+            combine(interactions.journal, interactions.attachments, links.links, ::Triple),
+        ) { i, s, g, p, jal -> Extras(i, s, g, p, jal.first, jal.second, jal.third) },
+    ) { all, hs, ints, msgs, (ideaList, s, gs, ps, journal, attachments, ls) ->
         val friend = all.firstOrNull { it.id == id } ?: return@combine null
         val byId = all.associateBy { it.id }
+        val kids = KidsAsPeople.kidsOf(id, ls, byId)
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
         val byType = ints.filter { it.friendId == id }.groupBy { it.type }.mapValues { (_, v) -> v.maxOf { it.at } }
             .toMutableMap()
@@ -143,12 +158,14 @@ class ObserveFriendDetailUseCase(
             cadenceDays = CadenceRules.from(s).cadenceFor(friend),
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
-            topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone),
+            topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone, kids.map { it.person }),
             plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
             others = all.filter { it.id != id }.sortedBy { it.displayName.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
             timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone, attachments),
             lastJournal = journal.filter { it.friendId == id }.maxByOrNull { it.at },
+            kids = kids,
+            parents = KidsAsPeople.parentsOf(id, ls, byId),
         )
     }
 
@@ -167,6 +184,7 @@ class ObserveFriendDetailUseCase(
         val plans: List<Plan>,
         val journal: List<JournalEntry>,
         val attachments: List<Attachment>,
+        val links: List<PersonLink>,
     )
 }
 

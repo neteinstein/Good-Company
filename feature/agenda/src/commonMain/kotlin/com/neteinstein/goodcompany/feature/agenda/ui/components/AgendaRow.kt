@@ -110,14 +110,14 @@ fun AgendaRow(
             Icons.Rounded.ChildCare,
             Color(0xFF00A88F),
             stringResource(Res.string.label_kid_birthday),
-            stringResource(Res.string.row_kid, item.kid.name, item.parent.displayName.substringBefore(' ')),
+            stringResource(Res.string.row_kid, item.kid.displayName, item.parent.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
-                (item.parent.gifts.filter { it.isIdea && it.forKidId == item.kid.id }.map { it.title } + item.kid.likes)
+                (item.kid.gifts.filter { it.isIdea }.map { it.title } + item.kid.likes)
                     .takeIf { it.isNotEmpty() }
                     ?.let { stringResource(Res.string.row_gift_idea, it.joinToString(limit = 2)) },
             ).joinToString(" · "),
-            item.parent,
+            item.kid,
         )
         is AgendaItem.RelativeBirthday -> Spec(
             Icons.Rounded.Cake,

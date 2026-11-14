@@ -200,4 +200,6 @@ class PersonLinkUseCases(
     val setRelationToMe: SetRelationToMeUseCase,
     val setPronouns: SetPronounsUseCase,
     val addRelativeAsPerson: AddRelativeAsPersonUseCase,
+    val addKid: AddKidUseCase,
+    val setShowInMyList: SetShowInMyListUseCase,
 )

@@ -5,6 +5,8 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -51,6 +53,23 @@ class FriendsViewModelTest {
         g.setHomeCircleFilter,
         g.clock,
     )
+
+    @Test
+    fun friendsKidsStayOutOfTheList_unlessSearchedForOrFamily() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana") { copy(kids = listOf(Kid("leo", "Leo"))) },
+                friend("rui") { copy(relationToMe = LinkType.SIBLING, kids = listOf(Kid("mia", "Mia"))) },
+            ),
+        )
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        // Rui is family, so his daughter shows; Ana's son doesn't.
+        assertEquals(listOf("Ana", "Mia", "Rui"), state.value.friends.map { it.friend.name })
+        assertEquals(listOf("Rui"), state.value.friends.single { it.friend.name == "Mia" }.parents.map { it.name })
+        vm.onQueryChange("le")
+        assertEquals(listOf("Leo"), state.value.friends.map { it.friend.name })
+    }
 
     @Test
     fun aCircleFiltersEveryHomeSection_andIsRemembered() = runViewModelTest {

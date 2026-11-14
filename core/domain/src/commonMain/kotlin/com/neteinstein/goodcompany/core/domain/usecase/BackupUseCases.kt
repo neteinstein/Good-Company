@@ -39,8 +39,9 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
             ?.takeIf { it.format == Backup.FORMAT && it.version <= Backup.VERSION }
             ?: return RestoreResult.NotABackup
         val current = backups.snapshot().settings
+        // An old backup's kids come back as people (F9).
         backups.restore(
-            backup.copy(
+            KidsAsPeople.convert(backup).copy(
                 settings = backup.settings.copy(
                     aiApiKey = current.aiApiKey,
                     appLock = current.appLock,

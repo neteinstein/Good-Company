@@ -102,9 +102,9 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
             item.turning?.let { stringResource(Res.string.card_turns, it) } ?: stringResource(Res.string.card_say_hi),
         )
         is AgendaItem.KidBirthday -> Spec(
-            item.parent,
+            item.kid,
             Icons.Rounded.ChildCare,
-            stringResource(Res.string.card_birthday, item.kid.name),
+            stringResource(Res.string.card_birthday, item.kid.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.card_turns, it) },
                 item.kid.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },

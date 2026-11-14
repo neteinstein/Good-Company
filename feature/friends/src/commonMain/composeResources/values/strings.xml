@@ -527,4 +527,11 @@
     <string name="birthday_remind">Remind me of %1$s’s birthday</string>
     <string name="birthday_remind_hint">On for everyone with a birthday. Turn it off here for one person.</string>
     <string name="birthday_remove">Remove birthday</string>
+    <!-- Kids are people (issue #40, F9). -->
+    <string name="kid_add_title">Add %1$s’s kid</string>
+    <string name="show_in_my_list">Show in my list</string>
+    <string name="kid_show_hint_family">On because %1$s is family. Off by default for friends’ kids.</string>
+    <string name="kid_show_hint_friend">Off by default for friends’ kids: they still show on %1$s’s page and in birthdays.</string>
+    <string name="show_in_my_list_hint">Off: they still show on %1$s’s page and in birthdays.</string>
+    <string name="show_in_my_list_hint_any">Off: they still show on the pages they’re linked to and in birthdays.</string>
 </resources>

@@ -480,4 +480,6 @@
     <string name="crop_title">Move and scale</string>
     <string name="crop_hint">Pinch to zoom · drag to move</string>
     <string name="crop_use">Use photo</string>
+    <!-- Kids are people (issue #40): the line under a kid’s name, "Ana’s daughter" (parent, kid word). -->
+    <string name="kid_of">%1$s’s %2$s</string>
 </resources>

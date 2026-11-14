@@ -316,7 +316,9 @@ class PersonLinksTest {
             link("3", ana, FriendId("ghost"), LinkType.FRIEND),
         )
         val card = ContactCard.from(r, links, people)
-        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE), CardLink("Leonor", LinkType.CHILD)), card.links)
+        // Leonor is Rui's kid: written once, as a child row, not also as a relation.
+        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE)), card.links)
+        assertEquals(listOf("Leonor"), card.kids.map { it.name })
         assertTrue(card.hasExtras)
         assertEquals(listOf(CardLink("Rui", LinkType.DATING, Pronouns.HE)), ContactCard.from(a, links, people).links)
         assertTrue(ContactCard.from(r).links.isEmpty())

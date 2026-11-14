@@ -3,17 +3,19 @@ package com.neteinstein.goodcompany.core.data
 import com.neteinstein.goodcompany.core.data.repository.FriendRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CardEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -30,12 +32,13 @@ class ContactWriteBackTest {
         friend(id) { copy(contactId = "c-$id") }.block()
 
     @Test
-    fun addingKidsEventsAndNotes_writesThemToTheContact() = runTest {
-        repo.upsert(contactFriend { copy(kids = listOf(Kid("k1", "Maria", Birthday(3, 9, 2018))), notes = "Met at uni") })
+    fun addingEventsAndNotes_writesThemToTheContact() = runTest {
+        // Kids are people linked to their parent (issue #40); SqlRepositoryContractTest covers writing them.
+        val wedding = ImportantEvent("e1", "Wedding", LocalDate(2026, 9, 3))
+        repo.upsert(contactFriend { copy(importantEvents = listOf(wedding), notes = "Met at uni") })
 
         val card = writer.written.getValue(FriendId("ana"))
-        assertEquals(listOf("Maria"), card.kids.map { it.name })
-        assertEquals(Birthday(3, 9, 2018), card.kids.single().birthday)
+        assertEquals(listOf(CardEvent("Wedding", LocalDate(2026, 9, 3))), card.events)
         assertEquals("Met at uni", card.notes)
         assertEquals("c-ana", writer.contactIds[FriendId("ana")])
     }
@@ -56,13 +59,13 @@ class ContactWriteBackTest {
 
     @Test
     fun clearingDetails_neverTakesAnythingOffTheContact() = runTest {
-        val withKid = contactFriend { copy(kids = listOf(Kid("k1", "Maria")), notes = "Met at uni") }
-        repo.upsert(withKid)
-        repo.upsert(withKid.copy(kids = emptyList(), notes = ""))
+        val withLikes = contactFriend { copy(likes = listOf("Maria"), notes = "Met at uni") }
+        repo.upsert(withLikes)
+        repo.upsert(withLikes.copy(likes = emptyList(), notes = ""))
 
         // Nothing is written for an empty card, and the earlier write is left exactly as it was.
         assertEquals(1, writer.writes)
-        assertEquals(listOf("Maria"), writer.written.getValue(FriendId("ana")).kids.map { it.name })
+        assertEquals(listOf("Maria"), writer.written.getValue(FriendId("ana")).likes)
     }
 
     @Test
@@ -74,7 +77,7 @@ class ContactWriteBackTest {
 
     @Test
     fun manualFriends_haveNoContactToWriteTo() = runTest {
-        repo.upsert(friend("manual") { copy(kids = listOf(Kid("k1", "Maria"))) })
+        repo.upsert(friend("manual") { copy(likes = listOf("Maria")) })
         assertEquals(0, writer.writes)
     }
 
@@ -86,13 +89,13 @@ class ContactWriteBackTest {
 
     @Test
     fun deletingAFriend_leavesTheirDataOnTheContact() = runTest {
-        val f = contactFriend { copy(kids = listOf(Kid("k1", "Maria"))) }
+        val f = contactFriend { copy(likes = listOf("Maria")) }
         repo.upsert(f)
         repo.delete(f.id)
 
         assertTrue(repo.friends.first().isEmpty())
         assertEquals(1, writer.writes)
-        assertEquals(listOf("Maria"), writer.written.getValue(f.id).kids.map { it.name })
+        assertEquals(listOf("Maria"), writer.written.getValue(f.id).likes)
     }
 
     @Test
@@ -107,7 +110,7 @@ class ContactWriteBackTest {
         // Details saved while the contact wasn't writable (e.g. before the permission was granted).
         repo.replaceAll(
             listOf(
-                contactFriend("kid") { copy(kids = listOf(Kid("k1", "Maria"))) },
+                contactFriend("kid") { copy(likes = listOf("Maria")) },
                 contactFriend("bday") { copy(birthday = Birthday(1, 2)) },
                 contactFriend("gone") { copy(notes = "x", isOrphaned = true) },
                 friend("manual") { copy(notes = "x") },

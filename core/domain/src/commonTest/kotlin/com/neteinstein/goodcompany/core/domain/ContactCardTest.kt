@@ -5,7 +5,8 @@ import com.neteinstein.goodcompany.core.domain.model.CardEvent
 import com.neteinstein.goodcompany.core.domain.model.CardKid
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -35,23 +36,26 @@ class ContactCardTest {
     fun keepsOnlyWhatAContactCanHold() {
         val f = friend("ana") {
             copy(
-                kids = listOf(Kid("k1", "Maria", Birthday(3, 9, 2018), likes = listOf("lego")), Kid("k2", "  ")),
                 importantEvents = listOf(ImportantEvent("e1", "Surgery", LocalDate(2026, 12, 1), remindDaysBefore = 3)),
                 meetEveryDays = 30,
                 isCloseFriend = true,
             )
         }
-        val card = ContactCard.from(f)
+        // Kids are people linked as Ana's children (F9): written as kids, with their birthday.
+        val kids = listOf(friend("k1", "Maria") { copy(birthday = Birthday(3, 9, 2018), likes = listOf("lego")) }, friend("k2", "  "))
+        val links = kids.map { PersonLink("l-${it.id.value}", f.id, it.id, LinkType.CHILD) }
+        val card = ContactCard.from(f, links, (kids + f).associateBy { it.id })
         // Nameless kids are dropped; a kid's likes and an event's reminder lead time have no slot on a contact.
         assertEquals(listOf(CardKid("Maria", Birthday(3, 9, 2018))), card.kids)
         assertEquals(listOf(CardEvent("Surgery", LocalDate(2026, 12, 1))), card.events)
+        assertTrue(card.links.isEmpty()) // a kid isn't written twice (as a kid and as a link)
         assertTrue(card.hasExtras)
     }
 
     @Test
     fun changesThatDontShowOnTheContact_leaveTheCardEqual() {
-        val base = friend("ana") { copy(kids = listOf(Kid("k1", "Maria"))) }
-        val tweaked = base.copy(isCloseFriend = true, meetEveryDays = 14, kids = listOf(Kid("k1", "Maria", likes = listOf("lego"))))
+        val base = friend("ana") { copy(notes = "Met at uni") }
+        val tweaked = base.copy(isCloseFriend = true, meetEveryDays = 14, showInMyList = false)
         assertEquals(ContactCard.from(base), ContactCard.from(tweaked))
     }
 

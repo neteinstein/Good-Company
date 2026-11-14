@@ -36,6 +36,8 @@ CREATE TABLE friend (
     pronouns TEXT,
     -- F19: the name given in the app; it wins over `name` (the contact's), which a contacts sync keeps updating.
     custom_name TEXT,
+    -- Issue #40 (F9): shown in the main A–Z list (0/1). Off for friends' kids.
+    show_in_my_list INTEGER NOT NULL DEFAULT 1,
     CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
 );
 
@@ -72,28 +74,6 @@ CREATE TABLE friend_occasion (
     PRIMARY KEY (friend_id, occasion)
 );
 
-CREATE TABLE kid (
-    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
-    id TEXT NOT NULL,
-    position INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
-    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
-    birthday_year INTEGER,
-    added_at INTEGER,
-    PRIMARY KEY (friend_id, id),
-    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
-);
-
-CREATE TABLE kid_like (
-    friend_id TEXT NOT NULL,
-    kid_id TEXT NOT NULL,
-    position INTEGER NOT NULL,
-    liked TEXT NOT NULL,
-    PRIMARY KEY (friend_id, kid_id, position),
-    FOREIGN KEY (friend_id, kid_id) REFERENCES kid(friend_id, id) ON DELETE CASCADE
-);
-
 CREATE TABLE important_event (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     id TEXT NOT NULL,
@@ -107,21 +87,19 @@ CREATE TABLE important_event (
 
 CREATE INDEX important_event_date ON important_event(date);
 
--- A gift idea (given_on null) or a gift given. for_kid_id points at one of this friend's kids. url and price come
--- from a shop link shared as a gift idea (F17).
+-- A gift idea (given_on null) or a gift given. url and price come from a shop link shared as a gift idea (F17).
+-- A kid's gifts are on the kid's own row since kids are people (issue #40).
 CREATE TABLE gift (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     id TEXT NOT NULL,
     position INTEGER NOT NULL,
     title TEXT NOT NULL,
     note TEXT NOT NULL,
-    for_kid_id TEXT,
     given_on TEXT,
     occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
     url TEXT,
     price TEXT,
-    PRIMARY KEY (friend_id, id),
-    FOREIGN KEY (friend_id, for_kid_id) REFERENCES kid(friend_id, id)
+    PRIMARY KEY (friend_id, id)
 );
 
 CREATE TABLE life_update (
@@ -178,7 +156,7 @@ CREATE TABLE friend_email (
     PRIMARY KEY (friend_id, position)
 );
 
--- Family other than kids (kids keep their own table).
+-- Family named inside a friend (partner, parents, siblings, pets…). Kids are people linked as CHILD (issue #40).
 CREATE TABLE relative (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     id TEXT NOT NULL,
@@ -228,12 +206,6 @@ SELECT * FROM friend_taste ORDER BY friend_id, kind, position;
 allOccasions:
 SELECT * FROM friend_occasion ORDER BY friend_id, position;
 
-allKids:
-SELECT * FROM kid ORDER BY friend_id, position;
-
-allKidLikes:
-SELECT * FROM kid_like ORDER BY friend_id, kid_id, position;
-
 allEvents:
 SELECT * FROM important_event ORDER BY friend_id, position;
 
@@ -281,7 +253,7 @@ INSERT INTO friend (
     id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
     notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
     job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel,
-    relation_to_me, pronouns, custom_name
+    relation_to_me, pronouns, custom_name, show_in_my_list
 ) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     position = excluded.position,
@@ -309,7 +281,8 @@ ON CONFLICT (id) DO UPDATE SET
     preferred_channel = excluded.preferred_channel,
     relation_to_me = excluded.relation_to_me,
     pronouns = excluded.pronouns,
-    custom_name = excluded.custom_name;
+    custom_name = excluded.custom_name,
+    show_in_my_list = excluded.show_in_my_list;
 
 delete:
 DELETE FROM friend WHERE id = ?;
@@ -317,14 +290,12 @@ DELETE FROM friend WHERE id = ?;
 deleteAll:
 DELETE FROM friend;
 
--- Replacing a friend's children: delete them all (gifts before kids, items before feeds, likes before relatives), then insert the new lists.
+-- Replacing a friend's children: delete them all (items before feeds, likes before relatives), then insert the new lists.
 deleteChildren {
     DELETE FROM friend_phone WHERE friend_id = :friendId;
     DELETE FROM friend_taste WHERE friend_id = :friendId;
     DELETE FROM friend_occasion WHERE friend_id = :friendId;
     DELETE FROM gift WHERE friend_id = :friendId;
-    DELETE FROM kid_like WHERE friend_id = :friendId;
-    DELETE FROM kid WHERE friend_id = :friendId;
     DELETE FROM important_event WHERE friend_id = :friendId;
     DELETE FROM life_update WHERE friend_id = :friendId;
     DELETE FROM feed_item WHERE friend_id = :friendId;
@@ -345,12 +316,6 @@ INSERT OR REPLACE INTO friend_taste VALUES ?;
 
 insertOccasion:
 INSERT OR REPLACE INTO friend_occasion VALUES ?;
-
-insertKid:
-INSERT OR REPLACE INTO kid VALUES ?;
-
-insertKidLike:
-INSERT OR REPLACE INTO kid_like VALUES ?;
 
 insertEvent:
 INSERT OR REPLACE INTO important_event VALUES ?;
