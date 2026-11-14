@@ -458,7 +458,7 @@ Backlog rows F1–F3 in [`BACKLOG_V1.md`](../BACKLOG_V1.md); decisions dated 202
 - Remove the `ExtendedFloatingActionButton` from `FriendsContent`; add "Add friend" as the first ⋮ item, calling the
   same `openAdd` (sheet of `AddFriendOption`s; web goes straight to the name dialog). Drop the 88 dp bottom padding.
 - The empty state keeps its own add button.
-- Open question: the Agenda's "New reminder" FAB (default: unchanged until the owner says otherwise).
+- The Agenda's "New reminder" FAB stays as it is (owner, 2026-11-14).
 - Done when: no FAB on Home on any platform, adding works from ⋮, screenshots refreshed (`capture-screenshots`).
 
 ## I15 · Snackbars always close and can be dismissed
