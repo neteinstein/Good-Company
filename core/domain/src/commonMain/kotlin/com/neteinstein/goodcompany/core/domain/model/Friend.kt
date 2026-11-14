@@ -160,6 +160,10 @@ data class Gift(
     val forKidId: String? = null,
     val givenOn: LocalDate? = null,
     val occasion: GiftOccasion? = null,
+    /** F17: the shop link a gift idea was shared from (never fetched). */
+    val url: String? = null,
+    /** F17: an optional price the user typed, as written ("€35"). */
+    val price: String? = null,
 ) {
     val isIdea: Boolean get() = givenOn == null
 }

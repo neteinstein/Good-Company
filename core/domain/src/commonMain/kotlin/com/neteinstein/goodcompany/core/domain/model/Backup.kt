@@ -22,6 +22,8 @@ data class Backup(
     val interactions: List<Interaction> = emptyList(),
     val messages: List<ConversationMessage> = emptyList(),
     val journal: List<JournalEntry> = emptyList(),
+    /** Shared attachments (D6): thumbnails and gallery references, never full photos. */
+    val attachments: List<Attachment> = emptyList(),
     val ideas: List<Idea> = emptyList(),
     val groups: List<FriendGroup> = emptyList(),
     val plans: List<Plan> = emptyList(),

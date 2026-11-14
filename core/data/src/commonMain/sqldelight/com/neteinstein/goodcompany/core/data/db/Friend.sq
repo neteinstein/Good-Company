@@ -101,7 +101,8 @@ CREATE TABLE important_event (
 
 CREATE INDEX important_event_date ON important_event(date);
 
--- A gift idea (given_on null) or a gift given. for_kid_id points at one of this friend's kids.
+-- A gift idea (given_on null) or a gift given. for_kid_id points at one of this friend's kids. url and price come
+-- from a shop link shared as a gift idea (F17).
 CREATE TABLE gift (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
     id TEXT NOT NULL,
@@ -111,6 +112,8 @@ CREATE TABLE gift (
     for_kid_id TEXT,
     given_on TEXT,
     occasion TEXT CHECK (occasion IN ('BIRTHDAY', 'CHRISTMAS', 'THANK_YOU', 'JUST_BECAUSE')),
+    url TEXT,
+    price TEXT,
     PRIMARY KEY (friend_id, id),
     FOREIGN KEY (friend_id, for_kid_id) REFERENCES kid(friend_id, id)
 );

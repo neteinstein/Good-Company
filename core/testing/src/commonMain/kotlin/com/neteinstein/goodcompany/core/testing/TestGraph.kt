@@ -8,6 +8,12 @@ import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveShareTargetsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -136,6 +142,15 @@ class TestGraph(
     val checkIn = CheckInUseCase(hangoutRepo, clock, ids)
     val logInteraction = LogInteractionUseCase(checkIn, interactionRepo, clock, ids)
     val undoLog = UndoLogUseCase(hangoutRepo, interactionRepo)
+
+    /** Turns any picture into its first 16 bytes, so a test can tell a thumbnail from the shared image. */
+    val thumbnailShrinker = PhotoShrinker { it.copyOf(minOf(it.size, 16)) }
+    val saveShared = SaveSharedUseCase(friendRepo, groupRepo, interactionRepo, logInteraction, thumbnailShrinker, clock, ids)
+    val undoSaveShare = UndoSaveShareUseCase(friendRepo, interactionRepo, undoLog)
+    val observeShareTargets = ObserveShareTargetsUseCase(friendRepo, hangoutRepo, interactionRepo, groupRepo)
+    val observeAttachments = ObserveAttachmentsUseCase(interactionRepo, groupRepo)
+    val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)
+    val restoreAttachment = RestoreAttachmentUseCase(interactionRepo)
     val observeActivities = ObserveActivitiesUseCase(hangoutRepo)
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
     val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)

@@ -1,6 +1,24 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
+import com.neteinstein.goodcompany.core.domain.model.PhotoRef
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.SaveShareRequest
+import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
+import com.neteinstein.goodcompany.core.domain.usecase.ShareGuess
+import com.neteinstein.goodcompany.core.domain.usecase.ShareGuesser
+import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
+import com.neteinstein.goodcompany.core.domain.usecase.ShareTarget
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.FriendFeed
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -15,9 +33,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ShareMatcher
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -56,11 +77,187 @@ class ShareAndFeedsTest {
     @Test
     fun friendsNamedInTheShareComeFirst() {
         val content = SharedContent(text = "Look what Ana posted!", url = "https://instagram.com/beatrizrocha/p/1")
-        assertEquals(listOf("ana", "bea", "rui"), ShareMatcher.rank(listOf(rui, bea, ana), content).map { it.id.value })
+        assertEquals(listOf("ana", "bea", "rui"), ShareMatcher.rank(listOf(rui, bea, ana), content).map { it.friend.id.value })
+        assertEquals(ShareReason.MENTIONED, ShareMatcher.rank(listOf(ana), content).single().reason)
         assertEquals(setOf(ana.id, bea.id), ShareMatcher.mentions(listOf(rui, bea, ana), content))
         // Nobody named: real friends first, then A–Z.
-        assertEquals(listOf("rui", "ana", "bea"), ShareMatcher.rank(listOf(bea, rui, ana), SharedContent(text = "hello")).map { it.id.value })
+        assertEquals(
+            listOf("rui", "ana", "bea"),
+            ShareMatcher.rank(listOf(bea, rui, ana), SharedContent(text = "hello")).map { it.friend.id.value },
+        )
         assertTrue(ShareMatcher.mentions(listOf(ana), SharedContent(image = SharedImage(byteArrayOf(1), "image/png"))).isEmpty())
+        // The link's title counts too.
+        assertEquals(ShareReason.MENTIONED, ShareMatcher.rank(listOf(bea), SharedContent(url = "https://x.y", title = "Beatriz Rocha's trail")).single().reason)
+    }
+
+    @Test
+    fun aNumberInTheTextThenRecentPeopleRankNext() {
+        val carla = friend("carla", "Carla Nunes") { copy(phoneNumbers = listOf("+351 912 345 678")) }
+        val now = at(2026, 3, 10, 18)
+        val last = mapOf(bea.id to at(2026, 3, 10, 9), ana.id to at(2026, 3, 1), rui.id to at(2026, 2, 1))
+        val content = SharedContent(text = "Call me on 912-345-678 tomorrow")
+        val ranked = ShareMatcher.rank(listOf(rui, ana, bea, carla), content, last, now)
+        assertEquals(listOf("carla", "bea", "ana", "rui"), ranked.map { it.friend.id.value })
+        assertEquals(listOf(ShareReason.NUMBER, ShareReason.SEEN_TODAY, ShareReason.RECENT, null), ranked.map { it.reason })
+        // A number that is nobody's ranks nobody; short digit runs are not numbers.
+        assertNull(ShareMatcher.rank(listOf(carla), SharedContent(text = "Room 12, 2026"), emptyMap(), now).single().reason)
+        assertEquals(setOf("912345678"), PhoneMatcher.keysIn("ring +351 912 345 678 or 112"))
+    }
+
+    @Test
+    fun guessesTheKindAndHowItCounts() {
+        val photo = SharedContent(image = SharedImage(byteArrayOf(1), "image/jpeg"), takenOn = LocalDate(2026, 3, 8))
+        assertEquals(ShareGuess(ShareChoice.INTERACTION, LogKind.MEETUP, LocalDate(2026, 3, 8)), ShareGuesser.guess(photo))
+        assertEquals(AttachmentKind.PHOTO, photo.kind)
+
+        val link = SharedContent(text = "https://wikiloc.com/t/1", url = "https://wikiloc.com/t/1", title = "Gerês trail")
+        assertEquals(AttachmentKind.LINK, link.kind)
+        assertEquals(ShareChoice.NOTE, ShareGuesser.guess(link).choice)
+        assertEquals("Gerês trail", link.draft())
+
+        val chat = SharedContent(text = "Ok so the job in Porto is confirmed, moving in March, need help with the van")
+        assertEquals(AttachmentKind.TEXT, chat.kind)
+        assertEquals(ShareGuess(ShareChoice.INTERACTION, LogKind.MESSAGE, null), ShareGuesser.guess(chat))
+        assertTrue(ShareGuesser.isChatLike("[13/11/26, 13:02] Rui: hi\n" + "long line ".repeat(100)))
+        assertTrue(ShareGuesser.isChatLike("Rui: are you coming?\n" + "x\n".repeat(10)))
+
+        val recipe = SharedContent(text = (1..12).joinToString("\n") { "Step $it: stir the pot well and wait" })
+        assertEquals(ShareChoice.NOTE, ShareGuesser.guess(recipe).choice)
+        assertFalse(ShareGuesser.isChatLike("  "))
+        // Text that only mentions a link stays text.
+        assertEquals(AttachmentKind.TEXT, SharedContent(text = "Look at this https://x.y", url = "https://x.y").kind)
+    }
+
+    @Test
+    fun savingAPhotoThatCountsLogsAMeetupAndKeepsAThumbnailAndTheReference() = runTest {
+        val g = TestGraph(listOf(ana))
+        val image = SharedImage(ByteArray(ContactPhoto.MAX_BYTES + 1) { 7 }, "image/jpeg")
+        val ref = PhotoRef(PhotoPlatform.ANDROID, "content://picker/1")
+        val result = g.saveShared(
+            SaveShareRequest(
+                ShareTarget.Person(ana.id),
+                SharedContent(image = image, photoRef = ref),
+                ShareChoice.INTERACTION,
+                LogKind.MEETUP,
+                date = LocalDate(2026, 3, 8),
+                caption = " Lunch at Ramiro ",
+            ),
+        )
+        val hangout = g.hangoutRepo.hangouts.value.single()
+        assertEquals(listOf(ana.id), hangout.friendIds)
+        assertEquals("Lunch at Ramiro", hangout.note)
+        val a = assertNotNull(result.attachment)
+        assertEquals(a, g.interactionRepo.attachments.value.single())
+        assertEquals(AttachmentKind.PHOTO, a.kind)
+        assertEquals(ref, a.photoRef)
+        assertEquals(16, assertNotNull(a.thumbnail).bytes().size, "only a thumbnail is kept")
+        assertEquals(hangout.id, a.logId)
+        assertEquals(hangout.at, a.at)
+        assertEquals(InteractionType.MEETUP, a.interactionType)
+        assertTrue(a.countsAsInteraction)
+        assertEquals(g.clock.now(), a.createdAt)
+        assertEquals(hangout.at, Relationships.lastContact(g.hangoutRepo.hangouts.value, emptyList())[ana.id])
+
+        g.undoSaveShare(result)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertTrue(g.interactionRepo.attachments.value.isEmpty())
+    }
+
+    @Test
+    fun savingTextAsAMessageLogsAShareInteraction_andANoteLogsNothing() = runTest {
+        val g = TestGraph(listOf(ana))
+        val long = "x".repeat(Attachment.MAX_TEXT + 50)
+        val counted = g.saveShared(SaveShareRequest(ShareTarget.Person(ana.id), SharedContent(text = long), ShareChoice.INTERACTION, LogKind.MESSAGE))
+        val interaction = g.interactionRepo.interactions.value.single()
+        assertEquals(InteractionSource.SHARE, interaction.source)
+        assertEquals(InteractionType.MESSAGE, interaction.type)
+        assertEquals(interaction.id, counted.attachment?.logId)
+        assertEquals(Attachment.MAX_TEXT, counted.attachment?.text?.length, "text is capped")
+
+        val note = g.saveShared(
+            SaveShareRequest(
+                ShareTarget.Person(ana.id),
+                SharedContent(text = "https://r.example/ramen", url = "https://r.example/ramen", title = "Ramen"),
+                ShareChoice.NOTE,
+                date = LocalDate(2026, 3, 1),
+            ),
+        )
+        val link = assertNotNull(note.attachment)
+        assertEquals(AttachmentKind.LINK, link.kind)
+        assertNull(link.text, "a link keeps only its address and title")
+        assertEquals("Ramen", link.title)
+        assertEquals("r.example", link.host)
+        assertFalse(link.countsAsInteraction)
+        assertNull(link.logId)
+        assertEquals(at(2026, 3, 1), link.at)
+        assertEquals(1, g.interactionRepo.interactions.value.size, "a note never logs contact")
+        assertEquals(listOf(interaction.id), g.interactionRepo.interactions.value.map { it.id })
+
+        // Newest first on the page; deleting puts back with Undo.
+        assertEquals(listOf(counted.attachment, link), g.observeAttachments(ana.id).first())
+        g.deleteAttachment(link)
+        assertEquals(listOf(counted.attachment), g.observeAttachments(ana.id).first())
+        g.restoreAttachment(link)
+        assertEquals(2, g.observeAttachments(ana.id).first().size)
+    }
+
+    @Test
+    fun aShareForACircleShowsOnEveryMembersPageAndLogsEveryone() = runTest {
+        val g = TestGraph(listOf(ana, rui, bea))
+        g.groupRepo.upsert(FriendGroup("crew", "Crew", memberIds = listOf(ana.id, rui.id)))
+        val result = g.saveShared(
+            SaveShareRequest(ShareTarget.Circle("crew"), SharedContent(text = "Dinner on Friday?"), ShareChoice.INTERACTION, LogKind.MESSAGE),
+        )
+        val a = assertNotNull(result.attachment)
+        assertEquals("crew", a.circleId)
+        assertNull(a.friendId)
+        assertEquals(setOf(ana.id, rui.id), g.interactionRepo.interactions.value.map { it.friendId }.toSet())
+        assertEquals(g.interactionRepo.interactions.value.first().batchId, a.logId)
+        assertEquals(listOf(a), g.observeAttachments(rui.id).first())
+        assertTrue(g.observeAttachments(bea.id).first().isEmpty())
+        // The timeline shows the share on the logged contact.
+        val timeline = g.observeTimeline(ana.id).first()
+        assertEquals(a, (timeline.single() as TimelineEntry.Contact).attachment)
+        assertFailsWith<IllegalArgumentException> {
+            g.saveShared(SaveShareRequest(ShareTarget.Circle("nope"), SharedContent(text = "x"), ShareChoice.NOTE))
+        }
+    }
+
+    @Test
+    fun aShopLinkCanBecomeAGiftIdeaWithAPrice() = runTest {
+        val g = TestGraph(listOf(ana))
+        val content = SharedContent(text = "https://shop.example/lego", url = "https://shop.example/lego", title = "LEGO dinosaur")
+        val result = g.saveShared(SaveShareRequest(ShareTarget.Person(ana.id), content, ShareChoice.GIFT_IDEA, price = " €35 "))
+        val gift = g.friendRepo.friends.value.single().gifts.single()
+        assertEquals("LEGO dinosaur", gift.title)
+        assertEquals("https://shop.example/lego", gift.url)
+        assertEquals("€35", gift.price)
+        assertTrue(gift.isIdea)
+        assertNull(result.attachment)
+        assertTrue(g.interactionRepo.attachments.value.isEmpty())
+        g.undoSaveShare(result)
+        assertTrue(g.friendRepo.friends.value.single().gifts.isEmpty())
+    }
+
+    @Test
+    fun shareTargetsCarryLastContactAndCirclesWithMembers() = runTest {
+        val g = TestGraph(listOf(ana, rui))
+        g.groupRepo.upsert(FriendGroup("crew", "Crew", memberIds = listOf(ana.id)))
+        g.groupRepo.upsert(FriendGroup("empty", "Empty"))
+        g.checkIn(listOf(ana.id), null, null, "", at(2026, 3, 9))
+        val targets = g.observeShareTargets().first()
+        assertEquals(listOf("crew"), targets.circles.map { it.id })
+        assertEquals(mapOf(ana.id to at(2026, 3, 9)), targets.lastContact)
+        assertEquals(2, targets.friends.size)
+    }
+
+    @Test
+    fun theInboxRemembersWhoAPhotoFromAPageIsFor() {
+        val g = TestGraph()
+        g.shareInbox.offer(SharedContent(text = "hi"), ana.id)
+        assertEquals(ana.id, g.shareInbox.preselected.value)
+        g.shareInbox.clear()
+        assertNull(g.shareInbox.preselected.value)
     }
 
     @Test

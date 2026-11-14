@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
@@ -36,14 +37,20 @@ sealed interface TimelineEntry {
     /** Whether it can be removed from the timeline (with Undo). Gifts are managed in their own section. */
     val deletable: Boolean get() = true
 
-    /** A meetup; [others] are everyone else who was there (a group meetup shows on every member's timeline). */
-    data class Meetup(val hangout: Hangout, val others: List<Friend>) : TimelineEntry {
+    /**
+     * A meetup; [others] are everyone else who was there (a group meetup shows on every member's timeline).
+     * [attachment] is the shared photo or text it was logged from (D6), shown with its thumbnail.
+     */
+    data class Meetup(val hangout: Hangout, val others: List<Friend>, val attachment: Attachment? = null) : TimelineEntry {
         override val key get() = "hangout-${hangout.id}"
         override val at get() = hangout.at
     }
 
-    /** A call, message, email, video call or WhatsApp day; [others] were logged in the same go ([Interaction.batchId]). */
-    data class Contact(val interaction: Interaction, val others: List<Friend>) : TimelineEntry {
+    /**
+     * A call, message, email, video call or WhatsApp day; [others] were logged in the same go ([Interaction.batchId]).
+     * [attachment] is the share it was logged from, if any.
+     */
+    data class Contact(val interaction: Interaction, val others: List<Friend>, val attachment: Attachment? = null) : TimelineEntry {
         override val key get() = "interaction-${interaction.id}"
         override val at get() = interaction.at
     }
@@ -105,17 +112,19 @@ object Timeline {
         interactions: List<Interaction>,
         journal: List<JournalEntry>,
         zone: TimeZone,
+        attachments: List<Attachment> = emptyList(),
     ): List<TimelineEntry> {
         val friend = friends.firstOrNull { it.id == friendId } ?: return emptyList()
         val byId = friends.associateBy { it.id }
+        val byLog = attachments.filter { it.countsAsInteraction && it.logId != null }.associateBy { it.logId }
         val batches = interactions.filter { it.batchId != null }.groupBy { it.batchId }
         val entries = buildList<TimelineEntry> {
             hangouts.filter { friendId in it.friendIds }.forEach { h ->
-                add(TimelineEntry.Meetup(h, h.friendIds.filter { it != friendId }.mapNotNull(byId::get)))
+                add(TimelineEntry.Meetup(h, h.friendIds.filter { it != friendId }.mapNotNull(byId::get), byLog[h.id]))
             }
             interactions.filter { it.friendId == friendId }.forEach { i ->
                 val others = i.batchId?.let { batches[it] }.orEmpty().map { it.friendId }.filter { it != friendId }.distinct()
-                add(TimelineEntry.Contact(i, others.mapNotNull(byId::get)))
+                add(TimelineEntry.Contact(i, others.mapNotNull(byId::get), byLog[i.batchId ?: i.id]))
             }
             journal.filter { it.friendId == friendId }.forEach { add(TimelineEntry.Journal(it)) }
             friend.lifeUpdates.forEach { add(TimelineEntry.WhatsNew(friendId, it)) }
@@ -147,7 +156,8 @@ class ObserveTimelineUseCase(
         hangouts.hangouts,
         interactions.interactions,
         interactions.journal,
-    ) { fs, hs, ints, journal -> Timeline.build(id, fs, hs, ints, journal, clock.timeZone) }
+        interactions.attachments,
+    ) { fs, hs, ints, journal, attachments -> Timeline.build(id, fs, hs, ints, journal, clock.timeZone, attachments) }
 }
 
 /** Removes an entry from the timeline (a whole group meetup goes for everyone). Put it back with [RestoreTimelineEntryUseCase]. */

@@ -1,7 +1,7 @@
 package com.neteinstein.goodcompany.core.data
 
 import com.neteinstein.goodcompany.core.data.source.ContactBirthdayParser
-import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import kotlin.test.Test
 import kotlin.test.assertEquals

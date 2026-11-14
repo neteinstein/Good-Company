@@ -2,7 +2,7 @@ package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
-import com.neteinstein.goodcompany.core.data.source.PhoneMatcher
+import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -101,7 +101,16 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             closeness = row.circle?.let(Closeness::valueOf),
             snoozedUntil = row.snoozed_until?.toLocalDate(),
             gifts = gifts[id].orEmpty().map {
-                DomainGift(it.id, it.title, it.note, it.for_kid_id, it.given_on?.toLocalDate(), it.occasion?.let(GiftOccasion::valueOf))
+                DomainGift(
+                    it.id,
+                    it.title,
+                    it.note,
+                    it.for_kid_id,
+                    it.given_on?.toLocalDate(),
+                    it.occasion?.let(GiftOccasion::valueOf),
+                    it.url,
+                    it.price,
+                )
             },
             catchUpPaused = row.catch_up_paused.toFlag(),
             contactCountsAsCatchUp = row.contact_counts_as_catch_up.toFlag(),
@@ -230,7 +239,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
     val kidIds = friend.kids.mapTo(HashSet()) { it.id }
     friend.gifts.forEachIndexed { i, g ->
         q.insertGift(
-            Gift(id, g.id, i.toLong(), g.title, g.note, g.forKidId?.takeIf { it in kidIds }, g.givenOn?.toColumn(), g.occasion?.name),
+            Gift(id, g.id, i.toLong(), g.title, g.note, g.forKidId?.takeIf { it in kidIds }, g.givenOn?.toColumn(), g.occasion?.name, g.url, g.price),
         )
     }
     friend.lifeUpdates.forEachIndexed { i, u -> q.insertLifeUpdate(Life_update(id, u.id, i.toLong(), u.text, u.addedAt.toColumn())) }

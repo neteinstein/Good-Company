@@ -37,17 +37,6 @@ interface CommunicationLogSource {
     }
 }
 
-/** Phone-number matching that tolerates formatting and country-code differences. */
-object PhoneMatcher {
-    private const val SIGNIFICANT_DIGITS = 9
-
-    fun key(raw: String): String? = raw.filter(Char::isDigit).takeLast(SIGNIFICANT_DIGITS).takeIf { it.length >= 6 }
-
-    fun <T> index(items: List<T>, numbersOf: (T) -> List<String>): Map<String, T> = buildMap {
-        items.forEach { item -> numbersOf(item).mapNotNull(::key).forEach { put(it, item) } }
-    }
-}
-
 /**
  * Parses address-book birthday strings: `1990-05-04`, `--05-04` (no year, Android/vCard),
  * `19900504` and `1990-05-04T00:00:00Z`. Returns null for anything else.
