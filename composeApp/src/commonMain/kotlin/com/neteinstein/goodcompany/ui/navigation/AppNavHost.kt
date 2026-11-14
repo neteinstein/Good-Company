@@ -102,10 +102,8 @@ fun AppNavHost(
                 val chosen by entry.savedStateHandle.getStateFlow(CONTACTS_ADDED, 0).collectAsStateWithLifecycle()
                 FriendsScreen(
                     onOpenFriend = openFriend,
-                    onOpenStory = openStory,
                     onEditCircle = editCircle,
                     onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
-                    onWeMet = weMet,
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },

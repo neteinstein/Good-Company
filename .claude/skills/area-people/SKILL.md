@@ -18,6 +18,10 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
   doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; unknown reads as not set).
 - Circle colours come only from `circlePalette` (`:core:ui`).
+- The People tab (`FriendsViewModel`, issue #66, F5) groups by `Closeness.entries` then "not set" (`levelOrder`), so a
+  new level (e.g. #69's Acquaintances) gets its group and chip by being added to the enum in order; give it a label in
+  `closenessLabel`. Chips count the listed people (circle filter and F9 applied, search not); a picked level nobody is in
+  any more reads as All. The "Your people" card uses `ObservePeopleDashboardUseCase(withTrend = false)`.
 - Pickers save on choice, form sheets on close (#64): on a person's page the birthday, family and link sheets put Save
   in `SaveSheetHeader` (above the scroll) and save when dismissed if valid and changed; a relation-to-me chip or a gift
   occasion saves at once. Each such save goes through `FriendDetailViewModel.editWithUndo`/`offerUndo`, which keeps a
@@ -34,9 +38,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     emoji, a `CircleColor` (seven names; light/dark values only in `:core:ui` `circlePalette`, never ad-hoc colours) and
     1+ members; `meetEveryDays` is the optional "Remind me when we haven't met" (null = off, the default for new circles)
     and never touches a member's own rhythm. A circle "met" when a hangout had enough of its members
-    (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). Home is filtered by
+    (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). The People tab is filtered by
     `AppSettings.homeCircleFilter` (in `user_preferences`; `DeleteGroupUseCase` resets it, an unknown id reads as All):
-    every section shows only members, and the A–Z list all of them whatever their closeness. Choosing a circle anywhere
+    the list shows only members, whatever their closeness. Choosing a circle anywhere
     (check-in sheet, Log sheet, "Log a <circle> meetup" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
     members with **nobody ticked** (F20). The editor is `CircleEditorRoute(id?)` in `:feature:hangouts`; delete has Undo
     (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
@@ -60,7 +64,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     kid is written once (not also as a relation).
 34. **Network map and "Your people" (issue #46, I12).** Both are pure domain code in `usecase/Network.kt` and
     `usecase/PeopleDashboard.kt`; the screens live in `:feature:review` (`NetworkMapRoute`, `PeopleDashboardRoute`, from
-    Home's menu and the year in review). Only "your people" are shown (`PeopleDashboard.isYours`: a real friend, a
+    the "Your people" card on top of the People tab and the year in review). Only "your people" are shown (`PeopleDashboard.isYours`: a real friend, a
     closeness, a relation to you or a circle member; never orphans or address-book-only contacts). Edges are person links
     (#39) plus "introduced by", never co-presence; you are the `NetworkGraph.ME` node at the origin. The layout is our own
     deterministic Fruchterman–Reingold (`ForceLayout`, fixed iteration budget, positions cached between emissions and
@@ -74,7 +78,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     "Not right" / "Not family" adds the offered relations to `Friend.dismissedKinship` (`friend.dismissed_kinship`,
     comma-separated `LinkType` names), which are never offered again. `STEP_PARENT` / `STEP_CHILD` / `HALF_SIBLING` /
     `STEP_SIBLING` are family `LinkType`s; migration `14.sqm` rebuilt `person_link` for the wider `CHECK` (gone since `16.sqm`). Proposals show on
-    the person's page and in `SuggestedFamilyRoute` (Home menu, plus a row on Home). Home search understands "my nieces and
+    the person's page and in `SuggestedFamilyRoute` (People ⋮ menu, plus a row on People). People search understands "my nieces and
     nephews", "my cousins"… through the `KinshipVocabulary` port (`KinshipWordsFromResources` in `:core:ui`, the
     `kin_search_*` strings: `|`-separated words, accents folded) and `ParseKinshipQueryUseCase`; it finds confirmed
     kinship only. Reuse that use case for any other "my nieces" picker.

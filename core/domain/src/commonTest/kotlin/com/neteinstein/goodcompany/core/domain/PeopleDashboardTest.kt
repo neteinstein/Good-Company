@@ -113,6 +113,24 @@ class PeopleDashboardTest {
     }
 
     @Test
+    fun withoutTheTrend_everythingElseIsTheSame() {
+        val full = build()
+        val light = PeopleDashboard.build(
+            friends,
+            listOf(climbing, choir, empty),
+            hangouts,
+            interactions,
+            AppSettings(),
+            today,
+            zone,
+            withTrend = false,
+        )
+        assertTrue(light.trend.isEmpty())
+        assertNull(light.trendDelta)
+        assertEquals(full.copy(trend = emptyList()), light)
+    }
+
+    @Test
     fun nobodyYet() {
         val d = PeopleDashboard.build(emptyList(), emptyList(), emptyList(), emptyList(), AppSettings(), today, zone)
         assertEquals(0, d.people)
@@ -126,5 +144,6 @@ class PeopleDashboardTest {
         val g = TestGraph(friends = friends, hangouts = hangouts)
         val d = g.observePeopleDashboard().first()
         assertTrue(d.byCircle.any { it.circle.name == "Family" && it.members == 1 })
+        assertTrue(g.observePeopleDashboard(withTrend = false).first().trend.isEmpty())
     }
 }

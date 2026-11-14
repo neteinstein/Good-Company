@@ -26,8 +26,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Edit
@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SortByAlpha
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -49,6 +50,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -76,26 +78,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
-import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
-import com.neteinstein.goodcompany.core.ui.components.CatchUpCard
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
-import com.neteinstein.goodcompany.core.ui.components.DriftingCard
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
-import com.neteinstein.goodcompany.core.ui.components.SectionHeader
-import com.neteinstein.goodcompany.core.ui.components.StoryBubbleChip
+import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.relativePast
-import com.neteinstein.goodcompany.core.ui.format.shortLabelText
+import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.linkWord
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
@@ -129,50 +131,36 @@ import com.neteinstein.goodcompany.feature.friends.resources.choose_empty_body
 import com.neteinstein.goodcompany.feature.friends.resources.choose_only_ticked
 import com.neteinstein.goodcompany.feature.friends.resources.choose_pick_instead
 import com.neteinstein.goodcompany.feature.friends.resources.circle_all
-import com.neteinstein.goodcompany.feature.friends.resources.circle_az
 import com.neteinstein.goodcompany.feature.friends.resources.circle_goal
 import com.neteinstein.goodcompany.feature.friends.resources.circle_last_together
 import com.neteinstein.goodcompany.feature.friends.resources.circle_log_meetup
 import com.neteinstein.goodcompany.feature.friends.resources.circle_never_together
-import com.neteinstein.goodcompany.feature.friends.resources.filter_everyone
-import com.neteinstein.goodcompany.feature.friends.resources.filter_real_friends
-import com.neteinstein.goodcompany.feature.friends.resources.greeting_afternoon
-import com.neteinstein.goodcompany.feature.friends.resources.greeting_evening
-import com.neteinstein.goodcompany.feature.friends.resources.greeting_morning
-import com.neteinstein.goodcompany.feature.friends.resources.home_quiet_week
-import com.neteinstein.goodcompany.feature.friends.resources.home_title
 import com.neteinstein.goodcompany.feature.friends.resources.kin_search_empty
 import com.neteinstein.goodcompany.feature.friends.resources.kin_search_result
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added
-import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged
 import com.neteinstein.goodcompany.feature.friends.resources.msg_contacts_denied
 import com.neteinstein.goodcompany.feature.friends.resources.msg_picked
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sample_added
-import com.neteinstein.goodcompany.feature.friends.resources.msg_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_sync_failed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_synced
 import com.neteinstein.goodcompany.feature.friends.resources.msg_synced_calls
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_result
-import com.neteinstein.goodcompany.feature.friends.resources.no_matches_close
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_search
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_title
+import com.neteinstein.goodcompany.feature.friends.resources.people_all
+import com.neteinstein.goodcompany.feature.friends.resources.people_card_cooling
+import com.neteinstein.goodcompany.feature.friends.resources.people_card_count
+import com.neteinstein.goodcompany.feature.friends.resources.people_card_meetups
+import com.neteinstein.goodcompany.feature.friends.resources.people_empty
+import com.neteinstein.goodcompany.feature.friends.resources.people_level_count
+import com.neteinstein.goodcompany.feature.friends.resources.people_not_set
+import com.neteinstein.goodcompany.feature.friends.resources.people_open
+import com.neteinstein.goodcompany.feature.friends.resources.people_title
 import com.neteinstein.goodcompany.feature.friends.resources.search_placeholder
-import com.neteinstein.goodcompany.feature.friends.resources.section_before_you_meet
-import com.neteinstein.goodcompany.feature.friends.resources.section_catch_up
-import com.neteinstein.goodcompany.feature.friends.resources.section_coming_up
-import com.neteinstein.goodcompany.feature.friends.resources.section_drifting
-import com.neteinstein.goodcompany.feature.friends.resources.section_drifting_hint
-import com.neteinstein.goodcompany.feature.friends.resources.section_real_friends
-import com.neteinstein.goodcompany.feature.friends.resources.sort_by
 import com.neteinstein.goodcompany.feature.friends.resources.sort_name
-import com.neteinstein.goodcompany.feature.friends.resources.sort_warmth
 import com.neteinstein.goodcompany.feature.friends.resources.suggested_family_count
 import com.neteinstein.goodcompany.feature.friends.resources.suggested_family_title
-import com.neteinstein.goodcompany.feature.friends.resources.week_big_days
-import com.neteinstein.goodcompany.feature.friends.resources.week_birthdays
-import com.neteinstein.goodcompany.feature.friends.resources.week_catch_up
-import com.neteinstein.goodcompany.feature.friends.resources.week_suffix
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_add_someone
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_import_vcf
@@ -182,8 +170,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.welcome_pick_contac
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_sample
 import com.neteinstein.goodcompany.feature.friends.resources.welcome_title
 import com.neteinstein.goodcompany.feature.friends.ui.components.FriendRow
-import com.neteinstein.goodcompany.feature.friends.ui.components.PersonChip
-import com.neteinstein.goodcompany.feature.friends.ui.components.UpcomingCard
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
@@ -195,17 +181,14 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 @Composable
 fun FriendsScreen(
     onOpenFriend: (FriendId) -> Unit,
-    onOpenStory: (FriendId) -> Unit = {},
     onEditCircle: (String) -> Unit = {},
     onLogCircle: (String) -> Unit = {},
-    /** "We met" on a catch-up or drifting card: opens the small "We met" panel (issue #47). */
-    onWeMet: (FriendId) -> Unit = {},
     /** Opens the "Choose friends" list (contacts with checkboxes). */
     onChooseContacts: () -> Unit = {},
     /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
     chosenContacts: Int = 0,
     onChosenShown: () -> Unit = {},
-    /** "Your network" and "Your people" (issue #46), from the menu. */
+    /** "Your network" and "Your people" (issue #46), from the "Your people" card on top. */
     onOpenNetwork: () -> Unit = {},
     onOpenPeople: () -> Unit = {},
     /** "Suggested family" (F7). */
@@ -252,11 +235,7 @@ fun FriendsScreen(
             onImportFile = pickVcf,
             onPickContacts = if (capabilities.hasContactWriteBack) requestThenPick else pickContacts,
             onOpenFriend = onOpenFriend,
-            onOpenStory = onOpenStory,
             onToggleClose = viewModel::onToggleClose,
-            onMetToday = onWeMet,
-            onCalled = viewModel::onCalled,
-            onSnooze = viewModel::onSnooze,
             onAddFriend = viewModel::onAddFriend,
             onChooseContacts = requestContactList,
             onExploreSample = viewModel::onExploreSample,
@@ -274,23 +253,19 @@ fun FriendsScreen(
 
 data class FriendsActions(
     val onQueryChange: (String) -> Unit = {},
-    val onFilterChange: (FriendFilter) -> Unit = {},
-    val onSortChange: (FriendSort) -> Unit = {},
+    val onFilterChange: (PeopleFilter) -> Unit = {},
+    val onSortChange: (PeopleSort) -> Unit = {},
     val onSync: () -> Unit = {},
     val onImportFile: () -> Unit = {},
     val onPickContacts: () -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
-    val onOpenStory: (FriendId) -> Unit = {},
     val onToggleClose: (FriendId) -> Unit = {},
-    val onMetToday: (FriendId) -> Unit = {},
-    val onCalled: (FriendId) -> Unit = {},
-    val onSnooze: (FriendId, SnoozeOption) -> Unit = { _, _ -> },
     val onAddFriend: (String) -> Unit = {},
     /** Asks for the contacts permission, then opens the contact list with checkboxes. */
     val onChooseContacts: () -> Unit = {},
     val onExploreSample: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
-    /** Filters Home by a circle (null = All). */
+    /** Filters the list by a circle (null = All). */
     val onCircleFilter: (String?) -> Unit = {},
     /** Long-press on a circle chip. */
     val onEditCircle: (String) -> Unit = {},
@@ -304,8 +279,6 @@ data class FriendsActions(
 
 /** Localised snackbar text for a [FriendsMessage]. */
 suspend fun FriendsMessage.text(): String = when (this) {
-    is FriendsMessage.CallLogged -> getString(Res.string.msg_call_logged, name)
-    is FriendsMessage.Snoozed -> getString(Res.string.msg_snoozed, name, until.shortLabelText())
     FriendsMessage.ContactsDenied -> getString(Res.string.msg_contacts_denied)
     is FriendsMessage.Synced -> if (calls > 0) getString(Res.string.msg_synced_calls, contacts, calls) else getString(Res.string.msg_synced, contacts)
     FriendsMessage.SyncFailed -> getString(Res.string.msg_sync_failed)
@@ -317,17 +290,6 @@ suspend fun FriendsMessage.text(): String = when (this) {
         getString(Res.string.msg_vcf_result, result.added, result.updated, result.skipped)
     }
     is FriendsMessage.ContactsPicked -> (result.added + result.updated).let { n -> getPluralString(Res.plurals.msg_picked, n, n) }
-}
-
-@Composable
-private fun weekSummaryText(week: WeekSummary): String? {
-    if (week.isEmpty) return null
-    val parts = listOfNotNull(
-        week.birthdays.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.week_birthdays, it, it) },
-        week.bigDays.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.week_big_days, it, it) },
-        week.catchUps.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.week_catch_up, it, it) },
-    )
-    return stringResource(Res.string.week_suffix, parts.joinToString(" · "))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -363,15 +325,7 @@ fun FriendsContent(
         ) {
             item(key = "header") {
                 ScreenHeader(
-                    eyebrow = stringResource(
-                        when (state.greeting) {
-                            Greeting.MORNING -> Res.string.greeting_morning
-                            Greeting.AFTERNOON -> Res.string.greeting_afternoon
-                            Greeting.EVENING -> Res.string.greeting_evening
-                        },
-                    ),
-                    title = stringResource(Res.string.home_title),
-                    subtitle = weekSummaryText(state.week) ?: if (isEmpty) null else stringResource(Res.string.home_quiet_week),
+                    title = stringResource(Res.string.people_title),
                     trailing = {
                         Row {
                             if (!isEmpty) {
@@ -427,27 +381,28 @@ fun FriendsContent(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.action_network)) },
-                                        leadingIcon = { Icon(Icons.Rounded.Hub, null) },
-                                        onClick = {
-                                            menuOpen = false
-                                            actions.onOpenNetwork()
-                                        },
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(Res.string.action_people)) },
-                                        leadingIcon = { Icon(Icons.Rounded.Insights, null) },
-                                        onClick = {
-                                            menuOpen = false
-                                            actions.onOpenPeople()
-                                        },
-                                    )
-                                    DropdownMenuItem(
                                         text = { Text(stringResource(Res.string.suggested_family_title)) },
                                         leadingIcon = { Icon(Icons.Rounded.FamilyRestroom, null) },
                                         onClick = {
                                             menuOpen = false
                                             actions.onOpenSuggestedFamily()
+                                        },
+                                    )
+                                    HorizontalDivider()
+                                    // A–Z instead of grouped by closeness (issue #66).
+                                    val az = state.sort == PeopleSort.NAME
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.sort_name)) },
+                                        leadingIcon = { Icon(Icons.Rounded.SortByAlpha, null) },
+                                        trailingIcon = if (az) {
+                                            { Icon(Icons.Rounded.Check, null) }
+                                        } else {
+                                            null
+                                        },
+                                        modifier = Modifier.semantics { selected = az },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onSortChange(if (az) PeopleSort.CLOSENESS else PeopleSort.NAME)
                                         },
                                     )
                                 }
@@ -495,66 +450,13 @@ fun FriendsContent(
                 return@LazyColumn
             }
 
-            if (!state.isSearching && state.stories.isNotEmpty()) {
-                item(key = "stories-h") { SectionHeader(stringResource(Res.string.section_before_you_meet)) }
-                item(key = "stories") {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        items(state.stories, key = { "s-${it.friend.id.value}" }) { b ->
-                            StoryBubbleChip(b, state.today, { actions.onOpenStory(b.friend.id) }, Modifier.animateItem())
-                        }
+            if (!state.isSearching) {
+                state.yourPeople?.let { yp ->
+                    item(key = "your-people") {
+                        YourPeopleCard(yp, state.showWarmth, onOpen = actions.onOpenPeople, onOpenNetwork = actions.onOpenNetwork)
                     }
                 }
             }
-            if (!state.isSearching && state.upcoming.isNotEmpty()) {
-                item(key = "upcoming-h") { SectionHeader(stringResource(Res.string.section_coming_up)) }
-                item(key = "upcoming") {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(state.upcoming, key = { it.key }) { UpcomingCard(it, state.today, actions.onOpenFriend, Modifier.animateItem()) }
-                    }
-                }
-            }
-            if (!state.isSearching && state.catchUp.isNotEmpty()) {
-                item(key = "catchup-h") { SectionHeader(stringResource(Res.string.section_catch_up)) }
-                items(state.catchUp.take(3), key = { "c-${it.friend.id.value}" }) { s ->
-                    val id = s.friend.id
-                    CatchUpCard(
-                        s,
-                        onOpen = { actions.onOpenFriend(id) },
-                        onMet = { actions.onMetToday(id) },
-                        onCalled = { actions.onCalled(id) },
-                        onSnooze = { actions.onSnooze(id, it) },
-                        modifier = Modifier.animateItem(),
-                    )
-                }
-            }
-            if (!state.isSearching && state.drifting.isNotEmpty()) {
-                item(key = "drift-h") { SectionHeader(stringResource(Res.string.section_drifting)) }
-                item(key = "drift-hint") {
-                    Text(
-                        stringResource(Res.string.section_drifting_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp),
-                    )
-                }
-                items(state.drifting, key = { "d-${it.friend.id.value}" }) { s ->
-                    DriftingCard(
-                        s,
-                        onOpen = { actions.onOpenFriend(s.friend.id) },
-                        onSnooze = { actions.onSnooze(s.friend.id, SnoozeOption.ONE_WEEK) },
-                        modifier = Modifier.animateItem(),
-                    )
-                }
-            }
-            if (!state.isSearching && state.closeFriends.isNotEmpty()) {
-                item(key = "people-h") { SectionHeader(stringResource(Res.string.section_real_friends, state.closeFriends.size)) }
-                item(key = "people") {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        items(state.closeFriends, key = { it.id.value }) { PersonChip(it, { actions.onOpenFriend(it.id) }, Modifier.animateItem()) }
-                    }
-                }
-            }
-
             if (!state.isSearching && state.circle == null && state.suggestedFamily > 0) {
                 item(key = "suggested-family") {
                     ListItem(
@@ -568,50 +470,26 @@ fun FriendsContent(
                     )
                 }
             }
-            item(key = "filters") {
-                Row(
-                    Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val circle = state.circle
-                    val kinship = state.kinship
-                    if (kinship != null) {
-                        // "Nieces & nephews · 3" (F7): what the search understood.
-                        SuggestionChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    stringResource(
-                                        Res.string.kin_search_result,
-                                        kinship.map { linkWord(it, null) }.joinToString(", "),
-                                        state.friends.size,
-                                    ),
-                                )
-                            },
-                        )
-                    } else if (circle != null) {
-                        // A circle shows all its members, whatever their closeness.
-                        Text(
-                            stringResource(Res.string.circle_az, state.friends.size, circle.group.name).uppercase(),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    } else {
-                        FilterChip(
-                            state.filter == FriendFilter.CLOSE,
-                            { actions.onFilterChange(FriendFilter.CLOSE) },
-                            label = { Text(stringResource(Res.string.filter_real_friends)) },
-                        )
-                        FilterChip(
-                            state.filter == FriendFilter.ALL,
-                            { actions.onFilterChange(FriendFilter.ALL) },
-                            label = { Text(stringResource(Res.string.filter_everyone, state.totalCount)) },
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    SortMenu(state.sort, actions.onSortChange)
+            val kinship = state.kinship
+            if (kinship != null) {
+                item(key = "kinship") {
+                    // "Nieces & nephews · 3" (F7): what the search understood.
+                    SuggestionChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                stringResource(
+                                    Res.string.kin_search_result,
+                                    kinship.map { linkWord(it, null) }.joinToString(", "),
+                                    state.friends.size,
+                                ),
+                            )
+                        },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
                 }
+            } else if (!state.isSearching && state.levels.isNotEmpty()) {
+                item(key = "levels") { LevelFilterRow(state, actions.onFilterChange) }
             }
             // Not while the first load is still running: the database answers after the first frame.
             if (!state.isLoading && state.friends.isEmpty()) {
@@ -624,24 +502,30 @@ fun FriendsContent(
                         } else if (state.isSearching) {
                             stringResource(Res.string.no_matches_search, state.query)
                         } else {
-                            stringResource(Res.string.no_matches_close)
+                            stringResource(Res.string.people_empty)
                         },
                     )
                 }
             }
-            state.sections.forEach { (letter, people) ->
-                if (letter != null) {
-                    stickyHeader(key = "letter-$letter") {
-                        Text(
-                            letter.toString(),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 24.dp, vertical = 6.dp),
-                        )
-                    }
+            state.sections.forEach { (section, people) ->
+                val key = when (section) {
+                    is PeopleSection.Level -> "level-${section.closeness?.name ?: "none"}"
+                    is PeopleSection.Letter -> "letter-${section.letter}"
+                }
+                stickyHeader(key = key) {
+                    Text(
+                        when (section) {
+                            is PeopleSection.Level -> levelLabel(section.closeness)
+                            is PeopleSection.Letter -> section.letter.toString()
+                        },
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(horizontal = 24.dp, vertical = 6.dp)
+                            .semantics { heading() },
+                    )
                 }
                 items(people, key = { it.friend.id.value }) { summary ->
                     FriendRow(
@@ -736,28 +620,90 @@ private fun CircleCard(status: Relationships.GroupStatus, state: FriendsUiState,
     }
 }
 
+/** A closeness level's name (short, as on the chips), or "Not set". */
 @Composable
-private fun SortMenu(sort: FriendSort, onChange: (FriendSort) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        TextButton(onClick = { open = true }) {
-            Icon(Icons.AutoMirrored.Rounded.Sort, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(if (sort == FriendSort.NAME) Res.string.sort_name else Res.string.sort_warmth), maxLines = 1)
-        }
-        DropdownMenu(open, onDismissRequest = { open = false }) {
-            Text(
-                stringResource(Res.string.sort_by),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+private fun levelLabel(closeness: Closeness?): String =
+    closeness?.let { closenessLabel(it, short = true) } ?: stringResource(Res.string.people_not_set)
+
+/** "All N" + one chip per closeness level somebody is in, with its count. */
+@Composable
+private fun LevelFilterRow(state: FriendsUiState, onChange: (PeopleFilter) -> Unit) {
+    LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item(key = "all") {
+            FilterChip(
+                state.filter == PeopleFilter.All,
+                { onChange(PeopleFilter.All) },
+                label = { Text(stringResource(Res.string.people_all, state.listedCount)) },
             )
-            listOf(FriendSort.NAME to Res.string.sort_name, FriendSort.WARMTH to Res.string.sort_warmth).forEach { (value, label) ->
-                DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
-                    open = false
-                    onChange(value)
-                })
+        }
+        items(state.levels, key = { it.closeness?.name ?: "none" }) { level ->
+            val filter = PeopleFilter.Level(level.closeness)
+            val selected = state.filter == filter
+            FilterChip(
+                selected,
+                { onChange(if (selected) PeopleFilter.All else filter) },
+                label = { Text(stringResource(Res.string.people_level_count, levelLabel(level.closeness), level.count)) },
+            )
+        }
+    }
+}
+
+/** "Your people" on top of the list: people, meetups in 90 days and who's cooling; opens the dashboard or the map. */
+@Composable
+private fun YourPeopleCard(summary: YourPeopleSummary, showWarmth: Boolean, onOpen: () -> Unit, onOpenNetwork: () -> Unit) {
+    SectionCard(
+        title = stringResource(Res.string.action_people),
+        icon = Icons.Rounded.Insights,
+        action = { TextButton(onClick = onOpen) { Text(stringResource(Res.string.people_open)) } },
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            StatTile(summary.people, pluralStringResource(Res.plurals.people_card_count, summary.people), onOpen, Modifier.weight(1f))
+            StatTile(
+                summary.meetupsLast90Days,
+                pluralStringResource(Res.plurals.people_card_meetups, summary.meetupsLast90Days),
+                onOpen,
+                Modifier.weight(1f),
+            )
+        }
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            val cooling = summary.cooling.takeIf { showWarmth }.orEmpty()
+            Text(
+                if (cooling.isEmpty()) {
+                    ""
+                } else {
+                    pluralStringResource(
+                        Res.plurals.people_card_cooling,
+                        cooling.size,
+                        cooling.size,
+                        cooling.joinToString(", ") { it.displayName.substringBefore(' ') },
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onOpenNetwork) {
+                Icon(Icons.Rounded.Hub, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(Res.string.action_network))
             }
+        }
+    }
+}
+
+@Composable
+private fun StatTile(value: Int, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier,
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Text(value.toString(), style = MaterialTheme.typography.headlineSmall)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
