@@ -62,11 +62,12 @@ import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Introducer
-import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinks
 import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
 import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
@@ -126,6 +127,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.family_note
 import com.neteinstein.goodcompany.feature.friends.resources.family_notify
 import com.neteinstein.goodcompany.feature.friends.resources.family_remove
 import com.neteinstein.goodcompany.feature.friends.resources.family_title
+import com.neteinstein.goodcompany.feature.friends.resources.kid_add_title
+import com.neteinstein.goodcompany.feature.friends.resources.kid_show_hint_family
+import com.neteinstein.goodcompany.feature.friends.resources.kid_show_hint_friend
 import com.neteinstein.goodcompany.feature.friends.resources.link_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_add
 import com.neteinstein.goodcompany.feature.friends.resources.more_edit
@@ -134,6 +138,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.more_label
 import com.neteinstein.goodcompany.feature.friends.resources.more_new
 import com.neteinstein.goodcompany.feature.friends.resources.more_title
 import com.neteinstein.goodcompany.feature.friends.resources.more_value
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Month
 import org.jetbrains.compose.resources.stringResource
@@ -387,15 +392,13 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
 
 // --- Family -----------------------------------------------------------------------------------------------------------
 
-/** Kids and the other relatives in one card. */
+/** Partners, kids (people of their own, F9), other family links and the relatives named inside this friend. */
 @Composable
 internal fun FamilyCard(
     f: Friend,
     today: LocalDate,
     onAdd: () -> Unit,
-    onEditKid: (Kid) -> Unit,
     onEditRelative: (Relative) -> Unit,
-    onRemoveKid: (String) -> Unit,
     onRemoveRelative: (String) -> Unit,
     links: List<LinkedPerson> = emptyList(),
     onOpenPerson: (FriendId) -> Unit = {},
@@ -405,34 +408,17 @@ internal fun FamilyCard(
 ) {
     // Partners first (F18), then exes, then kids and family; friends and colleagues have their own card.
     val romantic = links.filter { it.role.isRomantic }
-    val family = links.filter { it.role.isFamily }
+    val kids = links.filter { it.role == LinkType.CHILD }
+    val family = links.filter { it.role.isFamily && it.role != LinkType.CHILD }
     SectionCard(
         stringResource(Res.string.family_title),
         icon = Icons.Rounded.People,
         action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
     ) {
-        if (f.kids.isEmpty() && f.relatives.isEmpty() && romantic.isEmpty() && family.isEmpty()) Hint(stringResource(Res.string.family_hint))
+        if (f.relatives.isEmpty() && romantic.isEmpty() && kids.isEmpty() && family.isEmpty()) Hint(stringResource(Res.string.family_hint))
         romantic.forEach { LinkRow(it, onOpenPerson, onEditLink) }
         f.relatives.filter { it.relation == Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
-        f.kids.forEach { kid ->
-            ListItem(
-                modifier = Modifier.clickable { onEditKid(kid) },
-                leadingContent = { FriendAvatar(kid.name, kid.name.take(1).uppercase(), size = 44.dp) },
-                headlineContent = { Text(kid.name, style = MaterialTheme.typography.titleSmall) },
-                supportingContent = {
-                    val parts = listOfNotNull(
-                        stringResource(CoreRes.string.relation_kid),
-                        kid.birthday?.let { stringResource(Res.string.family_birthday_line, relativeDay(it.nextOccurrence(today), today)) },
-                        kid.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.family_likes_line, it.joinToString()) },
-                    )
-                    Text(parts.joinToString(" · "))
-                },
-                trailingContent = {
-                    IconButton(onClick = { onRemoveKid(kid.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.family_remove, kid.name)) }
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-        }
+        kids.forEach { LinkRow(it, onOpenPerson, onEditLink) }
         family.forEach { LinkRow(it, onOpenPerson, onEditLink) }
         f.relatives.filter { it.relation != Relation.PARTNER }.forEach { RelativeRow(it, today, onEditRelative, onRemoveRelative, onAddAsPerson) }
         TextButton(onClick = onAddLink, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -480,18 +466,16 @@ private fun RelativeRow(
     )
 }
 
-/** What the family sheet edits: a kid (today's model) or a relative. */
+/** What the family sheet edits: something new (a kid or a relative) or a relative. A kid is edited on their own page. */
 internal sealed interface FamilyEditing {
     data object New : FamilyEditing
-
-    data class EditKid(val kid: Kid) : FamilyEditing
 
     data class EditRelative(val relative: Relative) : FamilyEditing
 }
 
 /**
- * "Add to <name>'s family": one sheet for every relation. Choosing Kid saves a [Kid] exactly as before; the others are
- * [Relative]s, whose birthday reminder is on unless switched off here (F10). The birthday's year is optional (F4).
+ * "Add to <name>'s family": one sheet for every relation. Choosing Kid adds a person of their own (F9), linked to this
+ * friend, who shows in your list when [parentIsFamily]; the others are [Relative]s named inside this friend.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -500,18 +484,19 @@ internal fun FamilySheet(
     editing: FamilyEditing,
     latestYear: Int,
     onDismiss: () -> Unit,
-    onSaveKid: (id: String?, name: String, birthday: Birthday?, likes: List<String>) -> Unit,
+    onAddKid: (KidDraft) -> Unit,
     onSaveRelative: (RelativeEdit) -> Unit,
+    parentIsFamily: Boolean = false,
 ) {
-    val kid = (editing as? FamilyEditing.EditKid)?.kid
     val relative = (editing as? FamilyEditing.EditRelative)?.relative
     // null relation = Kid.
-    var relation by remember { mutableStateOf(relative?.relation ?: if (kid != null) null else Relation.PARTNER) }
-    var name by remember { mutableStateOf(kid?.name ?: relative?.name.orEmpty()) }
-    var likes by remember { mutableStateOf((kid?.likes ?: relative?.likes).orEmpty().joinToString()) }
+    var relation by remember { mutableStateOf<Relation?>(relative?.relation ?: Relation.PARTNER) }
+    var name by remember { mutableStateOf(relative?.name.orEmpty()) }
+    var likes by remember { mutableStateOf(relative?.likes.orEmpty().joinToString()) }
     var note by remember { mutableStateOf(relative?.note.orEmpty()) }
     var notify by remember { mutableStateOf(relative?.notifyBirthday ?: true) }
-    var birthday by remember { mutableStateOf(BirthdayDraft.of(kid?.birthday ?: relative?.birthday)) }
+    var showInList by remember { mutableStateOf(parentIsFamily) }
+    var birthday by remember { mutableStateOf(BirthdayDraft.of(relative?.birthday)) }
     val isNew = editing == FamilyEditing.New
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -521,24 +506,24 @@ internal fun FamilySheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                if (isNew) stringResource(Res.string.family_add_title, firstName) else stringResource(Res.string.family_edit_title, name),
+                when {
+                    !isNew -> stringResource(Res.string.family_edit_title, name)
+                    relation == null -> stringResource(Res.string.kid_add_title, firstName)
+                    else -> stringResource(Res.string.family_add_title, firstName)
+                },
                 style = MaterialTheme.typography.titleLarge,
             )
-            // A kid stays a kid and a relative stays a relative once saved: they live in different lists.
+            // A kid becomes a person with their own page; a relative stays a name inside this friend.
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (isNew || kid == null) {
-                    listOf(Relation.PARTNER, null, Relation.PARENT, Relation.SIBLING, Relation.PET, Relation.OTHER)
-                        .filter { isNew || it != null }
-                        .forEach { r ->
-                            FilterChip(
-                                selected = relation == r,
-                                onClick = { relation = r },
-                                label = { Text(if (r == null) stringResource(CoreRes.string.relation_kid) else relationLabel(r)) },
-                            )
-                        }
-                } else {
-                    FilterChip(selected = true, onClick = {}, label = { Text(stringResource(CoreRes.string.relation_kid)) })
-                }
+                listOf(Relation.PARTNER, null, Relation.PARENT, Relation.SIBLING, Relation.PET, Relation.OTHER)
+                    .filter { isNew || it != null }
+                    .forEach { r ->
+                        FilterChip(
+                            selected = relation == r,
+                            onClick = { relation = r },
+                            label = { Text(if (r == null) stringResource(CoreRes.string.relation_kid) else relationLabel(r)) },
+                        )
+                    }
             }
             OutlinedTextField(name, {
                 name = it
@@ -551,16 +536,37 @@ internal fun FamilySheet(
                 OutlinedTextField(note, {
                     note = it
                 }, label = { Text(stringResource(Res.string.family_note)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            } else {
+                // F9: on for family's kids, off for friends' kids (who still show on this page and in birthdays).
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(Res.string.family_notify), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Switch(checked = notify, onCheckedChange = { notify = it })
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(Res.string.show_in_my_list), style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            stringResource(if (parentIsFamily) Res.string.kid_show_hint_family else Res.string.kid_show_hint_friend, firstName),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = showInList, onCheckedChange = { showInList = it })
                 }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(Res.string.family_notify), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Switch(checked = notify, onCheckedChange = { notify = it })
             }
             Button(
                 onClick = {
                     val date = birthday.toBirthday(latestYear)
                     if (current == null) {
-                        onSaveKid(kid?.id, name, date, parseTags(likes))
+                        onAddKid(
+                            KidDraft(
+                                name = name,
+                                birthday = date,
+                                likes = parseTags(likes),
+                                showInMyList = showInList,
+                                notifyBirthday = notify,
+                            ),
+                        )
                     } else {
                         onSaveRelative(RelativeEdit(relative?.id, current, name, date, parseTags(likes), note, notify))
                     }

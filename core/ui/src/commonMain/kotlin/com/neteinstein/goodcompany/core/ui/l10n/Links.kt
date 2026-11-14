@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.ui.resources.anniversary_body
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_title
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.circle_family
+import com.neteinstein.goodcompany.core.ui.resources.kid_of
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_he
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_she
 import com.neteinstein.goodcompany.core.ui.resources.link_aunt_uncle_they
@@ -132,6 +133,12 @@ fun linkCategoryLabel(category: LinkCategory): String = stringResource(
         LinkCategory.OTHER -> Res.string.link_category_other
     },
 )
+
+/** "Ana’s daughter" (F9): the line under a kid's name, from their parent's first name and their own pronouns. */
+@Composable
+fun kidOfLabel(kid: Friend, parent: Friend): String =
+    stringResource(Res.string.kid_of, parent.displayName.substringBefore(' '), linkWord(LinkType.CHILD, kid.pronouns).lowercase())
+        .replaceFirstChar { it.uppercase() }
 
 /** "💞 Ana & Rui’s anniversary". */
 @Composable

@@ -3,10 +3,12 @@ package com.neteinstein.goodcompany.core.testing
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddKidUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -36,6 +38,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
@@ -96,6 +99,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
@@ -109,6 +113,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 /**
  * Every repository as a fake plus every use case wired to them, so ViewModel tests can build their subject in one
  * line (`FooViewModel(g.observeFoo, g.doBar, g.clock)`) and assert against the same fakes.
+ *
+ * Friends given with old-style kids ([Friend.kids]) start as the database migration leaves them: each kid a person
+ * linked to their parent ([KidsAsPeople.convert], issue #40).
  */
 class TestGraph(
     friends: List<Friend> = emptyList(),
@@ -116,8 +123,10 @@ class TestGraph(
     hangouts: List<Hangout> = emptyList(),
     val clock: FixedClock = FixedClock(),
     val ids: SequentialIds = SequentialIds(),
+    links: List<PersonLink> = emptyList(),
 ) {
-    val friendRepo = FakeFriendRepository(friends)
+    private val seeded = KidsAsPeople.convert(friends, links)
+    val friendRepo = FakeFriendRepository(seeded.first)
     val hangoutRepo = FakeHangoutRepository(hangouts)
     val reminderRepo = FakeReminderRepository()
     val interactionRepo = FakeInteractionRepository()
@@ -130,15 +139,16 @@ class TestGraph(
     val location = FakeLocationProvider()
     val scheduler = FakeNotificationScheduler()
     val language = LanguageProvider { "en" }
-    val linkRepo = FakePersonLinkRepository(friends = friendRepo)
+    val linkRepo = FakePersonLinkRepository(seeded.second, friends = friendRepo)
 
     /** The stored circles plus the built-in Family circle, as the app sees them. Writes go to [groupRepo]. */
     val circles = GroupsWithFamilyCircle(groupRepo, friendRepo) { "Family" }
     val backupRepo =
         FakeBackupRepository(friendRepo, hangoutRepo, reminderRepo, interactionRepo, ideaRepo, groupRepo, planRepo, settingsRepo, linkRepo)
 
-    val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
-    val observeFriendDetail = ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, circles, planRepo, clock)
+    val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
+    val observeFriendDetail =
+        ObserveFriendDetailUseCase(friendRepo, hangoutRepo, interactionRepo, ideaRepo, settingsRepo, circles, planRepo, linkRepo, clock)
     val updateFriend = UpdateFriendUseCase(friendRepo)
     val observeCatchUpStory = ObserveCatchUpStoryUseCase(observeFriendDetail, reminderRepo, clock)
     val feedFetcher = FakeFeedFetcher()
@@ -148,7 +158,7 @@ class TestGraph(
     val quickEntryInbox = QuickEntryInbox()
     val observeShortcuts = ObserveShortcutsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo)
     val addLifeUpdate = AddLifeUpdateUseCase(friendRepo, clock, ids)
-    val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, clock)
+    val observeStoryBubbles = ObserveStoryBubblesUseCase(friendRepo, planRepo, hangoutRepo, linkRepo, clock)
     val addFriend = AddFriendUseCase(friendRepo, ids)
     val deleteFriend = DeleteFriendUseCase(friendRepo)
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
@@ -218,12 +228,13 @@ class TestGraph(
     val dismissIdea = DismissIdeaUseCase(ideaRepo)
     val markIdeaProposed = MarkIdeaProposedUseCase(ideaRepo, clock)
     val generateTalkingPoints =
-        GenerateTalkingPointsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, clock, ids, language)
+        GenerateTalkingPointsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, clock, ids, language, linkRepo)
     val runWeeklyIdeas =
-        RunWeeklyIdeasUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, location, clock, ids, language)
-    val draftBirthdayMessage = DraftBirthdayMessageUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
-    val suggestGifts = SuggestGiftsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
-    val suggestUpdateFromShared = SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language)
+        RunWeeklyIdeasUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, ideaRepo, generator, location, clock, ids, language, linkRepo)
+    val draftBirthdayMessage = DraftBirthdayMessageUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language, linkRepo)
+    val suggestGifts = SuggestGiftsUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language, linkRepo)
+    val suggestUpdateFromShared =
+        SuggestUpdateFromSharedUseCase(friendRepo, interactionRepo, hangoutRepo, settingsRepo, assistant, language, linkRepo)
     val observeReminders = ObserveRemindersUseCase(reminderRepo)
     val addReminder = AddReminderUseCase(reminderRepo, clock, ids)
     val setReminderDone = SetReminderDoneUseCase(reminderRepo)
@@ -243,7 +254,8 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
-    val loadSampleData = LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, clock)
+    val loadSampleData =
+        LoadSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo, clock, links = linkRepo)
     val removeSampleData = RemoveSampleDataUseCase(friendRepo, hangoutRepo, reminderRepo, ideaRepo, circles, planRepo, interactionRepo)
     val hasSampleData = HasSampleDataUseCase(friendRepo)
     val updateSource = FakeAppUpdateSource()
@@ -255,7 +267,19 @@ class TestGraph(
     val setRelationToMe = SetRelationToMeUseCase(friendRepo)
     val setPronouns = SetPronounsUseCase(friendRepo)
     val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, clock, ids)
-    val personLinks = PersonLinkUseCases(observePersonLinks, saveLink, deleteLink, restoreLink, setRelationToMe, setPronouns, addRelativeAsPerson)
+    val addKid = AddKidUseCase(friendRepo, linkRepo, clock, ids)
+    val setShowInMyList = SetShowInMyListUseCase(friendRepo)
+    val personLinks = PersonLinkUseCases(
+        observePersonLinks,
+        saveLink,
+        deleteLink,
+        restoreLink,
+        setRelationToMe,
+        setPronouns,
+        addRelativeAsPerson,
+        addKid,
+        setShowInMyList,
+    )
     val observeSettings = ObserveSettingsUseCase(settingsRepo)
     val updateSettings = UpdateSettingsUseCase(settingsRepo)
 }

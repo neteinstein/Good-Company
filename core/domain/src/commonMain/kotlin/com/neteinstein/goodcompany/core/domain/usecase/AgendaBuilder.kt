@@ -17,7 +17,7 @@ import kotlinx.datetime.plus
 
 /**
  * Builds the "Coming up" agenda for the next [horizonDays] days:
- * birthdays (friend + kids, and relatives whose reminder is on) for friends you care about, important events, anniversaries, open reminders, planned meetups and
+ * birthdays (friends you care about, kids with their reminder on, shown with their parent, and relatives whose reminder is on), important events, anniversaries, open reminders, planned meetups and
  * overdue catch-ups. Overdue reminders, catch-ups and unconfirmed past plans are pinned to [today] so they stay visible.
  */
 object AgendaBuilder {
@@ -39,18 +39,22 @@ object AgendaBuilder {
         val end = today.plus(horizonDays, DateTimeUnit.DAY)
         fun inWindow(d: LocalDate) = d in today..end
         val items = mutableListOf<AgendaItem>()
+        val parents = KidsAsPeople.parentsById(links, friends)
 
+        fun Friend.caresAbout() = isCloseFriend || notifyBirthday
         for (friend in friends) {
-            val caresAbout = friend.isCloseFriend || friend.notifyBirthday
-            if (caresAbout) {
+            // A kid (F9) is a person with their own reminder; their birthday also shows when you care about a parent,
+            // as it did before kids were people, and the row says whose kid they are.
+            val parent = parents[friend.id]?.let { ps -> ps.firstOrNull { it.caresAbout() } ?: ps.first() }
+            if (friend.caresAbout() || parent?.caresAbout() == true) {
                 friend.birthday?.let { b ->
                     val next = b.nextOccurrence(today)
-                    if (inWindow(next)) items += AgendaItem.FriendBirthday(friend, next, b.ageOn(next))
-                }
-                friend.kids.forEach { kid ->
-                    kid.birthday?.let { b ->
-                        val next = b.nextOccurrence(today)
-                        if (inWindow(next)) items += AgendaItem.KidBirthday(friend, kid, next, b.ageOn(next))
+                    if (inWindow(next)) {
+                        items += if (parent != null) {
+                            AgendaItem.KidBirthday(parent, friend, next, b.ageOn(next))
+                        } else {
+                            AgendaItem.FriendBirthday(friend, next, b.ageOn(next))
+                        }
                     }
                 }
             }

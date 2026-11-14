@@ -76,7 +76,7 @@ class UseCasesTest {
     @Test
     fun observeFriends_sortsCloseFirstAndFlagsOverdue() = runTest {
         hangouts.add(Hangout("h", listOf(FriendId("bob")), at(2026, 3, 1)))
-        val list = ObserveFriendsUseCase(friends, hangouts, interactions, settings, clock)().first()
+        val list = ObserveFriendsUseCase(friends, hangouts, interactions, settings, FakePersonLinkRepository(), clock)().first()
         assertEquals(listOf("ana", "bob", "cat"), list.map { it.friend.id.value })
         assertTrue(list[0].meetupOverdue)
         assertEquals(at(2026, 3, 1), list[1].lastSeen)
@@ -150,6 +150,7 @@ class UseCasesTest {
             settings,
             FakeGroupRepository(),
             FakePlanRepository(),
+            FakePersonLinkRepository(),
             clock,
         )(FriendId("ana")).first()!!
         assertEquals(at(2026, 3, 1), detail.lastSeen)
@@ -165,6 +166,7 @@ class UseCasesTest {
                 settings,
                 FakeGroupRepository(),
                 FakePlanRepository(),
+                FakePersonLinkRepository(),
                 clock,
             )(FriendId("nope")).first(),
         )

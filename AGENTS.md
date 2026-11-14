@@ -263,7 +263,7 @@ Seen in practice:
     the card changed, and `syncContacts` backfills friends with details). `AndroidContactsWriter` keeps it all in one raw
     contact the app owns (`SOURCE_ID` = `goodcompany:<friendId>`, no account, so it never syncs to Google) joined to the real
     contact with an aggregation exception. Never edit the user's own contact rows. The mirror
-    **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid/event), a changed detail
+    **never deletes** (owner decision): one row per item (one note, one birthday, one row per kid (from CHILD links)/event), a changed detail
     updates the app's own earlier row in place (`ContactRowPlanner`, pure and tested; its `Step` has no delete), and a detail
     removed in the app, a cleared friend or a deleted friend leaves the contact as it is. The user's own contact rows are only read.
     `AndroidContactsSource` skips contacts made only of our raw contacts and has `importsNewContacts = false` (so does
@@ -370,6 +370,15 @@ Seen in practice:
     comes from the `BuiltInCircleNames` port). One link per pair (`SaveLinkUseCase`); anniversaries come from a current
     romance's `startedOn` (`PersonLinks.anniversaries` → agenda + notifications). Contact write-back: `ContactMirror` builds
     each card with its links (`ContactCard.links`), so a link change rewrites both contacts and a rename the linked ones.
+31. **Kids are people (issue #40, F9).** A kid is a `Friend` with a `LinkType.CHILD` link from the parent (`KidsAsPeople`:
+    `kidsOf` / `parentsOf` / `parentsById`); `AddKidUseCase` creates both. `Friend.kids` and `Gift.forKidId` are legacy:
+    only old backups and the old JSON store carry them, and `KidsAsPeople.convert` turns them into people (in
+    `RestoreBackupUseCase`, in `replaceAllData` so `LegacyJsonImport` too, and for `SampleData`); the database does the
+    same in SQL as migration `10.sqm` (id kept unless taken, then `<parent>-<kid>`; link id `kid-link-<id>`) and drops `kid`, `kid_like` and
+    `gift.for_kid_id`. `Friend.showInMyList` hides someone from the A–Z list only (search, circles and the parent's page
+    still show them); it defaults to `KidsAsPeople.showsByDefault(parent)` = the parent is family. Agenda and notifications
+    find a kid's parent through the links (`KidBirthday(parent, kid)`); `ContactCard.kids` comes from CHILD links, so a
+    kid is written once (not also as a relation).
 
 ## Skills
 

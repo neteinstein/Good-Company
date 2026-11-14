@@ -14,7 +14,6 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
@@ -43,6 +42,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
@@ -128,6 +128,9 @@ sealed interface FriendDetailMessage {
 
     /** A relative became a person of their own ("Add as a person"). */
     data class AddedAsPerson(val name: String) : FriendDetailMessage
+
+    /** A kid was added as a person of their own (F9). */
+    data class KidAdded(val name: String) : FriendDetailMessage
 }
 
 /** What the link sheet saves, seen from the page's friend: [other] is their [role] ("Ana is Rui's girlfriend"). */
@@ -169,8 +172,8 @@ data class RemovedCustomField(val field: CustomField, val index: Int)
 
 data class PlanEditing(val plan: Plan?)
 
-/** Who the AI gift suggestions are for: the friend (kidId = null) or one of their kids. */
-data class GiftSuggestions(val kidId: String?, val ideas: List<String>)
+/** AI gift ideas waiting to be kept or dismissed. A kid's are asked on the kid's own page (F9). */
+data class GiftSuggestions(val ideas: List<String>)
 
 data class FriendDetailUiState(
     val detail: FriendDetail? = null,
@@ -185,7 +188,7 @@ data class FriendDetailUiState(
     /** Increments on every "Together" so the UI can play the heart burst. */
     val celebrate: Int = 0,
     val showReminderEditor: Boolean = false,
-    /** Kid id (or "" for the friend) whose gift ideas the AI is working on. */
+    /** "" while the AI is working on gift ideas, null otherwise. */
     val suggestingGiftsFor: String? = null,
     val giftSuggestions: GiftSuggestions? = null,
     val showWish: Boolean = false,
@@ -273,7 +276,7 @@ class FriendDetailViewModel(
             showWarmth = settings.showWarmth,
             freshCount = detail?.let { d ->
                 val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
-                CatchUpStoryBuilder.freshItems(d.friend).count { it.addedAt > since }
+                CatchUpStoryBuilder.freshItems(d.friend, d.kids).count { it.addedAt > since }
             } ?: 0,
             now = clock.now(),
             today = clock.today(),
@@ -514,28 +517,21 @@ class FriendDetailViewModel(
         local.update { it.copy(undoCustomField = null) }
     }
 
-    fun onSaveKid(id: String?, name: String, birthday: Birthday?, likes: List<String>) {
-        if (name.isBlank()) return
-        val now = clock.now()
-        val kid = Kid(
-            id = id ?: ids.next(),
-            name = name.trim(),
-            birthday = birthday,
-            likes = likes,
-        )
-        edit { f ->
-            val existing = f.kids.firstOrNull { it.id == kid.id }
-            f.copy(
-                kids = if (existing != null) {
-                    f.kids.map { if (it.id == kid.id) kid.copy(addedAt = existing.addedAt) else it }
-                } else {
-                    f.kids + kid.copy(addedAt = now)
-                },
-            )
+    /**
+     * "Add <name>'s kid" (F9): the kid becomes a person with their own page and birthday reminder, linked to this
+     * friend. Removing them later removes the link (with Undo) from the Family card; the person stays.
+     */
+    fun onAddKid(draft: KidDraft) {
+        if (draft.name.isBlank()) return
+        viewModelScope.launch {
+            links.addKid(friendId, draft)?.let { say(FriendDetailMessage.KidAdded(draft.name.trim().substringBefore(' '))) }
         }
     }
 
-    fun onRemoveKid(id: String) = edit { f -> f.copy(kids = f.kids.filterNot { it.id == id }) }
+    /** "Show in my list" (F9) for this person. */
+    fun onSetShowInMyList(show: Boolean) {
+        viewModelScope.launch { links.setShowInMyList(friendId, show) }
+    }
 
     fun onAddEvent(title: String, date: LocalDate, remindDaysBefore: Int) {
         if (title.isBlank()) return
@@ -587,9 +583,9 @@ class FriendDetailViewModel(
 
     // --- Gifts ---------------------------------------------------------------------------------------------------
 
-    fun onSaveGift(title: String, note: String, forKidId: String?) {
+    fun onSaveGift(title: String, note: String) {
         if (title.isBlank()) return
-        val gift = Gift(ids.next(), title.trim(), note.trim(), forKidId)
+        val gift = Gift(ids.next(), title.trim(), note.trim())
         edit { f -> f.copy(gifts = f.gifts + gift) }
     }
 
@@ -600,17 +596,17 @@ class FriendDetailViewModel(
         edit { f -> f.copy(gifts = f.gifts.map { if (it.id == id) it.copy(givenOn = today, occasion = occasion) else it }) }
     }
 
-    fun onSuggestGifts(kidId: String?) {
+    fun onSuggestGifts() {
         if (local.value.suggestingGiftsFor != null) return
         viewModelScope.launch {
-            local.update { it.copy(suggestingGiftsFor = kidId.orEmpty(), giftSuggestions = null) }
-            val result = suggestGifts(friendId, kidId)
+            local.update { it.copy(suggestingGiftsFor = "", giftSuggestions = null) }
+            val result = suggestGifts(friendId)
             local.update {
                 result.fold(
                     { ideas ->
                         it.copy(
                             suggestingGiftsFor = null,
-                            giftSuggestions = GiftSuggestions(kidId, ideas).takeIf { ideas.isNotEmpty() },
+                            giftSuggestions = GiftSuggestions(ideas).takeIf { ideas.isNotEmpty() },
                             message = if (ideas.isEmpty()) FriendDetailMessage.NoNewGifts else it.message,
                         )
                     },
@@ -623,7 +619,7 @@ class FriendDetailViewModel(
     /** Keeps one AI suggestion as a gift idea. */
     fun onKeepGiftSuggestion(title: String) {
         val suggestions = local.value.giftSuggestions ?: return
-        onSaveGift(title, "", suggestions.kidId)
+        onSaveGift(title, "")
         local.update {
             val rest = suggestions.ideas - title
             it.copy(giftSuggestions = if (rest.isEmpty()) null else suggestions.copy(ideas = rest))

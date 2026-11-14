@@ -56,6 +56,7 @@ import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.StorageStatus
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AddKidUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -148,6 +149,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
@@ -253,6 +255,8 @@ val appModule = module {
     factoryOf(::SetRelationToMeUseCase)
     factoryOf(::SetPronounsUseCase)
     factoryOf(::AddRelativeAsPersonUseCase)
+    factoryOf(::AddKidUseCase)
+    factoryOf(::SetShowInMyListUseCase)
     factoryOf(::PersonLinkUseCases)
     factoryOf(::AddFriendUseCase)
     factoryOf(::DeleteFriendUseCase)

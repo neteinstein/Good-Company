@@ -503,4 +503,10 @@
     <string name="birthday_remind">Me rappeler l’anniversaire de %1$s</string>
     <string name="birthday_remind_hint">Activé pour tous ceux qui ont un anniversaire. Désactivez-le ici pour une personne.</string>
     <string name="birthday_remove">Supprimer l’anniversaire</string>
+    <string name="kid_add_title">Ajouter un enfant de %1$s</string>
+    <string name="show_in_my_list">Afficher dans ma liste</string>
+    <string name="kid_show_hint_family">Activé car %1$s fait partie de la famille. Désactivé par défaut pour les enfants d’amis.</string>
+    <string name="kid_show_hint_friend">Désactivé par défaut pour les enfants d’amis : ils restent sur la page de %1$s et dans les anniversaires.</string>
+    <string name="show_in_my_list_hint">Désactivé : reste sur la page de %1$s et dans les anniversaires.</string>
+    <string name="show_in_my_list_hint_any">Désactivé : reste sur les pages auxquelles il est lié et dans les anniversaires.</string>
 </resources>

@@ -6,7 +6,9 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.friendIds
 import com.neteinstein.goodcompany.core.domain.usecase.AgendaBuilder
+import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import kotlinx.datetime.LocalDate
@@ -45,13 +47,17 @@ class AgendaBuilderTest {
             Reminder("r2", "Done one", emptyList(), at(2026, 3, 12), done = true, createdAt = at(2026, 3, 1)),
             Reminder("r3", "Someday", emptyList(), null, createdAt = at(2026, 3, 1)),
         )
-        val items = AgendaBuilder.build(listOf(ana), reminders, emptyList(), today, TimeZone.UTC)
+        // An old-style kid becomes a person linked to Ana (F9); a close friend's kid still shows, with their parent.
+        val (people, links) = KidsAsPeople.convert(listOf(ana), emptyList())
+        val items = AgendaBuilder.build(people, reminders, emptyList(), today, TimeZone.UTC, links = links)
         assertEquals(3, items.size)
         assertIs<AgendaItem.ReminderDue>(items[0])
         assertEquals("Ana", (items[0] as AgendaItem.ReminderDue).friends.single().name)
         assertIs<AgendaItem.FriendEvent>(items[1])
         val kid = assertIs<AgendaItem.KidBirthday>(items[2])
         assertEquals(6, kid.turning)
+        assertEquals("Ana", kid.parent.name)
+        assertEquals(setOf(FriendId("ana"), FriendId("k1")), kid.friendIds)
     }
 
     @Test

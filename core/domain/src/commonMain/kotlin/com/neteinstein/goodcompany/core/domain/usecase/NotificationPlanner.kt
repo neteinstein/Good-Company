@@ -30,7 +30,7 @@ import kotlin.time.Instant
  * Text is not decided here — each notification carries [NotificationContent] that the UI layer renders
  * in the user's language.
  *
- * Only friends with `notifyBirthday` get birthday pings (theirs and their kids'); a relative's birthday pings only
+ * Only people with `notifyBirthday` get birthday pings (a kid has their own, F9); a relative's birthday pings only
  * when that relative's own `notifyBirthday` is on, an anniversary when its link's reminder is on; important events,
  * reminders and plans always notify. Catch-up nudges (friend and group rhythms) are budgeted by [NudgePolicy]:
  * gathered into one weekly digest, or at most one a day, and they quieten down (then stop) when the app isn't
@@ -72,16 +72,17 @@ object NotificationPlanner {
             if (at > now && day <= end) out += PlannedNotification(id, at, content)
         }
 
+        val parents = KidsAsPeople.parentsById(links, friends)
         for (f in friends) {
             if (f.notifyBirthday) {
                 f.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)))
-                }
-                f.kids.forEach { kid ->
-                    kid.birthday?.let { b ->
-                        val d = b.nextOccurrence(today)
-                        add("kid:${kid.id}:$d", d, NotificationContent.KidBirthday(kid.name, f.displayName, b.ageOn(d), kid.likes))
+                    // A kid (F9) has their own reminder; the ping says whose kid they are (same id as before they were people).
+                    val parent = parents[f.id]?.firstOrNull()
+                    if (parent != null) {
+                        add("kid:${f.id.value}:$d", d, NotificationContent.KidBirthday(f.displayName, parent.displayName, b.ageOn(d), f.likes))
+                    } else {
+                        add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)))
                     }
                 }
             }

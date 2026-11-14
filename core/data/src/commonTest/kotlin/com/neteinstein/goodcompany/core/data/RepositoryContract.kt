@@ -41,7 +41,6 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
@@ -135,10 +134,6 @@ abstract class RepositoryContract {
         likes = listOf("jazz", "sushi"),
         dislikes = listOf("cilantro"),
         notes = "Met at uni\nLoves hiking",
-        kids = listOf(
-            Kid("k1", "Maria", Birthday(5, 1, 2018), listOf("dinosaurs", "lego"), at(2026, 1, 2)),
-            Kid("k2", "João", Birthday(12, 24)),
-        ),
         importantEvents = listOf(ImportantEvent("e1", "Wedding", LocalDate(2026, 6, 20), remindDaysBefore = 7, addedAt = at(2026, 1, 3))),
         meetEveryDays = 14,
         suggestEvents = true,
@@ -146,8 +141,8 @@ abstract class RepositoryContract {
         closeness = Closeness.INNER,
         snoozedUntil = LocalDate(2026, 4, 1),
         gifts = listOf(
-            Gift("g1", "Book", "Murakami", forKidId = null, givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
-            Gift("g2", "Lego set", forKidId = "k1", url = "https://shop.example/lego", price = "€35"),
+            Gift("g1", "Book", "Murakami", givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
+            Gift("g2", "Lego set", url = "https://shop.example/lego", price = "€35"),
         ),
         catchUpPaused = true,
         contactCountsAsCatchUp = true,
@@ -194,6 +189,7 @@ abstract class RepositoryContract {
         pronouns = Pronouns.THEY,
         customName = "Aninhas",
         customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
+        showInMyList = false,
     )
 
     // --- Friends ---
@@ -326,7 +322,7 @@ abstract class RepositoryContract {
         stores.backup.restore(
             Backup(
                 friends = listOf(
-                    friend("kid") { copy(contactId = "c-kid", kids = listOf(Kid("k1", "Maria"))) },
+                    friend("kid") { copy(contactId = "c-kid", likes = listOf("Maria")) },
                     friend("bday") { copy(contactId = "c-bday", birthday = Birthday(1, 2)) },
                     friend("gone") { copy(contactId = "c-gone", notes = "x") },
                 ),

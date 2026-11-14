@@ -81,7 +81,12 @@ data class ContactCard(
         fun from(friend: Friend, links: List<PersonLink> = emptyList(), people: Map<FriendId, Friend> = emptyMap()): ContactCard = ContactCard(
             name = friend.name,
             birthday = friend.birthday,
-            kids = friend.kids.mapNotNull { kid -> kid.name.trim().takeIf { it.isNotEmpty() }?.let { CardKid(it, kid.birthday) } },
+            // Kids are people linked as their child (F9): written as kids (a child relation and their birthday).
+            kids = links.mapNotNull { link ->
+                if (link.roleSeenBy(friend.id) != LinkType.CHILD) return@mapNotNull null
+                val kid = link.otherThan(friend.id)?.let(people::get) ?: return@mapNotNull null
+                kid.name.trim().takeIf { it.isNotEmpty() }?.let { CardKid(it, kid.birthday) }
+            },
             events = friend.importantEvents.mapNotNull { e -> e.title.trim().takeIf { it.isNotEmpty() }?.let { CardEvent(it, e.date) } },
             notes = friend.notes,
             likes = friend.likes.map(String::trim).filter(String::isNotEmpty),
@@ -89,7 +94,7 @@ data class ContactCard(
             relatives = friend.relatives.mapNotNull { r -> r.name.trim().takeIf { it.isNotEmpty() }?.let { CardRelative(it, r.relation) } },
             links = links.mapNotNull { link ->
                 val other = link.otherThan(friend.id)?.let(people::get) ?: return@mapNotNull null
-                val role = link.roleSeenBy(friend.id) ?: return@mapNotNull null
+                val role = link.roleSeenBy(friend.id)?.takeIf { it != LinkType.CHILD } ?: return@mapNotNull null
                 other.name.trim().takeIf { it.isNotEmpty() }?.let { CardLink(it, role, other.pronouns) }
             },
             referredBy = friend.introducedBy?.name?.trim()?.takeIf { it.isNotEmpty() },

@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 interface FriendRepository {
     val friends: Flow<List<Friend>>
@@ -88,6 +89,17 @@ interface ReminderRepository {
     suspend fun upsert(reminder: Reminder)
 
     suspend fun delete(id: String)
+
+    companion object {
+        /** No links: a default for use cases that only read them to add context (kids in AI prompts). */
+        val None: PersonLinkRepository = object : PersonLinkRepository {
+            override val links: Flow<List<PersonLink>> = flowOf(emptyList())
+
+            override suspend fun upsert(link: PersonLink) = Unit
+
+            override suspend fun delete(id: String) = Unit
+        }
+    }
 }
 
 interface InteractionRepository {
@@ -149,6 +161,17 @@ interface PersonLinkRepository {
     suspend fun upsert(link: PersonLink)
 
     suspend fun delete(id: String)
+
+    companion object {
+        /** No links: for callers that only read links for context and have none to give. */
+        val None: PersonLinkRepository = object : PersonLinkRepository {
+            override val links: Flow<List<PersonLink>> = flowOf(emptyList())
+
+            override suspend fun upsert(link: PersonLink) = Unit
+
+            override suspend fun delete(id: String) = Unit
+        }
+    }
 }
 
 interface PlanRepository {

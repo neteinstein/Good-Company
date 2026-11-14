@@ -20,6 +20,7 @@ import com.neteinstein.goodcompany.core.data.repository.SqlSettingsRepository
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CardKid
 import com.neteinstein.goodcompany.core.domain.model.CardLink
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -124,6 +125,7 @@ class SqlRepositoryContractTest : RepositoryContract() {
     @Test
     fun referencesToThingsThatDontExist_areDroppedNotStored() = runTest {
         val s = open()
+        // An old-style gift for a kid (issue #40) isn't stored with its kid: kids are people now.
         s.friends.upsert(friend("ana") { copy(gifts = listOf(Gift("g", "Lego", forKidId = "no-such-kid"))) })
         s.hangouts.add(Hangout("h", listOf(ana, FriendId("ghost")), at(2026, 3, 1)))
         s.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "no-such-idea", createdAt = at(2026, 3, 1)))
@@ -221,7 +223,9 @@ class SqlRepositoryContractTest : RepositoryContract() {
         s.friends.upsert(friend("leo")) // no contact: never written
         links.upsert(PersonLink("l1", rui, ana, LinkType.DATING))
         links.upsert(PersonLink("l2", rui, FriendId("leo"), LinkType.CHILD))
-        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE), CardLink("Leo", LinkType.CHILD)), writer.written[rui]!!.links)
+        // A kid is written once, as a child row, not also as a relation.
+        assertEquals(listOf(CardLink("Ana Silva", LinkType.DATING, Pronouns.SHE)), writer.written[rui]!!.links)
+        assertEquals(listOf(CardKid("Leo")), writer.written[rui]!!.kids)
         assertEquals(listOf(CardLink("Rui", LinkType.DATING)), writer.written[ana]!!.links)
         assertNull(writer.written[FriendId("leo")])
 

@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.photoOf
@@ -366,6 +367,7 @@ class SuggestUpdateFromSharedUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     /** The suggested line, or null when the AI found nothing about them in what was shared. */
     suspend operator fun invoke(id: FriendId, content: SharedContent): Result<String?> {
@@ -382,7 +384,7 @@ class SuggestUpdateFromSharedUseCase(
             .ifEmpty { null }
         return assistant.lifeUpdateFromShared(
             key,
-            IdeaMapper.profile(friend, interactions, hangouts),
+            IdeaMapper.profile(friend, interactions, hangouts, links, friends),
             text,
             content.image,
             language.languageTag(),

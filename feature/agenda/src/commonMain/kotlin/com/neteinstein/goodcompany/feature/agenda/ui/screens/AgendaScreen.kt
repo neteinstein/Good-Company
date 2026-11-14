@@ -128,7 +128,7 @@ fun AgendaScreen(onOpenFriend: (FriendId) -> Unit, viewModel: AgendaViewModel = 
     }
     state.wishFor?.let { friend ->
         val firstName = friend.displayName.substringBefore(' ')
-        val ideas = friend.gifts.filter { it.isIdea && it.forKidId == null }
+        val ideas = friend.gifts.filter { it.isIdea }
         SendMessageSheet(
             title = stringResource(Res.string.wish_title, firstName),
             suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),

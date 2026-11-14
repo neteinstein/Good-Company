@@ -61,7 +61,7 @@ class SampleDataTest {
     @Test
     fun sampleAlwaysHasSomethingComingUpAndOverdue() {
         val b = SampleData.build(clock)
-        val agenda = AgendaBuilder.build(b.friends, b.reminders, b.hangouts, clock.today(), clock.timeZone)
+        val agenda = AgendaBuilder.build(b.friends, b.reminders, b.hangouts, clock.today(), clock.timeZone, links = b.links)
         assertTrue(agenda.any { it is AgendaItem.FriendBirthday && it.date == clock.today() })
         assertTrue(agenda.any { it is AgendaItem.KidBirthday })
         assertTrue(agenda.any { it is AgendaItem.FriendEvent })

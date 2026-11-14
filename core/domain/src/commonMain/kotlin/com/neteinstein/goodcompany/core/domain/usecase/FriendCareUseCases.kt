@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
+import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.photoOf
@@ -252,15 +253,19 @@ class DraftBirthdayMessageUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
     suspend operator fun invoke(id: FriendId): Result<String> {
         val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
-        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts), language.languageTag())
+        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts, links, friends), language.languageTag())
     }
 }
 
-/** AI gift ideas for a friend or one of their kids. Requires an API key. */
+/**
+ * AI gift ideas for someone. Requires an API key. For a kid (F9: someone with a parent among your people) the ideas
+ * are asked as before, as a gift for the parent's kid, so the prompt knows it's for a child.
+ */
 class SuggestGiftsUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
@@ -268,17 +273,18 @@ class SuggestGiftsUseCase(
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
+    private val links: PersonLinkRepository = PersonLinkRepository.None,
 ) {
-    suspend operator fun invoke(id: FriendId, kidId: String? = null): Result<List<String>> {
+    suspend operator fun invoke(id: FriendId): Result<List<String>> {
         val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
-        val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
-        val kid = friend.kids.firstOrNull { it.id == kidId }
-        val alreadyHave = friend.gifts.filter { it.forKidId == kidId }.map { it.title.lowercase() }.toSet()
+        val person = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
+        val parent = KidsAsPeople.parentsOf(id, links.links.first(), friends.friends.first().associateBy { it.id }).firstOrNull()
+        val alreadyHave = person.gifts.map { it.title.lowercase() }.toSet()
         return assistant.giftIdeas(
             key,
-            IdeaMapper.profile(friend, interactions, hangouts),
-            kid?.name,
-            kid?.likes.orEmpty(),
+            IdeaMapper.profile(parent ?: person, interactions, hangouts, links, friends),
+            person.name.takeIf { parent != null },
+            if (parent != null) person.likes else emptyList(),
             language.languageTag(),
         )
             .map { ideas -> ideas.map(String::trim).filter { it.isNotEmpty() && it.lowercase() !in alreadyHave }.distinct() }

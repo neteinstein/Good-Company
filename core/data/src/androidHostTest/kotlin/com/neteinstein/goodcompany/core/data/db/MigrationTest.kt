@@ -68,12 +68,13 @@ class MigrationTest {
 
         GoodCompanyDatabase.Schema.migrate(driver, 3, GoodCompanyDatabase.Schema.version).await()
         val database = GoodCompanyDatabase(driver)
-        val ana = database.readFriends().single()
+        val ana = database.readFriends().first { it.id.value == "ana" }
 
         assertEquals(listOf("jazz", "sushi"), ana.likes)
         assertEquals(listOf("cilantro"), ana.dislikes)
         assertEquals(setOf("jazz"), ana.likesAddedAt.keys)
-        assertEquals(listOf("Leo"), ana.kids.map { it.name })
+        // Since version 10 the kid is a person of their own (issue #40).
+        assertEquals("Leo", database.readFriends().single { it.id.value == "k1" }.name)
         assertEquals("Met at uni", ana.notes)
         assertEquals("", ana.job)
         assertEquals("", ana.livesIn)
@@ -86,7 +87,7 @@ class MigrationTest {
         // The rebuilt taste table takes the new kinds, and the friend round-trips with them.
         val edited = ana.copy(food = listOf("ramen"), interests = listOf("climbing"), met = MetInfo("Uni", null))
         database.writeFriend(edited, 0)
-        assertEquals(edited, database.readFriends().single())
+        assertEquals(edited, database.readFriends().first { it.id.value == "ana" })
         driver.close()
     }
 
@@ -308,6 +309,55 @@ class MigrationTest {
         assertEquals(ContactPhoto("AQI="), database.readFriends().first().avatar)
         database.friendQueries.delete("ana")
         assertEquals(listOf("rui"), database.readFriends().map { it.id.value })
+    }
+
+    @Test
+    fun version10to11_turnsKidsIntoPeople_keepingIdsLikesAndGifts() = runTest {
+        val driver = driverAt(10)
+        suspend fun friendRow(id: String, position: Int, relation: String?, notify: Int) = driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up, relation_to_me)
+            VALUES ('$id', $position, '$id', NULL, 0, $notify, '', 0, 0, 0, 0, ${relation?.let { "'$it'" } ?: "NULL"})
+            """.trimIndent(),
+            0,
+        ).await()
+        friendRow("ana", 0, "SIBLING", 1)
+        friendRow("rui", 1, null, 0)
+        friendRow("dup", 2, null, 0)
+        // Ana (family) has Leo; Rui (a friend) has a kid whose id another person already has.
+        driver.execute(null, "INSERT INTO kid VALUES ('ana', 'leo', 0, 'Leo', 5, 1, 2018, 1700000000000)", 0).await()
+        driver.execute(null, "INSERT INTO kid_like VALUES ('ana', 'leo', 0, 'dinosaurs')", 0).await()
+        driver.execute(null, "INSERT INTO kid VALUES ('rui', 'dup', 0, 'Mia', NULL, NULL, NULL, NULL)", 0).await()
+        driver.execute(null, "INSERT INTO gift VALUES ('rui', 'g1', 0, 'Lego', '', 'dup', NULL, NULL, NULL, '€35')", 0).await()
+        driver.execute(null, "INSERT INTO gift VALUES ('rui', 'g2', 1, 'Book', '', NULL, NULL, NULL, NULL, NULL)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 10, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val people = database.readFriends().associateBy { it.id.value }
+
+        val leo = people.getValue("leo")
+        assertEquals("Leo", leo.name)
+        assertEquals(listOf("dinosaurs"), leo.likes)
+        assertEquals(2018, leo.birthday?.year)
+        assertTrue(leo.notifyBirthday) // from Ana's birthday reminder
+        assertTrue(leo.showInMyList) // Ana is family
+        val mia = people.getValue("rui-dup")
+        assertEquals("Mia", mia.name)
+        assertEquals(false, mia.showInMyList) // a friend's kid
+        assertTrue(people.getValue("ana").showInMyList && people.getValue("dup").showInMyList)
+
+        assertEquals(
+            listOf(
+                PersonLink("kid-link-leo", FriendId("ana"), FriendId("leo"), LinkType.CHILD, addedAt = Instant.fromEpochMilliseconds(1700000000000)),
+                PersonLink("kid-link-rui-dup", FriendId("rui"), FriendId("rui-dup"), LinkType.CHILD),
+            ),
+            database.readLinks(),
+        )
+        // The gift for Mia moved to her page; Rui keeps his own.
+        assertEquals(listOf(Gift("g1", "Lego", price = "€35")), mia.gifts)
+        assertEquals(listOf("Book"), people.getValue("rui").gifts.map { it.title })
         driver.close()
     }
 }

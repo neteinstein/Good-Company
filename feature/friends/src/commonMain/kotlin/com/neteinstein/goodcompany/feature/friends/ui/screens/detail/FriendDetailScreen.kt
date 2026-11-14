@@ -41,7 +41,6 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Celebration
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
@@ -126,7 +125,6 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
-import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
@@ -136,6 +134,7 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
+import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
@@ -222,7 +221,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.feeds_hint
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_no_posts
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_title
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_to_news
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_for_kid
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_on
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_hint
@@ -230,7 +228,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.gifts_ideas
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_none_found
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest
-import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggest_for
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_suggestions
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_title
 import com.neteinstein.goodcompany.feature.friends.resources.groups_member_of
@@ -242,12 +239,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.ideas_hint_no_ai
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_open
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_setup
 import com.neteinstein.goodcompany.feature.friends.resources.ideas_title
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday
-import com.neteinstein.goodcompany.feature.friends.resources.kids_birthday_turns
-import com.neteinstein.goodcompany.feature.friends.resources.kids_hint
-import com.neteinstein.goodcompany.feature.friends.resources.kids_loves
-import com.neteinstein.goodcompany.feature.friends.resources.kids_remove
-import com.neteinstein.goodcompany.feature.friends.resources.kids_title
 import com.neteinstein.goodcompany.feature.friends.resources.moments_hint
 import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.moments_title
@@ -298,6 +289,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_add
 import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint
+import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint_any
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import com.neteinstein.goodcompany.feature.friends.resources.story_cta
@@ -353,7 +347,6 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.AddFeedDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
-import com.neteinstein.goodcompany.feature.friends.ui.components.KidDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -428,8 +421,8 @@ fun FriendDetailScreen(
             onAddDislikes = viewModel::onAddDislikes,
             onRemoveDislike = viewModel::onRemoveDislike,
             onNotesChange = viewModel::onNotesChange,
-            onSaveKid = viewModel::onSaveKid,
-            onRemoveKid = viewModel::onRemoveKid,
+            onAddKid = viewModel::onAddKid,
+            onSetShowInMyList = viewModel::onSetShowInMyList,
             onAddEvent = viewModel::onAddEvent,
             onRemoveEvent = viewModel::onRemoveEvent,
             onSaveGift = viewModel::onSaveGift,
@@ -535,14 +528,14 @@ data class FriendDetailActions(
     val onAddDislikes: (List<String>) -> Unit = {},
     val onRemoveDislike: (String) -> Unit = {},
     val onNotesChange: (String) -> Unit = {},
-    val onSaveKid: (id: String?, name: String, birthday: Birthday?, likes: List<String>) -> Unit = { _, _, _, _ -> },
-    val onRemoveKid: (String) -> Unit = {},
+    val onAddKid: (KidDraft) -> Unit = {},
+    val onSetShowInMyList: (Boolean) -> Unit = {},
     val onAddEvent: (String, LocalDate, Int) -> Unit = { _, _, _ -> },
     val onRemoveEvent: (String) -> Unit = {},
-    val onSaveGift: (title: String, note: String, forKidId: String?) -> Unit = { _, _, _ -> },
+    val onSaveGift: (title: String, note: String) -> Unit = { _, _ -> },
     val onRemoveGift: (String) -> Unit = {},
     val onMarkGiftGiven: (String, GiftOccasion?) -> Unit = { _, _ -> },
-    val onSuggestGifts: (kidId: String?) -> Unit = {},
+    val onSuggestGifts: () -> Unit = {},
     val onKeepGiftSuggestion: (String) -> Unit = {},
     val onDismissGiftSuggestions: () -> Unit = {},
     val onOpenWish: () -> Unit = {},
@@ -610,6 +603,7 @@ suspend fun FriendDetailMessage.text(): String = when (this) {
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
     FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
     is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
+    is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -835,9 +829,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     f,
                     state.today,
                     onAdd = { familyEditing = FamilyEditing.New },
-                    onEditKid = { familyEditing = FamilyEditing.EditKid(it) },
                     onEditRelative = { familyEditing = FamilyEditing.EditRelative(it) },
-                    onRemoveKid = actions.onRemoveKid,
                     onRemoveRelative = actions.onRemoveRelative,
                     links = state.links,
                     onOpenPerson = actions.onOpenFriend,
@@ -970,6 +962,16 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "prefs") {
                 SectionCard(stringResource(Res.string.prefs_title), icon = Icons.Rounded.Tune) {
+                    // F9: a kid can be kept out of the main list (they stay on their parent's page and in birthdays).
+                    val parent = detail.parents.firstOrNull()
+                    if (parent != null || !f.showInMyList) {
+                        ToggleRow(
+                            stringResource(Res.string.show_in_my_list),
+                            parent?.let { stringResource(Res.string.show_in_my_list_hint, it.name.substringBefore(' ')) }
+                                ?: stringResource(Res.string.show_in_my_list_hint_any),
+                            f.showInMyList,
+                        ) { actions.onSetShowInMyList(!f.showInMyList) }
+                    }
                     ToggleRow(
                         stringResource(Res.string.prefs_real),
                         stringResource(Res.string.prefs_real_hint),
@@ -1037,10 +1039,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 editing = editing,
                 latestYear = state.today.year,
                 onDismiss = { familyEditing = null },
-                onSaveKid = { id, name, birthday, likes ->
-                    actions.onSaveKid(id, name, birthday, likes)
+                onAddKid = {
+                    actions.onAddKid(it)
                     familyEditing = null
                 },
+                parentIsFamily = f.isFamily,
                 onSaveRelative = {
                     actions.onSaveRelative(it)
                     familyEditing = null
@@ -1085,8 +1088,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             }
         }
         if (addingGift) {
-            GiftDialog(f, onDismiss = { addingGift = false }) { title, note, kidId ->
-                actions.onSaveGift(title, note, kidId)
+            GiftDialog(onDismiss = { addingGift = false }) { title, note ->
+                actions.onSaveGift(title, note)
                 addingGift = false
             }
         }
@@ -1162,7 +1165,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             )
         }
         if (state.showWish) {
-            val ideas = f.gifts.filter { it.isIdea && it.forKidId == null }
+            val ideas = f.gifts.filter { it.isIdea }
             SendMessageSheet(
                 title = stringResource(Res.string.wish_title, firstName),
                 suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
@@ -1460,7 +1463,6 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
     ) {
         val ideas = f.gifts.filter { it.isIdea }
         val given = f.gifts.filterNot { it.isIdea }.sortedByDescending { it.givenOn }
-        val kidName = { id: String? -> f.kids.firstOrNull { it.id == id }?.name }
         if (f.gifts.isEmpty()) Hint(stringResource(Res.string.gifts_hint))
         if (ideas.isNotEmpty()) Label(stringResource(Res.string.gifts_ideas), Icons.Rounded.AutoAwesome)
         ideas.forEach { gift ->
@@ -1470,9 +1472,8 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
-                    val sub = listOfNotNull(kidName(gift.forKidId)?.let { stringResource(Res.string.gifts_for_kid, it) }, gift.note.ifBlank { null })
-                    if (sub.isNotEmpty()) {
-                        Text(sub.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (gift.note.isNotBlank()) {
+                        Text(gift.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 IconButton(onClick = { onGive(gift) }) {
@@ -1492,11 +1493,8 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                 Column(Modifier.weight(1f)) {
                     Text(gift.title, style = MaterialTheme.typography.titleSmall)
                     val date = gift.givenOn?.let { if (isFarDate(it, state.today)) it.shortLabel() else relativeDay(it, state.today) }.orEmpty()
-                    val parts = listOfNotNull(
-                        gift.occasion?.let { stringResource(Res.string.gifts_given_on, occasionLabel(it), date) } ?: date,
-                        kidName(gift.forKidId)?.let { stringResource(Res.string.gifts_for_kid, it) },
-                    )
-                    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val line = gift.occasion?.let { stringResource(Res.string.gifts_given_on, occasionLabel(it), date) } ?: date
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = {
                     actions.onRemoveGift(gift.id)
@@ -1511,7 +1509,7 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
             ) {
                 val busy = state.suggestingGiftsFor
                 AssistChip(
-                    onClick = { actions.onSuggestGifts(null) },
+                    onClick = actions.onSuggestGifts,
                     enabled = busy == null,
                     label = { Text(stringResource(Res.string.gifts_suggest)) },
                     leadingIcon = {
@@ -1524,22 +1522,6 @@ private fun Gifts(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                         }
                     },
                 )
-                f.kids.forEach { kid ->
-                    AssistChip(
-                        onClick = { actions.onSuggestGifts(kid.id) },
-                        enabled = busy == null,
-                        label = { Text(stringResource(Res.string.gifts_suggest_for, kid.name)) },
-                        leadingIcon = {
-                            if (busy ==
-                                kid.id
-                            ) {
-                                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Rounded.ChildCare, null, Modifier.size(18.dp))
-                            }
-                        },
-                    )
-                }
             }
         }
         AnimatedVisibility(state.giftSuggestions != null) {

@@ -503,4 +503,10 @@
     <string name="birthday_remind">Lembrar-me do aniversário de %1$s</string>
     <string name="birthday_remind_hint">Ativo para todos com data de aniversário. Desative-o aqui para uma pessoa.</string>
     <string name="birthday_remove">Remover aniversário</string>
+    <string name="kid_add_title">Adicionar filho de %1$s</string>
+    <string name="show_in_my_list">Mostrar na minha lista</string>
+    <string name="kid_show_hint_family">Ligado porque %1$s é família. Desligado por omissão para os filhos de amigos.</string>
+    <string name="kid_show_hint_friend">Desligado por omissão para os filhos de amigos: continuam na página de %1$s e nos aniversários.</string>
+    <string name="show_in_my_list_hint">Desligado: continua na página de %1$s e nos aniversários.</string>
+    <string name="show_in_my_list_hint_any">Desligado: continua nas páginas a que está ligado e nos aniversários.</string>
 </resources>

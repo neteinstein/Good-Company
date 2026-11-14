@@ -11,8 +11,9 @@ sealed interface AgendaItem {
         override val key get() = "bday-${friend.id.value}-$date"
     }
 
-    data class KidBirthday(val parent: Friend, val kid: Kid, override val date: LocalDate, val turning: Int?) : AgendaItem {
-        override val key get() = "kid-${kid.id}-$date"
+    /** A kid's birthday (F9): the kid is a person with their own reminder, shown with their [parent]. */
+    data class KidBirthday(val parent: Friend, val kid: Friend, override val date: LocalDate, val turning: Int?) : AgendaItem {
+        override val key get() = "kid-${kid.id.value}-$date"
     }
 
     /** A relative's birthday; only for relatives with [Relative.notifyBirthday] on. */
@@ -58,7 +59,7 @@ sealed interface AgendaItem {
 val AgendaItem.friendIds: Set<FriendId>
     get() = when (this) {
         is AgendaItem.FriendBirthday -> setOf(friend.id)
-        is AgendaItem.KidBirthday -> setOf(parent.id)
+        is AgendaItem.KidBirthday -> setOf(parent.id, kid.id)
         is AgendaItem.RelativeBirthday -> setOf(friend.id)
         is AgendaItem.FriendEvent -> setOf(friend.id)
         is AgendaItem.Anniversary -> setOf(first.id, second.id)
