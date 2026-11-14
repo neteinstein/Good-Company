@@ -85,7 +85,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
@@ -140,6 +139,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -160,6 +160,7 @@ import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.interactionIcon
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
@@ -676,7 +677,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null
-        val result = snackbar.showSnackbar(message.text(), actionLabel = if (undoable) undoLabel else null)
+        val result = snackbar.showMessage(message.text(), if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
@@ -688,7 +689,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         actions.onMessageShown()
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         val detail = state.detail
         if (detail == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {

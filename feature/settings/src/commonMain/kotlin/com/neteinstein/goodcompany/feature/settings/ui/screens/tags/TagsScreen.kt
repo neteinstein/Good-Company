@@ -31,8 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
@@ -56,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.Tags
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.feature.settings.resources.Res
 import com.neteinstein.goodcompany.feature.settings.resources.msg_tag_deleted
 import com.neteinstein.goodcompany.feature.settings.resources.msg_tag_merged
@@ -132,7 +132,7 @@ fun TagsContent(state: TagsUiState, actions: TagsActions) {
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val withUndo = message is TagsMessage.Deleted
-        val result = snackbar.showSnackbar(message.text(), actionLabel = if (withUndo) undo else null, duration = SnackbarDuration.Short)
+        val result = snackbar.showMessage(message.text(), if (withUndo) undo else null)
         if (withUndo && result == SnackbarResult.ActionPerformed) actions.onUndoDelete()
         actions.onMessageShown()
     }
@@ -148,7 +148,7 @@ fun TagsContent(state: TagsUiState, actions: TagsActions) {
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { AppSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 24.dp)) {
             if (searching || state.query.isNotEmpty()) {

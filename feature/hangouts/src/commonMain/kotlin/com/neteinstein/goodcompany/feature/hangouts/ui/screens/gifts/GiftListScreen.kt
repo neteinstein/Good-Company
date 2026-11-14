@@ -42,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
@@ -67,8 +66,10 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListPerson
 import com.neteinstein.goodcompany.core.domain.usecase.GiftTotals
 import com.neteinstein.goodcompany.core.domain.usecase.ListedGift
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.l10n.relationToMeText
@@ -204,13 +205,13 @@ fun GiftListContent(state: GiftListUiState, actions: GiftListActions) {
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val canUndo = message is GiftListMessage.Removed && state.recentlyRemoved != null
-        val result = snackbar.showSnackbar(message.text(), actionLabel = undo.takeIf { canUndo })
+        val result = snackbar.showMessage(message.text(), undo.takeIf { canUndo })
         if (result == SnackbarResult.ActionPerformed) actions.onUndoRemove()
         actions.onMessageShown()
     }
     val detail = state.detail
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { AppSnackbarHost(snackbar) },
         floatingActionButton = {
             if (detail != null) {
                 ExtendedFloatingActionButton(

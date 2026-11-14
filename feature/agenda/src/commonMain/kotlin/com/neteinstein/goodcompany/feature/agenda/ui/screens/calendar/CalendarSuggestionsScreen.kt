@@ -21,8 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
@@ -44,8 +42,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarMatchKind
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarSuggestion
+import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
+import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
@@ -115,7 +115,7 @@ fun CalendarSuggestionsContent(state: CalendarSuggestionsUiState, actions: Calen
     val undo = stringResource(CoreRes.string.undoLabel)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showSnackbar(message.text(), actionLabel = undo, duration = SnackbarDuration.Short)
+        val result = snackbar.showUndo(message.text(), undo)
         if (result == SnackbarResult.ActionPerformed) actions.onUndo() else actions.onMessageShown()
     }
     Scaffold(
@@ -127,7 +127,7 @@ fun CalendarSuggestionsContent(state: CalendarSuggestionsUiState, actions: Calen
                 },
             )
         },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { AppSnackbarHost(snackbar) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
