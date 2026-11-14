@@ -97,7 +97,10 @@ data class FriendDetail(
     val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
     val cadenceDays: Int? = null,
     val cadenceSource: CadenceRules.Source? = null,
+    /** The circles they're in, the built-in Family circle first when they're family. */
     val groups: List<FriendGroup> = emptyList(),
+    /** Every circle that can be ticked for them (issue #70): the stored ones, never the built-in Family circle. */
+    val allCircles: List<FriendGroup> = emptyList(),
     /** Things to bring up, from notes and dates you already have (works without an AI key). */
     val topics: List<TopicHint> = emptyList(),
     /** Planned meetups with this friend (or a circle they're in) that haven't happened yet. */
@@ -160,6 +163,7 @@ class ObserveFriendDetailUseCase(
             cadenceDays = CadenceRules.from(s).cadenceFor(friend),
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
+            allCircles = gs.filterNot { it.isBuiltIn },
             topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone, kids.map { it.person }),
             plans = ps.filter { p ->
                 p.status == PlanStatus.PLANNED && (id in p.friendIds || gs.any { it.id == p.circleId && id in it.memberIds })

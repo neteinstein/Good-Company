@@ -18,6 +18,10 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
   doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; unknown reads as not set).
 - Circle colours come only from `circlePalette` (`:core:ui`).
+- Membership from a person's page (issue #70) goes through `SetCircleMemberUseCase` (returns the circle as it was;
+  Undo = `RestoreGroupUseCase`). Taking out the last member keeps the circle empty, never deletes it. The "+ Circle"
+  sheet lists `FriendDetail.allCircles` (stored circles only, never Family). `CircleEditorRoute(withFriend = id)`
+  opens a new circle with that person in.
 - The Circles tab (issue #67) is `HangoutsScreen`/`HangoutsViewModel` behind `HangoutsRoute` (route names kept): circle
   cards last met first (never met last), Family among them, then "Last time with…" and memories. `CheckInSheetHost`
   (Today's "I'm with…") shares that ViewModel. "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).

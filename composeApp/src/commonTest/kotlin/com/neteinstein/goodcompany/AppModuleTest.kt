@@ -110,8 +110,9 @@ class AppModuleTest {
                 parametersOf(emptyList<FriendId>(), null, "circle-1", null, LogPrefill(activity = HangoutActivity.LUNCH, note = "n", place = "p"))
             },
         )
-        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null) })
-        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1") })
+        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null, null) })
+        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1", null) })
+        assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null, FriendId("ana")) })
         assertNotNull(koin.get<GiftListsViewModel>())
         assertNotNull(koin.get<GiftListViewModel> { parametersOf("list-1") })
         assertNotNull(koin.get<HangoutsViewModel>())

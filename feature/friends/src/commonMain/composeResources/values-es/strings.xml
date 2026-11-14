@@ -83,7 +83,6 @@
     <string name="contact_met">Os visteis %1$s</string>
     <string name="contact_call">Llamada %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Círculos</string>
     <string name="tastes_title">Gustos</string>
     <string name="tastes_loves">Le encanta</string>
     <string name="tastes_loves_placeholder">Añade gustos — jazz, sushi, F1…</string>
@@ -496,4 +495,10 @@
         <item quantity="one">%1$d enfriándose: %2$s</item>
         <item quantity="other">%1$d enfriándose: %2$s</item>
     </plurals>
+    <!-- Circles on a person's page (issue #70) -->
+    <string name="circles_add">Círculo</string>
+    <string name="circles_sheet_title">Círculos de %1$s</string>
+    <string name="circles_new_with">Nuevo círculo con %1$s</string>
+    <string name="circles_remove">Quitar de %1$s</string>
+    <string name="msg_removed_from_circle">Ya no está en %1$s</string>
 </resources>

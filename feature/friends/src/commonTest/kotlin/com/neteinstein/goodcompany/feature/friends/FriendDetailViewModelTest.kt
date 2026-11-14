@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
@@ -23,6 +24,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
+import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
@@ -80,6 +82,8 @@ class FriendDetailViewModelTest {
         g.removeFriendPhoto,
         g.renameFriend,
         g.setHomeCircleFilter,
+        g.setCircleMember,
+        g.restoreGroup,
         g.observeAttachments,
         g.observeTags,
         g.deleteAttachment,
@@ -89,6 +93,53 @@ class FriendDetailViewModelTest {
         g.clock,
         g.ids,
     )
+
+    @Test
+    fun circleSheet_listsStoredCircles_andATickSavesWithUndo() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana") { copy(relationToMe = LinkType.SIBLING) }, friend("rui")))
+        g.groupRepo.upsert(FriendGroup("surf", "Surf", memberIds = listOf(FriendId("rui"))))
+        val vm = vm()
+        val state = collecting(vm.state)
+        // Ana is family: the built-in circle shows as a chip but is never offered in the sheet.
+        assertEquals(listOf(FamilyCircle.ID), state.value.detail!!.groups.map { it.id })
+        assertEquals(listOf("surf"), state.value.detail!!.allCircles.map { it.id })
+
+        vm.onSetInCircle("surf", member = true)
+        assertEquals(listOf("rui", "ana"), g.groupRepo.groups.value.single().memberIds.map { it.value })
+        assertEquals(listOf(FamilyCircle.ID, "surf"), state.value.detail!!.groups.map { it.id })
+        assertEquals(FriendDetailMessage.Saved, state.value.message)
+        assertIs<SavedEdit.CircleBefore>(state.value.undoSave)
+
+        vm.onUndoSave()
+        assertEquals(listOf("rui"), g.groupRepo.groups.value.single().memberIds.map { it.value })
+        assertNull(state.value.undoSave)
+    }
+
+    @Test
+    fun circleChipX_removesWithUndo() = runViewModelTest {
+        val surf = FriendGroup("surf", "Surf", emoji = "🏄", memberIds = listOf(FriendId("ana"), FriendId("x")), meetEveryDays = 14)
+        g.groupRepo.upsert(surf)
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onRemoveFromCircle("surf")
+        assertEquals(listOf(FriendId("x")), g.groupRepo.groups.value.single().memberIds)
+        assertEquals(FriendDetailMessage.RemovedFromCircle(surf), state.value.message)
+        assertTrue(state.value.detail!!.groups.isEmpty())
+
+        vm.onUndoSave()
+        assertEquals(surf, g.groupRepo.groups.value.single()) // back as it was, order and reminder included
+    }
+
+    @Test
+    fun circleTick_onTheFamilyCircleOrNoChange_saysNothing() = runViewModelTest {
+        g.groupRepo.upsert(FriendGroup("surf", "Surf", memberIds = listOf(FriendId("ana"))))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSetInCircle("surf", member = true) // already in
+        vm.onSetInCircle(FamilyCircle.ID, member = true)
+        assertNull(state.value.message)
+        assertNull(state.value.undoSave)
+    }
 
     @Test
     fun aiOff_hidesTheAiSection_evenWithAKey() = runViewModelTest {

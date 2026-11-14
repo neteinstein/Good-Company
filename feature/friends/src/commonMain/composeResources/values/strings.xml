@@ -95,7 +95,6 @@
     <string name="contact_met">Met %1$s</string>
     <string name="contact_call">Call %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
-    <string name="groups_member_of">Circles</string>
 
     <string name="tastes_title">Tastes</string>
     <string name="tastes_loves">Loves</string>
@@ -521,4 +520,10 @@
         <item quantity="one">%1$d cooling: %2$s</item>
         <item quantity="other">%1$d cooling: %2$s</item>
     </plurals>
+    <!-- Circles on a person's page (issue #70) -->
+    <string name="circles_add">Circle</string>
+    <string name="circles_sheet_title">%1$s’s circles</string>
+    <string name="circles_new_with">New circle with %1$s</string>
+    <string name="circles_remove">Remove from %1$s</string>
+    <string name="msg_removed_from_circle">Removed from %1$s</string>
 </resources>

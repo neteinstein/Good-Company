@@ -26,8 +26,9 @@ class CircleEditorViewModelTest {
         ),
     )
 
-    private fun vm(id: String?) = CircleEditorViewModel(
+    private fun vm(id: String?, withFriend: FriendId? = null) = CircleEditorViewModel(
         id,
+        withFriend,
         g.observeFriends,
         g.observeGroups,
         g.saveGroup,
@@ -66,6 +67,25 @@ class CircleEditorViewModelTest {
         val friend = g.friendRepo.get(ana)!!
         assertEquals(7, friend.meetEveryDays)
         assertEquals(Closeness.INNER, friend.closeness)
+    }
+
+    @Test
+    fun newCircleWithSomeone_startsWithThemIn() = runViewModelTest {
+        val vm = vm(null, withFriend = rui)
+        val state = collecting(vm.state)
+        assertTrue(state.value.isNew)
+        assertEquals(listOf(rui), state.value.members.map { it.id })
+        vm.onName("Surf")
+        assertTrue(state.value.canSave) // only the name was missing
+        vm.onSave()
+        assertEquals(listOf(rui), g.groupRepo.groups.value.single { it.name == "Surf" }.memberIds)
+    }
+
+    @Test
+    fun anExistingCircleIgnoresWithFriend() = runViewModelTest {
+        val choir = g.saveGroup(null, "Choir", "🎵", CircleColor.MAGENTA, listOf(ana), null)
+        val state = collecting(vm(choir.id, withFriend = rui).state)
+        assertEquals(listOf(ana), state.value.members.map { it.id })
     }
 
     @Test
