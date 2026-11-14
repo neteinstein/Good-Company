@@ -294,4 +294,25 @@
     <string name="sample_news_rui_move">Moved to a new flat in Alvalade</string>
     <string name="sample_news_marta_job">Looking for a new job, tired of agency life</string>
     <string name="sample_plan_lunch">Lunch at Time Out Market</string>
+    <string name="sample_ana_job">Product designer at Feedzai</string>
+    <string name="sample_ana_met_place">Erasmus in Ghent</string>
+    <string name="sample_rui_job">Data engineer</string>
+    <string name="sample_marta_job">Art director at an agency</string>
+    <string name="sample_beagle">Beagle</string>
+    <string name="sample_taste_padel">Padel</string>
+    <string name="sample_taste_vegetarian_weekdays">Vegetarian on weekdays</string>
+    <string name="sample_taste_oat_flat_white">Oat flat white</string>
+    <string name="sample_taste_trail_running">Trail running</string>
+    <string name="sample_field_shoe_size">Shoe size</string>
+    <string name="sample_field_football_club">Football club</string>
+    <string name="notif_relative_title">🎈 %1$s (%2$s’s family)</string>
+    <string name="topic_new_interest">New interest: %1$s — ask how it’s going</string>
+    <string name="relation_partner">Partner</string>
+    <string name="relation_kid">Kid</string>
+    <string name="relation_parent">Parent</string>
+    <string name="relation_sibling">Sibling</string>
+    <string name="relation_pet">Pet</string>
+    <string name="relation_other">Other</string>
+    <string name="send_email">Email</string>
+    <string name="date_month_year">%1$s %2$d</string>
 </resources>

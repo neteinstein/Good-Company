@@ -5,4 +5,13 @@
     <string name="contact_kid_birthday">Aniversário de %1$s</string>
     <string name="contact_likes">Adora</string>
     <string name="contact_dislikes">Não é fã de</string>
+    <string name="contact_relation_pet">Animal de estimação</string>
+    <string name="contact_relation_other">Família</string>
+    <string name="contact_job">Trabalho</string>
+    <string name="contact_lives_in">Vive em</string>
+    <string name="contact_met">Como nos conhecemos</string>
+    <string name="contact_food">Comida</string>
+    <string name="contact_drinks">Bebidas</string>
+    <string name="contact_interests">Interesses</string>
+    <string name="contact_relation_sibling">Irmão/irmã</string>
 </resources>

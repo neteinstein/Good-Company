@@ -304,4 +304,25 @@
     <string name="sample_news_rui_move">Mudou-se para um apartamento novo em Alvalade</string>
     <string name="sample_news_marta_job">À procura de emprego novo, farta da vida de agência</string>
     <string name="sample_plan_lunch">Almoço no Time Out Market</string>
+    <string name="sample_ana_job">Designer de produto na Feedzai</string>
+    <string name="sample_ana_met_place">Erasmus em Gante</string>
+    <string name="sample_rui_job">Engenheiro de dados</string>
+    <string name="sample_marta_job">Diretora de arte numa agência</string>
+    <string name="sample_beagle">Beagle</string>
+    <string name="sample_taste_padel">Padel</string>
+    <string name="sample_taste_vegetarian_weekdays">Vegetariana durante a semana</string>
+    <string name="sample_taste_oat_flat_white">Flat white com aveia</string>
+    <string name="sample_taste_trail_running">Trail running</string>
+    <string name="sample_field_shoe_size">Número de sapato</string>
+    <string name="sample_field_football_club">Clube de futebol</string>
+    <string name="notif_relative_title">🎈 %1$s (família de %2$s)</string>
+    <string name="topic_new_interest">Interesse novo: %1$s — pergunta como está a correr</string>
+    <string name="relation_partner">Companheiro/a</string>
+    <string name="relation_kid">Filho/a</string>
+    <string name="relation_parent">Pai/mãe</string>
+    <string name="relation_sibling">Irmão/irmã</string>
+    <string name="relation_pet">Animal de estimação</string>
+    <string name="relation_other">Outro</string>
+    <string name="send_email">Email</string>
+    <string name="date_month_year">%1$s %2$d</string>
 </resources>

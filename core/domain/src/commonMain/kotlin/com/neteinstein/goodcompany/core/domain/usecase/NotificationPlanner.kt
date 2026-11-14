@@ -29,7 +29,8 @@ import kotlin.time.Instant
  * Text is not decided here — each notification carries [NotificationContent] that the UI layer renders
  * in the user's language.
  *
- * Only friends with `notifyBirthday` get birthday pings (theirs and their kids'); important events,
+ * Only friends with `notifyBirthday` get birthday pings (theirs and their kids'); a relative's birthday pings only
+ * when that relative's own `notifyBirthday` is on; important events,
  * reminders and plans always notify. Catch-up nudges (friend and group rhythms) are budgeted by [NudgePolicy]:
  * gathered into one weekly digest, or at most one a day, and they quieten down (then stop) when the app isn't
  * being opened. Paused friends never get one.
@@ -80,6 +81,13 @@ object NotificationPlanner {
                         val d = b.nextOccurrence(today)
                         add("kid:${kid.id}:$d", d, NotificationContent.KidBirthday(kid.name, f.name, b.ageOn(d), kid.likes))
                     }
+                }
+            }
+            // Relatives have their own switch (on by default, brief decision F10), like the friend's own; never throttled.
+            f.relatives.filter { it.notifyBirthday }.forEach { r ->
+                r.birthday?.let { b ->
+                    val d = b.nextOccurrence(today)
+                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.name, r.relation, b.ageOn(d)))
                 }
             }
             f.importantEvents.forEach { e ->

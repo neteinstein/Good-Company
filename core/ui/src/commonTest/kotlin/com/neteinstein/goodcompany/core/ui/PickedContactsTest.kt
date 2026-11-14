@@ -10,6 +10,20 @@ import kotlin.test.assertEquals
 
 class PickedContactsTest {
     @Test
+    fun collectsEachPersonsEmails_onceEach() {
+        val records = groupPickedContactRows(
+            listOf(
+                PickedContactRow("1", "Ana", null),
+                PickedContactRow("1", null, null, email = " ana@x.example "),
+                PickedContactRow("1", null, null, email = "ANA@x.example"),
+                PickedContactRow("1", null, null, email = "work@x.example"),
+                PickedContactRow("1", null, null, email = " "),
+            ),
+        )
+        assertEquals(listOf(ContactRecord("1", "Ana", emptyList(), null, emails = listOf("ana@x.example", "work@x.example"))), records)
+    }
+
+    @Test
     fun groupsSeveralPeopleKeepingPickOrder() {
         val records = groupPickedContactRows(
             listOf(

@@ -5,4 +5,13 @@
     <string name="contact_kid_birthday">Ziua de naștere a lui %1$s</string>
     <string name="contact_likes">Adoră</string>
     <string name="contact_dislikes">Nu-i place</string>
+    <string name="contact_relation_pet">Animal de companie</string>
+    <string name="contact_relation_other">Familie</string>
+    <string name="contact_job">Serviciu</string>
+    <string name="contact_lives_in">Locuiește în</string>
+    <string name="contact_met">Cum ne-am cunoscut</string>
+    <string name="contact_food">Mâncare</string>
+    <string name="contact_drinks">Băuturi</string>
+    <string name="contact_interests">Interese</string>
+    <string name="contact_relation_sibling">Frate/soră</string>
 </resources>

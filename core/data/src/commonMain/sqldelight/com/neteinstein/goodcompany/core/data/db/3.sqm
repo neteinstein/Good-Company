@@ -1,0 +1,72 @@
+-- Version 3 → 4 (issue #20): the full friend profile. "About" columns on friend, emails, relatives with their likes,
+-- custom fields, and three more taste kinds (friend_taste is rebuilt because SQLite can't widen a CHECK).
+
+ALTER TABLE friend ADD COLUMN job TEXT NOT NULL DEFAULT '';
+ALTER TABLE friend ADD COLUMN lives_in TEXT NOT NULL DEFAULT '';
+ALTER TABLE friend ADD COLUMN met_place TEXT;
+ALTER TABLE friend ADD COLUMN met_on TEXT;
+ALTER TABLE friend ADD COLUMN introduced_by_friend_id TEXT;
+ALTER TABLE friend ADD COLUMN introduced_by_name TEXT;
+ALTER TABLE friend ADD COLUMN preferred_channel TEXT;
+
+CREATE TABLE friend_taste_new (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('LIKE', 'DISLIKE', 'FOOD', 'DRINK', 'INTEREST')),
+    position INTEGER NOT NULL,
+    taste TEXT NOT NULL,
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, kind, position)
+);
+
+INSERT INTO friend_taste_new (friend_id, kind, position, taste, added_at)
+SELECT friend_id, kind, position, taste, added_at FROM friend_taste;
+
+DROP INDEX friend_taste_kind_taste;
+
+DROP TABLE friend_taste;
+
+ALTER TABLE friend_taste_new RENAME TO friend_taste;
+
+CREATE INDEX friend_taste_kind_taste ON friend_taste(kind, taste);
+
+CREATE TABLE friend_email (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    from_contact INTEGER NOT NULL CHECK (from_contact IN (0, 1)),
+    PRIMARY KEY (friend_id, position)
+);
+
+CREATE TABLE relative (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    relation TEXT NOT NULL CHECK (relation IN ('PARTNER', 'PARENT', 'SIBLING', 'PET', 'OTHER')),
+    name TEXT NOT NULL,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    note TEXT NOT NULL,
+    notify_birthday INTEGER NOT NULL CHECK (notify_birthday IN (0, 1)),
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, id),
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE TABLE relative_like (
+    friend_id TEXT NOT NULL,
+    relative_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    liked TEXT NOT NULL,
+    PRIMARY KEY (friend_id, relative_id, position),
+    FOREIGN KEY (friend_id, relative_id) REFERENCES relative(friend_id, id) ON DELETE CASCADE
+);
+
+CREATE TABLE custom_field (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (friend_id, position)
+);

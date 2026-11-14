@@ -315,4 +315,25 @@
     <string name="sample_news_rui_move">S-a mutat într-un apartament nou în Alvalade</string>
     <string name="sample_news_marta_job">Își caută un job nou, s-a săturat de viața de agenție</string>
     <string name="sample_plan_lunch">Prânz la Time Out Market</string>
+    <string name="sample_ana_job">Designer de produs la Feedzai</string>
+    <string name="sample_ana_met_place">Erasmus la Gent</string>
+    <string name="sample_rui_job">Inginer de date</string>
+    <string name="sample_marta_job">Director de artă la o agenție</string>
+    <string name="sample_beagle">Beagle</string>
+    <string name="sample_taste_padel">Padel</string>
+    <string name="sample_taste_vegetarian_weekdays">Vegetariană în timpul săptămânii</string>
+    <string name="sample_taste_oat_flat_white">Flat white cu lapte de ovăz</string>
+    <string name="sample_taste_trail_running">Alergare montană</string>
+    <string name="sample_field_shoe_size">Mărime la pantofi</string>
+    <string name="sample_field_football_club">Echipa de fotbal</string>
+    <string name="notif_relative_title">🎈 %1$s (familia lui/ei %2$s)</string>
+    <string name="topic_new_interest">Pasiune nouă: %1$s — întreabă cum merge</string>
+    <string name="relation_partner">Partener</string>
+    <string name="relation_kid">Copil</string>
+    <string name="relation_parent">Părinte</string>
+    <string name="relation_sibling">Frate/soră</string>
+    <string name="relation_pet">Animal de companie</string>
+    <string name="relation_other">Altul</string>
+    <string name="send_email">Email</string>
+    <string name="date_month_year">%1$s %2$d</string>
 </resources>

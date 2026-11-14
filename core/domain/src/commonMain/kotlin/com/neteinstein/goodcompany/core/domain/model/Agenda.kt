@@ -15,6 +15,11 @@ sealed interface AgendaItem {
         override val key get() = "kid-${kid.id}-$date"
     }
 
+    /** A relative's birthday; only for relatives with [Relative.notifyBirthday] on. */
+    data class RelativeBirthday(val friend: Friend, val relative: Relative, override val date: LocalDate, val turning: Int?) : AgendaItem {
+        override val key get() = "relative-${friend.id.value}-${relative.id}-$date"
+    }
+
     data class FriendEvent(val friend: Friend, val event: ImportantEvent) : AgendaItem {
         override val date get() = event.date
         override val key get() = "event-${event.id}"
@@ -52,4 +57,6 @@ data class ContactRecord(
     val birthday: Birthday?,
     /** The contact's thumbnail, when the platform hands one over. */
     val photo: ContactPhoto? = null,
+    /** Email addresses, in the contact's order. */
+    val emails: List<String> = emptyList(),
 )

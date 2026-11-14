@@ -107,6 +107,15 @@ fun UpcomingCard(item: AgendaItem, today: LocalDate, onOpenFriend: (FriendId) ->
                 item.kid.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
             ).joinToString(" · ").ifBlank { item.parent.name },
         )
+        is AgendaItem.RelativeBirthday -> Spec(
+            item.friend,
+            Icons.Rounded.Cake,
+            stringResource(Res.string.card_birthday, item.relative.name),
+            listOfNotNull(
+                item.turning?.let { stringResource(Res.string.card_turns, it) },
+                item.relative.likes.firstOrNull()?.let { stringResource(Res.string.card_loves, it) },
+            ).joinToString(" · ").ifBlank { item.friend.name },
+        )
         is AgendaItem.FriendEvent -> Spec(
             item.friend,
             Icons.Rounded.Favorite,

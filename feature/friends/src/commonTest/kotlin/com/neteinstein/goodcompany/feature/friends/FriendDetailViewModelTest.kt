@@ -3,20 +3,28 @@ package com.neteinstein.goodcompany.feature.friends
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Circle
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.AboutEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.RelativeEdit
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -348,5 +356,106 @@ class FriendDetailViewModelTest {
         assertTrue(state.value.detail!!.plans.isEmpty())
         vm.onMessageShown()
         assertNull(state.value.undoPlan)
+    }
+
+    @Test
+    fun aboutSavesTrimmed_keepsContactEmails_andReplacesTypedOnes() = runViewModelTest {
+        g.friendRepo.upsert(
+            g.friendRepo.get(FriendId("ana"))!!.copy(emails = listOf(FriendEmail("c@x.example", fromContact = true), FriendEmail("old@x.example"))),
+        )
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveAbout(
+            AboutEdit(
+                job = " Designer ",
+                livesIn = "Porto",
+                met = MetInfo(" ", null),
+                introducedBy = Introducer(FriendId("rui"), " Rui "),
+                preferredChannel = ContactChannel.EMAIL,
+                emails = listOf(" new@x.example ", "NEW@x.example", "C@x.example", ""),
+            ),
+        )
+        val f = state.value.detail!!.friend
+        assertEquals("Designer", f.job)
+        assertEquals("Porto", f.livesIn)
+        assertNull(f.met)
+        assertEquals(Introducer(FriendId("rui"), "Rui"), f.introducedBy)
+        assertEquals(ContactChannel.EMAIL, f.preferredChannel)
+        assertEquals(listOf(FriendEmail("c@x.example", true), FriendEmail("new@x.example")), f.emails)
+        vm.onSaveAbout(AboutEdit(introducedBy = Introducer(null, " ")))
+        assertNull(state.value.detail!!.friend.introducedBy)
+    }
+
+    @Test
+    fun relativesCanBeAddedEditedAndRemoved_keepingWhenTheyWereAdded() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveRelative(RelativeEdit(relation = Relation.PARTNER, name = " "))
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+        vm.onSaveRelative(
+            RelativeEdit(
+                relation = Relation.PARTNER,
+                name = " Tiago ",
+                birthday = LocalDate(1988, 3, 20),
+                likes = listOf("padel"),
+                notifyBirthday = true,
+            ),
+        )
+        val added = state.value.detail!!.friend.relatives.single()
+        assertEquals("Tiago", added.name)
+        assertEquals(Birthday(3, 20, 1988), added.birthday)
+        assertEquals(g.clock.now(), added.addedAt)
+        assertTrue(added.notifyBirthday)
+        vm.onSaveRelative(RelativeEdit(id = added.id, relation = Relation.PARTNER, name = "Tiago", note = " climbs ", notifyBirthday = false))
+        val edited = state.value.detail!!.friend.relatives.single()
+        assertEquals("climbs", edited.note)
+        assertEquals(added.addedAt, edited.addedAt)
+        assertFalse(edited.notifyBirthday)
+        vm.onRemoveRelative(added.id)
+        assertTrue(state.value.detail!!.friend.relatives.isEmpty())
+    }
+
+    @Test
+    fun tastesByKind_recordWhenTheyWereAdded() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddTastes(TasteKind.FOOD, listOf("ramen"))
+        vm.onAddTastes(TasteKind.DRINK, listOf("tea"))
+        vm.onAddTastes(TasteKind.INTEREST, listOf("chess", "chess"))
+        var f = state.value.detail!!.friend
+        assertEquals(listOf("ramen"), f.food)
+        assertEquals(listOf("tea"), f.drinks)
+        assertEquals(listOf("chess"), f.interests)
+        assertEquals(setOf("chess"), f.interestsAddedAt.keys)
+        assertEquals(setOf("ramen"), f.foodAddedAt.keys)
+        vm.onRemoveTaste(TasteKind.FOOD, "ramen")
+        vm.onRemoveTaste(TasteKind.DRINK, "tea")
+        vm.onRemoveTaste(TasteKind.INTEREST, "chess")
+        f = state.value.detail!!.friend
+        assertTrue(f.food.isEmpty() && f.drinks.isEmpty() && f.interests.isEmpty() && f.interestsAddedAt.isEmpty())
+    }
+
+    @Test
+    fun customFieldsCanBeAddedEdited_andRemovedWithUndoInPlace() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveCustomField(null, " Shoe size ", " 38 ")
+        vm.onSaveCustomField(null, "Club", "Benfica")
+        vm.onSaveCustomField(null, " ", "x")
+        val first = state.value.detail!!.friend.customFields.first()
+        assertEquals("Shoe size" to "38", first.label to first.value)
+        vm.onSaveCustomField(first.id, "Shoe size", "39")
+        assertEquals(listOf("39", "Benfica"), state.value.detail!!.friend.customFields.map { it.value })
+        vm.onRemoveCustomField(first.id)
+        assertEquals(listOf("Club"), state.value.detail!!.friend.customFields.map { it.label })
+        assertEquals(FriendDetailMessage.CustomFieldRemoved("Shoe size"), state.value.message)
+        vm.onUndoRemoveCustomField()
+        assertEquals(listOf("Shoe size", "Club"), state.value.detail!!.friend.customFields.map { it.label })
+        assertNull(state.value.undoCustomField)
+        vm.onRemoveCustomField(first.id)
+        vm.onMessageShown()
+        assertNull(state.value.undoCustomField)
+        vm.onUndoRemoveCustomField()
+        assertEquals(listOf("Club"), state.value.detail!!.friend.customFields.map { it.label })
     }
 }

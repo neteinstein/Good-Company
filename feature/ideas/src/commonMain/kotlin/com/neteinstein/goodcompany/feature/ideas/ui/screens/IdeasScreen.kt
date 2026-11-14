@@ -139,6 +139,8 @@ fun IdeasScreen(onOpenSettings: () -> Unit, viewModel: IdeasViewModel = koinView
             title = stringResource(Res.string.propose_title, names),
             suggestion = proposalText(card),
             phone = card.friends.singleOrNull()?.phoneNumbers?.firstOrNull(),
+            preferred = card.friends.singleOrNull()?.preferredChannel,
+            email = card.friends.singleOrNull()?.emails?.firstOrNull()?.address,
             onDismiss = viewModel::onDismissPropose,
             onSent = viewModel::onProposed,
         )

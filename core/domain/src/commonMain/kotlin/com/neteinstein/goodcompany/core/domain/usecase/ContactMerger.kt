@@ -2,12 +2,14 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 
 /**
  * Merges an address-book snapshot into the app's friend list.
  *
- * - Contact-owned fields (name, phones, birthday) follow the address book.
+ * - Contact-owned fields (name, phones, birthday) follow the address book. Emails the contact gave us
+ *   ([FriendEmail.fromContact]) are replaced by the contact's; emails typed in the app are always kept.
  * - App-owned fields (close friend, likes, kids, rules…) are never touched.
  * - A contact birthday never erases one the user entered in-app.
  * - Friends whose contact vanished are dropped unless they carry app data — then they're kept and flagged orphaned.
@@ -27,6 +29,7 @@ object ContactMerger {
                 phoneNumbers = contact.phoneNumbers.distinct(),
                 birthday = contact.birthday ?: current.birthday,
                 photo = contact.photo ?: current.photo,
+                emails = mergeEmails(current.emails, contact.emails),
                 isOrphaned = false,
             ) ?: Friend(
                 id = FriendId("contact-${contact.contactId}"),
@@ -35,6 +38,7 @@ object ContactMerger {
                 phoneNumbers = contact.phoneNumbers.distinct(),
                 birthday = contact.birthday,
                 photo = contact.photo,
+                emails = mergeEmails(emptyList(), contact.emails),
             )
         }
         val vanished = existing.filter { it.contactId != null && it.contactId !in seen && it.hasAppData() }
@@ -43,9 +47,23 @@ object ContactMerger {
         return merged + vanished + manual
     }
 
-    private fun Friend.hasAppData(): Boolean = isCloseFriend || notifyBirthday || likes.isNotEmpty() ||
+    /**
+     * The contact's emails (as [FriendEmail.fromContact]) followed by the typed ones, without duplicates
+     * (case-insensitive). A typed address the contact now also has becomes a contact one.
+     */
+    fun mergeEmails(current: List<FriendEmail>, fromContact: List<String>): List<FriendEmail> {
+        val contact = fromContact.map(String::trim).filter(String::isNotEmpty).distinctBy(String::lowercase)
+        val keys = contact.mapTo(HashSet(), String::lowercase)
+        val typed = current.filter { !it.fromContact && it.address.trim().lowercase() !in keys }
+        return contact.map { FriendEmail(it, fromContact = true) } + typed
+    }
+
+    /** True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count. */
+    fun Friend.hasAppData(): Boolean = isCloseFriend || notifyBirthday || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
         meetEveryDays != null || suggestEvents || circle != null || gifts.isNotEmpty() || catchUpPaused ||
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
-        feeds.isNotEmpty()
+        feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
+        preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||
+        drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty()
 }

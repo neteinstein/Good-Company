@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -21,6 +22,12 @@ sealed interface TopicHint {
     /** One of their kids has a birthday soon. */
     data class KidBirthday(val kidName: String, val date: LocalDate, val turning: Int?) : TopicHint
 
+    /** Someone in their family (not a kid) has a birthday soon. */
+    data class RelativeBirthday(val name: String, val relation: Relation, val date: LocalDate, val turning: Int?) : TopicHint
+
+    /** An interest or hobby added since you last met. */
+    data class NewInterest(val interest: String) : TopicHint
+
     /** Something they love. */
     data class Like(val like: String) : TopicHint
 }
@@ -33,9 +40,12 @@ object OfflineTopics {
     private const val KID_BIRTHDAY_DAYS = 30
     private const val LIKES = 2
 
+    /** Without a logged meetup, an interest added in this window counts as new. */
+    private const val NEW_INTEREST_DAYS = 60
+
     /**
      * Up to [MAX] hints, most timely first: recent big days and what's coming up, notes from your last meetups,
-     * kids' birthdays, then a couple of their tastes (rotating weekly so the list doesn't feel static).
+     * kids' and relatives' birthdays, newly added interests, then a couple of their tastes (rotating weekly so the list doesn't feel static).
      */
     fun build(friend: Friend, hangouts: List<Hangout>, today: LocalDate, zone: TimeZone): List<TopicHint> {
         val out = mutableListOf<TopicHint>()
@@ -52,6 +62,19 @@ object OfflineTopics {
             val next = b.nextOccurrence(today)
             if (today.daysUntil(next) <= KID_BIRTHDAY_DAYS) out += TopicHint.KidBirthday(kid.name, next, b.ageOn(next))
         }
+        friend.relatives.forEach { r ->
+            val b = r.birthday ?: return@forEach
+            val next = b.nextOccurrence(today)
+            if (today.daysUntil(next) <= KID_BIRTHDAY_DAYS) out += TopicHint.RelativeBirthday(r.name, r.relation, next, b.ageOn(next))
+        }
+        val lastMet = hangouts.filter { friend.id in it.friendIds }.maxOfOrNull { it.at }
+        friend.interests
+            .filter { interest ->
+                val added = friend.interestsAddedAt[interest] ?: return@filter false
+                val since = lastMet ?: return@filter added.toLocalDate(zone) >= today.minus(NEW_INTEREST_DAYS, DateTimeUnit.DAY)
+                added > since
+            }
+            .forEach { out += TopicHint.NewInterest(it) }
         if (friend.likes.isNotEmpty()) {
             val week = (today.toEpochDays() / 7).toInt()
             val start = week % friend.likes.size

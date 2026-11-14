@@ -239,6 +239,7 @@ private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> =
         val mimeType = c.getColumnIndex(ContactsContract.Data.MIMETYPE)
         val number = c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
         val photo = c.getColumnIndex(ContactsContract.CommonDataKinds.Photo.PHOTO)
+        val email = c.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS)
         while (c.moveToNext()) {
             val type = c.stringOrNull(mimeType)
             val isPhoto = type == ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE && photo >= 0 && !c.isNull(photo)
@@ -247,6 +248,7 @@ private fun readPickerSession(context: Context, uri: Uri): List<ContactRecord> =
                 name = c.stringOrNull(name),
                 number = if (type == ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) c.stringOrNull(number) else null,
                 photo = if (isPhoto) runCatching { ContactPhoto.of(c.getBlob(photo)) }.getOrNull() else null,
+                email = if (type == ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE) c.stringOrNull(email) else null,
             )
         }
     }
@@ -273,12 +275,14 @@ private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runC
     )?.use { c ->
         if (!c.moveToFirst()) return@use null
         val name = c.stringOrNull(1)?.trim()?.takeIf { it.isNotEmpty() } ?: return@use null
+        val details = readPickedDetails(context, uri)
         ContactRecord(
             contactId = c.getLong(0).toString(),
             name = name,
-            phoneNumbers = readPickedNumbers(context, uri),
+            phoneNumbers = details.numbers,
             birthday = null,
             photo = readPickedPhoto(context, uri),
+            emails = details.emails,
         )
     }
 }.getOrNull()
@@ -301,26 +305,35 @@ private fun readPickedPhoto(context: Context, contactUri: Uri): ContactPhoto? = 
     }
 }.getOrNull()
 
+/** Numbers and emails read from a picked contact's data rows. */
+private class PickedDetails(val numbers: List<String> = emptyList(), val emails: List<String> = emptyList())
+
 /**
  * Best effort: the grant covers the picked contact, and some contacts apps extend it to the contact's data rows. When
- * they don’t, the person is still added, just without numbers.
+ * they don’t, the person is still added, just without numbers or emails. Phone numbers and email addresses both live
+ * in DATA1; the MIME type tells them apart.
  */
-private fun readPickedNumbers(context: Context, contactUri: Uri): List<String> = runCatching {
+private fun readPickedDetails(context: Context, contactUri: Uri): PickedDetails = runCatching {
     val numbers = mutableListOf<String>()
+    val emails = mutableListOf<String>()
     context.contentResolver.query(
         Uri.withAppendedPath(contactUri, ContactsContract.Contacts.Data.CONTENT_DIRECTORY),
-        arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.NUMBER),
+        arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1),
         null,
         null,
         null,
     )?.use { c ->
         while (c.moveToNext()) {
-            if (c.stringOrNull(0) != ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE) continue
-            c.stringOrNull(1)?.trim()?.takeIf { it.isNotEmpty() && it !in numbers }?.let(numbers::add)
+            val value = c.stringOrNull(1)?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+            when (c.stringOrNull(0)) {
+                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> if (value !in numbers) numbers += value
+                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
+                    if (emails.none { it.equals(value, ignoreCase = true) }) emails += value
+            }
         }
     }
-    numbers.toList()
-}.getOrDefault(emptyList())
+    PickedDetails(numbers.toList(), emails.toList())
+}.getOrDefault(PickedDetails())
 
 @Composable
 actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {

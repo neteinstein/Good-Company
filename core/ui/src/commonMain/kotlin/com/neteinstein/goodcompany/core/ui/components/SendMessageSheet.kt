@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material.icons.rounded.Sms
 import androidx.compose.material3.Button
@@ -39,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.ui.format.urlEncode
 import com.neteinstein.goodcompany.core.ui.platform.ShareOutcome
 import com.neteinstein.goodcompany.core.ui.platform.platformCapabilities
@@ -47,6 +49,7 @@ import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.copied_to_clipboard
 import com.neteinstein.goodcompany.core.ui.resources.send_ai_personalise
 import com.neteinstein.goodcompany.core.ui.resources.send_ai_writing
+import com.neteinstein.goodcompany.core.ui.resources.send_email
 import com.neteinstein.goodcompany.core.ui.resources.send_share
 import com.neteinstein.goodcompany.core.ui.resources.send_sms
 import com.neteinstein.goodcompany.core.ui.resources.send_title_message
@@ -63,11 +66,15 @@ fun whatsAppLink(phone: String?, text: String): String {
 fun smsLink(phone: String, text: String, separator: String = platformCapabilities.smsBodySeparator): String =
     "sms:${phone.filter { it.isDigit() || it == '+' }}${separator}body=${urlEncode(text)}"
 
+/** `mailto:` link with a prefilled body. */
+fun emailLink(address: String, text: String): String = "mailto:${address.trim()}?body=${urlEncode(text)}"
+
 /**
- * Bottom sheet to review a drafted message and send it through WhatsApp, a text message or the share sheet.
+ * Bottom sheet to review a drafted message and send it through WhatsApp, a text message, email or the share sheet.
  * Nothing is sent by the app itself — the user always confirms in the messaging app.
  *
- * [suggestion] replaces the text whenever it changes (e.g. when the AI finishes a draft).
+ * [suggestion] replaces the text whenever it changes (e.g. when the AI finishes a draft). [preferred] (the friend's
+ * preferred channel) puts that way of sending first, as the main button; [email] adds an email option.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -80,6 +87,8 @@ fun SendMessageSheet(
     isGenerating: Boolean = false,
     onPersonalise: (() -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
+    preferred: ContactChannel? = null,
+    email: String? = null,
 ) {
     var text by remember { mutableStateOf(suggestion) }
     var copied by remember { mutableStateOf(false) }
@@ -114,22 +123,34 @@ fun SendMessageSheet(
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val ready = text.isNotBlank() && !isGenerating
-                Button(onClick = {
-                    uri.openUri(whatsAppLink(phone, text))
-                    onSent()
-                }, enabled = ready) {
-                    Icon(Icons.AutoMirrored.Rounded.Chat, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(Res.string.send_whatsapp))
+                // The friend's preferred channel leads (when we can use it); WhatsApp otherwise, as before.
+                val lead = when {
+                    preferred == ContactChannel.SMS && phone != null -> ContactChannel.SMS
+                    preferred == ContactChannel.EMAIL && email != null -> ContactChannel.EMAIL
+                    else -> ContactChannel.WHATSAPP
                 }
-                if (phone != null) {
-                    FilledTonalButton(onClick = {
-                        uri.openUri(smsLink(phone, text))
-                        onSent()
-                    }, enabled = ready) {
-                        Icon(Icons.Rounded.Sms, null, Modifier.size(18.dp))
+                val order = listOf(lead) + listOf(ContactChannel.WHATSAPP, ContactChannel.SMS, ContactChannel.EMAIL).filter { it != lead }
+                order.forEach { channel ->
+                    val (icon, label, link) = when (channel) {
+                        ContactChannel.WHATSAPP -> Triple(Icons.AutoMirrored.Rounded.Chat, Res.string.send_whatsapp, whatsAppLink(phone, text))
+                        ContactChannel.SMS -> Triple(Icons.Rounded.Sms, Res.string.send_sms, phone?.let { smsLink(it, text) })
+                        ContactChannel.EMAIL -> Triple(Icons.Rounded.Email, Res.string.send_email, email?.let { emailLink(it, text) })
+                        ContactChannel.CALL -> Triple(Icons.Rounded.Sms, Res.string.send_sms, null)
+                    }
+                    if (link == null) return@forEach
+                    val content: @Composable () -> Unit = {
+                        Icon(icon, null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(Res.string.send_sms))
+                        Text(stringResource(label))
+                    }
+                    val send = {
+                        uri.openUri(link)
+                        onSent()
+                    }
+                    if (channel == lead) {
+                        Button(onClick = send, enabled = ready) { content() }
+                    } else {
+                        FilledTonalButton(onClick = send, enabled = ready) { content() }
                     }
                 }
                 OutlinedButton(onClick = {

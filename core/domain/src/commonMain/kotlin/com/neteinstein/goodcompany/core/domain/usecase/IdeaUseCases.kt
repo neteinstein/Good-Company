@@ -69,6 +69,19 @@ internal object IdeaMapper {
         recentMessages = messages.filter { it.friendId == friend.id }.sortedBy { it.at }.takeLast(RECENT_MESSAGES)
             .map { (if (it.fromMe) "Me: " else "${friend.name}: ") + it.text },
         news = friend.lifeUpdates.sortedByDescending { it.addedAt }.take(RECENT_NEWS).map { it.text },
+        job = friend.job.trim(),
+        livesIn = friend.livesIn.trim(),
+        // Emails and custom fields are deliberately left out of the AI profile.
+        family = friend.relatives.map { r ->
+            buildString {
+                append(r.relation.name.lowercase()).append(": ").append(r.name)
+                if (r.note.isNotBlank()) append(", ").append(r.note.trim())
+                if (r.likes.isNotEmpty()) append(" (likes ").append(r.likes.joinToString()).append(')')
+            }
+        },
+        food = friend.food,
+        drinks = friend.drinks,
+        interests = friend.interests,
     )
 
     private const val RECENT_MESSAGES = 25

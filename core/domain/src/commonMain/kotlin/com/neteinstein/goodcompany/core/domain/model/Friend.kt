@@ -57,6 +57,30 @@ data class Friend(
     val feeds: List<FriendFeed> = emptyList(),
     /** Their contact photo (a thumbnail). A contact without one never clears it. */
     val photo: ContactPhoto? = null,
+    /** What they do (free text). */
+    val job: String = "",
+    /** Where they live (free text, not a map location). */
+    val livesIn: String = "",
+    /** How and where you met. */
+    val met: MetInfo? = null,
+    /** Who introduced you: one of your friends or just a name. */
+    val introducedBy: Introducer? = null,
+    /** How they like to be reached: that quick action comes first and message sheets open on it. */
+    val preferredChannel: ContactChannel? = null,
+    /** Email addresses: [FriendEmail.fromContact] ones follow the address book, typed ones are kept. Never written back. */
+    val emails: List<FriendEmail> = emptyList(),
+    /** Partner, parents, siblings, pets… Kids stay in [kids]. */
+    val relatives: List<Relative> = emptyList(),
+    /** Tastes by kind. [likes] holds "Other likes" and [dislikes] "Doesn't like". */
+    val food: List<String> = emptyList(),
+    val drinks: List<String> = emptyList(),
+    val interests: List<String> = emptyList(),
+    /** When each entry of [food], [drinks] and [interests] was added (like [likesAddedAt]). */
+    val foodAddedAt: Map<String, Instant> = emptyMap(),
+    val drinksAddedAt: Map<String, Instant> = emptyMap(),
+    val interestsAddedAt: Map<String, Instant> = emptyMap(),
+    /** "More about <name>": free label/value pairs ("Shoe size" → "38"). */
+    val customFields: List<CustomField> = emptyList(),
 ) {
     val initials: String
         get() = name.split(' ', '-')
@@ -139,3 +163,62 @@ enum class GiftOccasion { BIRTHDAY, CHRISTMAS, THANK_YOU, JUST_BECAUSE }
 
 /** Kinds of plans a friend is good company for. Rendered by `:core:ui`. */
 enum class Occasion { WEEKDAY_LUNCH, COFFEE, DINNER, DRINKS, OUTDOORS, SPORTS, CULTURE, FAMILY_TIME }
+
+/**
+ * How you met. [on] is null when you don't remember; with [dayKnown] false only its month and year count
+ * (shown as "Sep 2011") and its day is 1.
+ */
+@Serializable
+data class MetInfo(
+    val place: String = "",
+    val on: LocalDate? = null,
+    val dayKnown: Boolean = true,
+) {
+    val isEmpty: Boolean get() = place.isBlank() && on == null
+}
+
+/** Who introduced you: [friendId] when it's one of your friends (the page links to them), always a [name]. */
+@Serializable
+data class Introducer(
+    val friendId: FriendId? = null,
+    val name: String,
+)
+
+/** The ways the quick actions can reach someone. */
+enum class ContactChannel { WHATSAPP, CALL, SMS, EMAIL }
+
+/** An email address; [fromContact] ones are refreshed by a contacts sync, typed ones are never touched by it. */
+@Serializable
+data class FriendEmail(
+    val address: String,
+    val fromContact: Boolean = false,
+)
+
+/** Who a [Relative] is to the friend. Kids are [Kid]s, not relatives. */
+enum class Relation { PARTNER, PARENT, SIBLING, PET, OTHER }
+
+/** Someone in a friend's family other than their kids (a pet counts). */
+@Serializable
+data class Relative(
+    val id: String,
+    val relation: Relation,
+    val name: String,
+    val birthday: Birthday? = null,
+    val likes: List<String> = emptyList(),
+    /** A few words ("beagle", "my sister-in-law"). */
+    val note: String = "",
+    /** On by default (brief decision F10); it can be turned off for one relative. */
+    val notifyBirthday: Boolean = true,
+    val addedAt: Instant? = null,
+)
+
+/** The taste groups beyond "Other likes" ([Friend.likes]) and "Doesn't like" ([Friend.dislikes]). */
+enum class TasteKind { FOOD, DRINK, INTEREST }
+
+/** A free "More about <name>" line. */
+@Serializable
+data class CustomField(
+    val id: String,
+    val label: String,
+    val value: String,
+)

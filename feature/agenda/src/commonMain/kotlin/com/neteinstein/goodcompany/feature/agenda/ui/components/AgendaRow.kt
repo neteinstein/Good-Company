@@ -63,6 +63,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.row_kid
 import com.neteinstein.goodcompany.feature.agenda.resources.row_loves
 import com.neteinstein.goodcompany.feature.agenda.resources.row_never
 import com.neteinstein.goodcompany.feature.agenda.resources.row_ping
+import com.neteinstein.goodcompany.feature.agenda.resources.row_relative
 import com.neteinstein.goodcompany.feature.agenda.resources.row_see
 import com.neteinstein.goodcompany.feature.agenda.resources.row_send_wishes
 import com.neteinstein.goodcompany.feature.agenda.resources.row_turns
@@ -115,6 +116,17 @@ fun AgendaRow(
                     ?.let { stringResource(Res.string.row_gift_idea, it.joinToString(limit = 2)) },
             ).joinToString(" · "),
             item.parent,
+        )
+        is AgendaItem.RelativeBirthday -> Spec(
+            Icons.Rounded.Cake,
+            Color(0xFF00A88F),
+            stringResource(Res.string.label_birthday),
+            stringResource(Res.string.row_relative, item.relative.name, item.friend.name.substringBefore(' ')),
+            listOfNotNull(
+                item.turning?.let { stringResource(Res.string.row_turns, it) },
+                item.relative.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
+            ).joinToString(" · "),
+            item.friend,
         )
         is AgendaItem.FriendEvent -> Spec(
             Icons.Rounded.Favorite,

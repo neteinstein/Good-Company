@@ -44,6 +44,12 @@ internal object IdeaPrompts {
             if (f.likes.isNotEmpty()) appendLine("  likes: ${f.likes.joinToString()}")
             if (f.dislikes.isNotEmpty()) appendLine("  dislikes: ${f.dislikes.joinToString()}")
             if (f.kids.isNotEmpty()) appendLine("  kids: ${f.kids.joinToString()}")
+            if (f.job.isNotBlank()) appendLine("  work: ${f.job}")
+            if (f.livesIn.isNotBlank()) appendLine("  lives in: ${f.livesIn}")
+            if (f.family.isNotEmpty()) appendLine("  family: ${f.family.joinToString("; ")}")
+            if (f.food.isNotEmpty()) appendLine("  food: ${f.food.joinToString()}")
+            if (f.drinks.isNotEmpty()) appendLine("  drinks: ${f.drinks.joinToString()}")
+            if (f.interests.isNotEmpty()) appendLine("  interests & hobbies: ${f.interests.joinToString()}")
             if (f.news.isNotEmpty()) appendLine("  what's new in their life (newest first): ${f.news.joinToString("; ")}")
             if (f.recentMessages.isNotEmpty()) {
                 appendLine("  recent chat (oldest first):")

@@ -20,6 +20,16 @@ CREATE TABLE friend (
     snoozed_until TEXT,
     catch_up_paused INTEGER NOT NULL CHECK (catch_up_paused IN (0, 1)),
     contact_counts_as_catch_up INTEGER NOT NULL CHECK (contact_counts_as_catch_up IN (0, 1)),
+    -- Issue #20 ("About"). met_on is yyyy-mm-dd, or yyyy-mm when the day isn't known. introduced_by_friend_id is not a
+    -- foreign key on purpose: when that friend goes, the name stays. preferred_channel is a ContactChannel name (no CHECK:
+    -- SQLDelight can't parse one on an added column, and the migration has to match this table).
+    job TEXT NOT NULL DEFAULT '',
+    lives_in TEXT NOT NULL DEFAULT '',
+    met_place TEXT,
+    met_on TEXT,
+    introduced_by_friend_id TEXT,
+    introduced_by_name TEXT,
+    preferred_channel TEXT,
     CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
 );
 
@@ -36,10 +46,11 @@ CREATE TABLE friend_phone (
 
 CREATE INDEX friend_phone_normalized ON friend_phone(normalized);
 
--- Likes and dislikes. `added_at` is when a like was added (Friend.likesAddedAt); null for dislikes and older likes.
+-- Tastes by kind: LIKE ("Other likes"), DISLIKE ("Doesn't like"), FOOD, DRINK, INTEREST. `added_at` is when it was
+-- added (Friend.likesAddedAt / foodAddedAt…); null for dislikes and older entries.
 CREATE TABLE friend_taste (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
-    kind TEXT NOT NULL CHECK (kind IN ('LIKE', 'DISLIKE')),
+    kind TEXT NOT NULL CHECK (kind IN ('LIKE', 'DISLIKE', 'FOOD', 'DRINK', 'INTEREST')),
     position INTEGER NOT NULL,
     taste TEXT NOT NULL,
     added_at INTEGER,
@@ -142,6 +153,51 @@ CREATE TABLE friend_photo (
     image_base64 TEXT NOT NULL
 );
 
+-- Emails: from_contact ones follow the address book, typed ones are kept (ContactMerger).
+CREATE TABLE friend_email (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    from_contact INTEGER NOT NULL CHECK (from_contact IN (0, 1)),
+    PRIMARY KEY (friend_id, position)
+);
+
+-- Family other than kids (kids keep their own table).
+CREATE TABLE relative (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    relation TEXT NOT NULL CHECK (relation IN ('PARTNER', 'PARENT', 'SIBLING', 'PET', 'OTHER')),
+    name TEXT NOT NULL,
+    birthday_month INTEGER CHECK (birthday_month BETWEEN 1 AND 12),
+    birthday_day INTEGER CHECK (birthday_day BETWEEN 1 AND 31),
+    birthday_year INTEGER,
+    note TEXT NOT NULL,
+    notify_birthday INTEGER NOT NULL CHECK (notify_birthday IN (0, 1)),
+    added_at INTEGER,
+    PRIMARY KEY (friend_id, id),
+    CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
+);
+
+CREATE TABLE relative_like (
+    friend_id TEXT NOT NULL,
+    relative_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    liked TEXT NOT NULL,
+    PRIMARY KEY (friend_id, relative_id, position),
+    FOREIGN KEY (friend_id, relative_id) REFERENCES relative(friend_id, id) ON DELETE CASCADE
+);
+
+-- "More about <name>": free label/value lines.
+CREATE TABLE custom_field (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    id TEXT NOT NULL,
+    label TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (friend_id, position)
+);
+
 -- Reads: every row of every table, ordered; FriendMapper assembles the domain aggregates.
 
 allFriends:
@@ -180,6 +236,18 @@ SELECT * FROM feed_item ORDER BY friend_id, feed_url, position;
 allPhotos:
 SELECT * FROM friend_photo;
 
+allEmails:
+SELECT * FROM friend_email ORDER BY friend_id, position;
+
+allRelatives:
+SELECT * FROM relative ORDER BY friend_id, position;
+
+allRelativeLikes:
+SELECT * FROM relative_like ORDER BY friend_id, relative_id, position;
+
+allCustomFields:
+SELECT * FROM custom_field ORDER BY friend_id, position;
+
 ids:
 SELECT id FROM friend;
 
@@ -192,7 +260,8 @@ SELECT coalesce(max(position), -1) + 1 FROM friend;
 upsert:
 INSERT INTO friend (
     id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
-    notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up
+    notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
+    job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel
 ) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     position = excluded.position,
@@ -210,7 +279,14 @@ ON CONFLICT (id) DO UPDATE SET
     circle = excluded.circle,
     snoozed_until = excluded.snoozed_until,
     catch_up_paused = excluded.catch_up_paused,
-    contact_counts_as_catch_up = excluded.contact_counts_as_catch_up;
+    contact_counts_as_catch_up = excluded.contact_counts_as_catch_up,
+    job = excluded.job,
+    lives_in = excluded.lives_in,
+    met_place = excluded.met_place,
+    met_on = excluded.met_on,
+    introduced_by_friend_id = excluded.introduced_by_friend_id,
+    introduced_by_name = excluded.introduced_by_name,
+    preferred_channel = excluded.preferred_channel;
 
 delete:
 DELETE FROM friend WHERE id = ?;
@@ -218,7 +294,7 @@ DELETE FROM friend WHERE id = ?;
 deleteAll:
 DELETE FROM friend;
 
--- Replacing a friend's children: delete them all (gifts before kids, items before feeds), then insert the new lists.
+-- Replacing a friend's children: delete them all (gifts before kids, items before feeds, likes before relatives), then insert the new lists.
 deleteChildren {
     DELETE FROM friend_phone WHERE friend_id = :friendId;
     DELETE FROM friend_taste WHERE friend_id = :friendId;
@@ -231,6 +307,10 @@ deleteChildren {
     DELETE FROM feed_item WHERE friend_id = :friendId;
     DELETE FROM feed WHERE friend_id = :friendId;
     DELETE FROM friend_photo WHERE friend_id = :friendId;
+    DELETE FROM friend_email WHERE friend_id = :friendId;
+    DELETE FROM relative_like WHERE friend_id = :friendId;
+    DELETE FROM relative WHERE friend_id = :friendId;
+    DELETE FROM custom_field WHERE friend_id = :friendId;
 }
 
 insertPhone:
@@ -265,3 +345,15 @@ INSERT OR REPLACE INTO feed_item VALUES ?;
 
 insertPhoto:
 INSERT OR REPLACE INTO friend_photo VALUES ?;
+
+insertEmail:
+INSERT OR REPLACE INTO friend_email VALUES ?;
+
+insertRelative:
+INSERT OR REPLACE INTO relative VALUES ?;
+
+insertRelativeLike:
+INSERT OR REPLACE INTO relative_like VALUES ?;
+
+insertCustomField:
+INSERT OR REPLACE INTO custom_field VALUES ?;

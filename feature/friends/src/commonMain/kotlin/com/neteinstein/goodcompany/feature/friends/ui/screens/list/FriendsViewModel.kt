@@ -177,7 +177,7 @@ class FriendsViewModel(
                 else -> Greeting.EVENING
             },
             week = WeekSummary(
-                birthdays = week.count { it is AgendaItem.FriendBirthday || it is AgendaItem.KidBirthday },
+                birthdays = week.count { it is AgendaItem.FriendBirthday || it is AgendaItem.KidBirthday || it is AgendaItem.RelativeBirthday },
                 bigDays = week.count { it is AgendaItem.FriendEvent },
                 catchUps = catchUp.size,
             ),

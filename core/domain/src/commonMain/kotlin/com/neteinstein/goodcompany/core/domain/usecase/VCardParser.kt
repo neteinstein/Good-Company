@@ -5,7 +5,7 @@ import kotlin.io.encoding.Base64
 
 /**
  * Minimal, forgiving vCard 2.1 / 3.0 / 4.0 reader for contact exports (Google Contacts, iCloud, Android,
- * Outlook). Extracts only what the app uses: name, phone numbers, birthday and an inline photo.
+ * Outlook). Extracts only what the app uses: name, phone numbers, emails, birthday and an inline photo.
  *
  * Handles line folding, `item1.` group prefixes, `QUOTED-PRINTABLE` + `CHARSET=UTF-8` (Android 2.1 exports),
  * backslash escapes, and BDAY as `19900504`, `1990-05-04`, `--0504`, `--05-04` or with a time part.
@@ -13,14 +13,22 @@ import kotlin.io.encoding.Base64
  * are only a link are skipped (the app never fetches them).
  */
 object VCardParser {
-    class Card(val name: String, val phoneNumbers: List<String>, val birthday: Birthday?, val photo: ByteArray? = null) {
+    class Card(
+        val name: String,
+        val phoneNumbers: List<String>,
+        val birthday: Birthday?,
+        val photo: ByteArray? = null,
+        val emails: List<String> = emptyList(),
+    ) {
         override fun equals(other: Any?): Boolean = other is Card && name == other.name && phoneNumbers == other.phoneNumbers &&
-            birthday == other.birthday && (photo?.contentEquals(other.photo) ?: (other.photo == null))
+            birthday == other.birthday && (photo?.contentEquals(other.photo) ?: (other.photo == null)) && emails == other.emails
 
         override fun hashCode(): Int =
-            ((name.hashCode() * 31 + phoneNumbers.hashCode()) * 31 + birthday.hashCode()) * 31 + (photo?.contentHashCode() ?: 0)
+            (((name.hashCode() * 31 + phoneNumbers.hashCode()) * 31 + birthday.hashCode()) * 31 + (photo?.contentHashCode() ?: 0)) * 31 +
+                emails.hashCode()
 
-        override fun toString(): String = "Card(name=$name, phoneNumbers=$phoneNumbers, birthday=$birthday, photo=${photo?.size} bytes)"
+        override fun toString(): String =
+            "Card(name=$name, phoneNumbers=$phoneNumbers, birthday=$birthday, photo=${photo?.size} bytes, emails=$emails)"
     }
 
     fun parse(raw: String): List<Card> {
@@ -30,6 +38,7 @@ object VCardParser {
         var fn: String? = null
         var n: String? = null
         var phones = mutableListOf<String>()
+        var emails = mutableListOf<String>()
         var bday: Birthday? = null
         var photo: ByteArray? = null
         for (line in lines) {
@@ -46,17 +55,19 @@ object VCardParser {
                     fn = null
                     n = null
                     phones = mutableListOf()
+                    emails = mutableListOf()
                     bday = null
                     photo = null
                 }
                 "END" -> if (inCard && value.trim().equals("VCARD", ignoreCase = true)) {
                     inCard = false
                     val name = fn?.takeIf { it.isNotBlank() } ?: n?.let(::nameFromN)
-                    if (!name.isNullOrBlank()) cards += Card(name.trim(), phones.distinct(), bday, photo)
+                    if (!name.isNullOrBlank()) cards += Card(name.trim(), phones.distinct(), bday, photo, emails.distinctBy(String::lowercase))
                 }
                 "FN" -> if (inCard) fn = unescape(decoded)
                 "N" -> if (inCard) n = decoded
                 "TEL" -> if (inCard) unescape(decoded).removePrefix("tel:").trim().takeIf { it.any(Char::isDigit) }?.let(phones::add)
+                "EMAIL" -> if (inCard) unescape(decoded).trim().removePrefix("mailto:").trim().takeIf { '@' in it }?.let(emails::add)
                 "BDAY" -> if (inCard) bday = parseBirthday(decoded.trim())
                 "PHOTO" -> if (inCard && photo == null) photo = parsePhoto(value, params.drop(1))
             }

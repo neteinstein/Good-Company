@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
+import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.RenderedAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
@@ -65,6 +66,7 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_plan_ask_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_private
+import com.neteinstein.goodcompany.core.ui.resources.notif_relative_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_with
@@ -80,11 +82,17 @@ import com.neteinstein.goodcompany.core.ui.resources.occasion_outdoors
 import com.neteinstein.goodcompany.core.ui.resources.occasion_sports
 import com.neteinstein.goodcompany.core.ui.resources.occasion_thank_you
 import com.neteinstein.goodcompany.core.ui.resources.occasion_weekday_lunch
+import com.neteinstein.goodcompany.core.ui.resources.relation_other
+import com.neteinstein.goodcompany.core.ui.resources.relation_parent
+import com.neteinstein.goodcompany.core.ui.resources.relation_partner
+import com.neteinstein.goodcompany.core.ui.resources.relation_pet
+import com.neteinstein.goodcompany.core.ui.resources.relation_sibling
 import com.neteinstein.goodcompany.core.ui.resources.topic_event_past
 import com.neteinstein.goodcompany.core.ui.resources.topic_event_soon
 import com.neteinstein.goodcompany.core.ui.resources.topic_kid_birthday
 import com.neteinstein.goodcompany.core.ui.resources.topic_kid_birthday_age
 import com.neteinstein.goodcompany.core.ui.resources.topic_like
+import com.neteinstein.goodcompany.core.ui.resources.topic_new_interest
 import com.neteinstein.goodcompany.core.ui.resources.topic_note
 import com.neteinstein.goodcompany.core.ui.resources.topic_note_place
 import com.neteinstein.goodcompany.core.ui.resources.warmth_cooling
@@ -115,6 +123,11 @@ object ResourceNotificationRenderer : NotificationRenderer {
                     c.age?.let { getString(Res.string.notif_kid_body_age, it) } ?: getString(Res.string.notif_kid_body),
                     c.likes.takeIf { it.isNotEmpty() }?.let { getString(Res.string.notif_kid_likes, it.joinToString()) },
                 ).joinToString(" "),
+                emptyList(),
+            )
+            is NotificationContent.RelativeBirthday -> Triple(
+                getString(Res.string.notif_relative_title, c.relativeName, c.friendName),
+                c.age?.let { getString(Res.string.notif_kid_body_age, it) } ?: getString(Res.string.notif_kid_body),
                 emptyList(),
             )
             is NotificationContent.EventToday -> Triple(
@@ -246,8 +259,23 @@ fun topicText(topic: TopicHint): String = when (topic) {
     )
     is TopicHint.KidBirthday -> topic.turning?.let { stringResource(Res.string.topic_kid_birthday_age, topic.kidName, topic.date.shortLabel(), it) }
         ?: stringResource(Res.string.topic_kid_birthday, topic.kidName, topic.date.shortLabel())
+    is TopicHint.RelativeBirthday -> topic.turning?.let { stringResource(Res.string.topic_kid_birthday_age, topic.name, topic.date.shortLabel(), it) }
+        ?: stringResource(Res.string.topic_kid_birthday, topic.name, topic.date.shortLabel())
+    is TopicHint.NewInterest -> stringResource(Res.string.topic_new_interest, topic.interest)
     is TopicHint.Like -> stringResource(Res.string.topic_like, topic.like)
 }
+
+/** Who a relative is ("Partner", "Pet"…). */
+@Composable
+fun relationLabel(relation: Relation): String = stringResource(
+    when (relation) {
+        Relation.PARTNER -> Res.string.relation_partner
+        Relation.PARENT -> Res.string.relation_parent
+        Relation.SIBLING -> Res.string.relation_sibling
+        Relation.PET -> Res.string.relation_pet
+        Relation.OTHER -> Res.string.relation_other
+    },
+)
 
 /** A localised, user-facing explanation of an AI failure. */
 suspend fun aiErrorText(error: Throwable): String = getString(

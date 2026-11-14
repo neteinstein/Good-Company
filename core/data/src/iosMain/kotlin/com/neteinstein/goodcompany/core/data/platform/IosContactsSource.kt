@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import platform.Contacts.CNAuthorizationStatusAuthorized
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactBirthdayKey
+import platform.Contacts.CNContactEmailAddressesKey
 import platform.Contacts.CNContactFamilyNameKey
 import platform.Contacts.CNContactFetchRequest
 import platform.Contacts.CNContactGivenNameKey
@@ -38,6 +39,7 @@ internal class IosContactsSource : ContactsSource {
             CNContactPhoneNumbersKey,
             CNContactBirthdayKey,
             CNContactThumbnailImageDataKey,
+            CNContactEmailAddressesKey,
         )
         val request = CNContactFetchRequest(keysToFetch = keys)
         val out = mutableListOf<ContactRecord>()
@@ -61,7 +63,15 @@ internal class IosContactsSource : ContactsSource {
         } else {
             null
         }
-        return ContactRecord(identifier, name, phones, birthday, thumbnail())
+        return ContactRecord(identifier, name, phones, birthday, thumbnail(), emails())
+    }
+
+    /** The contact's email addresses, when that key was fetched. */
+    private fun CNContact.emails(): List<String> {
+        // Reading a key that wasn't fetched raises an Objective-C exception, which Kotlin can't catch.
+        if (!isKeyAvailable(CNContactEmailAddressesKey)) return emptyList()
+        return emailAddresses.mapNotNull { ((it as? CNLabeledValue)?.value as? String)?.trim()?.takeIf(String::isNotEmpty) }
+            .distinctBy(String::lowercase)
     }
 
     /** The contact's thumbnail (the small picture Contacts shows in lists), when it was fetched and there is one. */

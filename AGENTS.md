@@ -193,7 +193,9 @@ Seen in practice:
 9. **Persisted data.** App data lives in SQLite (gotcha 24); the `.sq` files are the schema. Adding a nullable column
    or one with a default is a new numbered `.sqm` migration. A new table also needs its read/write in `db/*Tables.kt`,
    its name in the matching `*_TABLES` list (observers), and a place in `SqlBackupRepository` / `replaceAllData` and the
-   domain `Backup` (export / restore). Device settings that must be readable before the database opens (theme, app lock,
+   domain `Backup` (export / restore). SQLDelight can't parse a `CHECK` on a column added with `ALTER TABLE … ADD COLUMN`
+   when it names the new column, so check such values in the mapper (e.g. `preferred_channel`). A column called `value` is
+   generated as `value_`. Device settings that must be readable before the database opens (theme, app lock,
    onboarding, API key) are `DeviceSettings`, JSON under `device_settings.v1`; the rest of `AppSettings` is the
    `user_preferences` row. The old `*.v1` JSON keys in `storage/PersistentState.kt` (`Keys`) are only read by the
    one-off `LegacyJsonImport`.
@@ -256,6 +258,11 @@ Seen in practice:
     refreshes friends that already have a `contactId`, never importing the whole address book. New data that fits on a contact goes into
     `ContactCard` (domain, tested) and `AndroidContactsWriter.rowsFor`; its labels are Android string resources in
     `core/data/src/androidMain/res/values-*` (all five languages). Other platforms use `ContactsWriter.None`.
+    What is written (issue #20): relatives as `Relation` rows (partner → `TYPE_PARTNER`, parent → `TYPE_PARENT`; sibling, pet
+    and other → `TYPE_CUSTOM` with a localized label, since Android has no sibling type), "introduced by" as `TYPE_REFERRED_BY`,
+    and job, lives in, how we met, food, drinks, interests and custom fields as labelled lines in the one note (`NoteLabels`).
+    **Emails are never written back** (owner decision); they are read from the contact (`ContactRecord.emails`, `fromContact`)
+    and refreshed on sync, while typed ones are kept.
 23. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the

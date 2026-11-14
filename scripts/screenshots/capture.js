@@ -27,7 +27,7 @@ const scenes = [
   { name: 'together-dark', query: '?demo&theme=dark&tab=together', viewport: phone },
   { name: 'agenda-dark', query: '?demo&theme=dark&tab=agenda', viewport: phone },
   { name: 'desktop', query: '?demo&theme=light', viewport: { width: 1280, height: 800 } },
-  { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 11000 },
+  { name: 'review', query: '?demo&theme=light&review', viewport: phone, wait: 92000 },
   { name: 'story', query: '?demo&theme=light&story=sample-ana', viewport: phone },
   { name: 'share', query: '?demo&theme=light&share_text=Marta%20just%20posted%3A%20last%20day%20at%20the%20agency%2C%20starting%20at%20a%20ceramics%20studio%20next%20month!&share_url=https%3A%2F%2Finstagram.com%2Fp%2Fexample', viewport: phone },
   // Localised renders: the browser locale drives the app language.
@@ -61,7 +61,9 @@ const server = http.createServer((req, res) => {
     page.on('pageerror', (e) => console.log(`[${scene.name}] pageerror: ${e.message.slice(0, 200)}`));
     await page.goto(`http://localhost:${PORT}/index.html${scene.query}`);
     await page.waitForSelector('canvas', { timeout: 60000 });
-    await page.waitForTimeout(scene.wait || 9000); // fonts, sample data and entry animations
+    // Fonts, sample data and entry animations. Writing the sample circle through the SQLite (OPFS) worker takes a while
+    // in headless Chromium, so the onboarding screen can still be up after a minute.
+    await page.waitForTimeout(scene.wait || 90000);
     for (const [x, y] of scene.clicks || []) {
       await page.mouse.click(x, y);
       await page.waitForTimeout(1800);

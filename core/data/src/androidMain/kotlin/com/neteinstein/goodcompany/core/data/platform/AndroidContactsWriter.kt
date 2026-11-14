@@ -16,9 +16,11 @@ import com.neteinstein.goodcompany.core.data.source.ContactRowPlanner
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.NoteLabels
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.neteinstein.goodcompany.core.domain.model.Relation as FamilyRelation
 
 /** How the app recognises the raw contacts it created. */
 internal object OwnRawContacts {
@@ -27,9 +29,16 @@ internal object OwnRawContacts {
     fun sourceId(friendId: FriendId): String = PREFIX + friendId.value
 }
 
-/** Which rows are interchangeable: all notes, all children, birthdays, other dated events. */
-private fun kindOf(mime: String, data2: String?): String =
-    if (mime == Event.CONTENT_ITEM_TYPE) "$mime/$data2" else mime
+/**
+ * Which rows are interchangeable: all notes, birthdays, other dated events, and relations of one type (all children,
+ * all partners…; custom relations by their label, so a pet never takes over an "other" row).
+ */
+private fun kindOf(mime: String, data2: String?, data3: String? = null): String = when {
+    mime == Event.CONTENT_ITEM_TYPE -> "$mime/$data2"
+    mime == Relation.CONTENT_ITEM_TYPE && data2 == Relation.TYPE_CUSTOM.toString() -> "$mime/$data2/$data3"
+    mime == Relation.CONTENT_ITEM_TYPE -> "$mime/$data2"
+    else -> mime
+}
 
 /** Only events carry identity in DATA3 (their label); for the rest DATA1 (name / note text) says it all. */
 private fun keyOf(mime: String, data1: String?, data3: String?): String =
@@ -83,7 +92,7 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
 
         /** Which rows are interchangeable (all notes, all children, birthdays, other dated events). */
         val kind: String
-            get() = kindOf(mime, values.getAsString(ContactsContract.Data.DATA2))
+            get() = kindOf(mime, values.getAsString(ContactsContract.Data.DATA2), values.getAsString(ContactsContract.Data.DATA3))
 
         /** What makes two rows "the same" (providers normalise the other columns). */
         val key: String
@@ -106,8 +115,32 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
                 add(eventRow(Event.TYPE_CUSTOM, context.getString(R.string.contact_kid_birthday, kid.name), it.toContactDate()))
             }
         }
+        card.relatives.forEach { r ->
+            when (r.relation) {
+                FamilyRelation.PARTNER -> add(relationRow(r.name, Relation.TYPE_PARTNER))
+                FamilyRelation.PARENT -> add(relationRow(r.name, Relation.TYPE_PARENT))
+                // Android only has brother / sister, and the app doesn't know which.
+                FamilyRelation.SIBLING ->
+                    add(relationRow(r.name, Relation.TYPE_CUSTOM, context.getString(R.string.contact_relation_sibling)))
+                FamilyRelation.PET ->
+                    add(relationRow(r.name, Relation.TYPE_CUSTOM, context.getString(R.string.contact_relation_pet)))
+                FamilyRelation.OTHER ->
+                    add(relationRow(r.name, Relation.TYPE_CUSTOM, context.getString(R.string.contact_relation_other)))
+            }
+        }
+        card.referredBy?.let { add(relationRow(it, Relation.TYPE_REFERRED_BY)) }
         card.events.forEach { add(eventRow(Event.TYPE_CUSTOM, it.title, it.date.toString())) }
-        card.noteText(context.getString(R.string.contact_likes), context.getString(R.string.contact_dislikes))?.let { text ->
+        val labels = NoteLabels(
+            likes = context.getString(R.string.contact_likes),
+            dislikes = context.getString(R.string.contact_dislikes),
+            job = context.getString(R.string.contact_job),
+            livesIn = context.getString(R.string.contact_lives_in),
+            met = context.getString(R.string.contact_met),
+            food = context.getString(R.string.contact_food),
+            drinks = context.getString(R.string.contact_drinks),
+            interests = context.getString(R.string.contact_interests),
+        )
+        card.noteText(labels)?.let { text ->
             add(
                 Row(
                     ContentValues().apply {
@@ -118,6 +151,15 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
             )
         }
     }
+
+    private fun relationRow(name: String, type: Int, label: String? = null) = Row(
+        ContentValues().apply {
+            put(ContactsContract.Data.MIMETYPE, Relation.CONTENT_ITEM_TYPE)
+            put(Relation.NAME, name)
+            put(Relation.TYPE, type)
+            if (label != null) put(Relation.LABEL, label)
+        },
+    )
 
     private fun eventRow(type: Int, label: String?, date: String) = Row(
         ContentValues().apply {
@@ -192,7 +234,7 @@ internal class AndroidContactsWriter(private val context: Context) : ContactsWri
         )?.use { c ->
             while (c.moveToNext()) {
                 val mime = c.getString(1) ?: continue
-                add(ContactRowPlanner.Stored(c.getLong(0), kindOf(mime, c.getString(3)), keyOf(mime, c.getString(2), c.getString(4))))
+                add(ContactRowPlanner.Stored(c.getLong(0), kindOf(mime, c.getString(3), c.getString(4)), keyOf(mime, c.getString(2), c.getString(4))))
             }
         }
     }

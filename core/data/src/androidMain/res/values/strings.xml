@@ -5,4 +5,13 @@
     <string name="contact_kid_birthday">%1$s’s birthday</string>
     <string name="contact_likes">Loves</string>
     <string name="contact_dislikes">Not a fan of</string>
+    <string name="contact_relation_pet">Pet</string>
+    <string name="contact_relation_other">Family</string>
+    <string name="contact_job">Work</string>
+    <string name="contact_lives_in">Lives in</string>
+    <string name="contact_met">How we met</string>
+    <string name="contact_food">Food</string>
+    <string name="contact_drinks">Drinks</string>
+    <string name="contact_interests">Interests</string>
+    <string name="contact_relation_sibling">Sibling</string>
 </resources>
