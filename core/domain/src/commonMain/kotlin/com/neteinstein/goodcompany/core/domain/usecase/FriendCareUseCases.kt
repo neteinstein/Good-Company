@@ -6,11 +6,13 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
+import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
@@ -67,14 +69,18 @@ class SnoozeCatchUpUseCase(
     }
 }
 
-/** "Called them": logs a call (counts towards warmth and last contact) and snoozes the meet-up nudge for a week. */
+/**
+ * "Called them" (one tap on the friend page, or a notification action): logs a call (counts towards warmth and last
+ * contact) and snoozes the meet-up nudge for a week.
+ */
 class LogCallUseCase(
     private val interactions: InteractionRepository,
     private val snooze: SnoozeCatchUpUseCase,
     private val clock: AppClock,
+    private val ids: IdGenerator,
 ) {
-    suspend operator fun invoke(id: FriendId) {
-        interactions.addAll(listOf(Interaction(id, InteractionType.CALL, clock.now())))
+    suspend operator fun invoke(id: FriendId, source: InteractionSource = InteractionSource.MANUAL) {
+        interactions.addAll(listOf(Interaction(id, InteractionType.CALL, clock.now(), id = ids.next(), source = source)))
         snooze.friend(id, SnoozeOption.ONE_WEEK)
     }
 }
@@ -106,7 +112,7 @@ class HandleNotificationActionUseCase(
         val id = FriendId(action.targetId)
         when (action.kind) {
             NotificationAction.Kind.MET -> checkIn(listOf(id))
-            NotificationAction.Kind.CALLED -> logCall(id)
+            NotificationAction.Kind.CALLED -> logCall(id, InteractionSource.NOTIFICATION)
             NotificationAction.Kind.SNOOZE_WEEK -> snooze.friend(id, SnoozeOption.ONE_WEEK)
             NotificationAction.Kind.SNOOZE_WEEKEND -> snooze.friend(id, SnoozeOption.WEEKEND)
             NotificationAction.Kind.PLAN_HAPPENED, NotificationAction.Kind.PLAN_SKIPPED -> Unit
@@ -242,6 +248,7 @@ class ImportContactsFileUseCase(
 class DraftBirthdayMessageUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
+    private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
@@ -249,7 +256,7 @@ class DraftBirthdayMessageUseCase(
     suspend operator fun invoke(id: FriendId): Result<String> {
         val key = settings.settings.first().aiApiKey?.takeIf { it.isNotBlank() } ?: return Result.failure(MissingApiKeyException())
         val friend = friends.get(id) ?: return Result.failure(NoSuchElementException("friend"))
-        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions.messages.first()), language.languageTag())
+        return assistant.birthdayMessage(key, IdeaMapper.profile(friend, interactions, hangouts), language.languageTag())
     }
 }
 
@@ -257,6 +264,7 @@ class DraftBirthdayMessageUseCase(
 class SuggestGiftsUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
+    private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
     private val assistant: AiAssistant,
     private val language: LanguageProvider,
@@ -268,7 +276,7 @@ class SuggestGiftsUseCase(
         val alreadyHave = friend.gifts.filter { it.forKidId == kidId }.map { it.title.lowercase() }.toSet()
         return assistant.giftIdeas(
             key,
-            IdeaMapper.profile(friend, interactions.messages.first()),
+            IdeaMapper.profile(friend, interactions, hangouts),
             kid?.name,
             kid?.likes.orEmpty(),
             language.languageTag(),

@@ -4,7 +4,9 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
@@ -13,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup as DomainGroup
 import com.neteinstein.goodcompany.core.domain.model.Hangout as DomainHangout
 import com.neteinstein.goodcompany.core.domain.model.Idea as DomainIdea
 import com.neteinstein.goodcompany.core.domain.model.Interaction as DomainInteraction
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry as DomainJournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan as DomainPlan
 import com.neteinstein.goodcompany.core.domain.model.Reminder as DomainReminder
 
@@ -27,6 +30,7 @@ internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "idea", "friend")
 internal val GROUP_TABLES = arrayOf("friend_group", "group_member", "friend")
 internal val INTERACTION_TABLES = arrayOf("interaction", "friend")
 internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
+internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
@@ -42,7 +46,8 @@ internal suspend fun GoodCompanyDatabase.readHangouts(): List<DomainHangout> {
         } else {
             Place(row.place_name, row.place_latitude, row.place_longitude)
         }
-        DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note)
+        val activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } }
+        DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note, activity)
     }
 }
 
@@ -58,6 +63,7 @@ internal suspend fun GoodCompanyDatabase.writeHangout(hangout: DomainHangout) {
             place_latitude = hangout.place?.latitude,
             place_longitude = hangout.place?.longitude,
             note = hangout.note,
+            activity = hangout.activity?.name,
         ),
     )
     q.deleteFriends(hangout.id)
@@ -194,17 +200,49 @@ internal suspend fun GoodCompanyDatabase.writeGroup(group: DomainGroup) {
 
 internal suspend fun GoodCompanyDatabase.readInteractions(): List<DomainInteraction> =
     interactionQueries.allInteractions().awaitAsList().map {
-        DomainInteraction(FriendId(it.friend_id), InteractionType.valueOf(it.type), it.at.toInstant())
+        DomainInteraction(
+            friendId = FriendId(it.friend_id),
+            type = InteractionType.valueOf(it.type),
+            at = it.at.toInstant(),
+            id = it.id,
+            note = it.note,
+            source = InteractionSource.valueOf(it.source),
+            durationSeconds = it.duration_seconds?.toInt(),
+            batchId = it.batch_id,
+            messageCount = it.message_count?.toInt(),
+        )
     }
+
+internal suspend fun GoodCompanyDatabase.readJournal(): List<DomainJournalEntry> =
+    interactionQueries.allJournal().awaitAsList().map { DomainJournalEntry(it.id, FriendId(it.friend_id), it.at.toInstant(), it.text) }
+
+/** Adds or replaces [entry] (skipped when its friend is gone). */
+internal suspend fun GoodCompanyDatabase.writeJournal(entry: DomainJournalEntry) {
+    interactionQueries.upsertJournal(entry.id, entry.friendId.value, entry.at.toColumn(), entry.text)
+}
 
 internal suspend fun GoodCompanyDatabase.readMessages(): List<DomainMessage> =
     interactionQueries.allMessages().awaitAsList().map {
         DomainMessage(FriendId(it.friend_id), it.at.toInstant(), it.from_me.toFlag(), it.text)
     }
 
-/** Adds [interaction] unless the same one is already stored. */
+/**
+ * Adds [interaction] unless it's already stored (same id, or an automatic row for the same friend, type and time).
+ * One without an id (an old backup) gets its stable automatic id.
+ */
 internal suspend fun GoodCompanyDatabase.writeInteraction(interaction: DomainInteraction) {
-    interactionQueries.insertInteraction(interaction.friendId.value, interaction.type.name, interaction.at.toColumn())
+    val i = interaction.withId()
+    interactionQueries.insertInteraction(
+        id = i.id,
+        friendId = i.friendId.value,
+        type = i.type.name,
+        at = i.at.toColumn(),
+        note = i.note,
+        source = i.source.name,
+        durationSeconds = i.durationSeconds?.toColumn(),
+        batchId = i.batchId,
+        messageCount = i.messageCount?.toColumn(),
+    )
 }
 
 /** Adds [message] unless the same one is already stored. */

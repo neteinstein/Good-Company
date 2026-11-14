@@ -2,6 +2,12 @@ package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.await
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import kotlinx.coroutines.test.runTest
 import java.io.File
@@ -12,6 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 /**
  * Migrations run against the committed schema snapshots (`src/commonMain/sqldelight/databases/<n>.db`), with rows written
@@ -69,6 +76,61 @@ class MigrationTest {
         val edited = ana.copy(food = listOf("ramen"), interests = listOf("climbing"), met = MetInfo("Uni", null))
         database.writeFriend(edited, 0)
         assertEquals(edited, database.readFriends().single())
+        driver.close()
+    }
+
+    @Test
+    fun version4to5_keepsOldInteractions_withStableIds_andCallLogSyncStaysIdempotent() = runTest {
+        val driver = driverAt(4)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', NULL, 1, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO interaction VALUES ('ana', 'CALL', 1700000000000)", 0).await()
+        driver.execute(null, "INSERT INTO interaction VALUES ('ana', 'WHATSAPP', 1700000100000)", 0).await()
+        driver.execute(null, "INSERT INTO hangout VALUES ('h', 0, 1700000200000, 'Café', NULL, NULL, 'Lunch')", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 4, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = FriendId("ana")
+        val call = Instant.fromEpochMilliseconds(1700000000000)
+        val chat = Instant.fromEpochMilliseconds(1700000100000)
+        assertEquals(
+            listOf(
+                Interaction(
+                    ana,
+                    InteractionType.CALL,
+                    call,
+                    Interaction.automaticId(ana, InteractionType.CALL, call),
+                    source = InteractionSource.CALL_LOG,
+                ),
+                Interaction(
+                    ana,
+                    InteractionType.WHATSAPP,
+                    chat,
+                    Interaction.automaticId(ana, InteractionType.WHATSAPP, chat),
+                    source = InteractionSource.CHAT_IMPORT,
+                ),
+            ),
+            database.readInteractions(),
+        )
+        assertNull(database.readHangouts().single().activity)
+        assertTrue(database.readJournal().isEmpty())
+
+        // The same call read again from the call log (as a sync after the update does) is not stored twice.
+        database.writeInteraction(Interaction(ana, InteractionType.CALL, call, "other-id", source = InteractionSource.CALL_LOG, durationSeconds = 60))
+        assertEquals(2, database.readInteractions().size)
+        // New types and a manual log at the same time are fine.
+        database.writeInteraction(Interaction(ana, InteractionType.VIDEO_CALL, call, "v1", note = "Gerês"))
+        database.writeInteraction(Interaction(ana, InteractionType.CALL, call, "c1"))
+        assertEquals(4, database.readInteractions().size)
+        database.writeHangout(Hangout("h2", listOf(ana), chat, activity = HangoutActivity.LUNCH))
+        assertEquals(HangoutActivity.LUNCH, database.readHangouts().single { it.id == "h2" }.activity)
         driver.close()
     }
 }

@@ -56,6 +56,7 @@ class AppStartupTest {
         RunWeeklyIdeasUseCase(
             friends,
             interactions,
+            FakeHangoutRepository(),
             settings,
             FakeIdeaRepository(),
             FakeIdeaGenerator(),

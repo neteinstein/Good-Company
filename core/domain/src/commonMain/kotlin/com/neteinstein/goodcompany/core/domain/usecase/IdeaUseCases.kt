@@ -4,11 +4,14 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GeneratedIdea
+import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaGenerator
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRequest
@@ -60,13 +63,30 @@ internal object IdeaMapper {
         )
     }
 
-    fun profile(friend: Friend, messages: List<ConversationMessage>): FriendProfile = FriendProfile(
+    /** Everything [profile] reads besides the friend: chat lines, journal entries and meetups. */
+    data class Context(
+        val messages: List<ConversationMessage> = emptyList(),
+        val journal: List<JournalEntry> = emptyList(),
+        val hangouts: List<Hangout> = emptyList(),
+    ) {
+        companion object {
+            suspend fun load(interactions: InteractionRepository, hangouts: HangoutRepository) =
+                Context(interactions.messages.first(), interactions.journal.first(), hangouts.hangouts.first())
+        }
+    }
+
+    suspend fun profile(friend: Friend, interactions: InteractionRepository, hangouts: HangoutRepository): FriendProfile =
+        profile(friend, Context.load(interactions, hangouts))
+
+    fun profile(friend: Friend, messages: List<ConversationMessage>): FriendProfile = profile(friend, Context(messages))
+
+    fun profile(friend: Friend, context: Context): FriendProfile = FriendProfile(
         id = friend.id.value,
         name = friend.name,
         likes = friend.likes,
         dislikes = friend.dislikes,
         kids = friend.kids.map { k -> if (k.likes.isEmpty()) k.name else "${k.name} (likes ${k.likes.joinToString()})" },
-        recentMessages = messages.filter { it.friendId == friend.id }.sortedBy { it.at }.takeLast(RECENT_MESSAGES)
+        recentMessages = context.messages.filter { it.friendId == friend.id }.sortedBy { it.at }.takeLast(RECENT_MESSAGES)
             .map { (if (it.fromMe) "Me: " else "${friend.name}: ") + it.text },
         news = friend.lifeUpdates.sortedByDescending { it.addedAt }.take(RECENT_NEWS).map { it.text },
         job = friend.job.trim(),
@@ -82,9 +102,13 @@ internal object IdeaMapper {
         food = friend.food,
         drinks = friend.drinks,
         interests = friend.interests,
+        journal = context.journal.filter { it.friendId == friend.id }.sortedByDescending { it.at }.take(RECENT_JOURNAL)
+            .map { it.text },
+        lastMeetupNote = context.hangouts.filter { friend.id in it.friendIds }.maxByOrNull { it.at }?.note?.trim().orEmpty(),
     )
 
     private const val RECENT_MESSAGES = 25
+    private const val RECENT_JOURNAL = 5
     private const val RECENT_NEWS = 5
 }
 
@@ -92,6 +116,7 @@ internal object IdeaMapper {
 class GenerateTalkingPointsUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
+    private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
     private val ideas: IdeaRepository,
     private val generator: IdeaGenerator,
@@ -106,7 +131,7 @@ class GenerateTalkingPointsUseCase(
         val request = IdeaRequest(
             apiKey = key,
             mode = IdeaRequest.Mode.TALKING_POINTS,
-            friends = listOf(IdeaMapper.profile(friend, interactions.messages.first())),
+            friends = listOf(IdeaMapper.profile(friend, interactions, hangouts)),
             area = s.homeArea.ifBlank { null },
             todayIso = clock.today().toString(),
             languageTag = language.languageTag(),
@@ -137,6 +162,7 @@ sealed interface WeeklyIdeasOutcome {
 class RunWeeklyIdeasUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
+    private val hangouts: HangoutRepository,
     private val settings: SettingsRepository,
     private val ideas: IdeaRepository,
     private val generator: IdeaGenerator,
@@ -156,11 +182,11 @@ class RunWeeklyIdeasUseCase(
 
         val area = s.homeArea.ifBlank { null }
             ?: runCatching { location.currentLocation() }.getOrNull()?.let { "near ${it.latitude}, ${it.longitude}" }
-        val messages = interactions.messages.first()
+        val context = IdeaMapper.Context.load(interactions, hangouts)
         val request = IdeaRequest(
             apiKey = key,
             mode = IdeaRequest.Mode.WEEKLY_EVENTS,
-            friends = optedIn.map { IdeaMapper.profile(it, messages) },
+            friends = optedIn.map { IdeaMapper.profile(it, context) },
             area = area,
             todayIso = clock.today().toString(),
             languageTag = language.languageTag(),

@@ -17,7 +17,7 @@ fun interface ContactsSource {
 }
 
 /** A call from the OS call log. Only Android exposes it, and only with a restricted permission. */
-data class LogEntry(val phoneNumber: String, val type: InteractionType, val at: Instant)
+data class LogEntry(val phoneNumber: String, val type: InteractionType, val at: Instant, val durationSeconds: Int? = null)
 
 interface CommunicationLogSource {
     suspend fun read(since: Instant): List<LogEntry>

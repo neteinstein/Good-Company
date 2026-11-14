@@ -61,6 +61,7 @@ internal object Keys {
     const val REMINDERS = "reminders.v1"
     const val INTERACTIONS = "interactions.v1"
     const val MESSAGES = "messages.v1"
+    const val JOURNAL = "journal.v1" // only the JSON reference repository: journal entries came after SQLite
     const val IDEAS = "ideas.v1"
     const val SETTINGS = "settings.v1"
     const val GROUPS = "groups.v1"

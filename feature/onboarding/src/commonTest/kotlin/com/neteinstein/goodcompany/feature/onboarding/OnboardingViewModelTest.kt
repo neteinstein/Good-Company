@@ -36,6 +36,7 @@ class OnboardingViewModelTest {
             FakeIdeaRepository(),
             FakeGroupRepository(),
             FakePlanRepository(),
+            FakeInteractionRepository(),
             FixedClock(),
         ),
     )

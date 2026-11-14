@@ -1,0 +1,49 @@
+-- Version 4 → 5 (issue #21): timeline and logging. Interactions get an id, a note, a source, a duration, a batch
+-- (one log with several people) and a WhatsApp message count, and three more types (message, email, video call).
+-- SQLite can't widen a CHECK, so the table is rebuilt. Old rows keep their stable automatic id; calls count as
+-- call-log rows (the old "Called" ones can't be told apart) and WhatsApp days as chat imports. Journal entries get
+-- their own table, and a meetup can have an activity (F3).
+
+CREATE TABLE interaction_new (
+    id TEXT NOT NULL PRIMARY KEY,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('CALL', 'WHATSAPP', 'MEETUP', 'MESSAGE', 'EMAIL', 'VIDEO_CALL')),
+    at INTEGER NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    source TEXT NOT NULL CHECK (source IN ('MANUAL', 'CALL_LOG', 'CHAT_IMPORT', 'SHARE', 'NOTIFICATION')),
+    duration_seconds INTEGER,
+    batch_id TEXT,
+    message_count INTEGER
+);
+
+INSERT INTO interaction_new (id, friend_id, type, at, note, source)
+SELECT 'auto-' || lower(type) || '-' || friend_id || '-' || at, friend_id, type, at, '',
+    CASE type WHEN 'WHATSAPP' THEN 'CHAT_IMPORT' WHEN 'CALL' THEN 'CALL_LOG' ELSE 'MANUAL' END
+FROM interaction;
+
+DROP INDEX interaction_friend_at;
+
+DROP INDEX interaction_at;
+
+DROP TABLE interaction;
+
+ALTER TABLE interaction_new RENAME TO interaction;
+
+CREATE INDEX interaction_friend_at ON interaction(friend_id, at);
+
+CREATE INDEX interaction_at ON interaction(at);
+
+CREATE UNIQUE INDEX interaction_automatic ON interaction(friend_id, type, at) WHERE source IN ('CALL_LOG', 'CHAT_IMPORT');
+
+CREATE INDEX interaction_batch ON interaction(batch_id);
+
+CREATE TABLE journal_entry (
+    id TEXT NOT NULL PRIMARY KEY,
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    at INTEGER NOT NULL,
+    text TEXT NOT NULL
+);
+
+CREATE INDEX journal_entry_friend_at ON journal_entry(friend_id, at);
+
+ALTER TABLE hangout ADD COLUMN activity TEXT;

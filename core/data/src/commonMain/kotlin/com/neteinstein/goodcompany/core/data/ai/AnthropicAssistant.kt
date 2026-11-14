@@ -174,6 +174,8 @@ internal object AssistantPrompts {
         if (f.drinks.isNotEmpty()) appendLine("Drinks: ${f.drinks.joinToString()}")
         if (f.interests.isNotEmpty()) appendLine("Interests & hobbies: ${f.interests.joinToString()}")
         if (f.news.isNotEmpty()) appendLine("What's new in their life (newest first): ${f.news.joinToString("; ")}")
+        if (f.journal.isNotEmpty()) appendLine("Notes from recent conversations (newest first): ${f.journal.joinToString("; ")}")
+        if (f.lastMeetupNote.isNotBlank()) appendLine("Note from your last meetup: ${f.lastMeetupNote}")
         if (f.recentMessages.isNotEmpty()) {
             appendLine("Recent chat (oldest first):")
             f.recentMessages.takeLast(10).forEach { appendLine("  $it") }

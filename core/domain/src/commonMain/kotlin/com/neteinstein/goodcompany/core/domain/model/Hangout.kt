@@ -11,7 +11,15 @@ data class Hangout(
     val at: Instant,
     val place: Place? = null,
     val note: String = "",
+    /** What you did together (F3), picked by icon in the log sheet. */
+    val activity: HangoutActivity? = null,
 )
+
+/**
+ * What a meetup was (F3). The log sheet shows the six most used first, the rest behind "More". [CULTURE] is cinema,
+ * concerts and theatre; [MUSIC] is playing or singing together; [TRIP] is a trip or an outing.
+ */
+enum class HangoutActivity { LUNCH, DINNER, DRINKS, COFFEE, SPORTS, RUNNING, WALK, AT_HOME, CULTURE, MUSIC, TRIP }
 
 @Serializable
 data class Place(

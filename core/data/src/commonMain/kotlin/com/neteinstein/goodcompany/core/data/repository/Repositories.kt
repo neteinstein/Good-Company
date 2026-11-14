@@ -15,6 +15,9 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -149,18 +152,38 @@ class InteractionRepositoryImpl(
     private val messageStore = PersistentState(settings, Keys.MESSAGES, ListSerializer(ConversationMessage.serializer()), emptyList())
     override val interactions: Flow<List<Interaction>> = store.flow
     override val messages: Flow<List<ConversationMessage>> = messageStore.flow
+    private val journalStore = PersistentState(settings, Keys.JOURNAL, ListSerializer(JournalEntry.serializer()), emptyList())
+    override val journal: Flow<List<JournalEntry>> = journalStore.flow
 
-    internal suspend fun replaceAll(list: List<Interaction>, messages: List<ConversationMessage>) {
-        store.update { list }
+    internal suspend fun replaceAll(list: List<Interaction>, messages: List<ConversationMessage>, journal: List<JournalEntry>) {
+        store.update { merged(emptyList(), list) }
         messageStore.update { messages }
+        journalStore.update { journal }
     }
 
     internal val current: List<Interaction> get() = store.value
     internal val currentMessages: List<ConversationMessage> get() = messageStore.value
+    internal val currentJournal: List<JournalEntry> get() = journalStore.value
 
-    override suspend fun addAll(interactions: List<Interaction>) = store.update { current ->
-        (current + interactions).distinct().sortedBy { it.at }.takeLast(MAX_INTERACTIONS)
+    override suspend fun addAll(interactions: List<Interaction>) = store.update { current -> merged(current, interactions) }
+
+    /** Like the database: one row per id, one automatic row per friend, type and time, the newest kept. */
+    private fun merged(current: List<Interaction>, added: List<Interaction>): List<Interaction> {
+        val seenAutomatic = HashSet<Triple<FriendId, InteractionType, kotlin.time.Instant>>()
+        return (current + added.map { it.withId() })
+            .distinctBy { it.id }
+            .filter { !it.source.isAutomatic || seenAutomatic.add(Triple(it.friendId, it.type, it.at)) }
+            .sortedBy { it.at }
+            .takeLast(MAX_INTERACTIONS)
     }
+
+    override suspend fun delete(id: String) = store.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertJournal(entry: JournalEntry) = journalStore.update { list ->
+        list.filterNot { it.id == entry.id } + entry
+    }
+
+    override suspend fun deleteJournal(id: String) = journalStore.update { list -> list.filterNot { it.id == id } }
 
     override suspend fun addMessages(messages: List<ConversationMessage>) = messageStore.update { current ->
         (current + messages).distinct()
@@ -174,7 +197,14 @@ class InteractionRepositoryImpl(
         val byPhone = PhoneMatcher.index(friends) { it.phoneNumbers }
         val matched = entries.mapNotNull { e ->
             val friend = PhoneMatcher.key(e.phoneNumber)?.let(byPhone::get) ?: return@mapNotNull null
-            Interaction(friend.id, e.type, e.at)
+            Interaction(
+                friendId = friend.id,
+                type = e.type,
+                at = e.at,
+                id = Interaction.automaticId(friend.id, e.type, e.at),
+                source = InteractionSource.CALL_LOG,
+                durationSeconds = e.durationSeconds,
+            )
         }
         addAll(matched)
         return matched.size
@@ -273,6 +303,7 @@ class BackupRepositoryImpl(
         reminders = reminders.current,
         interactions = interactions.current,
         messages = interactions.currentMessages,
+        journal = interactions.currentJournal,
         ideas = ideas.current,
         groups = groups.current,
         plans = plans.current,
@@ -283,7 +314,7 @@ class BackupRepositoryImpl(
         friends.replaceAll(backup.friends)
         hangouts.replaceAll(backup.hangouts)
         reminders.replaceAll(backup.reminders)
-        interactions.replaceAll(backup.interactions, backup.messages)
+        interactions.replaceAll(backup.interactions, backup.messages, backup.journal)
         ideas.replaceAll(backup.ideas)
         groups.replaceAll(backup.groups)
         plans.replaceAll(backup.plans)

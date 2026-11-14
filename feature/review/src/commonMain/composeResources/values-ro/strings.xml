@@ -61,4 +61,20 @@
     <string name="share_top">Pe cine am văzut cel mai des: %1$s</string>
     <string name="share_place">Locul preferat: %1$s</string>
     <string name="share_footer">— făcut cu Good Company</string>
+    <string name="contacts_title">Între timp</string>
+    <plurals name="contacts_body">
+        <item quantity="one">%1$d dată când ați vorbit de la distanță</item>
+        <item quantity="few">De %1$d ori când ați vorbit de la distanță</item>
+        <item quantity="other">De %1$d de ori când ați vorbit de la distanță</item>
+    </plurals>
+    <plurals name="contacts_calls">
+        <item quantity="one">%1$d apel</item>
+        <item quantity="few">%1$d apeluri</item>
+        <item quantity="other">%1$d de apeluri</item>
+    </plurals>
+    <plurals name="contacts_messages">
+        <item quantity="one">%1$d mesaj sau e-mail</item>
+        <item quantity="few">%1$d mesaje și e-mailuri</item>
+        <item quantity="other">%1$d de mesaje și e-mailuri</item>
+    </plurals>
 </resources>

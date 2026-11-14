@@ -88,6 +88,9 @@ sealed interface StorySlide {
     /** The last meetup: when, where, who else, and what you noted. */
     data class LastTime(val date: LocalDate, val place: String?, val note: String?, val with: List<String>) : StorySlide
 
+    /** The newest journal entry: "Last time you talked about…". */
+    data class LastTalk(val date: LocalDate, val text: String) : StorySlide
+
     data class Tastes(
         val likes: List<String>,
         val dislikes: List<String>,
@@ -228,6 +231,8 @@ object CatchUpStoryBuilder {
                 with = h.friends.filterNot { it.id == friend.id }.map { it.name.substringBefore(' ') },
             )
         }
+
+        detail.lastJournal?.let { j -> slides += StorySlide.LastTalk(j.at.toLocalDate(zone), j.text) }
 
         val hasTastes = listOf(friend.likes, friend.dislikes, friend.food, friend.drinks, friend.interests).any { it.isNotEmpty() }
         if (hasTastes) {

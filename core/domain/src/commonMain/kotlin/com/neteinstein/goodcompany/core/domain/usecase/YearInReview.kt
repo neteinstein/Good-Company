@@ -2,9 +2,12 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
+import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
@@ -37,12 +40,23 @@ data class YearInReview(
     /** Friends you met for the first time this year (in the app's records). */
     val newFaces: List<Friend>,
     val remindersDone: Int,
+    /** Calls, messages, emails, video calls and WhatsApp days this year, by type (types with none are left out). */
+    val contactsByType: Map<InteractionType, Int> = emptyMap(),
 ) {
+    val contacts: Int get() = contactsByType.values.sum()
+
     val isEmpty: Boolean get() = meetups == 0
 }
 
 object YearInReviewBuilder {
-    fun build(year: Int, friends: List<Friend>, hangouts: List<Hangout>, reminders: List<Reminder>, zone: TimeZone): YearInReview {
+    fun build(
+        year: Int,
+        friends: List<Friend>,
+        hangouts: List<Hangout>,
+        reminders: List<Reminder>,
+        zone: TimeZone,
+        interactions: List<Interaction> = emptyList(),
+    ): YearInReview {
         val byId = friends.associateBy { it.id }
         val inYear = hangouts.filter { it.at.toLocalDate(zone).year == year }
         val counts = inYear.flatMap { it.friendIds }.groupingBy { it }.eachCount()
@@ -76,6 +90,9 @@ object YearInReviewBuilder {
             longestWeekStreak = longestWeekStreak(dates),
             newFaces = newFaces,
             remindersDone = reminders.count { r -> r.done && (r.dueAt ?: r.createdAt).toLocalDate(zone).year == year },
+            contactsByType = interactions
+                .filter { it.type.isRemote && it.friendId in byId && it.at.toLocalDate(zone).year == year }
+                .groupingBy { it.type }.eachCount(),
         )
     }
 
@@ -104,10 +121,12 @@ class ObserveYearInReviewUseCase(
     private val friends: FriendRepository,
     private val hangouts: HangoutRepository,
     private val reminders: ReminderRepository,
+    private val interactions: InteractionRepository,
     private val clock: AppClock,
 ) {
     /** [year] null = [YearInReviewBuilder.defaultYear]. */
-    operator fun invoke(year: Int? = null): Flow<YearInReview> = combine(friends.friends, hangouts.hangouts, reminders.reminders) { fs, hs, rs ->
-        YearInReviewBuilder.build(year ?: YearInReviewBuilder.defaultYear(clock.today(), hs, clock.timeZone), fs, hs, rs, clock.timeZone)
-    }
+    operator fun invoke(year: Int? = null): Flow<YearInReview> =
+        combine(friends.friends, hangouts.hangouts, reminders.reminders, interactions.interactions) { fs, hs, rs, ints ->
+            YearInReviewBuilder.build(year ?: YearInReviewBuilder.defaultYear(clock.today(), hs, clock.timeZone), fs, hs, rs, clock.timeZone, ints)
+        }
 }

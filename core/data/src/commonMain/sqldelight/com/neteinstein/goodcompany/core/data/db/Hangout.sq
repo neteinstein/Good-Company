@@ -7,7 +7,8 @@ CREATE TABLE hangout (
     place_name TEXT,
     place_latitude REAL,
     place_longitude REAL,
-    note TEXT NOT NULL
+    note TEXT NOT NULL,
+    activity TEXT
 );
 
 CREATE TABLE hangout_friend (
@@ -30,13 +31,14 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM hangout;
 
 upsert:
-INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note) VALUES ?
+INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note, activity) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     at = excluded.at,
     place_name = excluded.place_name,
     place_latitude = excluded.place_latitude,
     place_longitude = excluded.place_longitude,
-    note = excluded.note;
+    note = excluded.note,
+    activity = excluded.activity;
 
 deleteFriends:
 DELETE FROM hangout_friend WHERE hangout_id = ?;

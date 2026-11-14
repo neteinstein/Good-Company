@@ -94,6 +94,10 @@ data class FriendProfile(
     val food: List<String> = emptyList(),
     val drinks: List<String> = emptyList(),
     val interests: List<String> = emptyList(),
+    /** The last few journal entries about them, newest first. */
+    val journal: List<String> = emptyList(),
+    /** The note on your last meetup, if any. */
+    val lastMeetupNote: String = "",
 )
 
 data class GeneratedIdea(

@@ -16,18 +16,22 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.toRoute
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
+import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewScreen
@@ -63,8 +67,29 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier, 
                         onOpenSettings = openSettings,
                         onOpenStory = { navController.navigate(CatchUpStoryRoute(id, fromFriend = true)) },
                         onOpenFriend = openFriend,
+                        onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
+                        onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
                     )
                 }
+            }
+            composable<FriendTimelineRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) { entry ->
+                val id = entry.toRoute<FriendTimelineRoute>().id
+                FriendTimelineScreen(
+                    friendId = FriendId(id),
+                    onBack = { navController.popBackStack() },
+                    onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                )
+            }
+            dialog<LogInteractionRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
+                val route = entry.toRoute<LogInteractionRoute>()
+                LogInteractionScreen(
+                    friendIds = route.friendIds.map(::FriendId),
+                    type = route.type,
+                    onClose = { navController.popBackStack() },
+                )
             }
             composable<ShareRoute>(
                 enterTransition = { slideInVertically { it / 4 } + fadeIn() },

@@ -384,4 +384,24 @@
     <string name="story_fresh_food">Nouveau plat préféré</string>
     <string name="story_fresh_drink">Nouvelle boisson préférée</string>
     <string name="story_fresh_interest">Nouvel intérêt</string>
+    <string name="timeline_title">Historique</string>
+    <string name="timeline_screen_title">Historique de %1$s</string>
+    <string name="timeline_see_all">Tout voir</string>
+    <string name="timeline_empty">Rien pour l’instant. Touchez + pour noter une rencontre, un appel, un message ou une note.</string>
+    <string name="timeline_filter_empty">Rien avec ce filtre.</string>
+    <string name="timeline_log">Noter</string>
+    <string name="timeline_more_options">Plus d’options</string>
+    <string name="timeline_back">Retour</string>
+    <string name="timeline_filter_all">Tout</string>
+    <string name="timeline_filter_together">Ensemble</string>
+    <string name="timeline_filter_calls">Appels</string>
+    <string name="timeline_filter_messages">Messages</string>
+    <string name="timeline_filter_notes">Notes</string>
+    <string name="timeline_filter_gifts">Cadeaux</string>
+    <string name="msg_timeline_removed">Retiré de l’historique</string>
+    <string name="timeline_delete">Supprimer</string>
+    <string name="contact_message">Message %1$s</string>
+    <string name="contact_email">E-mail %1$s</string>
+    <string name="contact_video">Appel vidéo %1$s</string>
+    <string name="story_last_talk_title">La dernière fois, vous avez parlé de…</string>
 </resources>

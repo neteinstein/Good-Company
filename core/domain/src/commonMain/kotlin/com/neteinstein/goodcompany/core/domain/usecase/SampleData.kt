@@ -13,10 +13,15 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
@@ -30,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.IdeaRepository
+import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -127,6 +133,12 @@ data class SampleTexts(
     val trailRunning: String = "Trail running",
     val shoeSize: String = "Shoe size",
     val footballClub: String = "Football club",
+    // Timeline (issue #21): notes on logged contacts and journal entries
+    val videoCallGeres: String = "Planned the Gerês weekend",
+    val emailFlatListings: String = "Sent her the flat listings",
+    val messageSurfPhotos: String = "Sent the surf trip photos",
+    val journalAnaPorto: String = "Talked about the move to Porto and Leo’s school",
+    val journalRuiRace: String = "He wants to run a race abroad next year",
 )
 
 /** Supplies [SampleTexts] in the user's language (implemented with UI string resources). */
@@ -149,6 +161,8 @@ object SampleData {
         val ideas: List<Idea>,
         val groups: List<FriendGroup> = emptyList(),
         val plans: List<Plan> = emptyList(),
+        val interactions: List<Interaction> = emptyList(),
+        val journal: List<JournalEntry> = emptyList(),
     )
 
     fun build(clock: AppClock, t: SampleTexts = SampleTexts()): Bundle {
@@ -263,17 +277,17 @@ object SampleData {
             Friend(id = id("carla"), name = "Carla Nunes", contactId = PREFIX + "c-carla", likes = listOf(t.running)),
         )
 
-        fun hangout(key: String, offset: Int, hour: Int, place: String?, vararg who: String, note: String = "") =
-            Hangout(PREFIX + key, who.map(::id), at(offset, hour), place?.let { Place(it) }, note)
+        fun hangout(key: String, offset: Int, hour: Int, place: String?, vararg who: String, note: String = "", activity: HangoutActivity? = null) =
+            Hangout(PREFIX + key, who.map(::id), at(offset, hour), place?.let { Place(it) }, note, activity)
         val hangouts = listOf(
-            hangout("h1", -2, 20, "Hot Clube de Portugal", "ana", "rui", note = t.jazzNight),
-            hangout("h2", -5, 13, "Time Out Market", "sofia"),
-            hangout("h3", -9, 19, t.ruisPlace, "rui", "pedro", "beatriz", note = t.boardGames),
-            hangout("h4", -16, 10, "Parque Eduardo VII", "marta"),
-            hangout("h5", -18, 21, "Cinema Ideal", "ana", "marta"),
-            hangout("h6", -26, 12, "Café Tati", "pedro"),
-            hangout("h7", -33, 20, t.beatrizDinner, "beatriz", "ana", "rui", "sofia"),
-            hangout("h8", -47, 9, "Guincho", "pedro", "rui", note = t.surfMorning),
+            hangout("h1", -2, 20, "Hot Clube de Portugal", "ana", "rui", note = t.jazzNight, activity = HangoutActivity.CULTURE),
+            hangout("h2", -5, 13, "Time Out Market", "sofia", activity = HangoutActivity.LUNCH),
+            hangout("h3", -9, 19, t.ruisPlace, "rui", "pedro", "beatriz", note = t.boardGames, activity = HangoutActivity.AT_HOME),
+            hangout("h4", -16, 10, "Parque Eduardo VII", "marta", activity = HangoutActivity.WALK),
+            hangout("h5", -18, 21, "Cinema Ideal", "ana", "marta", activity = HangoutActivity.CULTURE),
+            hangout("h6", -26, 12, "Café Tati", "pedro", activity = HangoutActivity.COFFEE),
+            hangout("h7", -33, 20, t.beatrizDinner, "beatriz", "ana", "rui", "sofia", activity = HangoutActivity.DINNER),
+            hangout("h8", -47, 9, "Guincho", "pedro", "rui", note = t.surfMorning, activity = HangoutActivity.SPORTS),
             hangout("h9", -75, 21, "Hot Clube de Portugal", "ana", "sofia"),
             hangout("h10", -120, 19, t.ruisPlace, "rui", "pedro", "beatriz"),
             hangout("h11", -150, 13, "Time Out Market", "marta", "ana"),
@@ -310,7 +324,29 @@ object SampleData {
         val plans = listOf(
             Plan(PREFIX + "plan-lunch", listOf(id("ana")), t.planLunch, day(0), place = "Time Out Market", createdAt = now - 2.days),
         )
-        return Bundle(friends, hangouts, reminders, ideas, groups, plans)
+        fun contact(key: String, who: String, type: InteractionType, offset: Int, hour: Int, note: String = "") = Interaction(
+            friendId = id(who),
+            type = type,
+            at = at(offset, hour),
+            id = PREFIX + key,
+            note = note,
+            source = if (type == InteractionType.WHATSAPP) InteractionSource.CHAT_IMPORT else InteractionSource.MANUAL,
+        )
+        val interactions = listOf(
+            contact("c1", "ana", InteractionType.CALL, -4, 18).copy(source = InteractionSource.CALL_LOG, durationSeconds = 14 * 60),
+            contact("c2", "ana", InteractionType.VIDEO_CALL, -8, 21, t.videoCallGeres),
+            contact("c3", "ana", InteractionType.EMAIL, -15, 10, t.emailFlatListings),
+            contact("c4", "ana", InteractionType.WHATSAPP, -40, 22).copy(messageCount = 48),
+            contact("c5", "rui", InteractionType.MESSAGE, -1, 9, t.messageSurfPhotos).copy(batchId = PREFIX + "b1"),
+            contact("c6", "pedro", InteractionType.MESSAGE, -1, 9, t.messageSurfPhotos).copy(batchId = PREFIX + "b1"),
+            contact("c7", "marta", InteractionType.CALL, -6, 19),
+            contact("c8", "sofia", InteractionType.VIDEO_CALL, -12, 20),
+        )
+        val journal = listOf(
+            JournalEntry(PREFIX + "j1", id("ana"), at(-3, 22), t.journalAnaPorto),
+            JournalEntry(PREFIX + "j2", id("rui"), at(-10, 22), t.journalRuiRace),
+        )
+        return Bundle(friends, hangouts, reminders, ideas, groups, plans, interactions, journal)
     }
 
     fun isSample(id: String) = id.startsWith(PREFIX)
@@ -324,6 +360,7 @@ class LoadSampleDataUseCase(
     private val ideas: IdeaRepository,
     private val groups: GroupRepository,
     private val plans: PlanRepository,
+    private val interactions: InteractionRepository,
     private val clock: AppClock,
     private val texts: SampleTextsProvider = SampleTextsProvider { SampleTexts() },
 ) {
@@ -338,6 +375,8 @@ class LoadSampleDataUseCase(
         bundle.groups.forEach { groups.upsert(it) }
         val existingPlans = plans.plans.first().map { it.id }.toSet()
         bundle.plans.filterNot { it.id in existingPlans }.forEach { plans.upsert(it) }
+        interactions.addAll(bundle.interactions)
+        bundle.journal.forEach { interactions.upsertJournal(it) }
     }
 }
 
@@ -349,6 +388,7 @@ class RemoveSampleDataUseCase(
     private val ideas: IdeaRepository,
     private val groups: GroupRepository,
     private val plans: PlanRepository,
+    private val interactions: InteractionRepository,
 ) {
     suspend operator fun invoke() {
         friends.friends.first().filter { SampleData.isSample(it.id.value) }.forEach { friends.delete(it.id) }
@@ -357,6 +397,9 @@ class RemoveSampleDataUseCase(
         ideas.ideas.first().filter { SampleData.isSample(it.id) && !it.dismissed }.forEach { ideas.dismiss(it.id) }
         groups.groups.first().filter { SampleData.isSample(it.id) }.forEach { groups.delete(it.id) }
         plans.plans.first().filter { SampleData.isSample(it.id) }.forEach { plans.delete(it.id) }
+        // The database drops a friend's interactions and journal with them; other stores may not.
+        interactions.interactions.first().filter { SampleData.isSample(it.id) }.forEach { interactions.delete(it.id) }
+        interactions.journal.first().filter { SampleData.isSample(it.id) }.forEach { interactions.deleteJournal(it.id) }
     }
 }
 

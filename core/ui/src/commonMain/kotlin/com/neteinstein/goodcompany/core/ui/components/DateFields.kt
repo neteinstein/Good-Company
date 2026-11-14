@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.ui.components
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -17,15 +18,24 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
 
-/** Material date picker dialog speaking kotlinx-datetime [LocalDate]. */
+/** Material date picker dialog speaking kotlinx-datetime [LocalDate]. [latest] (inclusive) disables later days. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocalDatePickerDialog(
     initial: LocalDate?,
     onDismiss: () -> Unit,
     onPicked: (LocalDate) -> Unit,
+    latest: LocalDate? = null,
 ) {
-    val state = rememberDatePickerState(initialSelectedDateMillis = initial?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds())
+    val latestMillis = latest?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds()
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = initial?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds(),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long) = latestMillis == null || utcTimeMillis <= latestMillis
+
+            override fun isSelectableYear(year: Int) = latest == null || year <= latest.year
+        },
+    )
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {

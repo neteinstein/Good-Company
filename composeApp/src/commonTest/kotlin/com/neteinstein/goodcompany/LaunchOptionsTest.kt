@@ -9,6 +9,7 @@ import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.FakeGroupRepository
 import com.neteinstein.goodcompany.core.testing.FakeHangoutRepository
 import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
+import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
 import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
@@ -56,6 +57,7 @@ class LaunchOptionsTest {
                 FakeIdeaRepository(),
                 FakeGroupRepository(),
                 FakePlanRepository(),
+                FakeInteractionRepository(),
                 FixedClock(),
             ),
             UpdateSettingsUseCase(settings),

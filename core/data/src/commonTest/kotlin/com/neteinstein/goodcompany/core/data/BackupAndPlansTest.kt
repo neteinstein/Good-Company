@@ -16,10 +16,13 @@ import com.neteinstein.goodcompany.core.domain.model.ConversationMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
@@ -78,6 +81,10 @@ class BackupAndPlansTest {
         from.reminders.upsert(Reminder("r", "Tickets", createdAt = at(2026, 3, 1)))
         from.interactions.addAll(listOf(Interaction(ana, InteractionType.CALL, at(2026, 3, 2))))
         from.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), fromMe = true, text = "hi")))
+        val email = Interaction(ana, InteractionType.EMAIL, at(2026, 3, 3), id = "e1", note = "flat listings", batchId = "b")
+        from.interactions.addAll(listOf(email))
+        from.interactions.upsertJournal(JournalEntry("j1", ana, at(2026, 3, 4), "Talked about Porto"))
+        from.hangouts.add(Hangout("h2", listOf(ana), at(2026, 3, 5), activity = HangoutActivity.LUNCH))
         from.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 3, 1))))
         from.groups.upsert(FriendGroup("g", "Crew", memberIds = listOf(ana)))
         from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), createdAt = at(2026, 3, 1)))
@@ -94,9 +101,12 @@ class BackupAndPlansTest {
         val snap: Backup = to.backup.snapshot()
         assertEquals(listOf("Ana"), snap.friends.map { it.name })
         assertEquals(listOf(Occasion.COFFEE), snap.friends.single().occasions)
-        assertEquals(1, snap.hangouts.size)
+        assertEquals(2, snap.hangouts.size)
+        assertEquals(HangoutActivity.LUNCH, snap.hangouts.single { it.id == "h2" }.activity)
         assertEquals(1, snap.reminders.size)
-        assertEquals(1, snap.interactions.size)
+        assertEquals(2, snap.interactions.size)
+        assertEquals(email, snap.interactions.single { it.id == "e1" })
+        assertEquals(listOf("Talked about Porto"), snap.journal.map { it.text })
         assertEquals(1, snap.messages.size)
         assertEquals(1, snap.ideas.size)
         assertEquals(1, snap.groups.size)
@@ -105,6 +115,27 @@ class BackupAndPlansTest {
         assertEquals("sk-mine", snap.settings.aiApiKey)
         // Flows see the restored data straight away.
         assertEquals("Ana", to.friends.friends.first().single().name)
+    }
+
+    @Test
+    fun aBackupFromBeforeTheTimeline_restoresInteractionsWithIdsAndNoJournal() = runTest {
+        // Written by an older version: interactions without id, source or note, no journal, hangouts without activity.
+        val json = """
+            {"format":"good-company-backup","version":1,"exportedAt":"2026-03-01T10:00:00Z",
+             "friends":[{"id":"ana","name":"Ana"}],
+             "hangouts":[{"id":"h","friendIds":["ana"],"at":"2026-02-01T12:00:00Z"}],
+             "interactions":[
+               {"friendId":"ana","type":"CALL","at":"2026-02-02T12:00:00Z"},
+               {"friendId":"ana","type":"WHATSAPP","at":"2026-02-03T12:00:00Z"}
+             ]}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf(InteractionSource.CALL_LOG, InteractionSource.CHAT_IMPORT), snap.interactions.map { it.source })
+        assertTrue(snap.interactions.all { it.id.isNotBlank() })
+        assertEquals(emptyList(), snap.journal)
+        assertEquals(null, snap.hangouts.single().activity)
     }
 
     @Test

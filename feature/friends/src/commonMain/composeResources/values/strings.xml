@@ -408,4 +408,24 @@
     <string name="story_fresh_food">New favourite food</string>
     <string name="story_fresh_drink">New favourite drink</string>
     <string name="story_fresh_interest">New interest</string>
+    <string name="timeline_title">Timeline</string>
+    <string name="timeline_screen_title">%1$s’s timeline</string>
+    <string name="timeline_see_all">See all</string>
+    <string name="timeline_empty">Nothing logged yet. Tap + to log a meetup, a call, a message or a note.</string>
+    <string name="timeline_filter_empty">Nothing here with this filter.</string>
+    <string name="timeline_log">Log</string>
+    <string name="timeline_more_options">More options</string>
+    <string name="timeline_back">Back</string>
+    <string name="timeline_filter_all">All</string>
+    <string name="timeline_filter_together">Together</string>
+    <string name="timeline_filter_calls">Calls</string>
+    <string name="timeline_filter_messages">Messages</string>
+    <string name="timeline_filter_notes">Notes</string>
+    <string name="timeline_filter_gifts">Gifts</string>
+    <string name="msg_timeline_removed">Removed from the timeline</string>
+    <string name="timeline_delete">Delete</string>
+    <string name="contact_message">Message %1$s</string>
+    <string name="contact_email">Email %1$s</string>
+    <string name="contact_video">Video call %1$s</string>
+    <string name="story_last_talk_title">Last time you talked about…</string>
 </resources>

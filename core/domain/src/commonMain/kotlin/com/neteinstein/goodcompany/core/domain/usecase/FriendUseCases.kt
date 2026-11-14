@@ -8,7 +8,9 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -94,6 +96,10 @@ data class FriendDetail(
     val others: List<Friend> = emptyList(),
     /** "More about" labels already used on other friends, most used first: suggestions for a new field. */
     val customFieldLabels: List<String> = emptyList(),
+    /** Their whole history, newest first (the friend page shows the first few). */
+    val timeline: List<TimelineEntry> = emptyList(),
+    /** The newest journal entry: "last time you talked about…". */
+    val lastJournal: JournalEntry? = null,
 )
 
 class ObserveFriendDetailUseCase(
@@ -111,8 +117,8 @@ class ObserveFriendDetailUseCase(
         hangouts.hangouts,
         interactions.interactions,
         interactions.messages,
-        combine(ideas.ideas, settings.settings, groups.groups, plans.plans) { i, s, g, p -> Extras(i, s, g, p) },
-    ) { all, hs, ints, msgs, (ideaList, s, gs, ps) ->
+        combine(ideas.ideas, settings.settings, groups.groups, plans.plans, interactions.journal) { i, s, g, p, j -> Extras(i, s, g, p, j) },
+    ) { all, hs, ints, msgs, (ideaList, s, gs, ps, journal) ->
         val friend = all.firstOrNull { it.id == id } ?: return@combine null
         val byId = all.associateBy { it.id }
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
@@ -134,6 +140,8 @@ class ObserveFriendDetailUseCase(
             plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
             others = all.filter { it.id != id }.sortedBy { it.name.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
+            timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone),
+            lastJournal = journal.filter { it.friendId == id }.maxByOrNull { it.at },
         )
     }
 
@@ -145,7 +153,13 @@ class ObserveFriendDetailUseCase(
         .sortedWith(compareByDescending<List<String>> { it.size }.thenBy { it.first().lowercase() })
         .map { it.first() }
 
-    private data class Extras(val ideas: List<Idea>, val settings: AppSettings, val groups: List<FriendGroup>, val plans: List<Plan>)
+    private data class Extras(
+        val ideas: List<Idea>,
+        val settings: AppSettings,
+        val groups: List<FriendGroup>,
+        val plans: List<Plan>,
+        val journal: List<JournalEntry>,
+    )
 }
 
 /** Applies an edit to one friend (toggles, likes, kids, rules…). No-op if the friend is gone. */
@@ -187,7 +201,7 @@ class SyncContactsUseCase(
 data class ChatImportResult(val messages: Int, val friendSender: String?, val lastMessageAt: Instant?)
 
 /**
- * Imports a WhatsApp chat export for one friend: one WHATSAPP interaction per day with messages,
+ * Imports a WhatsApp chat export for one friend: one WHATSAPP interaction per day with messages (and how many),
  * plus the last [KEEP_MESSAGES] lines as AI context.
  */
 class ImportChatUseCase(
@@ -200,8 +214,18 @@ class ImportChatUseCase(
         val parsed = WhatsAppChatParser.parse(raw, clock.timeZone)
         if (parsed.isEmpty()) return ChatImportResult(0, null, null)
         val friendSender = WhatsAppChatParser.pickFriendSender(parsed, friend.name)
-        val perDay = parsed.groupBy { it.at.toLocalDate(clock.timeZone) }.values.map { day -> day.maxOf { it.at } }
-        interactions.addAll(perDay.map { Interaction(id, InteractionType.WHATSAPP, it) })
+        val perDay = parsed.groupBy { it.at.toLocalDate(clock.timeZone) }.values.map { day ->
+            val at = day.maxOf { it.at }
+            Interaction(
+                friendId = id,
+                type = InteractionType.WHATSAPP,
+                at = at,
+                id = Interaction.automaticId(id, InteractionType.WHATSAPP, at),
+                source = InteractionSource.CHAT_IMPORT,
+                messageCount = day.size,
+            )
+        }
+        interactions.addAll(perDay)
         interactions.addMessages(
             parsed.takeLast(KEEP_MESSAGES).map {
                 ConversationMessage(id, it.at, fromMe = it.sender != friendSender, text = it.text.take(MAX_MESSAGE_CHARS))

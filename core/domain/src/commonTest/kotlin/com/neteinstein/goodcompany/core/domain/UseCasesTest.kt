@@ -182,7 +182,7 @@ class UseCasesTest {
 
     @Test
     fun talkingPoints_requireApiKey() = runTest {
-        val useCase = GenerateTalkingPointsUseCase(friends, interactions, settings, ideas, generator, clock, ids)
+        val useCase = GenerateTalkingPointsUseCase(friends, interactions, FakeHangoutRepository(), settings, ideas, generator, clock, ids)
         assertIs<MissingApiKeyException>(useCase(FriendId("ana")).exceptionOrNull())
         assertTrue(generator.requests.isEmpty())
     }
@@ -196,7 +196,16 @@ class UseCasesTest {
                 GeneratedIdea(emptyList(), "talking_point", " ", "blank titles are dropped", null, null),
             ),
         )
-        val count = GenerateTalkingPointsUseCase(friends, interactions, settings, ideas, generator, clock, ids)(FriendId("ana")).getOrThrow()
+        val count = GenerateTalkingPointsUseCase(
+            friends,
+            interactions,
+            FakeHangoutRepository(),
+            settings,
+            ideas,
+            generator,
+            clock,
+            ids,
+        )(FriendId("ana")).getOrThrow()
         assertEquals(1, count)
         val idea = ideas.ideas.value.single()
         assertEquals(IdeaKind.NEWS, idea.kind)
@@ -206,7 +215,14 @@ class UseCasesTest {
 
     @Test
     fun weeklyIdeas_skipReasonsAndCadence() = runTest {
-        val useCase = RunWeeklyIdeasUseCase(friends, interactions, settings, ideas, generator, FakeLocationProvider(GeoPoint(1.0, 2.0)), clock, ids)
+        val useCase =
+            RunWeeklyIdeasUseCase(
+                friends, interactions, FakeHangoutRepository(), settings, ideas, generator,
+                FakeLocationProvider(
+                    GeoPoint(1.0, 2.0),
+                ),
+                clock, ids,
+            )
         assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_API_KEY), useCase())
         settings.update { it.copy(aiApiKey = "k") }
         assertEquals(WeeklyIdeasOutcome.Skipped(WeeklyIdeasOutcome.Reason.NO_FRIENDS_OPTED_IN), useCase())
@@ -232,7 +248,8 @@ class UseCasesTest {
         settings.update { AppSettings(aiApiKey = "k", homeArea = "Lisbon") }
         friends.upsert(friends.get(FriendId("ana"))!!.copy(suggestEvents = true))
         generator.result = Result.failure(RuntimeException("boom"))
-        val useCase = RunWeeklyIdeasUseCase(friends, interactions, settings, ideas, generator, FakeLocationProvider(), clock, ids)
+        val useCase =
+            RunWeeklyIdeasUseCase(friends, interactions, FakeHangoutRepository(), settings, ideas, generator, FakeLocationProvider(), clock, ids)
         assertIs<WeeklyIdeasOutcome.Failed>(useCase())
         assertNull(settings.settings.value.lastIdeasRunAt)
         assertEquals("Lisbon", generator.requests.single().area)

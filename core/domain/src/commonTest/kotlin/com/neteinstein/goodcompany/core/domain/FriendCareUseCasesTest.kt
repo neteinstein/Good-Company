@@ -83,7 +83,7 @@ class FriendCareUseCasesTest {
         assertEquals(LocalDate(2026, 3, 14), friends.get(ana)!!.snoozedUntil)
         snooze.clearFriend(ana)
         assertNull(friends.get(ana)!!.snoozedUntil)
-        LogCallUseCase(interactions, snooze, clock)(ana)
+        LogCallUseCase(interactions, snooze, clock, ids)(ana)
         assertEquals(InteractionType.CALL, interactions.interactions.value.single().type)
         assertEquals(LocalDate(2026, 3, 17), friends.get(ana)!!.snoozedUntil)
     }
@@ -93,7 +93,7 @@ class FriendCareUseCasesTest {
         val handle =
             HandleNotificationActionUseCase(
                 CheckInUseCase(hangouts, clock, ids),
-                LogCallUseCase(interactions, snooze, clock),
+                LogCallUseCase(interactions, snooze, clock, ids),
                 snooze,
                 groups,
                 ConfirmPlanUseCase(FakePlanRepository(), friends, CheckInUseCase(hangouts, clock, ids), clock),
@@ -138,16 +138,16 @@ class FriendCareUseCasesTest {
     fun aiHelpersNeedAKeyAndUseTheUserLanguage() = runTest {
         val ai = FakeAiAssistant(gifts = Result.success(listOf(" LEGO castle ", "lego castle", "Vinyl", "Kind of blue")))
         val pt = LanguageProvider { "pt-PT" }
-        val draft = DraftBirthdayMessageUseCase(friends, interactions, settings, ai, pt)
+        val draft = DraftBirthdayMessageUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)
         assertIs<MissingApiKeyException>(draft(ana).exceptionOrNull())
         settings.update { it.copy(aiApiKey = "k") }
         assertEquals("Happy birthday!", draft(ana).getOrThrow())
         assertEquals("message:ana:pt-PT", ai.calls.single())
 
         friends.upsert(friends.get(ana)!!.copy(gifts = listOf(Gift("g", "Kind of Blue"))))
-        val gifts = SuggestGiftsUseCase(friends, interactions, settings, ai, pt)(ana).getOrThrow()
+        val gifts = SuggestGiftsUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)(ana).getOrThrow()
         assertEquals(listOf("LEGO castle", "lego castle", "Vinyl"), gifts) // trims and drops ones you already have
-        SuggestGiftsUseCase(friends, interactions, settings, ai, pt)(ana, kidId = "leo")
+        SuggestGiftsUseCase(friends, interactions, FakeHangoutRepository(), settings, ai, pt)(ana, kidId = "leo")
         assertEquals("gifts:ana:Leo:pt-PT", ai.calls.last())
     }
 

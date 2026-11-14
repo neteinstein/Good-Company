@@ -42,7 +42,7 @@ internal class AndroidCommunicationLogSource(private val context: Context) : Com
                 while (c.moveToNext()) {
                     val number = c.getString(0) ?: continue
                     if (c.getLong(2) <= 0) continue // missed / unanswered calls don't count as contact
-                    out += LogEntry(number, InteractionType.CALL, Instant.fromEpochMilliseconds(c.getLong(1)))
+                    out += LogEntry(number, InteractionType.CALL, Instant.fromEpochMilliseconds(c.getLong(1)), c.getLong(2).toInt())
                 }
             }
         }

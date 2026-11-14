@@ -21,6 +21,7 @@ data class Backup(
     val reminders: List<Reminder> = emptyList(),
     val interactions: List<Interaction> = emptyList(),
     val messages: List<ConversationMessage> = emptyList(),
+    val journal: List<JournalEntry> = emptyList(),
     val ideas: List<Idea> = emptyList(),
     val groups: List<FriendGroup> = emptyList(),
     val plans: List<Plan> = emptyList(),

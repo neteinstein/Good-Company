@@ -54,6 +54,22 @@ class WarmthTest {
     }
 
     @Test
+    fun messagesEmailsAndVideoCallsCountLikeCalls() {
+        val byCall = Warmth.score(
+            ana,
+            emptyList(),
+            listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 9))),
+            30,
+            today,
+            TimeZone.UTC,
+        )
+        listOf(InteractionType.MESSAGE, InteractionType.EMAIL, InteractionType.VIDEO_CALL, InteractionType.WHATSAPP).forEach { type ->
+            val s = Warmth.score(ana, emptyList(), listOf(Interaction(FriendId("ana"), type, at(2026, 3, 9))), 30, today, TimeZone.UTC)
+            assertEquals(byCall, s, "$type")
+        }
+    }
+
+    @Test
     fun otherFriendsDontCount() {
         val other = listOf(Hangout("x", listOf(FriendId("rui")), at(2026, 3, 9)))
         assertEquals(0, Warmth.score(ana, other, emptyList(), 30, today, TimeZone.UTC).value)
