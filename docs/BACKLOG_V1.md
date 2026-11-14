@@ -77,6 +77,12 @@ por uma decisão em aberto e **não devem ser feitos** sem resposta do dono.
 | G2 | "…match that with SMS, Calls, Whatsapp messages etc." | SMS não (decisão); chamadas só sideload; WhatsApp por exportação manual. | Importar exportações de Messenger, Telegram e Signal como a do WhatsApp (`CHAT_IMPORT`). |
 | G3 | "Match tastes with news and conversations" | Notícias e temas feitos; conversas só via chats importados e notas. | Usar mais os chats importados (ex.: temas a partir do último chat), respeitando F1. |
 
+## H. Novo layout (14-11-2026)
+
+Plano em [`issues/V1_LAYOUT.md`](issues/V1_LAYOUT.md), mockups em [`mockups/v1-layout/`](mockups/v1-layout/index.html).
+N1 separadores Hoje · Pessoas · Círculos · Planos e Definições no cabeçalho · N2 Pessoas · N3 Círculos e Planos ·
+N4 cartão "Quando estiveste com…?" · N5 quatro níveis de proximidade · N6 círculos na página da pessoa · N7 a tua foto.
+
 ## ⛔ Bloqueados (não correr sem decisão)
 
 - **F5 · Juntar "Everyone" e "Real friends"**: em discussão com o outro autor.
