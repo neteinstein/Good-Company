@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.data.repository.FriendRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CardEvent
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -49,7 +50,7 @@ class ContactWriteBackTest {
         repo.upsert(first)
         assertEquals(1, writer.writes)
 
-        repo.upsert(first.copy(isCloseFriend = true, meetEveryDays = 14))
+        repo.upsert(first.copy(closeness = Closeness.CLOSE, meetEveryDays = 14))
         assertEquals(1, writer.writes)
 
         repo.upsert(first.copy(likes = listOf("jazz", "sushi")))
@@ -71,7 +72,7 @@ class ContactWriteBackTest {
     @Test
     fun aFriendWithNothingToMirror_isNeverTouched() = runTest {
         repo.upsert(contactFriend())
-        repo.upsert(contactFriend { copy(isCloseFriend = true) })
+        repo.upsert(contactFriend { copy(closeness = Closeness.CLOSE) })
         assertEquals(0, writer.writes)
     }
 

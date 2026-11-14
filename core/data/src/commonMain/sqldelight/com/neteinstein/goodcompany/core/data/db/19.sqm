@@ -1,0 +1,13 @@
+-- Version 19 → 20 (issue #86): everyone has a closeness and the heart is gone; "real friend" follows the level.
+-- No level + real friend → Close; no level, or a level without the heart → Acquaintances (what the People tab showed);
+-- a real friend keeps their level. Afterwards is_close_friend = (circle <> 'ACQUAINTANCE') for every row, and it keeps
+-- its value, so birthdays and rhythms reach the same people. The column stays nullable (no table rebuild); the mapper
+-- reads a missing or unknown level with the same rule (closenessFrom).
+
+UPDATE friend SET circle = CASE
+    WHEN is_close_friend = 0 THEN 'ACQUAINTANCE'
+    WHEN circle IS NULL THEN 'CLOSE'
+    ELSE circle
+END;
+
+UPDATE friend SET is_close_friend = CASE WHEN circle = 'ACQUAINTANCE' THEN 0 ELSE 1 END;

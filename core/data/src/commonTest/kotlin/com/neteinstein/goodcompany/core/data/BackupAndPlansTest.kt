@@ -195,7 +195,7 @@ class BackupAndPlansTest {
     @Test
     fun closenessIsStillWrittenAsCircle_andCircleColoursRoundTrip() = runTest {
         val from = Stores()
-        from.friends.upsert(friend("ana", "Ana") { copy(isCloseFriend = true, closeness = Closeness.GOOD) })
+        from.friends.upsert(friend("ana", "Ana") { copy(closeness = Closeness.GOOD) })
         from.groups.upsert(FriendGroup("g", "Choir", "🎵", listOf(FriendId("ana")), color = CircleColor.MAGENTA))
         from.appSettings.update { it.copy(homeCircleFilter = "g") }
         val json = ExportBackupUseCase(from.backup, from.clock)()
@@ -225,6 +225,37 @@ class BackupAndPlansTest {
         assertEquals(Closeness.ACQUAINTANCE, snap.friends.single().closeness)
         assertFalse(snap.friends.single().isCloseFriend)
         assertEquals(180, snap.settings.acquaintanceDays)
+    }
+
+    @Test
+    fun aBackupFromBeforeEveryoneHadACloseness_getsTheMigrationRule_andExportsStillCarryTheHeart() = runTest {
+        // Written by a build before issue #86: a level is optional and "isCloseFriend" is the heart.
+        val old = """
+            {"format": "good-company-backup", "version": 1, "friends": [
+                {"id": "ana", "name": "Ana", "isCloseFriend": true},
+                {"id": "bob", "name": "Bob"},
+                {"id": "cat", "name": "Cat", "circle": "INNER"},
+                {"id": "dan", "name": "Dan", "circle": "GOOD", "isCloseFriend": true},
+                {"id": "eve", "name": "Eve", "circle": "BEST", "isCloseFriend": true}
+            ]}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(old))
+        val levels = to.backup.snapshot().friends.associate { it.id.value to it.closeness }
+        assertEquals(
+            mapOf(
+                "ana" to Closeness.CLOSE,
+                "bob" to Closeness.ACQUAINTANCE,
+                "cat" to Closeness.ACQUAINTANCE,
+                "dan" to Closeness.GOOD,
+                "eve" to Closeness.CLOSE, // a level this build doesn't know
+            ),
+            levels,
+        )
+
+        val json = ExportBackupUseCase(to.backup, to.clock)()
+        assertTrue(Regex("\"id\":\\s*\"ana\"[^}]*\"circle\":\\s*\"CLOSE\"[^}]*\"isCloseFriend\":\\s*true").containsMatchIn(json), json)
+        assertTrue(Regex("\"id\":\\s*\"bob\"[^}]*\"isCloseFriend\":\\s*false").containsMatchIn(json), json)
     }
 
     @Test

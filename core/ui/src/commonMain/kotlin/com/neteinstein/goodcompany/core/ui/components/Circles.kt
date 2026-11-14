@@ -9,6 +9,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -118,37 +119,67 @@ fun CircleChip(
     removeLabel: String? = null,
 ) {
     val palette = circlePalette(group.color)
+    ChipSurface(selected, palette.container, palette.onContainer, onClick, modifier, onLongClick) {
+        if (showDot) CircleDot(group.color, size = 8.dp)
+        ChipLabel(listOfNotNull("${group.emoji} ${group.name}", trailing).joinToString(" · "))
+        if (onRemove != null) {
+            Icon(
+                Icons.Rounded.Close,
+                contentDescription = removeLabel,
+                modifier = Modifier.size(24.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRemove).padding(3.dp),
+            )
+        }
+    }
+}
+
+/**
+ * The "All · 38" chip in front of a row of [CircleChip]s (issue #86): the same size, corners, padding and type, with no
+ * colour dot, so the row reads as one set of filters.
+ */
+@Composable
+fun AllChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ChipSurface(
+        selected,
+        MaterialTheme.colorScheme.secondaryContainer,
+        MaterialTheme.colorScheme.onSecondaryContainer,
+        onClick,
+        modifier,
+    ) { ChipLabel(label) }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ChipSurface(
+    selected: Boolean,
+    selectedColor: Color,
+    onSelectedColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit,
+) {
     Surface(
         modifier = modifier
             .heightIn(min = 36.dp)
             .semantics { this.selected = selected }
             .combinedClickable(role = Role.Checkbox, onClick = onClick, onLongClick = onLongClick),
         shape = MaterialTheme.shapes.small,
-        color = if (selected) palette.container else MaterialTheme.colorScheme.surface,
-        contentColor = if (selected) palette.onContainer else MaterialTheme.colorScheme.onSurface,
+        color = if (selected) selectedColor else MaterialTheme.colorScheme.surface,
+        contentColor = if (selected) onSelectedColor else MaterialTheme.colorScheme.onSurface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
             Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            if (showDot) CircleDot(group.color, size = 8.dp)
-            Text(
-                listOfNotNull("${group.emoji} ${group.name}", trailing).joinToString(" · "),
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (onRemove != null) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = removeLabel,
-                    modifier = Modifier.size(24.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onRemove).padding(3.dp),
-                )
-            }
-        }
+            content = content,
+        )
     }
+}
+
+@Composable
+private fun ChipLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
 /** A round colour swatch for the circle editor; the selected one gets a ring and a tick. */

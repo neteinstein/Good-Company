@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.review
 
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -18,7 +19,7 @@ import kotlin.test.assertNull
 
 class NetworkViewModelsTest {
     private val g = TestGraph(
-        friends = listOf(friend("ana") { copy(isCloseFriend = true) }, friend("rui") { copy(isCloseFriend = true) }),
+        friends = listOf(friend("ana") { copy(closeness = Closeness.CLOSE) }, friend("rui") { copy(closeness = Closeness.CLOSE) }),
         hangouts = listOf(Hangout("h", listOf(FriendId("ana")), at(2026, 3, 1))),
     )
 

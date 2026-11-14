@@ -6,7 +6,6 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
-import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -23,7 +22,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,22 +40,12 @@ import kotlin.time.Instant
 /** How the People list is ordered: grouped by closeness (the default, F5) or A–Z from the ⋮ menu. */
 enum class PeopleSort { CLOSENESS, NAME }
 
-/** The closeness chips above the list: everyone, or one level ([closeness] null = "not set"). */
-sealed interface PeopleFilter {
-    data object All : PeopleFilter
-
-    data class Level(val closeness: Closeness?) : PeopleFilter
-}
-
-/** A heading in the People list: a closeness level (null = not set) or, sorted A–Z, a first letter. */
+/** A heading in the People list: a closeness level (shown with its count, "Close · 9") or, sorted A–Z, a first letter. */
 sealed interface PeopleSection {
-    data class Level(val closeness: Closeness?) : PeopleSection
+    data class Level(val closeness: Closeness) : PeopleSection
 
     data class Letter(val letter: Char) : PeopleSection
 }
-
-/** One closeness chip: the level (null = not set) and how many people it holds. */
-data class LevelCount(val closeness: Closeness?, val count: Int)
 
 /** The "Your people" card on top of People (issue #66): a summary of the dashboard. */
 data class YourPeopleSummary(val people: Int, val meetupsLast90Days: Int, val cooling: List<Friend>)
@@ -103,17 +91,14 @@ sealed interface FriendsMessage {
 data class FriendsUiState(
     /** Who the list shows, in order (every section's people, one after another). */
     val friends: List<FriendSummary> = emptyList(),
-    /** [friends] under their headings: by closeness (Inner first, "not set" last), or by first letter when sorted A–Z. */
+    /** [friends] under their headings: by closeness (Inner first, Acquaintances last), or by first letter when sorted A–Z. */
     val sections: List<Pair<PeopleSection, List<FriendSummary>>> = emptyList(),
-    /** The closeness chips, in order, with how many people each holds (only levels somebody is in). */
-    val levels: List<LevelCount> = emptyList(),
-    /** How many people the "All" chip counts (the list before a level is picked). */
+    /** How many people the "All" chip counts: the list with no circle picked. */
     val listedCount: Int = 0,
     /** "Your people" on top; null until the first numbers arrive. */
     val yourPeople: YourPeopleSummary? = null,
     val totalCount: Int = 0,
     val query: String = "",
-    val filter: PeopleFilter = PeopleFilter.All,
     val sort: PeopleSort = PeopleSort.CLOSENESS,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
@@ -123,7 +108,7 @@ data class FriendsUiState(
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
-    /** Every circle, A–Z, for the chip row under the header. */
+    /** Every circle, A–Z, for the chip row above the list. */
     val circles: List<Relationships.GroupStatus> = emptyList(),
     /** The circle People is filtered by (remembered between launches); null = All. The list shows only its members. */
     val circle: Relationships.GroupStatus? = null,
@@ -140,8 +125,8 @@ data class FriendsUiState(
 }
 
 /**
- * The People tab (issue #66, F5): one list of everyone grouped by closeness (or A–Z), closeness chips with counts, the
- * circle filter, and "Your people" on top.
+ * The People tab (issues #66 and #86, F5): "Your people" on top, one row of circle chips, then one list of everyone
+ * grouped by closeness (each heading with its count) or A–Z. Search hides the card and the chips and keeps the grouping.
  */
 class FriendsViewModel(
     observeFriends: ObserveFriendsUseCase,
@@ -152,7 +137,6 @@ class FriendsViewModel(
     private val syncContacts: SyncContactsUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
     private val addFriend: AddFriendUseCase,
-    private val setRealFriend: SetRealFriendUseCase,
     private val loadSampleData: LoadSampleDataUseCase,
     private val setCircleFilter: SetHomeCircleFilterUseCase,
     observeKinship: ObserveKinshipProposalsUseCase,
@@ -185,23 +169,19 @@ class FriendsViewModel(
         val circle = circles.firstOrNull { it.group.id == settings.homeCircleFilter }
         val members = circle?.group?.memberIds?.toSet()
         val all = everyone.filter { members == null || it.friend.id in members }
+        // "All · N": the list with no circle picked and no search.
+        val allCount = everyone.count { it.friend.showInMyList }
         // "My nieces": confirmed kinship only, whoever is hidden from the list (F7).
         val kinship = kin.second.takeIf { kin.first == ui.query }
-        val searching = kinship != null || q.isNotEmpty()
         val listed = when {
             kinship != null -> all.filter { it.friend.relationToMe in kinship }
-            // A search looks across everyone, whatever the closeness chip.
             q.isNotEmpty() -> all.filter { it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
             // F9: people with "Show in my list" off (friends' kids) stay out unless searched for or in a circle.
             else -> all.filter { circle != null || it.friend.showInMyList }
         }
-        val levels = levelOrder.mapNotNull { c -> listed.count { it.friend.closeness == c }.takeIf { it > 0 }?.let { LevelCount(c, it) } }
-        // A level nobody is in any more (e.g. after a change of closeness) reads as All.
-        val filter = ui.filter.takeIf { f -> f is PeopleFilter.Level && levels.any { it.closeness == f.closeness } } ?: PeopleFilter.All
-        val shown = if (!searching && filter is PeopleFilter.Level) listed.filter { it.friend.closeness == filter.closeness } else listed
-        val byName = shown.sortedBy { it.friend.displayName.lowercase() }
+        val byName = listed.sortedBy { it.friend.displayName.lowercase() }
         val sections: List<Pair<PeopleSection, List<FriendSummary>>> = when (ui.sort) {
-            PeopleSort.CLOSENESS -> levelOrder.mapNotNull { c ->
+            PeopleSort.CLOSENESS -> Closeness.entries.mapNotNull { c ->
                 byName.filter { it.friend.closeness == c }.takeIf { it.isNotEmpty() }?.let { PeopleSection.Level(c) to it }
             }
             PeopleSort.NAME -> byName.groupBy { it.friend.displayName.firstOrNull()?.uppercaseChar()?.takeIf(Char::isLetter) ?: '#' }
@@ -210,8 +190,7 @@ class FriendsViewModel(
         ui.copy(
             friends = sections.flatMap { it.second },
             sections = sections,
-            levels = levels,
-            listedCount = listed.size,
+            listedCount = allCount,
             yourPeople = yourPeople,
             totalCount = everyone.size,
             circles = circles.sortedBy { it.group.name.lowercase() },
@@ -220,7 +199,6 @@ class FriendsViewModel(
             kinship = kinship,
             suggestedFamily = proposals,
             isLoading = false,
-            filter = filter,
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,
@@ -229,19 +207,12 @@ class FriendsViewModel(
 
     fun onQueryChange(query: String) = local.update { it.copy(query = query) }
 
-    /** A closeness chip (or All). */
-    fun onFilterChange(filter: PeopleFilter) = local.update { it.copy(filter = filter) }
-
     /** "A–Z" in the ⋮ menu switches between A–Z and grouped by closeness. */
     fun onSortChange(sort: PeopleSort) = local.update { it.copy(sort = sort) }
 
     /** Filters the list by a circle (null = All); remembered between launches. */
     fun onCircleFilter(groupId: String?) {
         viewModelScope.launch { setCircleFilter(groupId) }
-    }
-
-    fun onToggleClose(id: FriendId) {
-        viewModelScope.launch { setRealFriend.toggle(id) }
     }
 
     /** Called after the contacts permission prompt resolves. */
@@ -311,9 +282,4 @@ class FriendsViewModel(
     }
 
     fun onMessageShown() = local.update { it.copy(message = null) }
-
-    private companion object {
-        /** Closeness levels from closest to furthest, then "not set" (null). */
-        val levelOrder: List<Closeness?> = Closeness.entries + null
-    }
 }

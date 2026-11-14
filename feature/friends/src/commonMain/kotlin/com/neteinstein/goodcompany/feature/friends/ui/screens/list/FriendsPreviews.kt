@@ -18,7 +18,6 @@ private val sample = listOf(
         Friend(
             FriendId("ana"),
             "Ana Silva",
-            isCloseFriend = true,
             closeness = Closeness.INNER,
             likes = listOf("jazz", "sushi"),
             birthday = Birthday(3, 14, 1990),
@@ -29,7 +28,7 @@ private val sample = listOf(
         meetupOverdue = true,
     ),
     FriendSummary(
-        Friend(FriendId("rui"), "Rui Costa", isCloseFriend = true, closeness = Closeness.INNER, likes = listOf("F1")),
+        Friend(FriendId("rui"), "Rui Costa", closeness = Closeness.INNER, likes = listOf("F1")),
         null,
         null,
         null,
@@ -43,8 +42,7 @@ private fun FriendsPreview(dark: Boolean) = GoodCompanyTheme(if (dark) ThemeMode
     FriendsContent(
         state = FriendsUiState(
             friends = sample,
-            sections = listOf(PeopleSection.Level(Closeness.INNER) to sample.take(2), PeopleSection.Level(null) to sample.drop(2)),
-            levels = listOf(LevelCount(Closeness.INNER, 2), LevelCount(null, 1)),
+            sections = listOf(PeopleSection.Level(Closeness.INNER) to sample.take(2), PeopleSection.Level(Closeness.ACQUAINTANCE) to sample.drop(2)),
             listedCount = 3,
             yourPeople = YourPeopleSummary(people = 3, meetupsLast90Days = 4, cooling = listOf(sample[1].friend)),
             totalCount = 3,

@@ -1,6 +1,8 @@
 package com.neteinstein.goodcompany.core.domain.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KeepGeneratedSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -18,15 +20,15 @@ value class FriendId(val value: String)
  * else is app-owned and never overwritten by a sync. A name or photo set in the app ([customName], [customPhoto], F19
  * and F14) wins over the contact's: show [displayName] and [avatar], never [name] or [photo] directly.
  */
-@Serializable
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable(with = FriendSerializer::class)
+@KeepGeneratedSerializer
 data class Friend(
     val id: FriendId,
     val name: String,
     val contactId: String? = null,
     val phoneNumbers: List<String> = emptyList(),
     val birthday: Birthday? = null,
-    /** "Real friend" — promoted out of the address-book noise. */
-    val isCloseFriend: Boolean = false,
     /** On by default (brief decision F10); it can be turned off for one person. */
     val notifyBirthday: Boolean = true,
     val likes: List<String> = emptyList(),
@@ -49,7 +51,7 @@ data class Friend(
      * per-friend setup. Stored as "circle" (its name before decision D1), so backups and the database are unchanged.
      */
     @SerialName("circle")
-    val closeness: Closeness? = null,
+    val closeness: Closeness = Closeness.ACQUAINTANCE,
     /** Catch-up nudges are paused until this date (inclusive). */
     val snoozedUntil: LocalDate? = null,
     /** Gift ideas (not yet given) and gift history (given). A kid's gifts are on the kid's own page. */
@@ -121,10 +123,10 @@ data class Friend(
     val isFamily: Boolean get() = relationToMe?.isFamily == true
 
     /**
-     * The closeness to show on chips and pills: a real friend's level, or Acquaintance (never a real friend, so it
-     * shows whatever [isCloseFriend] says). Null when there is nothing to show.
+     * "Real friend": promoted out of the address-book noise. Derived from [closeness] (issue #86): every level but
+     * Acquaintances. Still stored (`friend.is_close_friend`, `isCloseFriend` in backups) so older builds read it.
      */
-    val shownCloseness: Closeness? get() = closeness?.takeIf { isCloseFriend || !it.isRealFriend }
+    val isCloseFriend: Boolean get() = closeness.isRealFriend
 
     /** The name shown everywhere: [customName] when set, else the contact's [name]. */
     val displayName: String

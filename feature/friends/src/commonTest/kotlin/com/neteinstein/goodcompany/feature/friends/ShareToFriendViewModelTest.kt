@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
@@ -32,7 +33,7 @@ class ShareToFriendViewModelTest {
     private fun graph(apiKey: String? = null) = TestGraph(
         listOf(
             friend("ana", "Ana Silva"),
-            friend("rui", "Rui Costa") { copy(isCloseFriend = true, phoneNumbers = listOf("+351 912 345 678")) },
+            friend("rui", "Rui Costa") { copy(closeness = Closeness.CLOSE, phoneNumbers = listOf("+351 912 345 678")) },
             friend("bea", "Beatriz Rocha"),
         ),
         settings = AppSettings(aiApiKey = apiKey, aiEnabled = apiKey != null),

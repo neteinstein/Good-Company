@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.agenda.ui.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
@@ -14,7 +15,7 @@ import kotlin.time.Instant
 @Preview
 @Composable
 private fun AgendaPreview() {
-    val ana = Friend(FriendId("ana"), "Ana Silva", isCloseFriend = true, likes = listOf("jazz"))
+    val ana = Friend(FriendId("ana"), "Ana Silva", closeness = Closeness.CLOSE, likes = listOf("jazz"))
     val today = LocalDate(2026, 3, 10)
     GoodCompanyTheme(dynamicColor = false) {
         AgendaContent(

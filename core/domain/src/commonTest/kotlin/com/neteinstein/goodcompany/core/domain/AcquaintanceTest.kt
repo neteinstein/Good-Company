@@ -5,12 +5,12 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.closenessFrom
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenQuestions
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -60,32 +60,25 @@ class AcquaintanceTest {
     }
 
     @Test
-    fun theLastSeenCardNeverAsksAboutAcquaintances() {
+    fun theLastSeenCardAsksAboutAcquaintancesOnlyForTheirOwnRhythm() {
         val friends = listOf(
             friend("ana") { copy(closeness = Closeness.ACQUAINTANCE) },
             friend("bob") { copy(closeness = Closeness.ACQUAINTANCE, meetEveryDays = 30) },
-            friend("cat") { copy(isCloseFriend = true, closeness = Closeness.GOOD) },
+            friend("cat") { copy(closeness = Closeness.GOOD) },
         )
         val asked = LastSeenQuestions.pending(friends, emptyList(), emptyList(), CadenceRules(acquaintanceDays = 60))
-        assertEquals(listOf("cat"), asked.map { it.id.value })
+        assertEquals(listOf("cat", "bob"), asked.map { it.id.value })
     }
 
     @Test
     fun choosingAcquaintanceMakesSomeoneNotARealFriend_andBackAgain() = runTest {
-        val friends = FakeFriendRepository(listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) }))
+        val friends = FakeFriendRepository(listOf(friend("ana") { copy(closeness = Closeness.CLOSE) }))
         val setCloseness = SetClosenessUseCase(friends)
         setCloseness(ana, Closeness.ACQUAINTANCE)
         assertEquals(Closeness.ACQUAINTANCE, friends.get(ana)!!.closeness)
         assertFalse(friends.get(ana)!!.isCloseFriend)
-        assertEquals(Closeness.ACQUAINTANCE, friends.get(ana)!!.shownCloseness)
 
         setCloseness(ana, Closeness.INNER)
-        assertTrue(friends.get(ana)!!.isCloseFriend)
-
-        // Marking an Acquaintance a real friend moves them up to Close.
-        setCloseness(ana, Closeness.ACQUAINTANCE)
-        SetRealFriendUseCase(friends)(ana, true)
-        assertEquals(Closeness.CLOSE, friends.get(ana)!!.closeness)
         assertTrue(friends.get(ana)!!.isCloseFriend)
     }
 
@@ -99,10 +92,12 @@ class AcquaintanceTest {
     }
 
     @Test
-    fun shownClosenessHidesALevelLeftOnSomeoneWhoIsNoLongerARealFriend() {
-        assertNull(friend("a") { copy(isCloseFriend = false, closeness = Closeness.INNER) }.shownCloseness)
-        assertEquals(Closeness.INNER, friend("a") { copy(isCloseFriend = true, closeness = Closeness.INNER) }.shownCloseness)
-        assertNull(friend("a").shownCloseness)
+    fun everyoneStartsAsAnAcquaintance_andRealFriendFollowsTheLevel() {
+        assertEquals(Closeness.ACQUAINTANCE, friend("a").closeness)
+        assertFalse(friend("a").isCloseFriend)
+        Closeness.entries.forEach { level ->
+            assertEquals(level != Closeness.ACQUAINTANCE, friend("a") { copy(closeness = level) }.isCloseFriend)
+        }
     }
 
     @Test
@@ -114,5 +109,33 @@ class AcquaintanceTest {
         assertTrue(g.observeMeetups().first().isEmpty())
         g.settingsRepo.update { it.copy(acquaintanceDays = 180) }
         assertEquals(180, g.observeMeetups().first().single().cadenceDays)
+    }
+
+    @Test
+    fun theOldHeartAndLevelBecomeOneLevel_likeMigration19() {
+        assertEquals(Closeness.CLOSE, closenessFrom(null, realFriend = true))
+        assertEquals(Closeness.ACQUAINTANCE, closenessFrom(null, realFriend = false))
+        Closeness.entries.forEach { level ->
+            assertEquals(Closeness.ACQUAINTANCE, closenessFrom(level, realFriend = false))
+            assertEquals(level, closenessFrom(level, realFriend = true))
+        }
+    }
+
+    @Test
+    fun birthdaysAndRhythmsReachTheSamePeopleAfterTheMigration() {
+        // Before #86: (level, heart). After: closenessFrom(level, heart). Who counts as a real friend (birthdays,
+        // AgendaBuilder.caresAbout) must not change, nor who has a rhythm from their level.
+        val rules = CadenceRules()
+        val levels: List<Closeness?> = listOf(null) + Closeness.entries
+        levels.forEach { level ->
+            listOf(true, false).forEach { heart ->
+                val oldDays = level?.takeIf { heart || !it.isRealFriend }?.let(rules::daysFor)
+                val migrated = friend("a") { copy(closeness = closenessFrom(level, heart)) }
+                // The one change is the table's own: a real friend with no level is now in Close, with its rhythm.
+                val expectedDays = if (level == null && heart) rules.closeDays else oldDays
+                assertEquals(expectedDays, rules.cadenceFor(migrated), "$level/$heart")
+                assertEquals(heart && level != Closeness.ACQUAINTANCE, migrated.isCloseFriend, "$level/$heart")
+            }
+        }
     }
 }

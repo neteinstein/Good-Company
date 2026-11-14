@@ -193,7 +193,7 @@ object SampleData {
 
         val friends = listOf(
             Friend(
-                id = id("ana"), name = "Ana Silva", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
+                id = id("ana"), name = "Ana Silva", closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 912 345 678"), birthday = bday(3, 34), meetEveryDays = 14,
                 likes = listOf(t.jazz, t.sushi, t.hiking, "Murakami"), dislikes = listOf(t.crowds, t.cilantro),
                 likesAddedAt = mapOf(t.hiking to now - 1.days),
@@ -227,7 +227,7 @@ object SampleData {
                 ),
             ),
             Friend(
-                id = id("rui"), name = "Rui Costa", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
+                id = id("rui"), name = "Rui Costa", closeness = Closeness.CLOSE, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 913 222 111"), birthday = bday(19, 37),
                 likes = listOf(t.formula1, t.craftBeer, t.boardGamesTaste, t.jazz), dislikes = listOf(t.earlyMornings),
                 job = t.ruiJob, livesIn = "Alvalade, Lisboa",
@@ -249,7 +249,7 @@ object SampleData {
                 gifts = listOf(Gift(PREFIX + "g-wingspan", t.giftBoardGame, givenOn = day(-320), occasion = GiftOccasion.CHRISTMAS)),
             ),
             Friend(
-                id = id("marta"), name = "Marta Lopes", isCloseFriend = true, closeness = Closeness.CLOSE, notifyBirthday = true,
+                id = id("marta"), name = "Marta Lopes", closeness = Closeness.CLOSE, notifyBirthday = true,
                 phoneNumbers = listOf("+351 914 555 000"), birthday = bday(41, 31),
                 likes = listOf(t.yoga, t.indieFilms, t.ceramics), dislikes = listOf(t.horrorMovies),
                 job = t.martaJob, preferredChannel = ContactChannel.CALL,
@@ -264,7 +264,6 @@ object SampleData {
             Friend(
                 id = id("pedro"),
                 name = "Pedro Almeida",
-                isCloseFriend = true,
                 closeness = Closeness.INNER,
                 phoneNumbers = listOf("+351 915 777 888"),
                 birthday = bday(88, 35),
@@ -277,7 +276,7 @@ object SampleData {
                 id = id(
                     "sofia",
                 ),
-                name = "Sofia Martins", isCloseFriend = true, closeness = Closeness.INNER, notifyBirthday = true, suggestEvents = true,
+                name = "Sofia Martins", closeness = Closeness.INNER, notifyBirthday = true, suggestEvents = true,
                 phoneNumbers = listOf("+351 916 123 456"), birthday = bday(0, 29), meetEveryDays = 21,
                 likes = listOf(t.photography, t.travel, t.specialtyCoffee, t.hiking), dislikes = listOf(t.spicyFood, t.cilantro),
                 occasions = listOf(Occasion.COFFEE, Occasion.WEEKDAY_LUNCH),
@@ -285,7 +284,6 @@ object SampleData {
             Friend(
                 id = id("beatriz"),
                 name = "Beatriz Rocha",
-                isCloseFriend = true,
                 closeness = Closeness.GOOD,
                 birthday = bday(57, 40),
                 likes = listOf(t.theatre, t.cooking, t.wine, t.sushi),
@@ -346,7 +344,7 @@ object SampleData {
                 color = CircleColor.AMBER,
             ),
             FriendGroup(PREFIX + "grp-surf", t.groupSurf, "🏄", listOf(id("pedro"), id("rui")), meetEveryDays = 21, color = CircleColor.TEAL),
-            // A bigger circle where closeness varies: two Close, one Inner, one Good friend and three with none.
+            // A bigger circle where closeness varies: two Close, one Inner, one Good friend and three Acquaintances.
             FriendGroup(
                 PREFIX + "grp-choir",
                 t.groupChoir,

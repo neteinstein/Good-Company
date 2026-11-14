@@ -35,13 +35,13 @@ class NetworkTest {
 
     @Test
     fun graph_youAtTheCentre_linksAndIntroducedBy_addressBookOnlyLeftOut() {
-        val rui = friend("rui") { copy(isCloseFriend = true) }
+        val rui = friend("rui") { copy(closeness = Closeness.CLOSE) }
         val ana = friend("ana") { copy(relationToMe = LinkType.SPOUSE) }
         val bea = friend("bea") { copy(relationToMe = LinkType.SIBLING) }
         val leonor = friend("leonor") // only on the map through Rui (his daughter)
         val pedro = friend("pedro") { copy(introducedBy = Introducer(id("rui"), "Rui")) } // only through "introduced by"
         val zed = friend("zed") // address book only: off the map
-        val gone = friend("gone") { copy(isCloseFriend = true, isOrphaned = true) }
+        val gone = friend("gone") { copy(closeness = Closeness.CLOSE, isOrphaned = true) }
         val links = listOf(
             PersonLink("l1", from = id("rui"), to = id("leonor"), type = LinkType.CHILD),
             PersonLink("l2", from = id("rui"), to = id("ana"), type = LinkType.FRIEND),
@@ -75,8 +75,8 @@ class NetworkTest {
 
     @Test
     fun graph_strongerKindWinsForTheSamePair() {
-        val ana = friend("ana") { copy(isCloseFriend = true, introducedBy = Introducer(id("rui"), "Rui")) }
-        val rui = friend("rui") { copy(isCloseFriend = true) }
+        val ana = friend("ana") { copy(closeness = Closeness.CLOSE, introducedBy = Introducer(id("rui"), "Rui")) }
+        val rui = friend("rui") { copy(closeness = Closeness.CLOSE) }
         val g = NetworkGraph.build(
             listOf(ana, rui),
             listOf(PersonLink("l", from = id("ana"), to = id("rui"), type = LinkType.SIBLING)),
@@ -150,7 +150,7 @@ class NetworkTest {
     @Test
     fun theMapUseCase_placesYouAtTheOrigin_andHidesWarmthWhenOff() = runTest {
         val g = TestGraph(
-            friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER) }, friend("rui") { copy(isCloseFriend = true) }),
+            friends = listOf(friend("ana") { copy(closeness = Closeness.INNER) }, friend("rui") { copy(closeness = Closeness.CLOSE) }),
             hangouts = listOf(Hangout("h", listOf(id("ana")), at(2026, 3, 9))),
         )
         val map = g.observeNetworkMap().first()

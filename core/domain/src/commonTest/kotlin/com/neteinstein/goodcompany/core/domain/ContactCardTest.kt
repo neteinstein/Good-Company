@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CardEvent
 import com.neteinstein.goodcompany.core.domain.model.CardKid
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.LinkType
@@ -38,7 +39,7 @@ class ContactCardTest {
             copy(
                 importantEvents = listOf(ImportantEvent("e1", "Surgery", LocalDate(2026, 12, 1), remindDaysBefore = 3)),
                 meetEveryDays = 30,
-                isCloseFriend = true,
+                closeness = Closeness.CLOSE,
             )
         }
         // Kids are people linked as Ana's children (F9): written as kids, with their birthday.
@@ -55,7 +56,7 @@ class ContactCardTest {
     @Test
     fun changesThatDontShowOnTheContact_leaveTheCardEqual() {
         val base = friend("ana") { copy(notes = "Met at uni") }
-        val tweaked = base.copy(isCloseFriend = true, meetEveryDays = 14, showInMyList = false)
+        val tweaked = base.copy(closeness = Closeness.CLOSE, meetEveryDays = 14, showInMyList = false)
         assertEquals(ContactCard.from(base), ContactCard.from(tweaked))
     }
 

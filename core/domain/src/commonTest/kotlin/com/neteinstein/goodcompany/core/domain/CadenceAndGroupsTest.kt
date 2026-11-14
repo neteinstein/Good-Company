@@ -28,18 +28,17 @@ class CadenceAndGroupsTest {
 
     @Test
     fun customCadenceBeatsCircleAndCircleNeedsRealFriend() {
-        assertEquals(7, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.INNER) }))
-        assertEquals(90, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.GOOD) }))
-        assertEquals(14, rules.cadenceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.GOOD, meetEveryDays = 14) }))
-        assertNull(rules.cadenceFor(friend("a") { copy(isCloseFriend = false, closeness = Closeness.INNER) }))
+        assertEquals(7, rules.cadenceFor(friend("a") { copy(closeness = Closeness.INNER) }))
+        assertEquals(90, rules.cadenceFor(friend("a") { copy(closeness = Closeness.GOOD) }))
+        assertEquals(14, rules.cadenceFor(friend("a") { copy(closeness = Closeness.GOOD, meetEveryDays = 14) }))
         assertEquals(CadenceRules.Source.CUSTOM, rules.sourceFor(friend("a") { copy(meetEveryDays = 3) }))
-        assertEquals(CadenceRules.Source.CLOSENESS, rules.sourceFor(friend("a") { copy(isCloseFriend = true, closeness = Closeness.CLOSE) }))
+        assertEquals(CadenceRules.Source.CLOSENESS, rules.sourceFor(friend("a") { copy(closeness = Closeness.CLOSE) }))
         assertEquals(CadenceRules(3, 20, 60), CadenceRules.from(AppSettings(innerCircleDays = 3, closeCircleDays = 20, goodFriendsDays = 60)))
     }
 
     @Test
     fun circleFriendsGetNudgesWithoutPerFriendSetup() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.INNER) })
+        val friends = listOf(friend("ana") { copy(closeness = Closeness.INNER) })
         val hangouts = listOf(Hangout("h", listOf(FriendId("ana")), at(2026, 3, 1)))
         val status = Relationships.meetupStatuses(friends, hangouts, today, TimeZone.UTC, rules).single()
         assertEquals(LocalDate(2026, 3, 8), status.dueDate)
@@ -132,7 +131,7 @@ class CadenceAndGroupsTest {
 
     @Test
     fun notificationPlannerUsesCircleCadence() {
-        val friends = listOf(friend("ana") { copy(isCloseFriend = true, closeness = Closeness.CLOSE, approxLastSeen = LocalDate(2026, 2, 8)) })
+        val friends = listOf(friend("ana") { copy(closeness = Closeness.CLOSE, approxLastSeen = LocalDate(2026, 2, 8)) })
         val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, rules = rules)
         val content = planned.single().content as NotificationContent.MeetupDue
         assertEquals(30, content.everyDays)

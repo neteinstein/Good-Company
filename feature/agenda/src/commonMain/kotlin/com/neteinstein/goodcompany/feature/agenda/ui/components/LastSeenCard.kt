@@ -83,7 +83,7 @@ fun LastSeenCard(
                     )
                     val progress = stringResource(Res.string.last_seen_progress, position, total)
                     Text(
-                        friend.closeness?.let { "${closenessLabel(it)} · $progress" } ?: progress,
+                        "${closenessLabel(friend.closeness)} · $progress",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

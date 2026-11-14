@@ -137,7 +137,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
@@ -247,7 +246,6 @@ class TestGraph(
     val setMyPhoto = SetMyPhotoUseCase(myPhotoRepo, PhotoShrinker.None)
     val removeMyPhoto = RemoveMyPhotoUseCase(myPhotoRepo)
     val renameFriend = RenameFriendUseCase(friendRepo)
-    val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCloseness = SetClosenessUseCase(friendRepo)
     val snooze = SnoozeCatchUpUseCase(friendRepo, circles, clock)
     val logCall = LogCallUseCase(interactionRepo, snooze, clock, ids)

@@ -66,7 +66,6 @@ import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.circle_closeness_none
 import com.neteinstein.goodcompany.feature.hangouts.resources.circle_closeness_note
 import com.neteinstein.goodcompany.feature.hangouts.resources.circle_colour
 import com.neteinstein.goodcompany.feature.hangouts.resources.circle_editor_edit
@@ -300,20 +299,14 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
 /** A member with their closeness, read-only (it belongs to the person, not the circle). */
 @Composable
 private fun MemberRow(friend: Friend, onRemove: () -> Unit) {
-    val closeness = friend.shownCloseness
     ListItem(
         modifier = Modifier.widthIn(max = 720.dp),
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
         leadingContent = { FriendAvatar(friend, size = 36.dp) },
         headlineContent = { Text(friend.displayName) },
-        supportingContent = if (closeness == null) {
-            { Text(stringResource(Res.string.circle_closeness_none), style = MaterialTheme.typography.bodySmall) }
-        } else {
-            null
-        },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                closeness?.let { InfoPill(closenessLabel(it, short = true)) }
+                InfoPill(closenessLabel(friend.closeness, short = true))
                 IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.removeItem, friend.displayName)) }
             }
         },

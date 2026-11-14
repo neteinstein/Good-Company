@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
@@ -66,7 +67,7 @@ class UseCasesTest {
         listOf(
             friend("bob"),
             friend("ana") {
-                copy(isCloseFriend = true, likes = listOf("jazz"), meetEveryDays = 7, approxLastSeen = kotlinx.datetime.LocalDate(2026, 3, 1))
+                copy(closeness = Closeness.CLOSE, likes = listOf("jazz"), meetEveryDays = 7, approxLastSeen = kotlinx.datetime.LocalDate(2026, 3, 1))
             },
             friend("cat") { copy(birthday = Birthday(4, 1)) },
         ),
@@ -115,7 +116,7 @@ class UseCasesTest {
 
     @Test
     fun updateAndAddFriend() = runTest {
-        UpdateFriendUseCase(friends)(FriendId("bob")) { it.copy(isCloseFriend = true) }
+        UpdateFriendUseCase(friends)(FriendId("bob")) { it.copy(closeness = Closeness.CLOSE) }
         assertTrue(friends.get(FriendId("bob"))!!.isCloseFriend)
         val id = AddFriendUseCase(friends, ids)("  Zoe ")
         assertEquals("Zoe", friends.get(id)!!.name)

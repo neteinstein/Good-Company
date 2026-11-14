@@ -197,7 +197,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetRealFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
@@ -403,7 +402,6 @@ val appModule = module {
     factoryOf(::LoadSampleDataUseCase)
     factoryOf(::RemoveSampleDataUseCase)
     factoryOf(::HasSampleDataUseCase)
-    factoryOf(::SetRealFriendUseCase)
     factoryOf(::SetClosenessUseCase)
     factoryOf(::SnoozeCatchUpUseCase)
     factoryOf(::LogCallUseCase)
@@ -478,7 +476,6 @@ val appModule = module {
             observeSettings = get(),
             updateFriend = get(),
             deleteFriend = get(),
-            setRealFriend = get(),
             setCloseness = get(),
             snooze = get(),
             logCall = get(),

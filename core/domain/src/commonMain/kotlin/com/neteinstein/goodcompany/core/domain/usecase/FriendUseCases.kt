@@ -207,9 +207,10 @@ class UpdateFriendUseCase(private val friends: FriendRepository) {
 
 /** Creates a friend that isn't in the address book (and the only way on the web). */
 class AddFriendUseCase(private val friends: FriendRepository, private val ids: IdGenerator) {
-    suspend operator fun invoke(name: String, isCloseFriend: Boolean = true): FriendId {
+    /** New people start as Acquaintances (issue #86). */
+    suspend operator fun invoke(name: String): FriendId {
         require(name.isNotBlank()) { "Name required" }
-        val friend = Friend(id = FriendId("manual-${ids.next()}"), name = name.trim(), isCloseFriend = isCloseFriend)
+        val friend = Friend(id = FriendId("manual-${ids.next()}"), name = name.trim())
         friends.upsert(friend)
         return friend.id
     }

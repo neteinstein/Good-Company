@@ -145,7 +145,7 @@ class EnumColumnsMigrationTest {
 
         // And the mapper writes it back under the same name.
         val ana = database.readFriends().first { it.id.value == "ana" }
-        database.writeFriend(ana.copy(closeness = Closeness.ACQUAINTANCE, isCloseFriend = false), 0)
+        database.writeFriend(ana.copy(closeness = Closeness.ACQUAINTANCE), 0)
         assertEquals(listOf("ACQUAINTANCE"), driver.strings("SELECT circle FROM friend WHERE id = 'ana'"))
         driver.close()
     }
@@ -180,7 +180,7 @@ class EnumColumnsMigrationTest {
         ).forEach { driver.exec(it) }
 
         val ana = database.readFriends().first { it.id.value == "ana" }
-        assertNull(ana.closeness) // closeness → not set
+        assertEquals(Closeness.CLOSE, ana.closeness) // unknown closeness → Close for a real friend (issue #86)
         assertEquals(listOf("chess", "jazz"), ana.likes.sorted()) // taste kind → like
         assertEquals(listOf("sushi"), ana.food)
         assertEquals(listOf(Occasion.COFFEE), ana.occasions) // occasion → left out

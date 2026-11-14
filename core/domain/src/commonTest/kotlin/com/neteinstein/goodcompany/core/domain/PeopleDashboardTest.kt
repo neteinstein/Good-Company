@@ -31,10 +31,10 @@ class PeopleDashboardTest {
     private fun id(s: String) = FriendId(s)
 
     // Ana was seen a lot until early February, then nothing: cooling. Rui and Bea are seen now: warming.
-    private val ana = friend("ana") { copy(isCloseFriend = true) }
-    private val rui = friend("rui") { copy(isCloseFriend = true) }
+    private val ana = friend("ana") { copy(closeness = Closeness.CLOSE) }
+    private val rui = friend("rui") { copy(closeness = Closeness.CLOSE) }
     private val bea = friend("bea") { copy(closeness = Closeness.INNER, relationToMe = LinkType.SIBLING) }
-    private val newbie = friend("newbie") { copy(isCloseFriend = true) }
+    private val newbie = friend("newbie") { copy(closeness = Closeness.CLOSE) }
     private val zed = friend("zed") // address book only
     private val friends = listOf(ana, rui, bea, newbie, zed)
     private val climbing = FriendGroup("climb", "Climbing", memberIds = listOf(id("ana"), id("rui")))
@@ -73,8 +73,9 @@ class PeopleDashboardTest {
         assertTrue(!d.byCircle.single { it.circle.id == "climb" }.isCooling)
         assertEquals(2, d.byCircle.single { it.circle.id == "climb" }.members)
 
-        assertEquals(listOf(Closeness.INNER), d.byCloseness.map { it.closeness })
-        assertEquals(warmth(bea, today), d.byCloseness.single().warmth)
+        assertEquals(listOf(Closeness.INNER, Closeness.CLOSE), d.byCloseness.map { it.closeness })
+        assertEquals(warmth(bea, today), d.byCloseness.first().warmth)
+        assertEquals(3, d.byCloseness.last().people) // Ana, Rui and the newbie; Zed (an Acquaintance) isn't yours
     }
 
     @Test

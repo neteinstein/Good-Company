@@ -36,7 +36,7 @@ data class CadenceRules(
     }
 
     private fun levelDays(friend: Friend): Int? =
-        friend.closeness?.takeIf { friend.isCloseFriend || !it.isRealFriend }?.let(::daysFor)
+        daysFor(friend.closeness)
 
     enum class Source { CUSTOM, CLOSENESS }
 

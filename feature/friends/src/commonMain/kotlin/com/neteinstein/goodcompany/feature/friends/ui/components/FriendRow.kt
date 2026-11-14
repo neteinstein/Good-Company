@@ -12,11 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cake
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,8 +38,6 @@ import com.neteinstein.goodcompany.feature.friends.resources.row_catch_up
 import com.neteinstein.goodcompany.feature.friends.resources.row_from_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.row_last_in_touch
 import com.neteinstein.goodcompany.feature.friends.resources.row_likes
-import com.neteinstein.goodcompany.feature.friends.resources.row_mark_real
-import com.neteinstein.goodcompany.feature.friends.resources.row_unmark_real
 import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -58,8 +52,9 @@ fun FriendRow(
     today: LocalDate,
     zone: TimeZone,
     onClick: () -> Unit,
-    onToggleClose: () -> Unit,
     showWarmth: Boolean = true,
+    /** Names the person's level in a pill: sorted A–Z, where no heading says it (issue #86). */
+    showCloseness: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val f = summary.friend
@@ -96,7 +91,7 @@ fun FriendRow(
                 overflow = TextOverflow.Ellipsis,
             )
             val birthdaySoon = summary.nextBirthday?.takeIf { today.daysUntil(it) in 0..14 }
-            val closeness = f.shownCloseness
+            val closeness = f.closeness.takeIf { showCloseness }
             if (birthdaySoon != null || summary.meetupOverdue || closeness != null) {
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     closeness?.let { InfoPill(closenessLabel(it, short = true)) }
@@ -104,13 +99,6 @@ fun FriendRow(
                     if (summary.meetupOverdue) InfoPill(stringResource(Res.string.row_catch_up), icon = Icons.Rounded.Schedule)
                 }
             }
-        }
-        IconToggleButton(checked = f.isCloseFriend, onCheckedChange = { onToggleClose() }) {
-            Icon(
-                if (f.isCloseFriend) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                contentDescription = stringResource(if (f.isCloseFriend) Res.string.row_unmark_real else Res.string.row_mark_real),
-                tint = if (f.isCloseFriend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-            )
         }
     }
 }

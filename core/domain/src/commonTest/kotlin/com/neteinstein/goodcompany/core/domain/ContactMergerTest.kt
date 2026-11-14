@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
@@ -22,7 +23,7 @@ class ContactMergerTest {
 
     @Test
     fun syncUpdatesContactFieldsButKeepsAppData() {
-        val existing = friend("contact-1", "Old") { copy(contactId = "1", isCloseFriend = true, likes = listOf("jazz")) }
+        val existing = friend("contact-1", "Old") { copy(contactId = "1", closeness = Closeness.CLOSE, likes = listOf("jazz")) }
         val merged = ContactMerger.merge(listOf(existing), listOf(ContactRecord("1", "Ana", listOf("+1", "+1"), null)))
         val ana = merged.single()
         assertEquals("Ana", ana.name)
@@ -53,7 +54,7 @@ class ContactMergerTest {
     @Test
     fun vanishedContactIsDroppedUnlessItHasAppData() {
         val plain = friend("contact-1") { copy(contactId = "1") }
-        val loved = friend("contact-2") { copy(contactId = "2", isCloseFriend = true) }
+        val loved = friend("contact-2") { copy(contactId = "2", closeness = Closeness.CLOSE) }
         val manual = friend("manual-x")
         val merged = ContactMerger.merge(listOf(plain, loved, manual), emptyList())
         assertEquals(listOf("contact-2", "manual-x"), merged.map { it.id.value })

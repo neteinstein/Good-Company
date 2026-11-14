@@ -158,7 +158,7 @@ class ShareToFriendViewModel(
     fun onAddTyped() {
         val name = local.value.query.trim().takeIf { it.isNotEmpty() } ?: return
         viewModelScope.launch {
-            val id = addFriend(name, isCloseFriend = false)
+            val id = addFriend(name)
             local.update { it.copy(query = "", target = PickedTarget.Person(Friend(id, name))) }
         }
     }

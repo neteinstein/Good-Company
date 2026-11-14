@@ -25,8 +25,6 @@
     <string name="row_added_in_app">Ajouté dans l’app</string>
     <string name="row_from_contacts">Depuis les contacts</string>
     <string name="row_catch_up">À revoir</string>
-    <string name="row_mark_real">Marquer comme vrai ami</string>
-    <string name="row_unmark_real">Retirer des vrais amis</string>
     <string name="row_warmth">Chaleur de l’amitié : %1$s</string>
     <string name="card_group">%1$s %2$s</string>
     <string name="snooze_week">Reporter d’une semaine</string>
@@ -72,7 +70,9 @@
     <string name="touch_snoozed">Reporté jusqu’au %1$s</string>
     <string name="touch_unsnooze">Reprendre</string>
     <string name="touch_circle">Proximité</string>
-    <string name="touch_circle_none">Aucun</string>
+    <string name="closeness_sheet_title">À quel point es-tu proche de %1$s ?</string>
+    <string name="closeness_change">Changer la proximité</string>
+    <string name="closeness_no_rhythm">Pas de rappels pour se revoir · les anniversaires restent</string>
     <string name="touch_custom">Rythme personnalisé</string>
     <string name="touch_from_circle">Selon leur proximité : %1$s</string>
     <string name="touch_called">Appelé</string>
@@ -149,8 +149,6 @@
     <string name="notes_title">Notes</string>
     <string name="notes_placeholder">Prénom du conjoint, allergies, tout ce qui vaut la peine d’être retenu…</string>
     <string name="prefs_title">Préférences</string>
-    <string name="prefs_real">Vrai ami</string>
-    <string name="prefs_real_hint">Apparaît en premier, sur l’accueil et dans l’agenda</string>
     <string name="prefs_birthday">Rappels d’anniversaire</string>
     <string name="prefs_birthday_hint">Activé pour tous ceux qui ont un anniversaire</string>
     <string name="prefs_events">Idées de sorties chaque semaine</string>
@@ -353,11 +351,6 @@
     <string name="contact_email">E-mail %1$s</string>
     <string name="contact_video">Appel vidéo %1$s</string>
     <string name="story_last_talk_title">La dernière fois, vous avez parlé de…</string>
-    <string name="circle_all">Tous</string>
-    <string name="circle_last_together">Réunis pour la dernière fois %1$s</string>
-    <string name="circle_never_together">Pas encore réunis</string>
-    <string name="circle_goal">objectif : %1$s</string>
-    <string name="circle_log_meetup">Noter une sortie : %1$s</string>
     <string name="choose_title">Choisir des amis</string>
     <string name="choose_count">%1$d sur %2$d</string>
     <string name="choose_filter_favourites">Favoris d’abord</string>
@@ -479,9 +472,8 @@
     <!-- People tab (issue #66) -->
     <string name="people_title">Personnes</string>
     <string name="people_open">Ouvrir</string>
-    <string name="people_all">Tous %1$d</string>
-    <string name="people_level_count">%1$s %2$d</string>
-    <string name="people_not_set">Non défini</string>
+    <string name="people_all">Tous · %1$d</string>
+    <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Personne ici pour l’instant.</string>
     <plurals name="people_card_count">
         <item quantity="one">personne</item>

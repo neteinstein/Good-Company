@@ -106,7 +106,6 @@ fun AppNavHost(
                 FriendsScreen(
                     onOpenFriend = openFriend,
                     onEditCircle = editCircle,
-                    onLogCircle = { navController.navigate(LogInteractionRoute(emptyList(), LogKind.MEETUP.name, circleId = it)) },
                     onChooseContacts = { navController.navigate(ChooseContactsRoute) },
                     chosenContacts = chosen,
                     onChosenShown = { entry.savedStateHandle[CONTACTS_ADDED] = 0 },

@@ -70,7 +70,6 @@
         <item quantity="other">%1$d members</item>
     </plurals>
     <string name="circle_members_empty">Add at least one friend.</string>
-    <string name="circle_closeness_none">No closeness set</string>
     <string name="circle_closeness_note">Closeness is shown, not edited, here: it belongs to the person. A friend’s own rhythm never changes because of a circle.</string>
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">You met %1$s</string>

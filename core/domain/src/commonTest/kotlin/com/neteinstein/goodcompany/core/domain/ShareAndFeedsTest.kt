@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FeedItem
 import com.neteinstein.goodcompany.core.domain.model.FriendFeed
@@ -48,7 +49,7 @@ import kotlin.time.Duration.Companion.hours
 
 class ShareAndFeedsTest {
     private val ana = friend("ana", "Ana Silva")
-    private val rui = friend("rui", "Rui Costa") { copy(isCloseFriend = true) }
+    private val rui = friend("rui", "Rui Costa") { copy(closeness = Closeness.CLOSE) }
     private val bea = friend("bea", "Beatriz Rocha")
 
     // --- Sharing ---------------------------------------------------------------------------------------------------
