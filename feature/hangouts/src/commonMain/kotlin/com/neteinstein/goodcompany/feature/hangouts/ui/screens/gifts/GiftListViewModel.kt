@@ -9,7 +9,6 @@ import com.neteinstein.goodcompany.core.domain.model.GiftList
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListDetail
-import com.neteinstein.goodcompany.core.domain.usecase.GiftListPicker
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.GiftPrices
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGiftListUseCase
@@ -36,20 +35,15 @@ sealed interface GiftListMessage {
 }
 
 /**
- * The "Add people" sheet: tick a whole circle or search (by name or kinship, "my cousins"), and one optional budget
- * for everyone added.
+ * "Add people" is the people picker (issue #89): a circle and "Tick all" take a whole circle, the search understands
+ * kinship ("my cousins", [GiftListViewModel.kinshipOf]); this is its one optional budget for everyone added.
  */
-data class AddPeopleDraft(
-    val query: String = "",
-    /** What the query means as kinship (issue #41), null when it's a name search. */
-    val kinship: Set<LinkType>? = null,
-    val picked: Set<FriendId> = emptySet(),
-    val budget: String = "",
-)
+data class AddPeopleDraft(val budget: String = "")
 
 data class GiftListUiState(
     val detail: GiftListDetail? = null,
     val isLoading: Boolean = true,
+    /** Circles with members, Family included: the picker's filter row. */
     val circles: List<FriendGroup> = emptyList(),
     /** AI gift ideas show only while AI is on and a key is saved (F1). */
     val hasAiKey: Boolean = false,
@@ -63,12 +57,8 @@ data class GiftListUiState(
     /** A duplicate was made: the screen opens it, then calls [GiftListViewModel.onOpened]. */
     val open: String? = null,
 ) {
-    /** Who the "Add people" sheet lists for the current search. */
-    val matches: List<Friend>
-        get() {
-            val draft = adding ?: return emptyList()
-            return GiftListPicker.matches(detail?.others.orEmpty(), draft.query, draft.kinship)
-        }
+    /** Who "Add people" can pick: everyone not on the list yet. */
+    val addable: List<Friend> get() = detail?.others.orEmpty()
 }
 
 /** One gift list (F8): people with their gifts, budgets and totals, "Add people" and AI ideas. */
@@ -125,40 +115,17 @@ class GiftListViewModel(
 
     fun onDismissAdding() = local.update { it.copy(adding = null) }
 
-    fun onAddQuery(query: String) {
-        local.update { s -> s.copy(adding = s.adding?.copy(query = query, kinship = null)) }
-        viewModelScope.launch {
-            val kinship = parseKinship(query)
-            local.update { s -> s.copy(adding = s.adding?.takeIf { it.query == query }?.copy(kinship = kinship) ?: s.adding) }
-        }
-    }
-
-    /** Ticks every member of a circle who isn't on the list yet; again unticks them. */
-    fun onToggleCircle(id: String) {
-        val circle = state.value.circles.firstOrNull { it.id == id } ?: return
-        val available = state.value.detail?.others.orEmpty().map { it.id }.toSet()
-        val members = circle.memberIds.filter { it in available }.toSet()
-        local.update { s ->
-            val draft = s.adding ?: return@update s
-            val picked = if (members.isNotEmpty() && draft.picked.containsAll(members)) draft.picked - members else draft.picked + members
-            s.copy(adding = draft.copy(picked = picked))
-        }
-    }
-
-    fun onTogglePerson(id: FriendId) = local.update { s ->
-        val draft = s.adding ?: return@update s
-        s.copy(adding = draft.copy(picked = if (id in draft.picked) draft.picked - id else draft.picked + id))
-    }
+    /** What a search in the picker means as kinship ("my cousins", issue #41); null for a name search. */
+    suspend fun kinshipOf(query: String): Set<LinkType>? = parseKinship(query)
 
     fun onAddBudget(text: String) = local.update { s -> s.copy(adding = s.adding?.copy(budget = text)) }
 
-    fun onConfirmAdding() {
+    /** "Done" in the picker: adds [picked] (in the order they were ticked) with the budget, if any. */
+    fun onConfirmAdding(picked: List<FriendId>) {
         val draft = local.value.adding ?: return
-        if (draft.picked.isEmpty()) return
+        if (picked.isEmpty()) return
         viewModelScope.launch {
-            // Keep the order people appear in the sheet.
-            val order = state.value.detail?.others.orEmpty().map { it.id }
-            lists.addPeople(listId, draft.picked.sortedBy { order.indexOf(it) }, GiftPrices.parse(draft.budget)?.amount)
+            lists.addPeople(listId, picked, GiftPrices.parse(draft.budget)?.amount)
             local.update { it.copy(adding = null) }
         }
     }

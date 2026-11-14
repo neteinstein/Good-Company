@@ -281,10 +281,18 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
         LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)
     }
     if (pickingPeople) {
-        PeoplePicker(state.everyone, state.people.map { it.id }, onDismiss = { pickingPeople = false }, onDone = {
-            actions.onPeople(it)
-            pickingPeople = false
-        })
+        PeoplePickerSheet(
+            state.everyone,
+            state.circles,
+            chosen = state.people.map { it.id },
+            onDismiss = { pickingPeople = false },
+            onDone = {
+                actions.onPeople(it)
+                pickingPeople = false
+            },
+            title = stringResource(Res.string.log_people_title),
+            requireSomeone = true,
+        )
     }
 }
 
@@ -331,41 +339,4 @@ fun LogDateChoice(date: LocalDate, today: LocalDate, onDate: (LocalDate) -> Unit
             leadingIcon = { Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(18.dp)) },
         )
     }
-}
-
-/** "+ Add people": tick who it was with (searchable). The people already picked stay ticked. */
-@Composable
-fun PeoplePicker(everyone: List<Friend>, picked: List<FriendId>, onDismiss: () -> Unit, onDone: (List<FriendId>) -> Unit) {
-    var chosen by remember { mutableStateOf(picked) }
-    var query by rememberSaveable { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.log_people_title)) },
-        text = {
-            Column {
-                OutlinedTextField(
-                    query,
-                    { query = it },
-                    Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    leadingIcon = { Icon(Icons.Rounded.Search, null) },
-                    placeholder = { Text(stringResource(Res.string.log_search)) },
-                )
-                val shown = everyone.filter { query.isBlank() || it.displayName.contains(query.trim(), ignoreCase = true) }
-                LazyColumn(Modifier.heightIn(max = 360.dp)) {
-                    items(shown, key = { it.id.value }) { f ->
-                        val on = f.id in chosen
-                        ListItem(
-                            modifier = Modifier.clickable { chosen = if (on) chosen - f.id else chosen + f.id },
-                            leadingContent = { FriendAvatar(f, size = 36.dp) },
-                            headlineContent = { Text(f.displayName) },
-                            trailingContent = { Checkbox(on, onCheckedChange = { chosen = if (on) chosen - f.id else chosen + f.id }) },
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = { onDone(chosen) }, enabled = chosen.isNotEmpty()) { Text(stringResource(Res.string.ok)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
-    )
 }

@@ -70,6 +70,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.domain.usecase.RankedFriend
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
@@ -79,10 +80,13 @@ import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LinkCard
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
+import com.neteinstein.goodcompany.core.ui.components.PeopleFilterRow
+import com.neteinstein.goodcompany.core.ui.components.PeoplePickerMode
 import com.neteinstein.goodcompany.core.ui.components.QuotedText
 import com.neteinstein.goodcompany.core.ui.components.attachmentKindLabel
 import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.logKindLabel
+import com.neteinstein.goodcompany.core.ui.components.peopleByCloseness
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -130,6 +134,7 @@ fun ShareToFriendScreen(onClose: () -> Unit, onSaved: (FriendId) -> Unit, viewMo
         state = state,
         actions = ShareActions(
             onQueryChange = viewModel::onQueryChange,
+            onFilter = viewModel::onFilter,
             onSelect = viewModel::onSelect,
             onSelectCircle = viewModel::onSelectCircle,
             onAddTyped = viewModel::onAddTyped,
@@ -149,6 +154,7 @@ fun ShareToFriendScreen(onClose: () -> Unit, onSaved: (FriendId) -> Unit, viewMo
 
 data class ShareActions(
     val onQueryChange: (String) -> Unit = {},
+    val onFilter: (PeopleFilter) -> Unit = {},
     val onSelect: (Friend) -> Unit = {},
     val onSelectCircle: (FriendGroup) -> Unit = {},
     val onAddTyped: () -> Unit = {},
@@ -284,8 +290,19 @@ private fun FriendPicker(state: ShareUiState, actions: ShareActions, modifier: M
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        if (state.hasFriends) {
+            // The people picker's filter row and grouped list (issue #89), under the suggestions.
+            PeopleFilterRow(
+                circles = state.filterCircles,
+                filter = state.filter,
+                everyoneCount = state.others.everyoneCount,
+                levelCounts = state.others.levelCounts,
+                onFilter = actions.onFilter,
+            )
+        }
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-            items(state.friends, key = { it.friend.id.value }) { ranked -> PersonRow(ranked) { actions.onSelect(ranked.friend) } }
+            items(state.suggested, key = { "suggested-" + it.friend.id.value }) { ranked -> PersonRow(ranked) { actions.onSelect(ranked.friend) } }
+            peopleByCloseness(state.others, state.filterCircles, PeoplePickerMode.SINGLE, emptySet(), onClick = actions.onSelect)
             if (state.circles.isNotEmpty()) {
                 item(key = "circles") {
                     Text(

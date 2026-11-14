@@ -204,6 +204,7 @@ fun CirclePageScreen(
             initial = editor.reminder,
             initialDate = due?.date,
             initialHour = due?.hour ?: com.neteinstein.goodcompany.core.ui.components.DEFAULT_HOUR,
+            circles = state.circles,
         )
     }
     cropping?.let { image ->

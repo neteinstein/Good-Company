@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.Icon
@@ -162,17 +163,21 @@ fun CircleChip(
 
 /**
  * The "All · 38" chip in front of a row of [CircleChip]s (issue #86): the same size, corners, padding and type, with no
- * colour dot, so the row reads as one set of filters.
+ * colour dot, so the row reads as one set of filters. [showMenuArrow] adds the ▾ when it opens the closeness menu.
  */
 @Composable
-fun AllChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun AllChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, showMenuArrow: Boolean = false) {
     ChipSurface(
         selected,
         MaterialTheme.colorScheme.secondaryContainer,
         MaterialTheme.colorScheme.onSecondaryContainer,
         onClick,
         modifier,
-    ) { ChipLabel(label) }
+    ) {
+        ChipLabel(label)
+        // The ▾ of the closeness menu (issue #89); 18 dp keeps the chip the height of a CircleChip.
+        if (showMenuArrow) Icon(Icons.Rounded.ArrowDropDown, null, Modifier.size(18.dp))
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

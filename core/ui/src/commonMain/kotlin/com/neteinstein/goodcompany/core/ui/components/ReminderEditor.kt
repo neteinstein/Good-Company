@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -72,6 +71,7 @@ fun ReminderEditor(
     onSave: (title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) -> Unit,
     preselected: Set<FriendId> = emptySet(),
     initialTitle: String = "",
+    circles: List<FriendGroup> = emptyList(),
 ) = ReminderEditorDialog(
     friends = friends,
     today = today,
@@ -79,6 +79,7 @@ fun ReminderEditor(
     onSave = { onSave(it.title, it.friendIds, it.date, it.hour) },
     preselected = preselected,
     initialTitle = initialTitle,
+    circles = circles,
 )
 
 /**
@@ -95,11 +96,13 @@ fun CircleReminderEditor(
     initial: Reminder? = null,
     initialDate: LocalDate? = today,
     initialHour: Int = DEFAULT_HOUR,
+    circles: List<FriendGroup> = emptyList(),
 ) = ReminderEditorDialog(
     friends = friends,
     today = today,
     onDismiss = onDismiss,
     onSave = onSave,
+    circles = circles,
     preselected = initial?.friendIds?.toSet().orEmpty(),
     initialTitle = initial?.title.orEmpty(),
     circle = circle,
@@ -121,9 +124,11 @@ private fun ReminderEditorDialog(
     initialCircle: Boolean = circle != null,
     initialDate: LocalDate? = today,
     initialHour: Int = DEFAULT_HOUR,
+    circles: List<FriendGroup> = emptyList(),
 ) {
     var title by remember { mutableStateOf(initialTitle) }
-    var selected by remember { mutableStateOf(preselected) }
+    var selected by remember { mutableStateOf(preselected.toList()) }
+    var picking by remember { mutableStateOf(false) }
     var withCircle by remember { mutableStateOf(initialCircle) }
     var date by remember { mutableStateOf(initialDate) }
     var hour by remember { mutableStateOf(initialHour) }
@@ -151,19 +156,9 @@ private fun ReminderEditorDialog(
                         leadingIcon = { CircleDot(circle.color) },
                     )
                 }
-                FlowRow(Modifier.heightIn(max = 180.dp).verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    friends.sortedWith(
-                        compareByDescending<Friend> {
-                            it.id in preselected
-                        }.thenByDescending { it.isCloseFriend },
-                    ).take(40).forEach { f ->
-                        FilterChip(
-                            f.id in selected,
-                            { selected = if (f.id in selected) selected - f.id else selected + f.id },
-                            label = { Text(f.displayName.substringBefore(' ')) },
-                        )
-                    }
-                }
+                // Issue #89: the chosen people with ×, and "+ People" opens the one people picker.
+                val byId = friends.associateBy { it.id }
+                ChosenPeople(selected.mapNotNull(byId::get), onRemove = { selected = selected - it }, onAdd = { picking = true })
                 Text(stringResource(Res.string.reminder_when), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { pickDate = true }) { Text(date?.longLabel() ?: stringResource(Res.string.reminder_no_date)) }
@@ -180,12 +175,18 @@ private fun ReminderEditorDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(ReminderDraft(title, selected.toList(), date, hour, circle?.id?.takeIf { withCircle }))
+                onSave(ReminderDraft(title, selected, date, hour, circle?.id?.takeIf { withCircle }))
             }, enabled = title.isNotBlank()) { Text(stringResource(Res.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date ?: today, onDismiss = { pickDate = false }, onPicked = { date = it })
+    if (picking) {
+        PeoplePickerSheet(friends, circles, chosen = selected, onDismiss = { picking = false }, onDone = {
+            selected = it
+            picking = false
+        })
+    }
 }
 
 /** The time a new reminder starts at (evening). */

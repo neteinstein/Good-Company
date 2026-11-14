@@ -618,4 +618,20 @@
     <string name="review_card_title">Anul tău %1$d în prietenie</string>
     <string name="review_card_body">Pe cine ai văzut cel mai des, locurile preferate și cea mai lungă serie — gata de distribuit.</string>
     <string name="review_card_cta">Vezi-ți anul</string>
+    <!-- People picker and the shared filter row (issue #89) -->
+    <string name="people_filter_all">Toți · %1$d</string>
+    <string name="people_filter_everyone">Toată lumea · %1$d</string>
+    <string name="people_filter_count">%1$s · %2$d</string>
+    <string name="people_picker_title">Cu cine?</string>
+    <plurals name="people_picker_chosen_n">
+        <item quantity="one">%1$d aleasă</item>
+        <item quantity="few">%1$d alese</item>
+        <item quantity="other">%1$d de alese</item>
+    </plurals>
+    <string name="people_picker_chosen">Alese · %1$d</string>
+    <string name="people_picker_tick_all">Bifează toate %1$d</string>
+    <string name="people_picker_untick_all">Debifează tot</string>
+    <string name="people_picker_done">Gata · %1$d</string>
+    <string name="people_picker_nobody">Nimeni numit ‘%1$s’</string>
+    <string name="people_picker_add">Persoane</string>
 </resources>

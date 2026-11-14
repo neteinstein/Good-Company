@@ -19,6 +19,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUs
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFiltering
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
@@ -93,8 +95,12 @@ data class FriendsUiState(
     val friends: List<FriendSummary> = emptyList(),
     /** [friends] under their headings: by closeness (Inner first, Acquaintances last), or by first letter when sorted A–Z. */
     val sections: List<Pair<PeopleSection, List<FriendSummary>>> = emptyList(),
-    /** How many people the "All" chip counts: the list with no circle picked. */
+    /** How many people the "All" chip counts: the list with no filter and no search. */
     val listedCount: Int = 0,
+    /** The "All" menu's count per closeness level (issue #89), on the same people as [listedCount]. */
+    val levelCounts: Map<Closeness, Int> = emptyMap(),
+    /** The closeness level People is filtered by (null = everyone); one at a time with [circle]. Not remembered. */
+    val closeness: Closeness? = null,
     /** "Your people" on top; null until the first numbers arrive. */
     val yourPeople: YourPeopleSummary? = null,
     val totalCount: Int = 0,
@@ -122,11 +128,15 @@ data class FriendsUiState(
     val suggestedFamily: Int = 0,
 ) {
     val isSearching: Boolean get() = query.isNotBlank()
+
+    /** The filter row's one choice: a level or a circle. */
+    val filter: PeopleFilter get() = PeopleFilter(circleId = circle?.group?.id, closeness = closeness)
 }
 
 /**
- * The People tab (issues #66 and #86, F5): "Your people" on top, one row of circle chips, then one list of everyone
- * grouped by closeness (each heading with its count) or A–Z. Search hides the card and the chips and keeps the grouping.
+ * The People tab (issues #66, #86 and #89, F5): "Your people" on top, the filter row (the "All" menu of closeness levels,
+ * then the circle chips; one choice at a time), then one list of everyone grouped by closeness (each heading with its
+ * count) or A–Z. Search hides the card and the row and keeps the grouping (and the filter).
  */
 class FriendsViewModel(
     observeFriends: ObserveFriendsUseCase,
@@ -164,33 +174,32 @@ class FriendsViewModel(
         },
         local,
     ) { everyone, yourPeople, (settings, circles, proposals, kin), ui ->
-        val q = ui.query.trim().lowercase()
-        // A deleted circle (or one from another device's backup) reads as All.
-        val circle = circles.firstOrNull { it.group.id == settings.homeCircleFilter }
-        val members = circle?.group?.memberIds?.toSet()
-        val all = everyone.filter { members == null || it.friend.id in members }
-        // "All · N": the list with no circle picked and no search.
-        val allCount = everyone.count { it.friend.showInMyList }
+        // A deleted circle (or one from another device's backup) reads as All; a level and a circle are one choice.
+        val circle = circles.firstOrNull { it.group.id == settings.homeCircleFilter }.takeIf { ui.closeness == null }
         // "My nieces": confirmed kinship only, whoever is hidden from the list (F7).
         val kinship = kin.second.takeIf { kin.first == ui.query }
-        val listed = when {
-            kinship != null -> all.filter { it.friend.relationToMe in kinship }
-            q.isNotEmpty() -> all.filter { it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
-            // F9: people with "Show in my list" off (friends' kids) stay out unless searched for or in a circle.
-            else -> all.filter { circle != null || it.friend.showInMyList }
-        }
-        val byName = listed.sortedBy { it.friend.displayName.lowercase() }
+        // F9: people with "Show in my list" off (friends' kids) stay out unless searched for or in a circle.
+        val result = PeopleFiltering.apply(
+            everyone,
+            { it.friend },
+            PeopleFilter(circleId = circle?.group?.id, closeness = ui.closeness),
+            circles.map { it.group },
+            query = ui.query,
+            kinship = kinship,
+            listedOnly = true,
+            matchLikes = true,
+        )
+        val byName = result.people
         val sections: List<Pair<PeopleSection, List<FriendSummary>>> = when (ui.sort) {
-            PeopleSort.CLOSENESS -> Closeness.entries.mapNotNull { c ->
-                byName.filter { it.friend.closeness == c }.takeIf { it.isNotEmpty() }?.let { PeopleSection.Level(c) to it }
-            }
+            PeopleSort.CLOSENESS -> result.byCloseness { it.friend.closeness }.map { (c, people) -> PeopleSection.Level(c) to people }
             PeopleSort.NAME -> byName.groupBy { it.friend.displayName.firstOrNull()?.uppercaseChar()?.takeIf(Char::isLetter) ?: '#' }
                 .map { (letter, people) -> PeopleSection.Letter(letter) to people }
         }
         ui.copy(
             friends = sections.flatMap { it.second },
             sections = sections,
-            listedCount = allCount,
+            listedCount = result.everyoneCount,
+            levelCounts = result.levelCounts,
             yourPeople = yourPeople,
             totalCount = everyone.size,
             circles = circles.sortedBy { it.group.name.lowercase() },
@@ -210,9 +219,17 @@ class FriendsViewModel(
     /** "A–Z" in the ⋮ menu switches between A–Z and grouped by closeness. */
     fun onSortChange(sort: PeopleSort) = local.update { it.copy(sort = sort) }
 
-    /** Filters the list by a circle (null = All); remembered between launches. */
+    /** Filters the list by a circle (null = All); remembered between launches. The level goes back to everyone. */
     fun onCircleFilter(groupId: String?) {
+        local.update { it.copy(closeness = null) }
         viewModelScope.launch { setCircleFilter(groupId) }
+    }
+
+    /** The filter row's choice (issue #89): a circle (remembered) or a closeness level (clears the circle). */
+    fun onFilter(filter: PeopleFilter) {
+        if (filter.closeness == null) return onCircleFilter(filter.circleId)
+        local.update { it.copy(closeness = filter.closeness) }
+        viewModelScope.launch { setCircleFilter(null) }
     }
 
     /** Called after the contacts permission prompt resolves. */

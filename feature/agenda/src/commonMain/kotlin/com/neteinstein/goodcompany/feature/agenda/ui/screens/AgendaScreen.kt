@@ -150,7 +150,7 @@ fun AgendaScreen(
         onBack = onBack,
     )
     if (state.showReminderEditor) {
-        ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder)
+        ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder, circles = state.circles)
     }
     state.wishFor?.let { friend ->
         val firstName = friend.displayName.substringBefore(' ')

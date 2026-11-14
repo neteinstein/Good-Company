@@ -64,7 +64,7 @@ import com.neteinstein.goodcompany.core.ui.components.CircleColorSwatch
 import com.neteinstein.goodcompany.core.ui.components.CropShape
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
-import com.neteinstein.goodcompany.core.ui.components.PeoplePicker
+import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
@@ -353,10 +353,17 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
         }
     }
     if (picking) {
-        PeoplePicker(state.everyone, state.members.map { it.id }, onDismiss = { picking = false }, onDone = {
-            actions.onMembers(it)
-            picking = false
-        })
+        PeoplePickerSheet(
+            state.everyone,
+            state.circles,
+            chosen = state.members.map { it.id },
+            onDismiss = { picking = false },
+            onDone = {
+                actions.onMembers(it)
+                picking = false
+            },
+            requireSomeone = true,
+        )
     }
 }
 

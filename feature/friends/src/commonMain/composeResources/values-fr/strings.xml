@@ -472,7 +472,6 @@
     <!-- People tab (issue #66) -->
     <string name="people_title">Personnes</string>
     <string name="people_open">Ouvrir</string>
-    <string name="people_all">Tous · %1$d</string>
     <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Personne ici pour l’instant.</string>
     <plurals name="people_card_count">

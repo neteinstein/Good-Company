@@ -92,12 +92,7 @@
     <string name="gift_list_ai_working">Mă gândesc la idei…</string>
     <string name="gift_list_no_new_ideas">Nicio idee nouă de data asta</string>
     <string name="gift_list_add_people">Adaugă persoane</string>
-    <string name="gift_list_whole_circle">Un cerc întreg</string>
-    <string name="gift_list_circle_chip">%1$s %2$s · %3$d</string>
-    <string name="gift_list_or_search">Sau caută</string>
-    <string name="gift_list_search_hint">Un nume sau „verii mei”</string>
     <string name="gift_list_budget_each">Buget de persoană (opțional)</string>
-    <string name="gift_list_nobody_found">Nu a fost găsit nimeni</string>
     <string name="gift_list_nobody">Nimeni pe listă încă. Adaugă un cerc întreg sau caută persoane.</string>
     <string name="gift_list_remove_person">Scoate de pe listă</string>
     <string name="gift_list_removed">%1$s a fost scos(ă) de pe listă</string>
@@ -125,11 +120,6 @@
         <item quantity="one">Alege din %d idee salvată</item>
         <item quantity="few">Alege din %d idei salvate</item>
         <item quantity="other">Alege din %d de idei salvate</item>
-    </plurals>
-    <plurals name="gift_list_add_n">
-        <item quantity="one">Adaugă %d persoană</item>
-        <item quantity="few">Adaugă %d persoane</item>
-        <item quantity="other">Adaugă %d de persoane</item>
     </plurals>
     <string name="page_people">Oameni · %1$d</string>
     <string name="page_coming_up">Urmează</string>

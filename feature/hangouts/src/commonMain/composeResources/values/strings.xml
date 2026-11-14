@@ -94,12 +94,7 @@
     <string name="gift_list_ai_working">Thinking of ideas…</string>
     <string name="gift_list_no_new_ideas">No new ideas this time</string>
     <string name="gift_list_add_people">Add people</string>
-    <string name="gift_list_whole_circle">A whole circle</string>
-    <string name="gift_list_circle_chip">%1$s %2$s · %3$d</string>
-    <string name="gift_list_or_search">Or search</string>
-    <string name="gift_list_search_hint">A name, or “my cousins”</string>
     <string name="gift_list_budget_each">Budget per person (optional)</string>
-    <string name="gift_list_nobody_found">Nobody found</string>
     <string name="gift_list_nobody">Nobody on this list yet. Add a whole circle or search for people.</string>
     <string name="gift_list_remove_person">Take off the list</string>
     <string name="gift_list_removed">%1$s taken off the list</string>
@@ -124,10 +119,6 @@
     <plurals name="gift_list_pick_ideas">
         <item quantity="one">Pick from %d saved idea</item>
         <item quantity="other">Pick from %d saved ideas</item>
-    </plurals>
-    <plurals name="gift_list_add_n">
-        <item quantity="one">Add %d person</item>
-        <item quantity="other">Add %d people</item>
     </plurals>
     <string name="page_people">People · %1$d</string>
     <string name="page_coming_up">Coming up</string>

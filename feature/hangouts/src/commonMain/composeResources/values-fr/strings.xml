@@ -89,12 +89,7 @@
     <string name="gift_list_ai_working">Recherche d’idées…</string>
     <string name="gift_list_no_new_ideas">Pas de nouvelle idée cette fois</string>
     <string name="gift_list_add_people">Ajouter des personnes</string>
-    <string name="gift_list_whole_circle">Un cercle entier</string>
-    <string name="gift_list_circle_chip">%1$s %2$s · %3$d</string>
-    <string name="gift_list_or_search">Ou cherchez</string>
-    <string name="gift_list_search_hint">Un nom, ou « mes cousins »</string>
     <string name="gift_list_budget_each">Budget par personne (facultatif)</string>
-    <string name="gift_list_nobody_found">Personne trouvé</string>
     <string name="gift_list_nobody">Personne sur cette liste. Ajoutez un cercle entier ou cherchez des personnes.</string>
     <string name="gift_list_remove_person">Retirer de la liste</string>
     <string name="gift_list_removed">%1$s retiré·e de la liste</string>
@@ -119,10 +114,6 @@
     <plurals name="gift_list_pick_ideas">
         <item quantity="one">Choisir parmi %d idée enregistrée</item>
         <item quantity="other">Choisir parmi %d idées enregistrées</item>
-    </plurals>
-    <plurals name="gift_list_add_n">
-        <item quantity="one">Ajouter %d personne</item>
-        <item quantity="other">Ajouter %d personnes</item>
     </plurals>
     <string name="page_people">Personnes · %1$d</string>
     <string name="page_coming_up">À venir</string>

@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
@@ -48,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.usecase.of
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.PersonPickerSheet
 import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
@@ -130,6 +132,7 @@ internal fun LinkSheet(
     onDismiss: () -> Unit,
     onSave: (LinkEdit) -> Unit,
     onRemove: (String) -> Unit,
+    circles: List<FriendGroup> = emptyList(),
 ) {
     var other by remember { mutableStateOf(editing?.person) }
     var role by remember { mutableStateOf(editing?.role ?: LinkType.DATING) }
@@ -137,7 +140,8 @@ internal fun LinkSheet(
     var startedOn by remember { mutableStateOf(editing?.link?.startedOn) }
     var endedOn by remember { mutableStateOf(editing?.link?.endedOn) }
     var remind by remember { mutableStateOf(editing?.link?.remindAnniversary ?: false) }
-    var query by remember { mutableStateOf("") }
+    // The person comes from the people picker in single mode (issue #89), opened straight away for a new link.
+    var choosing by remember { mutableStateOf(editing == null && others.isNotEmpty()) }
     var picking by remember { mutableStateOf<DateField?>(null) }
     val firstName = friend.displayName.substringBefore(' ')
 
@@ -168,9 +172,10 @@ internal fun LinkSheet(
         ) {
             val picked = other
             if (picked == null) {
-                PersonPicker(others, query, onQuery = { query = it }) {
-                    other = it
-                    pronouns = it.pronouns
+                if (others.isEmpty()) {
+                    Text(stringResource(Res.string.link_no_people), style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    OutlinedButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(Res.string.link_search)) }
                 }
                 return@Column
             }
@@ -181,7 +186,12 @@ internal fun LinkSheet(
             ) {
                 FriendAvatar(picked, size = 32.dp)
                 Text(picked.displayName, Modifier.weight(1f).padding(horizontal = 10.dp), style = MaterialTheme.typography.titleSmall)
-                if (editing == null) TextButton(onClick = { other = null }) { Text(stringResource(Res.string.link_change)) }
+                if (editing == null) {
+                    TextButton(onClick = {
+                        other = null
+                        choosing = true
+                    }) { Text(stringResource(Res.string.link_change)) }
+                }
             }
             val otherFirst = picked.displayName.substringBefore(' ')
 
@@ -230,6 +240,13 @@ internal fun LinkSheet(
             if (editing != null) TextButton(onClick = { onRemove(editing.link.id) }) { Text(stringResource(Res.string.link_remove)) }
         }
     }
+    if (choosing) {
+        PersonPickerSheet(others, circles, title = stringResource(Res.string.link_search), onDismiss = { choosing = false }, onPick = {
+            other = it
+            pronouns = it.pronouns
+            choosing = false
+        })
+    }
     when (picking) {
         DateField.START -> LocalDatePickerDialog(startedOn, onDismiss = { picking = null }, onPicked = { startedOn = it })
         DateField.END -> LocalDatePickerDialog(endedOn, onDismiss = { picking = null }, onPicked = { endedOn = it })
@@ -238,27 +255,6 @@ internal fun LinkSheet(
 }
 
 private enum class DateField { START, END }
-
-/** Search the other people and pick one. */
-@Composable
-private fun PersonPicker(others: List<Friend>, query: String, onQuery: (String) -> Unit, onPick: (Friend) -> Unit) {
-    if (others.isEmpty()) {
-        Text(stringResource(Res.string.link_no_people), style = MaterialTheme.typography.bodyMedium)
-        return
-    }
-    OutlinedTextField(query, onQuery, label = { Text(stringResource(Res.string.link_search)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-    val q = query.trim().lowercase()
-    others.filter { q.isEmpty() || it.displayName.lowercase().contains(q) }.take(MAX_MATCHES).forEach { f ->
-        ListItem(
-            modifier = Modifier.clickable { onPick(f) },
-            leadingContent = { FriendAvatar(f, size = 36.dp) },
-            headlineContent = { Text(f.displayName) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        )
-    }
-}
-
-private const val MAX_MATCHES = 8
 
 /**
  * "Rui is your…" (F6): what a friend is to you, separate from links between people. Family ones put them in the

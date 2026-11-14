@@ -351,6 +351,20 @@ class FriendDetailViewModelTest {
     }
 
     @Test
+    fun theReminderPicker_getsEveryone_andEveryCircleFamilyIncluded_andSavesWhoWasPicked() = runViewModelTest {
+        g = TestGraph(listOf(friend("ana") { copy(relationToMe = LinkType.SIBLING) }, friend("rui"), friend("zoe")))
+        g.groupRepo.upsert(FriendGroup("surf", "Surf", memberIds = listOf(FriendId("rui"))))
+        val vm = vm()
+        val state = collecting(vm.state)
+        // Issue #89: the picker's filter row has Family and the stored circles; everyone else can be picked.
+        assertEquals(listOf(FamilyCircle.ID, "surf"), state.value.detail!!.circles.map { it.id })
+        assertEquals(listOf("rui", "zoe"), state.value.detail!!.others.map { it.id.value })
+        vm.onOpenReminderEditor()
+        vm.onSaveReminder("Book the trip", listOf(FriendId("ana"), FriendId("zoe")), null, 18)
+        assertEquals(listOf(FriendId("ana"), FriendId("zoe")), reminders.reminders.value.single().friendIds)
+    }
+
+    @Test
     fun circleSnoozeAndCallShapeTheCatchUpRhythm() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)

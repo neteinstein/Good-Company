@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -178,6 +179,63 @@ class FriendsViewModelTest {
             listOf(Closeness.INNER to 1, Closeness.CLOSE to 2, Closeness.GOOD to 1),
             state.value.sections.map { (section, people) -> (section as PeopleSection.Level).closeness to people.size },
         )
+    }
+
+    @Test
+    fun aLevelFromTheAllMenu_showsOnlyThatHeading_andIsOneChoiceWithACircle() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana") { copy(closeness = Closeness.INNER) },
+                friend("bob") { copy(closeness = Closeness.CLOSE) },
+                friend("cat") { copy(closeness = Closeness.CLOSE) },
+                friend("dan"),
+                friend("kid") { copy(closeness = Closeness.CLOSE, showInMyList = false) }, // F9: not listed, not counted
+            ),
+        )
+        val choir = g.saveGroup(null, "Choir", "🎵", CircleColor.PURPLE, listOf(FriendId("ana"), FriendId("bob")), 30)
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        // The menu's counts: Everyone · 4, Inner · 1, Close · 2, Friends · 0, Acquaintances · 1.
+        assertEquals(4, state.value.listedCount)
+        assertEquals(
+            mapOf(Closeness.INNER to 1, Closeness.CLOSE to 2, Closeness.GOOD to 0, Closeness.ACQUAINTANCE to 1),
+            state.value.levelCounts,
+        )
+
+        vm.onFilter(PeopleFilter(closeness = Closeness.CLOSE))
+        assertEquals(PeopleFilter(closeness = Closeness.CLOSE), state.value.filter)
+        assertEquals(
+            listOf(PeopleSection.Level(Closeness.CLOSE) to listOf("Bob", "Cat")),
+            state.value.sections.map { (s, p) ->
+                s to
+                    p.map { it.friend.name }
+            },
+        )
+        // The counts don't move with the filter.
+        assertEquals(4, state.value.listedCount)
+        // A–Z still filters by the level.
+        vm.onSortChange(PeopleSort.NAME)
+        assertEquals(listOf("Bob", "Cat"), state.value.friends.map { it.friend.name })
+        vm.onSortChange(PeopleSort.CLOSENESS)
+        // Search works inside the level.
+        vm.onQueryChange("c")
+        assertEquals(listOf("Cat"), state.value.friends.map { it.friend.name })
+        vm.onQueryChange("")
+
+        // A circle resets the level; a level clears the (remembered) circle.
+        vm.onFilter(state.value.filter.withCircle(choir.id))
+        assertNull(state.value.closeness)
+        assertEquals(choir.id, state.value.circle?.group?.id)
+        assertEquals(listOf("Ana", "Bob"), state.value.friends.map { it.friend.name })
+        vm.onFilter(state.value.filter.withCloseness(Closeness.INNER))
+        assertNull(state.value.circle)
+        assertNull(g.settingsRepo.settings.first().homeCircleFilter)
+        assertEquals(listOf("Ana"), state.value.friends.map { it.friend.name })
+
+        // Everyone in the menu clears it.
+        vm.onFilter(PeopleFilter.Everyone)
+        assertTrue(state.value.filter.isEveryone)
+        assertEquals(listOf("Ana", "Bob", "Cat", "Dan"), state.value.friends.map { it.friend.name })
     }
 
     @Test

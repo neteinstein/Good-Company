@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -13,6 +14,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
@@ -52,6 +54,8 @@ data class AgendaUiState(
     val agenda: List<AgendaItem> = emptyList(),
     val reminders: List<Reminder> = emptyList(),
     val friends: List<Friend> = emptyList(),
+    /** Every circle, Family included: the people picker's filter row in the reminder editor (issue #89). */
+    val circles: List<FriendGroup> = emptyList(),
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
     val recentlyDeleted: Reminder? = null,
@@ -94,6 +98,7 @@ class AgendaViewModel(
     private val confirmPlan: ConfirmPlanUseCase,
     private val clock: AppClock,
     observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
+    observeGroups: ObserveGroupsUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
 
@@ -101,10 +106,13 @@ class AgendaViewModel(
         observeAgenda(),
         observeReminders(),
         observeFriends(),
-        combine(observeSettings(), observeCalendarSuggestions()) { settings, calendar -> settings to calendar.size },
+        combine(observeSettings(), observeCalendarSuggestions(), observeGroups()) { settings, calendar, groups ->
+            Triple(settings, calendar.size, groups.map { it.group })
+        },
         local,
-    ) { agenda, reminders, friends, (settings, calendarCount), ui ->
+    ) { agenda, reminders, friends, (settings, calendarCount, circles), ui ->
         ui.copy(
+            circles = circles,
             calendarCount = calendarCount,
             hasAiKey = settings.usableAiKey != null,
             agenda = agenda,
