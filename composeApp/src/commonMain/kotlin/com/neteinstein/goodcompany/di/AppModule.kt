@@ -116,7 +116,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHangoutHistoryUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveOccasionMatchesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObservePeopleDashboardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePersonLinksUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlacesUseCase
@@ -200,6 +202,8 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEdit
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapViewModel
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashboardViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
@@ -272,6 +276,8 @@ val appModule = module {
 
     // --- Use cases ---
     factoryOf(::ObserveFriendsUseCase)
+    factoryOf(::ObserveNetworkMapUseCase)
+    factoryOf(::ObservePeopleDashboardUseCase)
     factoryOf(::ObserveFriendDetailUseCase)
     factoryOf(::UpdateFriendUseCase)
     factoryOf(::ObservePersonLinksUseCase)
@@ -447,6 +453,8 @@ val appModule = module {
     viewModelOf(::TagsViewModel)
     viewModelOf(::ActivitiesViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
+    viewModel { NetworkMapViewModel(get()) }
+    viewModel { PeopleDashboardViewModel(get()) }
     viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
     viewModelOf(::ShareToFriendViewModel)
 }

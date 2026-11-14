@@ -31,6 +31,8 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PersonAdd
@@ -101,6 +103,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_import_vcf
 import com.neteinstein.goodcompany.feature.friends.resources.action_more
+import com.neteinstein.goodcompany.feature.friends.resources.action_network
+import com.neteinstein.goodcompany.feature.friends.resources.action_people
 import com.neteinstein.goodcompany.feature.friends.resources.action_pick_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.action_search
 import com.neteinstein.goodcompany.feature.friends.resources.action_sync_contacts
@@ -193,6 +197,9 @@ fun FriendsScreen(
     /** How many people the "Choose friends" list just added (0 = nothing to report); [onChosenShown] clears it. */
     chosenContacts: Int = 0,
     onChosenShown: () -> Unit = {},
+    /** "Your network" and "Your people" (issue #46), from the menu. */
+    onOpenNetwork: () -> Unit = {},
+    onOpenPeople: () -> Unit = {},
     viewModel: FriendsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -245,6 +252,8 @@ fun FriendsScreen(
             onCircleFilter = viewModel::onCircleFilter,
             onEditCircle = onEditCircle,
             onLogCircle = onLogCircle,
+            onOpenNetwork = onOpenNetwork,
+            onOpenPeople = onOpenPeople,
         ),
     )
 }
@@ -273,6 +282,8 @@ data class FriendsActions(
     val onEditCircle: (String) -> Unit = {},
     /** "Log a <circle> meetup" on the circle card. */
     val onLogCircle: (String) -> Unit = {},
+    val onOpenNetwork: () -> Unit = {},
+    val onOpenPeople: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [FriendsMessage]. */
@@ -399,6 +410,22 @@ fun FriendsContent(
                                         onClick = {
                                             menuOpen = false
                                             actions.onImportFile()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.action_network)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Hub, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onOpenNetwork()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(Res.string.action_people)) },
+                                        leadingIcon = { Icon(Icons.Rounded.Insights, null) },
+                                        onClick = {
+                                            menuOpen = false
+                                            actions.onOpenPeople()
                                         },
                                     )
                                 }

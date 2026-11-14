@@ -34,6 +34,8 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.NetworkMapViewModel
+import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashboardViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
@@ -114,6 +116,8 @@ class AppModuleTest {
         assertSame(koin.get<QuickEntryInbox>(), koin.get<QuickEntryInbox>())
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(null) })
         assertNotNull(koin.get<YearReviewViewModel> { parametersOf(2025) })
+        assertNotNull(koin.get<NetworkMapViewModel>())
+        assertNotNull(koin.get<PeopleDashboardViewModel>())
         assertNotNull(koin.get<HandleNotificationActionUseCase>())
         assertNotNull(koin.get<KeepNotificationsScheduledUseCase>())
     }

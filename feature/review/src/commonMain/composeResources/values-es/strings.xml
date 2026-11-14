@@ -66,4 +66,46 @@
         <item quantity="one">%1$d mensaje o correo</item>
         <item quantity="other">%1$d mensajes y correos</item>
     </plurals>
+    <string name="network_title">Tu red</string>
+    <string name="network_you">Tú</string>
+    <string name="network_empty_title">Aún no hay nadie en tu mapa</string>
+    <string name="network_empty_body">Marca amigos de verdad, crea círculos o vincula a personas entre sí, y aparecerán a tu alrededor.</string>
+    <string name="network_legend_family">Familia</string>
+    <string name="network_legend_partner">Pareja</string>
+    <string name="network_legend_friend">Amistad</string>
+    <string name="network_legend_introduced">Presentó</string>
+    <string name="people_title">Tu gente</string>
+    <string name="people_avg_warmth">calidez media</string>
+    <string name="people_by_circle">Calidez por círculo</string>
+    <string name="people_circles">Tus círculos</string>
+    <string name="people_by_closeness">Por cercanía</string>
+    <string name="people_trend">Últimos 90 días</string>
+    <string name="people_trend_caption">Calidez media, semana a semana</string>
+    <string name="people_trend_up">+%1$d frente a hace 90 días</string>
+    <string name="people_trend_down">−%1$d frente a hace 90 días</string>
+    <string name="people_trend_flat">Igual que hace 90 días</string>
+    <string name="people_cooling">Enfriándose</string>
+    <string name="people_cooling_row">Calidez %1$d → %2$d</string>
+    <string name="people_circle_cooling">Enfriándose: %1$d menos en un mes</string>
+    <string name="people_per_month">Encuentros por mes</string>
+    <string name="people_never">Sin registros</string>
+    <string name="people_never_hint">Añadidos, pero aún sin encuentros, llamadas ni mensajes</string>
+    <string name="people_warmth_off">Con “Mostrar la calidez” desactivado, las cifras de calidez y la tarjeta “Enfriándose” se ocultan; los recuentos se mantienen.</string>
+    <string name="people_empty">Marca amigos de verdad o crea círculos para ver aquí a tu gente.</string>
+    <plurals name="network_description">
+        <item quantity="one">Mapa con %1$d persona a tu alrededor</item>
+        <item quantity="other">Mapa con %1$d personas a tu alrededor</item>
+    </plurals>
+    <plurals name="people_meetups_90">
+        <item quantity="one">encuentro en los últimos 90 días</item>
+        <item quantity="other">encuentros en los últimos 90 días</item>
+    </plurals>
+    <plurals name="people_count">
+        <item quantity="one">persona</item>
+        <item quantity="other">personas</item>
+    </plurals>
+    <plurals name="people_members">
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
+    </plurals>
 </resources>

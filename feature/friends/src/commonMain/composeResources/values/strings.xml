@@ -534,4 +534,6 @@
     <string name="kid_show_hint_friend">Off by default for friends’ kids: they still show on %1$s’s page and in birthdays.</string>
     <string name="show_in_my_list_hint">Off: they still show on %1$s’s page and in birthdays.</string>
     <string name="show_in_my_list_hint_any">Off: they still show on the pages they’re linked to and in birthdays.</string>
+    <string name="action_network">Your network</string>
+    <string name="action_people">Your people</string>
 </resources>

@@ -48,7 +48,7 @@ feature/hangouts/     "I'm with…" check-in, history, "last time with these peo
 feature/agenda/       "Coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
-feature/review/       "Your year in friendship" (story cards + share)
+feature/review/       "Your year in friendship" (story cards + share), the network map and the "Your people" dashboard
 iosApp/               Hand-authored Xcode project: SwiftUI shell + Share Extension + "Who's next" WidgetKit widget
 build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose / .kmp.feature
 ```
@@ -402,6 +402,14 @@ Seen in practice:
     Restoring a backup keeps this device's switch, like the key. Settings → Activities (F3) edits
     `AppSettings.activities` (the ones on, in order, never empty; `user_preferences.activities`, NULL = all), and
     `ObserveActivitiesUseCase` offers only those to the log sheet.
+34. **Network map and "Your people" (issue #46, I12).** Both are pure domain code in `usecase/Network.kt` and
+    `usecase/PeopleDashboard.kt`; the screens live in `:feature:review` (`NetworkMapRoute`, `PeopleDashboardRoute`, from
+    Home's menu and the year in review). Only "your people" are shown (`PeopleDashboard.isYours`: a real friend, a
+    closeness, a relation to you or a circle member; never orphans or address-book-only contacts). Edges are person links
+    (#39) plus "introduced by", never co-presence; you are the `NetworkGraph.ME` node at the origin. The layout is our own
+    deterministic Fruchterman–Reingold (`ForceLayout`, fixed iteration budget, positions cached between emissions and
+    re-run for a third of the budget), drawn in a Compose `Canvas`: no graph library. Warmth is the same `Warmth.score`;
+    with Show warmth off node size and every dashboard warmth figure go away and only counts remain.
 
 ## Skills
 

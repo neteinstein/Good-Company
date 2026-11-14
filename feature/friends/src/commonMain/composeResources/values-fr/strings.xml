@@ -509,4 +509,6 @@
     <string name="kid_show_hint_friend">Désactivé par défaut pour les enfants d’amis : ils restent sur la page de %1$s et dans les anniversaires.</string>
     <string name="show_in_my_list_hint">Désactivé : reste sur la page de %1$s et dans les anniversaires.</string>
     <string name="show_in_my_list_hint_any">Désactivé : reste sur les pages auxquelles il est lié et dans les anniversaires.</string>
+    <string name="action_network">Ton réseau</string>
+    <string name="action_people">Tes proches</string>
 </resources>

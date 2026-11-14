@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.IosShare
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -77,6 +78,7 @@ import com.neteinstein.goodcompany.feature.review.resources.hero_meetups
 import com.neteinstein.goodcompany.feature.review.resources.hero_meetups_word
 import com.neteinstein.goodcompany.feature.review.resources.new_body
 import com.neteinstein.goodcompany.feature.review.resources.new_title
+import com.neteinstein.goodcompany.feature.review.resources.people_title
 import com.neteinstein.goodcompany.feature.review.resources.places_none
 import com.neteinstein.goodcompany.feature.review.resources.places_title
 import com.neteinstein.goodcompany.feature.review.resources.reminders_done
@@ -103,7 +105,12 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
 @Composable
-fun YearReviewScreen(year: Int?, onBack: () -> Unit, viewModel: YearReviewViewModel = koinViewModel(key = "review-$year") { parametersOf(year) }) {
+fun YearReviewScreen(
+    year: Int?,
+    onBack: () -> Unit,
+    onOpenPeople: () -> Unit = {},
+    viewModel: YearReviewViewModel = koinViewModel(key = "review-$year") { parametersOf(year) },
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sharer = rememberTextSharer()
     val shareText = state.review?.takeUnless { it.isEmpty }?.let { shareText(it) }
@@ -112,6 +119,7 @@ fun YearReviewScreen(year: Int?, onBack: () -> Unit, viewModel: YearReviewViewMo
         onBack = onBack,
         onShare = shareText?.let { text -> { if (sharer.share(text) == ShareOutcome.COPIED) viewModel.onCopied() } },
         onCopiedShown = viewModel::onCopiedShown,
+        onOpenPeople = onOpenPeople,
     )
 }
 
@@ -132,7 +140,13 @@ fun shareText(r: YearInReview): String = listOfNotNull(
 ).joinToString("\n")
 
 @Composable
-fun YearReviewContent(state: YearReviewUiState, onBack: () -> Unit, onShare: (() -> Unit)?, onCopiedShown: () -> Unit = {}) {
+fun YearReviewContent(
+    state: YearReviewUiState,
+    onBack: () -> Unit,
+    onShare: (() -> Unit)?,
+    onCopiedShown: () -> Unit = {},
+    onOpenPeople: () -> Unit = {},
+) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(state.copied) {
         if (state.copied) {
@@ -150,6 +164,7 @@ fun YearReviewContent(state: YearReviewUiState, onBack: () -> Unit, onShare: (()
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
+                IconButton(onClick = onOpenPeople) { Icon(Icons.Rounded.Insights, stringResource(Res.string.people_title)) }
                 if (onShare != null) {
                     FilledTonalButton(onClick = onShare, modifier = Modifier.padding(end = 8.dp)) {
                         Icon(Icons.Rounded.IosShare, null, Modifier.size(18.dp))
