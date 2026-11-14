@@ -201,7 +201,7 @@
     <string name="prefs_real">Amigo a sério</string>
     <string name="prefs_real_hint">Aparece primeiro, no início e na agenda</string>
     <string name="prefs_birthday">Lembretes de aniversário</string>
-    <string name="prefs_birthday_hint">Para ele e para os filhos</string>
+    <string name="prefs_birthday_hint">Ativo para todos com data de aniversário</string>
     <string name="prefs_events">Ideias de eventos semanais</string>
     <string name="prefs_events_hint">A IA sugere planos que combinam com os gostos dele</string>
     <string name="delete_title">Remover %1$s?</string>
@@ -485,4 +485,22 @@
     <string name="relation_to_me_clear">Sem relação</string>
     <string name="add_as_person">Adicionar como pessoa</string>
     <string name="msg_added_as_person">%1$s já tem a sua própria página</string>
+    <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
+    <string name="detail_edit_name">Editar nome</string>
+    <string name="photo_sheet_title">Foto de %1$s</string>
+    <string name="photo_replace">Substituir foto</string>
+    <string name="photo_replace_hint">Escolha uma imagem e depois amplie e recorte</string>
+    <string name="photo_adjust">Ajustar recorte</string>
+    <string name="photo_remove">Remover foto</string>
+    <string name="photo_remove_hint_contact">Volta a mostrar a foto do contacto</string>
+    <string name="photo_remove_hint_initials">Volta a mostrar as iniciais</string>
+    <string name="photo_contact_untouched">O contacto em si nunca é alterado.</string>
+    <string name="name_title">Nome</string>
+    <string name="name_contact_hint">Nos seus contactos: %1$s. O nome que der aqui é usado em todo o Good Company; uma sincronização dos contactos não o altera.</string>
+    <string name="name_restore">Usar o nome do contacto</string>
+    <string name="birthday_title">Aniversário</string>
+    <string name="birthday_year_hint">O ano é opcional. Sem ele recebe na mesma o lembrete; a idade aparece quando o acrescentar.</string>
+    <string name="birthday_remind">Lembrar-me do aniversário de %1$s</string>
+    <string name="birthday_remind_hint">Ativo para todos com data de aniversário. Desative-o aqui para uma pessoa.</string>
+    <string name="birthday_remove">Remover aniversário</string>
 </resources>

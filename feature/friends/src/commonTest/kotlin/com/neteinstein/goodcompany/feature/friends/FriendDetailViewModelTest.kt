@@ -74,6 +74,8 @@ class FriendDetailViewModelTest {
         g.restorePlan,
         g.addFeed,
         g.setFriendPhoto,
+        g.removeFriendPhoto,
+        g.renameFriend,
         g.setHomeCircleFilter,
         g.observeAttachments,
         g.deleteAttachment,
@@ -89,13 +91,12 @@ class FriendDetailViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onToggleClose()
-        vm.onToggleBirthdayNotifications()
         vm.onMeetEveryChange(14)
         vm.onAddLikes(listOf("jazz", "sushi"))
         vm.onAddLikes(listOf("jazz"))
         vm.onRemoveLike("sushi")
         vm.onAddDislikes(listOf("crowds"))
-        vm.onBirthdayChange(LocalDate(1990, 5, 4))
+        vm.onSaveBirthday(Birthday(5, 4, 1990), notify = true)
         val f = state.value.detail!!.friend
         assertTrue(f.isCloseFriend && f.notifyBirthday)
         assertEquals(Closeness.CLOSE, f.closeness)
@@ -111,11 +112,11 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onPhotoPicked(null)
         assertNull(state.value.message)
-        assertNull(state.value.detail!!.friend.photo)
+        assertNull(state.value.detail!!.friend.avatar)
 
         vm.onPhotoPicked(ByteArray(ContactPhoto.MAX_BYTES * 2)) // the test graph can't shrink this
         assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
-        assertNull(state.value.detail!!.friend.photo)
+        assertNull(state.value.detail!!.friend.avatar)
 
         vm.onMessageShown()
         vm.onPhotoPicked(ByteArray(0)) // what the pickers hand back for a picture they couldn't read
@@ -123,8 +124,52 @@ class FriendDetailViewModelTest {
 
         vm.onMessageShown()
         vm.onPhotoPicked(byteArrayOf(1, 2, 3))
-        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.detail!!.friend.photo)
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), state.value.detail!!.friend.customPhoto)
         assertNull(state.value.message)
+    }
+
+    @Test
+    fun aPhotoSetInTheApp_winsOverTheContactsOne_andRemovingItShowsTheContactsAgain() = runViewModelTest {
+        val contactPhoto = ContactPhoto.of(byteArrayOf(9, 9))!!
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(contactId = "c1", photo = contactPhoto))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onPhotoPicked(byteArrayOf(1, 2, 3))
+        val f = state.value.detail!!.friend
+        assertEquals(ContactPhoto.of(byteArrayOf(1, 2, 3)), f.avatar)
+        assertEquals(contactPhoto, f.photo)
+
+        vm.onRemovePhoto()
+        assertNull(state.value.detail!!.friend.customPhoto)
+        assertEquals(contactPhoto, state.value.detail!!.friend.avatar)
+    }
+
+    @Test
+    fun aNameGivenInTheApp_isShown_andTheContactsNameCanComeBack() = runViewModelTest {
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(contactId = "c1"))
+        val contactName = g.friendRepo.get(FriendId("ana"))!!.name
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onRename("  Aninhas ")
+        assertEquals("Aninhas", state.value.detail!!.friend.customName)
+        assertEquals("Aninhas", state.value.detail!!.friend.displayName)
+        assertEquals(contactName, state.value.detail!!.friend.name)
+
+        vm.onRename(null)
+        assertNull(state.value.detail!!.friend.customName)
+        assertEquals(contactName, state.value.detail!!.friend.displayName)
+    }
+
+    @Test
+    fun aBirthdayWithoutAYear_isKept_andTheReminderSwitchIsSavedWithIt() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveBirthday(Birthday(3, 14), notify = false)
+        val f = state.value.detail!!.friend
+        assertEquals(Birthday(3, 14, null), f.birthday)
+        assertFalse(f.notifyBirthday)
+        vm.onSaveBirthday(null, notify = true)
+        assertNull(state.value.detail!!.friend.birthday)
     }
 
     @Test
@@ -185,7 +230,7 @@ class FriendDetailViewModelTest {
     fun kidsAndEventsCanBeAddedEditedAndRemoved() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onSaveKid(null, "Leo", LocalDate(2020, 4, 1), listOf("lego"))
+        vm.onSaveKid(null, "Leo", Birthday(4, 1, 2020), listOf("lego"))
         val kid = state.value.detail!!.friend.kids.single()
         vm.onSaveKid(kid.id, "Leo", null, listOf("dinosaurs"))
         assertEquals(listOf("dinosaurs"), state.value.detail!!.friend.kids.single().likes)
@@ -403,7 +448,7 @@ class FriendDetailViewModelTest {
             RelativeEdit(
                 relation = Relation.PARTNER,
                 name = " Tiago ",
-                birthday = LocalDate(1988, 3, 20),
+                birthday = Birthday(3, 20, 1988),
                 likes = listOf("padel"),
                 notifyBirthday = true,
             ),

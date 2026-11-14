@@ -483,4 +483,11 @@
         <item quantity="other">%1$d años juntos</item>
     </plurals>
     <string name="anniversary_body">Hoy es su aniversario: ¡felicítalos!</string>
+    <!-- Birthday fields (F4) and the photo crop editor (F14) -->
+    <string name="birthday_day">Día</string>
+    <string name="birthday_month">Mes</string>
+    <string name="birthday_year">Año</string>
+    <string name="crop_title">Mover y ajustar</string>
+    <string name="crop_hint">Pellizca para ampliar · arrastra para mover</string>
+    <string name="crop_use">Usar foto</string>
 </resources>

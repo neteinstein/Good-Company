@@ -497,4 +497,11 @@
         <item quantity="other">%1$d de ani împreună</item>
     </plurals>
     <string name="anniversary_body">Azi e aniversarea lor — felicită-i!</string>
+    <!-- Birthday fields (F4) and the photo crop editor (F14) -->
+    <string name="birthday_day">Zi</string>
+    <string name="birthday_month">Lună</string>
+    <string name="birthday_year">An</string>
+    <string name="crop_title">Mută și scalează</string>
+    <string name="crop_hint">Ciupește pentru zoom · trage pentru a muta</string>
+    <string name="crop_use">Folosește fotografia</string>
 </resources>

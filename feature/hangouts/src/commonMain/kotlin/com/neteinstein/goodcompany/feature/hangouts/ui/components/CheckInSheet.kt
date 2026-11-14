@@ -109,8 +109,8 @@ fun CheckInSheet(
             // With a circle picked, its members come first (in the circle's order), then whoever else is ticked.
             val members = circle?.memberIds.orEmpty()
             val shown = friends
-                .filter { it.id in draft.selected || it.id in members || (circle == null && (q.isEmpty() || it.name.lowercase().contains(q))) }
-                .filter { q.isEmpty() || it.name.lowercase().contains(q) || it.id in draft.selected }
+                .filter { it.id in draft.selected || it.id in members || (circle == null && (q.isEmpty() || it.displayName.lowercase().contains(q))) }
+                .filter { q.isEmpty() || it.displayName.lowercase().contains(q) || it.id in draft.selected }
                 .sortedWith(
                     compareBy<Friend> { members.indexOf(it.id).let { i -> if (i < 0) Int.MAX_VALUE else i } }
                         .thenByDescending { it.id in draft.selected }
@@ -126,7 +126,7 @@ fun CheckInSheet(
                     FilterChip(
                         selected = selected,
                         onClick = { onToggleFriend(f.id) },
-                        label = { Text(f.name) },
+                        label = { Text(f.displayName) },
                         leadingIcon = {
                             AnimatedContent(selected) { on ->
                                 if (on) {

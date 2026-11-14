@@ -72,7 +72,7 @@ class ObserveFriendsUseCase(
                 warmth = Warmth.score(f, hs, ints, cadence, today, clock.timeZone),
                 cadenceDays = cadence,
             )
-        }.sortedWith(compareByDescending<FriendSummary> { it.friend.isCloseFriend }.thenBy { it.friend.name.lowercase() })
+        }.sortedWith(compareByDescending<FriendSummary> { it.friend.isCloseFriend }.thenBy { it.friend.displayName.lowercase() })
     }
 }
 
@@ -145,7 +145,7 @@ class ObserveFriendDetailUseCase(
             groups = gs.filter { id in it.memberIds },
             topics = OfflineTopics.build(friend, hs, clock.today(), clock.timeZone),
             plans = ps.filter { id in it.friendIds && it.status == PlanStatus.PLANNED }.sortedBy { it.date },
-            others = all.filter { it.id != id }.sortedBy { it.name.lowercase() },
+            others = all.filter { it.id != id }.sortedBy { it.displayName.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
             timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone, attachments),
             lastJournal = journal.filter { it.friendId == id }.maxByOrNull { it.at },

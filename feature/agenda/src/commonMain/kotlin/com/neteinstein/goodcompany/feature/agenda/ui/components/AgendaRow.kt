@@ -99,7 +99,7 @@ fun AgendaRow(
             Icons.Rounded.Cake,
             Color(0xFFF2A100),
             stringResource(Res.string.label_birthday),
-            stringResource(Res.string.row_birthday, item.friend.name),
+            stringResource(Res.string.row_birthday, item.friend.displayName),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
                 item.friend.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
@@ -110,7 +110,7 @@ fun AgendaRow(
             Icons.Rounded.ChildCare,
             Color(0xFF00A88F),
             stringResource(Res.string.label_kid_birthday),
-            stringResource(Res.string.row_kid, item.kid.name, item.parent.name.substringBefore(' ')),
+            stringResource(Res.string.row_kid, item.kid.name, item.parent.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
                 (item.parent.gifts.filter { it.isIdea && it.forKidId == item.kid.id }.map { it.title } + item.kid.likes)
@@ -123,7 +123,7 @@ fun AgendaRow(
             Icons.Rounded.Cake,
             Color(0xFF00A88F),
             stringResource(Res.string.label_birthday),
-            stringResource(Res.string.row_relative, item.relative.name, item.friend.name.substringBefore(' ')),
+            stringResource(Res.string.row_relative, item.relative.name, item.friend.displayName.substringBefore(' ')),
             listOfNotNull(
                 item.turning?.let { stringResource(Res.string.row_turns, it) },
                 item.relative.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_loves, it.joinToString(limit = 3)) },
@@ -134,7 +134,7 @@ fun AgendaRow(
             Icons.Rounded.Favorite,
             colors.primary,
             stringResource(Res.string.label_big_day),
-            anniversaryTitle(item.first.name.substringBefore(' '), item.second.name.substringBefore(' ')),
+            anniversaryTitle(item.first.displayName.substringBefore(' '), item.second.displayName.substringBefore(' ')),
             item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }.orEmpty(),
             item.first,
         )
@@ -142,7 +142,7 @@ fun AgendaRow(
             Icons.Rounded.Favorite,
             colors.primary,
             stringResource(Res.string.label_big_day),
-            stringResource(Res.string.row_ping, item.friend.name),
+            stringResource(Res.string.row_ping, item.friend.displayName),
             item.event.title,
             item.friend,
         )
@@ -153,14 +153,14 @@ fun AgendaRow(
             item.reminder.title,
             item.friends.takeIf {
                 it.isNotEmpty()
-            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+            }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
             item.friends.firstOrNull(),
         )
         is AgendaItem.MeetupOverdue -> Spec(
             Icons.Rounded.Schedule,
             colors.error,
             stringResource(Res.string.label_catch_up),
-            stringResource(Res.string.row_see, item.friend.name),
+            stringResource(Res.string.row_see, item.friend.displayName),
             item.daysSince?.let { pluralStringResource(Res.plurals.row_days_since, it, it) } ?: stringResource(Res.string.row_never),
             item.friend,
         )
@@ -169,7 +169,7 @@ fun AgendaRow(
             colors.secondary,
             stringResource(Res.string.label_group),
             "${item.group.emoji} ${item.group.name}",
-            item.members.joinToString { it.name.substringBefore(' ') }.let { names ->
+            item.members.joinToString { it.displayName.substringBefore(' ') }.let { names ->
                 item.daysSince?.let { pluralStringResource(Res.plurals.row_group_days, it, names, it) } ?: names
             },
             null,
@@ -182,7 +182,7 @@ fun AgendaRow(
             listOfNotNull(
                 item.friends.takeIf {
                     it.isNotEmpty()
-                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
                 item.plan.place,
             ).joinToString(" · "),
             item.friends.singleOrNull(),
@@ -196,7 +196,7 @@ fun AgendaRow(
                 item.plan.date.shortLabel(),
                 item.friends.takeIf {
                     it.isNotEmpty()
-                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.name.substringBefore(' ') }) },
+                }?.let { fs -> stringResource(Res.string.row_with, fs.joinToString { it.displayName.substringBefore(' ') }) },
             ).joinToString(" · "),
             item.friends.singleOrNull(),
         )

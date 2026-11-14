@@ -116,6 +116,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
@@ -143,6 +144,7 @@ import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.HeartBurst
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.PlanRow
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
@@ -211,6 +213,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.detail_back
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
+import com.neteinstein.goodcompany.feature.friends.resources.detail_edit_name
 import com.neteinstein.goodcompany.feature.friends.resources.detail_missing
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_remove_friend
@@ -271,6 +274,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_hint
 import com.neteinstein.goodcompany.feature.friends.resources.occasions_title
+import com.neteinstein.goodcompany.feature.friends.resources.photo_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.plans_add
 import com.neteinstein.goodcompany.feature.friends.resources.plans_empty
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
@@ -378,7 +382,11 @@ fun FriendDetailScreen(
     viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val pickPhoto = rememberImagePicker(onPicked = viewModel::onPhotoPicked)
+    // F14: a picked picture goes through the crop editor first; one the picker couldn't read goes straight on (it says so).
+    var cropping by remember { mutableStateOf<ByteArray?>(null) }
+    val pickPhoto = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) cropping = image else viewModel.onPhotoPicked(image)
+    }
     val pickSavedPhoto = rememberGalleryPhotoPicker { picked ->
         picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
     }
@@ -413,7 +421,8 @@ fun FriendDetailScreen(
             onSnooze = viewModel::onSnooze,
             onClearSnooze = viewModel::onClearSnooze,
             onCalled = viewModel::onCalled,
-            onBirthdayChange = viewModel::onBirthdayChange,
+            onSaveBirthday = viewModel::onSaveBirthday,
+            onRename = viewModel::onRename,
             onAddLikes = viewModel::onAddLikes,
             onRemoveLike = viewModel::onRemoveLike,
             onAddDislikes = viewModel::onAddDislikes,
@@ -440,6 +449,8 @@ fun FriendDetailScreen(
             },
             onEditCircle = onEditCircle,
             onAddPhoto = pickPhoto,
+            onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
+            onRemovePhoto = viewModel::onRemovePhoto,
             onAddSavedPhoto = pickSavedPhoto,
             onOpenOriginal = photoOpener::open,
             onRemoveAttachment = viewModel::onRemoveAttachment,
@@ -470,6 +481,12 @@ fun FriendDetailScreen(
             onAddPlanToCalendar = { plan, friends -> addToCalendar(plan.calendarEntry(friends)) },
         ),
     )
+    cropping?.let { image ->
+        PhotoCropDialog(image, onDismiss = { cropping = null }, onCropped = { cropped ->
+            cropping = null
+            viewModel.onPhotoPicked(cropped)
+        })
+    }
 }
 
 /** All UI events of the detail screen, so the content composable stays previewable. */
@@ -509,13 +526,16 @@ data class FriendDetailActions(
     val onSnooze: (SnoozeOption) -> Unit = {},
     val onClearSnooze: () -> Unit = {},
     val onCalled: () -> Unit = {},
-    val onBirthdayChange: (LocalDate?) -> Unit = {},
+    /** The birthday sheet: the birthday (year optional, F4) and the reminder switch (F10). */
+    val onSaveBirthday: (Birthday?, notify: Boolean) -> Unit = { _, _ -> },
+    /** F19: the name given in the app; null goes back to the contact's name. */
+    val onRename: (String?) -> Unit = {},
     val onAddLikes: (List<String>) -> Unit = {},
     val onRemoveLike: (String) -> Unit = {},
     val onAddDislikes: (List<String>) -> Unit = {},
     val onRemoveDislike: (String) -> Unit = {},
     val onNotesChange: (String) -> Unit = {},
-    val onSaveKid: (id: String?, name: String, birthday: LocalDate?, likes: List<String>) -> Unit = { _, _, _, _ -> },
+    val onSaveKid: (id: String?, name: String, birthday: Birthday?, likes: List<String>) -> Unit = { _, _, _, _ -> },
     val onRemoveKid: (String) -> Unit = {},
     val onAddEvent: (String, LocalDate, Int) -> Unit = { _, _, _ -> },
     val onRemoveEvent: (String) -> Unit = {},
@@ -533,8 +553,12 @@ data class FriendDetailActions(
     /** A circle pill: Home filtered by that circle. A long-press edits the circle. */
     val onOpenCircle: (String) -> Unit = {},
     val onEditCircle: (String) -> Unit = {},
-    /** Offered only while the friend has no photo. */
+    /** Picks a picture for the avatar (then the crop editor), offered for everyone (F14). */
     val onAddPhoto: () -> Unit = {},
+    /** Crops the photo shown again. */
+    val onAdjustCrop: () -> Unit = {},
+    /** Removes the photo set in the app. */
+    val onRemovePhoto: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
@@ -606,6 +630,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     LaunchedEffect(state.feedAdded) { addingFeed = false }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
+    var editingName by rememberSaveable { mutableStateOf(false) }
+    var photoOptions by rememberSaveable { mutableStateOf(false) }
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var seeAllSaved by rememberSaveable { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<AttachmentView?>(null) }
@@ -659,7 +685,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             return@Scaffold
         }
         val f = detail.friend
-        val firstName = f.name.substringBefore(' ')
+        val firstName = f.displayName.substringBefore(' ')
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp)) {
             item(key = "hero") {
                 Hero(
@@ -667,6 +693,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     state,
                     actions,
                     onEditBirthday = { pickBirthday = true },
+                    onEditName = { editingName = true },
+                    onPhoto = { if (f.avatar == null) actions.onAddPhoto() else photoOptions = true },
                     onDelete = { confirmDelete = true },
                     onEditRelationToMe = { editingRelationToMe = true },
                 )
@@ -676,7 +704,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
 
             item(key = "story") {
                 val meeting = detail.plans.firstOrNull { it.date >= state.today && state.today.daysUntil(it.date) <= 1 }?.date
-                StoryCta(f.name, meeting, state.today, state.freshCount, actions.onOpenStory)
+                StoryCta(f.displayName, meeting, state.today, state.freshCount, actions.onOpenStory)
             }
 
             val nextBirthday = f.birthday?.nextOccurrence(state.today)
@@ -1007,6 +1035,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             FamilySheet(
                 firstName = firstName,
                 editing = editing,
+                latestYear = state.today.year,
                 onDismiss = { familyEditing = null },
                 onSaveKid = { id, name, birthday, likes ->
                     actions.onSaveKid(id, name, birthday, likes)
@@ -1090,8 +1119,26 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             )
         }
         if (pickBirthday) {
-            val initial = f.birthday?.let { LocalDate(it.year ?: 1990, Month(it.month), it.day) }
-            LocalDatePickerDialog(initial, onDismiss = { pickBirthday = false }, onPicked = actions.onBirthdayChange)
+            BirthdaySheet(f, latestYear = state.today.year, onSave = actions.onSaveBirthday, onDismiss = { pickBirthday = false })
+        }
+        if (editingName) NameDialog(f, onSave = actions.onRename, onDismiss = { editingName = false })
+        if (photoOptions) {
+            PhotoOptionsSheet(
+                f,
+                onReplace = {
+                    photoOptions = false
+                    actions.onAddPhoto()
+                },
+                onAdjust = {
+                    photoOptions = false
+                    actions.onAdjustCrop()
+                },
+                onRemove = {
+                    photoOptions = false
+                    actions.onRemovePhoto()
+                },
+                onDismiss = { photoOptions = false },
+            )
         }
         if (state.showReminderEditor) {
             val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).distinctBy { it.id }
@@ -1141,7 +1188,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             AlertDialog(
                 onDismissRequest = { confirmDelete = false },
                 icon = { Icon(Icons.Rounded.Delete, null) },
-                title = { Text(stringResource(Res.string.delete_title, f.name)) },
+                title = { Text(stringResource(Res.string.delete_title, f.displayName)) },
                 text = { Text(stringResource(if (f.contactId != null) Res.string.delete_body_contact else Res.string.delete_body)) },
                 confirmButton = {
                     TextButton(onClick = {
@@ -1524,10 +1571,12 @@ private fun Hero(
     state: FriendDetailUiState,
     actions: FriendDetailActions,
     onEditBirthday: () -> Unit,
+    onEditName: () -> Unit,
+    onPhoto: () -> Unit,
     onDelete: () -> Unit,
     onEditRelationToMe: () -> Unit,
 ) {
-    val (start, end) = avatarColors(f.name)
+    val (start, end) = avatarColors(f.displayName)
     val uri = LocalUriHandler.current
     val haptics = LocalHapticFeedback.current
     val phone = f.phoneNumbers.firstOrNull()
@@ -1561,38 +1610,45 @@ private fun Hero(
                     Icon(Icons.Rounded.Delete, stringResource(Res.string.detail_remove_friend))
                 }
             }
-            if (f.photo == null) {
-                // No contact photo: the avatar (and its badge) lets you pick one from the gallery.
-                val addPhoto = stringResource(Res.string.detail_add_photo)
-                Box {
-                    FriendAvatar(
-                        f,
-                        size = 112.dp,
-                        highlighted = f.isCloseFriend,
-                        sharedKey = "avatar-${f.id.value}",
-                        modifier = Modifier.clip(CircleShape).clickable(onClickLabel = addPhoto, onClick = actions.onAddPhoto),
-                    )
-                    Surface(
-                        onClick = actions.onAddPhoto,
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
-                        modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
-                    ) {
-                        Icon(Icons.Rounded.AddAPhoto, contentDescription = addPhoto, modifier = Modifier.padding(7.dp))
-                    }
-                }
+            // F14: the avatar (and its camera badge) is always tappable: pick a photo, or replace, crop or remove it.
+            val photoLabel = if (f.avatar == null) {
+                stringResource(Res.string.detail_add_photo)
             } else {
-                FriendAvatar(f, size = 112.dp, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
+                stringResource(Res.string.photo_sheet_title, f.displayName.substringBefore(' '))
+            }
+            Box {
+                FriendAvatar(
+                    f,
+                    size = 112.dp,
+                    highlighted = f.isCloseFriend,
+                    sharedKey = "avatar-${f.id.value}",
+                    modifier = Modifier.clip(CircleShape).clickable(onClickLabel = photoLabel, onClick = onPhoto),
+                )
+                Surface(
+                    onClick = onPhoto,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
+                ) {
+                    Icon(Icons.Rounded.AddAPhoto, contentDescription = photoLabel, modifier = Modifier.padding(7.dp))
+                }
             }
             Spacer(Modifier.height(12.dp))
-            Text(
-                f.name,
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 24.dp),
-            )
+            // F19: the pencil edits the name shown everywhere in the app.
+            Row(
+                Modifier.padding(horizontal = 24.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onEditName),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(f.displayName, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                Icon(
+                    Icons.Rounded.Edit,
+                    contentDescription = stringResource(Res.string.detail_edit_name),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 6.dp).size(18.dp),
+                )
+            }
             Spacer(Modifier.height(8.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),

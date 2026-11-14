@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -67,6 +68,8 @@ import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinks
+import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
+import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
@@ -162,7 +165,7 @@ internal fun channelIcon(channel: ContactChannel): ImageVector = when (channel) 
 /** The "About <name>" card: one line per detail, each hidden when empty. */
 @Composable
 internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOpenFriend: (FriendId) -> Unit) {
-    val firstName = f.name.substringBefore(' ')
+    val firstName = f.displayName.substringBefore(' ')
     SectionCard(
         stringResource(Res.string.about_title, firstName),
         icon = Icons.Rounded.People,
@@ -184,7 +187,7 @@ internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOp
                 headlineContent = { Text(headline, style = MaterialTheme.typography.titleSmall) },
                 supportingContent = {
                     if (introducer != null) {
-                        val text = stringResource(Res.string.about_introduced_by_line, linked?.name ?: introducer.name)
+                        val text = stringResource(Res.string.about_introduced_by_line, linked?.displayName ?: introducer.name)
                         if (linked != null) {
                             Text(
                                 text,
@@ -260,7 +263,7 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.People, null) },
-        title = { Text(stringResource(Res.string.about_title, f.name.substringBefore(' '))) },
+        title = { Text(stringResource(Res.string.about_title, f.displayName.substringBefore(' '))) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(job, {
@@ -306,15 +309,15 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
                 )
                 val query = introducerName.trim()
                 if (query.isNotEmpty() && introducerId == null) {
-                    val matches = others.filter { it.name.contains(query, ignoreCase = true) && !it.isOrphaned }.take(4)
+                    val matches = others.filter { it.displayName.contains(query, ignoreCase = true) && !it.isOrphaned }.take(4)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         matches.forEach { other ->
                             SuggestionChip(
                                 onClick = {
-                                    introducerName = other.name
+                                    introducerName = other.displayName
                                     introducerId = other.id
                                 },
-                                label = { Text(other.name) },
+                                label = { Text(other.displayName) },
                                 icon = { FriendAvatar(other, size = 18.dp) },
                             )
                         }
@@ -488,15 +491,16 @@ internal sealed interface FamilyEditing {
 
 /**
  * "Add to <name>'s family": one sheet for every relation. Choosing Kid saves a [Kid] exactly as before; the others are
- * [Relative]s, whose birthday reminder is off unless switched on here.
+ * [Relative]s, whose birthday reminder is on unless switched off here (F10). The birthday's year is optional (F4).
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun FamilySheet(
     firstName: String,
     editing: FamilyEditing,
+    latestYear: Int,
     onDismiss: () -> Unit,
-    onSaveKid: (id: String?, name: String, birthday: LocalDate?, likes: List<String>) -> Unit,
+    onSaveKid: (id: String?, name: String, birthday: Birthday?, likes: List<String>) -> Unit,
     onSaveRelative: (RelativeEdit) -> Unit,
 ) {
     val kid = (editing as? FamilyEditing.EditKid)?.kid
@@ -507,9 +511,7 @@ internal fun FamilySheet(
     var likes by remember { mutableStateOf((kid?.likes ?: relative?.likes).orEmpty().joinToString()) }
     var note by remember { mutableStateOf(relative?.note.orEmpty()) }
     var notify by remember { mutableStateOf(relative?.notifyBirthday ?: true) }
-    val initialBirthday = (kid?.birthday ?: relative?.birthday)?.let { b -> LocalDate(b.year ?: 2000, Month(b.month), b.day) }
-    var birthday by remember { mutableStateOf(initialBirthday) }
-    var pickDate by remember { mutableStateOf(false) }
+    var birthday by remember { mutableStateOf(BirthdayDraft.of(kid?.birthday ?: relative?.birthday)) }
     val isNew = editing == FamilyEditing.New
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
@@ -541,12 +543,8 @@ internal fun FamilySheet(
             OutlinedTextField(name, {
                 name = it
             }, label = { Text(stringResource(Res.string.family_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { pickDate = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    birthday?.let { stringResource(Res.string.family_birthday_set, it.longLabel()) }
-                        ?: stringResource(Res.string.family_birthday_optional),
-                )
-            }
+            Text(stringResource(Res.string.family_birthday_optional), style = MaterialTheme.typography.labelLarge)
+            BirthdayFields(birthday, { birthday = it }, latestYear)
             OutlinedTextField(likes, { likes = it }, label = { Text(stringResource(Res.string.family_likes)) }, modifier = Modifier.fillMaxWidth())
             val current = relation
             if (current != null) {
@@ -560,18 +558,18 @@ internal fun FamilySheet(
             }
             Button(
                 onClick = {
+                    val date = birthday.toBirthday(latestYear)
                     if (current == null) {
-                        onSaveKid(kid?.id, name, birthday, parseTags(likes))
+                        onSaveKid(kid?.id, name, date, parseTags(likes))
                     } else {
-                        onSaveRelative(RelativeEdit(relative?.id, current, name, birthday, parseTags(likes), note, notify))
+                        onSaveRelative(RelativeEdit(relative?.id, current, name, date, parseTags(likes), note, notify))
                     }
                 },
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && birthday.isValid(latestYear),
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(CoreRes.string.save)) }
         }
     }
-    if (pickDate) LocalDatePickerDialog(birthday, onDismiss = { pickDate = false }, onPicked = { birthday = it })
 }
 
 // --- More about (custom fields) ---------------------------------------------------------------------------------------
@@ -579,7 +577,7 @@ internal fun FamilySheet(
 @Composable
 internal fun MoreAboutCard(f: Friend, onAdd: () -> Unit, onEdit: (CustomField) -> Unit, onRemove: (String) -> Unit) {
     SectionCard(
-        stringResource(Res.string.more_title, f.name.substringBefore(' ')),
+        stringResource(Res.string.more_title, f.displayName.substringBefore(' ')),
         icon = Icons.AutoMirrored.Rounded.List,
         action = { TextButton(onClick = onAdd) { Text(stringResource(Res.string.more_add)) } },
     ) {

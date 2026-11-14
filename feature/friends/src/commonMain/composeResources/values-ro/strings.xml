@@ -210,7 +210,7 @@
     <string name="prefs_real">Prieten adevărat</string>
     <string name="prefs_real_hint">Apare primul, pe ecranul principal și în agendă</string>
     <string name="prefs_birthday">Mementouri de ziua de naștere</string>
-    <string name="prefs_birthday_hint">Pentru el/ea și copii</string>
+    <string name="prefs_birthday_hint">Activat pentru toți cei cu zi de naștere</string>
     <string name="prefs_events">Idei de ieșiri săptămânale</string>
     <string name="prefs_events_hint">AI-ul sugerează planuri pe gustul lui/ei</string>
     <string name="delete_title">Elimini pe %1$s?</string>
@@ -500,4 +500,22 @@
     <string name="relation_to_me_clear">Fără legătură</string>
     <string name="add_as_person">Adaugă ca persoană</string>
     <string name="msg_added_as_person">%1$s are acum pagina sa</string>
+    <!-- Friend page header: photo (F14), name (F19), birthday (F4, F10) -->
+    <string name="detail_edit_name">Editează numele</string>
+    <string name="photo_sheet_title">Fotografia lui %1$s</string>
+    <string name="photo_replace">Înlocuiește fotografia</string>
+    <string name="photo_replace_hint">Alege o imagine, apoi mărește și decupează</string>
+    <string name="photo_adjust">Ajustează decuparea</string>
+    <string name="photo_remove">Elimină fotografia</string>
+    <string name="photo_remove_hint_contact">Arată din nou fotografia contactului</string>
+    <string name="photo_remove_hint_initials">Arată din nou inițialele</string>
+    <string name="photo_contact_untouched">Contactul în sine nu este modificat niciodată.</string>
+    <string name="name_title">Nume</string>
+    <string name="name_contact_hint">În contactele tale: %1$s. Numele pe care îl dai aici este folosit peste tot în Good Company; o sincronizare a contactelor nu îl va schimba.</string>
+    <string name="name_restore">Folosește numele contactului</string>
+    <string name="birthday_title">Zi de naștere</string>
+    <string name="birthday_year_hint">Anul este opțional. Fără el primești totuși mementoul; vârsta apare după ce îl adaugi.</string>
+    <string name="birthday_remind">Amintește-mi de ziua lui %1$s</string>
+    <string name="birthday_remind_hint">Activat pentru toți cei cu zi de naștere. Dezactivează-l aici pentru o persoană.</string>
+    <string name="birthday_remove">Elimină ziua de naștere</string>
 </resources>

@@ -182,10 +182,10 @@ class FriendsViewModel(
         val filter = if (ui.filter == FriendFilter.CLOSE && everyone.none { it.friend.isCloseFriend }) FriendFilter.ALL else ui.filter
         val matching = all
             .filter { q.isNotEmpty() || circle != null || filter == FriendFilter.ALL || it.friend.isCloseFriend }
-            .filter { q.isEmpty() || it.friend.name.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
+            .filter { q.isEmpty() || it.friend.displayName.lowercase().contains(q) || it.friend.likes.any { l -> l.lowercase().contains(q) } }
         val visible = when (ui.sort) {
-            FriendSort.NAME -> matching.sortedBy { it.friend.name.lowercase() }
-            FriendSort.WARMTH -> matching.sortedWith(compareBy({ it.warmth.value }, { it.friend.name.lowercase() }))
+            FriendSort.NAME -> matching.sortedBy { it.friend.displayName.lowercase() }
+            FriendSort.WARMTH -> matching.sortedWith(compareBy({ it.warmth.value }, { it.friend.displayName.lowercase() }))
         }
         val catchUp = meetups.filter { it.isOverdue(today) }
         val catchUpIds = catchUp.map { it.friend.id }.toSet()
@@ -196,7 +196,7 @@ class FriendsViewModel(
             friends = visible,
             sections = when (ui.sort) {
                 FriendSort.NAME -> visible.groupBy<FriendSummary, Char?> {
-                    it.friend.name.first().uppercaseChar().takeIf(Char::isLetter) ?: '#'
+                    it.friend.displayName.first().uppercaseChar().takeIf(Char::isLetter) ?: '#'
                 }.toList()
                 FriendSort.WARMTH -> if (visible.isEmpty()) emptyList() else listOf(null to visible)
             },
@@ -248,9 +248,9 @@ class FriendsViewModel(
         viewModelScope.launch { setRealFriend.toggle(id) }
     }
 
-    private fun firstName(id: FriendId): String? = state.value.friends.firstOrNull { it.friend.id == id }?.friend?.name?.substringBefore(' ')
-        ?: state.value.catchUp.firstOrNull { it.friend.id == id }?.friend?.name?.substringBefore(' ')
-        ?: state.value.drifting.firstOrNull { it.friend.id == id }?.friend?.name?.substringBefore(' ')
+    private fun firstName(id: FriendId): String? = state.value.friends.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
+        ?: state.value.catchUp.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
+        ?: state.value.drifting.firstOrNull { it.friend.id == id }?.friend?.displayName?.substringBefore(' ')
 
     /** "We met" straight from the catch-up card. */
     fun onMetToday(id: FriendId) {

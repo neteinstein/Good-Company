@@ -200,7 +200,7 @@ fun FriendTimelineContent(state: FriendTimelineUiState, actions: FriendTimelineA
 @Composable
 private fun Header(state: FriendTimelineUiState, actions: FriendTimelineActions) {
     var menu by remember { mutableStateOf(false) }
-    val name = state.friend?.name?.substringBefore(' ').orEmpty()
+    val name = state.friend?.displayName?.substringBefore(' ').orEmpty()
     Row(
         Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

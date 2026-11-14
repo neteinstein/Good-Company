@@ -78,7 +78,7 @@ fun FriendRow(
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(f.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(f.displayName, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val subtitle = summary.lastContact?.let { stringResource(Res.string.row_last_in_touch, relativePast(it, now, zone)) }
                 ?: f.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_likes, it.joinToString(limit = 3)) }
                 ?: stringResource(if (f.contactId == null) Res.string.row_added_in_app else Res.string.row_from_contacts)

@@ -89,7 +89,7 @@ class LogInteractionViewModel(
             sheet = LogSheetState(
                 kind = d.kind,
                 people = d.people.mapNotNull { byId[it]?.friend },
-                everyone = everyone.sortedBy { it.name.lowercase() },
+                everyone = everyone.sortedBy { it.displayName.lowercase() },
                 date = d.date,
                 today = clock.today(),
                 note = d.note,

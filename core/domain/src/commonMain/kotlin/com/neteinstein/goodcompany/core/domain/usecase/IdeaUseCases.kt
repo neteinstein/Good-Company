@@ -82,12 +82,12 @@ internal object IdeaMapper {
 
     fun profile(friend: Friend, context: Context): FriendProfile = FriendProfile(
         id = friend.id.value,
-        name = friend.name,
+        name = friend.displayName,
         likes = friend.likes,
         dislikes = friend.dislikes,
         kids = friend.kids.map { k -> if (k.likes.isEmpty()) k.name else "${k.name} (likes ${k.likes.joinToString()})" },
         recentMessages = context.messages.filter { it.friendId == friend.id }.sortedBy { it.at }.takeLast(RECENT_MESSAGES)
-            .map { (if (it.fromMe) "Me: " else "${friend.name}: ") + it.text },
+            .map { (if (it.fromMe) "Me: " else "${friend.displayName}: ") + it.text },
         news = friend.lifeUpdates.sortedByDescending { it.addedAt }.take(RECENT_NEWS).map { it.text },
         job = friend.job.trim(),
         livesIn = friend.livesIn.trim(),

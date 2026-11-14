@@ -69,7 +69,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
@@ -155,6 +157,8 @@ class TestGraph(
 
     /** Keeps small pictures as they are and can't shrink large ones, like the real one with an unreadable image. */
     val setFriendPhoto = SetFriendPhotoUseCase(friendRepo, PhotoShrinker.None)
+    val removeFriendPhoto = RemoveFriendPhotoUseCase(friendRepo)
+    val renameFriend = RenameFriendUseCase(friendRepo)
     val setRealFriend = SetRealFriendUseCase(friendRepo)
     val setCloseness = SetClosenessUseCase(friendRepo)
     val snooze = SnoozeCatchUpUseCase(friendRepo, circles, clock)

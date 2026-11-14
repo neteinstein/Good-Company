@@ -23,8 +23,8 @@ class AgendaBuilderTest {
     fun includesBirthdaysOnlyForFriendsYouCareAbout() {
         val friends = listOf(
             friend("ana") { copy(isCloseFriend = true, birthday = Birthday(3, 20, 1990)) },
-            friend("bob") { copy(birthday = Birthday(3, 21)) },
-            friend("cat") { copy(notifyBirthday = true, birthday = Birthday(3, 22)) },
+            friend("bob") { copy(notifyBirthday = false, birthday = Birthday(3, 21)) },
+            friend("cat") { copy(birthday = Birthday(3, 22)) }, // on by default (F10)
         )
         val items = AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC)
         assertEquals(listOf("ana", "cat"), items.map { (it as AgendaItem.FriendBirthday).friend.id.value })

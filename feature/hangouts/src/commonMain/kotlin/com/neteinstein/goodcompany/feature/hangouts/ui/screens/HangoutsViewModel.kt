@@ -245,7 +245,7 @@ class HangoutsViewModel(
             // At a named place the meetup takes its name (CheckInUseCase matches it again from the fix).
             val place = state.value.draftPlace.match?.place?.name ?: draft.place
             checkIn(draft.selected, place, draft.location, draft.note)
-            val names = state.value.friends.filter { it.id in draft.selected }.map { it.name.substringBefore(' ') }
+            val names = state.value.friends.filter { it.id in draft.selected }.map { it.displayName.substringBefore(' ') }
             local.update { it.copy(draft = null, celebrate = it.celebrate + 1, message = HangoutsMessage.LoggedWith(names)) }
         }
     }

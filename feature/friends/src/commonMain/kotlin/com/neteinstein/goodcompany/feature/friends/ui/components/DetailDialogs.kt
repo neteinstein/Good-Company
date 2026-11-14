@@ -30,10 +30,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
+import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.parseTags
@@ -75,14 +78,13 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 fun KidDialog(
     kid: Kid?,
     onDismiss: () -> Unit,
-    onSave: (name: String, birthday: LocalDate?, likes: List<String>) -> Unit,
+    latestYear: Int,
+    onSave: (name: String, birthday: Birthday?, likes: List<String>) -> Unit,
 ) {
     var name by remember { mutableStateOf(kid?.name.orEmpty()) }
     var likes by remember { mutableStateOf(kid?.likes?.joinToString().orEmpty()) }
-    var birthday by remember {
-        mutableStateOf(kid?.birthday?.let { b -> LocalDate(b.year ?: 2020, Month(b.month), b.day) })
-    }
-    var pickDate by remember { mutableStateOf(false) }
+    // The year is optional (F4).
+    var birthday by remember { mutableStateOf(BirthdayDraft.of(kid?.birthday)) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.ChildCare, null) },
@@ -92,9 +94,7 @@ fun KidDialog(
                 OutlinedTextField(name, {
                     name = it
                 }, label = { Text(stringResource(Res.string.kid_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedButton(onClick = { pickDate = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text(birthday?.let { stringResource(Res.string.kid_birthday, it.longLabel()) } ?: stringResource(Res.string.kid_set_birthday))
-                }
+                BirthdayFields(birthday, { birthday = it }, latestYear)
                 OutlinedTextField(
                     likes,
                     { likes = it },
@@ -105,12 +105,11 @@ fun KidDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(name, birthday, parseTags(likes))
-            }, enabled = name.isNotBlank()) { Text(stringResource(CoreRes.string.save)) }
+                onSave(name, birthday.toBirthday(latestYear), parseTags(likes))
+            }, enabled = name.isNotBlank() && birthday.isValid(latestYear)) { Text(stringResource(CoreRes.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )
-    if (pickDate) LocalDatePickerDialog(birthday, onDismiss = { pickDate = false }, onPicked = { birthday = it })
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -183,7 +182,7 @@ fun GiftDialog(friend: Friend, onDismiss: () -> Unit, onSave: (title: String, no
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(kidId == null, {
                             kidId = null
-                        }, label = { Text(stringResource(Res.string.gifts_for_them, friend.name.substringBefore(' '))) })
+                        }, label = { Text(stringResource(Res.string.gifts_for_them, friend.displayName.substringBefore(' '))) })
                         friend.kids.forEach { kid -> FilterChip(kidId == kid.id, { kidId = kid.id }, label = { Text(kid.name) }) }
                     }
                 }

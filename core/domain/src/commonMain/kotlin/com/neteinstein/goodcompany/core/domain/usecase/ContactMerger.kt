@@ -10,7 +10,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
  *
  * - Contact-owned fields (name, phones, birthday) follow the address book. Emails the contact gave us
  *   ([FriendEmail.fromContact]) are replaced by the contact's; emails typed in the app are always kept.
- * - App-owned fields (close friend, likes, kids, rules…) are never touched.
+ * - App-owned fields (close friend, likes, kids, rules…) are never touched, nor are a name or photo set in the app
+ *   ([Friend.customName], [Friend.customPhoto]): only [Friend.name] and [Friend.photo] follow the contact.
  * - A contact birthday never erases one the user entered in-app.
  * - Friends whose contact vanished are dropped unless they carry app data — then they're kept and flagged orphaned.
  * - Manual friends (no contactId) are left alone.
@@ -58,8 +59,11 @@ object ContactMerger {
         return contact.map { FriendEmail(it, fromContact = true) } + typed
     }
 
-    /** True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count. */
-    fun Friend.hasAppData(): Boolean = isCloseFriend || notifyBirthday || likes.isNotEmpty() ||
+    /**
+     * True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count,
+     * nor does the birthday reminder, which is on by default (F10).
+     */
+    fun Friend.hasAppData(): Boolean = isCloseFriend || customName != null || customPhoto != null || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
         meetEveryDays != null || suggestEvents || closeness != null || gifts.isNotEmpty() || catchUpPaused ||
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||

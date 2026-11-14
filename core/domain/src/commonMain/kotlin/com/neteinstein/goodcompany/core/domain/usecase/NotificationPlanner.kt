@@ -76,12 +76,12 @@ object NotificationPlanner {
             if (f.notifyBirthday) {
                 f.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.name, b.ageOn(d)))
+                    add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)))
                 }
                 f.kids.forEach { kid ->
                     kid.birthday?.let { b ->
                         val d = b.nextOccurrence(today)
-                        add("kid:${kid.id}:$d", d, NotificationContent.KidBirthday(kid.name, f.name, b.ageOn(d), kid.likes))
+                        add("kid:${kid.id}:$d", d, NotificationContent.KidBirthday(kid.name, f.displayName, b.ageOn(d), kid.likes))
                     }
                 }
             }
@@ -89,16 +89,16 @@ object NotificationPlanner {
             f.relatives.filter { it.notifyBirthday }.forEach { r ->
                 r.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.name, r.relation, b.ageOn(d)))
+                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.displayName, r.relation, b.ageOn(d)))
                 }
             }
             f.importantEvents.forEach { e ->
-                add("event:${e.id}:day", e.date, NotificationContent.EventToday(f.name, e.title))
+                add("event:${e.id}:day", e.date, NotificationContent.EventToday(f.displayName, e.title))
                 if (e.remindDaysBefore > 0) {
                     add(
                         "event:${e.id}:before",
                         e.date.minus(e.remindDaysBefore, DateTimeUnit.DAY),
-                        NotificationContent.EventSoon(f.name, e.title, e.remindDaysBefore),
+                        NotificationContent.EventSoon(f.displayName, e.title, e.remindDaysBefore),
                     )
                 }
             }
@@ -107,7 +107,7 @@ object NotificationPlanner {
         // Anniversaries (issue #39): on the day, like a birthday; never throttled.
         PersonLinks.anniversaries(links, friends).forEach { (link, a, b) ->
             val d = link.nextAnniversary(today) ?: return@forEach
-            add("anniversary:${link.id}:$d", d, NotificationContent.Anniversary(a.name, b.name, link.yearsOn(d)))
+            add("anniversary:${link.id}:$d", d, NotificationContent.Anniversary(a.displayName, b.displayName, link.yearsOn(d)))
         }
 
         val byId = friends.associateBy { it.id }
@@ -115,13 +115,13 @@ object NotificationPlanner {
             out += PlannedNotification(
                 id = "reminder:${r.id}",
                 at = r.dueAt!!,
-                content = NotificationContent.ReminderDue(r.title, r.friendIds.mapNotNull { byId[it]?.name }),
+                content = NotificationContent.ReminderDue(r.title, r.friendIds.mapNotNull { byId[it]?.displayName }),
             )
         }
 
         // --- Plans: a heads-up on the day, then "Did you meet?" the day after (until answered, for a week).
         plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
-            val names = p.friendIds.mapNotNull { byId[it]?.name }
+            val names = p.friendIds.mapNotNull { byId[it]?.displayName }
             add("plan:${p.id}:day", p.date, NotificationContent.PlanToday(p.id, p.title, names))
             val firstAsk = p.date.plus(1, DateTimeUnit.DAY)
             val lastAsk = p.date.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
@@ -138,9 +138,9 @@ object NotificationPlanner {
         Relationships.meetupStatuses(friends, hangouts, today, zone, rules, interactions).forEach { s ->
             catchUps += CatchUp(
                 s.dueDate,
-                s.friend.name,
+                s.friend.displayName,
                 "meet:${s.friend.id.value}",
-                NotificationContent.MeetupDue(s.friend.id, s.friend.name, s.daysSinceLastSeen, s.cadenceDays),
+                NotificationContent.MeetupDue(s.friend.id, s.friend.displayName, s.daysSinceLastSeen, s.cadenceDays),
             )
         }
         Relationships.groupStatuses(groups, friends, hangouts, today, zone).forEach { s ->

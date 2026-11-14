@@ -30,7 +30,8 @@ import com.neteinstein.goodcompany.core.domain.model.Relative as DomainRelative
 /** Tables that make up a friend. Observers of friends listen to all of them. */
 internal val FRIEND_TABLES = arrayOf(
     "friend", "friend_phone", "friend_taste", "friend_occasion", "kid", "kid_like", "important_event", "gift",
-    "life_update", "feed", "feed_item", "friend_photo", "friend_email", "relative", "relative_like", "custom_field",
+    "life_update", "feed", "feed_item", "friend_photo", "friend_custom_photo",
+    "friend_email", "relative", "relative_like", "custom_field",
 )
 
 private const val LIKE = "LIKE"
@@ -62,6 +63,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
     val feedItems = q.allFeedItems().awaitAsList().groupBy { it.friend_id to it.feed_url }
     val feeds = q.allFeeds().awaitAsList().groupBy { it.friend_id }
     val photos = q.allPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
+    val customPhotos = q.allCustomPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val emails = q.allEmails().awaitAsList().groupBy { it.friend_id }
     val relativeLikes = q.allRelativeLikes().awaitAsList().groupBy { it.friend_id to it.relative_id }
     val relatives = q.allRelatives().awaitAsList().groupBy { it.friend_id }
@@ -158,6 +160,8 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             customFields = customFields[id].orEmpty().map { CustomField(it.id, it.label, it.value_) },
             relationToMe = LinkType.parse(row.relation_to_me),
             pronouns = Pronouns.parse(row.pronouns),
+            customName = row.custom_name,
+            customPhoto = customPhotos[id],
         )
     }
 }
@@ -205,6 +209,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             preferred_channel = friend.preferredChannel?.name,
             relation_to_me = friend.relationToMe?.name,
             pronouns = friend.pronouns?.name,
+            custom_name = friend.customName?.takeIf { it.isNotBlank() },
         ),
     )
     q.deleteChildren(id).await()
@@ -256,6 +261,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
         }
     }
     friend.photo?.let { q.insertPhoto(Friend_photo(id, it.base64)) }
+    friend.customPhoto?.let { q.insertCustomPhoto(Friend_custom_photo(id, it.base64)) }
     friend.emails.forEachIndexed { i, e -> q.insertEmail(Friend_email(id, i.toLong(), e.address, e.fromContact.toColumn())) }
     friend.relatives.distinctBy { it.id }.forEachIndexed { i, r ->
         q.insertRelative(

@@ -61,7 +61,7 @@ object YearInReviewBuilder {
         val inYear = hangouts.filter { it.at.toLocalDate(zone).year == year }
         val counts = inYear.flatMap { it.friendIds }.groupingBy { it }.eachCount()
         val topFriends = counts.entries.mapNotNull { (id, n) -> byId[id]?.let { it to n } }
-            .sortedWith(compareByDescending<Pair<Friend, Int>> { it.second }.thenBy { it.first.name })
+            .sortedWith(compareByDescending<Pair<Friend, Int>> { it.second }.thenBy { it.first.displayName })
             .take(5)
         val topPlaces = inYear.mapNotNull { it.place?.name?.trim()?.takeIf(String::isNotEmpty) }
             .groupingBy { it }.eachCount().entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
@@ -76,7 +76,7 @@ object YearInReviewBuilder {
         val biggest = inYear.maxWithOrNull(compareBy<Hangout> { it.friendIds.size }.thenBy { it.at })
         val firstMet = hangouts.flatMap { h -> h.friendIds.map { it to h.at } }
             .groupBy({ it.first }, { it.second }).mapValues { (_, v) -> v.min().toLocalDate(zone) }
-        val newFaces = firstMet.filter { (_, d) -> d.year == year }.keys.mapNotNull(byId::get).sortedBy { it.name }
+        val newFaces = firstMet.filter { (_, d) -> d.year == year }.keys.mapNotNull(byId::get).sortedBy { it.displayName }
         return YearInReview(
             year = year,
             meetups = inYear.size,

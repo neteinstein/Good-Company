@@ -172,7 +172,7 @@ suspend fun ShareMessage.text(): String = when (this) {
 /** Who the confirm step is for, as a name: the person's first name or the circle's name. */
 private val PickedTarget.label: String
     get() = when (this) {
-        is PickedTarget.Person -> friend.name.substringBefore(' ')
+        is PickedTarget.Person -> friend.displayName.substringBefore(' ')
         is PickedTarget.Circle -> circle.name
     }
 
@@ -333,7 +333,7 @@ private fun PersonRow(ranked: RankedFriend, onClick: () -> Unit) {
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
         leadingContent = { FriendAvatar(friend, size = 44.dp, highlighted = strong) },
-        headlineContent = { Text(friend.name) },
+        headlineContent = { Text(friend.displayName) },
         supportingContent = reason?.let {
             {
                 Text(

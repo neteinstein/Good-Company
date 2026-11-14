@@ -5,7 +5,9 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
+import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -269,6 +271,43 @@ class MigrationTest {
         )
         database.friendQueries.delete("ana")
         assertTrue(database.readLinks().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version9to10_turnsBirthdayRemindersOnForEveryoneWithABirthday_andAddsTheAppsNameAndPhoto() = runTest {
+        val driver = driverAt(9)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend,
+                notify_birthday, notes, suggest_events, is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana Silva', 'c1', 3, 14, NULL, 0, 0, '', 0, 0, 0, 0),
+                   ('rui', 1, 'Rui', NULL, NULL, NULL, NULL, 0, 0, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO friend_photo VALUES ('ana', 'AQI=')", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 9, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val (ana, rui) = database.readFriends()
+        assertTrue(ana.notifyBirthday, "on for a friend with a birthday (F10)")
+        assertEquals(Birthday(3, 14, null), ana.birthday)
+        assertEquals(false, rui.notifyBirthday, "a friend without a birthday is left as they were")
+        assertNull(ana.customName)
+        assertNull(ana.customPhoto)
+
+        val mine = ContactPhoto("Aw==")
+        database.writeFriend(ana.copy(customName = "Aninhas", customPhoto = mine), 0)
+        val saved = database.readFriends().first()
+        assertEquals("Aninhas", saved.displayName)
+        assertEquals(ContactPhoto("AQI="), saved.photo)
+        assertEquals(mine, saved.avatar)
+        database.writeFriend(saved.copy(customPhoto = null), 0)
+        assertEquals(ContactPhoto("AQI="), database.readFriends().first().avatar)
+        database.friendQueries.delete("ana")
+        assertEquals(listOf("rui"), database.readFriends().map { it.id.value })
         driver.close()
     }
 }

@@ -125,7 +125,7 @@ fun shareText(r: YearInReview): String = listOfNotNull(
         pluralStringResource(Res.plurals.hero_friends, r.friendsSeen, r.friendsSeen),
     ),
     r.topFriends.takeIf { it.isNotEmpty() }?.let { top ->
-        stringResource(Res.string.share_top, top.take(3).joinToString { it.first.name.substringBefore(' ') })
+        stringResource(Res.string.share_top, top.take(3).joinToString { it.first.displayName.substringBefore(' ') })
     },
     r.topPlaces.firstOrNull()?.let { stringResource(Res.string.share_place, it.first) },
     stringResource(Res.string.share_footer),
@@ -196,7 +196,7 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
         }
         if (r.topFriends.isNotEmpty()) {
             item(key = "top") {
-                val (a, b) = avatarColors(r.topFriends.first().first.name)
+                val (a, b) = avatarColors(r.topFriends.first().first.displayName)
                 Story(listOf(a, b), index = 1) {
                     Text(stringResource(Res.string.top_title), style = MaterialTheme.typography.headlineSmall, color = Color.White)
                     Text(stringResource(Res.string.top_body), color = Color.White.copy(alpha = 0.85f))
@@ -206,7 +206,12 @@ private fun ReviewCards(r: YearInReview, zone: TimeZone, contentPadding: Padding
                             Text("${i + 1}", style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.width(28.dp))
                             FriendAvatar(friend, size = if (i == 0) 52.dp else 40.dp)
                             Spacer(Modifier.width(12.dp))
-                            Text(friend.name, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.weight(1f))
+                            Text(
+                                friend.displayName,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                modifier = Modifier.weight(1f),
+                            )
                             Text(pluralStringResource(Res.plurals.times, count, count), color = Color.White.copy(alpha = 0.9f))
                         }
                     }

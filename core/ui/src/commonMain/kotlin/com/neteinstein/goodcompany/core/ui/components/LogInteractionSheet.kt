@@ -217,7 +217,7 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                     StackedAvatars(state.people, size = 32.dp, max = 4)
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        state.people.joinToString(", ") { it.name.substringBefore(' ') },
+                        state.people.joinToString(", ") { it.displayName.substringBefore(' ') },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
@@ -268,7 +268,7 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                 )
                 val hint = when {
                     state.kind == LogKind.JOURNAL -> stringResource(Res.string.log_journal_footer)
-                    else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.name.substringBefore(' ')) }
+                    else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.displayName.substringBefore(' ')) }
                 }
                 hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 Button(onClick = actions.onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
@@ -306,7 +306,7 @@ private fun CircleMembers(circle: FriendGroup, members: List<Friend>, ticked: Se
                 Checkbox(on, onCheckedChange = { onToggle(f.id) })
                 FriendAvatar(f, size = 32.dp)
                 Spacer(Modifier.width(10.dp))
-                Text(f.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(f.displayName, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -351,14 +351,14 @@ fun PeoplePicker(everyone: List<Friend>, picked: List<FriendId>, onDismiss: () -
                     leadingIcon = { Icon(Icons.Rounded.Search, null) },
                     placeholder = { Text(stringResource(Res.string.log_search)) },
                 )
-                val shown = everyone.filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+                val shown = everyone.filter { query.isBlank() || it.displayName.contains(query.trim(), ignoreCase = true) }
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     items(shown, key = { it.id.value }) { f ->
                         val on = f.id in chosen
                         ListItem(
                             modifier = Modifier.clickable { chosen = if (on) chosen - f.id else chosen + f.id },
                             leadingContent = { FriendAvatar(f, size = 36.dp) },
-                            headlineContent = { Text(f.name) },
+                            headlineContent = { Text(f.displayName) },
                             trailingContent = { Checkbox(on, onCheckedChange = { chosen = if (on) chosen - f.id else chosen + f.id }) },
                         )
                     }

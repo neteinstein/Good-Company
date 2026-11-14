@@ -15,7 +15,8 @@ value class FriendId(val value: String)
  * manually in the app ([contactId] null — the only option on the web).
  *
  * Contact-owned fields (name, phones, birthday, photo) are refreshed on every contacts sync; everything
- * else is app-owned and never overwritten by a sync.
+ * else is app-owned and never overwritten by a sync. A name or photo set in the app ([customName], [customPhoto], F19
+ * and F14) wins over the contact's: show [displayName] and [avatar], never [name] or [photo] directly.
  */
 @Serializable
 data class Friend(
@@ -26,7 +27,8 @@ data class Friend(
     val birthday: Birthday? = null,
     /** "Real friend" — promoted out of the address-book noise. */
     val isCloseFriend: Boolean = false,
-    val notifyBirthday: Boolean = false,
+    /** On by default (brief decision F10); it can be turned off for one person. */
+    val notifyBirthday: Boolean = true,
     val likes: List<String> = emptyList(),
     val dislikes: List<String> = emptyList(),
     val notes: String = "",
@@ -90,12 +92,24 @@ data class Friend(
     val relationToMe: LinkType? = null,
     /** Which words describe them ("sister" / "brother" / "sibling"); null = the neutral word (decision F18). */
     val pronouns: Pronouns? = null,
+    /** F19: the name given in the app. Wins over [name] (the contact's) and is never touched by a contacts sync. */
+    val customName: String? = null,
+    /** F14: a photo set in the app (cropped thumbnail). Wins over [photo] (the contact's), which a sync keeps updating. */
+    val customPhoto: ContactPhoto? = null,
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true
 
+    /** The name shown everywhere: [customName] when set, else the contact's [name]. */
+    val displayName: String
+        get() = customName?.takeIf { it.isNotBlank() } ?: name
+
+    /** The photo shown everywhere: [customPhoto] when set, else the contact's [photo]. */
+    val avatar: ContactPhoto?
+        get() = customPhoto ?: photo
+
     val initials: String
-        get() = name.split(' ', '-')
+        get() = displayName.split(' ', '-')
             .filter { it.isNotBlank() }
             .take(2)
             .joinToString("") { it.first().uppercase() }

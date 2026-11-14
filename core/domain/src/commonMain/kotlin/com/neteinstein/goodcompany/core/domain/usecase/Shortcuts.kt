@@ -41,9 +41,9 @@ object Shortcuts {
         val last = Relationships.lastContact(hangouts, interactions)
         val people = friends
             .filter { !it.isOrphaned && it.id in last }
-            .sortedWith(compareByDescending<Friend> { last.getValue(it.id) }.thenBy { it.name.lowercase() })
+            .sortedWith(compareByDescending<Friend> { last.getValue(it.id) }.thenBy { it.displayName.lowercase() })
             .take(MAX_PEOPLE)
-            .map { ShortcutPerson(it.id, it.name, it.initials, it.photo) }
+            .map { ShortcutPerson(it.id, it.displayName, it.initials, it.avatar) }
         return ShortcutSnapshot(people, hideNames = false)
     }
 }
