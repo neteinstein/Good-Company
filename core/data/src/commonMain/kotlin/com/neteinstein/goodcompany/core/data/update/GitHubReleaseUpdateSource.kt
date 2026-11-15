@@ -20,18 +20,17 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
 /**
- * Reads the rolling `test-build` pre-release that CI replaces on every merge to main (see CI_CD.md). The release is
- * titled `Test build #<run>` and the run number is the build's `versionCode`; its sideload APK has a stable name.
+ * Reads the latest GitHub release, which CI publishes on every merge to main (see CI_CD.md). The release is
+ * titled `<version> (build #<run>)` and the run number is the build's `versionCode`; its sideload APK has a stable name.
  * No credentials are sent and nothing about the user is: it is a plain public GET.
  */
 class GitHubReleaseUpdateSource(
     private val http: HttpClient,
     private val repository: String = DEFAULT_REPOSITORY,
-    private val tag: String = DEFAULT_TAG,
     private val assetName: String = DEFAULT_ASSET,
 ) : AppUpdateSource {
     override suspend fun latest(): AppUpdate? {
-        val response = http.get("https://api.github.com/repos/$repository/releases/tags/$tag") {
+        val response = http.get("https://api.github.com/repos/$repository/releases/latest") {
             header(HttpHeaders.Accept, "application/vnd.github+json")
         }
         if (response.status == HttpStatusCode.NotFound) return null
@@ -41,8 +40,7 @@ class GitHubReleaseUpdateSource(
 
     companion object {
         const val DEFAULT_REPOSITORY = "neteinstein/Good-Company"
-        const val DEFAULT_TAG = "test-build"
-        const val DEFAULT_ASSET = "good-company-sideload-test.apk"
+        const val DEFAULT_ASSET = "good-company-sideload.apk"
 
         private val buildNumber = Regex("""#(\d+)""")
         private val versionInNotes = Regex("""version `([^`]+)`""")

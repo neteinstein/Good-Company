@@ -1,6 +1,6 @@
 ---
 name: area-backup-sync
-description: Rules for data leaving or entering Good Company outside the database - backup export/restore files, Google Drive backup (drive.file scope, OAuth per platform), blogs and RSS/Atom feeds, and the sideload build's self-update from the GitHub test-build release. Use before touching ExportBackupUseCase/RestoreBackupUseCase, GoogleDriveBackupStore, FeedParser/KtorFeedFetcher, GitHubReleaseUpdateSource, CheckForUpdateUseCase, AppUpdater or test-apk.yml.
+description: Rules for data leaving or entering Good Company outside the database - backup export/restore files, Google Drive backup (drive.file scope, OAuth per platform), blogs and RSS/Atom feeds, and the sideload build's self-update from the latest GitHub release. Use before touching ExportBackupUseCase/RestoreBackupUseCase, GoogleDriveBackupStore, FeedParser/KtorFeedFetcher, GitHubReleaseUpdateSource, CheckForUpdateUseCase, AppUpdater or test-apk.yml.
 ---
 
 # Area: backup, Drive, feeds and updates
@@ -26,8 +26,8 @@ of `persistence-change`.
     device. Feeds live on `Friend.feeds` (so backup covers them) and refresh at most every 20 h on app start. In the
     browser many feeds fail because of CORS; that's expected.
 21. **Sideload self-update.** Settings → "App updates" exists only where the manifest declares `REQUEST_INSTALL_PACKAGES`
-    (`PlatformCapabilities.hasSelfUpdate`, so only the sideload build). `GitHubReleaseUpdateSource` reads the rolling
-    `test-build` release (title `Test build #<run>`, run number = `versionCode`, asset `good-company-sideload-test.apk`);
+    (`PlatformCapabilities.hasSelfUpdate`, so only the sideload build). `GitHubReleaseUpdateSource` reads the
+    latest GitHub release (`v0.1.<n>`, title `<version> (build #<run>)`, run number = `versionCode`, asset `good-company-sideload.apk`);
     `CheckForUpdateUseCase` compares it with the installed `versionCode`; `AppUpdater` (Android) downloads the APK to
     `cache/updates/` and opens the system installer through the sideload-only FileProvider. Keep the release title and
     asset name in `.github/workflows/test-apk.yml` in step with the source. Android only installs over a build signed with

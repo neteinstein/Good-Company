@@ -16,9 +16,9 @@ if (file("google-services.json").exists()) {
 }
 
 // CI test builds (.github/workflows/test-apk.yml) pass these so every build installs over the previous one
-// and testers can tell builds apart: -Pgoodcompany.versionCode=<run> -Pgoodcompany.versionSuffix=test.<run>
+// and testers can tell builds apart: -Pgoodcompany.versionCode=<run> -Pgoodcompany.versionName=<x.y.z>
 val ciVersionCode = providers.gradleProperty("goodcompany.versionCode").orNull?.toIntOrNull()
-val ciVersionSuffix = providers.gradleProperty("goodcompany.versionSuffix").orNull?.takeIf { it.isNotBlank() }
+val ciVersionName = providers.gradleProperty("goodcompany.versionName").orNull?.takeIf { it.isNotBlank() }
 
 // Without a real keystore, -Pgoodcompany.signWithDebugKey=true signs release/sideload with the debug key so the
 // APKs still install on a test device (never for anything uploaded to Play).
@@ -37,7 +37,7 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = ciVersionCode ?: 1
-        versionName = "1.0.0" + (ciVersionSuffix?.let { "-$it" } ?: "")
+        versionName = ciVersionName ?: "0.1.0"
     }
 
     // Per-app language picker (Android 13+): generates the locale list from the res/values-* folders.
