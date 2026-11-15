@@ -252,7 +252,7 @@ before changing that area**, and put new area-specific notes in that skill, not 
     photo thumbnails. Details in `area-sharing-gifts`.
 20. **Blogs & feeds.** Fetched from the device, at most every 20 h; CORS failures on the web are expected. Details in
     `area-backup-sync`.
-21. **Sideload self-update.** Only in the sideload build; tied to the `test-build` release title and asset in
+21. **Sideload self-update.** Only in the sideload build; tied to the latest-release title and asset in
     `test-apk.yml`. Details in `area-backup-sync`.
 22. **Contact write-back (Android sideload only).** The mirror never deletes, never edits the user's own contact rows
     and never writes emails or photos. Details in `area-contacts`.

@@ -165,7 +165,7 @@ friends by hand (browsers have no address book).
 
 ## 🚀 Getting started
 
-**Just want to try it on Android?** Every merge to `main` publishes installable test APKs on the [`test-build`](https://github.com/neteinstein/Good-Company/releases/tag/test-build) pre-release ([details](CI_CD.md#test-builds)).
+**Just want to try it on Android?** Every merge to `main` publishes a release (`v0.1.0`, `v0.1.1`, …) with installable APKs on the [Releases](https://github.com/neteinstein/Good-Company/releases/latest) page ([details](CI_CD.md#releases)).
 
 Requirements: JDK 21, Android SDK (API 37), and Xcode on macOS for iOS.
 
