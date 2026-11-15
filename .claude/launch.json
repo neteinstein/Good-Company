@@ -1,0 +1,20 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "export JAVA_HOME=\"$(/usr/libexec/java_home -v 21)\"; exec ./gradlew :composeApp:wasmJsBrowserDevelopmentRun --continuous"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "web-dist",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8090", "--directory", "composeApp/build/dist/wasmJs/productionExecutable"],
+      "port": 8090
+    }
+  ]
+}
