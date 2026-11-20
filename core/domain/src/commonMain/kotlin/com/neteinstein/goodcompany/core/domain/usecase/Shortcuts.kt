@@ -30,7 +30,8 @@ data class ShortcutSnapshot(val people: List<ShortcutPerson>, val hideNames: Boo
 object Shortcuts {
     const val MAX_PEOPLE = 3
 
-    /** The [MAX_PEOPLE] most recent people by last contact (meetups and interactions), ties by name; orphans left out. */
+    /** The [MAX_PEOPLE] most recent people by last contact (meetups and interactions), ties by name; orphans and people
+     * whose keep-in-touch tracking is off (issue #115) left out. */
     fun snapshot(
         friends: List<Friend>,
         hangouts: List<Hangout>,
@@ -40,7 +41,7 @@ object Shortcuts {
         if (hideNames) return ShortcutSnapshot(emptyList(), hideNames = true)
         val last = Relationships.lastContact(hangouts, interactions)
         val people = friends
-            .filter { !it.isOrphaned && it.id in last }
+            .filter { !it.isOrphaned && it.tracksKeepInTouch && it.id in last }
             .sortedWith(compareByDescending<Friend> { last.getValue(it.id) }.thenBy { it.displayName.lowercase() })
             .take(MAX_PEOPLE)
             .map { ShortcutPerson(it.id, it.displayName, it.initials, it.avatar) }

@@ -286,7 +286,7 @@ class TimelineAndLoggingTest {
         assertTrue(g.interactionRepo.interactions.value.isEmpty())
         val summary = g.observeFriends().first().single { it.friend.id == ana }
         assertNull(summary.lastContact)
-        assertEquals(0, summary.warmth.value)
+        assertEquals(0, summary.warmth?.value)
         assertFailsWith<IllegalArgumentException> { g.logInteraction(LogRequest(listOf(ana), LogKind.JOURNAL, note = " ")) }
     }
 

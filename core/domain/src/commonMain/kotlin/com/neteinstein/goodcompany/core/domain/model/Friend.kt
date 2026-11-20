@@ -123,6 +123,13 @@ data class Friend(
      * isn't shown on their page or timeline, and a real meetup always wins (see `Relationships.meetupStatuses`).
      */
     val approxLastSeen: LocalDate? = null,
+    /**
+     * Issue #115, "Keep-in-touch tracking": on by default. Off is permanent (for someone you see every day, like your
+     * kids): no warmth, no rhythm and no catch-up nudges, and never in Time to catch up, Drifting, Cooling, the widget's
+     * "Who's next" or the app shortcuts. The timeline, logging, reminders, birthdays, plans, gifts and notes keep
+     * working. [catchUpPaused] and [snoozedUntil] are the temporary pauses and only matter while this is on.
+     */
+    val tracksKeepInTouch: Boolean = true,
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true

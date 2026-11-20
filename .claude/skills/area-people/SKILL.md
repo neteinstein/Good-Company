@@ -175,3 +175,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     stay null, the person's page and timeline never show it, it isn't a hangout (no warmth, no stats), and a real
     meetup (or any contact when `contactCountsAsCatchUp`) always wins. "Not now" is `AppSettings.lastSeenCardHiddenOn`,
     device-only (`DeviceSettings`, stripped from exports, kept on restore). Acquaintances (#69) must not be asked.
+- **Keep-in-touch tracking (#115).** `Friend.tracksKeepInTouch` (column `friend.tracks_keep_in_touch`, `24.sqm`). Off:
+  `CadenceRules.cadenceFor`/`sourceFor` return null, `Relationships.meetupStatuses` skips them, `Warmth.scoreOrNull`
+  is null (so `FriendSummary.warmth` / `FriendDetail.warmth` are nullable), `PeopleDashboard` keeps them in counts but
+  out of warmth, trend and cooling, and `Shortcuts` leaves them out. Anything new that nudges or shows warmth must
+  respect it. `catchUpPaused`/`snoozedUntil` are the temporary pauses.

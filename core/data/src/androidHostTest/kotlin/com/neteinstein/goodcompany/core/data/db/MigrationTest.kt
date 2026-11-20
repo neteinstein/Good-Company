@@ -777,6 +777,32 @@ class MigrationTest {
     }
 
     @Test
+    fun version24to25_everyoneStartsWithKeepInTouchTrackingOn_andTheSwitchRoundTrips() = runTest {
+        val driver = driverAt(24)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up, meet_every_days)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 'INNER', 1, 1, 14)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 24, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertTrue(ana.tracksKeepInTouch)
+        assertTrue(ana.catchUpPaused)
+        assertTrue(ana.contactCountsAsCatchUp)
+        assertEquals(14, ana.meetEveryDays)
+
+        database.writeFriend(ana.copy(tracksKeepInTouch = false), 0)
+        assertFalse(database.readFriends().single().tracksKeepInTouch)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

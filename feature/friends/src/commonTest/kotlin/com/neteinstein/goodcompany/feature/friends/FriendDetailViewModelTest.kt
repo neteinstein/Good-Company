@@ -521,6 +521,13 @@ class FriendDetailViewModelTest {
         assertFalse(state.value.detail!!.friend.catchUpPaused)
         vm.onToggleContactCounts()
         assertTrue(state.value.detail!!.friend.contactCountsAsCatchUp)
+        // Issue #115: tracking off means no warmth and no rhythm on the page; back on brings them back.
+        vm.onToggleTracking()
+        assertFalse(state.value.detail!!.friend.tracksKeepInTouch)
+        assertNull(state.value.detail!!.warmth)
+        assertNull(state.value.detail!!.cadenceDays)
+        vm.onToggleTracking()
+        assertTrue(state.value.detail!!.friend.tracksKeepInTouch)
         vm.onToggleOccasion(Occasion.OUTDOORS)
         vm.onToggleOccasion(Occasion.COFFEE)
         assertEquals(listOf(Occasion.COFFEE, Occasion.OUTDOORS), state.value.detail!!.friend.occasions)

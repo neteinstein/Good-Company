@@ -42,6 +42,16 @@ object Warmth {
         InteractionType.MESSAGE -> 0.3
     }
 
+    /** [score], or null for someone whose keep-in-touch tracking is off (issue #115): they have no warmth at all. */
+    fun scoreOrNull(
+        friend: Friend,
+        hangouts: List<Hangout>,
+        interactions: List<Interaction>,
+        cadenceDays: Int?,
+        today: LocalDate,
+        zone: TimeZone,
+    ): Score? = if (friend.tracksKeepInTouch) score(friend, hangouts, interactions, cadenceDays, today, zone) else null
+
     fun score(
         friend: Friend,
         hangouts: List<Hangout>,

@@ -216,9 +216,9 @@ class TodayViewModel(
             drifting = friends
                 .filter { settings.showWarmth }
                 .filter { it.friend.isCloseFriend && !it.friend.catchUpPaused }
-                .filter { it.warmth.level == Warmth.Level.FADING && it.friend.id !in overdueIds }
+                .filter { it.warmth?.level == Warmth.Level.FADING && it.friend.id !in overdueIds }
                 .filter { s -> s.friend.snoozedUntil?.let { it < today } ?: true }
-                .sortedBy { it.warmth.value }
+                .sortedBy { it.warmth?.value ?: 0 }
                 .take(TodayUiState.MAX_DRIFTING),
             friends = friends.map { it.friend },
             hasAiKey = settings.usableAiKey != null,

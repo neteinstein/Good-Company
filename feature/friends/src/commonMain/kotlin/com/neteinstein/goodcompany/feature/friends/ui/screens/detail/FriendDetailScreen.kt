@@ -453,6 +453,7 @@ fun FriendDetailScreen(
             onUndoReminder = viewModel::onUndoReminder,
             onMessageShown = viewModel::onMessageShown,
             onTogglePause = viewModel::onTogglePause,
+            onToggleTracking = viewModel::onToggleTracking,
             onToggleContactCounts = viewModel::onToggleContactCounts,
             onToggleOccasion = viewModel::onToggleOccasion,
             onOpenPlanEditor = viewModel::onOpenPlanEditor,
@@ -576,6 +577,7 @@ data class FriendDetailActions(
     val onUndoReminder: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
     val onTogglePause: () -> Unit = {},
+    val onToggleTracking: () -> Unit = {},
     val onToggleContactCounts: () -> Unit = {},
     val onToggleOccasion: (Occasion) -> Unit = {},
     val onOpenPlanEditor: (Plan?) -> Unit = {},
@@ -1227,36 +1229,39 @@ private fun RhythmLine(f: Friend, state: FriendDetailUiState, actions: FriendDet
     val last = detail.lastCaughtUp
     val days = last?.toLocalDateTime(state.zone)?.date?.daysUntil(state.today)
     val snoozedUntil = f.snoozedUntil?.takeIf { it >= state.today }
-    Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        val progress = when {
-            goal != null && days != null -> days.toFloat() / goal
-            goal != null -> 1f
-            else -> 0f
-        }
-        val overdue = goal != null && progress >= 1f && snoozedUntil == null && !f.catchUpPaused
-        ProgressRing(progress, size = 56.dp, color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) {
-            Text(days?.toString() ?: "–", style = MaterialTheme.typography.titleMedium)
-        }
-        Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                last?.let {
-                    val ago = relativePast(it, state.now, state.zone)
-                    stringResource(if (it == detail.lastSeen) Res.string.touch_last_together else Res.string.touch_last_caught_up, ago)
-                } ?: stringResource(Res.string.touch_never),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Text(
-                when {
-                    f.catchUpPaused -> stringResource(Res.string.touch_paused)
-                    snoozedUntil != null -> stringResource(Res.string.touch_snoozed, snoozedUntil.shortLabel())
-                    goal == null -> stringResource(Res.string.touch_pick)
-                    overdue -> stringResource(Res.string.touch_overdue, everyNDays(goal))
-                    else -> (goal - (days ?: 0)).let { left -> pluralStringResource(Res.plurals.touch_goal, left, everyNDays(goal), left) }
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    // Issue #115: no ring, rhythm line or snooze while keep-in-touch tracking is off; "I called" still logs.
+    if (f.tracksKeepInTouch) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            val progress = when {
+                goal != null && days != null -> days.toFloat() / goal
+                goal != null -> 1f
+                else -> 0f
+            }
+            val overdue = goal != null && progress >= 1f && snoozedUntil == null && !f.catchUpPaused
+            ProgressRing(progress, size = 56.dp, color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary) {
+                Text(days?.toString() ?: "–", style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    last?.let {
+                        val ago = relativePast(it, state.now, state.zone)
+                        stringResource(if (it == detail.lastSeen) Res.string.touch_last_together else Res.string.touch_last_caught_up, ago)
+                    } ?: stringResource(Res.string.touch_never),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    when {
+                        f.catchUpPaused -> stringResource(Res.string.touch_paused)
+                        snoozedUntil != null -> stringResource(Res.string.touch_snoozed, snoozedUntil.shortLabel())
+                        goal == null -> stringResource(Res.string.touch_pick)
+                        overdue -> stringResource(Res.string.touch_overdue, everyNDays(goal))
+                        else -> (goal - (days ?: 0)).let { left -> pluralStringResource(Res.plurals.touch_goal, left, everyNDays(goal), left) }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
     Row(Modifier.padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1265,7 +1270,9 @@ private fun RhythmLine(f: Friend, state: FriendDetailUiState, actions: FriendDet
             Spacer(Modifier.width(6.dp))
             Text(stringResource(Res.string.touch_called))
         }
-        if (f.catchUpPaused) {
+        if (!f.tracksKeepInTouch) {
+            Unit
+        } else if (f.catchUpPaused) {
             TextButton(onClick = actions.onTogglePause) { Text(stringResource(Res.string.touch_resume)) }
         } else if (snoozedUntil != null) {
             TextButton(onClick = actions.onClearSnooze) { Text(stringResource(Res.string.touch_unsnooze)) }

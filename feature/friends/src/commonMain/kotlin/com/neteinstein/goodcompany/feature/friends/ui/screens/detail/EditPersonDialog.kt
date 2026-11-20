@@ -72,6 +72,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_title
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_tracking
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_tracking_hint
 import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_add
 import com.neteinstein.goodcompany.feature.friends.resources.relation_to_me_pick
 import com.neteinstein.goodcompany.feature.friends.resources.remove_person
@@ -167,23 +169,26 @@ internal fun EditPersonDialog(
                                 )
                             }
                         }
-                        Label(stringResource(Res.string.touch_custom), Icons.Rounded.Schedule)
-                        Row(
-                            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            FilterChip(
-                                f.meetEveryDays == null,
-                                { actions.onMeetEveryChange(null) },
-                                label = { Text(stringResource(CoreRes.string.cadence_off)) },
-                            )
-                            RHYTHMS.forEach { d ->
-                                FilterChip(f.meetEveryDays == d, { actions.onMeetEveryChange(d) }, label = { Text(everyNDays(d)) })
+                        // Issue #115: with keep-in-touch tracking off there is no rhythm to pick.
+                        if (f.tracksKeepInTouch) {
+                            Label(stringResource(Res.string.touch_custom), Icons.Rounded.Schedule)
+                            Row(
+                                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                FilterChip(
+                                    f.meetEveryDays == null,
+                                    { actions.onMeetEveryChange(null) },
+                                    label = { Text(stringResource(CoreRes.string.cadence_off)) },
+                                )
+                                RHYTHMS.forEach { d ->
+                                    FilterChip(f.meetEveryDays == d, { actions.onMeetEveryChange(d) }, label = { Text(everyNDays(d)) })
+                                }
                             }
-                        }
-                        val goal = detail.cadenceDays
-                        if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
-                            Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
+                            val goal = detail.cadenceDays
+                            if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
+                                Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
+                            }
                         }
                     }
                     PersonSwitches(f, state, actions)
@@ -203,7 +208,10 @@ internal fun EditPersonDialog(
     }
 }
 
-/** The person's own switches: show in my list (for a kid), birthday notifications, AI events, calls count, pause. */
+/**
+ * The person's own switches: show in my list (for a kid), birthday notifications, AI events, keep-in-touch tracking, and
+ * (while tracking is on) calls count and pause.
+ */
 @Composable
 private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
     val detail = state.detail ?: return
@@ -232,17 +240,27 @@ private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: Frien
                 actions.onToggleSuggestEvents,
             )
         }
+        // Issue #115: the permanent switch. Pause stays the temporary one, and it and "calls count" only matter while
+        // tracking is on, so they're hidden while it is off.
         ToggleRow(
-            stringResource(Res.string.prefs_contact_counts),
-            stringResource(Res.string.prefs_contact_counts_hint),
-            f.contactCountsAsCatchUp,
-            actions.onToggleContactCounts,
+            stringResource(Res.string.prefs_tracking),
+            stringResource(Res.string.prefs_tracking_hint),
+            f.tracksKeepInTouch,
+            actions.onToggleTracking,
         )
-        ToggleRow(
-            stringResource(Res.string.prefs_pause),
-            stringResource(Res.string.prefs_pause_hint),
-            f.catchUpPaused,
-            actions.onTogglePause,
-        )
+        if (f.tracksKeepInTouch) {
+            ToggleRow(
+                stringResource(Res.string.prefs_contact_counts),
+                stringResource(Res.string.prefs_contact_counts_hint),
+                f.contactCountsAsCatchUp,
+                actions.onToggleContactCounts,
+            )
+            ToggleRow(
+                stringResource(Res.string.prefs_pause),
+                stringResource(Res.string.prefs_pause_hint),
+                f.catchUpPaused,
+                actions.onTogglePause,
+            )
+        }
     }
 }

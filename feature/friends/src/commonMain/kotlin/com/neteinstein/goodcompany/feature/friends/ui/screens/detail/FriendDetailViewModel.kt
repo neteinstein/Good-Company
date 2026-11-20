@@ -1016,6 +1016,9 @@ class FriendDetailViewModel(
         viewModelScope.launch { setCatchUpPaused(friendId, !paused) }
     }
 
+    /** Issue #115: keep-in-touch tracking on or off for this person. */
+    fun onToggleTracking() = edit { it.copy(tracksKeepInTouch = !it.tracksKeepInTouch) }
+
     fun onToggleContactCounts() = edit { it.copy(contactCountsAsCatchUp = !it.contactCountsAsCatchUp) }
 
     fun onToggleOccasion(occasion: Occasion) = edit { f ->

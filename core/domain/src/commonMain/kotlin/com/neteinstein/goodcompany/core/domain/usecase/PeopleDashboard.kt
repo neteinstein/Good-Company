@@ -95,8 +95,11 @@ data class PeopleDashboard(
             val show = settings.showWarmth
             fun warmthOn(f: Friend, day: LocalDate) = Warmth.score(f, hangouts, interactions, rules.cadenceFor(f), day, zone).value
             val compareDay = today.minus(COMPARE_DAYS, DateTimeUnit.DAY)
-            val now = if (show) people.associate { it.id to warmthOn(it, today) } else emptyMap()
-            val before = if (show) people.associate { it.id to warmthOn(it, compareDay) } else emptyMap()
+            // Issue #115: people whose keep-in-touch tracking is off have no warmth, so they're in no average or trend
+            // and never cooling; they still count as people.
+            val tracked = people.filter { it.tracksKeepInTouch }
+            val now = if (show) tracked.associate { it.id to warmthOn(it, today) } else emptyMap()
+            val before = if (show) tracked.associate { it.id to warmthOn(it, compareDay) } else emptyMap()
             fun avg(values: List<Int>): Int? = if (values.isEmpty()) null else values.average().roundToInt()
 
             val byCircle = circles.map { c ->
@@ -118,10 +121,10 @@ data class PeopleDashboard(
                 if (members.isEmpty()) null else ClosenessWarmth(c, members.size, if (show) avg(members.mapNotNull { now[it.id] }) else null)
             }
 
-            val trend = if (withTrend && show && people.isNotEmpty()) {
+            val trend = if (withTrend && show && tracked.isNotEmpty()) {
                 (TREND_WEEKS downTo 0).map { w ->
                     val day = today.minus(w * 7, DateTimeUnit.DAY)
-                    people.map { warmthOn(it, day) }.average().roundToInt()
+                    tracked.map { warmthOn(it, day) }.average().roundToInt()
                 }
             } else {
                 emptyList()
@@ -129,7 +132,7 @@ data class PeopleDashboard(
 
             val firstCircle = circles.flatMap { c -> c.memberIds.map { it to c } }.groupBy({ it.first }, { it.second })
             val cooling = if (show) {
-                people.mapNotNull { f ->
+                tracked.mapNotNull { f ->
                     val b = before.getValue(f.id)
                     val n = now.getValue(f.id)
                     if (b - n >= COOLING_DROP) CoolingFriend(f, b, n, firstCircle[f.id]?.firstOrNull()) else null

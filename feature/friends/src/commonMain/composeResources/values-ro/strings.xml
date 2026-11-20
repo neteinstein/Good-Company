@@ -171,6 +171,8 @@
     <string name="event_week">Cu o săptămână înainte</string>
     <string name="prefs_pause">Pune pe pauză mementourile</string>
     <string name="prefs_pause_hint">Fără mementouri „e timpul să vă vedeți” până reiei. Istoricul și zilele de naștere rămân.</string>
+    <string name="prefs_tracking">Urmărirea legăturii</string>
+    <string name="prefs_tracking_hint">Căldură, ritm de întâlnire și mementouri ca să țineți legătura. Oprește-o pentru cineva pe care îl vezi zilnic: cronologia, mementourile și ziua de naștere rămân.</string>
     <string name="prefs_contact_counts">Apelurile și mesajele contează ca revedere</string>
     <string name="prefs_contact_counts_hint">Pentru prietenii departe: un apel sau un mesaj resetează ritmul, nu doar o întâlnire.</string>
     <string name="touch_paused">Mementourile sunt pe pauză.</string>

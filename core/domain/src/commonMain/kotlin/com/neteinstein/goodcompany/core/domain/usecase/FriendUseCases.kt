@@ -40,7 +40,8 @@ data class FriendSummary(
     val lastContact: Instant?,
     val nextBirthday: LocalDate?,
     val meetupOverdue: Boolean,
-    val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
+    /** Null when their keep-in-touch tracking is off (issue #115). */
+    val warmth: Warmth.Score? = Warmth.Score(0, Warmth.Level.FADING),
     val cadenceDays: Int? = null,
     /** Their parents among your people (F9): a kid's row says whose kid they are. */
     val parents: List<Friend> = emptyList(),
@@ -77,7 +78,7 @@ class ObserveFriendsUseCase(
                 lastContact = contact[f.id],
                 nextBirthday = f.birthday?.nextOccurrence(today),
                 meetupOverdue = f.id in overdue,
-                warmth = Warmth.score(f, hs, ints, cadence, today, clock.timeZone),
+                warmth = Warmth.scoreOrNull(f, hs, ints, cadence, today, clock.timeZone),
                 cadenceDays = cadence,
                 parents = parents[f.id].orEmpty(),
             )
@@ -94,7 +95,8 @@ data class FriendDetail(
     val lastContactByType: Map<InteractionType, Instant>,
     val messageCount: Int,
     val ideas: List<Idea>,
-    val warmth: Warmth.Score = Warmth.Score(0, Warmth.Level.FADING),
+    /** Null when their keep-in-touch tracking is off (issue #115). */
+    val warmth: Warmth.Score? = Warmth.Score(0, Warmth.Level.FADING),
     val cadenceDays: Int? = null,
     val cadenceSource: CadenceRules.Source? = null,
     /** The circles they're in, the built-in Family circle first when they're family. */
@@ -171,7 +173,7 @@ class ObserveFriendDetailUseCase(
             lastContactByType = byType,
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },
-            warmth = Warmth.score(friend, hs, ints, CadenceRules.from(s).cadenceFor(friend), clock.today(), clock.timeZone),
+            warmth = Warmth.scoreOrNull(friend, hs, ints, CadenceRules.from(s).cadenceFor(friend), clock.today(), clock.timeZone),
             cadenceDays = CadenceRules.from(s).cadenceFor(friend),
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },
