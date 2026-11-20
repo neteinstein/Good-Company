@@ -48,5 +48,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     understands kinship through `GiftListViewModel.kinshipOf` → `ParseKinshipQueryUseCase`, #41; the budget for everyone
     added sits in the picker's `extra` slot). Share to… shows its suggested people on top, then the picker's filter row
     and grouped list, then circles as targets and "Add ‘…’". AI ideas reuse
-    `SuggestGiftsUseCase` and show only with `usableAiKey` (gotcha 33). Screens: `GiftListsRoute` / `GiftListRoute(id)` in
-    `:feature:hangouts` (Together tab row, plus "Gift lists" on a friend's gift card).
+    `SuggestGiftsUseCase` and show only with `usableAiKey` (gotcha 33).
+    **On the Plans tab (issue #104).** There are no gift-list screens or routes any more (`GiftListsRoute` /
+    `GiftListRoute` are gone; no deep link or share needed them). The UI lives in `:feature:ideas`
+    (`ui/screens/gifts/`, strings `gift_*` in its `strings.xml`): `PlansViewModel` owns the section
+    (`GiftListsSection`: current/past summaries, `expanded` ids, New/Edit dialogs, Duplicate, Delete with Undo through
+    `PlansMessage.GiftListDeleted`, and `scrollTo`), and each opened list is a `GiftListCard` whose body is
+    `GiftListPanel`, driven by its own `GiftListViewModel(listId)` (`koinViewModel(key = "gift-list-<id>")`) and showing
+    its messages on the tab's snackbar. The tab's `LazyColumn` is built from `plansRows(state)` so it can scroll to a
+    row that isn't on screen (`indexOfGiftTarget`). "Gift lists" on a friend's gift card calls
+    `navigateTopLevel(PLANS)` and sets the `gift_lists_for` saved-state key on the `IdeasRoute` entry;
+    `PlansViewModel.onShowGiftListsFor` opens `GiftListsOverview.listFor(friendId)` (soonest current list they're on,
+    else latest past) or scrolls to the section header.

@@ -5,8 +5,9 @@ description: Add a screen (or a dialog/sheet destination) to an EXISTING Good Co
 
 # New screen in an existing feature
 
-Worked example: gift lists (`feature/hangouts/.../ui/screens/gifts/`, `GiftListsViewModel` + `GiftListsScreen`, and
-`GiftListViewModelTest`). Read it before starting. Package: `com.neteinstein.goodcompany.feature.<name>.ui.screens.<area>`.
+Worked example: "Who's free for…?" (`feature/hangouts/.../ui/screens/free/`, `WhosFreeViewModel` + `WhosFreeScreen`,
+and `WhosFreeViewModelTest`). A section inside a tab instead of a screen: gift lists on Plans (issue #104,
+`area-sharing-gifts`). Read it before starting. Package: `com.neteinstein.goodcompany.feature.<name>.ui.screens.<area>`.
 
 ## 1. Domain first
 
