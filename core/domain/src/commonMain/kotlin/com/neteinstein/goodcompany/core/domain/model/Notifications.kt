@@ -39,7 +39,8 @@ sealed interface NotificationContent {
 
     /**
      * The day after a plan: "Did you meet?" — answered with quick actions. A circle plan ([isCircle]) can't be logged
-     * from the notification (you tick who came in the app), so it only offers "We didn't go".
+     * from the notification (you tick who came in the app), so it only offers "We didn't go". A group or circle plan
+     * ([isGroup]) also offers "I didn't go" (issue #100).
      */
     data class PlanFollowUp(
         val planId: String,
@@ -47,9 +48,22 @@ sealed interface NotificationContent {
         val withNames: List<String>,
         val occurrence: LocalDate? = null,
         val isCircle: Boolean = false,
+        /** With more than one person or a circle: "I didn't go" is offered too (issue #100). */
+        val isGroup: Boolean = isCircle,
     ) : NotificationContent {
         /** The notification actions' target: this occurrence. */
         val target: String get() = PlanOccurrence(planId, occurrence).encode()
+
+        /**
+         * Its quick actions: "Yes" (not for a circle plan, which asks who came in the app), "It didn't happen", and
+         * "I didn't go" for a group or circle plan (issue #100).
+         */
+        val actions: List<NotificationAction>
+            get() = listOfNotNull(
+                NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, target).takeUnless { isCircle },
+                NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, target),
+                NotificationAction(NotificationAction.Kind.PLAN_NOT_ATTENDED, target).takeIf { isGroup },
+            )
     }
 
     /**
@@ -129,9 +143,9 @@ data class PlannedNotification(
 
 /** Quick actions offered on notifications: catch-ups, plans and reminders ([targetId] is the reminder's id, issue #99). */
 data class NotificationAction(val kind: Kind, val targetId: String, val isGroup: Boolean = false) {
-    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND, PLAN_HAPPENED, PLAN_SKIPPED, REMINDER_DONE, REMINDER_SNOOZE }
+    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND, PLAN_HAPPENED, PLAN_SKIPPED, PLAN_NOT_ATTENDED, REMINDER_DONE, REMINDER_SNOOZE }
 
-    val isPlan: Boolean get() = kind == Kind.PLAN_HAPPENED || kind == Kind.PLAN_SKIPPED
+    val isPlan: Boolean get() = kind == Kind.PLAN_HAPPENED || kind == Kind.PLAN_SKIPPED || kind == Kind.PLAN_NOT_ATTENDED
 
     /** Compact form for platform payloads (Android intent extras, iOS userInfo). */
     fun encode(): String = "${kind.name}|${if (isGroup) "g" else "f"}|$targetId"

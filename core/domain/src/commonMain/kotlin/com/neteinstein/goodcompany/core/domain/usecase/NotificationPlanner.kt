@@ -199,6 +199,8 @@ object NotificationPlanner {
 
         // --- Plans: a heads-up on the day of each occurrence, then "Did you meet?" the day after (until answered, for
         // a week). Never throttled (gotcha 16). A circle plan names the circle.
+        // Issue #100: both share one slot per occurrence, so the day's one stays on screen only while the occurrence is
+        // open (its "did it happen?" keeps the slot planned) and goes as soon as it is closed in any way.
         val circlesById = groups.associateBy { it.id }
         plans.filter { it.status == PlanStatus.PLANNED }.forEach { p ->
             val names = listOfNotNull(p.circleId?.let { circlesById[it]?.name }) + p.friendIds.mapNotNull { byId[it]?.displayName }
@@ -206,7 +208,14 @@ object NotificationPlanner {
             p.occurrences(today.minus(FOLLOW_UP_DAYS, DateTimeUnit.DAY), end).forEach { day ->
                 val occurrence = PlanOccurrence(p.id, day.takeIf { p.isRecurring })
                 val key = occurrence.encode()
-                add("plan:$key:day", day, NotificationContent.PlanToday(p.id, p.title, names, occurrence.date), keepOnScreen)
+                add(
+                    "plan:$key:day",
+                    day,
+                    NotificationContent.PlanToday(p.id, p.title, names, occurrence.date),
+                    keepOnScreen,
+                    slot = "plan:$key",
+                    whileOpen = true,
+                )
                 val firstAsk = day.plus(1, DateTimeUnit.DAY)
                 val lastAsk = day.plus(FOLLOW_UP_DAYS, DateTimeUnit.DAY)
                 var ask = maxOf(firstAsk, today)
@@ -215,8 +224,9 @@ object NotificationPlanner {
                     add(
                         "plan:$key:ask",
                         ask,
-                        NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle),
+                        NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle, isGroup = p.isGroup),
                         keepOnScreen,
+                        slot = "plan:$key",
                         whileOpen = true,
                     )
                 }

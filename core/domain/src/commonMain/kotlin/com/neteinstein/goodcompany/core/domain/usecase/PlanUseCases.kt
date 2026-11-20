@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -30,6 +31,11 @@ class ObservePlansUseCase(private val plans: PlanRepository, private val groups:
     fun forFriend(id: FriendId): Flow<List<Plan>> = combine(invoke(), groups.groups) { list, circles ->
         val mine = circles.filter { id in it.memberIds }.mapTo(mutableSetOf()) { it.id }
         list.filter { id in it.friendIds || it.circleId in mine }
+    }
+
+    /** Cancelled plans (issue #100: kept and shown struck through), latest date first. */
+    fun cancelled(): Flow<List<Plan>> = plans.plans.map { list ->
+        list.filter { it.status == PlanStatus.CANCELLED }.sortedByDescending { it.date }
     }
 
     /** A circle's plans, soonest first (its card shows the first). */
@@ -118,10 +124,8 @@ class ConfirmPlanUseCase(
     private val clock: AppClock,
 ) {
     suspend operator fun invoke(id: String, happened: Boolean, day: LocalDate? = null, logCheckIn: Boolean = true) {
-        val plan = plans.plans.first().firstOrNull { it.id == id } ?: return
-        if (plan.status != PlanStatus.PLANNED) return
-        val on = day ?: plan.date
-        if (on != plan.date && on !in plan.occurrences(on, on)) return
+        val status = if (happened) PlanStatus.HAPPENED else PlanStatus.SKIPPED
+        val (plan, on) = openOccurrence(id, day) ?: return
         if (happened && logCheckIn) {
             val present = plan.friendIds.filter { friends.get(it) != null }
             if (present.isNotEmpty()) {
@@ -129,7 +133,27 @@ class ConfirmPlanUseCase(
                 checkIn(present, placeName = plan.place, note = plan.title, at = at, activity = plan.activity)
             }
         }
-        plans.upsert(plan.closeOccurrence(on, happened))
+        plans.upsert(plan.closeOccurrence(on, status))
+    }
+
+    /**
+     * "I didn't go" (issue #100): the group met without me. Closes that occurrence as [PlanStatus.NOT_ATTENDED] with no
+     * check-in, so it counts for nobody's warmth or rhythm. Only for group and circle plans ([Plan.isGroup]).
+     * Returns the plan as it was (for Undo), or null when nothing changed.
+     */
+    suspend fun notAttended(id: String, day: LocalDate? = null): Plan? {
+        val (plan, on) = openOccurrence(id, day) ?: return null
+        if (!plan.isGroup) return null
+        plans.upsert(plan.closeOccurrence(on, PlanStatus.NOT_ATTENDED))
+        return plan
+    }
+
+    private suspend fun openOccurrence(id: String, day: LocalDate?): Pair<Plan, LocalDate>? {
+        val plan = plans.plans.first().firstOrNull { it.id == id } ?: return null
+        if (plan.status != PlanStatus.PLANNED) return null
+        val on = day ?: plan.date
+        if (on != plan.date && on !in plan.occurrences(on, on)) return null
+        return plan to on
     }
 
     private companion object {
@@ -137,11 +161,67 @@ class ConfirmPlanUseCase(
     }
 }
 
+/**
+ * Cancels a plan (issue #100). A cancelled plan is kept, as [PlanStatus.CANCELLED], and shown struck through. On a
+ * series, [wholeSeries] false cancels only the occurrence on [day] (the open one when null): it is taken out and the
+ * series goes on. Returns the plan as it was (for Undo), or null when nothing changed.
+ */
 class CancelPlanUseCase(private val plans: PlanRepository) {
-    suspend operator fun invoke(id: String) = plans.delete(id)
+    suspend operator fun invoke(id: String, day: LocalDate? = null, wholeSeries: Boolean = false): Plan? {
+        val plan = plans.plans.first().firstOrNull { it.id == id } ?: return null
+        if (plan.status != PlanStatus.PLANNED) return null
+        val next = if (plan.isRecurring && !wholeSeries) {
+            plan.closeOccurrence(day ?: plan.date, PlanStatus.CANCELLED)
+        } else {
+            plan.copy(status = PlanStatus.CANCELLED)
+        }
+        if (next == plan) return null
+        plans.upsert(next)
+        return plan
+    }
 }
 
-/** Puts back a plan cancelled a moment ago (snackbar "Undo"). */
+/**
+ * Deletes a plan for good (was `CancelPlanUseCase`; Undo puts it back through [RestorePlanUseCase]). On a series,
+ * [wholeSeries] false deletes only the occurrence on [day] (the open one when null): it is taken out and the series
+ * goes on. Returns the plan as it was (for Undo), or null when there was nothing to delete.
+ */
+class DeletePlanUseCase(private val plans: PlanRepository) {
+    suspend operator fun invoke(id: String, day: LocalDate? = null, wholeSeries: Boolean = true): Plan? {
+        val plan = plans.plans.first().firstOrNull { it.id == id } ?: return null
+        if (plan.isRecurring && !wholeSeries && plan.status == PlanStatus.PLANNED) {
+            val next = plan.closeOccurrence(day ?: plan.date, PlanStatus.SKIPPED)
+            if (next == plan) return null
+            plans.upsert(next)
+        } else {
+            plans.delete(id)
+        }
+        return plan
+    }
+}
+
+/** Puts back a plan cancelled or deleted a moment ago (snackbar "Undo"). */
 class RestorePlanUseCase(private val plans: PlanRepository) {
     suspend operator fun invoke(plan: Plan) = plans.upsert(plan)
+}
+
+/**
+ * The "How did it go?" sheet (issue #100), for one occurrence ([day], the open one when null): Didn't happen,
+ * I didn't go, Cancel or Delete ([wholeSeries] picks "the whole series" for the last two on a recurring plan).
+ * "It happened" logs a check-in here too, but the screens open the "We met" panel for it instead.
+ * Returns the plan as it was, for Undo (null when nothing changed, or for the answers Undo doesn't cover).
+ */
+class ClosePlanUseCase(
+    private val confirm: ConfirmPlanUseCase,
+    private val cancel: CancelPlanUseCase,
+    private val delete: DeletePlanUseCase,
+) {
+    suspend operator fun invoke(id: String, answer: PlanAnswer, day: LocalDate? = null, wholeSeries: Boolean = false): Plan? =
+        when (answer) {
+            PlanAnswer.HAPPENED -> confirm(id, happened = true, day = day).let { null }
+            PlanAnswer.DIDNT_HAPPEN -> confirm(id, happened = false, day = day).let { null }
+            PlanAnswer.NOT_ATTENDED -> confirm.notAttended(id, day)
+            PlanAnswer.CANCEL -> cancel(id, day, wholeSeries)
+            PlanAnswer.DELETE -> delete(id, day, wholeSeries)
+        }
 }

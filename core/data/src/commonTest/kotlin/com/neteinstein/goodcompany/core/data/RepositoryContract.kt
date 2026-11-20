@@ -508,6 +508,12 @@ abstract class RepositoryContract {
         val lunch = Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), "Tasca", "i", createdAt = at(2026, 3, 1))
         s.plans.upsert(lunch)
         assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #100: cancelled and "I didn't go" are stored and read back by name.
+        listOf(PlanStatus.CANCELLED, PlanStatus.NOT_ATTENDED).forEach { status ->
+            s.plans.upsert(lunch.copy(status = status))
+            assertEquals(status, open().plans.plans.first().single().status)
+        }
+        s.plans.upsert(lunch)
 
         repeat(205) { i ->
             s.plans.upsert(
