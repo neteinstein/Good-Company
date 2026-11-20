@@ -55,10 +55,12 @@ Runtime parameters (an id) are the first constructor arguments. AI parts show on
 
 ## 4. Wiring (`composeApp`)
 
-1. `ui/navigation/Routes.kt`: `@Serializable data object FooRoute` or `data class FooRoute(val id: String)`, with a KDoc
-   line saying what it is (and the issue).
-2. `ui/navigation/AppNavHost.kt`: `composable<FooRoute> { entry -> val id = entry.toRoute<FooRoute>().id; FooScreen(…) }`
-   (a sheet/dialog: `dialog<…>`), and the callers' `onOpenFoo = { navController.navigate(FooRoute(…)) { launchSingleTop = true } }`.
+1. `ui/navigation/Routes.kt`: `@Serializable data object FooRoute : AppRoute` or `data class FooRoute(val id: String) : AppRoute`,
+   with a KDoc line saying what it is (and the issue). Every route implements the sealed `AppRoute`.
+2. `ui/navigation/AppNavHost.kt`, inside `appDestinations` (receiver `AppGraph`, which records every route):
+   `composable<FooRoute> { entry -> val id = entry.toRoute<FooRoute>().id; FooScreen(…) }`
+   (a sheet/dialog: `dialog<…>`). `AppRoutesTest` fails for a route with no destination: navigating to one crashes
+   ("Destination with route … cannot be found", issue #114, Settings → Tags). Then the callers' `onOpenFoo = { navController.navigate(FooRoute(…)) { launchSingleTop = true } }`.
 3. `di/AppModule.kt`: use cases, then `viewModelOf(::FooViewModel)` or
    `viewModel { (id: String) -> FooViewModel(id, get(), get()) }`.
 4. `composeApp/src/commonTest/.../AppModuleTest.kt`: `assertNotNull(koin.get<FooViewModel>())` (or with `parametersOf`).

@@ -18,6 +18,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A new `LinkType` needs no migration: `person_link.type` has no `CHECK` since `16.sqm` (issue #72), and a type this build
   doesn't know is skipped when read. The same holds for a new `Closeness` level (`friend.circle`; an unknown level reads through `closenessFrom`: Close for a real friend, else Acquaintances).
 - Circle colours come only from `circlePalette` (`:core:ui`).
+- A chip that acts next to circle chips ("✎ Circles" on a person's page) is `CircleActionChip` (`:core:ui`), the same
+  size and shape as a `CircleChip`; an M3 `AssistChip` is taller (48 dp touch target) and wider (issue #114).
 - Membership from a person's page (issue #70) goes through `SetCircleMemberUseCase` (returns the circle as it was;
   Undo = `RestoreGroupUseCase`). Taking out the last member keeps the circle empty, never deletes it. The "+ Circle"
   sheet lists `FriendDetail.allCircles` (stored circles only, never Family). `CircleEditorRoute(withFriend = id)`
