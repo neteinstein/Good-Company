@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
+import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenCard
@@ -105,6 +106,11 @@ data class TodayUiState(
     val lastSeenTotal: Int = 0,
     /** Answers given since Today opened (Undo takes one back). */
     val lastSeenAnswered: Int = 0,
+    /**
+     * Issue #98: notifications are on in Settings and "Not now" wasn't tapped, so the "Turn on notifications" card may
+     * show (the screen shows it only while the system doesn't allow them).
+     */
+    val askForNotifications: Boolean = false,
 ) {
     /** There is someone to check in with: the "I'm with…" card shows. */
     val showCheckIn: Boolean get() = friends.isNotEmpty()
@@ -137,6 +143,7 @@ class TodayViewModel(
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
     private val answerLastSeen: AnswerLastSeenUseCase,
     private val hideLastSeenCard: HideLastSeenCardUseCase,
+    private val dismissNotificationPrimer: DismissNotificationPrimerUseCase,
     private val clock: AppClock,
     observeGroups: ObserveGroupsUseCase,
 ) : ViewModel() {
@@ -186,6 +193,7 @@ class TodayViewModel(
                 .take(TodayUiState.MAX_DRIFTING),
             friends = friends.map { it.friend },
             hasAiKey = settings.usableAiKey != null,
+            askForNotifications = settings.notifications.enabled && !settings.notificationPrimerDismissed,
             isLoading = false,
             today = today,
         )
@@ -233,6 +241,11 @@ class TodayViewModel(
     /** "Not now": the card goes away until tomorrow. */
     fun onLastSeenNotNow() {
         viewModelScope.launch { hideLastSeenCard() }
+    }
+
+    /** "Not now" on the "Turn on notifications" card (issue #98): it doesn't come back; Settings → Notifications can. */
+    fun onNotificationsNotNow() {
+        viewModelScope.launch { dismissNotificationPrimer() }
     }
 
     private fun firstName(id: FriendId): String = state.value.friends.firstOrNull { it.id == id }?.displayName?.substringBefore(' ').orEmpty()

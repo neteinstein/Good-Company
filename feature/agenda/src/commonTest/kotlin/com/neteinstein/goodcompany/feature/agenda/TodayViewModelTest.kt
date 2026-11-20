@@ -16,6 +16,8 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayUiState
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,11 +42,27 @@ class TodayViewModelTest {
         g.draftBirthdayMessage,
         g.answerLastSeen,
         g.hideLastSeenCard,
+        g.dismissNotificationPrimer,
         g.clock,
         g.observeGroups,
     )
 
     private fun birthday(id: String, month: Int, day: Int): Friend = friend(id) { copy(birthday = Birthday(month, day)) }
+
+    @Test
+    fun theNotificationsCardCanShow_untilNotNow_orNotificationsAreOffInSettings() = runViewModelTest {
+        // Issue #98: the screen adds "the system doesn't allow them"; the state says whether Settings wants them.
+        val g = TestGraph(listOf(friend("ana")))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertTrue(state.value.askForNotifications)
+        vm.onNotificationsNotNow()
+        assertFalse(state.value.askForNotifications)
+        assertTrue(g.settingsRepo.settings.value.notificationPrimerDismissed)
+
+        val off = TestGraph(listOf(friend("ana")), settings = AppSettings(notifications = NotificationSettings(enabled = false)))
+        assertFalse(collecting(vm(off).state).value.askForNotifications)
+    }
 
     @Test
     fun theReminderEditorGetsEveryCircle_forThePeoplePicker() = runViewModelTest {
