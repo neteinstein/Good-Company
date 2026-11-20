@@ -59,4 +59,5 @@
     <string name="plans_ideas_title">Idei pentru săptămâna asta</string>
     <string name="plans_ideas_all">Toate (%1$d)</string>
     <string name="plans_ideas_empty">Încă nu sunt idei. Deschide-le ca să cauți.</string>
+    <string name="plans_cancelled">Anulate</string>
 </resources>

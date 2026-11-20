@@ -44,6 +44,7 @@ import com.neteinstein.goodcompany.core.ui.resources.names_and_more
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_called
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_met
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_no
+import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_not_attended
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_yes
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_reminder_done
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_reminder_snooze
@@ -235,17 +236,15 @@ object ResourceNotificationRenderer : NotificationRenderer {
             is NotificationContent.PlanFollowUp -> Triple(
                 getString(Res.string.notif_plan_ask_title, namesText(c.withNames, c.withNames.size)),
                 getString(Res.string.notif_plan_ask_body, c.title),
-                // A circle plan asks who came in the app (tap the notification); only "No" works from here.
-                listOfNotNull(
-                    RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_HAPPENED, c.target),
-                        getString(Res.string.notif_action_plan_yes),
-                    ).takeUnless { c.isCircle },
-                    RenderedAction(
-                        NotificationAction(NotificationAction.Kind.PLAN_SKIPPED, c.target),
-                        getString(Res.string.notif_action_plan_no),
-                    ),
-                ),
+                // A circle plan asks who came in the app (tap the notification); "Yes" isn't offered from here.
+                c.actions.map { action ->
+                    val label = when (action.kind) {
+                        NotificationAction.Kind.PLAN_HAPPENED -> Res.string.notif_action_plan_yes
+                        NotificationAction.Kind.PLAN_NOT_ATTENDED -> Res.string.notif_action_plan_not_attended
+                        else -> Res.string.notif_action_plan_no
+                    }
+                    RenderedAction(action, getString(label))
+                },
             )
             // On this device only (D3). No quick actions: "Log it" needs the log sheet, so a tap opens the app.
             is NotificationContent.CalendarMeetups -> {

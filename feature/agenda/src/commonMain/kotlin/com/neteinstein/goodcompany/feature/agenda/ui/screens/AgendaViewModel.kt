@@ -6,9 +6,12 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
@@ -21,6 +24,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -50,6 +54,9 @@ sealed interface AgendaMessage {
     data object PlanLogged : AgendaMessage
 
     data object PlanClosed : AgendaMessage
+
+    /** Answered from "How did it go?" (issue #100); Cancel and Delete carry the plan as it was, for Undo. */
+    data class PlanAnswered(val answer: PlanAnswer, val previous: Plan? = null) : AgendaMessage
 
     /** One occurrence of a recurring plan skipped; the series goes on. */
     data object PlanSkipped : AgendaMessage
@@ -112,6 +119,8 @@ class AgendaViewModel(
     private val deleteReminder: DeleteReminderUseCase,
     private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
+    private val closePlan: ClosePlanUseCase,
+    private val restorePlan: RestorePlanUseCase,
     private val clock: AppClock,
     observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
     observeGroups: ObserveGroupsUseCase,
@@ -232,6 +241,25 @@ class AgendaViewModel(
             confirmPlan(id, happened, day)
             local.update { it.copy(message = if (happened) AgendaMessage.PlanLogged else AgendaMessage.PlanClosed) }
         }
+    }
+
+    /**
+     * An answer from "How did it go?" on a plan to confirm (issue #100), for that occurrence. "It happened" opens the
+     * "We met" panel through navigation instead.
+     */
+    fun onAnswerPlan(item: AgendaItem.PlanToConfirm, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer == PlanAnswer.HAPPENED) return
+        viewModelScope.launch {
+            val before = closePlan(item.plan.id, answer, day = item.occurrence, wholeSeries = wholeSeries)
+            val undo = before.takeIf { answer == PlanAnswer.CANCEL || answer == PlanAnswer.DELETE }
+            local.update { it.copy(message = AgendaMessage.PlanAnswered(answer, undo)) }
+        }
+    }
+
+    /** Undo on a plan cancelled or deleted a moment ago. */
+    fun onUndoPlan(message: AgendaMessage.PlanAnswered) {
+        val plan = message.previous ?: return
+        viewModelScope.launch { restorePlan(plan) }
     }
 
     /** "Skip this one": takes one date out of a recurring plan; the series goes on. */

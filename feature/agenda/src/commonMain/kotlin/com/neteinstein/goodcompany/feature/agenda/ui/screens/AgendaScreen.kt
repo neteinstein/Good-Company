@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
@@ -62,6 +63,7 @@ import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
+import com.neteinstein.goodcompany.core.ui.components.doneText
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
@@ -108,6 +110,7 @@ suspend fun AgendaMessage.text(zone: TimeZone, today: LocalDate): String = when 
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    is AgendaMessage.PlanAnswered -> answer.doneText()
     AgendaMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
 }
 
@@ -145,13 +148,12 @@ fun AgendaScreen(
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = onCircleMet,
         // A yes opens the "We met" panel on that occurrence (a circle plan asks who came, F20); a no closes it here.
-        onConfirmPlan = { item, happened ->
-            if (happened) {
-                onLogPlan(item.plan.id, item.occurrence)
-            } else {
-                viewModel.onConfirmPlan(item.plan.id, false, item.occurrence)
-            }
+        // "It happened" opens the "We met" panel on that occurrence (a circle plan asks who came, F20); the other answers
+        // close it here (issue #100).
+        onAnswerPlan = { item, answer, whole ->
+            if (answer == PlanAnswer.HAPPENED) onLogPlan(item.plan.id, item.occurrence) else viewModel.onAnswerPlan(item, answer, whole)
         },
+        onUndoPlan = viewModel::onUndoPlan,
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
         onSkipPlan = viewModel::onSkipPlan,
         onOpenCalendar = onOpenCalendar,
@@ -199,7 +201,8 @@ fun AgendaContent(
     onUndoReminder: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
-    onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
+    onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
+    onUndoPlan: (AgendaMessage.PlanAnswered) -> Unit = {},
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
     onOpenCalendar: () -> Unit = {},
@@ -212,8 +215,9 @@ fun AgendaContent(
     var showDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showMessage(message.text(state.zone, state.today), if (state.reminderUndo != null) undo else null)
-        if (result == SnackbarResult.ActionPerformed) onUndoReminder()
+        val planUndo = (message as? AgendaMessage.PlanAnswered)?.takeIf { it.previous != null }
+        val result = snackbar.showMessage(message.text(state.zone, state.today), if (state.reminderUndo != null || planUndo != null) undo else null)
+        if (result == SnackbarResult.ActionPerformed) if (planUndo != null) onUndoPlan(planUndo) else onUndoReminder()
         onMessageShown()
     }
     // Index of each day's header in the lazy list, so tapping the week strip can scroll to it.
@@ -275,7 +279,7 @@ fun AgendaContent(
                         onOpenFriend,
                         onOpenWish = onOpenWish,
                         onGroupMet = onGroupMet,
-                        onConfirmPlan = onConfirmPlan,
+                        onAnswerPlan = onAnswerPlan,
                         onAddPlanToCalendar = onAddPlanToCalendar,
                         onSkipPlan = onSkipPlan,
                         reminders = reminders,

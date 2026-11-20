@@ -7,6 +7,8 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -44,6 +46,8 @@ class TodayViewModelTest {
         g.deleteReminder,
         g.restoreReminder,
         g.confirmPlan,
+        g.closePlan,
+        g.restorePlan,
         g.logCall,
         g.snooze,
         g.draftBirthdayMessage,
@@ -238,5 +242,25 @@ class TodayViewModelTest {
         assertNull(state.value.lastSeenAsk)
         assertNull(g.friendRepo.get(FriendId("ana"))?.approxLastSeen)
         assertEquals(LocalDate(2026, 3, 10), g.settingsRepo.settings.first().lastSeenCardHiddenOn)
+    }
+
+    @Test
+    fun howDidItGo_onToday_cancelsWithUndo_andDidntHappenCloses() = runViewModelTest {
+        val g = TestGraph(listOf(friend("ana")))
+        val lunch = g.savePlan(null, "Lunch", listOf(FriendId("ana")), LocalDate(2026, 3, 9))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        val ask = state.value.week.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        vm.onAnswerPlan(ask, PlanAnswer.CANCEL)
+        val cancelled = assertIs<TodayMessage.PlanAnswered>(state.value.message)
+        assertEquals(lunch, cancelled.previous)
+        assertEquals(PlanStatus.CANCELLED, g.planRepo.plans.value.single().status)
+        vm.onUndoPlan(cancelled)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+
+        vm.onAnswerPlan(ask, PlanAnswer.DIDNT_HAPPEN)
+        assertEquals(TodayMessage.PlanAnswered(PlanAnswer.DIDNT_HAPPEN), state.value.message)
+        assertEquals(PlanStatus.SKIPPED, g.planRepo.plans.value.single().status)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
     }
 }

@@ -17,11 +17,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,13 +46,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
@@ -61,15 +66,17 @@ import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.every_n_days
 import com.neteinstein.goodcompany.core.ui.resources.plan_activity
 import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
+import com.neteinstein.goodcompany.core.ui.resources.plan_answer_happened
 import com.neteinstein.goodcompany.core.ui.resources.plan_cancel
 import com.neteinstein.goodcompany.core.ui.resources.plan_change
 import com.neteinstein.goodcompany.core.ui.resources.plan_counts_hint
-import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.resources.plan_delete
 import com.neteinstein.goodcompany.core.ui.resources.plan_edit
 import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_months
 import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_weeks
+import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
 import com.neteinstein.goodcompany.core.ui.resources.plan_new
-import com.neteinstein.goodcompany.core.ui.resources.plan_no
+import com.neteinstein.goodcompany.core.ui.resources.plan_other_answer
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_add_end
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_custom
@@ -90,11 +97,11 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_with
 import com.neteinstein.goodcompany.core.ui.resources.plan_with_circle
 import com.neteinstein.goodcompany.core.ui.resources.plan_with_names
 import com.neteinstein.goodcompany.core.ui.resources.plan_with_people
-import com.neteinstein.goodcompany.core.ui.resources.plan_yes
 import com.neteinstein.goodcompany.core.ui.resources.save
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -319,18 +326,19 @@ fun repeatLabel(every: Int, unit: RepeatUnit): String = when (unit) {
 fun repeatLabel(repeat: Repeat): String = repeatLabel(repeat.every, repeat.unit)
 
 /**
- * One plan (one occurrence of a recurring plan): date, title, who, how often and where. Past ones ask "Did you meet?";
- * upcoming ones offer add-to-calendar, change, "Skip this one" (a series) and cancel.
+ * One plan (one occurrence of a recurring plan): date, title, who, how often and where. Past ones ask "How did it go?"
+ * (issue #100: "It happened" in one tap, the rest in [PlanCloseSheet]); upcoming ones offer add-to-calendar, change,
+ * "Skip this one" (a series), cancel and delete. [onAnswer] gets the answer for [occurrence] and whether it is for the
+ * whole series.
  */
 @Composable
 fun PlanRow(
     plan: Plan,
     friends: List<Friend>,
     today: LocalDate,
-    onConfirm: (happened: Boolean) -> Unit,
+    onAnswer: (PlanAnswer, wholeSeries: Boolean) -> Unit,
     onAddToCalendar: () -> Unit,
     onChange: () -> Unit,
-    onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     showNames: Boolean = true,
     occurrence: LocalDate = plan.date,
@@ -338,85 +346,114 @@ fun PlanRow(
     onSkip: () -> Unit = {},
 ) {
     val isPast = occurrence < today
+    var sheet by remember { mutableStateOf(false) }
+    var series by remember { mutableStateOf<PlanAnswer?>(null) }
+    fun answer(a: PlanAnswer) {
+        if (plan.asksForSeries(a)) series = a else onAnswer(a, false)
+    }
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             DateBadge(occurrence, today)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(plan.title, style = MaterialTheme.typography.titleSmall)
-                val details = listOfNotNull(
-                    circle?.let { "${it.emoji} ${it.name}" },
-                    friends.takeIf { showNames && circle == null && it.isNotEmpty() }?.let { fs ->
-                        stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
-                    },
-                    plan.activity?.let { activityLabel(it) },
-                    plan.repeat?.let { repeatLabel(it) },
-                    plan.place,
-                )
-                if (details.isNotEmpty()) {
-                    Text(
-                        details.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                PlanDetails(plan, friends, showNames, circle)
             }
             if (!isPast) {
                 var menu by remember { mutableStateOf(false) }
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.plan_change)) }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.plan_add_calendar)) },
-                        leadingIcon = { Icon(Icons.Rounded.CalendarMonth, null) },
-                        onClick = {
-                            menu = false
-                            onAddToCalendar()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.plan_change)) },
-                        leadingIcon = { Icon(Icons.Rounded.EditCalendar, null) },
-                        onClick = {
-                            menu = false
-                            onChange()
-                        },
-                    )
-                    if (plan.isRecurring) {
+                    fun item(label: StringResource, icon: ImageVector, onClick: () -> Unit): @Composable () -> Unit = {
                         DropdownMenuItem(
-                            text = { Text(stringResource(Res.string.plan_skip_one)) },
-                            leadingIcon = { Icon(Icons.Rounded.EventBusy, null) },
+                            text = { Text(stringResource(label)) },
+                            leadingIcon = { Icon(icon, null) },
                             onClick = {
                                 menu = false
-                                onSkip()
+                                onClick()
                             },
                         )
                     }
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.plan_cancel)) },
-                        leadingIcon = { Icon(Icons.Rounded.Close, null) },
-                        onClick = {
-                            menu = false
-                            onCancel()
-                        },
-                    )
+                    if (occurrence == today) item(Res.string.plan_how_did_it_go, Icons.Rounded.TaskAlt) { sheet = true }()
+                    item(Res.string.plan_add_calendar, Icons.Rounded.CalendarMonth, onAddToCalendar)()
+                    item(Res.string.plan_change, Icons.Rounded.EditCalendar, onChange)()
+                    if (plan.isRecurring) item(Res.string.plan_skip_one, Icons.Rounded.EventBusy, onSkip)()
+                    item(Res.string.plan_cancel, Icons.Rounded.Close) { answer(PlanAnswer.CANCEL) }()
+                    item(Res.string.plan_delete, Icons.Rounded.DeleteOutline) { answer(PlanAnswer.DELETE) }()
                 }
             }
         }
         if (isPast) {
             Text(
-                stringResource(Res.string.plan_did_you_meet),
+                stringResource(Res.string.plan_how_did_it_go),
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(top = 6.dp),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = { onConfirm(true) }) {
+                FilledTonalButton(onClick = { onAnswer(PlanAnswer.HAPPENED, false) }) {
                     Icon(Icons.Rounded.Check, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(Res.string.plan_yes))
+                    Text(stringResource(Res.string.plan_answer_happened))
                 }
-                TextButton(onClick = { onConfirm(false) }) { Text(stringResource(Res.string.plan_no)) }
+                TextButton(onClick = { sheet = true }) { Text(stringResource(Res.string.plan_other_answer)) }
             }
         }
+    }
+    if (sheet) {
+        PlanCloseSheet(plan, onDismiss = { sheet = false }, onAnswer = { a, whole ->
+            sheet = false
+            onAnswer(a, whole)
+        })
+    }
+    series?.let { a ->
+        PlanSeriesDialog(a, onDismiss = { series = null }, onPick = { whole ->
+            series = null
+            onAnswer(a, whole)
+        })
+    }
+}
+
+/** A cancelled plan (issue #100): kept, struck through, with Delete. */
+@Composable
+fun CancelledPlanRow(
+    plan: Plan,
+    friends: List<Friend>,
+    today: LocalDate,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    circle: FriendGroup? = null,
+) {
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        DateBadge(plan.date, today)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                plan.title,
+                style = MaterialTheme.typography.titleSmall.copy(textDecoration = TextDecoration.LineThrough),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            PlanDetails(plan, friends, showNames = true, circle = circle)
+        }
+        IconButton(onClick = onDelete) { Icon(Icons.Rounded.DeleteOutline, stringResource(Res.string.plan_delete)) }
+    }
+}
+
+@Composable
+private fun PlanDetails(plan: Plan, friends: List<Friend>, showNames: Boolean, circle: FriendGroup?) {
+    val details = listOfNotNull(
+        circle?.let { "${it.emoji} ${it.name}" },
+        friends.takeIf { showNames && circle == null && it.isNotEmpty() }?.let { fs ->
+            stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
+        },
+        plan.activity?.let { activityLabel(it) },
+        plan.repeat?.let { repeatLabel(it) },
+        plan.place,
+    )
+    if (details.isNotEmpty()) {
+        Text(
+            details.joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

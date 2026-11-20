@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
@@ -67,6 +68,7 @@ import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.StoryBubbleChip
 import com.neteinstein.goodcompany.core.ui.components.YearReviewCard
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
+import com.neteinstein.goodcompany.core.ui.components.doneText
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.components.showUndo
 import com.neteinstein.goodcompany.core.ui.components.text
@@ -129,7 +131,7 @@ suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = 
     is TodayMessage.CallLogged -> getString(Res.string.today_call_logged, name)
     is TodayMessage.Snoozed -> getString(Res.string.today_snoozed, name, until.shortLabelText())
     is TodayMessage.CheckedIn -> getString(Res.string.today_logged_with, names.joinToString())
-    TodayMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    is TodayMessage.PlanAnswered -> answer.doneText()
     TodayMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
     is TodayMessage.AiError -> aiErrorText(error)
     is TodayMessage.LastSeenAnswered -> getString(
@@ -190,7 +192,11 @@ fun TodayScreen(
             onSnooze = viewModel::onSnooze,
             onOpenWish = viewModel::onOpenWish,
             onGroupMet = onCircleMet,
-            onConfirmPlan = { item, happened -> if (happened) onLogPlan(item.plan.id, item.occurrence) else viewModel.onPlanDidNotHappen(item) },
+            // "It happened" opens the "We met" panel; the other answers close it here (issue #100).
+            onAnswerPlan = { item, answer, whole ->
+                if (answer == PlanAnswer.HAPPENED) onLogPlan(item.plan.id, item.occurrence) else viewModel.onAnswerPlan(item, answer, whole)
+            },
+            onUndoPlan = viewModel::onUndoPlan,
             onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
             onSkipPlan = viewModel::onSkipPlan,
             onOpenAgenda = onOpenAgenda,
@@ -265,7 +271,8 @@ data class TodayActions(
     val onSnooze: (FriendId, SnoozeOption) -> Unit = { _, _ -> },
     val onOpenWish: (FriendId) -> Unit = {},
     val onGroupMet: (String) -> Unit = {},
-    val onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
+    val onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
+    val onUndoPlan: (TodayMessage.PlanAnswered) -> Unit = {},
     val onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     val onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
     val onOpenAgenda: () -> Unit = {},
@@ -301,6 +308,8 @@ fun TodayContent(
                 actions.onUndoLastSeen(message)
                 return@LaunchedEffect
             }
+        } else if (message is TodayMessage.PlanAnswered && message.previous != null) {
+            if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoPlan(message)
         } else if (message is TodayMessage.Reminder && state.reminderUndo != null) {
             if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoReminder()
         } else {
@@ -393,7 +402,7 @@ fun TodayContent(
                         actions.onOpenFriend,
                         onOpenWish = actions.onOpenWish,
                         onGroupMet = actions.onGroupMet,
-                        onConfirmPlan = actions.onConfirmPlan,
+                        onAnswerPlan = actions.onAnswerPlan,
                         onAddPlanToCalendar = actions.onAddPlanToCalendar,
                         onSkipPlan = actions.onSkipPlan,
                         reminders = actions.reminders,
