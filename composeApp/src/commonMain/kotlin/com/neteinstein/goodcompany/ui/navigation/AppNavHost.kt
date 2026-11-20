@@ -33,6 +33,7 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
@@ -146,6 +147,7 @@ fun AppNavHost(
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                        onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
                         onLogPlan = logPlan,
                         onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                         // A circle chip opens that circle's page (issue #88).
@@ -164,6 +166,7 @@ fun AppNavHost(
                     friendId = FriendId(id),
                     onBack = { navController.popBackStack() },
                     onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                    onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
                 )
             }
             dialog<LogInteractionRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
@@ -179,6 +182,7 @@ fun AppNavHost(
                         note = route.note,
                         place = route.place,
                         label = route.label,
+                        edit = route.editKey?.let { key -> route.editFriend?.let { TimelineEntryRef(FriendId(it), key) } },
                     ),
                     onClose = { navController.popBackStack() },
                 )

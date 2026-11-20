@@ -85,6 +85,7 @@ import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_search
 import com.neteinstein.goodcompany.core.ui.resources.log_title
 import com.neteinstein.goodcompany.core.ui.resources.log_title_circle
+import com.neteinstein.goodcompany.core.ui.resources.log_title_edit
 import com.neteinstein.goodcompany.core.ui.resources.log_today
 import com.neteinstein.goodcompany.core.ui.resources.log_yesterday
 import com.neteinstein.goodcompany.core.ui.resources.ok
@@ -118,6 +119,8 @@ data class LogSheetState(
     /** The circle picked: its members are listed to tick who came, nobody ticked to start with (F20). */
     val circle: FriendGroup? = null,
     val circleMembers: List<Friend> = emptyList(),
+    /** Editing a timeline entry (issue #102): the title says so. */
+    val editing: Boolean = false,
 ) {
     /** Journal entries need text; everything else can be saved as it is. */
     val canSave: Boolean get() = people.isNotEmpty() && !saving && (kind != LogKind.JOURNAL || note.isNotBlank())
@@ -195,7 +198,9 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                 }
                 val circle = state.circle
                 Text(
-                    if (circle != null) {
+                    if (state.editing) {
+                        stringResource(Res.string.log_title_edit)
+                    } else if (circle != null) {
                         stringResource(Res.string.log_title_circle, circle.name)
                     } else {
                         stringResource(Res.string.log_title, namesList(state.people))

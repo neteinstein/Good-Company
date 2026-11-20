@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
@@ -15,6 +16,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
+import com.neteinstein.goodcompany.core.domain.usecase.asLogRequest
+import com.neteinstein.goodcompany.core.domain.usecase.editsInLogSheet
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.LogDraft
 import com.neteinstein.goodcompany.core.ui.components.LogSheetModel
@@ -23,7 +28,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
 /**
@@ -37,6 +44,8 @@ data class LogPrefill(
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */
     val label: String? = null,
+    /** Edit this timeline entry instead of logging a new one (issue #102); the rest is then ignored. */
+    val edit: TimelineEntryRef? = null,
 )
 
 data class LogInteractionUiState(
@@ -68,6 +77,8 @@ class LogInteractionViewModel(
     currentLocation: GetCurrentLocationUseCase,
     loggedMeetups: LoggedMeetupInbox,
     clock: AppClock,
+    observeTimeline: ObserveTimelineUseCase,
+    editEntry: EditTimelineEntryUseCase,
 ) : ViewModel() {
     private val model = LogSheetModel(
         viewModelScope,
@@ -92,8 +103,20 @@ class LogInteractionViewModel(
         loggedMeetups,
         clock,
         plan,
+        editEntry,
     )
     private val done = MutableStateFlow(false)
+
+    init {
+        // Edit mode (issue #102): open on the entry as it is; an entry that's gone (or can't be edited here) closes the sheet.
+        prefill.edit?.let { ref ->
+            viewModelScope.launch {
+                val entry = observeTimeline(ref.friendId).first().firstOrNull { it.key == ref.key }
+                val request = entry?.takeIf { it.editsInLogSheet }?.asLogRequest(ref.friendId, clock.timeZone)
+                if (entry == null || request == null) done.value = true else model.startEditing(entry, request)
+            }
+        }
+    }
 
     val state: StateFlow<LogInteractionUiState> = combine(model.sheet, done) { sheet, isDone -> LogInteractionUiState(sheet, isDone) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LogInteractionUiState(model.sheet.value))

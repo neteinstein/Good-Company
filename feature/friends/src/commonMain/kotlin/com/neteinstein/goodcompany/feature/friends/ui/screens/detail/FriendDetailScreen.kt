@@ -2,8 +2,10 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -128,6 +130,7 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
@@ -147,6 +150,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
+import com.neteinstein.goodcompany.core.ui.components.EditDeleteMenu
+import com.neteinstein.goodcompany.core.ui.components.EditableTimelineEntry
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
@@ -159,7 +164,6 @@ import com.neteinstein.goodcompany.core.ui.components.ReminderRow
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
-import com.neteinstein.goodcompany.core.ui.components.TimelineEntryRow
 import com.neteinstein.goodcompany.core.ui.components.WarmthDot
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
@@ -188,6 +192,7 @@ import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.close
+import com.neteinstein.goodcompany.core.ui.resources.delete
 import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_deleted
@@ -197,6 +202,7 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.remove_item
+import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -264,6 +270,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.moments_title
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
+import com.neteinstein.goodcompany.feature.friends.resources.msg_entry_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_error
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_not_found
@@ -313,6 +320,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_pla
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_doesnt_like
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_drink
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_drink_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.tastes_edit_title
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_food
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_food_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_interests
@@ -374,6 +382,8 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
+    /** The Log sheet in edit mode on this timeline entry ([TimelineEntry.key], issue #102). */
+    onEditEntry: (String) -> Unit = {},
     /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
     /** "Together" opens the small "We met" panel (issue #47). */
@@ -415,6 +425,13 @@ fun FriendDetailScreen(
             onUndoRemoveCustomField = viewModel::onUndoRemoveCustomField,
             onAddLifeUpdate = viewModel::onAddLifeUpdate,
             onRemoveLifeUpdate = viewModel::onRemoveLifeUpdate,
+            onEditLifeUpdate = viewModel::onEditLifeUpdate,
+            onEditEvent = viewModel::onEditEvent,
+            onRenameTaste = viewModel::onRenameTaste,
+            onDeleteTaste = viewModel::onDeleteTaste,
+            onEditGift = viewModel::onEditGift,
+            onEditEntry = onEditEntry,
+            onDeleteEntry = viewModel::onDeleteEntry,
             onAddFeed = viewModel::onAddFeed,
             onRemoveFeed = viewModel::onRemoveFeed,
             onFeedPostToNews = viewModel::onFeedPostToNews,
@@ -534,6 +551,15 @@ data class FriendDetailActions(
     val onAddRelativeAsPerson: (String) -> Unit = {},
     val onAddLifeUpdate: (String) -> Unit = {},
     val onRemoveLifeUpdate: (String) -> Unit = {},
+    // Issue #102: edit and delete every entry.
+    val onEditLifeUpdate: (id: String, text: String) -> Unit = { _, _ -> },
+    val onEditEvent: (id: String, title: String, date: LocalDate, remindDaysBefore: Int) -> Unit = { _, _, _, _ -> },
+    val onRenameTaste: (TasteSlot, old: String, new: String) -> Unit = { _, _, _ -> },
+    val onDeleteTaste: (TasteSlot, String) -> Unit = { _, _ -> },
+    val onEditGift: (id: String, title: String, note: String) -> Unit = { _, _, _ -> },
+    /** Meetups, contacts and journal entries open the Log sheet in edit mode ([TimelineEntry.key]). */
+    val onEditEntry: (String) -> Unit = {},
+    val onDeleteEntry: (TimelineEntry) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
     val onRemoveFeed: (String) -> Unit = {},
     val onFeedPostToNews: (String) -> Unit = {},
@@ -646,6 +672,7 @@ suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: Local
     is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
     is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
     FriendDetailMessage.Saved -> getString(Res.string.msg_saved)
+    FriendDetailMessage.Removed -> getString(Res.string.msg_entry_removed)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -666,6 +693,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var addingTaste by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.feedAdded) { addingFeed = false }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
+    // Issue #102: the entry being edited in its own dialog (news, a moment, a gift, a taste).
+    var pageEdit by remember { mutableStateOf<PageEdit?>(null) }
     var pickBirthday by rememberSaveable { mutableStateOf(false) }
     var pickLevel by rememberSaveable { mutableStateOf(false) }
     var editingName by rememberSaveable { mutableStateOf(false) }
@@ -833,8 +862,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 item(key = card.name) {
                     when (card) {
                         PersonCard.COMING_UP -> ComingUp(f, state, actions)
-                        PersonCard.TO_TALK_ABOUT -> ToTalkAbout(f, state, actions, editing, onAddNews = { addingNews = true })
-                        PersonCard.TASTES -> Tastes(f, state, actions, editing, onAdd = { addingTaste = true })
+                        PersonCard.TO_TALK_ABOUT -> ToTalkAbout(f, state, actions, editing, onAddNews = { addingNews = true }, onEdit = {
+                            pageEdit =
+                                it
+                        })
+                        PersonCard.TASTES -> Tastes(f, state, actions, editing, onAdd = { addingTaste = true }, onEdit = { pageEdit = it })
                         PersonCard.NOTES -> Notes(f, actions)
                         PersonCard.COMPLETE -> CompleteProfile(firstName, ProfileSections.missing(f, facts), onPick = ::complete)
                         PersonCard.ABOUT -> AboutCard(
@@ -870,7 +902,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             actions.onOpenFriend,
                             onEdit = { linkEditing = it },
                         )
-                        PersonCard.MOMENTS -> Moments(f, state, actions, editing, onAdd = { addingEvent = true })
+                        PersonCard.MOMENTS -> Moments(f, state, actions, editing, onAdd = { addingEvent = true }, onEdit = { pageEdit = it })
                         PersonCard.GIFTS -> Gifts(f, state, actions, editing, onAdd = { addingGift = true }, onGive = { givingGift = it })
                         PersonCard.SAVED -> SavedCard(
                             firstName,
@@ -883,7 +915,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                         )
                         PersonCard.FEEDS -> Feeds(f, state, actions, editing, onAdd = { addingFeed = true })
                         PersonCard.CONVERSATIONS -> Conversations(detail.messageCount)
-                        PersonCard.TIMELINE -> TimelineCard(detail.timeline, state, actions)
+                        PersonCard.TIMELINE -> TimelineCard(detail.timeline, state, actions, onEdit = { pageEdit = it })
                     }
                 }
             }
@@ -993,6 +1025,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 addingGift = false
             }
         }
+        pageEdit?.let { edit -> PageEditDialog(edit, firstName, state.today, actions, onDone = { pageEdit = null }) }
         givingGift?.let { gift ->
             GiftGivenDialog(gift, onDismiss = { givingGift = null }) { occasion ->
                 actions.onMarkGiftGiven(gift.id, occasion)
@@ -1472,8 +1505,16 @@ private fun EditTopCard(
 }
 
 /** News (with "Add news"), topics from notes and, while AI is on, the AI ideas (gotcha 33). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ToTalkAbout(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, editing: Boolean, onAddNews: () -> Unit) {
+private fun ToTalkAbout(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    editing: Boolean,
+    onAddNews: () -> Unit,
+    onEdit: (PageEdit) -> Unit,
+) {
     val detail = state.detail ?: return
     val firstName = f.displayName.substringBefore(' ')
     SectionCard(
@@ -1483,6 +1524,7 @@ private fun ToTalkAbout(f: Friend, state: FriendDetailUiState, actions: FriendDe
     ) {
         if (f.lifeUpdates.isNotEmpty()) Label(stringResource(Res.string.news_title), Icons.Rounded.NewReleases)
         f.lifeUpdates.sortedByDescending { it.addedAt }.forEach { update ->
+            var menu by remember { mutableStateOf(false) }
             ListItem(
                 headlineContent = { Text(update.text, style = MaterialTheme.typography.titleSmall) },
                 supportingContent = { Text(stringResource(Res.string.news_added, relativePast(update.addedAt, state.now, state.zone))) },
@@ -1493,9 +1535,18 @@ private fun ToTalkAbout(f: Friend, state: FriendDetailUiState, actions: FriendDe
                         }
                     }
                 } else {
-                    null
+                    {
+                        EditDeleteMenu(
+                            menu,
+                            onOpen = { menu = true },
+                            onClose = { menu = false },
+                            onEdit = { onEdit(PageEdit.News(update)) },
+                            onDelete = { actions.onRemoveLifeUpdate(update.id) },
+                        )
+                    }
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.combinedClickable(onClick = { onEdit(PageEdit.News(update)) }, onLongClick = { menu = true }),
             )
         }
         if (f.lifeUpdates.isEmpty() && detail.topics.isEmpty() && !state.aiEnabled) Hint(stringResource(Res.string.news_hint))
@@ -1536,7 +1587,14 @@ private fun ToTalkAbout(f: Friend, state: FriendDetailUiState, actions: FriendDe
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Tastes(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, editing: Boolean, onAdd: () -> Unit) {
+private fun Tastes(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    editing: Boolean,
+    onAdd: () -> Unit,
+    onEdit: (PageEdit) -> Unit,
+) {
     SectionCard(stringResource(Res.string.tastes_title), icon = Icons.Rounded.ThumbUp) {
         if (editing) {
             Label(stringResource(Res.string.tastes_food), Icons.Rounded.Restaurant)
@@ -1588,14 +1646,22 @@ private fun Tastes(f: Friend, state: FriendDetailUiState, actions: FriendDetailA
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // A tap opens the chip to rename or delete it; × deletes it with Undo (issue #102).
             @Composable
-            fun TasteChip(value: String, icon: ImageVector, dislike: Boolean = false, onRemove: () -> Unit) {
+            fun TasteChip(value: String, icon: ImageVector, slot: TasteSlot) {
+                val dislike = slot == TasteSlot.DISLIKE
                 InputChip(
                     selected = false,
-                    onClick = onRemove,
+                    onClick = { onEdit(PageEdit.Taste(slot, value)) },
                     label = { Text(value) },
                     leadingIcon = { Icon(icon, null, Modifier.size(16.dp)) },
-                    trailingIcon = { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, value), Modifier.size(16.dp)) },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Rounded.Close,
+                            stringResource(CoreRes.string.remove_item, value),
+                            Modifier.size(16.dp).clickable { actions.onDeleteTaste(slot, value) },
+                        )
+                    },
                     colors = if (dislike) {
                         InputChipDefaults.inputChipColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -1608,11 +1674,11 @@ private fun Tastes(f: Friend, state: FriendDetailUiState, actions: FriendDetailA
                     },
                 )
             }
-            f.food.forEach { TasteChip(it, Icons.Rounded.Restaurant) { actions.onRemoveTaste(TasteKind.FOOD, it) } }
-            f.drinks.forEach { TasteChip(it, Icons.Rounded.LocalCafe) { actions.onRemoveTaste(TasteKind.DRINK, it) } }
-            f.interests.forEach { TasteChip(it, Icons.Rounded.Interests) { actions.onRemoveTaste(TasteKind.INTEREST, it) } }
-            f.likes.forEach { TasteChip(it, Icons.Rounded.ThumbUp) { actions.onRemoveLike(it) } }
-            f.dislikes.forEach { TasteChip(it, Icons.Rounded.ThumbDown, dislike = true) { actions.onRemoveDislike(it) } }
+            f.food.forEach { TasteChip(it, Icons.Rounded.Restaurant, TasteSlot.FOOD) }
+            f.drinks.forEach { TasteChip(it, Icons.Rounded.LocalCafe, TasteSlot.DRINK) }
+            f.interests.forEach { TasteChip(it, Icons.Rounded.Interests, TasteSlot.INTEREST) }
+            f.likes.forEach { TasteChip(it, Icons.Rounded.ThumbUp, TasteSlot.LIKE) }
+            f.dislikes.forEach { TasteChip(it, Icons.Rounded.ThumbDown, TasteSlot.DISLIKE) }
             AssistChip(
                 onClick = onAdd,
                 label = { Text(stringResource(CoreRes.string.add)) },
@@ -1757,20 +1823,43 @@ private fun Occasions(f: Friend, actions: FriendDetailActions, editing: Boolean)
 
 /** Every moment, not only the upcoming ones; × only in edit mode. */
 @Composable
-private fun Moments(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, editing: Boolean, onAdd: () -> Unit) {
+private fun Moments(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    editing: Boolean,
+    onAdd: () -> Unit,
+    onEdit: (PageEdit) -> Unit,
+) {
     SectionCard(stringResource(Res.string.moments_title), icon = Icons.Rounded.Favorite, action = {
         TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) }
     }) {
         if (f.importantEvents.isEmpty()) Hint(stringResource(Res.string.moments_hint))
         f.importantEvents.forEach { event ->
-            MomentRow(event, state.today, onRemove = if (editing) ({ actions.onRemoveEvent(event.id) }) else null)
+            MomentRow(
+                event,
+                state.today,
+                onRemove = if (editing) ({ actions.onRemoveEvent(event.id) }) else null,
+                onEdit = { onEdit(PageEdit.Moment(event)) }.takeUnless { editing },
+                onDelete = { actions.onRemoveEvent(event.id) },
+            )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MomentRow(event: ImportantEvent, today: LocalDate, onRemove: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun MomentRow(
+    event: ImportantEvent,
+    today: LocalDate,
+    onRemove: (() -> Unit)? = null,
+    /** View mode (issue #102): a tap edits, a long press or ⋮ offers Edit and Delete. */
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val clickable = if (onEdit != null) Modifier.combinedClickable(onClick = onEdit, onLongClick = { menu = true }) else Modifier
+    Row(clickable.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         DateBadge(event.date, today)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
@@ -1788,6 +1877,8 @@ private fun MomentRow(event: ImportantEvent, today: LocalDate, onRemove: (() -> 
         }
         if (onRemove != null) {
             IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, event.title)) }
+        } else if (onEdit != null) {
+            EditDeleteMenu(menu, onOpen = { menu = true }, onClose = { menu = false }, onEdit = onEdit, onDelete = onDelete)
         }
     }
 }
@@ -1810,7 +1901,7 @@ private fun Conversations(messageCount: Int) {
  * what only it does (filters, swipe to delete, importing a WhatsApp export).
  */
 @Composable
-private fun TimelineCard(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions) {
+private fun TimelineCard(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit) {
     SectionCard(
         stringResource(Res.string.timeline_title),
         icon = Icons.Rounded.Diversity3,
@@ -1822,7 +1913,23 @@ private fun TimelineCard(timeline: List<TimelineEntry>, state: FriendDetailUiSta
         },
     ) {
         if (timeline.isEmpty()) Hint(stringResource(Res.string.timeline_empty))
-        timeline.forEachIndexed { i, entry -> TimelineEntryRow(entry, state.zone, last = i == timeline.lastIndex) }
+        // Issue #102: a tap edits (news and gifts in their dialogs, the rest in the Log sheet); ⋮ or a long press offers Delete too.
+        timeline.forEachIndexed { i, entry ->
+            EditableTimelineEntry(
+                entry,
+                state.zone,
+                onEdit = {
+                    when (entry) {
+                        is TimelineEntry.WhatsNew -> onEdit(PageEdit.News(entry.update))
+                        is TimelineEntry.GiftGiven -> onEdit(PageEdit.GiftEdit(entry.gift))
+                        is TimelineEntry.Share -> Unit
+                        else -> actions.onEditEntry(entry.key)
+                    }
+                },
+                onDelete = if (entry.deletable) ({ actions.onDeleteEntry(entry) }) else null,
+                last = i == timeline.lastIndex,
+            )
+        }
     }
 }
 
@@ -2096,4 +2203,59 @@ private fun IdeaRow(idea: Idea, onDismiss: (String) -> Unit) {
         }
         IconButton(onClick = { onDismiss(idea.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.ideas_dismiss)) }
     }
+}
+
+/** An entry on the page being edited in its own dialog (issue #102). */
+internal sealed interface PageEdit {
+    data class News(val update: LifeUpdate) : PageEdit
+
+    data class Moment(val event: ImportantEvent) : PageEdit
+
+    data class GiftEdit(val gift: Gift) : PageEdit
+
+    data class Taste(val slot: TasteSlot, val value: String) : PageEdit
+}
+
+@Composable
+private fun PageEditDialog(edit: PageEdit, firstName: String, today: LocalDate, actions: FriendDetailActions, onDone: () -> Unit) {
+    when (edit) {
+        is PageEdit.News -> LifeUpdateDialog(firstName, onDismiss = onDone, initial = edit.update.text) { text ->
+            actions.onEditLifeUpdate(edit.update.id, text)
+            onDone()
+        }
+        is PageEdit.Moment -> ImportantEventDialog(today, onDone, initial = edit.event) { t, d, b ->
+            actions.onEditEvent(edit.event.id, t, d, b)
+            onDone()
+        }
+        is PageEdit.GiftEdit -> GiftDialog(onDismiss = onDone, initial = edit.gift) { title, note ->
+            actions.onEditGift(edit.gift.id, title, note)
+            onDone()
+        }
+        is PageEdit.Taste -> TasteEditDialog(
+            edit.value,
+            onDismiss = onDone,
+            onSave = {
+                actions.onRenameTaste(edit.slot, edit.value, it)
+                onDone()
+            },
+            onDelete = {
+                actions.onDeleteTaste(edit.slot, edit.value)
+                onDone()
+            },
+        )
+    }
+}
+
+/** A taste chip opened (issue #102): rename it, or delete it (with Undo). */
+@Composable
+private fun TasteEditDialog(value: String, onDismiss: () -> Unit, onSave: (String) -> Unit, onDelete: () -> Unit) {
+    var text by rememberSaveable(value) { mutableStateOf(value) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ThumbUp, null) },
+        title = { Text(stringResource(Res.string.tastes_edit_title)) },
+        text = { OutlinedTextField(text, { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { TextButton(onClick = { onSave(text) }, enabled = text.isNotBlank()) { Text(stringResource(CoreRes.string.save)) } },
+        dismissButton = { TextButton(onClick = onDelete) { Text(stringResource(CoreRes.string.delete)) } },
+    )
 }

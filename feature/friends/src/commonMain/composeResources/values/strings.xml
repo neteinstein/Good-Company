@@ -119,6 +119,7 @@
     <string name="gifts_suggest_for">Suggest for %1$s</string>
     <string name="gifts_suggestions">AI suggestions — tap to keep</string>
     <string name="gifts_new">New gift idea</string>
+    <string name="gifts_edit">Edit gift</string>
     <string name="gifts_idea_label">Gift idea</string>
     <string name="gifts_note_label">Note (where to buy, size…)</string>
     <string name="gifts_for">For</string>
@@ -186,6 +187,7 @@
     <string name="kid_set_birthday">Set birthday</string>
     <string name="kid_likes">Likes (comma separated)</string>
     <string name="event_title">Important moment</string>
+    <string name="event_edit_title">Edit moment</string>
     <string name="event_what">What’s happening? (surgery, exam…)</string>
     <string name="event_also_remind">Also remind me</string>
     <string name="event_on_day">Only on the day</string>
@@ -366,6 +368,7 @@
     <string name="timeline_filter_notes">Notes</string>
     <string name="timeline_filter_gifts">Gifts</string>
     <string name="msg_timeline_removed">Removed from the timeline</string>
+    <string name="msg_entry_removed">Removed</string>
     <string name="timeline_delete">Delete</string>
     <string name="contact_message">Message %1$s</string>
     <string name="contact_email">Email %1$s</string>
@@ -536,6 +539,7 @@
     <string name="complete_feeds">Blog or feed</string>
     <string name="circles_edit">Circles</string>
     <string name="tastes_add_title">Add to %1$s’s tastes</string>
+    <string name="tastes_edit_title">Edit taste</string>
     <string name="coming_up_title">Coming up</string>
     <string name="talk_title">To talk about</string>
     <string name="news_add">Add news</string>

@@ -48,12 +48,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
+import com.neteinstein.goodcompany.core.ui.components.EditableTimelineEntry
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
-import com.neteinstein.goodcompany.core.ui.components.TimelineEntryRow
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
@@ -77,6 +78,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.timeline_log
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_more_options
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_screen_title
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_title
+import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -90,6 +93,8 @@ fun FriendTimelineScreen(
     friendId: FriendId,
     onBack: () -> Unit,
     onLog: () -> Unit,
+    /** The Log sheet in edit mode on this entry ([TimelineEntry.key], issue #102). */
+    onEditEntry: (String) -> Unit = {},
     viewModel: FriendTimelineViewModel = koinViewModel(key = "timeline-${friendId.value}") { parametersOf(friendId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -99,6 +104,9 @@ fun FriendTimelineScreen(
         actions = FriendTimelineActions(
             onBack = onBack,
             onLog = onLog,
+            onEditEntry = onEditEntry,
+            onEditNews = viewModel::onEditNews,
+            onEditGift = viewModel::onEditGift,
             onFilter = viewModel::onFilter,
             onDelete = viewModel::onDelete,
             onUndoDelete = viewModel::onUndoDelete,
@@ -111,6 +119,10 @@ fun FriendTimelineScreen(
 data class FriendTimelineActions(
     val onBack: () -> Unit = {},
     val onLog: () -> Unit = {},
+    /** Meetups, contacts and journal entries open the Log sheet in edit mode. */
+    val onEditEntry: (String) -> Unit = {},
+    val onEditNews: (TimelineEntry.WhatsNew, String) -> Unit = { _, _ -> },
+    val onEditGift: (Gift, title: String, note: String) -> Unit = { _, _, _ -> },
     val onFilter: (TimelineFilter) -> Unit = {},
     val onDelete: (TimelineEntry) -> Unit = {},
     val onUndoDelete: () -> Unit = {},
@@ -142,6 +154,17 @@ fun timelineFilterLabel(filter: TimelineFilter): String = stringResource(
 fun FriendTimelineContent(state: FriendTimelineUiState, actions: FriendTimelineActions) {
     val snackbar = remember { SnackbarHostState() }
     val undoLabel = stringResource(CoreRes.string.coreUndo)
+    // News and gifts edit in their own dialogs; everything else in the Log sheet (issue #102).
+    var editingNews by remember { mutableStateOf<TimelineEntry.WhatsNew?>(null) }
+    var editingGift by remember { mutableStateOf<TimelineEntry.GiftGiven?>(null) }
+    val edit: (TimelineEntry) -> Unit = { entry ->
+        when (entry) {
+            is TimelineEntry.WhatsNew -> editingNews = entry
+            is TimelineEntry.GiftGiven -> editingGift = entry
+            is TimelineEntry.Share -> Unit
+            else -> actions.onEditEntry(entry.key)
+        }
+    }
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val result = snackbar.showMessage(message.text(), if (state.undo != null) undoLabel else null)
@@ -188,12 +211,44 @@ fun FriendTimelineContent(state: FriendTimelineUiState, actions: FriendTimelineA
                     month.entries.forEachIndexed { i, entry ->
                         item(key = entry.key) {
                             DeletableRow(entry, enabled = entry.deletable, onDelete = { actions.onDelete(entry) }) {
-                                TimelineEntryRow(entry, state.zone, last = i == month.entries.lastIndex)
+                                EditableTimelineEntry(
+                                    entry,
+                                    state.zone,
+                                    onEdit = { edit(entry) },
+                                    onDelete = if (entry.deletable) ({ actions.onDelete(entry) }) else null,
+                                    last = i == month.entries.lastIndex,
+                                )
                             }
                         }
                     }
                 }
             }
+        }
+    }
+    TimelineEditDialogs(state.friend?.displayName?.substringBefore(' ').orEmpty(), editingNews, editingGift, actions) {
+        editingNews = null
+        editingGift = null
+    }
+}
+
+@Composable
+private fun TimelineEditDialogs(
+    firstName: String,
+    news: TimelineEntry.WhatsNew?,
+    gift: TimelineEntry.GiftGiven?,
+    actions: FriendTimelineActions,
+    onDone: () -> Unit,
+) {
+    news?.let { n ->
+        LifeUpdateDialog(firstName, onDismiss = onDone, initial = n.update.text) { text ->
+            actions.onEditNews(n, text)
+            onDone()
+        }
+    }
+    gift?.let { g ->
+        GiftDialog(onDismiss = onDone, initial = g.gift) { title, note ->
+            actions.onEditGift(g.gift, title, note)
+            onDone()
         }
     }
 }

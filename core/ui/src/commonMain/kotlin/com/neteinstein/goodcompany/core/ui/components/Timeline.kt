@@ -1,6 +1,8 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +24,9 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DinnerDining
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
@@ -32,6 +36,7 @@ import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.Luggage
 import androidx.compose.material.icons.rounded.LunchDining
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.QuestionAnswer
 import androidx.compose.material.icons.rounded.Share
@@ -39,11 +44,18 @@ import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.SportsTennis
 import androidx.compose.material.icons.rounded.TheaterComedy
 import androidx.compose.material.icons.rounded.Videocam
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,11 +81,14 @@ import com.neteinstein.goodcompany.core.ui.resources.activity_running
 import com.neteinstein.goodcompany.core.ui.resources.activity_sports
 import com.neteinstein.goodcompany.core.ui.resources.activity_trip
 import com.neteinstein.goodcompany.core.ui.resources.activity_walk
+import com.neteinstein.goodcompany.core.ui.resources.delete
+import com.neteinstein.goodcompany.core.ui.resources.edit
 import com.neteinstein.goodcompany.core.ui.resources.tl_activity_at
 import com.neteinstein.goodcompany.core.ui.resources.tl_and
 import com.neteinstein.goodcompany.core.ui.resources.tl_call
 import com.neteinstein.goodcompany.core.ui.resources.tl_call_minutes
 import com.neteinstein.goodcompany.core.ui.resources.tl_email
+import com.neteinstein.goodcompany.core.ui.resources.tl_entry_options
 import com.neteinstein.goodcompany.core.ui.resources.tl_game
 import com.neteinstein.goodcompany.core.ui.resources.tl_gift
 import com.neteinstein.goodcompany.core.ui.resources.tl_journal
@@ -154,7 +169,13 @@ fun namesList(friends: List<Friend>): String {
  * [last] hides the rail below the icon.
  */
 @Composable
-fun TimelineEntryRow(entry: TimelineEntry, zone: TimeZone, modifier: Modifier = Modifier, last: Boolean = false) {
+fun TimelineEntryRow(
+    entry: TimelineEntry,
+    zone: TimeZone,
+    modifier: Modifier = Modifier,
+    last: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     val date = entry.at.toLocalDate(zone).shortLabel()
     val v = describe(entry)
     Row(modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 16.dp), verticalAlignment = Alignment.Top) {
@@ -203,7 +224,34 @@ fun TimelineEntryRow(entry: TimelineEntry, zone: TimeZone, modifier: Modifier = 
             }
             v.attachment?.let { AttachmentPreview(it, Modifier.padding(top = 6.dp)) }
         }
+        trailing?.invoke()
     }
+}
+
+/**
+ * A timeline line you can change (issue #102): a tap runs [onEdit] (the Log sheet in edit mode, the news dialog, or the
+ * gift), a long press or ⋮ offers Edit and, when [onDelete] is set, Delete (the caller offers Undo). Used on a person's
+ * page and on the full timeline; it knows nothing about either.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun EditableTimelineEntry(
+    entry: TimelineEntry,
+    zone: TimeZone,
+    onEdit: () -> Unit,
+    onDelete: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    last: Boolean = false,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val editLabel = stringResource(Res.string.edit)
+    TimelineEntryRow(
+        entry,
+        zone,
+        modifier.combinedClickable(onClickLabel = editLabel, onClick = onEdit, onLongClick = { menu = true }),
+        last = last,
+        trailing = { EditDeleteMenu(menu, onOpen = { menu = true }, onClose = { menu = false }, onEdit = onEdit, onDelete = onDelete) },
+    )
 }
 
 private data class EntryLook(
@@ -283,4 +331,44 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
         entry.attachment.caption.trim().ifEmpty { stringResource(Res.string.tl_shared) },
         attachment = entry.attachment,
     )
+}
+
+/**
+ * ⋮ with Edit and, when [onDelete] is set, Delete (issue #102): for any listed entry that can be changed. [expanded] is
+ * the caller's, so a long press on the row can open the same menu.
+ */
+@Composable
+fun EditDeleteMenu(
+    expanded: Boolean,
+    onOpen: () -> Unit,
+    onClose: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: (() -> Unit)?,
+    contentDescription: String = stringResource(Res.string.tl_entry_options),
+) {
+    Box {
+        IconButton(onClick = onOpen, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Rounded.MoreVert, contentDescription, Modifier.size(20.dp))
+        }
+        DropdownMenu(expanded, onDismissRequest = onClose) {
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.edit)) },
+                leadingIcon = { Icon(Icons.Rounded.Edit, null) },
+                onClick = {
+                    onClose()
+                    onEdit()
+                },
+            )
+            if (onDelete != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.delete)) },
+                    leadingIcon = { Icon(Icons.Rounded.Delete, null) },
+                    onClick = {
+                        onClose()
+                        onDelete()
+                    },
+                )
+            }
+        }
+    }
 }

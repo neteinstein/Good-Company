@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
@@ -40,6 +41,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.event_1_day
 import com.neteinstein.goodcompany.feature.friends.resources.event_3_days
 import com.neteinstein.goodcompany.feature.friends.resources.event_also_remind
+import com.neteinstein.goodcompany.feature.friends.resources.event_edit_title
 import com.neteinstein.goodcompany.feature.friends.resources.event_on_day
 import com.neteinstein.goodcompany.feature.friends.resources.event_title
 import com.neteinstein.goodcompany.feature.friends.resources.event_week
@@ -47,6 +49,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.event_what
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_add_title
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_follow
 import com.neteinstein.goodcompany.feature.friends.resources.feeds_url
+import com.neteinstein.goodcompany.feature.friends.resources.gifts_edit
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_given_title
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_idea_label
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_mark_given
@@ -63,16 +66,18 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 fun ImportantEventDialog(
     today: LocalDate,
     onDismiss: () -> Unit,
+    /** Editing this moment (issue #102) rather than adding one. */
+    initial: ImportantEvent? = null,
     onSave: (title: String, date: LocalDate, remindDaysBefore: Int) -> Unit,
 ) {
-    var title by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf(today) }
-    var before by remember { mutableStateOf(1) }
+    var title by remember { mutableStateOf(initial?.title.orEmpty()) }
+    var date by remember { mutableStateOf(initial?.date ?: today) }
+    var before by remember { mutableStateOf(initial?.remindDaysBefore ?: 1) }
     var pickDate by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.Event, null) },
-        title = { Text(stringResource(Res.string.event_title)) },
+        title = { Text(stringResource(if (initial != null) Res.string.event_edit_title else Res.string.event_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -104,15 +109,15 @@ fun ImportantEventDialog(
     if (pickDate) LocalDatePickerDialog(date, onDismiss = { pickDate = false }, onPicked = { date = it })
 }
 
-/** New gift idea. A kid's gift ideas go on the kid's own page (F9). */
+/** New gift idea, or [initial] edited (a gift given opens here from the timeline, issue #102). A kid's gift ideas go on the kid's own page (F9). */
 @Composable
-fun GiftDialog(onDismiss: () -> Unit, onSave: (title: String, note: String) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
+fun GiftDialog(onDismiss: () -> Unit, initial: Gift? = null, onSave: (title: String, note: String) -> Unit) {
+    var title by remember { mutableStateOf(initial?.title.orEmpty()) }
+    var note by remember { mutableStateOf(initial?.note.orEmpty()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.CardGiftcard, null) },
-        title = { Text(stringResource(Res.string.gifts_new)) },
+        title = { Text(stringResource(if (initial != null) Res.string.gifts_edit else Res.string.gifts_new)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(title, {
@@ -158,8 +163,8 @@ fun GiftGivenDialog(gift: Gift, onDismiss: () -> Unit, onConfirm: (GiftOccasion?
 
 /** "What's new with Ana?" — one line about their life (new job, a move…). */
 @Composable
-fun LifeUpdateDialog(firstName: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    var text by remember { mutableStateOf("") }
+fun LifeUpdateDialog(firstName: String, onDismiss: () -> Unit, initial: String = "", onSave: (String) -> Unit) {
+    var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.NewReleases, null) },

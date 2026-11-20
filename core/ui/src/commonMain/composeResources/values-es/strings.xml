@@ -672,4 +672,6 @@
     <string name="notif_reminder_overdue_body">Recordatorio atrasado</string>
     <string name="notif_test_title">Good Company</string>
     <string name="notif_test_body">Las notificaciones funcionan. Así es como se verán.</string>
+    <string name="tl_entry_options">Editar o eliminar</string>
+    <string name="log_title_edit">Editar entrada</string>
 </resources>

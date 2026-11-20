@@ -31,6 +31,8 @@ import org.jetbrains.compose.resources.StringResource
  * [plan] answers a plan's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`, issue #43).
  * [note], [place] and [label] (with [type], [date] and [activity]) carry what the "Caught up" panel had chosen ("More details",
  * issues #47, #101).
+ * [editFriend] + [editKey] open it in edit mode on that entry of that person's timeline (`TimelineEntry.key`, issue #102):
+ * everything else is then ignored, and a gone entry closes the sheet.
  */
 @Serializable data class LogInteractionRoute(
     val friendIds: List<String>,
@@ -45,7 +47,14 @@ import org.jetbrains.compose.resources.StringResource
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */
     val label: String? = null,
-)
+    val editFriend: String? = null,
+    val editKey: String? = null,
+) {
+    companion object {
+        /** The Log sheet editing [key] on [friendId]'s timeline (issue #102). */
+        fun edit(friendId: String, key: String) = LogInteractionRoute(listOf(friendId), editFriend = friendId, editKey = key)
+    }
+}
 
 /**
  * The small "Caught up" panel (issues #47, #101, F2; it was "We met"): every in-app "Caught up" opens it, with "How?" first. [friendIds] or [circleId] (members listed,

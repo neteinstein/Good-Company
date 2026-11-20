@@ -4,12 +4,14 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -25,6 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 
 class LogInteractionViewModelTest {
     private val ana = FriendId("ana")
@@ -53,6 +56,8 @@ class LogInteractionViewModelTest {
         g.currentLocation,
         g.loggedMeetups,
         g.clock,
+        g.observeTimeline,
+        g.editTimelineEntry,
     )
 
     @Test
@@ -289,5 +294,40 @@ class LogInteractionViewModelTest {
         assertEquals("Sent a long letter", row.label)
         // Contacts logged on the sheet get the app-wide "Logged time with … · Undo" too (issue #101).
         assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
+    }
+
+    @Test
+    fun editModeOpensOnTheEntry_andSavingEditsItWithoutANewLogOrSnackbar() = runViewModelTest {
+        val day = g.clock.today().minus(DatePeriod(days = 2))
+        g.interactionRepo.addAll(
+            listOf(Interaction(ana, InteractionType.CALL, g.clock.now() - 2.days, id = "c1", note = "Hi")),
+        )
+        val vm = vm(prefill = LogPrefill(edit = TimelineEntryRef(ana, "interaction-c1")))
+        val state = collecting(vm.state)
+        val sheet = state.value.sheet
+        assertTrue(sheet.editing)
+        assertEquals(LogKind.CALL, sheet.kind)
+        assertEquals(day, sheet.date)
+        assertEquals("Hi", sheet.note)
+        assertEquals(listOf(ana), sheet.people.map { it.id })
+
+        vm.onKind(LogKind.VIDEO_CALL)
+        vm.onTogglePerson(rui)
+        vm.onNote("Long one")
+        vm.onSave()
+        assertTrue(state.value.done)
+        val rows = g.interactionRepo.interactions.value
+        assertEquals(setOf(ana, rui), rows.map { it.friendId }.toSet())
+        assertTrue(rows.all { it.type == InteractionType.VIDEO_CALL && it.note == "Long one" && it.batchId == "c1" })
+        assertEquals("c1", rows.first { it.friendId == ana }.id)
+        assertNull(g.loggedMeetups.pending.value)
+    }
+
+    @Test
+    fun editModeOnAGoneEntryCloses() = runViewModelTest {
+        val vm = vm(prefill = LogPrefill(edit = TimelineEntryRef(ana, "hangout-nope")))
+        val state = collecting(vm.state)
+        assertTrue(state.value.done)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
     }
 }
