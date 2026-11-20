@@ -48,7 +48,7 @@ more than one area. When you add a Decision row, add it here too.
   *(part → D8)* · 11-13 App data moves to SQLite · 11-13 D4 · D5 · D8
 - **Layout, navigation, UI rules**: 11-07 Languages · 11-08 iOS keeps pace · 11-13 C2 · 11-14 Home · no floating
   button · Snackbars · always go away · Pickers · save without a Save button · Layout · four tabs · Settings · your
-  photo · Circles and Plans tabs *(part → Circles tab · only the circles)* · 11-20 Settings · your photo · a gear
+  photo *(part → Settings · your photo · a gear)* · Circles and Plans tabs *(part → Circles tab · only the circles)* · 11-20 Settings · your photo · a gear
 - **Person page**: 11-14 Friend page basics · Friend page · circles as chips *(part)* · Person page · view and edit
   *(old → 11-20 Person page · Together · About)* · Person page · three tabs *(old → 11-20)* · Person page · family
   around the photo · Person page · one Message button · Person page · circles and "Related to you?" · 11-20 Person
@@ -174,7 +174,7 @@ more than one area. When you add a Decision row, add it here too.
 | 2026-11-14 | **Closeness · four levels, none called "circle".** Inner · Close · Friends · Acquaintances (PT: Íntimos · Próximos · Amigos · Conhecidos). Acquaintances have no catch-up rhythm by default, keep birthday reminders and aren't real friends. Stored values stay, plus `ACQUAINTANCE`. | Owner. "Circle" now only means the groups you make. |
 | 2026-11-14 | **Catch-up · never-logged people aren't overdue.** Someone with nothing logged isn't due; a card on Today asks, one at a time, when you last saw them. The answer is an approximate date that only starts the rhythm (not a meetup, not on the timeline, not in warmth). | Owner: Coming up listed everyone. |
 | 2026-11-14 | *Partly superseded by "Person page · view and edit" (2026-11-14): no × on the chips; "Circles" opens the tick list.* **Friend page · circles as chips.** The person's circles show under the name with × to remove and "+ Circle" to tick circles in a sheet; no long press. | Owner. |
-| 2026-11-14 | **Settings · your photo.** Settings gets your own photo (gallery + crop), shown in every tab header, at the centre of the network map and on your year in review; in backups, never sent to contacts or the AI. | Owner. |
+| 2026-11-14 | *Partly superseded by "Settings · your photo · a gear" (2026-11-20): the photo in the tab headers gets a gear badge.* **Settings · your photo.** Settings gets your own photo (gallery + crop), shown in every tab header, at the centre of the network map and on your year in review; in backups, never sent to contacts or the AI. | Owner. |
 | 2026-11-14 | **F5 · Everyone and Real friends merge (confirms F5).** One list of everyone sorted by closeness (People tab, #66) replaces the Everyone / Real friends split. | Owner confirmed. |
 | 2026-11-14 | **Catch-up · last-seen answers (issue #68).** The "When did you last see…?" card stores: This week = 3 days ago, This month = 15 days ago, A few months ago = 90 days ago, Over a year = 400 days ago; I don't know = today. | Owner, build-in-sequence preflight. |
 | 2026-11-14 | **Catch-up · the approximate last-seen date stays hidden (issue #68).** It only starts the rhythm; the person's page doesn't show it and keeps showing nothing logged until a real meetup. | Owner, build-in-sequence preflight. |
