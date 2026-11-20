@@ -45,6 +45,8 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_action_called
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_met
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_no
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_plan_yes
+import com.neteinstein.goodcompany.core.ui.resources.notif_action_reminder_done
+import com.neteinstein.goodcompany.core.ui.resources.notif_action_reminder_snooze
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_week
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_weekend
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body
@@ -167,7 +169,7 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 } else {
                     getString(Res.string.notif_reminder_with, c.withNames.joinToString())
                 },
-                emptyList(),
+                reminderActions(c.reminderId),
             )
             is NotificationContent.ReminderOverdue -> Triple(
                 getString(Res.string.notif_reminder_overdue_title, c.title),
@@ -176,7 +178,7 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 } else {
                     getString(Res.string.notif_reminder_with, c.withNames.joinToString())
                 },
-                emptyList(),
+                reminderActions(c.reminderId),
             )
             NotificationContent.Test -> Triple(
                 getString(Res.string.notif_test_title),
@@ -268,6 +270,12 @@ object ResourceNotificationRenderer : NotificationRenderer {
 
     override suspend fun privateText(): String = getString(Res.string.notif_private)
 }
+
+/** A reminder's quick actions (issue #99): Done, and Snooze for an hour. Neither asks "did you meet?". */
+private suspend fun reminderActions(id: String) = listOf(
+    RenderedAction(NotificationAction(NotificationAction.Kind.REMINDER_DONE, id), getString(Res.string.notif_action_reminder_done)),
+    RenderedAction(NotificationAction(NotificationAction.Kind.REMINDER_SNOOZE, id), getString(Res.string.notif_action_reminder_snooze)),
+)
 
 /** "Ana", "Ana and Rui", "Ana, Rui and Cat", "Ana, Rui, Cat and 2 more" — [total] counts everyone, named or not. */
 suspend fun namesText(names: List<String>, total: Int): String {

@@ -35,6 +35,7 @@ import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.getStringArray
 import org.jetbrains.compose.resources.pluralStringResource
@@ -157,6 +158,16 @@ fun relativeDay(date: LocalDate, today: LocalDate): String = when (val r = Relat
     is RelativeDay.InDays -> pluralStringResource(Res.plurals.day_in_days, r.days, r.days)
     is RelativeDay.DaysAgo -> pluralStringResource(Res.plurals.day_days_ago, r.days, r.days)
     is RelativeDay.On -> r.date.shortLabel()
+}
+
+/** [relativeDay] outside composition (snackbars). */
+suspend fun relativeDayText(date: LocalDate, today: LocalDate): String = when (val r = RelativeDay.of(date, today)) {
+    RelativeDay.Today -> getString(Res.string.day_today)
+    RelativeDay.Tomorrow -> getString(Res.string.day_tomorrow)
+    RelativeDay.Yesterday -> getString(Res.string.day_yesterday)
+    is RelativeDay.InDays -> getPluralString(Res.plurals.day_in_days, r.days, r.days)
+    is RelativeDay.DaysAgo -> getPluralString(Res.plurals.day_days_ago, r.days, r.days)
+    is RelativeDay.On -> r.date.shortLabelText()
 }
 
 /** Lower-case, for use mid-sentence: "today", "in 4 days", "on Mar 30". */
