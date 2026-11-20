@@ -40,6 +40,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.PlaceBook
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.log_clear_location
 import com.neteinstein.goodcompany.core.ui.resources.log_locating
+import com.neteinstein.goodcompany.core.ui.resources.log_location_denied
+import com.neteinstein.goodcompany.core.ui.resources.log_location_unavailable
 import com.neteinstein.goodcompany.core.ui.resources.log_use_location
 import com.neteinstein.goodcompany.core.ui.resources.place_add_person
 import com.neteinstein.goodcompany.core.ui.resources.place_change
@@ -48,8 +50,6 @@ import com.neteinstein.goodcompany.core.ui.resources.place_name_hint
 import com.neteinstein.goodcompany.core.ui.resources.place_named_auto
 import com.neteinstein.goodcompany.core.ui.resources.place_next_time
 import com.neteinstein.goodcompany.core.ui.resources.place_suggest_hint
-import com.neteinstein.goodcompany.core.ui.resources.log_location_denied
-import com.neteinstein.goodcompany.core.ui.resources.log_location_unavailable
 import com.neteinstein.goodcompany.core.ui.resources.place_usually_with
 import com.neteinstein.goodcompany.core.ui.resources.place_what_is_this
 import org.jetbrains.compose.resources.pluralStringResource

@@ -13,10 +13,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
-import com.neteinstein.goodcompany.core.ui.components.LocationProblem
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.components.LocationProblem
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import kotlinx.datetime.DatePeriod

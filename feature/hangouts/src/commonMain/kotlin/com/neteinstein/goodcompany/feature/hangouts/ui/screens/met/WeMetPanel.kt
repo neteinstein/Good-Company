@@ -60,8 +60,6 @@ import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
-import com.neteinstein.goodcompany.core.ui.platform.AppPermission
-import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.LogOtherLabel
@@ -74,6 +72,8 @@ import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.logKindLabel
 import com.neteinstein.goodcompany.core.ui.components.namesList
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_counts_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_less

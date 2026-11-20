@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.feature.friends.ui.screens.choose
 
-import com.neteinstein.goodcompany.core.domain.model.FriendId
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.ContactChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ContactListFilter
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
