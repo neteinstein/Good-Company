@@ -137,9 +137,14 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
     ) {
         ChooseContactsScreen(
             onBack = { navController.popBackStack(ChooseContactsRoute, inclusive = true) },
-            onDone = { added ->
-                navController.previousBackStackEntry?.savedStateHandle?.set(CONTACTS_ADDED, added)
-                navController.popBackStack(ChooseContactsRoute, inclusive = true)
+            onDone = { added, single ->
+                if (single != null) {
+                    // One person added: their page, in place of the list (issue #114).
+                    navController.navigate(FriendDetailRoute(single.value)) { popUpTo<ChooseContactsRoute> { inclusive = true } }
+                } else {
+                    navController.previousBackStackEntry?.savedStateHandle?.set(CONTACTS_ADDED, added)
+                    navController.popBackStack(ChooseContactsRoute, inclusive = true)
+                }
             },
         )
     }

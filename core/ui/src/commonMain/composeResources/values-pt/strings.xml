@@ -384,7 +384,7 @@
     <string name="log_search">Pesquisar</string>
     <string name="log_today">Hoje</string>
     <string name="log_yesterday">Ontem</string>
-    <string name="log_pick_date">Escolher data</string>
+    <string name="log_pick_date">Outro dia</string>
     <string name="log_note_hint">Uma nota (opcional)</string>
     <string name="log_journal_hint">Sobre o que falaram?</string>
     <string name="log_place_hint">Local (opcional)</string>

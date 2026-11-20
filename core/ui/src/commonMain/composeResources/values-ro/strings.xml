@@ -395,7 +395,7 @@
     <string name="log_search">Caută</string>
     <string name="log_today">Azi</string>
     <string name="log_yesterday">Ieri</string>
-    <string name="log_pick_date">Alege data</string>
+    <string name="log_pick_date">Altă zi</string>
     <string name="log_note_hint">O notă (opțional)</string>
     <string name="log_journal_hint">Despre ce ați vorbit?</string>
     <string name="log_place_hint">Loc (opțional)</string>

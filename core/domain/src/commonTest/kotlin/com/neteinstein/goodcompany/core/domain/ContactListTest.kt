@@ -114,11 +114,24 @@ class ContactListTest {
         val choices = ListContactsUseCase(repo)()
         val chosen = choices.filter { it.record.contactId in setOf("2", "5") }.map { it.record }
         val result = SaveChosenContactsUseCase(repo, ImportPickedContactsUseCase(repo))(chosen)
-        assertEquals(PickedContactsResult(2, 0), result)
+        assertEquals(PickedContactsResult(2, 0, listOf(FriendId("contact-2"), FriendId("contact-5"))), result)
         assertEquals(listOf(setOf("2", "5")), repo.photoRequests)
         val friends = repo.friends.value
         assertEquals(setOf("2", "5"), friends.mapNotNull { it.contactId }.toSet())
         assertTrue(friends.all { it.photo == photo && it.closeness == Closeness.ACQUAINTANCE })
+    }
+
+    @Test
+    fun pickingSomeoneAlreadyThere_namesThem_soTheirPageOpens() = runTest {
+        // Issue #114: one person picked opens their page, even if they were already a friend.
+        val repo = FakeFriendRepository(contacts = contacts)
+        val import = ImportPickedContactsUseCase(repo)
+        val first = import(listOf(contacts.first()))
+        assertEquals(1, first.added)
+        val again = import(listOf(contacts.first()))
+        assertEquals(0, again.added)
+        assertEquals(first.single, again.single)
+        assertEquals(listOf(first.single), again.picked)
     }
 
     @Test

@@ -128,6 +128,8 @@ class WeMetViewModel(
 
     fun onUseLocation() = model.onUseLocation()
 
+    fun onLocationPermissionResult(granted: Boolean) = model.onLocationPermissionResult(granted)
+
     fun onClearLocation() = model.onClearLocation()
 
     fun onChangePlace() = model.onChangePlace()

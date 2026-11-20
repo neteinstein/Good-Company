@@ -37,8 +37,6 @@ import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Place
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +74,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyMember
 import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
+import com.neteinstein.goodcompany.core.ui.components.CircleActionChip
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FamilyRing
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
@@ -360,11 +359,8 @@ private fun Circles(state: FriendDetailUiState, actions: PersonTopActions) {
         state.detail?.groups.orEmpty().forEach { g ->
             CircleChip(g, selected = true, onClick = { actions.onOpenCircle(g.id) }, showDot = false)
         }
-        AssistChip(
-            onClick = actions.onEditCircles,
-            label = { Text(stringResource(Res.string.circles_edit)) },
-            leadingIcon = { Icon(Icons.Rounded.Edit, null, Modifier.size(AssistChipDefaults.IconSize)) },
-        )
+        // Same height and style as the circle chips beside it (issue #114).
+        CircleActionChip(stringResource(Res.string.circles_edit), Icons.Rounded.Edit, onClick = actions.onEditCircles)
     }
 }
 

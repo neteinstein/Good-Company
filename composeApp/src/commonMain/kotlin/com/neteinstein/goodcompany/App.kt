@@ -107,7 +107,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                     } else {
                         OnboardingScreen(
                             onDone = {},
-                            contactList = { onClose -> ChooseContactsScreen(onBack = { onClose(0) }, onDone = onClose) },
+                            contactList = { onClose -> ChooseContactsScreen(onBack = { onClose(0) }, onDone = { added, _ -> onClose(added) }) },
                         )
                     }
                 }

@@ -60,6 +60,8 @@ import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.LogOtherLabel
@@ -134,6 +136,8 @@ fun WeMetPanelScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onClose() }
+    // Ask for location first (issue #114): without the permission the provider just returns nothing.
+    val requestLocation = rememberPermissionRequester(AppPermission.LOCATION, viewModel::onLocationPermissionResult)
     WeMetPanel(
         state,
         WeMetActions(
@@ -146,7 +150,7 @@ fun WeMetPanelScreen(
             onOpenNote = viewModel::onOpenNote,
             onOpenPlace = viewModel::onOpenPlace,
             onPlaceName = viewModel::onPlaceName,
-            onUseLocation = viewModel::onUseLocation,
+            onUseLocation = requestLocation,
             onClearLocation = viewModel::onClearLocation,
             onChangePlace = viewModel::onChangePlace,
             onNote = viewModel::onNote,
