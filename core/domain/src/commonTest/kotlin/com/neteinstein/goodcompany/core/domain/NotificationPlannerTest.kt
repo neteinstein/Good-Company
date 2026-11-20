@@ -87,7 +87,7 @@ class NotificationPlannerTest {
         )
         val single = planned.single()
         assertEquals("reminder:a", single.id)
-        assertEquals(NotificationContent.ReminderDue("Book tickets", listOf("Ana")), single.content)
+        assertEquals(NotificationContent.ReminderDue("a", "Book tickets", listOf("Ana")), single.content)
     }
 
     @Test

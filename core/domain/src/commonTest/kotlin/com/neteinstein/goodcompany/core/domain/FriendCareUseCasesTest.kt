@@ -12,8 +12,10 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
+import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.repository.LanguageProvider
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
@@ -30,6 +32,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.testing.FakeAiAssistant
 import com.neteinstein.goodcompany.core.testing.FakeFriendRepository
@@ -39,6 +42,7 @@ import com.neteinstein.goodcompany.core.testing.FakeIdeaRepository
 import com.neteinstein.goodcompany.core.testing.FakeInteractionRepository
 import com.neteinstein.goodcompany.core.testing.FakePersonLinkRepository
 import com.neteinstein.goodcompany.core.testing.FakePlanRepository
+import com.neteinstein.goodcompany.core.testing.FakeReminderRepository
 import com.neteinstein.goodcompany.core.testing.FakeSettingsRepository
 import com.neteinstein.goodcompany.core.testing.FixedClock
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -52,6 +56,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 
 class FriendCareUseCasesTest {
     private val clock = FixedClock()
@@ -103,6 +108,8 @@ class FriendCareUseCasesTest {
                 snooze,
                 groups,
                 ConfirmPlanUseCase(FakePlanRepository(), friends, CheckInUseCase(hangouts, clock, ids), clock),
+                CompleteReminderUseCase(FakeReminderRepository(), clock),
+                SnoozeReminderUseCase(FakeReminderRepository(), clock),
             )
         handle(NotificationAction.decode(NotificationAction(NotificationAction.Kind.MET, "ana").encode())!!)
         assertEquals(listOf(ana), hangouts.hangouts.value.single().friendIds)
@@ -114,6 +121,31 @@ class FriendCareUseCasesTest {
         assertEquals(listOf(ana, FriendId("rui")), hangouts.hangouts.value.last().friendIds)
         handle(NotificationAction(NotificationAction.Kind.SNOOZE_WEEKEND, "g", isGroup = true))
         assertEquals(LocalDate(2026, 3, 14), groups.groups.value.single().snoozedUntil)
+    }
+
+    @Test
+    fun reminderActions_doneAndSnoozeAnHour_neverLogAMeetup() = runTest {
+        // Issue #99: a reminder's Done and Snooze from its notification.
+        val reminders = FakeReminderRepository()
+        val handle = HandleNotificationActionUseCase(
+            CheckInUseCase(hangouts, clock, ids),
+            LogCallUseCase(interactions, snooze, clock, ids),
+            snooze,
+            groups,
+            ConfirmPlanUseCase(FakePlanRepository(), friends, CheckInUseCase(hangouts, clock, ids), clock),
+            CompleteReminderUseCase(reminders, clock),
+            SnoozeReminderUseCase(reminders, clock),
+        )
+        reminders.upsert(Reminder("r1", "Buy flowers", listOf(ana), clock.now(), createdAt = clock.now()))
+        reminders.upsert(Reminder("r2", "Call the bank", emptyList(), clock.now(), createdAt = clock.now()))
+        handle(NotificationAction.decode(NotificationAction(NotificationAction.Kind.REMINDER_DONE, "r1").encode())!!)
+        assertTrue(reminders.reminders.first().single { it.id == "r1" }.done)
+        assertTrue(hangouts.hangouts.value.isEmpty())
+        handle(NotificationAction(NotificationAction.Kind.REMINDER_SNOOZE, "r2"))
+        assertEquals(clock.now() + 1.hours, reminders.reminders.first().single { it.id == "r2" }.snoozedUntil)
+        // A reminder deleted in the meantime: nothing happens.
+        handle(NotificationAction(NotificationAction.Kind.REMINDER_DONE, "gone"))
+        assertEquals(2, reminders.reminders.first().size)
     }
 
     @Test

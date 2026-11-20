@@ -12,6 +12,8 @@ import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -33,6 +35,13 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.atTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 class ObserveRemindersUseCase(private val reminders: ReminderRepository) {
@@ -40,8 +49,9 @@ class ObserveRemindersUseCase(private val reminders: ReminderRepository) {
     operator fun invoke(): Flow<List<Reminder>> = reminders.reminders.map { list ->
         list.sortedWith(
             compareBy<Reminder> { it.done }
-                .thenBy { it.dueAt == null }
-                .thenBy { it.dueAt }
+                .thenBy { it.nextAt == null }
+                .thenBy { it.nextAt }
+                .thenByDescending { it.completedAt }
                 .thenByDescending { it.createdAt },
         )
     }
@@ -52,27 +62,128 @@ class AddReminderUseCase(
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
-    /** A new reminder about [friendIds] and/or the circle [circleId] (issue #88: it then belongs to the circle). */
-    suspend operator fun invoke(title: String, friendIds: List<FriendId>, dueAt: Instant?, circleId: String? = null): Reminder {
+    /**
+     * A new reminder about [friendIds] and/or the circle [circleId] (issue #88: it then belongs to the circle). A
+     * [repeat] needs a date; without one it is saved as not repeating.
+     */
+    suspend operator fun invoke(
+        title: String,
+        friendIds: List<FriendId>,
+        dueAt: Instant?,
+        circleId: String? = null,
+        repeat: ReminderRepeat = ReminderRepeat.NONE,
+        important: Boolean = false,
+    ): Reminder {
         require(title.isNotBlank()) { "Title required" }
-        val reminder = Reminder(ids.next(), title.trim(), friendIds.distinct(), dueAt, done = false, createdAt = clock.now(), circleId = circleId)
+        val reminder = Reminder(
+            ids.next(),
+            title.trim(),
+            friendIds.distinct(),
+            dueAt,
+            done = false,
+            createdAt = clock.now(),
+            circleId = circleId,
+            important = important,
+            repeat = if (dueAt == null) ReminderRepeat.NONE else repeat,
+        )
         reminders.upsert(reminder)
         return reminder
     }
 }
 
-/** Changes a reminder's title, people, circle and time (a reminder opened from a circle's "Coming up", issue #88). */
+/**
+ * Changes a reminder's title, people, circle, time, repeat and important flag (issue #99: from everywhere a reminder
+ * shows). A new time clears the snooze; the rest of it (done, created) is kept.
+ */
 class EditReminderUseCase(private val reminders: ReminderRepository) {
-    suspend operator fun invoke(reminder: Reminder, title: String, friendIds: List<FriendId>, dueAt: Instant?, circleId: String?): Reminder {
+    suspend operator fun invoke(
+        reminder: Reminder,
+        title: String,
+        friendIds: List<FriendId>,
+        dueAt: Instant?,
+        circleId: String?,
+        repeat: ReminderRepeat = reminder.repeat,
+        important: Boolean = reminder.important,
+    ): Reminder {
         require(title.isNotBlank()) { "Title required" }
-        val edited = reminder.copy(title = title.trim(), friendIds = friendIds.distinct(), dueAt = dueAt, circleId = circleId)
+        val edited = reminder.copy(
+            title = title.trim(),
+            friendIds = friendIds.distinct(),
+            dueAt = dueAt,
+            circleId = circleId,
+            snoozedUntil = reminder.snoozedUntil.takeIf { dueAt == reminder.dueAt },
+            repeat = if (dueAt == null) ReminderRepeat.NONE else repeat,
+            important = important,
+        )
         reminders.upsert(edited)
         return edited
     }
 }
 
-class SetReminderDoneUseCase(private val reminders: ReminderRepository) {
-    suspend operator fun invoke(reminder: Reminder, done: Boolean) = reminders.upsert(reminder.copy(done = done))
+/**
+ * "Done" (issue #99). A one-off reminder closes ([Reminder.done], [Reminder.completedAt]); a repeating one rolls to its
+ * next date instead, open and unsnoozed. Never asks "did you meet?" and logs nothing, even when it names people.
+ * Returns the reminder as saved; null when [id] is unknown (a notification for a deleted reminder).
+ */
+class CompleteReminderUseCase(private val reminders: ReminderRepository, private val clock: AppClock) {
+    suspend operator fun invoke(reminder: Reminder): Reminder {
+        val now = clock.now()
+        val next = reminder.takeIf { it.isRepeating }?.nextDueAfter(now, clock.timeZone)
+        val saved = if (next != null) {
+            reminder.copy(dueAt = next, snoozedUntil = null, done = false, completedAt = null)
+        } else {
+            reminder.copy(done = true, completedAt = now, snoozedUntil = null)
+        }
+        reminders.upsert(saved)
+        return saved
+    }
+
+    suspend operator fun invoke(id: String): Reminder? = reminders.reminders.first().firstOrNull { it.id == id }?.let { invoke(it) }
+}
+
+/** Takes a done reminder back to the open list (tapping it in the "Done" group). */
+class ReopenReminderUseCase(private val reminders: ReminderRepository) {
+    suspend operator fun invoke(reminder: Reminder) = reminders.upsert(reminder.copy(done = false, completedAt = null))
+}
+
+/**
+ * "Snooze" (issue #99): 1 hour, tonight, tomorrow, next week or a picked time. Only [Reminder.snoozedUntil] moves; the
+ * due date stays, so a repeating reminder keeps its rhythm. A time in the past is taken as an hour from now.
+ */
+class SnoozeReminderUseCase(private val reminders: ReminderRepository, private val clock: AppClock) {
+    suspend operator fun invoke(reminder: Reminder, snooze: ReminderSnooze): Reminder {
+        val saved = reminder.copy(snoozedUntil = until(snooze), done = false, completedAt = null)
+        reminders.upsert(saved)
+        return saved
+    }
+
+    suspend operator fun invoke(id: String, snooze: ReminderSnooze): Reminder? =
+        reminders.reminders.first().firstOrNull { it.id == id }?.let { invoke(it, snooze) }
+
+    /** When [snooze] ends, from now. */
+    fun until(snooze: ReminderSnooze): Instant {
+        val now = clock.now()
+        val zone = clock.timeZone
+        val today = clock.today()
+        fun LocalDate.at(hour: Int) = atTime(LocalTime(hour, 0)).toInstant(zone)
+        val at = when (snooze) {
+            ReminderSnooze.OneHour -> now + 1.hours
+            ReminderSnooze.Tonight -> today.at(TONIGHT_HOUR)
+            ReminderSnooze.Tomorrow -> today.plus(1, DateTimeUnit.DAY).at(MORNING_HOUR)
+            ReminderSnooze.NextWeek -> today.plus(DAYS_PER_WEEK, DateTimeUnit.DAY).at(MORNING_HOUR)
+            is ReminderSnooze.Until -> snooze.at
+        }
+        return if (at > now) at else now + 1.hours
+    }
+
+    /** Whether "Tonight" still makes sense (it is before [TONIGHT_HOUR]). */
+    fun tonightAvailable(): Boolean = clock.now() < clock.today().atTime(LocalTime(TONIGHT_HOUR, 0)).toInstant(clock.timeZone)
+
+    companion object {
+        const val TONIGHT_HOUR = 20
+        const val MORNING_HOUR = 9
+        private const val DAYS_PER_WEEK = 7
+    }
 }
 
 class DeleteReminderUseCase(private val reminders: ReminderRepository) {

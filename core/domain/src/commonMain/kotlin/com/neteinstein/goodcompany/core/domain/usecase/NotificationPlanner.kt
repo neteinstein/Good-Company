@@ -157,8 +157,10 @@ object NotificationPlanner {
         val byId = friends.associateBy { it.id }
         val circleNames = groups.associateBy({ it.id }, { it.name })
         if (notifications.allows(NotificationType.REMINDERS)) {
-            reminders.filter { !it.done && it.dueAt != null }.forEach { r ->
-                val dueAt = r.dueAt!!
+            // Issue #99: a snoozed reminder rings when the snooze ends ([Reminder.nextAt]); a repeating one only for its
+            // next date (Done rolls it on, and the next re-plan picks that up).
+            reminders.filter { !it.done && it.nextAt != null }.forEach { r ->
+                val dueAt = r.nextAt!!
                 // A circle reminder (issue #88) names the circle rather than every member, like a circle plan.
                 val names = listOfNotNull(r.circleId?.let(circleNames::get)) + r.friendIds.mapNotNull { byId[it]?.displayName }
                 val slot = "reminder:${r.id}"
@@ -166,7 +168,14 @@ object NotificationPlanner {
                     val persistent = keepOnScreen && r.important
                     val until = if (persistent) dueAt.toLocalDate(zone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone) else null
                     out +=
-                        PlannedNotification(slot, dueAt, NotificationContent.ReminderDue(r.title, names), persistent, until, whileOpen = persistent)
+                        PlannedNotification(
+                            slot,
+                            dueAt,
+                            NotificationContent.ReminderDue(r.id, r.title, names),
+                            persistent,
+                            until,
+                            whileOpen = persistent,
+                        )
                 }
                 // Overdue (issue #98): asked again at the reminder hour from the day after it was due, until done. Only
                 // while important ones stay on screen; otherwise the reminder pings once, as before.
@@ -178,7 +187,7 @@ object NotificationPlanner {
                         add(
                             "$slot:overdue:$day",
                             day,
-                            NotificationContent.ReminderOverdue(r.title, names),
+                            NotificationContent.ReminderOverdue(r.id, r.title, names),
                             persistent = true,
                             slot = slot,
                             whileOpen = true,
@@ -319,10 +328,3 @@ data class NudgePolicy(
         fun from(settings: AppSettings) = NudgePolicy(settings.weeklyDigest, settings.digestDay, settings.lastOpenedAt)
     }
 }
-
-/**
- * Whether a reminder is marked important (persistent when it is due). The field itself arrives with the reminders
- * rework (issue #99); until then no reminder is important. A member property of the same name will take over.
- */
-@Suppress("UnusedReceiverParameter", "FunctionOnlyReturningConstant")
-internal val Reminder.important: Boolean get() = false

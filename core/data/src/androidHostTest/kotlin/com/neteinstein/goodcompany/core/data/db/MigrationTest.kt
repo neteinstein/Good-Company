@@ -27,6 +27,7 @@ import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import kotlinx.coroutines.test.runTest
@@ -37,6 +38,7 @@ import kotlin.io.path.createTempFile
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -649,6 +651,44 @@ class MigrationTest {
         assertEquals(mapOf("surf" to ContactPhoto("BAU=")), database.readCircleCovers())
         database.writeCircleCover("surf", null)
         assertTrue(database.readCircleCovers().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version21to22_remindersStartOnceNotImportantNotSnoozed_andTheNewFieldsRoundTrip() = runTest {
+        val driver = driverAt(21)
+        driver.execute(
+            null,
+            "INSERT INTO reminder (id, position, title, due_at, done, created_at, circle_id) VALUES ('r', 0, 'Call', 1000, 0, 500, 'surf')",
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO reminder (id, position, title, due_at, done, created_at) VALUES ('d', 1, 'Old', NULL, 1, 400)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 21, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val (open, done) = database.readReminders()
+        assertEquals("Call", open.title)
+        assertEquals("surf", open.circleId)
+        assertNull(open.snoozedUntil)
+        assertFalse(open.important)
+        assertEquals(ReminderRepeat.NONE, open.repeat)
+        assertNull(open.completedAt)
+        assertTrue(done.done)
+        assertNull(done.completedAt)
+
+        val changed = open.copy(
+            snoozedUntil = Instant.fromEpochMilliseconds(2000),
+            important = true,
+            repeat = ReminderRepeat.MONTHLY,
+            completedAt = Instant.fromEpochMilliseconds(3000),
+        )
+        database.writeReminder(changed)
+        assertEquals(changed, database.readReminders().first())
+        database.writeReminder(changed.copy(snoozedUntil = null, important = false, repeat = ReminderRepeat.NONE, completedAt = null))
+        assertEquals(open, database.readReminders().first())
+        // A repeat this build doesn't know (a newer build or backup) reads as once.
+        driver.execute(null, "UPDATE reminder SET repeat_every = 'HOURLY' WHERE id = 'r'", 0).await()
+        assertEquals(ReminderRepeat.NONE, database.readReminders().first().repeat)
         driver.close()
     }
 

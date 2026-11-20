@@ -90,7 +90,7 @@ object YearInReviewBuilder {
             biggestHangoutFriends = biggest?.takeIf { it.friendIds.size > 1 }?.friendIds?.mapNotNull(byId::get).orEmpty(),
             longestWeekStreak = longestWeekStreak(dates),
             newFaces = newFaces,
-            remindersDone = reminders.count { r -> r.done && (r.dueAt ?: r.createdAt).toLocalDate(zone).year == year },
+            remindersDone = reminders.count { r -> r.done && (r.completedAt ?: r.dueAt ?: r.createdAt).toLocalDate(zone).year == year },
             contactsByType = interactions
                 .filter { it.type.isRemote && it.friendId in byId && it.at.toLocalDate(zone).year == year }
                 .groupingBy { it.type }.eachCount(),
