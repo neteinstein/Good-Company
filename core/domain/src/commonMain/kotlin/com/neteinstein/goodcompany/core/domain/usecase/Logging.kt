@@ -37,10 +37,22 @@ enum class LogKind(val interactionType: InteractionType?) {
     MESSAGE(InteractionType.MESSAGE),
     EMAIL(InteractionType.EMAIL),
     VIDEO_CALL(InteractionType.VIDEO_CALL),
+    LONG_CHAT(InteractionType.LONG_CHAT),
+    GAME(InteractionType.GAME),
+    OTHER(InteractionType.OTHER),
     JOURNAL(null),
     ;
 
+    /** A contact at a distance: written as an [Interaction], with no place or activity. */
+    val isRemote: Boolean get() = interactionType?.isRemote == true
+
     companion object {
+        /**
+         * The "How?" row of the "Caught up" panel (issue #101), in order: in person (the default), call, video,
+         * said hi, long chat, played online, other. Email and the journal stay on the full Log sheet.
+         */
+        val CAUGHT_UP = listOf(MEETUP, CALL, VIDEO_CALL, MESSAGE, LONG_CHAT, GAME, OTHER)
+
         /**
          * The kind named by `LogInteractionRoute.type`: a [LogKind] name or an [InteractionType] name ("WHATSAPP" logs
          * a message). Null or unknown → null (the sheet then preselects [MEETUP]).
@@ -66,6 +78,8 @@ data class LogRequest(
     /** Contacts only: where the log came from (the share screen passes [InteractionSource.SHARE]). */
     val source: InteractionSource = InteractionSource.MANUAL,
     val durationSeconds: Int? = null,
+    /** [LogKind.OTHER] only: what it was ("Sent a postcard"), trimmed. */
+    val label: String = "",
 )
 
 /** What a log wrote, so the caller can show it or undo it. */
@@ -76,7 +90,8 @@ sealed interface LogResult {
      */
     data class Met(val hangout: Hangout, val plan: Plan? = null) : LogResult
 
-    data class Contacts(val interactions: List<Interaction>) : LogResult
+    /** [plan] as for [Met]: a plan answered with a call, a chat or a game (issue #101). */
+    data class Contacts(val interactions: List<Interaction>, val plan: Plan? = null) : LogResult
 
     data class Journal(val entries: List<JournalEntry>) : LogResult
 }
@@ -119,6 +134,7 @@ class LogInteractionUseCase(
                         source = request.source,
                         durationSeconds = request.durationSeconds,
                         batchId = batch,
+                        label = request.label.trim().take(LABEL_MAX).takeIf { kind == LogKind.OTHER }.orEmpty(),
                     )
                 }
                 interactions.addAll(rows)
@@ -133,8 +149,11 @@ class LogInteractionUseCase(
         return if (date == null || date == today) clock.now() else date.atTime(NOON).toInstant(clock.timeZone)
     }
 
-    private companion object {
-        val NOON = LocalTime(12, 0)
+    companion object {
+        private val NOON = LocalTime(12, 0)
+
+        /** The longest "Other" label kept: it is a short name, not a note. */
+        const val LABEL_MAX = 40
     }
 }
 
@@ -150,7 +169,10 @@ class UndoLogUseCase(
                 hangouts.delete(result.hangout.id)
                 result.plan?.let { plans.upsert(it) }
             }
-            is LogResult.Contacts -> result.interactions.forEach { interactions.delete(it.id) }
+            is LogResult.Contacts -> {
+                result.interactions.forEach { interactions.delete(it.id) }
+                result.plan?.let { plans.upsert(it) }
+            }
             is LogResult.Journal -> result.entries.forEach { interactions.deleteJournal(it.id) }
         }
     }
@@ -184,11 +206,14 @@ class SetActivitiesUseCase(private val settings: SettingsRepository) {
     }
 }
 
-/** A meetup just logged in the app, with the people it was with (for "Logged time with Rui ✨ · Undo"). */
-data class LoggedMeetup(val result: LogResult.Met, val people: List<Friend>)
+/**
+ * A meetup or a contact (a call, a chat…, issue #101) just logged in the app, with the people it was with (for
+ * "Logged time with Rui ✨ · Undo"). Journal entries never come here.
+ */
+data class LoggedMeetup(val result: LogResult, val people: List<Friend>)
 
 /**
- * The last meetup logged from the "We met" panel or the Log sheet (F2), until the app-wide snackbar has shown it.
+ * The last meetup or contact logged from the "Caught up" panel or the Log sheet (F2), until the app-wide snackbar has shown it.
  * The sheet closes on save, so the snackbar that offers Undo lives outside it.
  */
 class LoggedMeetupInbox {

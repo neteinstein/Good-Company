@@ -53,20 +53,65 @@ class WarmthTest {
         assertEquals(Warmth.Level.COOLING, byCall.level)
     }
 
+    private fun byOne(type: InteractionType, daysAgo: Int = 1) =
+        Warmth.score(ana, emptyList(), listOf(Interaction(FriendId("ana"), type, at(2026, 3, 10).minusDays(daysAgo))), 30, today, TimeZone.UTC)
+
     @Test
-    fun messagesEmailsAndVideoCallsCountLikeCalls() {
-        val byCall = Warmth.score(
-            ana,
-            emptyList(),
-            listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 9))),
-            30,
-            today,
-            TimeZone.UTC,
-        )
-        listOf(InteractionType.MESSAGE, InteractionType.EMAIL, InteractionType.VIDEO_CALL, InteractionType.WHATSAPP).forEach { type ->
-            val s = Warmth.score(ana, emptyList(), listOf(Interaction(FriendId("ana"), type, at(2026, 3, 9))), 30, today, TimeZone.UTC)
-            assertEquals(byCall, s, "$type")
+    fun emailsWhatsAppGamesAndOtherCountLikeCalls() {
+        val byCall = byOne(InteractionType.CALL)
+        listOf(InteractionType.EMAIL, InteractionType.WHATSAPP, InteractionType.GAME, InteractionType.OTHER).forEach { type ->
+            assertEquals(byCall, byOne(type), "$type")
         }
+    }
+
+    @Test
+    fun eachKindIsWeighted_inPersonAndLongChatsMost_saidHiLeast() {
+        // Issue #101: in person and long chat highest, then video, then call and game, "said hi" lightest.
+        assertEquals(1.0, Warmth.weight(InteractionType.MEETUP))
+        assertEquals(1.0, Warmth.weight(InteractionType.LONG_CHAT))
+        assertTrue(Warmth.weight(InteractionType.VIDEO_CALL) < 1.0)
+        assertTrue(Warmth.weight(InteractionType.CALL) < Warmth.weight(InteractionType.VIDEO_CALL))
+        assertEquals(Warmth.weight(InteractionType.CALL), Warmth.weight(InteractionType.GAME))
+        assertTrue(Warmth.weight(InteractionType.MESSAGE) < Warmth.weight(InteractionType.CALL))
+        InteractionType.entries.forEach { assertTrue(Warmth.weight(it) > 0.0, "$it always adds to warmth") }
+
+        val longChat = byOne(InteractionType.LONG_CHAT).value
+        val video = byOne(InteractionType.VIDEO_CALL).value
+        val call = byOne(InteractionType.CALL).value
+        val game = byOne(InteractionType.GAME).value
+        val saidHi = byOne(InteractionType.MESSAGE).value
+        assertTrue(longChat > video, "long chat $longChat > video $video")
+        assertTrue(video > call, "video $video > call $call")
+        assertEquals(call, game)
+        assertTrue(call > saidHi, "call $call > said hi $saidHi")
+        assertTrue(saidHi > 0)
+    }
+
+    @Test
+    fun aLongChatYesterdayIsAsWarmAsMeetingYesterday_forRecency() {
+        val chat = byOne(InteractionType.LONG_CHAT)
+        val met = Warmth.score(ana, seen(1), emptyList(), 30, today, TimeZone.UTC)
+        // Same recency; the meetup still adds to the meetup frequency, the chat to contact at a distance.
+        assertTrue(chat.value > 0 && met.value > 0)
+        assertEquals(Warmth.Level.WARM, chat.level)
+    }
+
+    @Test
+    fun remoteContactCountsWhateverTheCatchUpSwitchSays() {
+        val off = ana.copy(contactCountsAsCatchUp = false)
+        val on = ana.copy(contactCountsAsCatchUp = true)
+        val call = listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 9)))
+        val a = Warmth.score(off, emptyList(), call, 30, today, TimeZone.UTC)
+        assertTrue(a.value > 0)
+        assertEquals(a, Warmth.score(on, emptyList(), call, 30, today, TimeZone.UTC))
+    }
+
+    @Test
+    fun manySaidHisAddUpLessThanAsManyCalls() {
+        fun of(type: InteractionType) = (1..6).map { Interaction(FriendId("ana"), type, at(2026, 3, 10).minusDays(it * 10)) }
+        val hi = Warmth.score(ana, emptyList(), of(InteractionType.MESSAGE), 30, today, TimeZone.UTC)
+        val calls = Warmth.score(ana, emptyList(), of(InteractionType.CALL), 30, today, TimeZone.UTC)
+        assertTrue(hi.value < calls.value)
     }
 
     @Test

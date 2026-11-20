@@ -1,4 +1,4 @@
--- Evidence of contact (calls, messages, emails, video calls, WhatsApp days), journal entries, and imported chat lines
+-- Evidence of contact (calls, messages, emails, video calls, WhatsApp days, long chats, games, other), journal entries, and imported chat lines
 -- kept as AI context. Automatic interactions and chat lines are de-duplicated (UNIQUE + INSERT OR IGNORE), trimmed by
 -- age, and everything goes with the friend.
 
@@ -11,7 +11,8 @@ CREATE TABLE interaction (
     source TEXT NOT NULL,
     duration_seconds INTEGER,
     batch_id TEXT,
-    message_count INTEGER
+    message_count INTEGER,
+    label TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX interaction_friend_at ON interaction(friend_id, at);
@@ -51,8 +52,8 @@ SELECT * FROM conversation_message ORDER BY friend_id, at, rowid;
 
 -- Automatic rows that are already stored are skipped (same id, or same friend, type and time).
 insertInteraction:
-INSERT OR IGNORE INTO interaction (id, friend_id, type, at, note, source, duration_seconds, batch_id, message_count)
-SELECT :id, :friendId, :type, :at, :note, :source, :durationSeconds, :batchId, :messageCount
+INSERT OR IGNORE INTO interaction (id, friend_id, type, at, note, source, duration_seconds, batch_id, message_count, label)
+SELECT :id, :friendId, :type, :at, :note, :source, :durationSeconds, :batchId, :messageCount, :label
 WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
 
 deleteInteraction:

@@ -102,7 +102,7 @@ enum class TimelineFilter {
 
     companion object {
         val CALL_TYPES = setOf(InteractionType.CALL, InteractionType.VIDEO_CALL)
-        val MESSAGE_TYPES = setOf(InteractionType.MESSAGE, InteractionType.WHATSAPP, InteractionType.EMAIL)
+        val MESSAGE_TYPES = setOf(InteractionType.MESSAGE, InteractionType.WHATSAPP, InteractionType.EMAIL, InteractionType.LONG_CHAT)
     }
 }
 

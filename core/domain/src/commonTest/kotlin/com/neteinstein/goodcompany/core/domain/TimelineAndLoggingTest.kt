@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.domain.usecase.LogResult
@@ -32,6 +33,7 @@ import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -179,6 +181,59 @@ class TimelineAndLoggingTest {
         g.undoLog(logged.copy(plan = plan))
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
         assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+    }
+
+    @Test
+    fun eachWayToKeepInTouchIsLoggedAsItsOwnInteraction() = runTest {
+        val g = TestGraph(friends = friends)
+        val kinds = mapOf(
+            LogKind.CALL to InteractionType.CALL,
+            LogKind.VIDEO_CALL to InteractionType.VIDEO_CALL,
+            LogKind.MESSAGE to InteractionType.MESSAGE,
+            LogKind.EMAIL to InteractionType.EMAIL,
+            LogKind.LONG_CHAT to InteractionType.LONG_CHAT,
+            LogKind.GAME to InteractionType.GAME,
+            LogKind.OTHER to InteractionType.OTHER,
+        )
+        kinds.forEach { (kind, type) ->
+            assertTrue(kind.isRemote, "$kind")
+            val row = assertIs<LogResult.Contacts>(g.logInteraction(LogRequest(listOf(ana), kind, note = " n "))).interactions.single()
+            assertEquals(type, row.type)
+            assertEquals("n", row.note)
+            assertEquals("", row.label)
+        }
+        assertFalse(LogKind.MEETUP.isRemote)
+        assertFalse(LogKind.JOURNAL.isRemote)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertEquals(kinds.size, g.interactionRepo.interactions.value.size)
+    }
+
+    @Test
+    fun otherKeepsItsLabel_trimmedAndShort_andOtherKindsIgnoreIt() = runTest {
+        val g = TestGraph(friends = friends)
+        val other = assertIs<LogResult.Contacts>(g.logInteraction(LogRequest(listOf(ana, rui), LogKind.OTHER, label = "  Sent a postcard ")))
+        assertEquals(listOf("Sent a postcard", "Sent a postcard"), other.interactions.map { it.label })
+        val long = assertIs<LogResult.Contacts>(g.logInteraction(LogRequest(listOf(ana), LogKind.OTHER, label = "x".repeat(100))))
+        assertEquals(LogInteractionUseCase.LABEL_MAX, long.interactions.single().label.length)
+        val call = assertIs<LogResult.Contacts>(g.logInteraction(LogRequest(listOf(ana), LogKind.CALL, label = "Ignored")))
+        assertEquals("", call.interactions.single().label)
+    }
+
+    @Test
+    fun undoingAContactThatAnsweredAPlanPutsThePlanBack() = runTest {
+        val g = TestGraph(friends = friends)
+        val plan = g.savePlan(null, "Catch up", listOf(ana), LocalDate(2026, 3, 6))
+        val logged = assertIs<LogResult.Contacts>(g.logInteraction(LogRequest(listOf(ana), LogKind.GAME, date = LocalDate(2026, 3, 6))))
+        g.confirmPlan(plan.id, happened = true, day = plan.date, logCheckIn = false)
+        g.undoLog(logged.copy(plan = plan))
+        assertTrue(g.interactionRepo.interactions.value.isEmpty())
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+    }
+
+    @Test
+    fun longChatsCountAsMessagesInTheTimelineFilter() {
+        assertTrue(InteractionType.LONG_CHAT in TimelineFilter.MESSAGE_TYPES)
+        assertFalse(InteractionType.GAME in TimelineFilter.MESSAGE_TYPES + TimelineFilter.CALL_TYPES)
     }
 
     @Test

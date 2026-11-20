@@ -5,7 +5,10 @@ import kotlin.time.Instant
 
 /**
  * A kind of contact. [MEETUP] is kept for old data only: meetups are [Hangout]s. Every other type is "contact at a
- * distance": it adds to warmth and resets the rhythm only when the friend's "calls and chats count" switch is on.
+ * distance": it always adds to warmth (weighted per kind, see `Warmth.weight`) and resets the rhythm only when the
+ * friend's "calls and chats count" switch is on. [MESSAGE] is "said hi" on the "Caught up" panel (issue #101),
+ * [LONG_CHAT] a long text conversation, [GAME] playing online together and [OTHER] anything else, named by
+ * [Interaction.label].
  */
 enum class InteractionType {
     CALL,
@@ -14,9 +17,12 @@ enum class InteractionType {
     MESSAGE,
     EMAIL,
     VIDEO_CALL,
+    LONG_CHAT,
+    GAME,
+    OTHER,
     ;
 
-    /** Calls, messages, emails, video calls and WhatsApp days: everything that isn't being together. */
+    /** Calls, messages, emails, video calls, WhatsApp days, long chats, games: everything that isn't being together. */
     val isRemote: Boolean get() = this != MEETUP
 }
 
@@ -50,6 +56,8 @@ data class Interaction(
     val batchId: String? = null,
     /** WhatsApp import: how many messages were sent that day. */
     val messageCount: Int? = null,
+    /** [InteractionType.OTHER] only: what it was, in the user's words ("Sent a postcard"). Blank shows "Other". */
+    val label: String = "",
 ) {
     /**
      * This interaction with an id. One without (from a backup older than the timeline) gets its stable automatic id
