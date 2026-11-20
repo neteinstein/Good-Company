@@ -643,4 +643,8 @@
         <item quantity="few">Încă %1$d copii</item>
         <item quantity="other">Încă %1$d de copii</item>
     </plurals>
+    <string name="notif_reminder_overdue_title">⏰ Încă de făcut: %1$s</string>
+    <string name="notif_reminder_overdue_body">Memento întârziat</string>
+    <string name="notif_test_title">Good Company</string>
+    <string name="notif_test_body">Notificările funcționează. Așa vor arăta.</string>
 </resources>

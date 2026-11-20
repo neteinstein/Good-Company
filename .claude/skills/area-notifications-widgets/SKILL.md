@@ -18,6 +18,29 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A reminder that belongs to a circle (#88, `Reminder.circleId`) is planned for the circle: its text names the circle,
   then its own people (`NotificationPlanner`); who it's for is `Reminder.peopleIds(circles)`, today's members.
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
+- **Settings → Notifications (issue #98).** `AppSettings.notifications` (`NotificationSettings`: master switch, one
+  switch per `NotificationType`, `persistent` = "Keep important ones on screen") lives in `DeviceSettings` (no schema
+  change) and travels in backups; `notificationPrimerDismissed` (Today's card) is device-only. `NotificationPlanner`
+  checks `notifications.allows(content.type)` for every notification: a new `NotificationContent` needs a `type`.
+- **Persistent notifications (issue #98).** With `persistent` on, the planner marks these `PlannedNotification.persistent`
+  with `until` = the end of their day: reminders marked important (`Reminder.important`, a stub returning false until
+  #99 adds the field), overdue reminders (`ReminderOverdue`, asked at the reminder hour each day, `OVERDUE_ASKS` planned
+  ahead), today's birthdays/anniversaries/big days, `PlanToday` and `PlanFollowUp`. Notifications with the same `slot`
+  replace each other on screen (an overdue reminder shows once); `whileOpen` ones are taken off the screen when their
+  slot is no longer planned (reminder done/deleted, plan answered). Persistent = channel `IMPORTANT`.
+- **Android delivery (issue #98).** Check `mayPostNotifications()` (`areNotificationsEnabled()`, plus
+  `POST_NOTIFICATIONS` only on API 33+: minSdk 32 has no runtime permission). Channels: `reminders` (old id kept),
+  `birthdays`, `plans`, `catch_ups` (low), `important` (high); names in `core/data/src/androidMain/res`. Posts use the
+  slot as the notification tag (id 0). Persistent = `setOngoing` + `setOnlyAlertOnce` + `setTimeoutAfter`. Re-planning
+  also runs from `ReplanNotificationsWorker` (daily) and after every notification quick action
+  (`KeepNotificationsScheduledUseCase.once()`), not only while the UI is alive.
+- **iOS delivery (issue #98).** Persistent = `UNNotificationInterruptionLevelTimeSensitive`, which needs the
+  `com.apple.developer.usernotifications.time-sensitive` entitlement (`iosApp/iosApp/iosApp.entitlements`); the slot is
+  the `threadIdentifier` and goes in `userInfo` with `whileOpen`. "Send a test notification" is `showNow` on every
+  scheduler (a 1 s trigger on iOS, a no-op on the web).
+- **Asking for permission.** Use `rememberNotificationsEnabler` (core:ui): it asks, and opens the system's notification
+  settings when the system won't ask again (refused before, or Android 12L). Today shows `NotificationPrimerCard`
+  while notifications are blocked, until "Not now".
 
 ## Reference (moved from AGENTS.md)
 

@@ -92,4 +92,8 @@
     <string name="last_seen_got_few_months">Registado: %1$s, há uns meses</string>
     <string name="last_seen_got_over_year">Registado: %1$s, há mais de um ano</string>
     <string name="last_seen_got_dont_know">Registado: o ritmo com %1$s começa hoje</string>
+    <string name="notif_primer_title">Ativa as notificações</string>
+    <string name="notif_primer_body">Para que aniversários, dias importantes, lembretes e planos te cheguem mesmo com a app fechada.</string>
+    <string name="notif_primer_allow">Permitir</string>
+    <string name="notif_primer_not_now">Agora não</string>
 </resources>

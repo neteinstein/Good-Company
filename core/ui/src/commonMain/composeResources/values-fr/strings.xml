@@ -621,4 +621,8 @@
         <item quantity="one">%1$d autre enfant</item>
         <item quantity="other">%1$d autres enfants</item>
     </plurals>
+    <string name="notif_reminder_overdue_title">⏰ Toujours à faire : %1$s</string>
+    <string name="notif_reminder_overdue_body">Rappel en retard</string>
+    <string name="notif_test_title">Good Company</string>
+    <string name="notif_test_body">Les notifications fonctionnent. Voici à quoi elles ressembleront.</string>
 </resources>

@@ -96,4 +96,8 @@
     <string name="last_seen_got_few_months">Notat: %1$s, acum câteva luni</string>
     <string name="last_seen_got_over_year">Notat: %1$s, acum peste un an</string>
     <string name="last_seen_got_dont_know">Notat: ritmul cu %1$s începe azi</string>
+    <string name="notif_primer_title">Activează notificările</string>
+    <string name="notif_primer_body">Ca zilele de naștere, zilele importante, mementourile și planurile să ajungă la tine chiar și cu aplicația închisă.</string>
+    <string name="notif_primer_allow">Permite</string>
+    <string name="notif_primer_not_now">Nu acum</string>
 </resources>
