@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,12 +55,14 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleDashboard
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.PeopleLegend
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.format.monthShort
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.resources.back
+import com.neteinstein.goodcompany.core.ui.resources.legend_title
 import com.neteinstein.goodcompany.feature.review.resources.Res
 import com.neteinstein.goodcompany.feature.review.resources.network_title
 import com.neteinstein.goodcompany.feature.review.resources.people_avg_warmth
@@ -249,6 +252,12 @@ private fun Dashboard(d: PeopleDashboard, onOpenFriend: (FriendId) -> Unit) {
                         )
                     }
                 }
+            }
+        }
+        // Issue #120: what the ring and the circle dots on People mean.
+        item {
+            SectionCard(stringResource(CoreRes.string.legend_title), icon = Icons.Rounded.Info) {
+                PeopleLegend(Modifier.padding(horizontal = 16.dp), showWarmth = d.showWarmth)
             }
         }
         if (!d.showWarmth) {

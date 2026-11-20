@@ -44,7 +44,7 @@ private fun FriendsPreview(dark: Boolean) = GoodCompanyTheme(if (dark) ThemeMode
             friends = sample,
             sections = listOf(PeopleSection.Level(Closeness.INNER) to sample.take(2), PeopleSection.Level(Closeness.ACQUAINTANCE) to sample.drop(2)),
             listedCount = 3,
-            yourPeople = YourPeopleSummary(people = 3, meetupsLast90Days = 4, cooling = listOf(sample[1].friend)),
+            yourPeople = YourPeopleSummary(people = 3, meetupsLast90Days = 4),
             totalCount = 3,
             isLoading = false,
             now = now,

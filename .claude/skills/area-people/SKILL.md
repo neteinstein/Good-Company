@@ -55,6 +55,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   no circle. Search hides the card and chips and keeps the grouping. A–Z (⋮ menu) names each row's level in a pill. A
   new level gets its heading by being added to the enum in order; give it a label in `closenessLabel`. The "Your
   people" card uses `ObservePeopleDashboardUseCase(withTrend = false)`.
+- **People tab since #120.** Tabs All · Friends · Family (`PeopleTab`, domain; Family = `Friend.isFamily`, the same
+  people as the built-in Family circle) under the card, applied before `PeopleFiltering.apply` so search, the filter row
+  and its counts stay inside the tab (not stored). Inside a closeness heading `PeopleOrder.recentFirst` (last contact
+  of any kind, never-contacted last A–Z). Warmth is the avatar ring (`FriendAvatar(ringColor = warmthColor(...))`) for
+  tracked people with Show warmth on; the old warmth dot is gone. `CircleDots` (max 4 then "+N") follow the name, in
+  `circlePalette` colours. `PeopleLegend` (`:core:ui`) explains both, in the Dashboard and as a tip until "Got it"
+  (`AppSettings.peopleLegendSeen`, device-only). The card is two equal tiles + Dashboard / Your network links.
 - **One people picker (issue #89).** Everywhere people are chosen uses `PeoplePickerSheet` (multiple: reminder,
   plan, Log sheet, We met, circle editor, gift list) or `PersonPickerSheet` (single: person links), both in `:core:ui`
   `components/PeoplePicker.kt`; Share to… embeds its body (`PeopleFilterRow` + `peopleByCloseness`) under its

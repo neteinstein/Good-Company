@@ -22,10 +22,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.usecase.CircleDots
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
+import com.neteinstein.goodcompany.core.ui.components.CircleDot
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
-import com.neteinstein.goodcompany.core.ui.components.WarmthDot
+import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
@@ -38,6 +40,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.row_catch_up
 import com.neteinstein.goodcompany.feature.friends.resources.row_from_contacts
 import com.neteinstein.goodcompany.feature.friends.resources.row_last_in_touch
 import com.neteinstein.goodcompany.feature.friends.resources.row_likes
+import com.neteinstein.goodcompany.feature.friends.resources.row_more_circles
 import com.neteinstein.goodcompany.feature.friends.resources.row_warmth
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -55,6 +58,8 @@ fun FriendRow(
     showWarmth: Boolean = true,
     /** Names the person's level in a pill: sorted A–Z, where no heading says it (issue #86). */
     showCloseness: Boolean = false,
+    /** One dot per circle after the name (issue #120). */
+    circles: CircleDots = CircleDots.None,
     modifier: Modifier = Modifier,
 ) {
     val f = summary.friend
@@ -66,17 +71,43 @@ fun FriendRow(
             .animateContentSize(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box {
-            FriendAvatar(f, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
-            val level = summary.warmth?.level
-            if (f.isCloseFriend && showWarmth && level != null) {
-                val warmth = stringResource(Res.string.row_warmth, warmthLabel(level))
-                WarmthDot(level, Modifier.align(Alignment.BottomEnd).semantics { contentDescription = warmth }, size = 12.dp)
-            }
-        }
+        // Issue #120: warmth is the ring around the photo, for people you keep track of (#115); no ring otherwise.
+        val level = summary.warmth?.level?.takeIf { showWarmth }
+        val warmth = level?.let { stringResource(Res.string.row_warmth, warmthLabel(it)) }
+        FriendAvatar(
+            f,
+            sharedKey = "avatar-${f.id.value}",
+            ringColor = level?.let { warmthColor(it) },
+            modifier = if (warmth != null) Modifier.semantics { contentDescription = warmth } else Modifier,
+        )
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(f.displayName, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    f.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (circles.shown.isNotEmpty()) {
+                    val names = circles.shown.joinToString(", ") { it.name }
+                    Row(
+                        Modifier.padding(start = 8.dp).semantics { contentDescription = names },
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        circles.shown.forEach { CircleDot(it.color, size = 8.dp) }
+                        if (circles.more > 0) {
+                            Text(
+                                stringResource(Res.string.row_more_circles, circles.more),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
             // F9: a kid's line says who they are ("Niece · Ana’s daughter") rather than when you were last in touch.
             val kidOf = summary.parents.firstOrNull()?.let { parent ->
                 listOfNotNull(f.relationToMe?.let { linkWord(it, f.pronouns) }, kidOfLabel(f, parent)).joinToString(" · ")

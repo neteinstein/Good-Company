@@ -458,7 +458,6 @@
     <string name="gift_lists_link">Listas de regalos</string>
     <!-- People tab (issue #66) -->
     <string name="people_title">Personas</string>
-    <string name="people_open">Abrir</string>
     <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Aún no hay nadie aquí.</string>
     <plurals name="people_card_count">
@@ -466,12 +465,8 @@
         <item quantity="other">personas</item>
     </plurals>
     <plurals name="people_card_meetups">
-        <item quantity="one">encuentro en 90 días</item>
-        <item quantity="other">encuentros en 90 días</item>
-    </plurals>
-    <plurals name="people_card_cooling">
-        <item quantity="one">%1$d enfriándose: %2$s</item>
-        <item quantity="other">%1$d enfriándose: %2$s</item>
+        <item quantity="one">encuentro</item>
+        <item quantity="other">encuentros</item>
     </plurals>
     <!-- Circles on a person's page (issue #70) -->
     <string name="circles_sheet_title">Círculos de %1$s</string>
@@ -535,4 +530,9 @@
     <string name="note_add_media">Añadir foto o vídeo</string>
     <string name="note_media_explained">Good Company guarda una pequeña vista previa. El original se queda en tu galería.</string>
     <string name="note_saved">Nota guardada</string>
+    <string name="people_dashboard">Panel</string>
+    <string name="people_tab_all">Todos</string>
+    <string name="people_tab_friends">Amigos</string>
+    <string name="people_tab_family">Familia</string>
+    <string name="row_more_circles">+%1$d</string>
 </resources>

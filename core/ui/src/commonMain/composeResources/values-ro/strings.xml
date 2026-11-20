@@ -708,4 +708,9 @@
     <string name="log_last_together">Ultima dată împreună: %1$s</string>
     <string name="notif_daily_log_title">Cu cine ai ținut legătura azi?</string>
     <string name="notif_daily_log_body">Atinge ca să notezi cât e proaspăt.</string>
+    <string name="legend_title">Ce înseamnă culorile</string>
+    <string name="legend_ring">Inelul din jurul fotografiei arată cât de caldă e relația:</string>
+    <string name="legend_no_ring">Fără inel: nu urmărești această persoană.</string>
+    <string name="legend_dots">Câte un punct pentru fiecare cerc din care face parte, în culoarea cercului.</string>
+    <string name="legend_got_it">Am înțeles</string>
 </resources>
