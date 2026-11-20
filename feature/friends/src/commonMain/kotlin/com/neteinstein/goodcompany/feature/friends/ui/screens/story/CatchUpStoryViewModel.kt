@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStory
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,8 +36,18 @@ data class CatchUpStoryUiState(
 }
 
 /** A friend's catch-up story: tap through what's new and what to ask about. */
-class CatchUpStoryViewModel(friendId: FriendId, observeStory: ObserveCatchUpStoryUseCase, private val clock: AppClock) : ViewModel() {
+class CatchUpStoryViewModel(
+    friendId: FriendId,
+    observeStory: ObserveCatchUpStoryUseCase,
+    private val clock: AppClock,
+    storyViews: StoryViews,
+) : ViewModel() {
     private val local = MutableStateFlow(CatchUpStoryUiState())
+
+    init {
+        // Opening the story is seeing it: the ring on their photo turns grey (issue #103).
+        storyViews.markSeen(friendId, clock.now())
+    }
 
     val state: StateFlow<CatchUpStoryUiState> = combine(observeStory(friendId), local) { story, ui ->
         val count = story?.slides?.size ?: 0

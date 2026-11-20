@@ -215,6 +215,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -289,6 +290,8 @@ val appModule = module {
     // SQLite (SQLDelight), opened lazily on first use. The first open moves the old JSON documents in (issue #14).
     single<DatabaseDriverFactory> { createDatabaseDriverFactory() }
     single { LegacyJsonImport(get(), get()) }
+    // Issue #103: when each catch-up story was last opened, in memory only.
+    single { StoryViews() }
     single {
         val legacy: LegacyJsonImport = get()
         AppDatabase(get(), get(), prepare = legacy::run)
@@ -543,6 +546,7 @@ val appModule = module {
             ids = get(),
             deleteEntry = get(),
             restoreEntry = get(),
+            storyViews = get(),
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }
@@ -622,6 +626,6 @@ val appModule = module {
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
     viewModel { NetworkMapViewModel(get()) }
     viewModel { PeopleDashboardViewModel(get()) }
-    viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get()) }
+    viewModel { (id: FriendId) -> CatchUpStoryViewModel(id, get(), get(), get()) }
     viewModelOf(::ShareToFriendViewModel)
 }

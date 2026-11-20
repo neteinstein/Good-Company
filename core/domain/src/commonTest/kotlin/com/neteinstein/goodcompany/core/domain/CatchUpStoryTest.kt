@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.Place
@@ -14,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.FreshItem
+import com.neteinstein.goodcompany.core.domain.usecase.NotesToJournal
 import com.neteinstein.goodcompany.core.domain.usecase.StorySlide
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -22,8 +24,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
-import com.neteinstein.goodcompany.core.domain.model.JournalEntry
-import com.neteinstein.goodcompany.core.domain.usecase.NotesToJournal
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull

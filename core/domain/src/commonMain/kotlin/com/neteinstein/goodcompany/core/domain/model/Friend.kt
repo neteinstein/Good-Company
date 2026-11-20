@@ -33,6 +33,11 @@ data class Friend(
     val notifyBirthday: Boolean = true,
     val likes: List<String> = emptyList(),
     val dislikes: List<String> = emptyList(),
+    /**
+     * Legacy free-text notes (issue #103): notes are dated journal entries now, and this text was copied into one
+     * (`NotesToJournal`, migration `23.sqm`). Kept, never shown or edited, until the migration is verified; the contact
+     * write-back still carries it (the mirror never deletes).
+     */
     val notes: String = "",
     /**
      * Only read from old backups and the old JSON store: kids are people now (F9, issue #40), linked to their parent

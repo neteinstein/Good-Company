@@ -88,16 +88,12 @@
     <string name="touch_from_circle">From their closeness: %1$s</string>
     <string name="touch_called">Called</string>
     <string name="warmth_title">Warmth %1$d</string>
-    <string name="warmth_hint_warm">You’re in a good rhythm.</string>
-    <string name="warmth_hint_cooling">Cooling a little — a message would warm it up.</string>
-    <string name="warmth_hint_fading">It’s been quiet for a while — a hello would be nice.</string>
     <string name="contact_met">Met %1$s</string>
     <string name="contact_call">Call %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
 
     <string name="tastes_title">Tastes</string>
     <string name="tastes_loves">Loves</string>
-    <string name="tastes_loves_placeholder">Add likes — jazz, sushi, F1…</string>
     <string name="tastes_dislikes">Not a fan of</string>
     <string name="tastes_dislikes_placeholder">Add dislikes</string>
 
@@ -212,11 +208,6 @@
         <item quantity="other">%1$d friends added</item>
     </plurals>
     <!-- Catch-up story -->
-    <string name="story_cta">Catch up on %1$s</string>
-    <string name="story_cta_hint">A quick story of their life, newest first</string>
-    <string name="story_meeting_today">Seeing %1$s today</string>
-    <string name="story_meeting_tomorrow">Seeing %1$s tomorrow</string>
-    <string name="story_meeting_hint">Catch up on their life before you go</string>
     <string name="news_title">What’s new</string>
     <string name="news_hint">New job, a move, a new hobby… Jot it down and it leads their catch-up story, so you remember to ask.</string>
     <string name="news_dialog_title">What’s new with %1$s?</string>
@@ -263,10 +254,6 @@
     <plurals name="story_kid_age">
         <item quantity="one">%1$d year old</item>
         <item quantity="other">%1$d years old</item>
-    </plurals>
-    <plurals name="story_cta_fresh">
-        <item quantity="one">%1$d new thing since you last met</item>
-        <item quantity="other">%1$d new things since you last met</item>
     </plurals>
     <!-- Share into the app, blogs & feeds -->
     <string name="share_title">Save to a friend</string>
@@ -340,7 +327,6 @@
     <string name="tastes_doesnt_like">Doesn’t like</string>
     <string name="tastes_interests">Interests &amp; hobbies</string>
     <string name="tastes_interests_placeholder">Add an interest — ceramics, trail running…</string>
-    <string name="tastes_other_likes">Other likes</string>
     <string name="more_title">More about %1$s</string>
     <string name="more_add">Add field</string>
     <string name="more_hint">Anything else worth remembering: shoe size, allergies, football club…</string>
@@ -520,10 +506,12 @@
     <string name="qa_message">Message</string>
     <string name="qa_we_met">Caught up</string>
     <string name="message_sheet_title">Message %1$s</string>
-    <string name="tab_summary">Summary</string>
     <string name="tab_about">About</string>
-    <string name="tab_history">History</string>
-    <string name="editing_title">Editing %1$s</string>
+    <string name="tab_together">Together</string>
+    <string name="story_open">Open %1$s’s story</string>
+    <string name="notes_add">Note</string>
+    <string name="edit_close">Close</string>
+    <string name="edit_person_hint">Changes save as you make them.</string>
     <string name="edit_done">Done</string>
     <string name="edit_person">Edit %1$s</string>
     <string name="detail_more_options">More options</string>
@@ -544,4 +532,5 @@
     <string name="talk_title">To talk about</string>
     <string name="news_add">Add news</string>
     <string name="relation_to_me_pick">Tap to choose (sister, cousin…)</string>
+    <string name="tastes_other_likes">Other likes</string>
 </resources>

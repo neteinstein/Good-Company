@@ -20,7 +20,11 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -321,6 +325,36 @@ class ObserveStoryBubblesUseCase(
             val since = seen[id] ?: (now - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
             val kids = KidsAsPeople.kidsOf(id, ls, byId)
             StoryBubble(friend, date, CatchUpStoryBuilder.freshItems(friend, kids).count { it.addedAt > since })
+        }
+    }
+}
+
+/**
+ * When each person's catch-up story was last opened (issue #103): the story ring on their photo turns grey once
+ * everything fresh in it has been seen. Kept in memory only (nothing stored, nothing in backups), so after a restart
+ * the ring is bright again while those things are still fresh.
+ */
+class StoryViews {
+    private val opened = MutableStateFlow<Map<FriendId, Instant>>(emptyMap())
+
+    val views: StateFlow<Map<FriendId, Instant>> = opened.asStateFlow()
+
+    fun markSeen(friendId: FriendId, at: Instant) = opened.update { it + (friendId to at) }
+}
+
+/** The ring around a person's photo (issue #103): none when nothing is fresh, bright while some of it is unseen. */
+enum class StoryRing {
+    NONE,
+    FRESH,
+    SEEN,
+    ;
+
+    companion object {
+        /** [fresh]: when each fresh thing was added; [seenAt]: when their story was last opened. */
+        fun of(fresh: List<Instant>, seenAt: Instant?): StoryRing = when {
+            fresh.isEmpty() -> NONE
+            seenAt == null || fresh.any { it > seenAt } -> FRESH
+            else -> SEEN
         }
     }
 }

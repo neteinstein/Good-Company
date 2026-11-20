@@ -16,13 +16,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Diversity1
+import androidx.compose.material.icons.rounded.Group
+import androidx.compose.material.icons.rounded.Handshake
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.format.monthShort
@@ -233,6 +241,38 @@ fun warmthColor(level: Warmth.Level): Color = when (level) {
     Warmth.Level.WARM -> MaterialTheme.colorScheme.primary
     Warmth.Level.COOLING -> MaterialTheme.colorScheme.tertiary
     Warmth.Level.FADING -> MaterialTheme.colorScheme.outline
+}
+
+/** The icon for a closeness level (issue #103), shown with its label on a person's page. No hearts (issue #86). */
+fun closenessIcon(level: Closeness): ImageVector = when (level) {
+    Closeness.INNER -> Icons.Rounded.Star
+    Closeness.CLOSE -> Icons.Rounded.Diversity1
+    Closeness.GOOD -> Icons.Rounded.Group
+    Closeness.ACQUAINTANCE -> Icons.Rounded.Handshake
+}
+
+/**
+ * Warmth as a bar (issue #103): filled by the score in the warmth colour, from warm (full) to quiet (empty), with
+ * [label] above it (e.g. "Warmth · Warm").
+ */
+@Composable
+fun WarmthMeter(warmth: Warmth.Score, label: String, modifier: Modifier = Modifier) {
+    val color = warmthColor(warmth.level)
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            WarmthDot(warmth.level, size = 8.dp)
+            Spacer(Modifier.width(6.dp))
+            Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        }
+        LinearProgressIndicator(
+            progress = { (warmth.value / 100f).coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(6.dp),
+            color = color,
+            trackColor = color.copy(alpha = 0.18f),
+            strokeCap = StrokeCap.Round,
+            drawStopIndicator = {},
+        )
+    }
 }
 
 /** Small dot showing a friendship's warmth. */

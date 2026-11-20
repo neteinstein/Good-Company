@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.LeadAction
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.MessageOptions
@@ -86,24 +87,31 @@ class PersonPageTest {
         assertEquals(LeadAction.WE_MET, MessageOptions.lead(null))
     }
 
-    // --- Tabs and empty cards ---
+    // --- Tabs and empty cards (issue #103: Together · About, no edit mode) ---
 
     @Test
-    fun everyCardBelongsToOneTab() {
+    fun twoTabs_togetherFirst_andEveryCardBelongsToOne() {
+        assertEquals(listOf(PersonTab.TOGETHER, PersonTab.ABOUT), PersonTab.entries)
+        // Coming up is the first entry, then the timeline; To talk about comes after.
         assertEquals(
-            listOf(PersonCard.COMING_UP, PersonCard.TO_TALK_ABOUT, PersonCard.TASTES, PersonCard.NOTES),
-            PersonCard.entries.filter { it.tab == PersonTab.SUMMARY },
+            listOf(PersonCard.COMING_UP, PersonCard.TIMELINE, PersonCard.CONVERSATIONS, PersonCard.TO_TALK_ABOUT),
+            PersonCard.entries.filter { it.tab == PersonTab.TOGETHER },
         )
-        assertEquals(listOf(PersonCard.CONVERSATIONS, PersonCard.TIMELINE), PersonCard.entries.filter { it.tab == PersonTab.HISTORY })
+        // Tastes and Notes moved to About.
+        assertEquals(PersonTab.ABOUT, PersonCard.TASTES.tab)
+        assertEquals(PersonTab.ABOUT, PersonCard.NOTES.tab)
         assertEquals(PersonTab.ABOUT, PersonCard.FAMILY.tab)
         assertEquals(PersonTab.ABOUT, PersonCard.COMPLETE.tab)
     }
 
     @Test
-    fun emptyProfile_aboutShowsOnlyTheCompleteCard_withAChipPerEmptySection() {
+    fun emptyProfile_aboutShowsTheCompleteCard_tastesAndNotes_withAChipPerEmptySection() {
         val ana = friend("ana")
         val facts = PageFacts()
-        assertEquals(listOf(PersonCard.COMPLETE), ProfileSections.shown(PersonTab.ABOUT, ana, facts, editing = false))
+        assertEquals(
+            listOf(PersonCard.COMPLETE, PersonCard.TASTES, PersonCard.NOTES),
+            ProfileSections.shown(PersonTab.ABOUT, ana, facts),
+        )
         assertEquals(
             listOf(
                 PersonCard.ABOUT,
@@ -126,8 +134,19 @@ class PersonPageTest {
             copy(job = "Designer", gifts = listOf(Gift("g", "Book")), customFields = listOf(CustomField("c", "Shoe size", "38")))
         }
         val facts = PageFacts(links = listOf(partner))
-        val shown = ProfileSections.shown(PersonTab.ABOUT, ana, facts, editing = false)
-        assertEquals(listOf(PersonCard.COMPLETE, PersonCard.ABOUT, PersonCard.MORE_ABOUT, PersonCard.FAMILY, PersonCard.GIFTS), shown)
+        val shown = ProfileSections.shown(PersonTab.ABOUT, ana, facts)
+        assertEquals(
+            listOf(
+                PersonCard.COMPLETE,
+                PersonCard.ABOUT,
+                PersonCard.MORE_ABOUT,
+                PersonCard.TASTES,
+                PersonCard.NOTES,
+                PersonCard.FAMILY,
+                PersonCard.GIFTS,
+            ),
+            shown,
+        )
         assertFalse(PersonCard.FAMILY in ProfileSections.missing(ana, facts))
 
         val full = ana.copy(
@@ -139,7 +158,9 @@ class PersonPageTest {
         )
         val fullFacts = facts.copy(savedCount = 2)
         assertTrue(ProfileSections.missing(full, fullFacts).isEmpty())
-        assertFalse(PersonCard.COMPLETE in ProfileSections.shown(PersonTab.ABOUT, full, fullFacts, editing = false))
+        assertFalse(PersonCard.COMPLETE in ProfileSections.shown(PersonTab.ABOUT, full, fullFacts))
+        // Occasions has a popup of its own now, so a filled Occasions card shows like any other.
+        assertTrue(PersonCard.OCCASIONS in ProfileSections.shown(PersonTab.ABOUT, full, fullFacts))
     }
 
     @Test
@@ -152,41 +173,37 @@ class PersonPageTest {
         val ana = friend("ana")
         assertTrue(PersonCard.FAMILY in ProfileSections.missing(ana, facts))
         assertFalse(PersonCard.OTHER_LINKS in ProfileSections.missing(ana, facts))
-        assertTrue(PersonCard.OTHER_LINKS in ProfileSections.shown(PersonTab.ABOUT, ana, facts, editing = false))
-        assertFalse(PersonCard.OTHER_LINKS in ProfileSections.shown(PersonTab.ABOUT, ana, PageFacts(), editing = true))
+        assertTrue(PersonCard.OTHER_LINKS in ProfileSections.shown(PersonTab.ABOUT, ana, facts))
+        assertFalse(PersonCard.OTHER_LINKS in ProfileSections.shown(PersonTab.ABOUT, ana, PageFacts()))
     }
 
     @Test
-    fun editMode_showsEveryAboutCard_withoutTheCompleteCard() {
-        val shown = ProfileSections.shown(PersonTab.ABOUT, friend("ana"), PageFacts(), editing = true)
-        assertEquals(
-            listOf(
-                PersonCard.ABOUT,
-                PersonCard.MORE_ABOUT,
-                PersonCard.OCCASIONS,
-                PersonCard.FAMILY,
-                PersonCard.MOMENTS,
-                PersonCard.GIFTS,
-                PersonCard.SAVED,
-                PersonCard.FEEDS,
-            ),
-            shown,
-        )
-    }
-
-    @Test
-    fun summary_keepsTastesAndNotes_andHidesToTalkAboutWhenEmpty() {
+    fun together_startsWithComingUpAndTheTimeline_andHidesToTalkAboutWhenEmpty() {
         val ana = friend("ana")
         assertEquals(
-            listOf(PersonCard.COMING_UP, PersonCard.TASTES, PersonCard.NOTES),
-            ProfileSections.shown(PersonTab.SUMMARY, ana, PageFacts(), editing = false),
+            listOf(PersonCard.COMING_UP, PersonCard.TIMELINE, PersonCard.CONVERSATIONS),
+            ProfileSections.shown(PersonTab.TOGETHER, ana, PageFacts()),
         )
-        assertTrue(PersonCard.TO_TALK_ABOUT in ProfileSections.shown(PersonTab.SUMMARY, ana, PageFacts(hasTopics = true), editing = false))
-        assertTrue(PersonCard.TO_TALK_ABOUT in ProfileSections.shown(PersonTab.SUMMARY, ana, PageFacts(aiEnabled = true), editing = false))
-        assertTrue(PersonCard.TO_TALK_ABOUT in ProfileSections.shown(PersonTab.SUMMARY, ana, PageFacts(), editing = true))
-        assertEquals(
-            listOf(PersonCard.CONVERSATIONS, PersonCard.TIMELINE),
-            ProfileSections.shown(PersonTab.HISTORY, ana, PageFacts(), editing = false),
+        assertEquals(PersonCard.TO_TALK_ABOUT, ProfileSections.shown(PersonTab.TOGETHER, ana, PageFacts(hasTopics = true)).last())
+        assertTrue(PersonCard.TO_TALK_ABOUT in ProfileSections.shown(PersonTab.TOGETHER, ana, PageFacts(aiEnabled = true)))
+        val withNews = ana.copy(
+            lifeUpdates = listOf(com.neteinstein.goodcompany.core.domain.model.LifeUpdate("u", "New job", kotlin.time.Instant.DISTANT_PAST)),
         )
+        assertTrue(PersonCard.TO_TALK_ABOUT in ProfileSections.shown(PersonTab.TOGETHER, withNews, PageFacts()))
+    }
+
+    // --- Story ring (issue #103) ---
+
+    @Test
+    fun storyRing_brightWhileSomethingFreshIsUnseen_greyOnceSeen_noneWithNothingFresh() {
+        val t1 = kotlin.time.Instant.fromEpochMilliseconds(1_000)
+        val t2 = kotlin.time.Instant.fromEpochMilliseconds(2_000)
+        assertEquals(StoryRing.NONE, StoryRing.of(emptyList(), null))
+        assertEquals(StoryRing.NONE, StoryRing.of(emptyList(), t2))
+        assertEquals(StoryRing.FRESH, StoryRing.of(listOf(t1), null))
+        assertEquals(StoryRing.SEEN, StoryRing.of(listOf(t1), t1))
+        assertEquals(StoryRing.SEEN, StoryRing.of(listOf(t1), t2))
+        // Something added after the story was opened makes it bright again.
+        assertEquals(StoryRing.FRESH, StoryRing.of(listOf(t1, t2), t1))
     }
 }

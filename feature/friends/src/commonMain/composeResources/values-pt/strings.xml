@@ -76,15 +76,11 @@
     <string name="touch_from_circle">Pela proximidade: %1$s</string>
     <string name="touch_called">Liguei</string>
     <string name="warmth_title">Calor %1$d</string>
-    <string name="warmth_hint_warm">Estão num bom ritmo.</string>
-    <string name="warmth_hint_cooling">Está a arrefecer um pouco — uma mensagem aquecia isto.</string>
-    <string name="warmth_hint_fading">Tem estado tudo calmo — um olá ia saber bem.</string>
     <string name="contact_met">Juntos %1$s</string>
     <string name="contact_call">Chamada %1$s</string>
     <string name="contact_whatsapp">WhatsApp %1$s</string>
     <string name="tastes_title">Gostos</string>
     <string name="tastes_loves">Adora</string>
-    <string name="tastes_loves_placeholder">Junta gostos — jazz, sushi, F1…</string>
     <string name="tastes_dislikes">Não é fã de</string>
     <string name="tastes_dislikes_placeholder">Junta o que não gosta</string>
     <string name="kids_title">Filhos</string>
@@ -186,11 +182,6 @@
         <item quantity="other">%1$d amigos adicionados</item>
     </plurals>
     <!-- Catch-up story -->
-    <string name="story_cta">Pôr a conversa em dia com %1$s</string>
-    <string name="story_cta_hint">Um resumo rápido da sua vida, novidades primeiro</string>
-    <string name="story_meeting_today">Vais estar com %1$s hoje</string>
-    <string name="story_meeting_tomorrow">Vais estar com %1$s amanhã</string>
-    <string name="story_meeting_hint">Revê as novidades antes de saíres</string>
     <string name="news_title">Novidades</string>
     <string name="news_hint">Emprego novo, uma mudança de casa, um novo passatempo… Aponta aqui e passa a abrir a história, para não te esqueceres de perguntar.</string>
     <string name="news_dialog_title">Que novidades há com %1$s?</string>
@@ -237,10 +228,6 @@
     <plurals name="story_kid_age">
         <item quantity="one">%1$d ano</item>
         <item quantity="other">%1$d anos</item>
-    </plurals>
-    <plurals name="story_cta_fresh">
-        <item quantity="one">%1$d novidade desde o último encontro</item>
-        <item quantity="other">%1$d novidades desde o último encontro</item>
     </plurals>
     <!-- Share into the app, blogs & feeds -->
     <string name="share_title">Guardar num amigo</string>
@@ -314,7 +301,6 @@
     <string name="tastes_doesnt_like">Não gosta</string>
     <string name="tastes_interests">Interesses e passatempos</string>
     <string name="tastes_interests_placeholder">Adicionar interesse — cerâmica, trail…</string>
-    <string name="tastes_other_likes">Outros gostos</string>
     <string name="more_title">Mais sobre %1$s</string>
     <string name="more_add">Adicionar campo</string>
     <string name="more_hint">Tudo o que vale a pena lembrar: número de sapato, alergias, clube…</string>
@@ -492,10 +478,7 @@
     <string name="qa_message">Mensagem</string>
     <string name="qa_we_met">Conversa em dia</string>
     <string name="message_sheet_title">Mensagem para %1$s</string>
-    <string name="tab_summary">Resumo</string>
     <string name="tab_about">Sobre</string>
-    <string name="tab_history">Histórico</string>
-    <string name="editing_title">A editar %1$s</string>
     <string name="edit_done">Feito</string>
     <string name="edit_person">Editar %1$s</string>
     <string name="detail_more_options">Mais opções</string>
@@ -519,4 +502,10 @@
     <string name="gifts_edit">Editar prenda</string>
     <string name="event_edit_title">Editar momento</string>
     <string name="msg_entry_removed">Removido</string>
+    <string name="tastes_other_likes">Outros gostos</string>
+    <string name="tab_together">Juntos</string>
+    <string name="story_open">Abrir a história de %1$s</string>
+    <string name="notes_add">Nota</string>
+    <string name="edit_close">Fechar</string>
+    <string name="edit_person_hint">As alterações ficam guardadas à medida que as fazes.</string>
 </resources>

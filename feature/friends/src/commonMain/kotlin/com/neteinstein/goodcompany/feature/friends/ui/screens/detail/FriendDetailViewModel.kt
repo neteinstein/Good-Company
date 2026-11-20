@@ -75,6 +75,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
+import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
@@ -279,6 +281,8 @@ data class FriendDetailUiState(
     val cadenceRules: CadenceRules = CadenceRules(),
     /** Things added since you last met — the catch-up story leads with them. */
     val freshCount: Int = 0,
+    /** The ring on their photo (issue #103): bright while something fresh is unseen, grey once their story was opened. */
+    val storyRing: StoryRing = StoryRing.NONE,
     /** Looking for a blog's feed (the add dialog stays open meanwhile). */
     val isAddingFeed: Boolean = false,
     /** Closes the "Follow their blog" dialog after a successful add. */
@@ -341,6 +345,7 @@ class FriendDetailViewModel(
     private val ids: IdGenerator,
     private val deleteEntry: DeleteTimelineEntryUseCase,
     private val restoreEntry: RestoreTimelineEntryUseCase,
+    storyViews: StoryViews,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendDetailUiState())
 
@@ -349,8 +354,12 @@ class FriendDetailViewModel(
         observeSettings(),
         observeAttachments(friendId).combine(observeReminders()) { attachments, reminders -> attachments to reminders },
         links.observe(friendId).combine(observeTags()) { linked, tags -> linked to tags },
-        local,
-    ) { detail, settings, (attachments, reminders), (linked, tags), ui ->
+        local.combine(storyViews.views) { ui, views -> ui to views[friendId] },
+    ) { detail, settings, (attachments, reminders), (linked, tags), (ui, storySeenAt) ->
+        val fresh = detail?.let { d ->
+            val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
+            CatchUpStoryBuilder.freshItems(d.friend, d.kids).map { it.addedAt }.filter { it > since }
+        }.orEmpty()
         ui.copy(
             detail = detail,
             reminders = reminders.filter { !it.done && it.isFor(friendId, detail?.groups.orEmpty()) },
@@ -363,10 +372,8 @@ class FriendDetailViewModel(
             hasAiKey = settings.usableAiKey != null,
             showWarmth = settings.showWarmth,
             cadenceRules = CadenceRules.from(settings),
-            freshCount = detail?.let { d ->
-                val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
-                CatchUpStoryBuilder.freshItems(d.friend, d.kids).count { it.addedAt > since }
-            } ?: 0,
+            freshCount = fresh.size,
+            storyRing = StoryRing.of(fresh, storySeenAt),
             now = clock.now(),
             today = clock.today(),
             zone = clock.timeZone,
@@ -513,8 +520,6 @@ class FriendDetailViewModel(
     fun onAddDislikes(values: List<String>) = edit { it.copy(dislikes = (it.dislikes + values).distinct()) }
 
     fun onRemoveDislike(value: String) = edit { it.copy(dislikes = it.dislikes - value) }
-
-    fun onNotesChange(notes: String) = edit { it.copy(notes = notes) }
 
     // --- About ------------------------------------------------------------------------------------------------------
 

@@ -38,12 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
+import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
@@ -164,12 +166,37 @@ fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Uni
     }
 }
 
+/** The story ring's colours while something in it is fresh (Today's bubbles and the photo on a person's page). */
+val StoryFreshColors: List<Color> = listOf(Color(0xFFF2A100), Color(0xFFE5574F), Color(0xFFD81B60))
+
+/**
+ * A photo with the Instagram-style story ring (issue #103): the gradient while something fresh is unseen, grey once
+ * seen, none when nothing is fresh. [content] is the photo, drawn inside the ring.
+ */
+@Composable
+fun StoryRingBox(ring: StoryRing, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val brush = when (ring) {
+        StoryRing.FRESH -> Brush.sweepGradient(StoryFreshColors + StoryFreshColors.first())
+        StoryRing.SEEN -> SolidColor(MaterialTheme.colorScheme.outlineVariant)
+        StoryRing.NONE -> null
+    }
+    if (brush == null) {
+        Box(modifier, contentAlignment = Alignment.Center) { content() }
+        return
+    }
+    Box(
+        modifier.clip(CircleShape).background(brush).padding(4.dp).clip(CircleShape)
+            .background(MaterialTheme.colorScheme.background).padding(3.dp),
+        contentAlignment = Alignment.Center,
+    ) { content() }
+}
+
 /** "Before you meet": an Instagram-style story bubble with a gradient ring; tap for their catch-up story. */
 @Composable
 fun StoryBubbleChip(bubble: StoryBubble, today: LocalDate, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val friend = bubble.friend
     val ring = if (bubble.freshCount > 0) {
-        listOf(Color(0xFFF2A100), Color(0xFFE5574F), Color(0xFFD81B60))
+        StoryFreshColors
     } else {
         avatarColors(friend.displayName).let { (a, b) -> listOf(a, b) }
     }
