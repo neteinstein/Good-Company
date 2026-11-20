@@ -34,6 +34,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   the timeline. Edits have no Undo (they save on Save); deletes do.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
+- **Together timeline (issue #117).** The person page's Together tab has no Coming up card: `PersonTimeline.build`
+  (`usecase/PersonTimeline.kt`) gives `TogetherTimeline(upcoming, past, hasMore)` of `TogetherItem`s. Top to bottom:
+  "+ Make plans" with the rhythm line, upcoming (open plans, open reminders, birthday and moments in the next 30
+  days; soonest last), "Today", then every dated thing (logged entries, unlogged shares, closed plans, done
+  reminders, past birthdays and moments), newest first, cut at `SHOWN` = 12 with a fade and "Show all" (the full
+  timeline screen). A plan that happened is its meetup. The Conversations box's Add imports a chat export
+  (`FriendDetailViewModel.onChatPicked`).
 - **One Log action (issue #116).** "Caught up", "We met" and "I'm with…" are one **Log** action with one icon, `LogIcon`
   (`Icons.Rounded.EditNote`, `:core:ui` `LogTime.kt`), always beside the word Log. Today's button, quick entries and
   app-icon shortcuts open `WeMetRoute`; with nobody given (`WeMetUiState.startsWithNobody`) it opens on the people

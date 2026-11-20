@@ -94,7 +94,7 @@ class PersonPageTest {
         assertEquals(listOf(PersonTab.TOGETHER, PersonTab.ABOUT), PersonTab.entries)
         // Coming up is the first entry, then the timeline; To talk about comes after.
         assertEquals(
-            listOf(PersonCard.COMING_UP, PersonCard.TIMELINE, PersonCard.CONVERSATIONS, PersonCard.TO_TALK_ABOUT),
+            listOf(PersonCard.TIMELINE, PersonCard.CONVERSATIONS, PersonCard.TO_TALK_ABOUT),
             PersonCard.entries.filter { it.tab == PersonTab.TOGETHER },
         )
         // Tastes and Notes moved to About.
@@ -181,7 +181,7 @@ class PersonPageTest {
     fun together_startsWithComingUpAndTheTimeline_andHidesToTalkAboutWhenEmpty() {
         val ana = friend("ana")
         assertEquals(
-            listOf(PersonCard.COMING_UP, PersonCard.TIMELINE, PersonCard.CONVERSATIONS),
+            listOf(PersonCard.TIMELINE, PersonCard.CONVERSATIONS),
             ProfileSections.shown(PersonTab.TOGETHER, ana, PageFacts()),
         )
         assertEquals(PersonCard.TO_TALK_ABOUT, ProfileSections.shown(PersonTab.TOGETHER, ana, PageFacts(hasTopics = true)).last())

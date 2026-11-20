@@ -510,7 +510,6 @@
     <string name="complete_feeds">Blog sau flux</string>
     <string name="circles_edit">Cercuri</string>
     <string name="tastes_add_title">Adaugă la pasiunile lui %1$s</string>
-    <string name="coming_up_title">Urmează</string>
     <string name="talk_title">De vorbit</string>
     <string name="news_add">Adaugă o noutate</string>
     <string name="relation_to_me_pick">Atinge ca să alegi (soră, văr…)</string>
@@ -524,4 +523,13 @@
     <string name="notes_add">Notiță</string>
     <string name="edit_close">Închide</string>
     <string name="edit_person_hint">Modificările se salvează pe loc.</string>
+    <!-- Together timeline (issue #117) -->
+    <string name="together_make_plans">Fă planuri</string>
+    <string name="together_today">Astăzi</string>
+    <string name="together_show_all">Vezi tot</string>
+    <string name="together_turned">A împlinit %1$d ani</string>
+    <string name="together_plan_skipped">Sărit</string>
+    <string name="together_plan_cancelled">Anulat</string>
+    <string name="together_plan_not_attended">Nu ai mers</string>
+    <string name="together_reminder_done">Memento făcut</string>
 </resources>

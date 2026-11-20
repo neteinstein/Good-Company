@@ -64,10 +64,11 @@ object MessageOptions {
  * the person's own settings are in the Edit person popup.
  */
 enum class PersonCard(val tab: PersonTab) {
-    /** First on Together: the birthday banner, plans ("Plan something"), reminders, upcoming moments and the rhythm line. */
-    COMING_UP(PersonTab.TOGETHER),
-
-    /** The whole timeline in place, with "+" and ⋮ (filters, import) and edit/delete on every entry (issue #102). */
+    /**
+     * First on Together (issue #117, the Coming up card is gone): the birthday banner, "+ Make plans" with the catch-up
+     * line, upcoming plans, reminders, birthday and moments, "Today", then the last 12 past entries and "Show all".
+     * "+" logs and ⋮ opens the full timeline; every entry edits and deletes (issue #102).
+     */
     TIMELINE(PersonTab.TOGETHER),
     CONVERSATIONS(PersonTab.TOGETHER),
 
@@ -113,7 +114,7 @@ object ProfileSections {
 
     /** True when [card] has nothing in it for [friend]. */
     fun isEmpty(card: PersonCard, friend: Friend, facts: PageFacts): Boolean = when (card) {
-        PersonCard.COMING_UP, PersonCard.TASTES, PersonCard.NOTES, PersonCard.CONVERSATIONS, PersonCard.TIMELINE -> false
+        PersonCard.TASTES, PersonCard.NOTES, PersonCard.CONVERSATIONS, PersonCard.TIMELINE -> false
         PersonCard.TO_TALK_ABOUT -> friend.lifeUpdates.isEmpty() && !facts.hasTopics && !facts.aiEnabled
         PersonCard.COMPLETE -> missing(friend, facts).isEmpty()
         PersonCard.ABOUT -> friend.job.isBlank() && friend.livesIn.isBlank() && friend.met?.isEmpty != false &&

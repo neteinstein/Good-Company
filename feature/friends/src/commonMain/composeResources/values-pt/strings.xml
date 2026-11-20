@@ -496,7 +496,6 @@
     <string name="complete_feeds">Blogue ou feed</string>
     <string name="circles_edit">Círculos</string>
     <string name="tastes_add_title">Adicionar aos gostos de %1$s</string>
-    <string name="coming_up_title">A seguir</string>
     <string name="talk_title">Para conversar</string>
     <string name="news_add">Adicionar novidade</string>
     <string name="relation_to_me_pick">Toca para escolher (irmã, primo…)</string>
@@ -510,4 +509,13 @@
     <string name="notes_add">Nota</string>
     <string name="edit_close">Fechar</string>
     <string name="edit_person_hint">As alterações ficam guardadas à medida que as fazes.</string>
+    <!-- Together timeline (issue #117) -->
+    <string name="together_make_plans">Fazer planos</string>
+    <string name="together_today">Hoje</string>
+    <string name="together_show_all">Ver tudo</string>
+    <string name="together_turned">Fez %1$d anos</string>
+    <string name="together_plan_skipped">Saltado</string>
+    <string name="together_plan_cancelled">Cancelado</string>
+    <string name="together_plan_not_attended">Não foste</string>
+    <string name="together_reminder_done">Lembrete feito</string>
 </resources>
