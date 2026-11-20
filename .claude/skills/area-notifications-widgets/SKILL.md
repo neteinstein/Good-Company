@@ -17,6 +17,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   Android resources and iOS `Localizable.strings` (`add-strings`).
 - A reminder that belongs to a circle (#88, `Reminder.circleId`) is planned for the circle: its text names the circle,
   then its own people (`NotificationPlanner`); who it's for is `Reminder.peopleIds(circles)`, today's members.
+- A plan occurrence's day and "did it happen?" notifications share the slot `plan:<occurrence>` and are both
+  "while open" (issue #100), so a persistent one goes as soon as the plan is cancelled, deleted or answered. The ask
+  offers "I didn't go" (`PLAN_NOT_ATTENDED`) for group and circle plans (`PlanFollowUp.isGroup`).
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
 - Reminders (#99): plan and sort by `Reminder.nextAt` (`snoozedUntil ?: dueAt`), never `dueAt` alone. Snooze moves only
   `snoozedUntil`; Done (`CompleteReminderUseCase`) closes a one-off with `completedAt`, or rolls a repeating one to
