@@ -25,6 +25,34 @@
 
     <string name="reminders">Reminders</string>
     <string name="allow_notifications">Allow notifications</string>
+    <!-- Settings → Notifications (issue #98). -->
+    <string name="notif_settings_title">Notifications</string>
+    <string name="notif_settings_row_hint">What to be told about, when, and what stays on screen</string>
+    <string name="notif_settings_row_off">Off</string>
+    <string name="notif_settings_allowed">Notifications are allowed</string>
+    <string name="notif_settings_blocked">Notifications are blocked</string>
+    <string name="notif_settings_blocked_hint">Nothing from Good Company can reach you until you allow notifications for it.</string>
+    <string name="notif_settings_system">System settings</string>
+    <string name="notif_settings_send_test">Send a test notification</string>
+    <string name="notif_settings_msg_test_sent">Test notification sent</string>
+    <string name="notif_settings_types">What to tell you about</string>
+    <string name="notif_settings_master">Notifications</string>
+    <string name="notif_settings_master_hint">Off: Good Company sends nothing. “Coming up” still shows it all.</string>
+    <string name="notif_type_birthdays">Birthdays &amp; anniversaries</string>
+    <string name="notif_type_birthdays_hint">Friends’, kids’ and relatives’ birthdays, and anniversaries</string>
+    <string name="notif_type_events">Big days</string>
+    <string name="notif_type_events_hint">The important events you saved for people, on the day and before</string>
+    <string name="notif_type_reminders">Reminders</string>
+    <string name="notif_type_reminders_hint">Your reminders, when they’re due</string>
+    <string name="notif_type_plans">Plans</string>
+    <string name="notif_type_plans_hint">On the day, and “Did you meet?” the day after</string>
+    <string name="notif_type_catch_ups">Catch-ups</string>
+    <string name="notif_type_catch_ups_hint">Who it’s time to see again, within the weekly note or one a day</string>
+    <string name="notif_type_calendar">Calendar summary</string>
+    <string name="notif_type_calendar_hint">In the evening, meetups from your calendar worth logging</string>
+    <string name="notif_settings_persistent">Keep important ones on screen</string>
+    <string name="notif_settings_persistent_hint">Reminders marked important, overdue reminders, today’s birthdays and big days, and today’s plan stay until you act on them. Overdue reminders come back each day.</string>
+    <string name="notif_settings_when">When and how</string>
     <string name="web_notifications">Browsers can’t remind you when the tab is closed — check “Coming up”, or install the mobile app.</string>
     <string name="pings_at">Birthday &amp; big-day pings at</string>
 

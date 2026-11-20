@@ -116,6 +116,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UpdateNotificationSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
@@ -256,6 +259,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
@@ -403,6 +407,9 @@ val appModule = module {
     factoryOf(::RestoreReminderUseCase)
     factoryOf(::ObserveAgendaUseCase)
     factoryOf(::KeepNotificationsScheduledUseCase)
+    factoryOf(::SendTestNotificationUseCase)
+    factoryOf(::DismissNotificationPrimerUseCase)
+    factoryOf(::UpdateNotificationSettingsUseCase)
     factoryOf(::ObserveIdeasUseCase)
     factoryOf(::DismissIdeaUseCase)
     factoryOf(::GenerateTalkingPointsUseCase)
@@ -539,6 +546,7 @@ val appModule = module {
     viewModelOf(::TodayViewModel)
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)
+    viewModelOf(::NotificationSettingsViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::PlansViewModel)
     viewModelOf(::SettingsViewModel)

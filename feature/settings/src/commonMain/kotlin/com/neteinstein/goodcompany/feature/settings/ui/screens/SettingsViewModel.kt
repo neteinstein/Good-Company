@@ -228,8 +228,6 @@ class SettingsViewModel(
         }
     }
 
-    fun onReminderHourChange(hour: Int) = update { it.copy(reminderHour = hour.coerceIn(0, 23)) }
-
     fun onNotificationPermissionResult(granted: Boolean) = local.update {
         it.copy(message = SettingsMessage.Notifications(granted))
     }
@@ -252,13 +250,6 @@ class SettingsViewModel(
     fun onReplayIntro() = update { it.copy(onboardingDone = false) }
 
     // --- Nudges & privacy ------------------------------------------------------------------------------------------
-
-    fun onWeeklyDigestChange(enabled: Boolean) = update { it.copy(weeklyDigest = enabled) }
-
-    /** ISO day of week, 1 = Monday … 7 = Sunday. */
-    fun onDigestDayChange(day: Int) = update { it.copy(digestDay = day.coerceIn(1, 7)) }
-
-    fun onPrivateNotificationsChange(enabled: Boolean) = update { it.copy(privateNotifications = enabled) }
 
     fun onShowWarmthChange(enabled: Boolean) = update { it.copy(showWarmth = enabled) }
 

@@ -115,6 +115,9 @@ import org.jetbrains.compose.resources.StringResource
 /** Settings → Calendar suggestions (D3). */
 @Serializable data object CalendarSettingsRoute
 
+/** Settings → Notifications: switches, persistent ones, hour, digest and privacy (issue #98). */
+@Serializable data object NotificationSettingsRoute
+
 /** "From your calendar": past meetups to log (D3). */
 @Serializable data object CalendarSuggestionsRoute
 

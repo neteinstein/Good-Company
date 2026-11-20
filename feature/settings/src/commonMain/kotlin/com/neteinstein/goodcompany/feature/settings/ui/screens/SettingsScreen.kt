@@ -117,6 +117,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberFileSaver
 import com.neteinstein.goodcompany.core.ui.platform.rememberGoogleDriveAuthorizer
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
@@ -135,6 +136,9 @@ import com.neteinstein.goodcompany.feature.settings.resources.ai_off_note
 import com.neteinstein.goodcompany.feature.settings.resources.ai_switch
 import com.neteinstein.goodcompany.feature.settings.resources.ai_switch_hint
 import com.neteinstein.goodcompany.feature.settings.resources.allow_notifications
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_title
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_off
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_show
@@ -293,6 +297,7 @@ fun SettingsScreen(
     appVersion: String,
     onOpenPlaces: () -> Unit = {},
     onOpenCalendar: () -> Unit = {},
+    onOpenNotifications: () -> Unit = {},
     onOpenTags: () -> Unit = {},
     onOpenActivities: () -> Unit = {},
     /** Settings is opened from a tab header (issue #65), so it has a back arrow; null hides it. */
@@ -301,7 +306,7 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var notificationsAsked by remember { mutableIntStateOf(0) }
-    val requestNotifications = rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
+    val requestNotifications = rememberNotificationsEnabler { granted ->
         notificationsAsked++
         viewModel.onNotificationPermissionResult(granted)
     }
@@ -345,7 +350,6 @@ fun SettingsScreen(
             onDynamicColorChange = viewModel::onDynamicColorChange,
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
             onHomeAreaChange = viewModel::onHomeAreaChange,
-            onReminderHourChange = viewModel::onReminderHourChange,
             onClosenessDaysChange = viewModel::onClosenessDaysChange,
             onImportContactsFile = pickVcf,
             onOpenPlaces = onOpenPlaces,
@@ -355,9 +359,7 @@ fun SettingsScreen(
             onRemoveSampleData = viewModel::onRemoveSampleData,
             onReplayIntro = viewModel::onReplayIntro,
             onMessageShown = viewModel::onMessageShown,
-            onWeeklyDigestChange = viewModel::onWeeklyDigestChange,
-            onDigestDayChange = viewModel::onDigestDayChange,
-            onPrivateNotificationsChange = viewModel::onPrivateNotificationsChange,
+            onOpenNotifications = onOpenNotifications,
             onShowWarmthChange = viewModel::onShowWarmthChange,
             onAppLockChange = { enabled ->
                 if (enabled) {
@@ -417,7 +419,6 @@ data class SettingsActions(
     val onDynamicColorChange: (Boolean) -> Unit = {},
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
     val onHomeAreaChange: (String) -> Unit = {},
-    val onReminderHourChange: (Int) -> Unit = {},
     /** A level's default rhythm; null turns it off (only Acquaintances can be off, issue #69). */
     val onClosenessDaysChange: (Closeness, Int?) -> Unit = { _, _ -> },
     val onImportContactsFile: () -> Unit = {},
@@ -427,9 +428,8 @@ data class SettingsActions(
     val onRemoveSampleData: () -> Unit = {},
     val onReplayIntro: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
-    val onWeeklyDigestChange: (Boolean) -> Unit = {},
-    val onDigestDayChange: (Int) -> Unit = {},
-    val onPrivateNotificationsChange: (Boolean) -> Unit = {},
+    /** Settings → Notifications (issue #98). */
+    val onOpenNotifications: () -> Unit = {},
     val onShowWarmthChange: (Boolean) -> Unit = {},
     val onAppLockChange: (Boolean) -> Unit = {},
     val onExportBackup: () -> Unit = {},
@@ -584,56 +584,32 @@ fun SettingsContent(
             }
 
             SectionCard(stringResource(Res.string.reminders), icon = Icons.Rounded.Notifications) {
-                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (capabilities.hasBackgroundNotifications) {
-                        if (notificationsAllowed == false) {
-                            FilledTonalButton(onClick = actions.onEnableNotifications) {
-                                Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(Res.string.allow_notifications))
-                            }
-                        }
-                    } else {
+                if (capabilities.hasBackgroundNotifications && notificationsAllowed == false) {
+                    FilledTonalButton(onClick = actions.onEnableNotifications, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.allow_notifications))
+                    }
+                }
+                // Settings → Notifications (issue #98): its own screen.
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenNotifications),
+                    leadingContent = { Icon(Icons.Rounded.Notifications, null) },
+                    headlineContent = { Text(stringResource(Res.string.notif_settings_title), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = {
                         Text(
-                            stringResource(Res.string.web_notifications),
-                            style = MaterialTheme.typography.bodyMedium,
+                            stringResource(
+                                when {
+                                    !capabilities.hasBackgroundNotifications -> Res.string.web_notifications
+                                    !s.notifications.enabled -> Res.string.notif_settings_row_off
+                                    else -> Res.string.notif_settings_row_hint
+                                },
+                            ),
                         )
-                    }
-                    Text(stringResource(Res.string.pings_at), style = MaterialTheme.typography.labelLarge)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(8, 9, 10, 12, 18).forEach { h ->
-                            FilterChip(s.reminderHour == h, { actions.onReminderHourChange(h) }, label = { Text("$h:00") })
-                        }
-                    }
-                }
-                if (capabilities.hasBackgroundNotifications) {
-                    SwitchRow(stringResource(Res.string.digest), stringResource(Res.string.digest_hint), s.weeklyDigest, actions.onWeeklyDigestChange)
-                    if (s.weeklyDigest) {
-                        Row(
-                            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(stringResource(Res.string.digest_day), style = MaterialTheme.typography.labelLarge)
-                            DayOfWeek.entries.forEach { day ->
-                                val iso = day.isoDayNumber
-                                FilterChip(s.digestDay == iso, { actions.onDigestDayChange(iso) }, label = { Text(weekdayShort(day)) })
-                            }
-                        }
-                    }
-                    SwitchRow(
-                        stringResource(Res.string.private_notifications),
-                        stringResource(Res.string.private_notifications_hint),
-                        s.privateNotifications,
-                        actions.onPrivateNotificationsChange,
-                    )
-                    Text(
-                        stringResource(Res.string.quiet_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                }
+                    },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
                 // Calendar suggestions (D3): Android and iOS only; the web says so here.
                 ListItem(
                     modifier = if (capabilities.hasCalendar) Modifier.clickable(onClick = actions.onOpenCalendar) else Modifier,
@@ -902,13 +878,20 @@ private fun ApiKeyField(maskedKey: String?, onSave: (String) -> Unit, onClear: (
 }
 
 @Composable
-private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit, icon: ImageVector? = null) {
+internal fun SwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+    icon: ImageVector? = null,
+    enabled: Boolean = true,
+) {
     ListItem(
-        modifier = Modifier.clickable { onChange(!checked) },
+        modifier = Modifier.clickable(enabled = enabled) { onChange(!checked) },
         leadingContent = icon?.let { { Icon(it, null) } },
         headlineContent = { Text(title, style = MaterialTheme.typography.titleSmall) },
         supportingContent = { Text(subtitle) },
-        trailingContent = { Switch(checked, onChange) },
+        trailingContent = { Switch(checked, onChange, enabled = enabled) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }

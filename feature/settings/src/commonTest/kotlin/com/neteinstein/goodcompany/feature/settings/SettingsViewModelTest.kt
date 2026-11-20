@@ -111,7 +111,6 @@ class SettingsViewModelTest {
         vm.onDynamicColorChange(false)
         vm.onWeeklyIdeasChange(false)
         vm.onHomeAreaChange("Porto")
-        vm.onReminderHourChange(42)
         vm.onClosenessDaysChange(Closeness.INNER, 14)
         vm.onClosenessDaysChange(Closeness.CLOSE, 60)
         vm.onClosenessDaysChange(Closeness.GOOD, 0)
@@ -123,7 +122,6 @@ class SettingsViewModelTest {
         assertEquals(false, s.dynamicColor)
         assertEquals(false, s.weeklyIdeasEnabled)
         assertEquals("Porto", s.homeArea)
-        assertEquals(23, s.reminderHour)
         assertEquals(14, s.innerCircleDays)
         assertEquals(60, s.closeCircleDays)
         assertEquals(1, s.goodFriendsDays)
@@ -161,17 +159,11 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun nudgePrivacyAndLockSettings() = runViewModelTest {
+    fun warmthAndLockSettings() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onWeeklyDigestChange(false)
-        vm.onDigestDayChange(9)
-        vm.onPrivateNotificationsChange(true)
         vm.onShowWarmthChange(false)
         val s = state.value.settings
-        assertFalse(s.weeklyDigest)
-        assertEquals(7, s.digestDay)
-        assertTrue(s.privateNotifications)
         assertFalse(s.showWarmth)
 
         vm.onAppLockChange(enabled = true, verified = false)

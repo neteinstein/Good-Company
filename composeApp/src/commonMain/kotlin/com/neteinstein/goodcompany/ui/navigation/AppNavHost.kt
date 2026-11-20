@@ -62,6 +62,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
@@ -357,6 +358,7 @@ fun AppNavHost(
                     appVersion = APP_VERSION,
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenCalendar = { navController.navigate(CalendarSettingsRoute) },
+                    onOpenNotifications = { navController.navigate(NotificationSettingsRoute) { launchSingleTop = true } },
                     onOpenTags = { navController.navigate(TagsRoute) },
                     onOpenActivities = { navController.navigate(ActivitiesRoute) },
                 )
@@ -366,6 +368,12 @@ fun AppNavHost(
                 popExitTransition = { slideOutVertically { it / 4 } + fadeOut() },
             ) {
                 PlacesScreen(onBack = { navController.popBackStack() })
+            }
+            composable<NotificationSettingsRoute>(
+                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
+                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
+            ) {
+                NotificationSettingsScreen(onBack = { navController.popBackStack() })
             }
             composable<CalendarSettingsRoute>(
                 enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
