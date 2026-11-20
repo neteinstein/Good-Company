@@ -229,6 +229,32 @@ class BackupAndPlansTest {
     }
 
     @Test
+    fun aBackupFromBeforeDatedNotes_turnsEachNoteIntoOneDatedNote_andBlankNotesMakeNone() = runTest {
+        // Written by a build before issue #103: notes are one free-text field per person.
+        val old = """
+            {"format": "good-company-backup", "version": 1, "exportedAt": "2026-03-01T10:00:00Z", "friends": [
+                {"id": "ana", "name": "Ana", "notes": "Partner: Tiago.\nAllergic to peanuts."},
+                {"id": "bob", "name": "Bob", "notes": "  \n "},
+                {"id": "cat", "name": "Cat"}
+            ], "journal": [{"id": "j1", "friendId": "cat", "at": "2026-02-01T10:00:00Z", "text": "New job"}]}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup, to.clock)(old))
+        val journal = to.backup.snapshot().journal
+        assertEquals(setOf("note-ana", "j1"), journal.mapTo(HashSet()) { it.id })
+        val note = journal.single { it.id == "note-ana" }
+        assertEquals("Partner: Tiago.\nAllergic to peanuts.", note.text)
+        assertEquals(kotlin.time.Instant.parse("2026-03-01T10:00:00Z"), note.at) // dated when the backup was made
+
+        // A backup from this build says its notes are already dated: restoring it adds nothing.
+        val json = ExportBackupUseCase(to.backup, to.clock)()
+        assertTrue("\"notesInJournal\": true" in json, json)
+        val again = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup, again.clock)(json))
+        assertEquals(journal.sortedBy { it.id }, again.backup.snapshot().journal.sortedBy { it.id })
+    }
+
+    @Test
     fun aBackupFromBeforeEveryoneHadACloseness_getsTheMigrationRule_andExportsStillCarryTheHeart() = runTest {
         // Written by a build before issue #86: a level is optional and "isCloseFriend" is the heart.
         val old = """

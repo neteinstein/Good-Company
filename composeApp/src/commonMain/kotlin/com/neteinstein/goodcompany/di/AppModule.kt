@@ -288,7 +288,7 @@ val appModule = module {
     single<Settings> { Settings() }
     // SQLite (SQLDelight), opened lazily on first use. The first open moves the old JSON documents in (issue #14).
     single<DatabaseDriverFactory> { createDatabaseDriverFactory() }
-    single { LegacyJsonImport(get()) }
+    single { LegacyJsonImport(get(), get()) }
     single {
         val legacy: LegacyJsonImport = get()
         AppDatabase(get(), get(), prepare = legacy::run)

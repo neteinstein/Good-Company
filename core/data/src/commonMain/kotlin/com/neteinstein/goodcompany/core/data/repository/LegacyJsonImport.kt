@@ -14,6 +14,8 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.usecase.NotesToJournal
+import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
@@ -31,7 +33,7 @@ import kotlinx.serialization.builtins.ListSerializer
  * could still recover. If the import itself fails, the JSON stays and the failure is recorded in [KEY_FAILED]
  * instead of crashing on every start.
  */
-class LegacyJsonImport(private val settings: Settings) {
+class LegacyJsonImport(private val settings: Settings, private val clock: AppClock = AppClock.System) {
     init {
         // Before the database can open (it's built with this import), whichever repository Koin happens to create first.
         takeOverDeviceSettings(settings)
@@ -44,7 +46,8 @@ class LegacyJsonImport(private val settings: Settings) {
             val legacy = read()
             try {
                 database.transaction {
-                    if (legacy.hasData) database.replaceAllData(legacy.backup)
+                    // The old store's free-text notes come in as dated notes (issue #103).
+                    if (legacy.hasData) database.replaceAllData(NotesToJournal.convert(legacy.backup, clock.now()))
                     meta.put(KEY_IMPORTED, legacy.summary)
                 }
             } catch (e: CancellationException) {

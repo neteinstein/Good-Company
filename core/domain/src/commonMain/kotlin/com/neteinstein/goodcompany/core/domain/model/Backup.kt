@@ -39,6 +39,11 @@ data class Backup(
     val giftLists: List<GiftList> = emptyList(),
     /** Your own photo (issue #71); missing in older backups. */
     val myPhoto: ContactPhoto? = null,
+    /**
+     * Issue #103: the friends' old free-text notes are already in [journal] (every export since then). False in older
+     * backups, whose notes `NotesToJournal.convert` turns into dated entries on restore.
+     */
+    val notesInJournal: Boolean = false,
     val settings: AppSettings = AppSettings(),
 ) {
     companion object {

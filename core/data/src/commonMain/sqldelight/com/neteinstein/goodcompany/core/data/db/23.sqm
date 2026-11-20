@@ -1,0 +1,10 @@
+-- Version 23 → 24 (issue #103): dated notes. Each friend's free-text notes become one journal entry (a dated note,
+-- never contact), id 'note-<friend id>', dated now (the database has no older date for them). The text is copied
+-- exactly; empty or blank notes (spaces, tabs, line breaks) make no entry. friend.notes keeps its column and its text
+-- until the migration is verified; the app no longer shows or edits it. NotesToJournal (domain) is the same rule for
+-- older backups and the old JSON store.
+
+INSERT OR IGNORE INTO journal_entry (id, friend_id, at, text)
+SELECT 'note-' || id, id, CAST(strftime('%s', 'now') AS INTEGER) * 1000, notes
+FROM friend
+WHERE trim(notes, ' ' || char(9) || char(10) || char(13)) <> '';

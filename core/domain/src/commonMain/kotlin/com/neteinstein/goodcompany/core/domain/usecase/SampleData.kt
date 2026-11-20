@@ -202,7 +202,6 @@ object SampleData {
                 kids = listOf(Kid(PREFIX + "leo", "Leo", bday(9, 6), listOf(t.dinosaurs, "LEGO", t.pancakes))),
                 importantEvents = listOf(ImportantEvent(PREFIX + "ana-knee", t.kneeSurgery, day(2), remindDaysBefore = 1, addedAt = now - 1.days)),
                 lifeUpdates = listOf(LifeUpdate(PREFIX + "news-leo", t.newsLeoSchool, now - 1.days)),
-                notes = t.anaNotes,
                 job = t.anaJob,
                 livesIn = "Campo de Ourique, Lisboa",
                 met = MetInfo(t.anaMetPlace, LocalDate(2011, 9, 1), dayKnown = false),
@@ -379,6 +378,8 @@ object SampleData {
         )
         val journal = listOf(
             JournalEntry(PREFIX + "j1", id("ana"), at(-3, 22), t.journalAnaPorto),
+            // Dated notes (issue #103): what used to be Ana's free-text notes.
+            JournalEntry(PREFIX + "note-ana", id("ana"), at(-40, 20), t.anaNotes),
             JournalEntry(PREFIX + "j2", id("rui"), at(-10, 22), t.journalRuiRace),
         )
         // The sample kids are written as before and become people the same way old data does (F9).

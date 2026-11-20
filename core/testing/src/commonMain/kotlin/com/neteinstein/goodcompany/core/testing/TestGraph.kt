@@ -394,7 +394,7 @@ class TestGraph(
     val restoreLink = RestoreLinkUseCase(linkRepo)
     val setRelationToMe = SetRelationToMeUseCase(friendRepo)
     val setPronouns = SetPronounsUseCase(friendRepo)
-    val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, clock, ids)
+    val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, interactionRepo, clock, ids)
     val addKid = AddKidUseCase(friendRepo, linkRepo, clock, ids)
     val setShowInMyList = SetShowInMyListUseCase(friendRepo)
     val observeKinship = ObserveKinshipProposalsUseCase(friendRepo, linkRepo)

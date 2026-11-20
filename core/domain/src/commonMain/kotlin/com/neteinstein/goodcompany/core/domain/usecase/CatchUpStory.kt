@@ -249,7 +249,10 @@ object CatchUpStoryBuilder {
                 interests = friend.interests.take(MAX_TASTES),
             )
         }
-        friend.notes.trim().takeIf { it.isNotEmpty() }?.let { slides += StorySlide.Notes(it) }
+        // The note that used to be their free-text notes (issue #103), while it's there and isn't the last talk above.
+        detail.timeline.asSequence().filterIsInstance<TimelineEntry.Journal>().map { it.entry }
+            .firstOrNull { it.id == NotesToJournal.idFor(friend) && it.id != detail.lastJournal?.id }
+            ?.text?.trim()?.takeIf { it.isNotEmpty() }?.let { slides += StorySlide.Notes(it) }
 
         // Their own reminders and those of the circles they're in (issue #88).
         val todo = reminders.filter { !it.done && it.isFor(friend.id, detail.groups) }.sortedBy { it.nextAt ?: Instant.DISTANT_FUTURE }
