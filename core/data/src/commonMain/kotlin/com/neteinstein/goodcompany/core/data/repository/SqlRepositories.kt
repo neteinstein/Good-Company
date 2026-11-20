@@ -60,6 +60,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
@@ -407,8 +408,14 @@ internal data class DeviceSettings(
     val lastSeenCardHiddenOn: LocalDate? = null,
     /** Issue #69: Acquaintances' default rhythm (null = none). Here to avoid a schema change; backups still carry it. */
     val acquaintanceDays: Int? = null,
+    /** Issue #98: Settings → Notifications. Here to avoid a schema change; backups still carry it. */
+    val notifications: NotificationSettings = NotificationSettings(),
+    /** Issue #98: "Not now" on Today's notifications card. */
+    val notificationPrimerDismissed: Boolean = false,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
+        notifications = notifications,
+        notificationPrimerDismissed = notificationPrimerDismissed,
         keptTagSpellings = keptTagSpellings,
         acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
@@ -443,6 +450,8 @@ internal data class DeviceSettings(
             keptTagSpellings = settings.keptTagSpellings,
             lastSeenCardHiddenOn = settings.lastSeenCardHiddenOn,
             acquaintanceDays = settings.acquaintanceDays,
+            notifications = settings.notifications,
+            notificationPrimerDismissed = settings.notificationPrimerDismissed,
         )
     }
 }

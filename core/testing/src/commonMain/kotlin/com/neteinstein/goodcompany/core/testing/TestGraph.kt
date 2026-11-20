@@ -54,6 +54,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UpdateNotificationSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
@@ -347,6 +350,9 @@ class TestGraph(
         FakeNotificationRenderer,
         clock,
     )
+    val sendTestNotification = SendTestNotificationUseCase(settingsRepo, scheduler, FakeNotificationRenderer, clock)
+    val dismissNotificationPrimer = DismissNotificationPrimerUseCase(settingsRepo)
+    val updateNotificationSettings = UpdateNotificationSettingsUseCase(settingsRepo)
     val loadSampleData = LoadSampleDataUseCase(
         friendRepo,
         hangoutRepo,

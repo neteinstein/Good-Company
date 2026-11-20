@@ -6,6 +6,42 @@ import kotlin.time.Instant
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/**
+ * Settings → Notifications (issue #98): a master switch, one switch per [NotificationType], and whether the important
+ * ones stay on screen. Everything on by default, so nothing changes for people who never open the screen.
+ */
+@Serializable
+data class NotificationSettings(
+    val enabled: Boolean = true,
+    val birthdays: Boolean = true,
+    val events: Boolean = true,
+    val reminders: Boolean = true,
+    val plans: Boolean = true,
+    val catchUps: Boolean = true,
+    val calendar: Boolean = true,
+    /** "Keep important ones on screen": persistent notifications for what matters (see [NotificationPlanner]). */
+    val persistent: Boolean = true,
+) {
+    fun allows(type: NotificationType): Boolean = enabled &&
+        when (type) {
+            NotificationType.BIRTHDAYS -> birthdays
+            NotificationType.EVENTS -> events
+            NotificationType.REMINDERS -> reminders
+            NotificationType.PLANS -> plans
+            NotificationType.CATCH_UPS -> catchUps
+            NotificationType.CALENDAR -> calendar
+        }
+
+    fun with(type: NotificationType, on: Boolean): NotificationSettings = when (type) {
+        NotificationType.BIRTHDAYS -> copy(birthdays = on)
+        NotificationType.EVENTS -> copy(events = on)
+        NotificationType.REMINDERS -> copy(reminders = on)
+        NotificationType.PLANS -> copy(plans = on)
+        NotificationType.CATCH_UPS -> copy(catchUps = on)
+        NotificationType.CALENDAR -> copy(calendar = on)
+    }
+}
+
 @Serializable
 data class AppSettings(
     /** User-supplied Anthropic API key. Required for every AI feature; never leaves the device except to the API. */
@@ -71,6 +107,13 @@ data class AppSettings(
      * Device-only like [lastOpenedAt]: never exported, kept on restore.
      */
     val lastSeenCardHiddenOn: LocalDate? = null,
+    /** Issue #98: Settings → Notifications. Kept with the device settings (no schema change); backups carry it. */
+    val notifications: NotificationSettings = NotificationSettings(),
+    /**
+     * Issue #98: "Not now" on Today's "Turn on notifications" card. Device-only like [lastSeenCardHiddenOn]: never
+     * exported, kept on restore.
+     */
+    val notificationPrimerDismissed: Boolean = false,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 

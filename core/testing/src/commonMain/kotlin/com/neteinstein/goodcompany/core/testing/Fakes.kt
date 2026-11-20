@@ -448,8 +448,14 @@ class FakeLocationProvider(var point: GeoPoint? = null) : LocationProvider {
 class FakeNotificationScheduler : NotificationScheduler {
     val scheduled = mutableListOf<List<RenderedNotification>>()
 
+    val shownNow = mutableListOf<RenderedNotification>()
+
     override suspend fun replaceAll(notifications: List<RenderedNotification>) {
         scheduled += notifications
+    }
+
+    override suspend fun showNow(notification: RenderedNotification) {
+        shownNow += notification
     }
 }
 

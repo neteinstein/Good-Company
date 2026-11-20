@@ -6,9 +6,13 @@ import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -22,10 +26,12 @@ import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlin.time.Instant
 
@@ -113,7 +119,9 @@ class ObserveAgendaUseCase(
 
 /**
  * Keeps the OS notification schedule in sync with the data: re-plans whenever friends, reminders,
- * hangouts or settings change and hands the result to the platform scheduler. Runs until cancelled.
+ * hangouts or settings change and hands the result to the platform scheduler. Runs until cancelled; a failed
+ * re-plan is skipped (the next change tries again) instead of stopping the schedule (issue #98).
+ * [once] re-plans a single time, for background triggers (Android's daily job, notification quick actions).
  */
 class KeepNotificationsScheduledUseCase(
     private val friends: FriendRepository,
@@ -132,6 +140,33 @@ class KeepNotificationsScheduledUseCase(
 ) {
     @OptIn(kotlinx.coroutines.FlowPreview::class)
     suspend operator fun invoke() {
+        schedules()
+            .debounce(DEBOUNCE_MS)
+            .distinctUntilChanged()
+            .collect { schedule ->
+                try {
+                    apply(schedule)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // One bad re-plan mustn't stop the schedule for the rest of the session.
+                    onFailure(e)
+                }
+            }
+    }
+
+    /** Re-plans once from the current data. */
+    suspend fun once() = apply(schedules().first())
+
+    /** Called when a re-plan fails; the app logs it. */
+    var onFailure: (Throwable) -> Unit = {}
+
+    private suspend fun apply(schedule: Schedule) {
+        val publicText = if (schedule.private) renderer.privateText() else null
+        scheduler.replaceAll(schedule.planned.map { renderer.render(it).planned(it, publicText) })
+    }
+
+    private fun schedules(): Flow<Schedule> =
         combine(
             friends.friends,
             reminders.reminders,
@@ -160,16 +195,12 @@ class KeepNotificationsScheduledUseCase(
                 policy = NudgePolicy.from(s),
                 links = ls,
                 calendar = calendar,
+                notifications = s.notifications,
             )
-            planned to s.privateNotifications
+            Schedule(planned, s.privateNotifications)
         }
-            .debounce(DEBOUNCE_MS)
-            .distinctUntilChanged()
-            .collect { (planned, private) ->
-                val publicText = if (private) renderer.privateText() else null
-                scheduler.replaceAll(planned.map { renderer.render(it).copy(publicText = publicText) })
-            }
-    }
+
+    private data class Schedule(val planned: List<PlannedNotification>, val private: Boolean)
 
     private companion object {
         const val DEBOUNCE_MS = 500L
@@ -186,3 +217,38 @@ private data class Inputs(
     val interactions: List<Interaction>,
     val links: List<PersonLink>,
 )
+
+/** The platform-facing parts the planner decided (channel, persistence, slot), on top of the rendered text. */
+internal fun RenderedNotification.planned(from: PlannedNotification, publicText: String?) = copy(
+    publicText = publicText,
+    channel = from.channel,
+    persistent = from.persistent,
+    until = from.until,
+    slot = from.slot,
+)
+
+/** Settings → Notifications → "Send a test notification" (issue #98): shows one right away, as the others would. */
+class SendTestNotificationUseCase(
+    private val settings: SettingsRepository,
+    private val scheduler: NotificationScheduler,
+    private val renderer: NotificationRenderer,
+    private val clock: AppClock,
+) {
+    suspend operator fun invoke() {
+        val s = settings.settings.first()
+        val planned = PlannedNotification("test", clock.now(), NotificationContent.Test)
+        val publicText = if (s.privateNotifications) renderer.privateText() else null
+        scheduler.showNow(renderer.render(planned).planned(planned, publicText))
+    }
+}
+
+/** Today's "Turn on notifications" card (issue #98): "Not now" hides it for good on this device. */
+class DismissNotificationPrimerUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke() = settings.update { it.copy(notificationPrimerDismissed = true) }
+}
+
+/** Settings → Notifications (issue #98): the master switch, a switch per type and "Keep important ones on screen". */
+class UpdateNotificationSettingsUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(transform: (NotificationSettings) -> NotificationSettings) =
+        settings.update { it.copy(notifications = transform(it.notifications)) }
+}
