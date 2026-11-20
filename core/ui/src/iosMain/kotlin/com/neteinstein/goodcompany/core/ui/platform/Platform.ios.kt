@@ -44,6 +44,8 @@ import platform.LocalAuthentication.LAContext
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+import platform.UIKit.UIApplicationOpenNotificationSettingsURLString
+import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.UIDocumentPickerDelegateProtocol
 import platform.UIKit.UIDocumentPickerViewController
 import platform.UIKit.UIViewController
@@ -102,6 +104,15 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
             // Calendar suggestions (D3) need full access to read past events (iOS 17+).
             AppPermission.CALENDAR -> EKEventStore().requestFullAccessToEventsWithCompletion { granted, _ -> report(granted) }
         }
+    }
+}
+
+/** iOS 16+ opens the app's notification settings directly; earlier versions open the app's settings page. */
+@Composable
+actual fun rememberNotificationSettingsOpener(): () -> Unit = remember {
+    {
+        val url = NSURL.URLWithString(UIApplicationOpenNotificationSettingsURLString) ?: NSURL.URLWithString(UIApplicationOpenSettingsURLString)
+        if (url != null) UIApplication.sharedApplication.openURL(url, options = emptyMap<Any?, Any>(), completionHandler = null)
     }
 }
 
