@@ -15,10 +15,12 @@ import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Introducer
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.NoteMedia
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
@@ -56,6 +58,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MarkMediaExplainedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
@@ -63,7 +66,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
+import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
@@ -71,6 +76,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveNoteUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
@@ -149,6 +155,9 @@ sealed interface FriendDetailMessage {
     data class ChatImported(val messages: Int, val sender: String?) : FriendDetailMessage
 
     data object ChatInvalid : FriendDetailMessage
+
+    /** The note popup saved (issue #119). */
+    data object NoteSaved : FriendDetailMessage
 
     /** Something deleted from the page (issue #102); offered with "Undo". */
     data object Removed : FriendDetailMessage
@@ -258,6 +267,9 @@ data class PlanEditing(val plan: Plan?)
 /** AI gift ideas waiting to be kept or dismissed. A kid's are asked on the kid's own page (F9). */
 data class GiftSuggestions(val ideas: List<String>)
 
+/** The note popup (issue #119): the note changed ([entry] null = a new one) and its photos and videos so far. */
+data class NoteEditing(val entry: JournalEntry? = null, val media: List<NoteMedia> = emptyList(), val isAddingMedia: Boolean = false)
+
 data class FriendDetailUiState(
     val detail: FriendDetail? = null,
     val isLoading: Boolean = true,
@@ -274,6 +286,10 @@ data class FriendDetailUiState(
     val editingReminder: Reminder? = null,
     /** Their open reminders and those of their circles (issue #99), soonest first. */
     val reminders: List<Reminder> = emptyList(),
+    /** The note popup (issue #119); null while closed. */
+    val noteEditing: NoteEditing? = null,
+    /** The one-line "a small preview, the original stays in your gallery" was shown once on this device (issue #119). */
+    val mediaExplained: Boolean = true,
     /** The Together timeline (issue #117): Make plans, upcoming, Today, the last [PersonTimeline.SHOWN] past entries. */
     val together: TogetherTimeline = TogetherTimeline(),
     /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
@@ -363,6 +379,9 @@ class FriendDetailViewModel(
     private val restoreEntry: RestoreTimelineEntryUseCase,
     storyViews: StoryViews,
     private val importChat: ImportChatUseCase,
+    private val prepareNoteMedia: PrepareNoteMediaUseCase,
+    private val saveNote: SaveNoteUseCase,
+    private val markMediaExplained: MarkMediaExplainedUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendDetailUiState())
 
@@ -390,6 +409,7 @@ class FriendDetailViewModel(
             isLoading = false,
             notFound = detail == null,
             aiEnabled = settings.aiEnabled,
+            mediaExplained = settings.mediaExplained,
             hasAiKey = settings.usableAiKey != null,
             showWarmth = settings.showWarmth,
             cadenceRules = CadenceRules.from(settings),
@@ -1148,6 +1168,50 @@ class FriendDetailViewModel(
         viewModelScope.launch {
             restoreAttachment(attachment)
             local.update { it.copy(undoAttachment = null) }
+        }
+    }
+
+    /** "+ Note", or a note tapped (issue #119): its own popup with the text, the date and photos and videos. */
+    fun onOpenNote(entry: JournalEntry?) = local.update { it.copy(noteEditing = NoteEditing(entry, entry?.media.orEmpty())) }
+
+    fun onCloseNote() = local.update { it.copy(noteEditing = null) }
+
+    /** Photos and videos picked in the note popup: thumbnails are made now; the originals stay in the gallery. */
+    fun onNoteMediaPicked(picked: List<PickedNoteMedia>) {
+        if (picked.isEmpty() || local.value.noteEditing == null) return
+        local.update { it.copy(noteEditing = it.noteEditing?.copy(isAddingMedia = true)) }
+        viewModelScope.launch {
+            val media = picked.mapNotNull { prepareNoteMedia(it) }
+            local.update { ui ->
+                val editing = ui.noteEditing ?: return@update ui
+                ui.copy(
+                    noteEditing = editing.copy(media = editing.media + media, isAddingMedia = false),
+                    message = if (media.size < picked.size) FriendDetailMessage.PhotoUnreadable else ui.message,
+                )
+            }
+        }
+    }
+
+    fun onRemoveNoteMedia(id: String) = local.update { ui ->
+        ui.copy(
+            noteEditing = ui.noteEditing?.let { e ->
+                e.copy(
+                    media = e.media.filterNot {
+                        it.id ==
+                            id
+                    },
+                )
+            },
+        )
+    }
+
+    /** Save in the note popup: needs words or media; the first note with media marks the explanation as shown. */
+    fun onSaveNote(text: String, date: LocalDate) {
+        val editing = local.value.noteEditing ?: return
+        viewModelScope.launch {
+            val saved = saveNote(friendId, text, date, editing.media, editing.entry) ?: return@launch
+            if (saved.media.isNotEmpty() && !state.value.mediaExplained) markMediaExplained()
+            local.update { it.copy(noteEditing = null, message = FriendDetailMessage.NoteSaved) }
         }
     }
 

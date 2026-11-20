@@ -128,6 +128,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.MarkIdeaProposedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MarkMediaExplainedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MergePlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
@@ -168,6 +169,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
@@ -196,6 +198,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SaveNoteUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
@@ -385,6 +388,9 @@ val appModule = module {
     factoryOf(::DeleteFriendUseCase)
     factoryOf(::SyncContactsUseCase)
     factoryOf(::ImportChatUseCase)
+    factoryOf(::PrepareNoteMediaUseCase)
+    factoryOf(::SaveNoteUseCase)
+    factoryOf(::MarkMediaExplainedUseCase)
     factoryOf(::CheckInUseCase)
     factoryOf(::LogInteractionUseCase)
     factoryOf(::UndoLogUseCase)
@@ -547,6 +553,9 @@ val appModule = module {
             restoreEntry = get(),
             storyViews = get(),
             importChat = get(),
+            prepareNoteMedia = get(),
+            saveNote = get(),
+            markMediaExplained = get(),
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }

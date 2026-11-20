@@ -124,10 +124,13 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
+import com.neteinstein.goodcompany.core.domain.model.MediaKind
+import com.neteinstein.goodcompany.core.domain.model.NoteMedia
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
@@ -141,6 +144,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
+import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
@@ -151,6 +155,7 @@ import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EditDeleteMenu
 import com.neteinstein.goodcompany.core.ui.components.EditableTimelineEntry
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.NoteMediaRow
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.PlanRow
@@ -180,6 +185,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.l10n.topicText
 import com.neteinstein.goodcompany.core.ui.platform.OpenedPhoto
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryMediaPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoOpener
 import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
@@ -282,6 +288,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.news_add
 import com.neteinstein.goodcompany.feature.friends.resources.news_added
 import com.neteinstein.goodcompany.feature.friends.resources.news_hint
 import com.neteinstein.goodcompany.feature.friends.resources.news_title
+import com.neteinstein.goodcompany.feature.friends.resources.note_saved
 import com.neteinstein.goodcompany.feature.friends.resources.notes_add
 import com.neteinstein.goodcompany.feature.friends.resources.notes_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.notes_title
@@ -366,8 +373,6 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
-    /** "+ Note" on Notes (issue #103): the Log sheet on a dated note for this person. */
-    onAddNote: () -> Unit = {},
     /** The Log sheet in edit mode on this timeline entry ([TimelineEntry.key], issue #102). */
     onEditEntry: (String) -> Unit = {},
     /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
@@ -392,6 +397,9 @@ fun FriendDetailScreen(
     }
     val photoOpener = rememberGalleryPhotoOpener()
     val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
+    val pickNoteMedia = rememberGalleryMediaPicker { picked ->
+        viewModel.onNoteMediaPicked(picked.map { PickedNoteMedia(it.preview, if (it.isVideo) MediaKind.VIDEO else MediaKind.PHOTO, it.ref) })
+    }
     val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
     FriendDetailContent(
@@ -439,7 +447,11 @@ fun FriendDetailScreen(
             onRemoveLike = viewModel::onRemoveLike,
             onAddDislikes = viewModel::onAddDislikes,
             onRemoveDislike = viewModel::onRemoveDislike,
-            onAddNote = onAddNote,
+            onOpenNote = viewModel::onOpenNote,
+            onCloseNote = viewModel::onCloseNote,
+            onAddNoteMedia = pickNoteMedia,
+            onRemoveNoteMedia = viewModel::onRemoveNoteMedia,
+            onSaveNote = viewModel::onSaveNote,
             onAddKid = viewModel::onAddKid,
             onSetShowInMyList = viewModel::onSetShowInMyList,
             onConfirmKinship = viewModel::onConfirmKinship,
@@ -575,8 +587,13 @@ data class FriendDetailActions(
     val onRemoveLike: (String) -> Unit = {},
     val onAddDislikes: (List<String>) -> Unit = {},
     val onRemoveDislike: (String) -> Unit = {},
-    /** "+ Note": a new dated note (issue #103). */
-    val onAddNote: () -> Unit = {},
+    /** "+ Note" (null) or a note tapped: the note popup (issue #119). */
+    val onOpenNote: (JournalEntry?) -> Unit = {},
+    val onCloseNote: () -> Unit = {},
+    /** The system picker on photos and videos, for the note popup. */
+    val onAddNoteMedia: () -> Unit = {},
+    val onRemoveNoteMedia: (String) -> Unit = {},
+    val onSaveNote: (String, LocalDate) -> Unit = { _, _ -> },
     val onAddKid: (KidDraft) -> Unit = {},
     val onSetShowInMyList: (Boolean) -> Unit = {},
     val onConfirmKinship: (LinkType) -> Unit = {},
@@ -670,6 +687,7 @@ suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: Local
         sender?.let { getString(Res.string.msg_chat_matched, base, it) } ?: base
     }
     FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
+    FriendDetailMessage.NoteSaved -> getString(Res.string.note_saved)
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
@@ -711,13 +729,29 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var seeAllSaved by rememberSaveable { mutableStateOf(false) }
     var messaging by rememberSaveable { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<AttachmentView?>(null) }
+    val scope = rememberCoroutineScope()
+    var viewingMedia by remember { mutableStateOf<Pair<NoteMedia, ByteArray?>?>(null) }
+    // Issue #119: a note's photo or video opens from the gallery (the system viewer on Android); gone → its thumbnail.
+    val openNoteMedia: (NoteMedia) -> Unit = { m ->
+        val ref = m.ref
+        if (ref == null) {
+            viewingMedia = m to null
+        } else {
+            scope.launch {
+                when (val opened = actions.onOpenOriginal(ref)) {
+                    OpenedPhoto.Shown -> Unit
+                    is OpenedPhoto.Loaded -> viewingMedia = m to opened.image
+                    OpenedPhoto.Unavailable -> viewingMedia = m to null
+                }
+            }
+        }
+    }
     // Issue #103: no edit mode; the pencil opens the Edit person popup, Occasions has its own popup. The chosen tab is
     // screen state (it survives rotation, not a restart); the page always opens on Together.
     var editingPerson by rememberSaveable { mutableStateOf(false) }
     var editingOccasions by rememberSaveable { mutableStateOf(false) }
     var tabIndex by rememberSaveable { mutableIntStateOf(PersonTab.TOGETHER.ordinal) }
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
     val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
     val openAttachment: (Attachment) -> Unit = { a ->
@@ -853,7 +887,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                     when (card) {
                         PersonCard.TO_TALK_ABOUT -> ToTalkAbout(f, state, actions, onAddNews = { addingNews = true }, onEdit = { pageEdit = it })
                         PersonCard.TASTES -> Tastes(f, actions, onAdd = { addingTaste = true }, onEdit = { pageEdit = it })
-                        PersonCard.NOTES -> Notes(detail.timeline, state, actions)
+                        PersonCard.NOTES -> Notes(detail.timeline, state, actions, onOpenMedia = openNoteMedia)
                         PersonCard.COMPLETE -> CompleteProfile(firstName, ProfileSections.missing(f, facts), onPick = ::complete)
                         PersonCard.ABOUT -> AboutCard(
                             f,
@@ -907,6 +941,19 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         }
 
         if (messaging) MessageSheet(f, onDismiss = { messaging = false })
+        state.noteEditing?.let { editing ->
+            NoteDialog(
+                editing,
+                state.today,
+                state.zone,
+                state.mediaExplained,
+                onAddMedia = actions.onAddNoteMedia,
+                onRemoveMedia = actions.onRemoveNoteMedia,
+                onSave = actions.onSaveNote,
+                onDismiss = actions.onCloseNote,
+            )
+        }
+        viewingMedia?.let { (m, original) -> NoteMediaViewer(m, original, onDismiss = { viewingMedia = null }) }
         if (editingPerson) {
             EditPersonDialog(
                 f,
@@ -1559,13 +1606,13 @@ private fun AddTasteDialog(firstName: String, tags: List<Tag>, actions: FriendDe
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Notes(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions) {
+private fun Notes(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions, onOpenMedia: (NoteMedia) -> Unit) {
     val notes = timeline.filterIsInstance<TimelineEntry.Journal>()
     SectionCard(
         stringResource(Res.string.notes_title),
         icon = Icons.AutoMirrored.Rounded.Notes,
         action = {
-            TextButton(onClick = actions.onAddNote) {
+            TextButton(onClick = { actions.onOpenNote(null) }) {
                 Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(Res.string.notes_add))
@@ -1577,19 +1624,25 @@ private fun Notes(timeline: List<TimelineEntry>, state: FriendDetailUiState, act
             var menu by remember { mutableStateOf(false) }
             val day = note.at.toLocalDateTime(state.zone).date
             ListItem(
-                headlineContent = { Text(note.entry.text, style = MaterialTheme.typography.bodyMedium) },
+                headlineContent = {
+                    Column {
+                        if (note.entry.text.isNotBlank()) Text(note.entry.text, style = MaterialTheme.typography.bodyMedium)
+                        // Issue #119: thumbnails; a tap opens the original from the gallery.
+                        if (note.entry.media.isNotEmpty()) NoteMediaRow(note.entry.media, Modifier.padding(top = 6.dp), onOpen = onOpenMedia)
+                    }
+                },
                 overlineContent = { Text(if (isFarDate(day, state.today)) day.shortLabel() else relativeDay(day, state.today)) },
                 trailingContent = {
                     EditDeleteMenu(
                         menu,
                         onOpen = { menu = true },
                         onClose = { menu = false },
-                        onEdit = { actions.onEditEntry(note.key) },
+                        onEdit = { actions.onOpenNote(note.entry) },
                         onDelete = { actions.onDeleteEntry(note) },
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.combinedClickable(onClick = { actions.onEditEntry(note.key) }, onLongClick = { menu = true }),
+                modifier = Modifier.combinedClickable(onClick = { actions.onOpenNote(note.entry) }, onLongClick = { menu = true }),
             )
         }
     }
@@ -1888,6 +1941,8 @@ private fun PastItem(item: TogetherItem, state: FriendDetailUiState, actions: Fr
                         is TimelineEntry.WhatsNew -> onEdit(PageEdit.News(entry.update))
                         is TimelineEntry.GiftGiven -> onEdit(PageEdit.GiftEdit(entry.gift))
                         is TimelineEntry.Share -> Unit
+                        // Issue #119: a note edits in its own popup, media included.
+                        is TimelineEntry.Journal -> actions.onOpenNote(entry.entry)
                         else -> actions.onEditEntry(entry.key)
                     }
                 },

@@ -554,4 +554,11 @@
     <string name="websites_address">Web address</string>
     <string name="complete_socials">Socials</string>
     <string name="complete_websites">Website</string>
+    <!-- Notes with media (issue #119) -->
+    <string name="note_new_title">New note</string>
+    <string name="note_edit_title">Edit note</string>
+    <string name="note_text">Note</string>
+    <string name="note_add_media">Add photo or video</string>
+    <string name="note_media_explained">Good Company keeps a small preview. The original stays in your gallery.</string>
+    <string name="note_saved">Note saved</string>
 </resources>

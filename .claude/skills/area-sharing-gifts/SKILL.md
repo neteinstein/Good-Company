@@ -18,6 +18,18 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Share changes usually touch three platforms: Android `MainActivity`/`ShareIntents`, iOS `ShareExtension` (see
   `ios-project-edit`), web `LaunchOptions.shared`. Keep them in step.
 
+## Note media (issue #119)
+
+- A note's photos and videos are `JournalEntry.media` (`NoteMedia`: kind, thumbnail, optional `PhotoRef`), in their own
+  `journal_media` table (migration `26.sqm`), saved whole with the note. They are **not** `Attachment`s, so they never
+  show in the Saved card. Same rule as attachments: a thumbnail plus a gallery reference, never the original.
+- Picked through `rememberGalleryMediaPicker` (Android Photo Picker image+video, `loadThumbnail` for a video frame;
+  iOS `PHPicker` with `AVAssetImageGenerator`; web one image, no ref), at most `MAX_NOTE_MEDIA` per pick, shrunk by
+  `PrepareNoteMediaUseCase`, saved by `SaveNoteUseCase`. Opening goes through `rememberGalleryPhotoOpener`
+  (Android `ACTION_VIEW` with the item's MIME type).
+- `AppSettings.mediaExplained` is device-only: the explanation line shows until the first note with media is saved.
+- Known gap (gotcha 23): gallery references don't survive a phone switch; only thumbnails come back from a backup.
+
 ## Reference (moved from AGENTS.md)
 
 19. **Share into the app (issue #24, D6, C1, F12, F17).** "Share → Good Company" lands in `ShareInbox` (domain), which

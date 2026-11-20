@@ -44,6 +44,20 @@ CREATE TABLE journal_entry (
 
 CREATE INDEX journal_entry_friend_at ON journal_entry(friend_id, at);
 
+-- A note's photos and videos (issue #119): a base64 JPEG thumbnail and, when the platform allowed it, a reference to
+-- the original in the gallery (photo_platform + photo_ref, as on attachment). kind and photo_platform are enum names
+-- (no CHECK). Rewritten with the note.
+CREATE TABLE journal_media (
+    journal_id TEXT NOT NULL REFERENCES journal_entry(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    thumbnail TEXT NOT NULL,
+    photo_platform TEXT,
+    photo_ref TEXT,
+    PRIMARY KEY (journal_id, id)
+);
+
 allInteractions:
 SELECT * FROM interaction ORDER BY at, rowid;
 
@@ -87,6 +101,18 @@ SELECT * FROM journal_entry ORDER BY at, id;
 upsertJournal:
 INSERT OR REPLACE INTO journal_entry (id, friend_id, at, text)
 SELECT :id, :friendId, :at, :text WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+journalExists:
+SELECT EXISTS (SELECT 1 FROM journal_entry WHERE id = ?);
+
+allJournalMedia:
+SELECT * FROM journal_media ORDER BY journal_id, position;
+
+deleteJournalMedia:
+DELETE FROM journal_media WHERE journal_id = ?;
+
+insertJournalMedia:
+INSERT OR REPLACE INTO journal_media VALUES ?;
 
 deleteJournal:
 DELETE FROM journal_entry WHERE id = ?;

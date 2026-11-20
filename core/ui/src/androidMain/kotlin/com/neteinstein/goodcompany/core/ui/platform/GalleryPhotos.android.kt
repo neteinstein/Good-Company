@@ -3,8 +3,10 @@ package com.neteinstein.goodcompany.core.ui.platform
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Size
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import java.io.ByteArrayOutputStream
 import kotlin.time.Instant
 
 /** Twice the stored thumbnail size, like the friend-photo picker, so the shrinker has detail to work with. */
@@ -53,6 +56,47 @@ actual fun rememberGalleryPhotoPicker(onPicked: (PickedPhoto?) -> Unit): () -> U
 }
 
 /**
+ * Photos and videos for a note (issue #119): the Photo Picker in image-and-video mode, several at once. The preview is
+ * the provider's thumbnail (a frame for a video); the reference is kept like a photo's.
+ */
+@Composable
+actual fun rememberGalleryMediaPicker(onPicked: (List<PickedMedia>) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    val callback = rememberUpdatedState(onPicked)
+    val scope = rememberCoroutineScope()
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(MAX_NOTE_MEDIA)) { uris ->
+        if (uris.isEmpty()) {
+            callback.value(emptyList())
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val picked = withContext(Dispatchers.IO) { uris.map { uri -> pickedMedia(context, uri) } }
+            callback.value(picked)
+        }
+    }
+    return { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)) }
+}
+
+private fun pickedMedia(context: Context, uri: Uri): PickedMedia {
+    val video = context.contentResolver.getType(uri)?.startsWith("video/") == true
+    val thumbnail = runCatching { context.contentResolver.loadThumbnail(uri, Size(GALLERY_PICK_MAX_SIDE, GALLERY_PICK_MAX_SIDE), null) }
+        .getOrNull()
+        ?.let { bitmap ->
+            ByteArrayOutputStream().use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, THUMBNAIL_QUALITY, out).let { out.toByteArray() } }
+        }
+    val preview = thumbnail ?: if (video) {
+        null
+    } else {
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        }.getOrNull()?.let { uprightJpeg(it, GALLERY_PICK_MAX_SIDE) }
+    }
+    return PickedMedia(preview ?: ByteArray(0), video, keepReference(context, uri))
+}
+
+private const val THUMBNAIL_QUALITY = 85
+
+/**
  * Keeps read access to [uri] across restarts. Works for Photo Picker and document URIs; other apps' MediaStore URIs
  * shared through the share sheet usually refuse it, and then there is no reference (D6: thumbnail only).
  */
@@ -83,8 +127,10 @@ actual fun rememberGalleryPhotoOpener(): GalleryPhotoOpener {
             val bytes = withContext(Dispatchers.IO) {
                 runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
             } ?: return@GalleryPhotoOpener OpenedPhoto.Unavailable
+            // A note's video opens in the video player (issue #119); everything else as a picture.
+            val type = runCatching { context.contentResolver.getType(uri) }.getOrNull() ?: "image/*"
             val view = Intent(Intent.ACTION_VIEW)
-                .setDataAndType(uri, "image/*")
+                .setDataAndType(uri, type)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
             try {
                 context.startActivity(view)
