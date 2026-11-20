@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlin.time.Instant
@@ -80,7 +82,41 @@ data class LogRequest(
     val durationSeconds: Int? = null,
     /** [LogKind.OTHER] only: what it was ("Sent a postcard"), trimmed. */
     val label: String = "",
+    /**
+     * Issue #116: the time of day it happened (a quick chip or a picked time). Null = now for today, noon for an
+     * earlier day. A time later than now today is taken as now: nothing is logged in the future.
+     */
+    val time: LocalTime? = null,
 )
+
+/** Issue #116: the quick times of day on the Log sheet's time row, besides "Now" and "Pick a time". */
+enum class LogTimeOfDay(val time: LocalTime) {
+    MORNING(LocalTime(9, 0)),
+    LUNCH(LocalTime(13, 0)),
+    AFTERNOON(LocalTime(16, 0)),
+    EVENING(LocalTime(20, 0)),
+    ;
+
+    companion object {
+        /** The chip for [time], if it is one of them. */
+        fun of(time: LocalTime?): LogTimeOfDay? = entries.firstOrNull { it.time == time }
+    }
+}
+
+/**
+ * When a log happened (issue #116): [date] (null = today) at [time]; without a time, now for today and noon for an
+ * earlier day (the rule from before times existed). Never later than [now], and never on a future day.
+ */
+fun logInstant(date: LocalDate?, time: LocalTime?, now: Instant, zone: TimeZone): Instant {
+    val today = now.toLocalDate(zone)
+    val day = date ?: today
+    require(day <= today) { "Can't log the future" }
+    return when {
+        time != null -> minOf(day.atTime(time).toInstant(zone), now)
+        day == today -> now
+        else -> day.atTime(LocalTime(12, 0)).toInstant(zone)
+    }
+}
 
 /** What a log wrote, so the caller can show it or undo it. */
 sealed interface LogResult {
@@ -106,7 +142,8 @@ class LogInteractionUseCase(
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
-    suspend operator fun invoke(request: LogRequest): LogResult = logAt(request, instantFor(request.date))
+    suspend operator fun invoke(request: LogRequest): LogResult =
+        logAt(request, logInstant(request.date, request.time, clock.now(), clock.timeZone))
 
     /** Writes [request] at exactly [at] (editing a timeline entry keeps its time of day, issue #102). */
     suspend fun logAt(request: LogRequest, at: Instant): LogResult {
@@ -145,15 +182,7 @@ class LogInteractionUseCase(
         }
     }
 
-    private fun instantFor(date: LocalDate?): Instant {
-        val today = clock.today()
-        require(date == null || date <= today) { "Can't log the future" }
-        return if (date == null || date == today) clock.now() else date.atTime(NOON).toInstant(clock.timeZone)
-    }
-
     companion object {
-        private val NOON = LocalTime(12, 0)
-
         /** The longest "Other" label kept: it is a short name, not a note. */
         const val LABEL_MAX = 40
     }

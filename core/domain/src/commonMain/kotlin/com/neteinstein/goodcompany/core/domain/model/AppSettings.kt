@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
@@ -21,7 +22,15 @@ data class NotificationSettings(
     val calendar: Boolean = true,
     /** "Keep important ones on screen": persistent notifications for what matters (see [NotificationPlanner]). */
     val persistent: Boolean = true,
+    /** Issue #116: the daily "log your day" reminder, on by default. */
+    val dailyLog: Boolean = true,
+    /** Issue #116: when it comes, in minutes after midnight (21:00 by default). */
+    val dailyLogMinute: Int = DEFAULT_DAILY_LOG_MINUTE,
 ) {
+    /** [dailyLogMinute] as a time of day (kept within the day). */
+    val dailyLogTime: LocalTime
+        get() = dailyLogMinute.coerceIn(0, MINUTES_PER_DAY - 1).let { LocalTime(it / 60, it % 60) }
+
     fun allows(type: NotificationType): Boolean = enabled &&
         when (type) {
             NotificationType.BIRTHDAYS -> birthdays
@@ -30,6 +39,7 @@ data class NotificationSettings(
             NotificationType.PLANS -> plans
             NotificationType.CATCH_UPS -> catchUps
             NotificationType.CALENDAR -> calendar
+            NotificationType.DAILY_LOG -> dailyLog
         }
 
     fun with(type: NotificationType, on: Boolean): NotificationSettings = when (type) {
@@ -39,6 +49,12 @@ data class NotificationSettings(
         NotificationType.PLANS -> copy(plans = on)
         NotificationType.CATCH_UPS -> copy(catchUps = on)
         NotificationType.CALENDAR -> copy(calendar = on)
+        NotificationType.DAILY_LOG -> copy(dailyLog = on)
+    }
+
+    companion object {
+        const val DEFAULT_DAILY_LOG_MINUTE = 21 * 60
+        private const val MINUTES_PER_DAY = 24 * 60
     }
 }
 

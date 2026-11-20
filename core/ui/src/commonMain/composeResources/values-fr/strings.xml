@@ -208,7 +208,7 @@
         <item quantity="other">Le cercle s’est réuni il y a %1$d jours.</item>
     </plurals>
     <string name="notif_group_body_never">Le cercle ne s’est pas encore réuni.</string>
-    <string name="notif_action_met">Nouvelles prises</string>
+    <string name="notif_action_met">Noter</string>
     <string name="notif_action_called">J’ai appelé</string>
     <string name="notif_action_snooze_week">Semaine prochaine</string>
     <string name="notif_action_snooze_weekend">Ce week-end</string>
@@ -635,7 +635,7 @@
         <item quantity="other">%1$d jours depuis votre dernière rencontre · objectif %2$s</item>
     </plurals>
     <string name="catchup_never">Aucune rencontre enregistrée</string>
-    <string name="catchup_met">Nouvelles prises</string>
+    <string name="catchup_met">Noter</string>
     <string name="catchup_called">Je l’ai appelé</string>
     <string name="catchup_snooze_week">Reporter d’une semaine</string>
     <string name="catchup_snooze_weekend">Me le rappeler samedi</string>
@@ -676,4 +676,14 @@
     <string name="notif_test_body">Les notifications fonctionnent. Voici à quoi elles ressembleront.</string>
     <string name="tl_entry_options">Modifier ou supprimer</string>
     <string name="log_title_edit">Modifier l’entrée</string>
+    <string name="log_action">Noter</string>
+    <string name="log_time_now">Maintenant</string>
+    <string name="log_time_morning">Matin</string>
+    <string name="log_time_lunch">Déjeuner</string>
+    <string name="log_time_afternoon">Après-midi</string>
+    <string name="log_time_evening">Soir</string>
+    <string name="log_time_pick">Choisir l’heure</string>
+    <string name="log_last_together">Dernière fois ensemble : %1$s</string>
+    <string name="notif_daily_log_title">Avec qui as-tu pris des nouvelles aujourd’hui ?</string>
+    <string name="notif_daily_log_body">Touche pour le noter tant que c’est frais.</string>
 </resources>

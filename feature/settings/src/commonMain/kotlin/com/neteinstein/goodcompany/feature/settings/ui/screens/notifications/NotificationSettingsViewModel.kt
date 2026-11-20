@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalTime
 
 sealed interface NotificationSettingsMessage {
     /** The answer after asking the system for notifications. */
@@ -52,6 +53,9 @@ class NotificationSettingsViewModel(
     fun onTypeChange(type: NotificationType, enabled: Boolean) = notifications { it.with(type, enabled) }
 
     fun onPersistentChange(enabled: Boolean) = notifications { it.copy(persistent = enabled) }
+
+    /** Issue #116: when the daily "log your day" reminder comes. */
+    fun onDailyLogTimeChange(time: LocalTime) = notifications { it.copy(dailyLogMinute = time.hour * 60 + time.minute) }
 
     fun onReminderHourChange(hour: Int) = settings { it.copy(reminderHour = hour.coerceIn(0, 23)) }
 

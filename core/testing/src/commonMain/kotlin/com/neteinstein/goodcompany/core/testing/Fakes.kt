@@ -576,3 +576,10 @@ class FakeAppUpdateSource(var newest: AppUpdate? = null) : AppUpdateSource {
         return newest
     }
 }
+
+/**
+ * The planned notifications without the daily "log your day" reminder (issue #116), which is on by default and so is
+ * in every plan: for tests about the other kinds.
+ */
+fun List<com.neteinstein.goodcompany.core.domain.model.PlannedNotification>.withoutDailyLog() =
+    filterNot { it.content == com.neteinstein.goodcompany.core.domain.model.NotificationContent.DailyLog }

@@ -31,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.VCardParser
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -188,7 +189,7 @@ class FullProfileTest {
 
     @Test
     fun aRelativesBirthday_isNotifiedOnlyWhenSwitchedOn_evenIfTheFriendsIsOff() {
-        val planned = NotificationPlanner.plan(listOf(family), emptyList(), emptyList(), at(2026, 3, 10), zone, reminderHour = 9)
+        val planned = NotificationPlanner.plan(listOf(family), emptyList(), emptyList(), at(2026, 3, 10), zone, reminderHour = 9).withoutDailyLog()
         assertEquals(listOf("relative:ana:on:2026-03-20"), planned.map { it.id })
         assertEquals(NotificationContent.RelativeBirthday("Tiago", "Ana", Relation.PARTNER, 38), planned.single().content)
     }

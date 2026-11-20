@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 data class WeMetUiState(
     val sheet: LogSheetState,
@@ -35,6 +36,11 @@ data class WeMetUiState(
     val placeOpen: Boolean = false,
     /** Saved: the panel closes (the app-wide snackbar offers Undo). */
     val done: Boolean = false,
+    /**
+     * Issue #116: opened with nobody, no circle and no plan (Today's Log button, a shortcut, the daily reminder): the
+     * people picker opens first and "who" leads the panel.
+     */
+    val startsWithNobody: Boolean = false,
 )
 
 /** What "More details" hands to the full Log sheet: everything chosen so far. */
@@ -49,6 +55,8 @@ data class WeMetDetails(
     /** The "How?" chosen (issue #101), so the full Log sheet opens on the same kind. */
     val kind: LogKind = LogKind.MEETUP,
     val label: String = "",
+    /** Issue #116: the time of day chosen (null = now / noon). */
+    val time: LocalTime? = null,
 )
 
 /**
@@ -89,6 +97,7 @@ class WeMetViewModel(
         clock,
         plan,
     )
+    private val startsWithNobody = friendIds.isEmpty() && circleId == null && plan == null
     private val noteOpen = MutableStateFlow(false)
     private val placeOpen = MutableStateFlow(false)
     private val done = MutableStateFlow(false)
@@ -100,8 +109,9 @@ class WeMetViewModel(
             placeOpen = !sheet.kind.isRemote &&
                 (place || sheet.place.name.isNotEmpty() || sheet.place.location != null || sheet.place.isLocating),
             done = isDone,
+            startsWithNobody = startsWithNobody,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WeMetUiState(model.sheet.value))
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WeMetUiState(model.sheet.value, startsWithNobody = startsWithNobody))
 
     /** "How?": in person, a call, a video call, "said hi", a long chat, a game online or something else. */
     fun onKind(kind: LogKind) {
@@ -111,6 +121,8 @@ class WeMetViewModel(
     fun onLabel(label: String) = model.onLabel(label)
 
     fun onDate(date: LocalDate) = model.onDate(date)
+
+    fun onTime(time: LocalTime?) = model.onTime(time)
 
     fun onActivity(activity: HangoutActivity?) = model.onActivity(activity)
 
@@ -138,6 +150,6 @@ class WeMetViewModel(
 
     /** Everything chosen so far, for "More details" (the full Log sheet). */
     fun details(): WeMetDetails = model.draft.value.let {
-        WeMetDetails(it.people, it.circleId, it.date, it.activity, it.note, model.plan, it.placeName, it.kind, it.label)
+        WeMetDetails(it.people, it.circleId, it.date, it.activity, it.note, model.plan, it.placeName, it.kind, it.label, it.time)
     }
 }

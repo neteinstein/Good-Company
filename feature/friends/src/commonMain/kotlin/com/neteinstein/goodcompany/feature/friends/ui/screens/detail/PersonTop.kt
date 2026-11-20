@@ -79,6 +79,7 @@ import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FamilyRing
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.QuickAction
 import com.neteinstein.goodcompany.core.ui.components.StoryRingBox
 import com.neteinstein.goodcompany.core.ui.components.WarmthMeter
@@ -390,7 +391,7 @@ private fun TopActions(f: Friend, actions: PersonTopActions) {
             emphasized = lead == LeadAction.CALL,
             modifier = Modifier.weight(1f),
         )
-        QuickAction(Icons.Rounded.Diversity3, stringResource(Res.string.qa_we_met), onClick = {
+        QuickAction(LogIcon, stringResource(Res.string.qa_we_met), onClick = {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
             actions.onWeMet()
         }, emphasized = lead == LeadAction.WE_MET, modifier = Modifier.weight(1f))

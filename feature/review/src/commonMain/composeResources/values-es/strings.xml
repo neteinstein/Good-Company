@@ -4,7 +4,7 @@
     <string name="back">Atrás</string>
     <string name="share">Compartir</string>
     <string name="empty_title">Aún no hay nada que recordar</string>
-    <string name="empty_body">Registra algunas quedadas con “Estoy con…” y aquí aparecerá tu año en amistad.</string>
+    <string name="empty_body">Registra algunas quedadas con “Registrar” y aquí aparecerá tu año en amistad.</string>
     <string name="copied">Copiado — pégalo donde quieras</string>
     <string name="hero_kicker">Tu año en amistad</string>
     <plurals name="hero_meetups">

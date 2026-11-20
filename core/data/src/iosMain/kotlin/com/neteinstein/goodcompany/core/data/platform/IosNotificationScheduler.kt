@@ -3,7 +3,10 @@ package com.neteinstein.goodcompany.core.data.platform
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.usecase.AppLink
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
+import com.neteinstein.goodcompany.core.domain.usecase.toQuickEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -93,6 +96,7 @@ internal class IosNotificationScheduler : NotificationScheduler {
         setThreadIdentifier(n.slot)
         if (n.persistent) setInterruptionLevel(UNNotificationInterruptionLevel.UNNotificationInterruptionLevelTimeSensitive)
         val info = mutableMapOf<Any?, Any?>(KEY_SLOT to n.slot, KEY_WHILE_OPEN to n.whileOpen)
+        n.link?.let { info[KEY_LINK] = it }
         n.actions.firstOrNull()?.let { first ->
             setCategoryIdentifier(categoryId(n))
             info[KEY_TARGET] = first.action.copy(kind = NotificationAction.Kind.MET).encode()
@@ -117,6 +121,7 @@ internal class IosNotificationScheduler : NotificationScheduler {
         const val KEY_TARGET = "target"
         const val KEY_SLOT = "slot"
         const val KEY_WHILE_OPEN = "whileOpen"
+        const val KEY_LINK = "link"
     }
 }
 
@@ -136,6 +141,13 @@ internal class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDel
     ) {
         val actionId = didReceiveNotificationResponse.actionIdentifier
         val target = didReceiveNotificationResponse.notification.request.content.userInfo[IosNotificationScheduler.KEY_TARGET] as? String
+        // Issue #116: a tap on a notification with an app link (the daily log reminder) opens the Log popup.
+        val link = didReceiveNotificationResponse.notification.request.content.userInfo[IosNotificationScheduler.KEY_LINK] as? String
+        if (actionId == UNNotificationDefaultActionIdentifier && link != null) {
+            (AppLink.parse(link) as? AppLink.Log)?.let { KoinPlatform.getKoin().get<QuickEntryInbox>().offer(it.toQuickEntry()) }
+            withCompletionHandler()
+            return
+        }
         val kind = NotificationAction.Kind.entries.firstOrNull { it.name == actionId }
         val action = target?.let(NotificationAction::decode)
         if (kind == null || action == null || actionId == UNNotificationDefaultActionIdentifier) {

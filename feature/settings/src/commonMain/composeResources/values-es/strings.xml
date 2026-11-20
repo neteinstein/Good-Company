@@ -210,4 +210,6 @@
     <string name="notif_settings_persistent">Mantener las importantes en pantalla</string>
     <string name="notif_settings_persistent_hint">Los recordatorios marcados como importantes, los atrasados, los cumpleaños y días importantes de hoy y el plan de hoy se quedan hasta que hagas algo. Los atrasados vuelven cada día.</string>
     <string name="notif_settings_when">Cuándo y cómo</string>
+    <string name="notif_type_daily_log">Registra tu día</string>
+    <string name="notif_type_daily_log_hint">Un aviso diario para registrar con quién te pusiste al día.</string>
 </resources>

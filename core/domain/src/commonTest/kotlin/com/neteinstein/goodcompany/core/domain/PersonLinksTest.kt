@@ -24,6 +24,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.of
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -247,7 +248,7 @@ class PersonLinksTest {
         assertEquals(setOf(rui, ana), anniversary.friendIds)
         assertEquals("anniversary-couple-2026-03-20", anniversary.key)
 
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, links = links)
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, links = links).withoutDailyLog()
         val n = planned.single()
         assertEquals("anniversary:couple:2026-03-20", n.id)
         assertEquals(NotificationContent.Anniversary("Rui", "Ana", 7), n.content)

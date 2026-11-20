@@ -4,7 +4,7 @@
     <string name="back">Retour</string>
     <string name="share">Partager</string>
     <string name="empty_title">Rien à revoir pour l’instant</string>
-    <string name="empty_body">Enregistre quelques rencontres avec « Je suis avec… » et ton année en amitié apparaîtra ici.</string>
+    <string name="empty_body">Enregistre quelques rencontres avec « Noter » et ton année en amitié apparaîtra ici.</string>
     <string name="copied">Copié — colle-le où tu veux</string>
     <string name="hero_kicker">Ton année en amitié</string>
     <plurals name="hero_meetups">

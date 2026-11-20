@@ -47,6 +47,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.PlanCloseSheet
 import com.neteinstein.goodcompany.core.ui.components.ReminderActionsRow
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
@@ -333,7 +334,11 @@ fun AgendaRow(
                         onClick = { onGroupMet(item.group.id) },
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                         modifier = Modifier.padding(top = 6.dp).height(34.dp),
-                    ) { Text(stringResource(Res.string.row_we_met), style = MaterialTheme.typography.labelLarge) }
+                    ) {
+                        Icon(LogIcon, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(Res.string.row_we_met), style = MaterialTheme.typography.labelLarge)
+                    }
                 }
             }
             when {

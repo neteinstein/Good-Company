@@ -72,10 +72,10 @@ import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScree
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
-import com.neteinstein.goodcompany.ui.navigation.LogInteractionRoute
 import com.neteinstein.goodcompany.ui.navigation.SettingsRoute
 import com.neteinstein.goodcompany.ui.navigation.ShareRoute
 import com.neteinstein.goodcompany.ui.navigation.TopLevelDestination
+import com.neteinstein.goodcompany.ui.navigation.WeMetRoute
 import com.neteinstein.goodcompany.ui.navigation.YearReviewRoute
 import com.neteinstein.goodcompany.ui.navigation.navigateTopLevel
 import org.jetbrains.compose.resources.stringResource
@@ -155,7 +155,8 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
     val pendingEntry by quickEntryInbox.pending.collectAsStateWithLifecycle()
     LaunchedEffect(pendingEntry) {
         val entry = pendingEntry ?: return@LaunchedEffect
-        navController.navigate(LogInteractionRoute(entry.friendIds.map { it.value }, entry.kind.name))
+        // Issue #116: a shortcut or the daily reminder opens the Log popup (the people picker first when nobody's named).
+        navController.navigate(WeMetRoute(entry.friendIds.map { it.value }))
         quickEntryInbox.clear()
     }
 

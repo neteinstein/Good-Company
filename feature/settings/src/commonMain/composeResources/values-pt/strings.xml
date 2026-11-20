@@ -210,4 +210,6 @@
     <string name="notif_settings_persistent">Manter as importantes no ecrã</string>
     <string name="notif_settings_persistent_hint">Lembretes marcados como importantes, lembretes em atraso, os aniversários e dias importantes de hoje, e o plano de hoje ficam até fazeres alguma coisa. Os lembretes em atraso voltam todos os dias.</string>
     <string name="notif_settings_when">Quando e como</string>
+    <string name="notif_type_daily_log">Regista o teu dia</string>
+    <string name="notif_type_daily_log_hint">Um lembrete diário para registar com quem estiveste.</string>
 </resources>

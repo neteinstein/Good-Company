@@ -17,8 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /** Which entry of whose timeline to edit (`LogInteractionRoute` in edit mode, issue #102). [key] is [TimelineEntry.key]. */
@@ -34,6 +33,7 @@ fun TimelineEntry.asLogRequest(friendId: FriendId, zone: TimeZone): LogRequest? 
         friendIds = hangout.friendIds,
         kind = LogKind.MEETUP,
         date = hangout.at.toLocalDate(zone),
+        time = hangout.at.timeOfDay(zone),
         note = hangout.note,
         placeName = hangout.place?.label,
         location = hangout.place?.point,
@@ -43,13 +43,19 @@ fun TimelineEntry.asLogRequest(friendId: FriendId, zone: TimeZone): LogRequest? 
         friendIds = listOf(interaction.friendId) + others.map { it.id },
         kind = LogKind.parse(interaction.type.name) ?: LogKind.OTHER,
         date = interaction.at.toLocalDate(zone),
+        time = interaction.at.timeOfDay(zone),
         note = interaction.note,
         label = interaction.label,
     )
-    is TimelineEntry.Journal -> LogRequest(listOf(entry.friendId), LogKind.JOURNAL, entry.at.toLocalDate(zone), entry.text)
-    is TimelineEntry.WhatsNew -> LogRequest(listOf(friendId), LogKind.JOURNAL, update.addedAt.toLocalDate(zone), update.text)
+    is TimelineEntry.Journal ->
+        LogRequest(listOf(entry.friendId), LogKind.JOURNAL, entry.at.toLocalDate(zone), entry.text, time = entry.at.timeOfDay(zone))
+    is TimelineEntry.WhatsNew ->
+        LogRequest(listOf(friendId), LogKind.JOURNAL, update.addedAt.toLocalDate(zone), update.text, time = update.addedAt.timeOfDay(zone))
     is TimelineEntry.GiftGiven, is TimelineEntry.Share -> null
 }
+
+/** The time of day of [this] in [zone], to the minute (the time row's precision, issue #116). */
+private fun Instant.timeOfDay(zone: TimeZone): LocalTime = toLocalDateTime(zone).time.let { LocalTime(it.hour, it.minute) }
 
 private val Place.point: GeoPoint?
     get() {
@@ -60,7 +66,8 @@ private val Place.point: GeoPoint?
 
 /**
  * Edits a timeline entry (issue #102): its date, kind, people, place, activity and note, as the Log sheet has them in
- * [request]. The same day keeps the entry's time; another day moves it to noon (today: now); no future days.
+ * [request]. The same day keeps the entry's time; a time from the time row (issue #116) moves it there; without one,
+ * another day moves it to noon (today: now); no future days.
  *
  * - A meetup stays the same hangout (everyone on it sees the change); its place is matched again (F11) only when the
  *   name or the fix changed, so a named place stays linked.
@@ -99,7 +106,7 @@ class EditTimelineEntryUseCase(
     private suspend fun meetup(entry: TimelineEntry.Meetup, request: LogRequest) {
         val h = entry.hangout
         val people = people(request)
-        val at = instantFor(h.at, request.date)
+        val at = instantFor(h.at, request)
         if (request.kind == LogKind.MEETUP) {
             val place = if (samePlace(h.place, request.placeName, request.location)) h.place else checkIn.place(request.placeName, request.location)
             hangouts.add(h.copy(friendIds = people, at = at, place = place, note = request.note.trim(), activity = request.activity))
@@ -113,7 +120,7 @@ class EditTimelineEntryUseCase(
     private suspend fun contact(entry: TimelineEntry.Contact, request: LogRequest) {
         val i = entry.interaction
         val people = people(request)
-        val at = instantFor(i.at, request.date)
+        val at = instantFor(i.at, request)
         val rows = i.batchId?.let { batch -> interactions.interactions.first().filter { it.batchId == batch } }?.ifEmpty { null } ?: listOf(i)
         val type = request.kind.interactionType
         // An old "together" contact row stays a contact when it's still "in person"; any other change to in person is a meetup.
@@ -140,7 +147,7 @@ class EditTimelineEntryUseCase(
     private suspend fun journal(entry: TimelineEntry.Journal, request: LogRequest) {
         val e = entry.entry
         val people = people(request)
-        val at = instantFor(e.at, request.date)
+        val at = instantFor(e.at, request)
         if (request.kind != LogKind.JOURNAL) {
             interactions.deleteJournal(e.id)
             log.logAt(request.copy(friendIds = people), at)
@@ -155,7 +162,7 @@ class EditTimelineEntryUseCase(
 
     private suspend fun news(entry: TimelineEntry.WhatsNew, request: LogRequest) {
         val text = requireText(request)
-        val at = instantFor(entry.update.addedAt, request.date)
+        val at = instantFor(entry.update.addedAt, request)
         val f = friends.get(entry.friendId) ?: return
         friends.upsert(f.copy(lifeUpdates = f.lifeUpdates.map { if (it.id == entry.update.id) it.copy(text = text, addedAt = at) else it }))
     }
@@ -181,15 +188,16 @@ class EditTimelineEntryUseCase(
     private fun samePlace(old: Place?, name: String?, location: GeoPoint?): Boolean =
         name?.trim()?.ifBlank { null } == old?.label && location == old?.point
 
-    private fun instantFor(old: Instant, date: LocalDate?): Instant {
+    /**
+     * The same day and time keep the entry's own instant (to the second). A new time from the time row (issue #116)
+     * puts it at that time on the chosen day. Another day with the time left as it was keeps the rule of issue #102:
+     * noon (today: now).
+     */
+    private fun instantFor(old: Instant, request: LogRequest): Instant {
         val zone = clock.timeZone
-        if (date == null || date == old.toLocalDate(zone)) return old
-        val today = clock.today()
-        require(date <= today) { "Can't log the future" }
-        return if (date == today) clock.now() else date.atTime(NOON).toInstant(zone)
-    }
-
-    private companion object {
-        val NOON = LocalTime(12, 0)
+        val date = request.date ?: old.toLocalDate(zone)
+        val newTime = request.time?.takeIf { it != old.timeOfDay(zone) }
+        if (date == old.toLocalDate(zone) && newTime == null) return old
+        return logInstant(date, newTime, clock.now(), zone)
     }
 }

@@ -2,7 +2,7 @@
 <resources>
     <string name="page1_title">Tes proches,\nà ne pas oublier</string>
     <string name="page1_body">Un petit CRM pour l’amitié. Retiens ce que tes amis adorent, le prénom de leurs enfants et les dates qui comptent — le tout sur ton appareil.</string>
-    <string name="page2_title">Une touche :\n« Je suis avec… »</string>
+    <string name="page2_title">Une touche :\n« Noter »</string>
     <string name="page2_body">Note avec qui tu es et où. Retrouve la dernière fois avec n’importe quel groupe — et qui tu n’as pas vu depuis longtemps.</string>
     <string name="page3_title">Ne rate plus\nl’essentiel</string>
     <string name="page3_body">Anniversaires, l’opération d’un ami, « réserver le concert avec Rui » — des rappels en douceur au bon moment, plus des idées de sorties par l’IA.</string>

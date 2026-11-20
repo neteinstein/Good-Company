@@ -27,13 +27,22 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log sheet edits meetups,
   contacts and journal entries (`LogInteractionRoute.edit(friendId, key)` → `LogPrefill.edit` → `LogSheetModel.startEditing`,
   prefilled by `TimelineEntry.asLogRequest`); news and gifts given edit in their own dialogs; circle shares are delete only.
-  Same day keeps the time, another day is noon (today: now). Contact rows keep their ids (an automatic call keeps its
+  Same day keeps the time, another day is noon (today: now), unless a new time is picked (issue #116: then that time). Contact rows keep their ids (an automatic call keeps its
   automatic id, so a re-sync doesn't re-add it); a single row that gains people batches under its own id. A kind change
   across meetup / contact / journal deletes and re-logs at the same instant, and the share it came from is relinked.
   The rows are `EditableTimelineEntry` (`:core:ui`: tap edits, long press or ⋮ → `EditDeleteMenu`), so any screen can host
   the timeline. Edits have no Undo (they save on Save); deletes do.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
+- **One Log action (issue #116).** "Caught up", "We met" and "I'm with…" are one **Log** action with one icon, `LogIcon`
+  (`Icons.Rounded.EditNote`, `:core:ui` `LogTime.kt`), always beside the word Log. Today's button, quick entries and
+  app-icon shortcuts open `WeMetRoute`; with nobody given (`WeMetUiState.startsWithNobody`) it opens on the people
+  picker (recent first, `LogSheetState.recentFirst`). The old check-in sheet (`CheckInSheetHost`) is gone.
+- **Time of day (issue #116).** `LogRequest.time: LocalTime?` and `logInstant(date, time, now, zone)` in `Logging.kt`:
+  no time = now today, noon earlier; a time = that time, capped at now (never in the future). Chips `LogTimeOfDay`
+  (Morning 09:00, Lunch 13:00, Afternoon 16:00, Evening 20:00) plus Now and "Pick a time" (`LogTimeChoice`,
+  `LocalTimePickerDialog`); today's later chips are disabled. In person shows "Last time together" from
+  `PlaceBook.lastTogether(people)`.
 - **"Caught up" (issue #101, was "We met").** The panel behind `WeMetRoute` (code names keep "WeMet"/`MET`) starts with
   **How?**: `LogKind.CAUGHT_UP` = in person (default), call, video, said hi (`MESSAGE`), long chat, played online
   (`GAME`), other. A remote kind (`LogKind.isRemote`) is an `Interaction` through `LogInteractionUseCase` and hides

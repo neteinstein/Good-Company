@@ -218,7 +218,7 @@
         <item quantity="other">Cercul s-a întâlnit acum %1$d de zile.</item>
     </plurals>
     <string name="notif_group_body_never">Cercul nu s-a întâlnit încă.</string>
-    <string name="notif_action_met">Ne-am pus la curent</string>
+    <string name="notif_action_met">Notează</string>
     <string name="notif_action_called">Am sunat</string>
     <string name="notif_action_snooze_week">Săptămâna viitoare</string>
     <string name="notif_action_snooze_weekend">Weekendul ăsta</string>
@@ -655,7 +655,7 @@
         <item quantity="other">%1$d de zile de când v-ați văzut · obiectiv %2$s</item>
     </plurals>
     <string name="catchup_never">Nicio întâlnire înregistrată încă</string>
-    <string name="catchup_met">Ne-am pus la curent</string>
+    <string name="catchup_met">Notează</string>
     <string name="catchup_called">L-am sunat</string>
     <string name="catchup_snooze_week">Amână o săptămână</string>
     <string name="catchup_snooze_weekend">Amintește-mi sâmbătă</string>
@@ -698,4 +698,14 @@
     <string name="notif_test_body">Notificările funcționează. Așa vor arăta.</string>
     <string name="tl_entry_options">Editează sau șterge</string>
     <string name="log_title_edit">Editează intrarea</string>
+    <string name="log_action">Notează</string>
+    <string name="log_time_now">Acum</string>
+    <string name="log_time_morning">Dimineață</string>
+    <string name="log_time_lunch">Prânz</string>
+    <string name="log_time_afternoon">După-amiază</string>
+    <string name="log_time_evening">Seară</string>
+    <string name="log_time_pick">Alege ora</string>
+    <string name="log_last_together">Ultima dată împreună: %1$s</string>
+    <string name="notif_daily_log_title">Cu cine ai ținut legătura azi?</string>
+    <string name="notif_daily_log_body">Atinge ca să notezi cât e proaspăt.</string>
 </resources>

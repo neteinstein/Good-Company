@@ -11,7 +11,7 @@
     <string name="group_overdue">Time for a get-together · %1$s</string>
     <string name="group_due">Due %1$s · %2$s</string>
     <string name="group_snoozed">Snoozed until %1$s</string>
-    <string name="group_met">Caught up</string>
+    <string name="group_met">Log</string>
     <string name="group_edit">Edit</string>
     <string name="group_delete">Delete circle</string>
     <string name="group_snooze_week">Snooze a week</string>
@@ -54,7 +54,7 @@
     <string name="circle_members_empty">Add at least one friend.</string>
     <string name="circle_closeness_note">Closeness is shown, not edited, here: it belongs to the person. A friend’s own rhythm never changes because of a circle.</string>
     <!-- The small "We met" panel (issue #47) -->
-    <string name="met_title">Caught up with %1$s</string>
+    <string name="met_title">Log · %1$s</string>
     <string name="met_title_circle">%1$s · who came?</string>
     <string name="met_how">How?</string>
     <string name="met_more_details">More details</string>

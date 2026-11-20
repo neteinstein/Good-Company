@@ -217,4 +217,6 @@
     <string name="my_photo_change">Change</string>
     <string name="msg_my_photo_unreadable">Couldn’t read that picture. Try a JPEG or PNG.</string>
     <string name="msg_my_photo_removed">Photo removed</string>
+    <string name="notif_type_daily_log">Log your day</string>
+    <string name="notif_type_daily_log_hint">A daily nudge to log who you caught up with.</string>
 </resources>

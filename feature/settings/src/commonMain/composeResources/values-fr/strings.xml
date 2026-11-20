@@ -210,4 +210,6 @@
     <string name="notif_settings_persistent">Garder les importantes à l’écran</string>
     <string name="notif_settings_persistent_hint">Les rappels marqués importants, les rappels en retard, les anniversaires et grands jours du jour, et le projet du jour restent jusqu’à ce que tu agisses. Les rappels en retard reviennent chaque jour.</string>
     <string name="notif_settings_when">Quand et comment</string>
+    <string name="notif_type_daily_log">Note ta journée</string>
+    <string name="notif_type_daily_log_hint">Un rappel quotidien pour noter qui tu as vu.</string>
 </resources>

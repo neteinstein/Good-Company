@@ -15,6 +15,7 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.time.Instant
 
 /** Named places (F11): distance matching and "usually here with". Pure; everything stays on the device. */
 object NamedPlaces {
@@ -87,6 +88,10 @@ data class PlaceBook(val places: List<NamedPlace> = emptyList(), val hangouts: L
 
     fun usualPeople(placeId: String, exclude: Collection<FriendId>): List<FriendId> =
         NamedPlaces.usualPeople(placeId, hangouts, exclude)
+
+    /** Issue #116: the newest meetup with everyone in [people] (null with nobody, or when they never met together). */
+    fun lastTogether(people: Collection<FriendId>): Instant? =
+        if (people.isEmpty()) null else hangouts.filter { h -> h.friendIds.containsAll(people) }.maxOfOrNull { it.at }
 
     /** How many of the last meetups there the suggestion comes from. */
     fun recentMeetups(placeId: String): Int = minOf(NamedPlaces.meetupsAt(placeId, hangouts).size, NamedPlaces.RECENT_MEETUPS)

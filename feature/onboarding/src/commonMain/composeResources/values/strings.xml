@@ -2,7 +2,7 @@
 <resources>
     <string name="page1_title">Your people,\nremembered</string>
     <string name="page1_body">A little CRM for friendship. Keep what your friends love, their kids’ names and the dates that matter — all on your device.</string>
-    <string name="page2_title">One tap:\n“I’m with…”</string>
+    <string name="page2_title">One tap:\n“Log”</string>
     <string name="page2_body">Log who you’re with and where. See the last time you were with any group — and who you haven’t seen in a while.</string>
     <string name="page3_title">Never miss\nwhat matters</string>
     <string name="page3_body">Birthdays, a friend’s surgery, “book tickets with Rui” — gentle reminders at the right time, plus AI ideas for things to do together.</string>

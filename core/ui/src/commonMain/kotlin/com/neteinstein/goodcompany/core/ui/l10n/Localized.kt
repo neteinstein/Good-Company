@@ -57,6 +57,8 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_one_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_daily_log_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_daily_log_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_digest_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_event_soon_body
@@ -180,6 +182,11 @@ object ResourceNotificationRenderer : NotificationRenderer {
                     getString(Res.string.notif_reminder_with, c.withNames.joinToString())
                 },
                 reminderActions(c.reminderId),
+            )
+            NotificationContent.DailyLog -> Triple(
+                getString(Res.string.notif_daily_log_title),
+                getString(Res.string.notif_daily_log_body),
+                emptyList(),
             )
             NotificationContent.Test -> Triple(
                 getString(Res.string.notif_test_title),

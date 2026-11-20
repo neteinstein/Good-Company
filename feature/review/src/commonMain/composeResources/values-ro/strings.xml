@@ -4,7 +4,7 @@
     <string name="back">Înapoi</string>
     <string name="share">Distribuie</string>
     <string name="empty_title">Încă nu ai la ce privi înapoi</string>
-    <string name="empty_body">Înregistrează câteva întâlniri cu „Sunt cu…” și anul tău în prietenie va apărea aici.</string>
+    <string name="empty_body">Înregistrează câteva întâlniri cu „Notează” și anul tău în prietenie va apărea aici.</string>
     <string name="copied">Copiat — lipește-l oriunde</string>
     <string name="hero_kicker">Anul tău în prietenie</string>
     <plurals name="hero_meetups">

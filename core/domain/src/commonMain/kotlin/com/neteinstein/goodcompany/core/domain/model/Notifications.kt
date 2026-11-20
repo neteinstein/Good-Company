@@ -81,6 +81,9 @@ sealed interface NotificationContent {
     /** Issue #98: Settings → Notifications → "Send a test notification". */
     data object Test : NotificationContent
 
+    /** Issue #116: the daily "Who did you catch up with today?"; a tap opens the Log popup. */
+    data object DailyLog : NotificationContent
+
     /** Which switch in Settings → Notifications this belongs to (and, on Android, its channel). */
     val type: NotificationType
         get() = when (this) {
@@ -90,11 +93,12 @@ sealed interface NotificationContent {
             is PlanToday, is PlanFollowUp -> NotificationType.PLANS
             is MeetupDue, is GroupMeetupDue, is CatchUpDigest -> NotificationType.CATCH_UPS
             is CalendarMeetups -> NotificationType.CALENDAR
+            DailyLog -> NotificationType.DAILY_LOG
         }
 }
 
 /** The kinds of notification the user can switch on and off (issue #98). */
-enum class NotificationType { BIRTHDAYS, EVENTS, REMINDERS, PLANS, CATCH_UPS, CALENDAR }
+enum class NotificationType { BIRTHDAYS, EVENTS, REMINDERS, PLANS, CATCH_UPS, CALENDAR, DAILY_LOG }
 
 /**
  * Where a notification is posted on Android (issue #98): Reminders · Birthdays & big days · Plans · Catch-ups (low)
@@ -113,7 +117,7 @@ enum class NotificationChannel {
             persistent -> IMPORTANT
             else -> when (type) {
                 NotificationType.BIRTHDAYS, NotificationType.EVENTS -> BIRTHDAYS
-                NotificationType.REMINDERS -> REMINDERS
+                NotificationType.REMINDERS, NotificationType.DAILY_LOG -> REMINDERS
                 NotificationType.PLANS -> PLANS
                 NotificationType.CATCH_UPS, NotificationType.CALENDAR -> CATCH_UPS
             }
@@ -137,6 +141,8 @@ data class PlannedNotification(
     val until: Instant? = null,
     val slot: String = id,
     val whileOpen: Boolean = false,
+    /** Issue #116: an app link (`goodcompany://…`) a tap opens instead of just the app. */
+    val link: String? = null,
 ) {
     val channel: NotificationChannel get() = NotificationChannel.of(content.type, persistent)
 }
@@ -180,4 +186,6 @@ data class RenderedNotification(
     val slot: String = id,
     /** Taken off the screen once its slot is no longer planned; see [PlannedNotification.whileOpen]. */
     val whileOpen: Boolean = false,
+    /** What a tap opens; see [PlannedNotification.link]. */
+    val link: String? = null,
 )

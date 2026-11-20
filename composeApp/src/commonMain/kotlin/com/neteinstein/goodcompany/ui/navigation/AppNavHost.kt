@@ -44,7 +44,6 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInSheetHost
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeScreen
@@ -62,6 +61,7 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.Not
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 const val APP_VERSION = "1.0.0"
 
@@ -203,6 +203,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
                 note = route.note,
                 place = route.place,
                 label = route.label,
+                time = route.time?.let { runCatching { LocalTime.parse(it) }.getOrNull() },
                 edit = route.editKey?.let { key -> route.editFriend?.let { TimelineEntryRef(FriendId(it), key) } },
             ),
             onClose = { navController.popBackStack() },
@@ -228,6 +229,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
                         plan = d.plan?.encode(),
                         place = d.placeName.ifEmpty { null },
                         label = d.label.ifEmpty { null },
+                        time = d.time?.toString(),
                     ),
                 ) { popUpTo<WeMetRoute> { inclusive = true } }
             },
@@ -328,8 +330,8 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onOpenAgenda = { navController.navigate(AgendaRoute) { launchSingleTop = true } },
             onOpenSettings = openSettings,
             onOpenPeople = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
-            // "I'm with…" lives with the circles (feature modules never depend on each other).
-            checkInSheet = { onSaved, onDismiss -> CheckInSheetHost(onSaved = onSaved, onDismiss = onDismiss) },
+            // Issue #116: "I'm with…" became Log: the Log popup with nobody picked, the people picker first.
+            onLog = { navController.navigate(WeMetRoute()) },
             onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
             onOpenCircle = openCircle,
         )

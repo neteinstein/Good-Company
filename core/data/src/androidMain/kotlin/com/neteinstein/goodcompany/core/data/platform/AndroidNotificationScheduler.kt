@@ -89,6 +89,7 @@ internal class AndroidNotificationScheduler(private val context: Context) : Noti
         const val KEY_UNTIL = "until"
         const val KEY_SLOT = "slot"
         const val KEY_WHILE_OPEN = "whileOpen"
+        const val KEY_LINK = "link"
         const val EXTRA_WHILE_OPEN = "goodcompany.whileOpen"
         const val MAX_SCHEDULED = 200
 
@@ -107,6 +108,7 @@ internal class AndroidNotificationScheduler(private val context: Context) : Noti
             .putLong(KEY_UNTIL, until?.toEpochMilliseconds() ?: 0L)
             .putString(KEY_SLOT, slot)
             .putBoolean(KEY_WHILE_OPEN, whileOpen)
+            .putString(KEY_LINK, link)
             .build()
     }
 }
@@ -174,7 +176,14 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
             ?: NotificationChannel.REMINDERS
         val channelId = AndroidChannels.id(channel)
         val requestCode = slot.hashCode()
-        val launch = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+        // Issue #116: a notification with an app link (the daily log reminder) opens it, like an app-icon shortcut.
+        val link = inputData.getString(AndroidNotificationScheduler.KEY_LINK)
+        val launch = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.apply {
+            if (link != null) {
+                action = android.content.Intent.ACTION_VIEW
+                data = android.net.Uri.parse(link)
+            }
+        }
         val content = launch?.let {
             PendingIntent.getActivity(ctx, requestCode, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }

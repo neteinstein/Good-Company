@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -112,7 +113,17 @@ class CadenceAndGroupsTest {
         val status = Relationships.groupStatuses(listOf(solo), friends, emptyList(), today, TimeZone.UTC).single()
         assertNull(status.dueDate)
         assertFalse(status.isOverdue(today))
-        assertTrue(NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, groups = listOf(solo)).isEmpty())
+        assertTrue(
+            NotificationPlanner.plan(
+                friends,
+                emptyList(),
+                emptyList(),
+                at(2026, 3, 10),
+                TimeZone.UTC,
+                9,
+                groups = listOf(solo),
+            ).withoutDailyLog().isEmpty(),
+        )
         assertTrue(AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC, groups = listOf(solo)).isEmpty())
     }
 
@@ -124,7 +135,15 @@ class CadenceAndGroupsTest {
         val item = agenda.single() as AgendaItem.GroupOverdue
         assertEquals("Crew", item.group.name)
 
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, groups = listOf(group))
+        val planned = NotificationPlanner.plan(
+            friends,
+            emptyList(),
+            emptyList(),
+            at(2026, 3, 10),
+            TimeZone.UTC,
+            9,
+            groups = listOf(group),
+        ).withoutDailyLog()
         assertEquals(NotificationContent.GroupMeetupDue("g", "Crew", null, 7), planned.single().content)
         assertEquals("group:g:2026-03-11", planned.single().id)
     }
@@ -132,7 +151,7 @@ class CadenceAndGroupsTest {
     @Test
     fun notificationPlannerUsesCircleCadence() {
         val friends = listOf(friend("ana") { copy(closeness = Closeness.CLOSE, approxLastSeen = LocalDate(2026, 2, 8)) })
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, rules = rules)
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, rules = rules).withoutDailyLog()
         val content = planned.single().content as NotificationContent.MeetupDue
         assertEquals(30, content.everyDays)
         assertEquals(FriendId("ana"), content.friendId)

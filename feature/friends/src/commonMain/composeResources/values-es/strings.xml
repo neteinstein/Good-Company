@@ -478,7 +478,7 @@
     <string name="circles_new_with">Nuevo círculo con %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Mensaje</string>
-    <string name="qa_we_met">Puestos al día</string>
+    <string name="qa_we_met">Registrar</string>
     <string name="message_sheet_title">Mensaje a %1$s</string>
     <string name="tab_about">Sobre</string>
     <string name="edit_done">Hecho</string>

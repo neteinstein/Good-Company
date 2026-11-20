@@ -102,7 +102,11 @@ fun CatchUpCard(
                     onClick = onMet,
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                     modifier = Modifier.padding(top = 6.dp).height(34.dp),
-                ) { Text(stringResource(Res.string.catchup_met), style = MaterialTheme.typography.labelLarge, maxLines = 1) }
+                ) {
+                    Icon(LogIcon, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(Res.string.catchup_met), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                }
             }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.catchup_more)) }
