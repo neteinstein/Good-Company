@@ -159,7 +159,10 @@ class FakeHangoutRepository(initial: List<Hangout> = emptyList(), places: List<N
     private val placeState = MutableStateFlow(places)
     override val places: StateFlow<List<NamedPlace>> = placeState
 
-    override suspend fun add(hangout: Hangout) = state.update { it + hangout }
+    /** Like the SQL repository: a hangout with the same id is replaced (editing a meetup, issue #102). */
+    override suspend fun add(hangout: Hangout) = state.update { list ->
+        if (list.any { it.id == hangout.id }) list.map { if (it.id == hangout.id) hangout else it } else list + hangout
+    }
 
     override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
 

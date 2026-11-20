@@ -45,6 +45,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimer
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -284,6 +285,7 @@ class TestGraph(
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
     val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)
     val restoreTimelineEntry = RestoreTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)
+    val editTimelineEntry = EditTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo, checkIn, logInteraction, clock, ids)
     val deleteHangout = DeleteHangoutUseCase(hangoutRepo)
     val restoreHangout = RestoreHangoutUseCase(hangoutRepo)
     val confirmPlan = ConfirmPlanUseCase(planRepo, friendRepo, checkIn, clock)

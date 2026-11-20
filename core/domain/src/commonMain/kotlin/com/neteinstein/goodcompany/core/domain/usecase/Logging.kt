@@ -106,10 +106,12 @@ class LogInteractionUseCase(
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
-    suspend operator fun invoke(request: LogRequest): LogResult {
+    suspend operator fun invoke(request: LogRequest): LogResult = logAt(request, instantFor(request.date))
+
+    /** Writes [request] at exactly [at] (editing a timeline entry keeps its time of day, issue #102). */
+    suspend fun logAt(request: LogRequest, at: Instant): LogResult {
         val people = request.friendIds.distinct()
         require(people.isNotEmpty()) { "Pick at least one friend" }
-        val at = instantFor(request.date)
         val note = request.note.trim()
         return when (val kind = request.kind) {
             LogKind.MEETUP -> LogResult.Met(
