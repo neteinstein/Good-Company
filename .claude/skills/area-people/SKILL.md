@@ -69,7 +69,21 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `SavedEdit` (only what that save touched) for the "Saved · Undo" snackbar (`onUndoSave`). `LocalDatePickerDialog`
   picks on the day tap, with no OK.
 
-- **A person's page (issue #90).** View mode vs. edit mode (`editing`, screen state in `FriendDetailContent`, nothing
+- **A person's page (issue #103, supersedes the view/edit mode and three tabs below).** Two tabs, `PersonTab { TOGETHER,
+  ABOUT }`, always opening on Together: Coming up first (birthday banner, "Plan something" + plans, reminders, moments,
+  rhythm line), then the timeline (edit/delete from #102), conversations, To talk about. About: the old About cards plus
+  Tastes and dated Notes. There is **no edit mode**: the About cards always show their editors (inline editing on About
+  stays), Occasions has its own popup (`OccasionsDialog`), and the pencil opens `EditPersonDialog` (full screen: name,
+  "Related to you?", preferred channel, closeness, meet-every, the person's switches, Remove). `ProfileSections.shown`
+  has no `editing` parameter. Under the photo + family ring sits the **info box** (`InfoBox` in `PersonTop.kt`):
+  closeness with `closenessIcon` (`:core:ui`) and, next to it, `WarmthMeter` (`showsWarmth`: Show warmth on and a real
+  friend); then birthday, "Your sister", last catch-up; then circles. The area behind the photo is tinted with
+  `warmthColor` when warmth shows (else the avatar colours). The photo opens the catch-up story and wears
+  `StoryRingBox(state.storyRing)`: `StoryRing.of(fresh, seenAt)` (domain) is bright while something fresh is unseen,
+  grey once `StoryViews` (in-memory Koin single, marked by `CatchUpStoryViewModel`) says the story was opened, none
+  with nothing fresh; the camera badge keeps the photo options. `StoryCta` is gone. The top actions are Message · Call
+  · Caught up · Remind · Add news.
+- **A person's page (issue #90, *superseded by #103 above*).** View mode vs. edit mode (`editing`, screen state in `FriendDetailContent`, nothing
   stored; Back leaves edit mode first via `NavigationBackHandler`) and three tabs (`PersonTab`, always opens on Summary).
   Which card lives on which tab, and which show, is pure code in `detail/PersonPage.kt` (`PersonCard`,
   `ProfileSections.shown/missing`, tested in `PersonPageTest`): add a card there, not only in the composable, or the
