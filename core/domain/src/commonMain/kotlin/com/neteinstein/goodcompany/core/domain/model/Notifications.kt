@@ -111,7 +111,8 @@ enum class NotificationChannel {
  *
  * Issue #98: [persistent] ones stay on screen (Android: ongoing; iOS: time-sensitive) until acted on, and go away by
  * themselves at [until]. Notifications that share a [slot] replace each other on screen (an overdue reminder asked
- * again the next day shows once, not twice).
+ * again the next day shows once, not twice). A posted [whileOpen] one is taken off the screen as soon as its slot is no
+ * longer planned: the reminder was done or deleted, the plan answered.
  */
 data class PlannedNotification(
     val id: String,
@@ -120,6 +121,7 @@ data class PlannedNotification(
     val persistent: Boolean = false,
     val until: Instant? = null,
     val slot: String = id,
+    val whileOpen: Boolean = false,
 ) {
     val channel: NotificationChannel get() = NotificationChannel.of(content.type, persistent)
 }
@@ -161,4 +163,6 @@ data class RenderedNotification(
     val until: Instant? = null,
     /** On-screen identity: a newer notification with the same slot replaces the older one. */
     val slot: String = id,
+    /** Taken off the screen once its slot is no longer planned; see [PlannedNotification.whileOpen]. */
+    val whileOpen: Boolean = false,
 )

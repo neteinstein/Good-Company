@@ -87,13 +87,20 @@ object NotificationPlanner {
         val hour = reminderHour.coerceIn(0, 23)
         fun LocalDate.atReminderTime(): Instant = atTime(LocalTime(hour, 0)).toInstant(zone)
         val out = mutableListOf<PlannedNotification>()
-        fun add(id: String, day: LocalDate, content: NotificationContent, persistent: Boolean = false, slot: String = id) {
+        fun add(
+            id: String,
+            day: LocalDate,
+            content: NotificationContent,
+            persistent: Boolean = false,
+            slot: String = id,
+            whileOpen: Boolean = false,
+        ) {
             if (!notifications.allows(content.type)) return
             val at = day.atReminderTime()
             if (at > now && day <= end) {
                 // A persistent one goes away by itself when its day is over.
                 val until = if (persistent) day.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone) else null
-                out += PlannedNotification(id, at, content, persistent, until, slot)
+                out += PlannedNotification(id, at, content, persistent, until, slot, whileOpen && persistent)
             }
         }
 
@@ -148,7 +155,7 @@ object NotificationPlanner {
                 if (dueAt > now) {
                     val persistent = keepOnScreen && r.important
                     val until = if (persistent) dueAt.toLocalDate(zone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone) else null
-                    out += PlannedNotification(slot, dueAt, NotificationContent.ReminderDue(r.title, names), persistent, until)
+                    out += PlannedNotification(slot, dueAt, NotificationContent.ReminderDue(r.title, names), persistent, until, whileOpen = persistent)
                 }
                 // Overdue (issue #98): asked again at the reminder hour from the day after it was due, until done. Only
                 // while important ones stay on screen; otherwise the reminder pings once, as before.
@@ -157,7 +164,7 @@ object NotificationPlanner {
                     if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
                     repeat(OVERDUE_ASKS) { i ->
                         val day = ask.plus(i, DateTimeUnit.DAY)
-                        add("$slot:overdue:$day", day, NotificationContent.ReminderOverdue(r.title, names), persistent = true, slot = slot)
+                        add("$slot:overdue:$day", day, NotificationContent.ReminderOverdue(r.title, names), persistent = true, slot = slot, whileOpen = true)
                     }
                 }
             }
@@ -178,7 +185,7 @@ object NotificationPlanner {
                 var ask = maxOf(firstAsk, today)
                 if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
                 if (ask <= lastAsk) {
-                    add("plan:$key:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle), keepOnScreen)
+                    add("plan:$key:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle), keepOnScreen, whileOpen = true)
                 }
             }
         }

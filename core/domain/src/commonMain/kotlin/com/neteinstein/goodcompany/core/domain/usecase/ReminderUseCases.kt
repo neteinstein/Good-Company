@@ -225,6 +225,7 @@ internal fun RenderedNotification.planned(from: PlannedNotification, publicText:
     persistent = from.persistent,
     until = from.until,
     slot = from.slot,
+    whileOpen = from.whileOpen,
 )
 
 /** Settings → Notifications → "Send a test notification" (issue #98): shows one right away, as the others would. */

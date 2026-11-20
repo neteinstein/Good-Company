@@ -27,6 +27,8 @@ actual fun Scope.createLocationProvider(): LocationProvider = BrowserLocationPro
 /** A closed tab can't fire reminders; the web build shows them in the agenda only. */
 actual fun Scope.createNotificationScheduler(): NotificationScheduler = object : NotificationScheduler {
     override suspend fun replaceAll(notifications: List<RenderedNotification>) = Unit
+
+    override suspend fun showNow(notification: RenderedNotification) = Unit
 }
 
 /** Browsers can't read the device calendar: calendar suggestions are Android and iOS only (D3). */

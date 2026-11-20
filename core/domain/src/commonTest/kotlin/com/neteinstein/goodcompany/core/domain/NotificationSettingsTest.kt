@@ -110,7 +110,9 @@ class NotificationSettingsTest {
         assertNull(before.until)
         assertEquals(NotificationChannel.BIRTHDAYS, before.channel)
         assertTrue(planned.single { it.id == "plan:p:day" }.persistent)
-        assertTrue(planned.single { it.id == "plan:p:ask" }.persistent)
+        assertTrue(planned.single { it.id == "plan:p:ask" }.let { it.persistent && it.whileOpen })
+        // Today's plan and birthdays stay once posted, even when no longer planned.
+        assertFalse(birthday.whileOpen || planned.single { it.id == "plan:p:day" }.whileOpen)
         // A catch-up never is, and goes in the quiet channel.
         val catchUp = planned.first { it.content is NotificationContent.MeetupDue }
         assertFalse(catchUp.persistent)
@@ -135,7 +137,7 @@ class NotificationSettingsTest {
             listOf("reminder:late:overdue:2026-03-11", "reminder:late:overdue:2026-03-12", "reminder:late:overdue:2026-03-13"),
             asks.map { it.id },
         )
-        assertTrue(asks.all { it.persistent && it.channel == NotificationChannel.IMPORTANT })
+        assertTrue(asks.all { it.persistent && it.whileOpen && it.channel == NotificationChannel.IMPORTANT })
         assertEquals(at(2026, 3, 11, 9), asks.first().at)
         // The reminder still due later gets its own asks from the day after it's due, in its own slot.
         val soon = planned.filter { it.content is NotificationContent.ReminderOverdue && it.slot == "reminder:soon" }
@@ -148,7 +150,7 @@ class NotificationSettingsTest {
     @Test
     fun withKeepOnScreenOff_nothingIsPersistentAndOverdueRemindersArentAskedAgain() {
         val planned = plan(NotificationSettings(persistent = false))
-        assertTrue(planned.none { it.persistent || it.until != null })
+        assertTrue(planned.none { it.persistent || it.until != null || it.whileOpen })
         assertTrue(planned.none { it.content is NotificationContent.ReminderOverdue })
         assertTrue(planned.any { it.id == "bday:ana:2026-03-20" })
     }
@@ -173,6 +175,7 @@ class NotificationSettingsTest {
         val ask = scheduled.first { it.id == "reminder:late:overdue:2026-03-11" }
         assertTrue(ask.persistent)
         assertEquals("reminder:late", ask.slot)
+        assertTrue(ask.whileOpen)
         assertEquals(NotificationChannel.IMPORTANT, ask.channel)
         assertEquals(at(2026, 3, 12, 0), ask.until)
     }
