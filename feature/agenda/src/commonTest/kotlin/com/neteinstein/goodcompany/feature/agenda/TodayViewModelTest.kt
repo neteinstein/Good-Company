@@ -7,12 +7,14 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayMessage
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayUiState
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayViewModel
@@ -36,6 +38,11 @@ class TodayViewModelTest {
         g.observeYearReviewCard,
         g.observeLastSeenCard,
         g.addReminder,
+        g.editReminder,
+        g.completeReminder,
+        g.snoozeReminder,
+        g.deleteReminder,
+        g.restoreReminder,
         g.confirmPlan,
         g.logCall,
         g.snooze,
@@ -124,13 +131,40 @@ class TodayViewModelTest {
         val state = collecting(vm.state)
         vm.onNewReminder()
         assertTrue(state.value.showReminderEditor)
-        vm.onSaveReminder("  ", emptyList(), null, 9)
+        vm.onSaveReminder(ReminderDraft("  ", emptyList(), null, 9))
         assertTrue(state.value.showReminderEditor)
-        vm.onSaveReminder("Book tickets", listOf(FriendId("ana")), LocalDate(2026, 3, 12), 18)
+        vm.onSaveReminder(ReminderDraft("Book tickets", listOf(FriendId("ana")), LocalDate(2026, 3, 12), 18))
         assertFalse(state.value.showReminderEditor)
         assertEquals(TodayMessage.ReminderSaved, state.value.message)
         assertEquals("Book tickets", g.reminderRepo.reminders.first().single().title)
         assertIs<AgendaItem.ReminderDue>(state.value.week.single())
+    }
+
+    @Test
+    fun aReminderInTheWeek_isDoneSnoozedEditedOrDeleted_withUndo() = runViewModelTest {
+        val g = TestGraph(listOf(friend("ana")))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onSaveReminder(ReminderDraft("Buy flowers", listOf(FriendId("ana")), LocalDate(2026, 3, 12), 18))
+        val r = g.reminderRepo.reminders.first().single()
+        vm.onReminderDone(r)
+        assertIs<TodayMessage.Reminder>(state.value.message)
+        assertTrue(g.reminderRepo.reminders.first().single().done)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        vm.onUndoReminder()
+        assertFalse(g.reminderRepo.reminders.first().single().done)
+        vm.onSnoozeReminder(r, ReminderSnooze.Tomorrow)
+        assertEquals(LocalDate(2026, 3, 11), (state.value.week.single() as AgendaItem.ReminderDue).date)
+        vm.onEditReminder(r)
+        assertEquals(r, state.value.editingReminder)
+        vm.onSaveReminder(ReminderDraft("Buy tulips", listOf(FriendId("ana")), LocalDate(2026, 3, 12), 18))
+        assertEquals("Buy tulips", g.reminderRepo.reminders.first().single().title)
+        vm.onDeleteReminder(g.reminderRepo.reminders.first().single())
+        assertTrue(g.reminderRepo.reminders.first().isEmpty())
+        vm.onUndoReminder()
+        assertEquals("Buy tulips", g.reminderRepo.reminders.first().single().title)
+        vm.onMessageShown()
+        assertNull(state.value.reminderUndo)
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
@@ -34,8 +35,7 @@ private fun AgendaPreview() {
             ),
             onOpenFriend = {},
             onNewReminder = {},
-            onToggleDone = {},
-            onDeleteReminder = {},
+            reminders = ReminderCallbacks(onDone = {}, onSnooze = { _, _ -> }, onEdit = {}, onDelete = {}),
             onMessageShown = {},
         )
     }

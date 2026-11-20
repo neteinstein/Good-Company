@@ -7,22 +7,28 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.CirclePage
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCirclePageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
+import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,10 +37,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
 /** One-off feedback for the circle page's snackbar; the screen turns it into localised text. */
@@ -44,6 +47,9 @@ sealed interface CirclePageMessage {
     data object PlanSaved : CirclePageMessage
 
     data object ReminderSaved : CirclePageMessage
+
+    /** Done, snoozed or deleted (issue #99); Done and Delete offer Undo. */
+    data class ReminderChanged(val notice: ReminderNotice) : CirclePageMessage
 
     /** A meetup or a share taken off the timeline (Undo puts it back). */
     data object EntryDeleted : CirclePageMessage
@@ -59,6 +65,9 @@ sealed interface CirclePageUndo {
     data class Entry(val entry: TimelineEntry) : CirclePageUndo
 
     data class Cover(val cover: ContactPhoto) : CirclePageUndo
+
+    /** A reminder as it was before Done or Delete (issue #99). */
+    data class ReminderBefore(val reminder: Reminder) : CirclePageUndo
 }
 
 /** The plan editor on the page: a new plan with the circle picked, or one from "Coming up". */
@@ -94,6 +103,10 @@ class CirclePageViewModel(
     private val savePlan: SavePlanUseCase,
     private val addReminder: AddReminderUseCase,
     private val editReminder: EditReminderUseCase,
+    private val completeReminder: CompleteReminderUseCase,
+    private val snoozeReminder: SnoozeReminderUseCase,
+    private val deleteReminder: DeleteReminderUseCase,
+    private val restoreReminder: RestoreReminderUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val deleteEntry: DeleteTimelineEntryUseCase,
     private val restoreEntry: RestoreTimelineEntryUseCase,
@@ -157,14 +170,39 @@ class CirclePageViewModel(
         val editor = local.value.reminderEditor ?: return
         if (draft.title.isBlank()) return
         viewModelScope.launch {
-            val due = draft.date?.atTime(LocalTime(draft.hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
+            val due = draft.dueAt(clock.timeZone)
             val existing = editor.reminder
             if (existing == null) {
-                addReminder(draft.title, draft.friendIds, due, draft.circleId)
+                addReminder(draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
             } else {
-                editReminder(existing, draft.title, draft.friendIds, due, draft.circleId)
+                editReminder(existing, draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
             }
             local.update { it.copy(reminderEditor = null, message = CirclePageMessage.ReminderSaved, undo = null) }
+        }
+    }
+
+    /** "Done": closes it (a repeating one rolls on). Never asks "did you meet?" (issue #99). */
+    fun onReminderDone(reminder: Reminder) {
+        viewModelScope.launch {
+            val saved = completeReminder(reminder)
+            val notice = ReminderNotice.Done(saved.dueAt.takeIf { !saved.done })
+            local.update { it.copy(message = CirclePageMessage.ReminderChanged(notice), undo = CirclePageUndo.ReminderBefore(reminder)) }
+        }
+    }
+
+    fun onSnoozeReminder(reminder: Reminder, snooze: ReminderSnooze) {
+        viewModelScope.launch {
+            val until = snoozeReminder(reminder, snooze).snoozedUntil ?: return@launch
+            local.update { it.copy(message = CirclePageMessage.ReminderChanged(ReminderNotice.Snoozed(until)), undo = null) }
+        }
+    }
+
+    fun onDeleteReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            deleteReminder(reminder.id)
+            local.update {
+                it.copy(message = CirclePageMessage.ReminderChanged(ReminderNotice.Deleted), undo = CirclePageUndo.ReminderBefore(reminder))
+            }
         }
     }
 
@@ -204,6 +242,7 @@ class CirclePageViewModel(
             when (undo) {
                 is CirclePageUndo.Entry -> restoreEntry(undo.entry)
                 is CirclePageUndo.Cover -> covers.restore(circleId, undo.cover)
+                is CirclePageUndo.ReminderBefore -> restoreReminder(undo.reminder)
             }
             local.update { it.copy(undo = null) }
         }

@@ -75,6 +75,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.CirclePage
 import com.neteinstein.goodcompany.core.domain.usecase.CircleUpcoming
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -91,12 +92,15 @@ import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.QuickAction
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
+import com.neteinstein.goodcompany.core.ui.components.ReminderRow
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.TimelineEntryRow
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
 import com.neteinstein.goodcompany.core.ui.components.activityLabel
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
@@ -132,6 +136,7 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.page_people
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_reminder
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_together
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circleStatusLine
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
@@ -176,6 +181,9 @@ fun CirclePageScreen(
             onRemoveCover = viewModel::onRemoveCover,
             onOpenPlan = viewModel::onOpenPlan,
             onOpenReminder = viewModel::onOpenReminder,
+            onReminderDone = viewModel::onReminderDone,
+            onSnoozeReminder = viewModel::onSnoozeReminder,
+            onDeleteReminder = viewModel::onDeleteReminder,
             onDeleteEntry = viewModel::onDeleteEntry,
             onUndo = viewModel::onUndo,
             onMessageShown = viewModel::onMessageShown,
@@ -228,13 +236,18 @@ data class CirclePageActions(
     val onRemoveCover: () -> Unit = {},
     val onOpenPlan: (Plan) -> Unit = {},
     val onOpenReminder: (Reminder) -> Unit = {},
+    /** Done · Snooze · Edit · Delete on the circle's reminders (issue #99); Edit is [onOpenReminder]. */
+    val onReminderDone: (Reminder) -> Unit = {},
+    val onSnoozeReminder: (Reminder, ReminderSnooze) -> Unit = { _, _ -> },
+    val onDeleteReminder: (Reminder) -> Unit = {},
     val onDeleteEntry: (TimelineEntry) -> Unit = {},
     val onUndo: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
 )
 
 /** Localised snackbar text for a [CirclePageMessage]. */
-suspend fun CirclePageMessage.text(): String = when (this) {
+suspend fun CirclePageMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = LocalDate(2000, 1, 1)): String = when (this) {
+    is CirclePageMessage.ReminderChanged -> notice.text(zone, today)
     is CirclePageMessage.Snoozed -> getString(Res.string.msg_group_snoozed, name, until.shortLabelText())
     CirclePageMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
     CirclePageMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
@@ -249,7 +262,7 @@ fun CirclePageContent(state: CirclePageUiState, actions: CirclePageActions) {
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showMessage(message.text(), if (state.undo != null) undo else null)
+        val result = snackbar.showMessage(message.text(state.zone, state.today), if (state.undo != null) undo else null)
         if (result == SnackbarResult.ActionPerformed) actions.onUndo()
         actions.onMessageShown()
     }
@@ -477,6 +490,26 @@ private val CircleUpcoming.key: String
 
 @Composable
 private fun UpcomingRow(item: CircleUpcoming, state: CirclePageUiState, actions: CirclePageActions) {
+    if (item is CircleUpcoming.ReminderItem) {
+        // Issue #99: a reminder offers Done · Snooze · Edit · Delete here too; its people open their pages.
+        val byId = state.friends.associateBy { it.id }
+        ReminderRow(
+            item.reminder,
+            item.reminder.friendIds.mapNotNull(byId::get),
+            state.today,
+            state.zone,
+            state.now,
+            ReminderCallbacks(
+                onDone = actions.onReminderDone,
+                onSnooze = actions.onSnoozeReminder,
+                onEdit = actions.onOpenReminder,
+                onDelete = actions.onDeleteReminder,
+                onOpenFriend = actions.onOpenFriend,
+            ),
+            Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        return
+    }
     val (icon, title) = when (item) {
         is CircleUpcoming.PlanItem -> (if (item.plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable) to item.plan.title
         is CircleUpcoming.ReminderItem -> Icons.Rounded.Alarm to item.reminder.title

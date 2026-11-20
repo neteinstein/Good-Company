@@ -1,6 +1,5 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.screens
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,47 +23,49 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CardGiftcard
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EventAvailable
-import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
+import com.neteinstein.goodcompany.core.ui.components.ReminderRow
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
-import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
-import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
@@ -72,6 +73,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
+import com.neteinstein.goodcompany.core.ui.resources.reminders_done_group
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
@@ -81,11 +83,8 @@ import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
 import com.neteinstein.goodcompany.feature.agenda.resources.fab_reminder
-import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_deleted
 import com.neteinstein.goodcompany.feature.agenda.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.agenda.resources.nothing_ahead
-import com.neteinstein.goodcompany.feature.agenda.resources.reminder_delete
-import com.neteinstein.goodcompany.feature.agenda.resources.reminder_with
 import com.neteinstein.goodcompany.feature.agenda.resources.reminders_empty
 import com.neteinstein.goodcompany.feature.agenda.resources.reminders_header
 import com.neteinstein.goodcompany.feature.agenda.resources.things_ahead
@@ -95,7 +94,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -103,9 +102,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Localised snackbar text for an [AgendaMessage]. */
-suspend fun AgendaMessage.text(): String = when (this) {
+suspend fun AgendaMessage.text(zone: TimeZone, today: LocalDate): String = when (this) {
     AgendaMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
-    AgendaMessage.ReminderDeleted -> getString(Res.string.msg_reminder_deleted)
+    is AgendaMessage.Reminder -> notice.text(zone, today)
     is AgendaMessage.AiError -> aiErrorText(error)
     AgendaMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
@@ -122,6 +121,8 @@ fun AgendaScreen(
     onOpenCalendar: () -> Unit = {},
     /** "Everything coming up", pushed from Today (issue #65): a back arrow in the header. */
     onBack: (() -> Unit)? = null,
+    /** A reminder's circle chip opens the circle's page (issue #99). */
+    onOpenCircle: ((String) -> Unit)? = null,
     viewModel: AgendaViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -130,10 +131,17 @@ fun AgendaScreen(
         state = state,
         onOpenFriend = onOpenFriend,
         onNewReminder = viewModel::onNewReminder,
-        onToggleDone = viewModel::onToggleDone,
-        onDeleteReminder = viewModel::onDeleteReminder,
+        reminders = ReminderCallbacks(
+            onDone = viewModel::onReminderDone,
+            onSnooze = viewModel::onSnoozeReminder,
+            onEdit = viewModel::onEditReminder,
+            onDelete = viewModel::onDeleteReminder,
+            onReopen = viewModel::onReminderReopen,
+            onOpenFriend = onOpenFriend,
+            onOpenCircle = onOpenCircle,
+        ),
         onMessageShown = viewModel::onMessageShown,
-        onUndoDelete = viewModel::onUndoDelete,
+        onUndoReminder = viewModel::onUndoReminder,
         onOpenWish = viewModel::onOpenWish,
         onGroupMet = onCircleMet,
         // A yes opens the "We met" panel on that occurrence (a circle plan asks who came, F20); a no closes it here.
@@ -150,7 +158,15 @@ fun AgendaScreen(
         onBack = onBack,
     )
     if (state.showReminderEditor) {
-        ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder, circles = state.circles)
+        ReminderEditor(
+            state.friends,
+            state.today,
+            viewModel::onDismissReminderEditor,
+            viewModel::onSaveReminder,
+            circles = state.circles,
+            initial = state.editingReminder,
+            zone = state.zone,
+        )
     }
     state.wishFor?.let { friend ->
         val firstName = friend.displayName.substringBefore(' ')
@@ -178,10 +194,9 @@ fun AgendaContent(
     state: AgendaUiState,
     onOpenFriend: (FriendId) -> Unit,
     onNewReminder: () -> Unit,
-    onToggleDone: (Reminder) -> Unit,
-    onDeleteReminder: (String) -> Unit,
+    reminders: ReminderCallbacks,
     onMessageShown: () -> Unit,
-    onUndoDelete: () -> Unit = {},
+    onUndoReminder: () -> Unit = {},
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
     onConfirmPlan: (AgendaItem.PlanToConfirm, Boolean) -> Unit = { _, _ -> },
@@ -194,10 +209,11 @@ fun AgendaContent(
     val snackbar = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var showDone by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
-        val result = snackbar.showMessage(message.text(), if (state.recentlyDeleted != null) undo else null)
-        if (result == SnackbarResult.ActionPerformed) onUndoDelete()
+        val result = snackbar.showMessage(message.text(state.zone, state.today), if (state.reminderUndo != null) undo else null)
+        if (result == SnackbarResult.ActionPerformed) onUndoReminder()
         onMessageShown()
     }
     // Index of each day's header in the lazy list, so tapping the week strip can scroll to it.
@@ -262,6 +278,9 @@ fun AgendaContent(
                         onConfirmPlan = onConfirmPlan,
                         onAddPlanToCalendar = onAddPlanToCalendar,
                         onSkipPlan = onSkipPlan,
+                        reminders = reminders,
+                        now = state.now,
+                        zone = state.zone,
                         modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
                     )
                 }
@@ -278,40 +297,41 @@ fun AgendaContent(
                     )
                 }
             }
-            items(state.reminders, key = { "r-${it.id}" }) { r ->
-                val faded by animateColorAsState(if (r.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-                val people = state.friends.filter { it.id in r.friendIds }
-                Surface(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
-                    shape = MaterialTheme.shapes.large,
-                    color = if (r.done) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.surfaceContainerLow,
-                ) {
-                    Row(Modifier.padding(start = 4.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = r.done, onCheckedChange = { onToggleDone(r) })
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                r.title,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = faded,
-                                textDecoration = if (r.done) TextDecoration.LineThrough else null,
-                            )
-                            val due = r.dueAt?.toLocalDateTime(state.zone)?.let { "${relativeDay(it.date, state.today)} · ${it.timeLabel()}" }
-                            val text = listOfNotNull(
-                                due,
-                                people.joinToString {
-                                    it.displayName.substringBefore(' ')
-                                }.ifBlank { null }?.let { stringResource(Res.string.reminder_with, it) },
-                            ).joinToString(" · ")
-                            if (text.isNotBlank()) {
-                                Text(
-                                    text,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                        if (people.isNotEmpty()) StackedAvatars(people, size = 28.dp, max = 3)
-                        IconButton(onClick = { onDeleteReminder(r.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.reminder_delete)) }
+            val circlesById = state.circles.associateBy { it.id }
+            val byId = state.friends.associateBy { it.id }
+            items(state.open, key = { "r-${it.id}" }) { r ->
+                ReminderRow(
+                    r,
+                    r.friendIds.mapNotNull(byId::get),
+                    state.today,
+                    state.zone,
+                    state.now,
+                    reminders,
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
+                    circle = r.circleId?.let(circlesById::get),
+                )
+            }
+            // Issue #99: done reminders stay, in a "Done" group that starts collapsed.
+            if (state.done.isNotEmpty()) {
+                item(key = "reminders-done-h") {
+                    TextButton(onClick = { showDone = !showDone }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                        Icon(if (showDone) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
+                        Spacer(Modifier.width(6.dp))
+                        Text(stringResource(CoreRes.string.reminders_done_group, state.done.size))
+                    }
+                }
+                if (showDone) {
+                    items(state.done, key = { "r-${it.id}" }) { r ->
+                        ReminderRow(
+                            r,
+                            r.friendIds.mapNotNull(byId::get),
+                            state.today,
+                            state.zone,
+                            state.now,
+                            reminders,
+                            Modifier.padding(horizontal = 16.dp, vertical = 4.dp).animateItem(),
+                            circle = r.circleId?.let(circlesById::get),
+                        )
                     }
                 }
             }
