@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.ideas
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GiftList
+import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
@@ -17,9 +18,13 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.GiftListsSection
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlanEditing
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansMessage
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansRow
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansViewModel
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.indexOfGiftTarget
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.plansRows
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -52,6 +57,7 @@ class PlansViewModelTest {
         g.confirmPlan,
         g.closePlan,
         g.restorePlan,
+        g.giftLists,
         g.clock,
     )
 
@@ -168,15 +174,16 @@ class PlansViewModelTest {
     }
 
     @Test
-    fun giftListTileAndDecemberReview() = runViewModelTest {
+    fun giftListsSectionAndDecemberReview() = runViewModelTest {
         val december = FixedClock(LocalDateTime(2026, 12, 5, 12, 0).toInstant(TimeZone.UTC))
         val g = graph(december)
         val vm = vm(g)
         val state = collecting(vm.state)
-        assertNull(state.value.giftList)
+        assertTrue(state.value.gifts.isEmpty)
+        assertTrue(PlansRow.GiftsEmpty in plansRows(state.value))
         assertEquals(2026, state.value.reviewYear)
         g.giftListRepo.upsert(GiftList("x", "Christmas 2026", LocalDate(2026, 12, 25), createdAt = at(2026, 11, 1)))
-        assertEquals("Christmas 2026", state.value.giftList?.list?.title)
+        assertEquals(listOf("Christmas 2026"), state.value.gifts.current.map { it.list.title })
 
         val march = graph()
         val state2 = collecting(vm(march).state)
@@ -198,5 +205,95 @@ class PlansViewModelTest {
         assertTrue(state.value.cancelled.isEmpty())
         vm.onUndo()
         assertEquals(listOf(recent.id), state.value.cancelled.map { it.id })
+    }
+
+    // --- Gift lists on the Plans tab (issue #104) ---
+
+    @Test
+    fun aNewGiftList_opensInPlace_andTheTabScrollsToIt() = runViewModelTest {
+        val g = graph()
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onNewGiftList()
+        assertEquals(GiftOccasion.CHRISTMAS, state.value.gifts.creating?.occasion)
+        vm.onDismissNewGiftList()
+        assertNull(state.value.gifts.creating)
+
+        vm.onNewGiftList()
+        vm.onCreateGiftList("  ", null, null) // no name: nothing made, the dialog stays
+        assertTrue(state.value.gifts.current.isEmpty())
+        vm.onCreateGiftList("Christmas 2026", GiftOccasion.CHRISTMAS, LocalDate(2026, 12, 25))
+        val id = state.value.gifts.current.single().list.id
+        assertNull(state.value.gifts.creating)
+        assertEquals(setOf(id), state.value.gifts.expanded)
+        assertEquals(id, state.value.gifts.scrollTo)
+        val rows = plansRows(state.value)
+        val index = rows.indexOfGiftTarget(id)!!
+        assertEquals(PlansRow.GiftList(state.value.gifts.current.single(), expanded = true, past = false), rows[index])
+        assertTrue(rows.indexOf(PlansRow.GiftsHeader) < index && index < rows.indexOf(PlansRow.WhosFree))
+        vm.onScrolled()
+        assertNull(state.value.gifts.scrollTo)
+
+        // Tapping the card closes it again, and opens it.
+        vm.onToggleGiftList(id)
+        assertTrue(state.value.gifts.expanded.isEmpty())
+        vm.onToggleGiftList(id)
+        assertEquals(setOf(id), state.value.gifts.expanded)
+    }
+
+    @Test
+    fun aGiftListCard_editsDuplicatesAndDeletesWithUndo() = runViewModelTest {
+        val g = graph()
+        val old = g.giftLists.create("Christmas 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 25))!!
+        g.giftLists.addPeople(old, listOf(ana), 30.0)
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(listOf(old), state.value.gifts.past.map { it.list.id })
+        assertTrue(PlansRow.PastGiftsHeader in plansRows(state.value))
+
+        vm.onEditGiftList(old)
+        assertEquals(old, state.value.gifts.editing?.id)
+        vm.onDismissEditGiftList()
+        assertNull(state.value.gifts.editing)
+        vm.onEditGiftList(old)
+        vm.onSaveGiftList("Natal 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 24))
+        assertNull(state.value.gifts.editing)
+        assertEquals("Natal 2025", state.value.gifts.past.single().list.title)
+        vm.onSaveGiftList("Nothing open", null, null) // no list being edited: nothing changes
+        assertEquals("Natal 2025", g.giftListRepo.get(old)!!.title)
+
+        vm.onDuplicateGiftList(old)
+        val copy = state.value.gifts.current.single()
+        assertEquals("Natal 2026", copy.list.title)
+        assertEquals(listOf(ana), copy.people.map { it.id })
+        assertEquals(setOf(copy.list.id), state.value.gifts.expanded)
+        assertEquals(copy.list.id, state.value.gifts.scrollTo)
+
+        vm.onDeleteGiftList(copy.list.id)
+        assertEquals(PlansMessage.GiftListDeleted("Natal 2026"), state.value.message)
+        assertTrue(state.value.gifts.current.isEmpty())
+        assertTrue(state.value.gifts.expanded.isEmpty())
+        vm.onUndo()
+        vm.onMessageShown()
+        assertEquals(listOf(copy.list.id), state.value.gifts.current.map { it.list.id })
+        assertNull(state.value.undoGiftList)
+    }
+
+    @Test
+    fun aPersonsGiftListsLink_opensTheirList_elseScrollsToTheSection() = runViewModelTest {
+        val g = graph()
+        val christmas = g.giftLists.create("Christmas 2026", GiftOccasion.CHRISTMAS, LocalDate(2026, 12, 25))!!
+        g.giftLists.addPeople(christmas, listOf(rui))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onShowGiftListsFor(rui)
+        assertEquals(setOf(christmas), state.value.gifts.expanded)
+        assertEquals(christmas, state.value.gifts.scrollTo)
+        vm.onScrolled()
+
+        vm.onShowGiftListsFor(ana) // on no list
+        assertEquals(GiftListsSection.HEADER, state.value.gifts.scrollTo)
+        assertEquals(plansRows(state.value).indexOf(PlansRow.GiftsHeader), plansRows(state.value).indexOfGiftTarget(GiftListsSection.HEADER))
+        assertNull(plansRows(state.value).indexOfGiftTarget("gone"))
     }
 }

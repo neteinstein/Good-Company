@@ -251,12 +251,11 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTim
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeViewModel
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListViewModel
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasViewModel
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts.GiftListViewModel
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.plans.PlansViewModel
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel
 import com.neteinstein.goodcompany.feature.review.ui.screens.YearReviewViewModel
@@ -576,7 +575,7 @@ val appModule = module {
     viewModel { (id: String) ->
         CirclePageViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    viewModelOf(::GiftListsViewModel)
+    // A gift list opened in place on the Plans tab (issue #104).
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::WhosFreeViewModel)

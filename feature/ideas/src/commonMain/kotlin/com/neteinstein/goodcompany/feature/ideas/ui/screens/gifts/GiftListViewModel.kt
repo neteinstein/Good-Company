@@ -1,4 +1,4 @@
-package com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts
+package com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,6 +34,9 @@ sealed interface GiftListMessage {
     data class AiError(val error: Throwable) : GiftListMessage
 }
 
+/** The "New list" and "Edit list" dialog: a title, an occasion and an optional date. */
+data class NewGiftList(val title: String = "", val occasion: GiftOccasion? = null, val date: LocalDate? = null)
+
 /**
  * "Add people" is the people picker (issue #89): a circle and "Tick all" take a whole circle, the search understands
  * kinship ("my cousins", [GiftListViewModel.kinshipOf]); this is its one optional budget for everyone added.
@@ -48,20 +51,20 @@ data class GiftListUiState(
     /** AI gift ideas show only while AI is on and a key is saved (F1). */
     val hasAiKey: Boolean = false,
     val adding: AddPeopleDraft? = null,
-    val editing: Boolean = false,
     /** AI ideas waiting under a person, kept or dismissed one by one. */
     val suggestions: Map<FriendId, List<String>> = emptyMap(),
     val suggestingFor: FriendId? = null,
     val message: GiftListMessage? = null,
     val recentlyRemoved: GiftList? = null,
-    /** A duplicate was made: the screen opens it, then calls [GiftListViewModel.onOpened]. */
-    val open: String? = null,
 ) {
     /** Who "Add people" can pick: everyone not on the list yet. */
     val addable: List<Friend> get() = detail?.others.orEmpty()
 }
 
-/** One gift list (F8): people with their gifts, budgets and totals, "Add people" and AI ideas. */
+/**
+ * One gift list (F8), opened in place on the Plans tab (issue #104): people with their gifts, budgets and totals,
+ * "Add people" and AI ideas. Renaming, duplicating and deleting the list are the Plans tab’s (`PlansViewModel`).
+ */
 class GiftListViewModel(
     private val listId: String,
     observeGiftList: ObserveGiftListUseCase,
@@ -86,28 +89,6 @@ class GiftListViewModel(
             hasAiKey = settings.usableAiKey != null,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), local.value)
-
-    // --- The list ---
-
-    fun onEdit() = local.update { it.copy(editing = true) }
-
-    fun onDismissEdit() = local.update { it.copy(editing = false) }
-
-    fun onSaveEdit(title: String, occasion: GiftOccasion?, date: LocalDate?) {
-        viewModelScope.launch {
-            lists.update(listId, title, occasion, date)
-            local.update { it.copy(editing = false) }
-        }
-    }
-
-    fun onDuplicate() {
-        viewModelScope.launch {
-            val copy = lists.duplicate(listId) ?: return@launch
-            local.update { it.copy(open = copy) }
-        }
-    }
-
-    fun onOpened() = local.update { it.copy(open = null) }
 
     // --- Adding people ---
 

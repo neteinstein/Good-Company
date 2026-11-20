@@ -1,4 +1,4 @@
-package com.neteinstein.goodcompany.feature.hangouts
+package com.neteinstein.goodcompany.feature.ideas
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -13,10 +13,8 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListMessage
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListViewModel
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsMessage
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsViewModel
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts.GiftListMessage
+import com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts.GiftListViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
@@ -38,21 +36,13 @@ class GiftListViewModelTest {
         settings = AppSettings(aiApiKey = "key".takeIf { ai }, aiEnabled = ai),
     )
 
-    private fun lists(g: TestGraph) = GiftListsViewModel(g.observeGiftLists, g.giftLists, g.clock)
-
     private fun list(g: TestGraph, id: String) =
         GiftListViewModel(id, g.observeGiftList, g.observeGroups, g.observeSettings, g.giftLists, g.parseKinshipQuery, g.suggestGifts)
 
     @Test
     fun aChristmasListForTheCousins_tracksToBuyBoughtGiven_withABudget_andFillsTheirGiftHistory() = runViewModelTest {
         val g = graph()
-        val overview = lists(g)
-        val overviewState = collecting(overview.state)
-        overview.onNewList()
-        overview.onCreate("Christmas 2026", GiftOccasion.CHRISTMAS, LocalDate(2026, 12, 25))
-        val id = overviewState.value.open!!
-        assertNull(overviewState.value.creating)
-        overview.onOpened()
+        val id = g.giftLists.create("Christmas 2026", GiftOccasion.CHRISTMAS, LocalDate(2026, 12, 25))!!
 
         val vm = list(g, id)
         val state = collecting(vm.state)
@@ -87,8 +77,8 @@ class GiftListViewModelTest {
         vm.onRemoveGift(FriendId("tomas"), shoes)
         assertTrue(state.value.detail!!.people.first { it.friend.id.value == "tomas" }.gifts.isEmpty())
 
-        // The overview counts it.
-        val summary = overviewState.value.current.single()
+        // The Plans tab's card counts it.
+        val summary = g.observeGiftLists().first().current.single()
         assertEquals(1, summary.gifts)
         assertTrue(summary.allGiven)
     }
@@ -164,49 +154,11 @@ class GiftListViewModelTest {
     }
 
     @Test
-    fun editAndDuplicate_andAMissingList() = runViewModelTest {
+    fun aMissingList_showsNothing() = runViewModelTest {
         val g = graph()
-        val id = g.giftLists.create("Christmas 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 25))!!
-        g.giftLists.addPeople(id, listOf(FriendId("ana")), 30.0)
-        val vm = list(g, id)
-        val state = collecting(vm.state)
-        vm.onEdit()
-        assertTrue(state.value.editing)
-        vm.onSaveEdit("Natal 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 24))
-        assertFalse(state.value.editing)
-        assertEquals("Natal 2025", state.value.detail!!.list.title)
-        vm.onDuplicate()
-        val copy = g.giftListRepo.get(state.value.open!!)!!
-        assertEquals("Natal 2026", copy.title)
-        assertEquals(listOf(30.0), copy.entries.map { it.budget })
-        vm.onOpened()
-        assertNull(state.value.open)
-
         val missing = list(g, "nope")
         val missingState = collecting(missing.state)
         assertNull(missingState.value.detail)
         assertFalse(missingState.value.isLoading)
-    }
-
-    @Test
-    fun theOverview_duplicatesAndDeletesWithUndo() = runViewModelTest {
-        val g = graph()
-        val id = g.giftLists.create("Christmas 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 25))!!
-        val vm = lists(g)
-        val state = collecting(vm.state)
-        assertEquals(listOf(id), state.value.past.map { it.list.id })
-        vm.onDuplicate(id)
-        val copy = state.value.open!!
-        assertEquals(listOf(copy), state.value.current.map { it.list.id })
-        vm.onDelete(copy)
-        assertEquals(GiftListsMessage.Deleted("Christmas 2026"), state.value.message)
-        assertTrue(state.value.current.isEmpty())
-        vm.onUndoDelete()
-        vm.onMessageShown()
-        assertEquals(listOf(copy), state.value.current.map { it.list.id })
-        vm.onNewList()
-        vm.onDismissNew()
-        assertNull(state.value.creating)
-        assertEquals(2, g.giftListRepo.lists.first().size)
     }
 }

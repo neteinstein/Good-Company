@@ -1,4 +1,4 @@
-package com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts
+package com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -6,42 +6,28 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.GroupAdd
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SuggestionChip
@@ -56,58 +42,48 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListPerson
 import com.neteinstein.goodcompany.core.domain.usecase.GiftTotals
 import com.neteinstein.goodcompany.core.domain.usecase.ListedGift
-import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
-import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.showMessage
-import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.l10n.relationToMeText
 import com.neteinstein.goodcompany.core.ui.resources.add
-import com.neteinstein.goodcompany.core.ui.resources.back
 import com.neteinstein.goodcompany.core.ui.resources.close
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.undo
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_add_gift
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_add_people
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_ai_ideas
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_ai_working
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_budget
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_budget_each
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_edit
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_from_link
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_gift_price
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_gift_title
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_last_year
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_missing
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_name_age
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_budget
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_new_ideas
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_nobody
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_partial
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_pick_ideas
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_planned
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_remove_person
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_removed
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_set_budget
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_spent
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_year
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_duplicate
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_lists_more
-import kotlinx.datetime.LocalDate
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_add_gift
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_add_people
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_ai_ideas
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_ai_working
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_budget
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_budget_each
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_from_link
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_gift_price
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_gift_title
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_last_year
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_missing
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_name_age
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_no_budget
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_no_new_ideas
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_nobody
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_partial
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_pick_ideas
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_planned
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_remove_person
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_removed
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_set_budget
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_spent
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_year
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_lists_more
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -115,30 +91,24 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
+/**
+ * One gift list opened in place on the Plans tab (issue #104, was its own screen): the totals, each person with their
+ * gifts (to buy → bought → given), budget, past gifts, saved and AI ideas, and "Add people". Messages go to the tab's
+ * [snackbar].
+ */
 @Composable
-fun GiftListScreen(
+fun GiftListPanel(
     listId: String,
-    onBack: () -> Unit,
+    snackbar: SnackbarHostState,
     onOpenFriend: (FriendId) -> Unit,
-    onOpenList: (String) -> Unit,
-    viewModel: GiftListViewModel = koinViewModel(key = listId) { parametersOf(listId) },
+    modifier: Modifier = Modifier,
+    viewModel: GiftListViewModel = koinViewModel(key = "gift-list-$listId") { parametersOf(listId) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(state.open) {
-        state.open?.let {
-            viewModel.onOpened()
-            onOpenList(it)
-        }
-    }
-    GiftListContent(
+    GiftListPanelContent(
         state,
         GiftListActions(
-            onBack = onBack,
             onOpenFriend = onOpenFriend,
-            onEdit = viewModel::onEdit,
-            onDismissEdit = viewModel::onDismissEdit,
-            onSaveEdit = viewModel::onSaveEdit,
-            onDuplicate = viewModel::onDuplicate,
             onStartAdding = viewModel::onStartAdding,
             onDismissAdding = viewModel::onDismissAdding,
             kinshipOf = viewModel::kinshipOf,
@@ -156,16 +126,13 @@ fun GiftListScreen(
             onDismissSuggestions = viewModel::onDismissSuggestions,
             onMessageShown = viewModel::onMessageShown,
         ),
+        snackbar = snackbar,
+        modifier = modifier,
     )
 }
 
 data class GiftListActions(
-    val onBack: () -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
-    val onEdit: () -> Unit = {},
-    val onDismissEdit: () -> Unit = {},
-    val onSaveEdit: (String, GiftOccasion?, LocalDate?) -> Unit = { _, _, _ -> },
-    val onDuplicate: () -> Unit = {},
     val onStartAdding: () -> Unit = {},
     val onDismissAdding: () -> Unit = {},
     /** The picker's kinship search ("my cousins"); null for a name search. */
@@ -192,8 +159,7 @@ suspend fun GiftListMessage.text(): String = when (this) {
 }
 
 @Composable
-fun GiftListContent(state: GiftListUiState, actions: GiftListActions) {
-    val snackbar = remember { SnackbarHostState() }
+fun GiftListPanelContent(state: GiftListUiState, actions: GiftListActions, snackbar: SnackbarHostState, modifier: Modifier = Modifier) {
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
@@ -203,102 +169,41 @@ fun GiftListContent(state: GiftListUiState, actions: GiftListActions) {
         actions.onMessageShown()
     }
     val detail = state.detail
-    Scaffold(
-        snackbarHost = { AppSnackbarHost(snackbar) },
-        floatingActionButton = {
-            if (detail != null) {
-                ExtendedFloatingActionButton(
-                    onClick = actions.onStartAdding,
-                    icon = { Icon(Icons.Rounded.GroupAdd, contentDescription = null) },
-                    text = { Text(stringResource(Res.string.gift_list_add_people)) },
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (detail == null) {
+            if (!state.isLoading) {
+                Text(
+                    stringResource(Res.string.gift_list_missing),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        },
-    ) { padding ->
-        LazyColumn(
-            Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 96.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(key = "header") {
-                Row(
-                    Modifier.fillMaxWidth().statusBarsPadding().padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = actions.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(CoreRes.string.back)) }
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            detail?.list?.title.orEmpty(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.semantics { heading() },
-                        )
-                        detail?.list?.occasionDate?.let {
-                            Text(
-                                "${it.shortLabel()} ${it.year}",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                    if (detail != null) HeaderMenu(actions)
-                }
-            }
-            if (!state.isLoading && detail == null) {
-                item(key = "missing") { EmptyState(Icons.Rounded.CardGiftcard, stringResource(Res.string.gift_list_missing), "") }
-            }
-            if (detail == null) return@LazyColumn
-            item(key = "totals") { Totals(detail.totals, Modifier.padding(horizontal = 16.dp)) }
-            if (detail.people.isEmpty()) {
-                item(key = "nobody") {
-                    Text(
-                        stringResource(Res.string.gift_list_nobody),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                    )
-                }
-            }
-            items(detail.people, key = { it.friend.id.value }) { person ->
-                PersonCard(
-                    person = person,
-                    currency = detail.totals.currency,
-                    year = (detail.list.occasionDate ?: detail.today).year,
-                    state = state,
-                    actions = actions,
-                    modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
-                )
-            }
+            return@Column
         }
-    }
-    if (state.editing && detail != null) {
-        val list = detail.list
-        GiftListEditorDialog(
-            NewGiftList(list.title, list.occasion, list.occasionDate),
-            detail.today,
-            isNew = false,
-            onDismiss = actions.onDismissEdit,
-            onSave = actions.onSaveEdit,
-        )
+        Totals(detail.totals)
+        if (detail.people.isEmpty()) {
+            Text(
+                stringResource(Res.string.gift_list_nobody),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        detail.people.forEach { person ->
+            PersonCard(
+                person = person,
+                currency = detail.totals.currency,
+                year = (detail.list.occasionDate ?: detail.today).year,
+                state = state,
+                actions = actions,
+            )
+        }
+        OutlinedButton(onClick = actions.onStartAdding) {
+            Icon(Icons.Rounded.GroupAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.gift_list_add_people))
+        }
     }
     state.adding?.let { AddPeopleSheet(it, state, actions) }
-}
-
-@Composable
-private fun HeaderMenu(actions: GiftListActions) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { open = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.gift_lists_more)) }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text(stringResource(Res.string.gift_list_edit)) }, onClick = {
-                open = false
-                actions.onEdit()
-            })
-            DropdownMenuItem(text = { Text(stringResource(Res.string.gift_lists_duplicate)) }, onClick = {
-                open = false
-                actions.onDuplicate()
-            })
-        }
-    }
 }
 
 @Composable
@@ -342,7 +247,7 @@ private fun PersonCard(
     val id = friend.id
     var budgetDialog by remember { mutableStateOf(false) }
     var giftDialog by remember { mutableStateOf(false) }
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth()) {
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FriendAvatar(friend, size = 48.dp, modifier = Modifier.clickable { actions.onOpenFriend(id) })
