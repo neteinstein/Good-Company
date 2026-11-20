@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,7 +73,10 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
@@ -108,14 +112,10 @@ import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
+import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
-import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
-import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
-import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
-import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
-import androidx.compose.runtime.mutableIntStateOf
 import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 

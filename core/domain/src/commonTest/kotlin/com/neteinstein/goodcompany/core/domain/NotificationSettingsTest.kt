@@ -67,7 +67,13 @@ class NotificationSettingsTest {
     fun everyTypeIsPlannedByDefault() {
         val types = plan(NotificationSettings()).types()
         assertEquals(
-            setOf(NotificationType.BIRTHDAYS, NotificationType.EVENTS, NotificationType.REMINDERS, NotificationType.PLANS, NotificationType.CATCH_UPS),
+            setOf(
+                NotificationType.BIRTHDAYS,
+                NotificationType.EVENTS,
+                NotificationType.REMINDERS,
+                NotificationType.PLANS,
+                NotificationType.CATCH_UPS,
+            ),
             types,
         )
     }

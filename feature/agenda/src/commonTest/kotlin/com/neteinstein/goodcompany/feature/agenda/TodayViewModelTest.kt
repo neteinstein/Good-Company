@@ -1,10 +1,12 @@
 package com.neteinstein.goodcompany.feature.agenda
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -16,8 +18,6 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayUiState
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
-import com.neteinstein.goodcompany.core.domain.model.AppSettings
-import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

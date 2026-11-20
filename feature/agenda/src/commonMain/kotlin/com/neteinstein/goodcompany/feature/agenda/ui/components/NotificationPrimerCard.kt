@@ -49,7 +49,11 @@ fun NotificationPrimerCard(onAllow: () -> Unit, onNotNow: () -> Unit, modifier: 
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp),
             )
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 TextButton(onClick = onNotNow) { Text(stringResource(Res.string.notif_primer_not_now)) }
                 Spacer(Modifier.width(8.dp))
                 Button(onClick = onAllow) { Text(stringResource(Res.string.notif_primer_allow)) }

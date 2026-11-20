@@ -136,9 +136,6 @@ import com.neteinstein.goodcompany.feature.settings.resources.ai_off_note
 import com.neteinstein.goodcompany.feature.settings.resources.ai_switch
 import com.neteinstein.goodcompany.feature.settings.resources.ai_switch_hint
 import com.neteinstein.goodcompany.feature.settings.resources.allow_notifications
-import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_title
-import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_off
-import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_hint
 import com.neteinstein.goodcompany.feature.settings.resources.api_key
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_hide
 import com.neteinstein.goodcompany.feature.settings.resources.api_key_show
@@ -207,6 +204,9 @@ import com.neteinstein.goodcompany.feature.settings.resources.my_photo
 import com.neteinstein.goodcompany.feature.settings.resources.my_photo_change
 import com.neteinstein.goodcompany.feature.settings.resources.my_photo_choose
 import com.neteinstein.goodcompany.feature.settings.resources.my_photo_hint
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_hint
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_row_off
+import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_title
 import com.neteinstein.goodcompany.feature.settings.resources.pings_at
 import com.neteinstein.goodcompany.feature.settings.resources.places
 import com.neteinstein.goodcompany.feature.settings.resources.places_row_hint

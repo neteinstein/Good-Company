@@ -112,7 +112,12 @@ object NotificationPlanner {
                     // A kid (F9) has their own reminder; the ping says whose kid they are (same id as before they were people).
                     val parent = parents[f.id]?.firstOrNull()
                     if (parent != null) {
-                        add("kid:${f.id.value}:$d", d, NotificationContent.KidBirthday(f.displayName, parent.displayName, b.ageOn(d), f.likes), keepOnScreen)
+                        add(
+                            "kid:${f.id.value}:$d",
+                            d,
+                            NotificationContent.KidBirthday(f.displayName, parent.displayName, b.ageOn(d), f.likes),
+                            keepOnScreen,
+                        )
                     } else {
                         add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)), keepOnScreen)
                     }
@@ -122,7 +127,12 @@ object NotificationPlanner {
             f.relatives.filter { it.notifyBirthday }.forEach { r ->
                 r.birthday?.let { b ->
                     val d = b.nextOccurrence(today)
-                    add("relative:${f.id.value}:${r.id}:$d", d, NotificationContent.RelativeBirthday(r.name, f.displayName, r.relation, b.ageOn(d)), keepOnScreen)
+                    add(
+                        "relative:${f.id.value}:${r.id}:$d",
+                        d,
+                        NotificationContent.RelativeBirthday(r.name, f.displayName, r.relation, b.ageOn(d)),
+                        keepOnScreen,
+                    )
                 }
             }
             f.importantEvents.forEach { e ->
@@ -155,7 +165,8 @@ object NotificationPlanner {
                 if (dueAt > now) {
                     val persistent = keepOnScreen && r.important
                     val until = if (persistent) dueAt.toLocalDate(zone).plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone) else null
-                    out += PlannedNotification(slot, dueAt, NotificationContent.ReminderDue(r.title, names), persistent, until, whileOpen = persistent)
+                    out +=
+                        PlannedNotification(slot, dueAt, NotificationContent.ReminderDue(r.title, names), persistent, until, whileOpen = persistent)
                 }
                 // Overdue (issue #98): asked again at the reminder hour from the day after it was due, until done. Only
                 // while important ones stay on screen; otherwise the reminder pings once, as before.
@@ -164,7 +175,14 @@ object NotificationPlanner {
                     if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
                     repeat(OVERDUE_ASKS) { i ->
                         val day = ask.plus(i, DateTimeUnit.DAY)
-                        add("$slot:overdue:$day", day, NotificationContent.ReminderOverdue(r.title, names), persistent = true, slot = slot, whileOpen = true)
+                        add(
+                            "$slot:overdue:$day",
+                            day,
+                            NotificationContent.ReminderOverdue(r.title, names),
+                            persistent = true,
+                            slot = slot,
+                            whileOpen = true,
+                        )
                     }
                 }
             }
@@ -185,7 +203,13 @@ object NotificationPlanner {
                 var ask = maxOf(firstAsk, today)
                 if (ask.atReminderTime() <= now) ask = ask.plus(1, DateTimeUnit.DAY)
                 if (ask <= lastAsk) {
-                    add("plan:$key:ask", ask, NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle), keepOnScreen, whileOpen = true)
+                    add(
+                        "plan:$key:ask",
+                        ask,
+                        NotificationContent.PlanFollowUp(p.id, p.title, names, occurrence.date, isCircle),
+                        keepOnScreen,
+                        whileOpen = true,
+                    )
                 }
             }
         }
@@ -196,7 +220,9 @@ object NotificationPlanner {
 
         // --- Calendar suggestions (D3): at most one summary a day, in the evening once that day's matched events are
         // over. Within the same budget as catch-ups: silent when the app has been ignored for a long time.
-        calendar.filter { it.event.end > now && notifications.allows(NotificationType.CALENDAR) }.groupBy { it.event.end.toLocalDate(zone) }.forEach { (day, items) ->
+        calendar.filter {
+            it.event.end > now && notifications.allows(NotificationType.CALENDAR)
+        }.groupBy { it.event.end.toLocalDate(zone) }.forEach { (day, items) ->
             if (day > end) return@forEach
             val evening = day.atTime(LocalTime(CALENDAR_HOUR, 0)).toInstant(zone)
             val at = maxOf(evening, items.maxOf { it.event.end } + CALENDAR_DELAY_MINUTES.minutes)

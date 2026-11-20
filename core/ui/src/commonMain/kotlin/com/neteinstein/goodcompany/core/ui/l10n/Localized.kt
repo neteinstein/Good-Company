@@ -77,9 +77,9 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_private
 import com.neteinstein.goodcompany.core.ui.resources.notif_relative_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_body
-import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_overdue_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_overdue_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_with
 import com.neteinstein.goodcompany.core.ui.resources.notif_test_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_test_title

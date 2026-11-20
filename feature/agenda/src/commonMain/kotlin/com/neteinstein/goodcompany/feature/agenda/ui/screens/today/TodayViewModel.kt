@@ -10,9 +10,9 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
-import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenCard
