@@ -45,6 +45,7 @@
     <string name="detail_birthday_turns">%1$s · cumple %2$d</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Visto %1$s</string>
+    <string name="detail_caught_up">En contacto %1$s</string>
     <string name="detail_orphaned">Ya no está en tus contactos</string>
     <string name="qa_call">Llamar</string>
     <string name="qa_text">SMS</string>
@@ -57,6 +58,7 @@
     <string name="wish_title">Felicitación para %1$s</string>
     <string name="wish_gift_hint">Ideas de regalo: %1$s</string>
     <string name="touch_last_together">Os visteis por última vez %1$s</string>
+    <string name="touch_last_caught_up">Último contacto %1$s</string>
     <string name="touch_never">Aún no hay encuentros registrados</string>
     <string name="touch_pick">Elige la cercanía o cada cuánto quieres veros — te lo recordaremos.</string>
     <string name="touch_overdue">Ha pasado un tiempo — tu objetivo es %1$s.</string>
@@ -344,6 +346,9 @@
     <string name="contact_message">Mensaje %1$s</string>
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Videollamada %1$s</string>
+    <string name="contact_long_chat">Charla larga %1$s</string>
+    <string name="contact_game">Juego online %1$s</string>
+    <string name="contact_other">En contacto %1$s</string>
     <string name="story_last_talk_title">La última vez hablasteis de…</string>
     <string name="choose_title">Elegir amigos</string>
     <string name="choose_count">%1$d de %2$d</string>
@@ -485,7 +490,7 @@
     <string name="circles_new_with">Nuevo círculo con %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Mensaje</string>
-    <string name="qa_we_met">Nos vimos</string>
+    <string name="qa_we_met">Puestos al día</string>
     <string name="message_sheet_title">Mensaje a %1$s</string>
     <string name="tab_summary">Resumen</string>
     <string name="tab_about">Sobre</string>

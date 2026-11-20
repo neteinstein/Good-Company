@@ -57,18 +57,23 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
+import com.neteinstein.goodcompany.core.ui.components.LogOtherLabel
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
 import com.neteinstein.goodcompany.core.ui.components.activityLabel
+import com.neteinstein.goodcompany.core.ui.components.logKindIcon
+import com.neteinstein.goodcompany.core.ui.components.logKindLabel
 import com.neteinstein.goodcompany.core.ui.components.namesList
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
+import com.neteinstein.goodcompany.core.ui.resources.log_counts_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_less
 import com.neteinstein.goodcompany.core.ui.resources.log_more
 import com.neteinstein.goodcompany.core.ui.resources.log_note_hint
@@ -78,6 +83,7 @@ import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_note
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_place
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_how
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_log_people
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_details
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_people
@@ -92,6 +98,8 @@ import org.koin.core.parameter.parametersOf
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 data class WeMetActions(
+    val onKind: (LogKind) -> Unit = {},
+    val onLabel: (String) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
     val onActivity: (HangoutActivity?) -> Unit = {},
     val onTogglePerson: (FriendId) -> Unit = {},
@@ -129,6 +137,8 @@ fun WeMetPanelScreen(
     WeMetPanel(
         state,
         WeMetActions(
+            onKind = viewModel::onKind,
+            onLabel = viewModel::onLabel,
             onDate = viewModel::onDate,
             onActivity = viewModel::onActivity,
             onTogglePerson = viewModel::onTogglePerson,
@@ -148,8 +158,9 @@ fun WeMetPanelScreen(
 }
 
 /**
- * Issue #47 (F2, F3): who, Today / Yesterday / a picked day, the activity as one tap, "+ Add a note", and Save within
- * reach, so "We met" → Save logs today in two taps. No hidden gestures. Drawn like the Log sheet: a bottom panel over
+ * Issue #47 (F2, F3) and #101: "How?" (in person by default), who, Today / Yesterday / a picked day, the activity as
+ * one tap (in person only), "+ Add a note", and Save within reach, so "Caught up" → Save logs today in two taps. A call,
+ * a chat or a game hides the activity and the place; "Other" asks what it was. No hidden gestures. Drawn like the Log sheet: a bottom panel over
  * a scrim that dismisses it.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -194,9 +205,13 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                     )
                     TextButton(onClick = actions.onMoreDetails) { Text(stringResource(Res.string.met_more_details)) }
                 }
+                HowRow(sheet.kind, actions.onKind)
+                if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
                 LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
                 People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
-                Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+                if (!sheet.kind.isRemote) {
+                    Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+                }
                 if (state.placeOpen) {
                     // The Log sheet's place field (F11): a named place recognises itself and suggests who's usually there.
                     MeetupPlace(
@@ -217,11 +232,19 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                         label = { Text(stringResource(CoreRes.string.log_note_hint)) },
                     )
                 }
-                if (!state.noteOpen || !state.placeOpen) {
+                val canAddPlace = !state.placeOpen && !sheet.kind.isRemote
+                if (!state.noteOpen || canAddPlace) {
                     Row {
                         if (!state.noteOpen) AddButton(stringResource(Res.string.met_add_note), actions.onOpenNote)
-                        if (!state.placeOpen) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
+                        if (canAddPlace) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
                     }
+                }
+                sheet.countsHintFor?.let {
+                    Text(
+                        stringResource(CoreRes.string.log_counts_hint, it.displayName.substringBefore(' ')),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Button(
                     onClick = {
@@ -250,6 +273,25 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
             title = stringResource(CoreRes.string.log_people_title),
             requireSomeone = true,
         )
+    }
+}
+
+/** "How?" (issue #101): one chip per way of keeping in touch, in person first. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HowRow(kind: LogKind, onKind: (LogKind) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(stringResource(Res.string.met_how), style = MaterialTheme.typography.labelLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            LogKind.CAUGHT_UP.forEach { k ->
+                FilterChip(
+                    selected = kind == k,
+                    onClick = { onKind(k) },
+                    label = { Text(logKindLabel(k)) },
+                    leadingIcon = { Icon(logKindIcon(k), null, Modifier.size(18.dp)) },
+                )
+            }
+        }
     }
 }
 

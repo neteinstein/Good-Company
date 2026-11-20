@@ -81,10 +81,10 @@ fun attachmentCountLabel(attachment: Attachment): String = stringResource(
     } else {
         when (attachment.interactionType) {
             InteractionType.MEETUP -> Res.string.attachment_counted_met
-            InteractionType.MESSAGE, InteractionType.WHATSAPP -> Res.string.attachment_counted_message
+            InteractionType.MESSAGE, InteractionType.WHATSAPP, InteractionType.LONG_CHAT -> Res.string.attachment_counted_message
             InteractionType.CALL, InteractionType.VIDEO_CALL -> Res.string.attachment_counted_call
             InteractionType.EMAIL -> Res.string.attachment_counted_email
-            null -> Res.string.attachment_counted_contact
+            InteractionType.GAME, InteractionType.OTHER, null -> Res.string.attachment_counted_contact
         }
     },
 )

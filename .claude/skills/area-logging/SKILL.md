@@ -18,6 +18,18 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Calendar events live in memory: never stored, backed up, or sent to the AI.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
+- **"Caught up" (issue #101, was "We met").** The panel behind `WeMetRoute` (code names keep "WeMet"/`MET`) starts with
+  **How?**: `LogKind.CAUGHT_UP` = in person (default), call, video, said hi (`MESSAGE`), long chat, played online
+  (`GAME`), other. A remote kind (`LogKind.isRemote`) is an `Interaction` through `LogInteractionUseCase` and hides
+  activity and place; date and note stay. `OTHER` carries `Interaction.label` (`interaction.label`, migration `22.sqm`,
+  at most `LogInteractionUseCase.LABEL_MAX`, kept only for `OTHER`; the timeline shows it instead of "Kept in touch").
+  "More details" carries the kind and label to the Log sheet. A plan's "It happened" answered with a remote kind still
+  closes that occurrence; `LogResult.Contacts.plan` lets Undo reopen it. Meetups and contacts both go to
+  `LoggedMeetupInbox` (the "Logged time with … · Undo" snackbar); journal entries don't.
+- **Warmth weights (issue #101).** `Warmth.weight(type)`: in person and long chat 1.0, video 0.8, call / game / email /
+  WhatsApp / other 0.6, said hi 0.3. Remote contact **always** adds to warmth; the "calls and chats count" switch only
+  decides the rhythm (`Relationships.meetupStatuses`). The person page's ring and pill use `FriendDetail.lastCaughtUp`,
+  the same rule.
 
 - **How a plan ends (issue #100).** `PlanStatus` is PLANNED, HAPPENED, SKIPPED ("Didn't happen"), CANCELLED (kept,
   struck through on the Plans tab for a month) and NOT_ATTENDED ("I didn't go": group and circle plans only,
@@ -30,10 +42,10 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 ## Reference (moved from AGENTS.md)
 
 26. **Timeline and logging (issue #21).** Meetups are `Hangout`s (with an optional `HangoutActivity`, F3); calls, messages,
-    emails, video calls and WhatsApp days are `Interaction`s (`id`, `source`, `note`, `durationSeconds`, `batchId`,
-    `messageCount`); a `JournalEntry` is a dated note that never counts as contact (own `journal_entry` table, exposed through
-    `InteractionRepository`). Every non-meetup type counts like a call: warmth and the rhythm only with the friend's
-    "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
+    emails, video calls, WhatsApp days, long chats, games and "other" are `Interaction`s (`id`, `source`, `note`,
+    `durationSeconds`, `batchId`, `messageCount`, `label`); a `JournalEntry` is a dated note that never counts as contact
+    (own `journal_entry` table, exposed through `InteractionRepository`). Every non-meetup type always adds to warmth
+    (weighted, see above) and resets the rhythm only with the friend's "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
     `Interaction.automaticId` and a partial unique index, so a re-sync never duplicates them; manual ones never dedupe.
     Logging several people at once writes one row per person sharing a `batchId`. All logging goes through
     `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is `LogInteractionSheet` (`:core:ui`), hosted

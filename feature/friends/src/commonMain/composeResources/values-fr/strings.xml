@@ -45,6 +45,7 @@
     <string name="detail_birthday_turns">%1$s · fête ses %2$d ans</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Vu %1$s</string>
+    <string name="detail_caught_up">Des nouvelles %1$s</string>
     <string name="detail_orphaned">N’est plus dans les contacts</string>
     <string name="qa_call">Appeler</string>
     <string name="qa_text">SMS</string>
@@ -57,6 +58,7 @@
     <string name="wish_title">Vœux pour %1$s</string>
     <string name="wish_gift_hint">Idées cadeaux : %1$s</string>
     <string name="touch_last_together">Vus ensemble %1$s</string>
+    <string name="touch_last_caught_up">Dernières nouvelles %1$s</string>
     <string name="touch_never">Aucune rencontre enregistrée</string>
     <string name="touch_pick">Choisissez la proximité ou la fréquence à laquelle vous voulez vous voir — on vous le rappellera.</string>
     <string name="touch_overdue">Ça fait un moment — ton objectif est %1$s.</string>
@@ -344,6 +346,9 @@
     <string name="contact_message">Message %1$s</string>
     <string name="contact_email">E-mail %1$s</string>
     <string name="contact_video">Appel vidéo %1$s</string>
+    <string name="contact_long_chat">Longue discussion %1$s</string>
+    <string name="contact_game">Jeu en ligne %1$s</string>
+    <string name="contact_other">Des nouvelles %1$s</string>
     <string name="story_last_talk_title">La dernière fois, vous avez parlé de…</string>
     <string name="choose_title">Choisir des amis</string>
     <string name="choose_count">%1$d sur %2$d</string>
@@ -485,7 +490,7 @@
     <string name="circles_new_with">Nouveau cercle avec %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Message</string>
-    <string name="qa_we_met">On s’est vus</string>
+    <string name="qa_we_met">Nouvelles prises</string>
     <string name="message_sheet_title">Écrire à %1$s</string>
     <string name="tab_summary">Résumé</string>
     <string name="tab_about">À propos</string>

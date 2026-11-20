@@ -27,12 +27,15 @@ import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.LocalBar
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.Luggage
 import androidx.compose.material.icons.rounded.LunchDining
 import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.QuestionAnswer
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material.icons.rounded.SportsTennis
 import androidx.compose.material.icons.rounded.TheaterComedy
 import androidx.compose.material.icons.rounded.Videocam
@@ -71,10 +74,13 @@ import com.neteinstein.goodcompany.core.ui.resources.tl_and
 import com.neteinstein.goodcompany.core.ui.resources.tl_call
 import com.neteinstein.goodcompany.core.ui.resources.tl_call_minutes
 import com.neteinstein.goodcompany.core.ui.resources.tl_email
+import com.neteinstein.goodcompany.core.ui.resources.tl_game
 import com.neteinstein.goodcompany.core.ui.resources.tl_gift
 import com.neteinstein.goodcompany.core.ui.resources.tl_journal
+import com.neteinstein.goodcompany.core.ui.resources.tl_long_chat
 import com.neteinstein.goodcompany.core.ui.resources.tl_message
 import com.neteinstein.goodcompany.core.ui.resources.tl_messages
+import com.neteinstein.goodcompany.core.ui.resources.tl_other
 import com.neteinstein.goodcompany.core.ui.resources.tl_shared
 import com.neteinstein.goodcompany.core.ui.resources.tl_source_call_log
 import com.neteinstein.goodcompany.core.ui.resources.tl_source_imported
@@ -127,6 +133,9 @@ fun interactionIcon(type: InteractionType): ImageVector = when (type) {
     InteractionType.EMAIL -> Icons.Rounded.Email
     InteractionType.MESSAGE -> Icons.AutoMirrored.Rounded.Chat
     InteractionType.WHATSAPP -> Icons.Rounded.Forum
+    InteractionType.LONG_CHAT -> Icons.Rounded.QuestionAnswer
+    InteractionType.GAME -> Icons.Rounded.SportsEsports
+    InteractionType.OTHER -> Icons.Rounded.Interests
 }
 
 /** "Pedro", "Pedro and Rui", "Pedro, Rui and Ana" (first names). */
@@ -239,6 +248,9 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
             InteractionType.MESSAGE -> stringResource(Res.string.tl_message)
             InteractionType.WHATSAPP -> stringResource(Res.string.tl_whatsapp)
             InteractionType.MEETUP -> stringResource(Res.string.tl_together)
+            InteractionType.LONG_CHAT -> stringResource(Res.string.tl_long_chat)
+            InteractionType.GAME -> stringResource(Res.string.tl_game)
+            InteractionType.OTHER -> i.label.trim().ifEmpty { stringResource(Res.string.tl_other) }
         }
         val details = listOfNotNull(
             i.messageCount?.let { pluralStringResource(Res.plurals.tl_messages, it, it) },

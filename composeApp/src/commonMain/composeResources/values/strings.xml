@@ -3,7 +3,7 @@
     <string name="app_name">Good Company</string>
     <string name="storage_temporary">Changes in this tab won’t be saved. Good Company is probably open in another tab, so carry on there.</string>
     <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
-    <string name="shortcut_log_meetup">Log a meetup</string>
+    <string name="shortcut_log_meetup">Caught up</string>
     <string name="nav_today">Today</string>
     <string name="nav_people">People</string>
     <string name="nav_circles">Circles</string>

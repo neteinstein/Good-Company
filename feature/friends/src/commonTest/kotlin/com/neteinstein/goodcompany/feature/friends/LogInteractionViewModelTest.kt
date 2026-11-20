@@ -275,4 +275,19 @@ class LogInteractionViewModelTest {
         // A meetup saved from the sheet gets the app-wide "Logged time with … · Undo" snackbar.
         assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
     }
+
+    @Test
+    fun moreDetailsFromCaughtUpOpensOnTheSameKind_andOtherKeepsItsLabel() = runViewModelTest {
+        val vm = vm(type = LogKind.OTHER.name, prefill = LogPrefill(label = "Sent a postcard"))
+        val state = collecting(vm.state)
+        assertEquals(LogKind.OTHER, state.value.sheet.kind)
+        assertEquals("Sent a postcard", state.value.sheet.label)
+        vm.onLabel("Sent a long letter")
+        vm.onSave()
+        val row = g.interactionRepo.interactions.value.single()
+        assertEquals(InteractionType.OTHER, row.type)
+        assertEquals("Sent a long letter", row.label)
+        // Contacts logged on the sheet get the app-wide "Logged time with … · Undo" too (issue #101).
+        assertEquals(listOf(ana), g.loggedMeetups.pending.value?.people?.map { it.id })
+    }
 }

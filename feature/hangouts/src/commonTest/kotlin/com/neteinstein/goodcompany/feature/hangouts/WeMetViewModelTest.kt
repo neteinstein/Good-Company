@@ -3,8 +3,10 @@ package com.neteinstein.goodcompany.feature.hangouts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -199,5 +201,101 @@ class WeMetViewModelTest {
         vm.onPlaceName("Café Lisboa")
         vm.onSave()
         assertEquals("Café Lisboa", g.hangoutRepo.hangouts.value.single().place?.name)
+    }
+
+    @Test
+    fun howStartsInPerson_andOffersEveryWayToKeepInTouch() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(LogKind.MEETUP, state.value.sheet.kind)
+        assertEquals(
+            listOf(LogKind.MEETUP, LogKind.CALL, LogKind.VIDEO_CALL, LogKind.MESSAGE, LogKind.LONG_CHAT, LogKind.GAME, LogKind.OTHER),
+            LogKind.CAUGHT_UP,
+        )
+        // The journal and email stay on the full Log sheet.
+        vm.onKind(LogKind.JOURNAL)
+        vm.onKind(LogKind.EMAIL)
+        assertEquals(LogKind.MEETUP, state.value.sheet.kind)
+    }
+
+    @Test
+    fun eachRemoteKindWritesAnInteraction_withNoPlaceOrActivity() = runViewModelTest {
+        val expected = mapOf(
+            LogKind.CALL to InteractionType.CALL,
+            LogKind.VIDEO_CALL to InteractionType.VIDEO_CALL,
+            LogKind.MESSAGE to InteractionType.MESSAGE,
+            LogKind.LONG_CHAT to InteractionType.LONG_CHAT,
+            LogKind.GAME to InteractionType.GAME,
+            LogKind.OTHER to InteractionType.OTHER,
+        )
+        expected.forEach { (kind, type) ->
+            val vm = vm()
+            val state = collecting(vm.state)
+            vm.onOpenPlace()
+            vm.onPlaceName("Time Out")
+            vm.onActivity(HangoutActivity.LUNCH)
+            vm.onKind(kind)
+            assertFalse(state.value.placeOpen, "$kind hides the place")
+            vm.onOpenNote()
+            vm.onNote("About the move")
+            vm.onSave()
+            assertTrue(state.value.done)
+            val row = g.interactionRepo.interactions.value.last()
+            assertEquals(type, row.type)
+            assertEquals(ana, row.friendId)
+            assertEquals("About the move", row.note)
+        }
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertEquals(6, g.interactionRepo.interactions.value.size)
+    }
+
+    @Test
+    fun otherTakesAShortLabel_thatOnlyOtherKeeps() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onKind(LogKind.OTHER)
+        vm.onLabel("  Sent a postcard  ")
+        assertEquals("  Sent a postcard  ", state.value.sheet.label)
+        assertEquals(LogKind.OTHER, vm.details().kind)
+        vm.onSave()
+        assertEquals("Sent a postcard", g.interactionRepo.interactions.value.single().label)
+
+        val call = vm()
+        collecting(call.state)
+        call.onKind(LogKind.OTHER)
+        call.onLabel("Board games")
+        call.onKind(LogKind.CALL)
+        call.onSave()
+        assertEquals("", g.interactionRepo.interactions.value.last().label)
+    }
+
+    @Test
+    fun aRemoteCatchUpGetsTheUndoSnackbarToo() = runViewModelTest {
+        val panel = vm()
+        collecting(panel.state)
+        panel.onKind(LogKind.LONG_CHAT)
+        panel.onSave()
+        val snackbar = LoggedMeetupViewModel(g.loggedMeetups, g.undoLog)
+        val logged = snackbar.pending.value!!
+        assertEquals(listOf(ana), logged.people.map { it.id })
+        snackbar.onUndo(logged)
+        assertTrue(g.interactionRepo.interactions.value.isEmpty())
+    }
+
+    @Test
+    fun itHappenedOnACall_closesThePlan_andUndoReopensIt() = runViewModelTest {
+        val plan = g.savePlan(null, "Catch up", listOf(ana), LocalDate(2026, 3, 6))
+        val panel = vm(plan = PlanOccurrence(plan.id, plan.date))
+        collecting(panel.state)
+        panel.onKind(LogKind.VIDEO_CALL)
+        panel.onSave()
+        assertEquals(InteractionType.VIDEO_CALL, g.interactionRepo.interactions.value.single().type)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertEquals(PlanStatus.HAPPENED, g.planRepo.plans.value.single().status)
+
+        val snackbar = LoggedMeetupViewModel(g.loggedMeetups, g.undoLog)
+        snackbar.onUndo(snackbar.pending.value!!)
+        assertTrue(g.interactionRepo.interactions.value.isEmpty())
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
     }
 }

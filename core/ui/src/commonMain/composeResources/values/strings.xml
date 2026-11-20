@@ -198,7 +198,7 @@
         <item quantity="other">The circle last met %1$d days ago.</item>
     </plurals>
     <string name="notif_group_body_never">The circle hasn’t met up yet.</string>
-    <string name="notif_action_met">We met</string>
+    <string name="notif_action_met">Caught up</string>
     <string name="notif_action_called">Called</string>
     <string name="notif_action_snooze_week">Next week</string>
     <string name="notif_action_snooze_weekend">This weekend</string>
@@ -363,11 +363,15 @@
     <string name="send_email">Email</string>
     <string name="date_month_year">%1$s %2$d</string>
     <string name="log_title">Log with %1$s</string>
-    <string name="log_kind_met">Met</string>
+    <string name="log_kind_in_person">In person</string>
     <string name="log_kind_call">Call</string>
-    <string name="log_kind_message">Message</string>
+    <string name="log_kind_said_hi">Said hi</string>
     <string name="log_kind_email">Email</string>
-    <string name="log_kind_video">Video call</string>
+    <string name="log_kind_video">Video</string>
+    <string name="log_kind_long_chat">Long chat</string>
+    <string name="log_kind_game">Played online</string>
+    <string name="log_kind_other">Other</string>
+    <string name="log_other_label">What was it?</string>
     <string name="log_kind_journal">Journal</string>
     <string name="log_add_people">Add people</string>
     <string name="log_people_title">Who was it with?</string>
@@ -406,6 +410,9 @@
     <string name="tl_email">Email</string>
     <string name="tl_message">Message</string>
     <string name="tl_whatsapp">WhatsApp chat</string>
+    <string name="tl_long_chat">Long chat</string>
+    <string name="tl_game">Played online</string>
+    <string name="tl_other">Kept in touch</string>
     <string name="tl_journal">Journal</string>
     <string name="tl_whats_new">What’s new</string>
     <string name="tl_gift">Gave: %1$s</string>
@@ -621,7 +628,7 @@
         <item quantity="other">%1$d days since you met · goal %2$s</item>
     </plurals>
     <string name="catchup_never">No meetup logged yet</string>
-    <string name="catchup_met">We met</string>
+    <string name="catchup_met">Caught up</string>
     <string name="catchup_called">Called them</string>
     <string name="catchup_snooze_week">Snooze a week</string>
     <string name="catchup_snooze_weekend">Remind me Saturday</string>

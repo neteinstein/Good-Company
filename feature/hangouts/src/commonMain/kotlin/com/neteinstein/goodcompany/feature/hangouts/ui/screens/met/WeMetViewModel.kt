@@ -46,10 +46,15 @@ data class WeMetDetails(
     val note: String,
     val plan: PlanOccurrence?,
     val placeName: String = "",
+    /** The "How?" chosen (issue #101), so the full Log sheet opens on the same kind. */
+    val kind: LogKind = LogKind.MEETUP,
+    val label: String = "",
 )
 
 /**
- * The small "We met" panel (issue #47, F2/F3) behind `WeMetRoute(friendIds, circleId, plan)`: Today preselected,
+ * The small "Caught up" panel (issues #47 and #101, F2/F3) behind `WeMetRoute(friendIds, circleId, plan)`. First
+ * "How?" ([LogKind.CAUGHT_UP], in person by default): a remote kind is written as an interaction and has no place or
+ * activity, and "Other" takes a short label. Then Today preselected,
  * Yesterday or a picked day (never the future), the activity and an optional note, then Save. A circle lists its
  * members with nobody ticked (F20). [plan] answers that plan occurrence's "Did you meet?" (issue #43): its day,
  * people (a circle plan's members unticked), activity, place and title fill the panel, and saving closes it. The logic is the Log sheet's own [LogSheetModel] (issue #21).
@@ -92,10 +97,18 @@ class WeMetViewModel(
         WeMetUiState(
             sheet,
             noteOpen = note || sheet.note.isNotEmpty(),
-            placeOpen = place || sheet.place.name.isNotEmpty() || sheet.place.location != null || sheet.place.isLocating,
+            placeOpen = !sheet.kind.isRemote &&
+                (place || sheet.place.name.isNotEmpty() || sheet.place.location != null || sheet.place.isLocating),
             done = isDone,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WeMetUiState(model.sheet.value))
+
+    /** "How?": in person, a call, a video call, "said hi", a long chat, a game online or something else. */
+    fun onKind(kind: LogKind) {
+        if (kind in LogKind.CAUGHT_UP) model.onKind(kind)
+    }
+
+    fun onLabel(label: String) = model.onLabel(label)
 
     fun onDate(date: LocalDate) = model.onDate(date)
 
@@ -123,6 +136,6 @@ class WeMetViewModel(
 
     /** Everything chosen so far, for "More details" (the full Log sheet). */
     fun details(): WeMetDetails = model.draft.value.let {
-        WeMetDetails(it.people, it.circleId, it.date, it.activity, it.note, model.plan, it.placeName)
+        WeMetDetails(it.people, it.circleId, it.date, it.activity, it.note, model.plan, it.placeName, it.kind, it.label)
     }
 }

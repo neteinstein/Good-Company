@@ -33,6 +33,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.AssistChip
@@ -97,6 +98,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.detail_back
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.detail_birthday_when
+import com.neteinstein.goodcompany.feature.friends.resources.detail_caught_up
 import com.neteinstein.goodcompany.feature.friends.resources.detail_more_options
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
@@ -310,8 +312,16 @@ private fun Pills(f: Friend, state: FriendDetailUiState, actions: PersonTopActio
         }
         // "Your sister" only when it is set (issue #90); "Related to you?" is asked in edit mode.
         relationToMeLabel(f)?.let { InfoPill(it, icon = Icons.Rounded.FavoriteBorder, emphasized = true) }
-        state.detail?.lastSeen?.let {
-            InfoPill(stringResource(Res.string.detail_seen, relativePast(it, state.now, state.zone)), icon = Icons.Rounded.Place)
+        // Same rule as the rhythm (issue #101): with calls and chats counting, a call is the last catch-up too.
+        state.detail?.let { d ->
+            d.lastCaughtUp?.let {
+                val ago = relativePast(it, state.now, state.zone)
+                if (it == d.lastSeen) {
+                    InfoPill(stringResource(Res.string.detail_seen, ago), icon = Icons.Rounded.Place)
+                } else {
+                    InfoPill(stringResource(Res.string.detail_caught_up, ago), icon = Icons.Rounded.Forum)
+                }
+            }
         }
         if (f.isOrphaned) InfoPill(stringResource(Res.string.detail_orphaned))
     }

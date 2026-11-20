@@ -45,6 +45,7 @@
     <string name="detail_birthday_turns">%1$s · împlinește %2$d ani</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Văzut %1$s</string>
+    <string name="detail_caught_up">În legătură %1$s</string>
     <string name="detail_orphaned">Nu mai e în contacte</string>
     <string name="qa_call">Sună</string>
     <string name="qa_text">SMS</string>
@@ -57,6 +58,7 @@
     <string name="wish_title">Urări pentru %1$s</string>
     <string name="wish_gift_hint">Idei de cadou: %1$s</string>
     <string name="touch_last_together">Împreună ultima dată %1$s</string>
+    <string name="touch_last_caught_up">Ultima dată în legătură %1$s</string>
     <string name="touch_never">Nicio întâlnire înregistrată încă</string>
     <string name="touch_pick">Alege apropierea sau cât de des ai vrea să vă vedeți — îți vom aminti.</string>
     <string name="touch_overdue">A trecut ceva timp — obiectivul tău e %1$s.</string>
@@ -353,6 +355,9 @@
     <string name="contact_message">Mesaj %1$s</string>
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Apel video %1$s</string>
+    <string name="contact_long_chat">Conversație lungă %1$s</string>
+    <string name="contact_game">Joc online %1$s</string>
+    <string name="contact_other">Legătură %1$s</string>
     <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
     <string name="choose_title">Alege prieteni</string>
     <string name="choose_count">%1$d din %2$d</string>
@@ -500,7 +505,7 @@
     <string name="circles_new_with">Cerc nou cu %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Mesaj</string>
-    <string name="qa_we_met">Ne-am văzut</string>
+    <string name="qa_we_met">Ne-am pus la curent</string>
     <string name="message_sheet_title">Mesaj pentru %1$s</string>
     <string name="tab_summary">Rezumat</string>
     <string name="tab_about">Despre</string>

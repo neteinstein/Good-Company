@@ -21,6 +21,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   "while open" (issue #100), so a persistent one goes as soon as the plan is cancelled, deleted or answered. The ask
   offers "I didn't go" (`PLAN_NOT_ATTENDED`) for group and circle plans (`PlanFollowUp.isGroup`).
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
+- "We met" is labelled **"Caught up"** everywhere outside the app too (issue #101): the notification quick action
+  (`notif_action_met`), the widget button (Android `widget_met`, iOS `widget.met`) and the generic app-icon shortcut
+  (`shortcut_log_meetup` in `androidApp` and `composeApp`). The `MET` notification action and the widget button
+  (`ACTION_MET` on Android, `goodcompany://met/<id>` on iOS) still log an in-person meetup straight away, with no panel;
+  the generic shortcut opens the Log sheet, which has every kind. The How? row lives in the in-app panel.
 - Reminders (#99): plan and sort by `Reminder.nextAt` (`snoozedUntil ?: dueAt`), never `dueAt` alone. Snooze moves only
   `snoozedUntil`; Done (`CompleteReminderUseCase`) closes a one-off with `completedAt`, or rolls a repeating one to
   `nextDueAfter` and clears the snooze. `Reminder.important` + the notification setting "keep on screen" is what makes a
@@ -58,7 +63,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     and plans are never throttled.
 18. **Widgets.** Android: `androidApp/.../widget/NextUpWidget.kt` is plain `RemoteViews` (no Glance); its strings are Android
     resources in `androidApp/src/main/res/values-*` (all five languages). iOS: `iosApp/NextUpWidget` (WidgetKit) reads the
-    `WidgetSnapshot` JSON the app writes to the app group (`startWidgetSync`); "We met" opens `goodcompany://met/<id>`.
+    `WidgetSnapshot` JSON the app writes to the app group (`startWidgetSync`); "Caught up" opens `goodcompany://met/<id>`.
     Both show what `ObserveHomeWidgetUseCase` returns; keep the two in step (owner: iOS keeps pace with Android and web).
 28. **App-icon shortcuts (issue #23, D7).** `ObserveShortcutsUseCase` (domain, `Shortcuts.kt`) gives the three most recent
     people by `Relationships.lastContact` (no orphans) and none while app lock or private notifications are on. A picked

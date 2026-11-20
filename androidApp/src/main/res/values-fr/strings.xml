@@ -11,7 +11,7 @@
     <string name="widget_nothing">Rien de prévu</string>
     <string name="widget_see">Le moment de voir %1$s</string>
     <string name="widget_caught_up">Tout est à jour 💛</string>
-    <string name="widget_met">On s’est vus</string>
+    <string name="widget_met">Nouvelles</string>
     <string name="widget_private">Ouvrez Good Company pour voir la suite</string>
     <plurals name="widget_in_days">
         <item quantity="one">Dans %1$d jour</item>
@@ -20,6 +20,6 @@
     </plurals>
     <string name="share_target_label">Enregistrer pour un ami</string>
     <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
-    <string name="shortcut_log_meetup">Noter une sortie</string>
-    <string name="shortcut_log_meetup_short">Sortie</string>
+    <string name="shortcut_log_meetup">Nouvelles prises</string>
+    <string name="shortcut_log_meetup_short">Nouvelles</string>
 </resources>

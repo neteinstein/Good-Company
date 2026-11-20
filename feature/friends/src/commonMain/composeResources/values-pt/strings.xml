@@ -45,6 +45,7 @@
     <string name="detail_birthday_turns">%1$s · faz %2$d anos</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Visto %1$s</string>
+    <string name="detail_caught_up">Em contacto %1$s</string>
     <string name="detail_orphaned">Já não está nos contactos</string>
     <string name="qa_call">Ligar</string>
     <string name="qa_text">SMS</string>
@@ -57,6 +58,7 @@
     <string name="wish_title">Parabéns para %1$s</string>
     <string name="wish_gift_hint">Ideias de prenda: %1$s</string>
     <string name="touch_last_together">Juntos pela última vez %1$s</string>
+    <string name="touch_last_caught_up">Último contacto %1$s</string>
     <string name="touch_never">Ainda sem encontros registados</string>
     <string name="touch_pick">Escolhe a proximidade ou de quanto em quanto tempo queres estar com esta pessoa — nós lembramos-te.</string>
     <string name="touch_overdue">Já passou algum tempo — o teu objetivo é %1$s.</string>
@@ -344,6 +346,9 @@
     <string name="contact_message">Mensagem %1$s</string>
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Videochamada %1$s</string>
+    <string name="contact_long_chat">Conversa longa %1$s</string>
+    <string name="contact_game">Jogo online %1$s</string>
+    <string name="contact_other">Em contacto %1$s</string>
     <string name="story_last_talk_title">Da última vez falaram sobre…</string>
     <string name="choose_title">Escolher amigos</string>
     <string name="choose_count">%1$d de %2$d</string>
@@ -485,7 +490,7 @@
     <string name="circles_new_with">Novo círculo com %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Mensagem</string>
-    <string name="qa_we_met">Estivemos juntos</string>
+    <string name="qa_we_met">Conversa em dia</string>
     <string name="message_sheet_title">Mensagem para %1$s</string>
     <string name="tab_summary">Resumo</string>
     <string name="tab_about">Sobre</string>
