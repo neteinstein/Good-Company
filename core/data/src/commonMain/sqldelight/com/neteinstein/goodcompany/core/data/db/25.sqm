@@ -1,0 +1,10 @@
+-- Version 25 → 26 (issue #118): a person's social profiles (Instagram, Facebook, TikTok, X, LinkedIn, YouTube, Threads,
+-- Bluesky, Mastodon) and websites. kind is the network's name or WEBSITE; no CHECK, so a newer kind is skipped on read.
+
+CREATE TABLE friend_link (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    PRIMARY KEY (friend_id, kind, position)
+);

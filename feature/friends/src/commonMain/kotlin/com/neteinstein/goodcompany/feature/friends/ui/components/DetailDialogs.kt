@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AlternateEmail
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.RssFeed
 import androidx.compose.material3.AlertDialog
@@ -32,9 +34,12 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.SocialNetwork
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.socialIcon
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
+import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -57,6 +62,10 @@ import com.neteinstein.goodcompany.feature.friends.resources.gifts_new
 import com.neteinstein.goodcompany.feature.friends.resources.gifts_note_label
 import com.neteinstein.goodcompany.feature.friends.resources.news_dialog_title
 import com.neteinstein.goodcompany.feature.friends.resources.news_placeholder
+import com.neteinstein.goodcompany.feature.friends.resources.socials_add
+import com.neteinstein.goodcompany.feature.friends.resources.socials_handle
+import com.neteinstein.goodcompany.feature.friends.resources.websites_add
+import com.neteinstein.goodcompany.feature.friends.resources.websites_address
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
@@ -206,6 +215,76 @@ fun AddFeedDialog(busy: Boolean, onDismiss: () -> Unit, onAdd: (String) -> Unit)
             TextButton(onClick = { onAdd(url) }, enabled = url.isNotBlank() && !busy) {
                 if (busy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp) else Text(stringResource(Res.string.feeds_follow))
             }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
+    )
+}
+
+/** "Add a profile" (issue #118): the network, then a username or a pasted link. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun AddSocialDialog(onDismiss: () -> Unit, onAdd: (SocialNetwork, String) -> Unit) {
+    var network by remember { mutableStateOf(SocialNetwork.INSTAGRAM) }
+    var handle by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.AlternateEmail, null) },
+        title = { Text(stringResource(Res.string.socials_add)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SocialNetwork.entries.forEach { n ->
+                        FilterChip(
+                            n == network,
+                            onClick = { network = n },
+                            label = { Text(n.displayName, maxLines = 1) },
+                            leadingIcon = { Icon(socialIcon(n), null, Modifier.size(18.dp)) },
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    handle,
+                    { handle = it },
+                    label = { Text(stringResource(Res.string.socials_handle)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onAdd(network, handle)
+                onDismiss()
+            }, enabled = handle.isNotBlank()) { Text(stringResource(CoreRes.string.add)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
+    )
+}
+
+/** "Add a website" (issue #118): one address; https:// is added when missing. */
+@Composable
+fun AddWebsiteDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+    var url by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.Language, null) },
+        title = { Text(stringResource(Res.string.websites_add)) },
+        text = {
+            OutlinedTextField(
+                url,
+                { url = it },
+                label = { Text(stringResource(Res.string.websites_address)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onAdd(url)
+                onDismiss()
+            }, enabled = url.isNotBlank()) { Text(stringResource(CoreRes.string.add)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )

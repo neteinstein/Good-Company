@@ -30,6 +30,26 @@ class PersonPageTest {
     // --- Message sheet ---
 
     @Test
+    fun oneContactButton_hasCallFirstThenMessages_preferredOnTop_andItsIconFollowsThePreference() {
+        val phone = "+351 912 345 678"
+        val mail = "ana@example.com"
+        assertEquals(
+            listOf(ContactChannel.CALL, ContactChannel.WHATSAPP, ContactChannel.SMS, ContactChannel.EMAIL),
+            MessageOptions.contact(phone, mail, null).map { it.channel },
+        )
+        assertEquals("tel:+351912345678", MessageOptions.contact(phone, null, null).first().link)
+        val textFirst = MessageOptions.contact(phone, mail, ContactChannel.SMS)
+        assertEquals(ContactChannel.SMS, textFirst.first().channel)
+        assertTrue(textFirst.first().preferred)
+        assertTrue(MessageOptions.contact(phone, mail, ContactChannel.CALL).first().let { it.channel == ContactChannel.CALL && it.preferred })
+        assertEquals(listOf(ContactChannel.EMAIL), MessageOptions.contact(null, mail, ContactChannel.CALL).map { it.channel })
+        assertTrue(MessageOptions.contact(null, null, null).isEmpty())
+        assertTrue(MessageOptions.showsPhone(ContactChannel.CALL))
+        assertFalse(MessageOptions.showsPhone(ContactChannel.WHATSAPP))
+        assertFalse(MessageOptions.showsPhone(null))
+    }
+
+    @Test
     fun phoneOnly_offersWhatsAppAndText() {
         val options = MessageOptions.of(phone, null, null)
         assertEquals(listOf(ContactChannel.WHATSAPP, ContactChannel.SMS), options.map { it.channel })
@@ -121,6 +141,8 @@ class PersonPageTest {
                 PersonCard.MOMENTS,
                 PersonCard.GIFTS,
                 PersonCard.SAVED,
+                PersonCard.SOCIALS,
+                PersonCard.WEBSITES,
                 PersonCard.FEEDS,
             ),
             ProfileSections.missing(ana, facts),
@@ -155,6 +177,10 @@ class PersonPageTest {
                 com.neteinstein.goodcompany.core.domain.model.ImportantEvent("e", "Wedding", kotlinx.datetime.LocalDate(2027, 5, 1)),
             ),
             feeds = listOf(com.neteinstein.goodcompany.core.domain.model.FriendFeed(url = "https://blog.example")),
+            socials = listOf(
+                com.neteinstein.goodcompany.core.domain.model.SocialLink(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.X, "ana"),
+            ),
+            websites = listOf("https://ana.pt"),
         )
         val fullFacts = facts.copy(savedCount = 2)
         assertTrue(ProfileSections.missing(full, fullFacts).isEmpty())

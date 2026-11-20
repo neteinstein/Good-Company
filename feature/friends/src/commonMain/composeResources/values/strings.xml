@@ -505,9 +505,7 @@
     <string name="circles_sheet_title">%1$s’s circles</string>
     <string name="circles_new_with">New circle with %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
-    <string name="qa_message">Message</string>
     <string name="qa_we_met">Log</string>
-    <string name="message_sheet_title">Message %1$s</string>
     <string name="tab_about">About</string>
     <string name="tab_together">Together</string>
     <string name="story_open">Open %1$s’s story</string>
@@ -543,4 +541,17 @@
     <string name="together_plan_cancelled">Cancelled</string>
     <string name="together_plan_not_attended">You didn’t go</string>
     <string name="together_reminder_done">Reminder done</string>
+    <!-- Contact and links (issue #118) -->
+    <string name="qa_contact">Contact</string>
+    <string name="contact_sheet_title">Contact %1$s</string>
+    <string name="socials_title">Socials</string>
+    <string name="socials_hint">Their Instagram, LinkedIn and other profiles: buttons beside their photo.</string>
+    <string name="socials_add">Add a profile</string>
+    <string name="socials_handle">Username or link</string>
+    <string name="websites_title">Website</string>
+    <string name="websites_hint">Their site or portfolio. It opens in your browser; the app never loads it.</string>
+    <string name="websites_add">Add a website</string>
+    <string name="websites_address">Web address</string>
+    <string name="complete_socials">Socials</string>
+    <string name="complete_websites">Website</string>
 </resources>

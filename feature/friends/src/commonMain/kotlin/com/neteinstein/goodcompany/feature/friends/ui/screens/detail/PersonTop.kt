@@ -71,6 +71,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.SocialLink
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyMember
 import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
@@ -85,6 +86,7 @@ import com.neteinstein.goodcompany.core.ui.components.StoryRingBox
 import com.neteinstein.goodcompany.core.ui.components.WarmthMeter
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.closenessIcon
+import com.neteinstein.goodcompany.core.ui.components.socialIcon
 import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
@@ -97,6 +99,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_badge
 import com.neteinstein.goodcompany.feature.friends.resources.circles_edit
 import com.neteinstein.goodcompany.feature.friends.resources.closeness_change
+import com.neteinstein.goodcompany.feature.friends.resources.contact_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.detail_add_birthday
 import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.detail_back
@@ -107,17 +110,17 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_more_options
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
 import com.neteinstein.goodcompany.feature.friends.resources.edit_person
-import com.neteinstein.goodcompany.feature.friends.resources.message_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.news_add
 import com.neteinstein.goodcompany.feature.friends.resources.photo_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.qa_call
+import com.neteinstein.goodcompany.feature.friends.resources.qa_contact
 import com.neteinstein.goodcompany.feature.friends.resources.qa_email
-import com.neteinstein.goodcompany.feature.friends.resources.qa_message
 import com.neteinstein.goodcompany.feature.friends.resources.qa_remind
 import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_we_met
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.remove_person
+import com.neteinstein.goodcompany.feature.friends.resources.socials_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_open
 import com.neteinstein.goodcompany.feature.friends.resources.tab_about
 import com.neteinstein.goodcompany.feature.friends.resources.tab_together
@@ -152,11 +155,6 @@ internal class PersonTopActions(
     val onLog: () -> Unit,
 )
 
-/** The phone number Call dials, or null without one. */
-internal fun callLink(
-    f: Friend,
-): String? = f.phoneNumbers.firstOrNull()?.filter { it.isDigit() || it == '+' }?.takeIf { it.isNotEmpty() }?.let { "tel:$it" }
-
 /** Warmth shows for real friends while Settings → Show warmth is on (the same rule everywhere on the page). */
 internal fun showsWarmth(f: Friend, state: FriendDetailUiState): Boolean =
     state.showWarmth && f.isCloseFriend && f.tracksKeepInTouch && state.detail?.warmth != null
@@ -184,44 +182,48 @@ internal fun PersonTop(f: Friend, state: FriendDetailUiState, family: FamilyArou
                 stringResource(Res.string.photo_sheet_title, f.displayName.substringBefore(' '))
             }
             val storyLabel = stringResource(Res.string.story_open, f.displayName.substringBefore(' '))
-            FamilyRing(
-                family = family,
-                today = state.today,
-                onOpen = actions.onOpenFamily,
-                onMore = actions.onMoreFamily,
-                photo = {
-                    // The photo opens their story; the camera badge keeps the photo options (F14).
-                    Box {
-                        StoryRingBox(state.storyRing) {
-                            FriendAvatar(
-                                f,
-                                size = 112.dp,
-                                highlighted = f.isCloseFriend && state.storyRing == StoryRing.NONE,
-                                sharedKey = "avatar-${f.id.value}",
-                                modifier = Modifier.clip(CircleShape).clickable(onClickLabel = storyLabel, onClick = actions.onOpenStory),
-                            )
+            // Issue #118: their socials as round buttons right of the photo, under ⋮ and in its style.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                FamilyRing(
+                    family = family,
+                    today = state.today,
+                    onOpen = actions.onOpenFamily,
+                    onMore = actions.onMoreFamily,
+                    photo = {
+                        // The photo opens their story; the camera badge keeps the photo options (F14).
+                        Box {
+                            StoryRingBox(state.storyRing) {
+                                FriendAvatar(
+                                    f,
+                                    size = 112.dp,
+                                    highlighted = f.isCloseFriend && state.storyRing == StoryRing.NONE,
+                                    sharedKey = "avatar-${f.id.value}",
+                                    modifier = Modifier.clip(CircleShape).clickable(onClickLabel = storyLabel, onClick = actions.onOpenStory),
+                                )
+                            }
+                            Surface(
+                                onClick = actions.onPhoto,
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
+                                modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
+                            ) {
+                                Icon(Icons.Rounded.AddAPhoto, contentDescription = photoLabel, modifier = Modifier.padding(7.dp))
+                            }
                         }
-                        Surface(
-                            onClick = actions.onPhoto,
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.surface),
-                            modifier = Modifier.align(Alignment.BottomEnd).size(34.dp),
-                        ) {
-                            Icon(Icons.Rounded.AddAPhoto, contentDescription = photoLabel, modifier = Modifier.padding(7.dp))
-                        }
-                    }
-                },
-                name = {
-                    Text(
-                        f.displayName,
-                        style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 24.dp).padding(top = 12.dp),
-                    )
-                },
-            )
+                    },
+                    name = {
+                        Text(
+                            f.displayName,
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp).padding(top = 12.dp),
+                        )
+                    },
+                )
+                SocialButtons(f.socials, Modifier.align(Alignment.TopEnd).padding(end = 4.dp))
+            }
             Spacer(Modifier.height(12.dp))
             InfoBox(f, state, actions)
             Spacer(Modifier.height(12.dp))
@@ -245,6 +247,62 @@ private fun ViewBar(f: Friend, actions: PersonTopActions) {
         RemoveMenu(f, actions.onRemove) { open ->
             FilledTonalIconButton(onClick = open, colors = glass) {
                 Icon(Icons.Rounded.MoreVert, stringResource(Res.string.detail_more_options))
+            }
+        }
+    }
+}
+
+/**
+ * Their socials (issue #118): a column of round brand buttons the size and style of ⋮; with more than
+ * [MAX_SOCIAL_BUTTONS], the last one is "+N" and opens them all. Each opens the profile in its app or the browser.
+ */
+@Composable
+private fun SocialButtons(socials: List<SocialLink>, modifier: Modifier = Modifier) {
+    if (socials.isEmpty()) return
+    val uri = LocalUriHandler.current
+    var all by remember { mutableStateOf(false) }
+    val glass = IconButtonDefaults.filledTonalIconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+    val shown = if (socials.size > MAX_SOCIAL_BUTTONS) socials.take(MAX_SOCIAL_BUTTONS - 1) else socials
+    Column(modifier) {
+        shown.forEach { link ->
+            FilledTonalIconButton(onClick = { runCatching { uri.openUri(link.url) } }, colors = glass) {
+                Icon(socialIcon(link.network), link.network.displayName, Modifier.size(20.dp))
+            }
+        }
+        if (shown.size < socials.size) {
+            FilledTonalIconButton(onClick = { all = true }, colors = glass) {
+                Text("+${socials.size - shown.size}", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+    if (all) SocialsSheet(socials, onDismiss = { all = false })
+}
+
+private const val MAX_SOCIAL_BUTTONS = 4
+
+/** Every social of theirs, from "+N" (issue #118). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SocialsSheet(socials: List<SocialLink>, onDismiss: () -> Unit) {
+    val uri = LocalUriHandler.current
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 16.dp).navigationBarsPadding()) {
+            Text(
+                stringResource(Res.string.socials_title),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            socials.forEach { link ->
+                ListItem(
+                    modifier = Modifier.clickable {
+                        onDismiss()
+                        runCatching { uri.openUri(link.url) }
+                    }.padding(horizontal = 8.dp),
+                    leadingContent = { Icon(socialIcon(link.network), null, Modifier.size(24.dp)) },
+                    headlineContent = { Text(link.network.displayName) },
+                    supportingContent = { Text(link.handle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
             }
         }
     }
@@ -366,29 +424,21 @@ private fun Circles(state: FriendDetailUiState, actions: PersonTopActions) {
     }
 }
 
-/** Message · Call · Caught up · Remind · Add news (decision "Person page · one Message button"; Add news: issue #103). */
+/**
+ * Contact · Log · Remind · Add news. One contact button (issue #118, was Message and Call): the phone when Call is
+ * preferred, the chat bubble otherwise; it opens the sheet with Call, WhatsApp, Text and Email.
+ */
 @Composable
 private fun TopActions(f: Friend, actions: PersonTopActions) {
-    val uri = LocalUriHandler.current
     val haptics = LocalHapticFeedback.current
     val lead = MessageOptions.lead(f.preferredChannel)
-    val canMessage = MessageOptions.of(f).isNotEmpty()
-    val call = callLink(f)
     Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
         QuickAction(
-            Icons.AutoMirrored.Rounded.Chat,
-            stringResource(Res.string.qa_message),
+            contactIcon(f),
+            stringResource(Res.string.qa_contact),
             onClick = actions.onMessage,
-            enabled = canMessage,
-            emphasized = lead == LeadAction.MESSAGE,
-            modifier = Modifier.weight(1f),
-        )
-        QuickAction(
-            Icons.Rounded.Call,
-            stringResource(Res.string.qa_call),
-            onClick = { call?.let { runCatching { uri.openUri(it) } } },
-            enabled = call != null,
-            emphasized = lead == LeadAction.CALL,
+            enabled = MessageOptions.contact(f).isNotEmpty(),
+            emphasized = lead != LeadAction.WE_MET,
             modifier = Modifier.weight(1f),
         )
         QuickAction(LogIcon, stringResource(Res.string.qa_we_met), onClick = {
@@ -400,9 +450,12 @@ private fun TopActions(f: Friend, actions: PersonTopActions) {
     }
 }
 
+/** The contact button's icon (issue #118). */
+internal fun contactIcon(f: Friend) = if (MessageOptions.showsPhone(f.preferredChannel)) Icons.Rounded.Call else Icons.AutoMirrored.Rounded.Chat
+
 /**
  * Pinned under the top: the bar the top shrinks into once it has scrolled away ([collapsed]: back, small avatar,
- * name, Message, Call; "+" for the Log sheet on Together), then the two tabs.
+ * name, the contact button; "+" for the Log sheet on Together), then the two tabs.
  */
 @Composable
 internal fun PinnedTabs(f: Friend, tab: PersonTab, onTab: (PersonTab) -> Unit, collapsed: Boolean, actions: PersonTopActions) {
@@ -435,8 +488,6 @@ internal fun PinnedTabs(f: Friend, tab: PersonTab, onTab: (PersonTab) -> Unit, c
 
 @Composable
 private fun CollapsedBar(f: Friend, tab: PersonTab, actions: PersonTopActions) {
-    val uri = LocalUriHandler.current
-    val call = callLink(f)
     Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = actions.onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(Res.string.detail_back)) }
         FriendAvatar(f, size = 32.dp)
@@ -451,18 +502,15 @@ private fun CollapsedBar(f: Friend, tab: PersonTab, actions: PersonTopActions) {
         if (tab == PersonTab.TOGETHER) {
             IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
         }
-        IconButton(onClick = actions.onMessage, enabled = MessageOptions.of(f).isNotEmpty()) {
-            Icon(Icons.AutoMirrored.Rounded.Chat, stringResource(Res.string.qa_message))
-        }
-        IconButton(onClick = { call?.let { runCatching { uri.openUri(it) } } }, enabled = call != null) {
-            Icon(Icons.Rounded.Call, stringResource(Res.string.qa_call))
+        IconButton(onClick = actions.onMessage, enabled = MessageOptions.contact(f).isNotEmpty()) {
+            Icon(contactIcon(f), stringResource(Res.string.qa_contact))
         }
     }
 }
 
 /**
- * "Message <name>": WhatsApp and Text when there is a number, Email when there is an address, their preferred one
- * first with a badge. Each opens the app with nothing typed; nothing is sent by the app.
+ * "Contact <name>" (issue #118): Call, WhatsApp and Text when there is a number, Email when there is an address, their
+ * preferred one first with a badge. Each opens the app with nothing typed; nothing is sent by the app.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -471,11 +519,11 @@ internal fun MessageSheet(f: Friend, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(bottom = 16.dp).navigationBarsPadding()) {
             Text(
-                stringResource(Res.string.message_sheet_title, f.displayName.substringBefore(' ')),
+                stringResource(Res.string.contact_sheet_title, f.displayName.substringBefore(' ')),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             )
-            val options = MessageOptions.of(f)
+            val options = MessageOptions.contact(f)
             options.forEachIndexed { i, option ->
                 if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 24.dp))
                 ListItem(

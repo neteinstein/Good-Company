@@ -247,6 +247,24 @@ class BackupAndPlansTest {
     }
 
     @Test
+    fun socialsAndWebsites_roundTripThroughABackup() = runTest {
+        val from = Stores()
+        val socials = listOf(
+            com.neteinstein.goodcompany.core.domain.model.SocialLink(
+                com.neteinstein.goodcompany.core.domain.model.SocialNetwork.MASTODON,
+                "@ana@mastodon.social",
+            ),
+        )
+        from.friends.upsert(friend("ana", "Ana") { copy(socials = socials, websites = listOf("https://ana.pt")) })
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val ana = to.backup.snapshot().friends.single()
+        assertEquals(socials, ana.socials)
+        assertEquals(listOf("https://ana.pt"), ana.websites)
+    }
+
+    @Test
     fun aBackupFromBeforeDatedNotes_turnsEachNoteIntoOneDatedNote_andBlankNotesMakeNone() = runTest {
         // Written by a build before issue #103: notes are one free-text field per person.
         val old = """

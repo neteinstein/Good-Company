@@ -31,6 +31,9 @@ import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
+import com.neteinstein.goodcompany.core.domain.model.SocialLink
+import com.neteinstein.goodcompany.core.domain.model.SocialNetwork
+import com.neteinstein.goodcompany.core.domain.model.Socials
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
@@ -236,6 +239,9 @@ sealed interface SavedEdit {
 
     /** Every taste list before one was deleted (issue #102). */
     data class TastesBefore(val friend: Friend) : SavedEdit
+
+    /** Their socials and websites before one was removed (issue #118). */
+    data class LinksBefore(val socials: List<SocialLink>, val websites: List<String>) : SavedEdit
 
     /** A timeline entry deleted from the person's page (issue #102). */
     data class EntryRemoved(val entry: TimelineEntry) : SavedEdit
@@ -444,6 +450,7 @@ class FriendDetailViewModel(
                 is SavedEdit.KidAdded -> deleteFriend(undo.id)
                 is SavedEdit.NewsBefore -> updateFriend(friendId) { it.copy(lifeUpdates = undo.updates) }
                 is SavedEdit.MomentsBefore -> updateFriend(friendId) { it.copy(importantEvents = undo.events) }
+                is SavedEdit.LinksBefore -> updateFriend(friendId) { it.copy(socials = undo.socials, websites = undo.websites) }
                 is SavedEdit.TastesBefore -> updateFriend(friendId) { f ->
                     val t = undo.friend
                     f.copy(
@@ -833,6 +840,28 @@ class FriendDetailViewModel(
                 )
             }
         }
+    }
+
+    /** Adds a profile (issue #118): what was typed is cleaned by [Socials.parse]; the same one twice is kept once. */
+    fun onAddSocial(network: SocialNetwork, input: String) {
+        val link = Socials.parse(network, input) ?: return
+        edit { f -> if (link in f.socials) f else f.copy(socials = f.socials + link) }
+    }
+
+    fun onRemoveSocial(link: SocialLink) = editWithUndo(before = {
+        SavedEdit.LinksBefore(it.socials, it.websites)
+    }, FriendDetailMessage.Removed) { f ->
+        f.copy(socials = f.socials - link)
+    }
+
+    /** Adds a website (issue #118), with https:// when none was typed. Never fetched. */
+    fun onAddWebsite(input: String) {
+        val url = Socials.website(input) ?: return
+        edit { f -> if (url in f.websites) f else f.copy(websites = f.websites + url) }
+    }
+
+    fun onRemoveWebsite(url: String) = editWithUndo(before = { SavedEdit.LinksBefore(it.socials, it.websites) }, FriendDetailMessage.Removed) { f ->
+        f.copy(websites = f.websites - url)
     }
 
     fun onRemoveFeed(url: String) = edit { f -> f.copy(feeds = f.feeds.filterNot { it.url == url }) }

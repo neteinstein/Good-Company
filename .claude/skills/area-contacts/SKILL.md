@@ -67,3 +67,12 @@ knows nothing of it) and never sent to the AI. `AppViewModel` observes it and `A
 (`:core:ui` `HeaderButtons.kt`); readers are `HeaderSettingsButton` (photo instead of the gear, every tab header), the
 network map's centre node and the year in review hero card. Add a new place by reading `LocalMyPhoto`, not by
 injecting the use case into another ViewModel.
+
+## Contact button, socials and websites (issue #118)
+
+- One contact button on the person page (`MessageOptions.contact`): Call, WhatsApp, Text, Email, preferred first; the
+  icon is the phone only when Call is preferred (`MessageOptions.showsPhone`).
+- `Friend.socials` (`SocialLink`, `SocialNetwork`, `Socials.parse`/`url` in `model/Socials.kt`) and `Friend.websites`
+  are app-owned, in table `friend_link` (`kind` = network name or `WEBSITE`, migration `25.sqm`). Never written back
+  to contacts, never fetched. Logos: `SocialIcons` in `:core:ui` (Simple Icons, CC0, `docs/licenses/simple-icons.md`);
+  never redraw them.
