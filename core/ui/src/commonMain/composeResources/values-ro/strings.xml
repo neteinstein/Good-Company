@@ -401,6 +401,8 @@
     <string name="log_place_hint">Loc (opțional)</string>
     <string name="log_use_location">Folosește locația mea</string>
     <string name="log_clear_location">Elimină locația</string>
+    <string name="log_location_denied">Fără permisiune de localizare. Scrie locul.</string>
+    <string name="log_location_unavailable">Nu am putut afla locația ta. Verifică dacă locația e pornită sau scrie locul.</string>
     <string name="log_activity">Ce ați făcut?</string>
     <string name="log_more">Mai mult</string>
     <string name="log_less">Mai puțin</string>

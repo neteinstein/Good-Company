@@ -390,6 +390,8 @@
     <string name="log_place_hint">Local (opcional)</string>
     <string name="log_use_location">Usar a minha localização</string>
     <string name="log_clear_location">Remover localização</string>
+    <string name="log_location_denied">Sem permissão de localização. Escreve o local.</string>
+    <string name="log_location_unavailable">Não foi possível obter a tua localização. Verifica se a localização está ligada, ou escreve o local.</string>
     <string name="log_activity">O que fizeram?</string>
     <string name="log_more">Mais</string>
     <string name="log_less">Menos</string>
