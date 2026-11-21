@@ -54,14 +54,22 @@ class CirclePageTest {
         CirclePages.build(group.id, listOf(pair, six), people, hangouts, plans, reminders, attachments, today, TimeZone.UTC)
 
     @Test
-    fun aCircleOfTwoNeedsBoth_aCircleOfSixNeedsThree() {
+    fun everyMeetupWithAMemberShows_andACircleOfTwoNeedsBoth_aCircleOfSixThreeToCount() {
+        // Issue #150 (D 2026-11-21): the page lists every meetup with members; the quorum marks the ones that counted.
         val hangouts = listOf(
+            Hangout("h0", ids("outsider"), at(2026, 2, 28)),
             Hangout("h1", ids("ana"), at(2026, 3, 1)),
             Hangout("h2", ids("ana", "rui"), at(2026, 3, 2)),
             Hangout("h3", ids("ana", "rui", "eva"), at(2026, 3, 3)),
         )
-        assertEquals(listOf("h3", "h2"), page(pair, hangouts)!!.timeline.map { (it as TimelineEntry.Meetup).hangout.id })
-        assertEquals(listOf("h3"), page(six, hangouts)!!.timeline.map { (it as TimelineEntry.Meetup).hangout.id })
+        fun counted(group: FriendGroup): List<String> {
+            val p = page(group, hangouts)!!
+            return p.timeline.filterIsInstance<TimelineEntry.Meetup>().filter { p.countedAt(it) }.map { it.hangout.id }
+        }
+        assertEquals(listOf("h3", "h2", "h1"), page(pair, hangouts)!!.timeline.map { (it as TimelineEntry.Meetup).hangout.id })
+        assertEquals(listOf("h3", "h2", "h1"), page(six, hangouts)!!.timeline.map { (it as TimelineEntry.Meetup).hangout.id })
+        assertEquals(listOf("h3", "h2"), counted(pair))
+        assertEquals(listOf("h3"), counted(six))
     }
 
     @Test

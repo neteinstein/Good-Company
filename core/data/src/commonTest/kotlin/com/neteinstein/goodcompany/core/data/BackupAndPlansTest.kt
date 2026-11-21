@@ -95,7 +95,7 @@ class BackupAndPlansTest {
         from.interactions.upsertJournal(JournalEntry("j1", ana, at(2026, 3, 4), "Talked about Porto"))
         from.hangouts.add(Hangout("h2", listOf(ana), at(2026, 3, 5), activity = HangoutActivity.LUNCH))
         from.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 3, 1))))
-        from.groups.upsert(FriendGroup("g", "Crew", memberIds = listOf(ana)))
+        from.groups.upsert(FriendGroup("g", "Crew", memberIds = listOf(ana), meetEveryDays = 15, approxLastMet = LocalDate(2026, 2, 1)))
         from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), createdAt = at(2026, 3, 1)))
         from.appSettings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon") }
 
@@ -118,6 +118,8 @@ class BackupAndPlansTest {
         assertEquals(listOf("Talked about Porto"), snap.journal.map { it.text })
         assertEquals(1, snap.messages.size)
         assertEquals(1, snap.ideas.size)
+        // Issue #150: the circle's "When did it last meet?" answer survives a backup.
+        assertEquals(LocalDate(2026, 2, 1), snap.groups.single().approxLastMet)
         assertEquals(1, snap.groups.size)
         assertEquals(1, snap.plans.size)
         assertEquals("Lisbon", snap.settings.homeArea)

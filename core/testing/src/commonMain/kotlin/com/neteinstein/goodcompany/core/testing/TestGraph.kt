@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -157,6 +158,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TurnOffCircleRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
@@ -321,7 +323,7 @@ class TestGraph(
     val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
     val currentLocation = GetCurrentLocationUseCase(location)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
-    val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
+    val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock, circles)
     val answerLastSeen = AnswerLastSeenUseCase(friendRepo, clock)
     val hideLastSeenCard = HideLastSeenCardUseCase(settingsRepo, clock)
     val observeOccasionMatches = ObserveOccasionMatchesUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
@@ -329,6 +331,8 @@ class TestGraph(
     val saveGroup = SaveGroupUseCase(circles, ids)
     val deleteGroup = DeleteGroupUseCase(circles, settingsRepo, coverRepo)
     val restoreGroup = RestoreGroupUseCase(circles, coverRepo)
+    val answerLastMet = AnswerLastMetUseCase(circles, clock)
+    val turnOffCircleReminders = TurnOffCircleRemindersUseCase(circles)
 
     /** Covers keep the first 16 bytes, like [thumbnailShrinker], so tests can tell a shrunk cover. */
     val circleCovers = CircleCoverUseCases(coverRepo) { it.copyOf(minOf(it.size, 16)) }

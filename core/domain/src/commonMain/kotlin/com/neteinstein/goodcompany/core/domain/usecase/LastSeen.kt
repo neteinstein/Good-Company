@@ -1,16 +1,19 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
 import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
@@ -53,12 +56,31 @@ object LastSeenQuestions {
             .filter { f -> f.id !in seen && !(f.contactCountsAsCatchUp && f.id in contacted) }
             .sortedWith(compareBy<Friend> { it.closeness.ordinal }.thenBy { it.displayName.lowercase() })
     }
+
+    /**
+     * Circles the card asks "When did the circle last meet?" about (issue #150, decision 2026-11-21): their reminder is
+     * on, they have members, no meetup counts for them yet ([Relationships.lastCircleMeetup], the quorum) and there is
+     * no answer yet. By name.
+     */
+    fun pendingCircles(groups: List<FriendGroup>, hangouts: List<Hangout>): List<FriendGroup> = groups
+        .filter { g -> (g.meetEveryDays ?: 0) > 0 && g.memberIds.isNotEmpty() && g.approxLastMet == null }
+        .filter { g -> Relationships.lastCircleMeetup(hangouts, g.memberIds.toSet()) == null }
+        .sortedBy { it.name.lowercase() }
 }
 
-/** What Today's last-seen card shows: who is left to ask, or nothing while "Not now" hides it for the day. */
-data class LastSeenCard(val pending: List<Friend>, val hiddenToday: Boolean) {
+/**
+ * What Today's last-seen card shows: who is left to ask (people first, then circles, issue #150), or nothing while
+ * "Not now" hides it for the day.
+ */
+data class LastSeenCard(val pending: List<Friend>, val hiddenToday: Boolean, val pendingCircles: List<FriendGroup> = emptyList()) {
     /** The person the card asks about now; null when there is no one or the card is hidden. */
     val current: Friend? get() = if (hiddenToday) null else pending.firstOrNull()
+
+    /** The circle the card asks about now: only once no person is left to ask. */
+    val currentCircle: FriendGroup? get() = if (hiddenToday || pending.isNotEmpty()) null else pendingCircles.firstOrNull()
+
+    /** Everyone and every circle still to ask. */
+    val pendingCount: Int get() = pending.size + pendingCircles.size
 }
 
 class ObserveLastSeenCardUseCase(
@@ -67,12 +89,14 @@ class ObserveLastSeenCardUseCase(
     private val interactions: InteractionRepository,
     private val settings: SettingsRepository,
     private val clock: AppClock,
+    private val groups: GroupRepository,
 ) {
     operator fun invoke(): Flow<LastSeenCard> =
-        combine(friends.friends, hangouts.hangouts, interactions.interactions, settings.settings) { fs, hs, ints, s ->
+        combine(friends.friends, hangouts.hangouts, interactions.interactions, settings.settings, groups.groups) { fs, hs, ints, s, gs ->
             LastSeenCard(
                 pending = LastSeenQuestions.pending(fs, hs, ints, CadenceRules.from(s)),
                 hiddenToday = s.lastSeenCardHiddenOn?.let { it >= clock.today() } ?: false,
+                pendingCircles = LastSeenQuestions.pendingCircles(gs, hs),
             )
         }
 }
@@ -90,6 +114,26 @@ class AnswerLastSeenUseCase(private val friends: FriendRepository, private val c
     suspend fun undo(id: FriendId, previous: LocalDate? = null) {
         val f = friends.get(id) ?: return
         friends.upsert(f.copy(approxLastSeen = previous))
+    }
+}
+
+/**
+ * Stores an answer to "When did the circle last meet?" (issue #150) as the circle's approximate last meetup, with the
+ * same answers as people. It only starts the circle's rhythm: no meetup, nothing on a timeline. [undo] puts back what
+ * was there before.
+ */
+class AnswerLastMetUseCase(private val groups: GroupRepository, private val clock: AppClock) {
+    /** Returns the date stored, or null when the circle is gone. */
+    suspend operator fun invoke(id: String, answer: LastSeenAnswer): LocalDate? {
+        val g = groups.groups.first().firstOrNull { it.id == id } ?: return null
+        val date = answer.dateFor(clock.today())
+        groups.upsert(g.copy(approxLastMet = date))
+        return date
+    }
+
+    suspend fun undo(id: String, previous: LocalDate? = null) {
+        val g = groups.groups.first().firstOrNull { it.id == id } ?: return
+        groups.upsert(g.copy(approxLastMet = previous))
     }
 }
 

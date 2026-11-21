@@ -268,6 +268,7 @@ internal suspend fun GoodCompanyDatabase.readGroups(): List<DomainGroup> {
             memberIds = members[row.id].orEmpty(),
             meetEveryDays = row.meet_every_days?.toInt(),
             snoozedUntil = row.snoozed_until?.toLocalDate(),
+            approxLastMet = row.approx_last_met?.toLocalDate(),
             color = CircleColor.parse(row.color),
         )
     }
@@ -284,6 +285,7 @@ internal suspend fun GoodCompanyDatabase.writeGroup(group: DomainGroup) {
             meet_every_days = group.meetEveryDays?.toColumn(),
             snoozed_until = group.snoozedUntil?.toColumn(),
             color = group.color.name,
+            approx_last_met = group.approxLastMet?.toColumn(),
         ),
     )
     q.deleteMembers(group.id)

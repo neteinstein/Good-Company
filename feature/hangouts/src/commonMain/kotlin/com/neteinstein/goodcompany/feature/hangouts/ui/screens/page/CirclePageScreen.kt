@@ -129,6 +129,7 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.msg_entry_deleted
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_group_snoozed
 import com.neteinstein.goodcompany.feature.hangouts.resources.msg_reminder_saved
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_coming_up
+import com.neteinstein.goodcompany.feature.hangouts.resources.page_counted
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_cover
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_empty
 import com.neteinstein.goodcompany.feature.hangouts.resources.page_everyone
@@ -591,7 +592,12 @@ private fun MeetupRow(page: CirclePage, entry: TimelineEntry.Meetup, zone: TimeZ
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleSmall)
             Text(
-                listOf(h.at.toLocalDate(zone).shortLabel(), who).joinToString(" · "),
+                // Issue #150: with the reminder on, the meetups that reset it say so; the rest say how many came.
+                listOfNotNull(
+                    h.at.toLocalDate(zone).shortLabel(),
+                    who,
+                    stringResource(Res.string.page_counted).takeIf { page.group.meetEveryDays != null && page.countedAt(entry) },
+                ).joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

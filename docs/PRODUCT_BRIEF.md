@@ -31,7 +31,8 @@ more than one area. When you add a Decision row, add it here too.
   Circles · a page for each circle · People · everyone has a closeness · 11-20 Keep-in-touch tracking *(part → 11-21
   Stay in touch…)* · People tab · tabs, recent first, circle dots · 11-21 Stay in touch · off for kids, partners and
   relatives · Stay in touch · the name · Rhythm · custom Off means no catch-ups · Person page · a background image ·
-  Closeness · Inner is shown as Closest
+  Closeness · Inner is shown as Closest · Circles · nothing logged isn't overdue · Circles · the row on Today says why ·
+  Circles · the page shows which meetups counted
 - **Logging, timeline, places, calendar, plans** (`area-logging`): 11-07 Warmth score · 11-07 Plans *(part → D3, Plans · states)* ·
   11-07 Pause · 11-08 Catch-up story · 11-13 D3 · F2 · F3 · F11 · F13 · F20 · 11-14 Timeline · what counts as what ·
   Timeline · remote contact *(old → Logging · ways to keep in touch)* · Timeline · one "Log" sheet · Plans · recurring and circle plans *(part → Plans · states)* · Calendar suggestions ·
@@ -39,13 +40,15 @@ more than one area. When you add a Decision row, add it here too.
   Catch-up · never-logged people · Catch-up · last-seen answers · Catch-up · last-seen date stays hidden · 11-20 Plans · states · 11-21 Plans · It happened ▾ and a ⋮ on plan rows · Logging · ways to keep in touch *(part → Log from anywhere)* ·
   Timeline · edit and delete · Reminders · like a reminders app · Log from anywhere · Keep-in-touch tracking *(part → 11-21 Stay in touch…)* ·
   Together tab · one timeline *(part → 11-21 Together tab · no status block…)* · Your data · activities, places, tastes ·
-  11-21 Together tab · no status block, catch-up in Edit person · Reminders · where a tap goes · Today · Before you meet above This week
+  11-21 Together tab · no status block, catch-up in Edit person · Reminders · where a tap goes · Today · Before you meet above This week ·
+  Circles · nothing logged isn't overdue · Circles · the row on Today says why
 - **Notifications, widgets, shortcuts** (`area-notifications-widgets`): 11-07 Snooze and "Called" *(part → 11-21 Together
   tab · no status block…)* · 11-07 Catch-up
   nudges have a budget · 11-07 Privacy options · 11-07 Android widget · 11-07 Owner answers to the follow-up questions
   *(part → D4)* · 11-08 iOS widget · 11-13 D7 · 11-14 App-icon shortcuts · what they offer · App-icon shortcuts · privacy · 11-20 Notifications · settings
   and persistent · Reminders · like a reminders app · Log from anywhere (daily reminder) · Keep-in-touch tracking ·
-  11-21 Birthdays · heads-up before the day · Settings · Closeness after Reminders · Reminders · where a tap goes
+  11-21 Birthdays · heads-up before the day · Settings · Closeness after Reminders · Reminders · where a tap goes ·
+  Circles · nothing logged isn't overdue (no circle nudge until answered)
 - **AI** (`area-ai`): 11-06 "AI token" · 11-06 Weekly job · 11-07 Messages are drafted, never sent · 11-07 Occasions
   and offline talking points *(part → F1)* · 11-13 F1 · 11-14 AI switch (F1 as built)
 - **Sharing & gifts** (`area-sharing-gifts`): 11-07 Saved groups (gift ideas & history) · 11-08 Social networks: share
@@ -228,3 +231,6 @@ more than one area. When you add a Decision row, add it here too.
 | 2026-11-21 | **Save · one SaveBar above the navigation bar and the keyboard (issue #146).** Save lives in a bottom `SaveBar` that stays above the navigation bar and the keyboard, so it is never drawn under either (3-button or gesture navigation, light or dark). Full-screen editors (Edit circle, edit person…) put Save in that bottom bar too, not in the top app bar; Delete stays in the top bar. Pick-from-a-list sheets still save on selection with Undo; sheets with text fields keep a sticky SaveBar at the bottom of the sheet, never at the end of a scroll. | Owner, on issue #146: "Save goes in a bottom SaveBar on full-screen editors as well, not in the top app bar." |
 | 2026-11-21 | **Closeness · Inner is shown as Closest in English (issue #147).** The top closeness level reads **Closest** in English, so the levels are Closest · Close · Friends · Acquaintances, nearest to furthest; "Inner" read as "inner circle" and got confused with Circles. English only: PT/ES/FR/RO already say "intimates" (Íntimos, Íntimos, Intimes, Intimi) and stay. Stored values and keys don't change: the enum stays `INNER`, the column `circle`, the `circle_inner*` string keys and `innerCircleDays`. | Owner. Partly supersedes 2026-11-14 "Closeness · four levels". |
 | 2026-11-21 | **Today · Before you meet above This week (issue #149).** On Today, the notifications card, the "When did you last see…?" card and the Log card stay at the top. Then comes **Before you meet** (the catch-up story row), then **This week**. With nobody to show, Before you meet stays hidden as before. | Owner, on issue #149. |
+| 2026-11-21 | **Circles · nothing logged isn't overdue (issue #150).** A circle with its reminder on and no meetup logged is **not** overdue: no row on Today, no nudge. Today's "When did you last see…?" card asks "When did the circle last meet?" instead, one at a time (after the people), with the same answers as people (Catch-up · last-seen answers). The answer only starts the circle's rhythm: it isn't a meetup and never shows on a timeline; a real meetup always wins. The quorum stays: a meetup counts for the circle with at least half its members, never fewer than two. | Owner, comment on issue #150. |
+| 2026-11-21 | **Circles · the row on Today says why (issue #150).** A circle's row reads "Every 15 days · last met 40 days ago", or "Every 15 days · no meetup logged yet", above its members' names. Its ⋮ offers the same snoozes as people (a week, or until Saturday) and **Turn off reminders for this circle** (with Undo). | Owner, comment on issue #150. |
+| 2026-11-21 | **Circles · the page shows which meetups counted (issue #150).** A circle's page lists every meetup with members of the circle. While its reminder is on, the ones that counted for it (the quorum) say "Counted for the reminder"; the rest say how many of the circle came ("2 of 16"). | Owner, comment on issue #150. |

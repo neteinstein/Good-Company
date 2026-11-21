@@ -50,6 +50,12 @@ data class CirclePage(
     /** How many of the circle's members were at [meetup] ("4 of 6"). */
     fun membersAt(meetup: TimelineEntry.Meetup): Int = meetup.hangout.friendIds.distinct().count { it in group.memberIds }
 
+    /**
+     * Whether [meetup] counted for the circle's reminder (issue #150): at least [Relationships.meetupQuorum] of its
+     * current members came. Only meaningful while the reminder is on.
+     */
+    fun countedAt(meetup: TimelineEntry.Meetup): Boolean = membersAt(meetup) >= Relationships.meetupQuorum(group.memberIds.size)
+
     /** Whether every member was there ("Everyone"). */
     fun everyoneAt(meetup: TimelineEntry.Meetup): Boolean = group.memberIds.isNotEmpty() && group.memberIds.all { it in meetup.hangout.friendIds }
 }
@@ -84,18 +90,14 @@ object CirclePages {
     }
 
     /**
-     * Meetups with at least [Relationships.meetupQuorum] of the circle's current members, and the shares saved to the
-     * circle. A share logged as one of those meetups ([Attachment.logId]) shows once, on the meetup.
+     * Every meetup with at least one of the circle's current members (issue #150, decision 2026-11-21; the ones that
+     * reach [Relationships.meetupQuorum] are marked with [CirclePage.countedAt]), and the shares saved to the circle. A
+     * share logged as one of those meetups ([Attachment.logId]) shows once, on the meetup.
      */
     fun timeline(group: FriendGroup, friends: List<Friend>, hangouts: List<Hangout>, attachments: List<Attachment>): List<TimelineEntry> {
         val memberIds = group.memberIds.toSet()
         val byId = friends.associateBy { it.id }
-        val quorum = Relationships.meetupQuorum(memberIds.size)
-        val meetups = if (memberIds.isEmpty()) {
-            emptyList()
-        } else {
-            hangouts.filter { h -> h.friendIds.distinct().count { it in memberIds } >= quorum }
-        }
+        val meetups = hangouts.filter { h -> h.friendIds.any { it in memberIds } }
         val mine = attachments.filter { it.circleId == group.id }
         val byLog = mine.filter { it.countsAsInteraction && it.logId != null }.associateBy { it.logId }
         val shownOnMeetup = mutableSetOf<String>()

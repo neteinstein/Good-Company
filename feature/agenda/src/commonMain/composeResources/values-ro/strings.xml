@@ -35,11 +35,6 @@
         <item quantity="other">%1$d de zile de când v-ați văzut</item>
     </plurals>
     <string name="row_never">Nicio întâlnire înregistrată încă</string>
-    <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d zi de când s-a întâlnit cercul</item>
-        <item quantity="few">%1$s · %2$d zile de când s-a întâlnit cercul</item>
-        <item quantity="other">%1$s · %2$d de zile de când s-a întâlnit cercul</item>
-    </plurals>
     <string name="row_send_wishes">Trimite urări</string>
     <string name="row_we_met">Notează</string>
     <string name="wish_title">Urări pentru %1$s</string>
@@ -114,4 +109,19 @@
         <item quantity="few">%1$d intrări</item>
         <item quantity="other">%1$d de intrări</item>
     </plurals>
+    <plurals name="row_group_rhythm">
+        <item quantity="one">În fiecare zi</item>
+        <item quantity="few">La fiecare %1$d zile</item>
+        <item quantity="other">La fiecare %1$d de zile</item>
+    </plurals>
+    <plurals name="row_group_last_met">
+        <item quantity="one">ultima întâlnire acum %1$d zi</item>
+        <item quantity="few">ultima întâlnire acum %1$d zile</item>
+        <item quantity="other">ultima întâlnire acum %1$d de zile</item>
+    </plurals>
+    <string name="row_group_no_meetup">nicio întâlnire înregistrată încă</string>
+    <string name="row_circle_more">Opțiunile cercului</string>
+    <string name="row_circle_reminders_off">Dezactivează mementourile pentru acest cerc</string>
+    <string name="today_circle_reminders_off">Mementouri dezactivate pentru %1$s</string>
+    <string name="last_met_title">Când s-a întâlnit cercul ultima dată?</string>
 </resources>

@@ -33,10 +33,6 @@
         <item quantity="other">%1$d dias desde o último encontro</item>
     </plurals>
     <string name="row_never">Ainda sem encontros registados</string>
-    <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d dia desde que o círculo se juntou</item>
-        <item quantity="other">%1$s · %2$d dias desde que o círculo se juntou</item>
-    </plurals>
     <string name="row_send_wishes">Dar os parabéns</string>
     <string name="row_we_met">Registar</string>
     <string name="wish_title">Parabéns para %1$s</string>
@@ -109,4 +105,17 @@
         <item quantity="one">%1$d entrada</item>
         <item quantity="other">%1$d entradas</item>
     </plurals>
+    <plurals name="row_group_rhythm">
+        <item quantity="one">Todos os dias</item>
+        <item quantity="other">A cada %1$d dias</item>
+    </plurals>
+    <plurals name="row_group_last_met">
+        <item quantity="one">último encontro há %1$d dia</item>
+        <item quantity="other">último encontro há %1$d dias</item>
+    </plurals>
+    <string name="row_group_no_meetup">ainda sem encontros registados</string>
+    <string name="row_circle_more">Opções do círculo</string>
+    <string name="row_circle_reminders_off">Desligar lembretes deste círculo</string>
+    <string name="today_circle_reminders_off">Lembretes desligados para %1$s</string>
+    <string name="last_met_title">Quando foi o último encontro do círculo?</string>
 </resources>
