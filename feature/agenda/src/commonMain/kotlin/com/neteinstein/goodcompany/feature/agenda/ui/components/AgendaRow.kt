@@ -32,6 +32,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,7 +45,9 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.PlanCloseSheet
 import com.neteinstein.goodcompany.core.ui.components.ReminderActionsRow
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderWhen
@@ -51,13 +57,13 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
+import com.neteinstein.goodcompany.core.ui.resources.plan_answer_happened
 import com.neteinstein.goodcompany.core.ui.resources.plan_circle_people
-import com.neteinstein.goodcompany.core.ui.resources.plan_did_you_meet
+import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
 import com.neteinstein.goodcompany.core.ui.resources.plan_next_after
-import com.neteinstein.goodcompany.core.ui.resources.plan_no
+import com.neteinstein.goodcompany.core.ui.resources.plan_other_answer
 import com.neteinstein.goodcompany.core.ui.resources.plan_people_count
 import com.neteinstein.goodcompany.core.ui.resources.plan_skip_one
-import com.neteinstein.goodcompany.core.ui.resources.plan_yes
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
 import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
@@ -100,7 +106,8 @@ fun AgendaRow(
     modifier: Modifier = Modifier,
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
-    onConfirmPlan: (AgendaItem.PlanToConfirm, happened: Boolean) -> Unit = { _, _ -> },
+    /** "How did it go?" on a past plan (issue #100): the answer and whether it is for the whole series. */
+    onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
     /** Done · Snooze · Edit · Delete under a reminder (issue #99); none when null. */
@@ -269,20 +276,27 @@ fun AgendaRow(
                     }
                 }
                 if (item is AgendaItem.PlanToConfirm) {
+                    var sheet by remember { mutableStateOf(false) }
                     Text(
-                        stringResource(CoreRes.string.plan_did_you_meet),
+                        stringResource(CoreRes.string.plan_how_did_it_go),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(top = 6.dp),
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilledTonalButton(
-                            onClick = { onConfirmPlan(item, true) },
+                            onClick = { onAnswerPlan(item, PlanAnswer.HAPPENED, false) },
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                             modifier = Modifier.height(34.dp),
-                        ) { Text(stringResource(CoreRes.string.plan_yes), style = MaterialTheme.typography.labelLarge) }
-                        TextButton(onClick = { onConfirmPlan(item, false) }, modifier = Modifier.height(34.dp)) {
-                            Text(stringResource(CoreRes.string.plan_no), style = MaterialTheme.typography.labelLarge)
+                        ) { Text(stringResource(CoreRes.string.plan_answer_happened), style = MaterialTheme.typography.labelLarge) }
+                        TextButton(onClick = { sheet = true }, modifier = Modifier.height(34.dp)) {
+                            Text(stringResource(CoreRes.string.plan_other_answer), style = MaterialTheme.typography.labelLarge)
                         }
+                    }
+                    if (sheet) {
+                        PlanCloseSheet(item.plan, onDismiss = { sheet = false }, onAnswer = { answer, whole ->
+                            sheet = false
+                            onAnswerPlan(item, answer, whole)
+                        })
                     }
                 }
                 if (item is AgendaItem.PlanUpcoming) {

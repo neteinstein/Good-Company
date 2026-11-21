@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
@@ -34,8 +35,8 @@ import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.AddFeedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
-import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
@@ -113,6 +114,10 @@ sealed interface FriendDetailMessage {
 
     /** Offered with "Undo". */
     data object PlanCancelled : FriendDetailMessage
+
+    data object PlanDeleted : FriendDetailMessage
+
+    data object PlanNotAttended : FriendDetailMessage
 
     data object PlanLogged : FriendDetailMessage
 
@@ -297,7 +302,7 @@ class FriendDetailViewModel(
     private val setCatchUpPaused: SetCatchUpPausedUseCase,
     private val savePlan: SavePlanUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
-    private val cancelPlan: CancelPlanUseCase,
+    private val closePlan: ClosePlanUseCase,
     private val restorePlan: RestorePlanUseCase,
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
@@ -926,22 +931,26 @@ class FriendDetailViewModel(
         }
     }
 
-    /** "Did you meet?" answered on the friend page. A yes from the screen opens the "We met" panel instead (issue #47). */
-    fun onConfirmPlan(id: String, happened: Boolean) {
+    /**
+     * An answer from "How did it go?" or the plan's menu on the friend page (issue #100), for the open occurrence.
+     * "It happened" opens the "We met" panel through navigation instead. Cancel and Delete offer Undo.
+     */
+    fun onAnswerPlan(plan: Plan, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer == PlanAnswer.HAPPENED) return
         viewModelScope.launch {
-            confirmPlan(id, happened)
-            say(if (happened) FriendDetailMessage.PlanLogged else FriendDetailMessage.PlanClosed)
+            val before = closePlan(plan.id, answer, day = plan.date, wholeSeries = wholeSeries)
+            val message = when (answer) {
+                PlanAnswer.DIDNT_HAPPEN, PlanAnswer.HAPPENED -> FriendDetailMessage.PlanClosed
+                PlanAnswer.NOT_ATTENDED -> FriendDetailMessage.PlanNotAttended
+                PlanAnswer.CANCEL -> FriendDetailMessage.PlanCancelled
+                PlanAnswer.DELETE -> FriendDetailMessage.PlanDeleted
+            }
+            val undo = before.takeIf { answer == PlanAnswer.CANCEL || answer == PlanAnswer.DELETE }
+            local.update { it.copy(undoPlan = undo, message = message) }
         }
     }
 
-    fun onCancelPlan(plan: Plan) {
-        viewModelScope.launch {
-            cancelPlan(plan.id)
-            local.update { it.copy(undoPlan = plan, message = FriendDetailMessage.PlanCancelled) }
-        }
-    }
-
-    fun onUndoCancelPlan() {
+    fun onUndoPlan() {
         val plan = local.value.undoPlan ?: return
         viewModelScope.launch {
             restorePlan(plan)

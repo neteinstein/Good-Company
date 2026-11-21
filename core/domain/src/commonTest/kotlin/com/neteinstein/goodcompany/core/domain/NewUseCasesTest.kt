@@ -85,7 +85,7 @@ class NewUseCasesTest {
         assertEquals(g.clock.now(), g.hangoutRepo.hangouts.value.single().at)
 
         val r = g.savePlan(null, "Dinner", listOf(ana), LocalDate(2026, 3, 20))
-        g.cancelPlan(r.id)
+        g.deletePlan(r.id)
         assertTrue(g.planRepo.plans.value.none { it.id == r.id })
         g.restorePlan(r)
         assertEquals(r, g.planRepo.plans.value.last())

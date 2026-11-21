@@ -37,6 +37,9 @@ data class Plan(
 ) {
     val isRecurring: Boolean get() = repeat != null
 
+    /** With more than one person or a circle: only then "I didn't go" is offered (issue #100). */
+    val isGroup: Boolean get() = circleId != null || friendIds.size > 1
+
     /** The open occurrences in [from]..[to], oldest first: [date] and, for a series, the ones after it. */
     fun occurrences(from: LocalDate, to: LocalDate): List<LocalDate> {
         if (status != PlanStatus.PLANNED) return emptyList()
@@ -62,8 +65,17 @@ data class Plan(
      * The plan once the occurrence on [day] is answered ([happened]) or skipped. The open one moves the series on to
      * the next occurrence; a later one is just taken out. A one-off plan (or the last of a series) closes.
      */
-    fun closeOccurrence(day: LocalDate, happened: Boolean): Plan {
-        val closed = copy(status = if (happened) PlanStatus.HAPPENED else PlanStatus.SKIPPED)
+    fun closeOccurrence(day: LocalDate, happened: Boolean): Plan =
+        closeOccurrence(day, if (happened) PlanStatus.HAPPENED else PlanStatus.SKIPPED)
+
+    /**
+     * The plan once the occurrence on [day] is closed as [status] (issue #100: happened, didn't happen, I didn't go,
+     * cancelled). The open one moves the series on to the next occurrence; a later one is just taken out. A one-off
+     * plan (or the last of a series) closes with [status].
+     */
+    fun closeOccurrence(day: LocalDate, status: PlanStatus): Plan {
+        require(status != PlanStatus.PLANNED) { "A plan closes with an answer" }
+        val closed = copy(status = status)
         if (repeat == null) return if (day == date) closed else this
         if (day != date) {
             return if (day > date && day in occurrences(day, day)) copy(skippedDates = (skippedDates + day).sorted()) else this
@@ -76,7 +88,16 @@ data class Plan(
 /** A guard against runaway loops (a daily plan over a long window). */
 private const val MAX_OCCURRENCES = 400
 
-enum class PlanStatus { PLANNED, HAPPENED, SKIPPED }
+/**
+ * Where a plan stands (issue #100). Only [PLANNED] is open. [HAPPENED] logged a check-in; [SKIPPED] is "Didn't happen";
+ * [NOT_ATTENDED] is "I didn't go" (a group or circle plan met without me: no check-in, no warmth, no rhythm);
+ * [CANCELLED] is kept and shown struck through. Stored by name with no `CHECK` (issue #72); an unknown name reads as
+ * [PLANNED].
+ */
+enum class PlanStatus { PLANNED, HAPPENED, SKIPPED, CANCELLED, NOT_ATTENDED }
+
+/** The answers in the "How did it go?" sheet (issue #100). */
+enum class PlanAnswer { HAPPENED, DIDNT_HAPPEN, NOT_ATTENDED, CANCEL, DELETE }
 
 enum class RepeatUnit { DAY, WEEK, MONTH }
 

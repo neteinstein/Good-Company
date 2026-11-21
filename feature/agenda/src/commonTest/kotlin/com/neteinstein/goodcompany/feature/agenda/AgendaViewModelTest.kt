@@ -6,6 +6,8 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.Repeat
@@ -50,6 +52,8 @@ class AgendaViewModelTest {
         g.deleteReminder,
         g.restoreReminder,
         g.confirmPlan,
+        g.closePlan,
+        g.restorePlan,
         g.clock,
         g.observeCalendarSuggestions,
         g.observeGroups,
@@ -225,5 +229,31 @@ class AgendaViewModelTest {
         vm.onConfirmPlan(ask.plan.id, happened = true, day = ask.occurrence)
         assertEquals(1, g.hangoutRepo.hangouts.value.size)
         assertEquals(LocalDate(2026, 4, 13), g.planRepo.plans.value.single().date)
+    }
+
+    @Test
+    fun howDidItGo_closesThatOccurrence_andCancelOrDeleteCanBeUndone() = runViewModelTest {
+        val dinner = g.savePlan(null, "Dinner", listOf(FriendId("ana"), FriendId("rui")), LocalDate(2026, 3, 9))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val ask = state.value.agenda.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        // "It happened" is navigation (the "We met" panel): nothing changes here.
+        vm.onAnswerPlan(ask, PlanAnswer.HAPPENED)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+
+        vm.onAnswerPlan(ask, PlanAnswer.DELETE)
+        val deleted = assertIs<AgendaMessage.PlanAnswered>(state.value.message)
+        assertEquals(dinner, deleted.previous)
+        assertTrue(g.planRepo.plans.value.isEmpty())
+        vm.onUndoPlan(deleted)
+        assertEquals(listOf(dinner), g.planRepo.plans.value)
+
+        vm.onAnswerPlan(ask, PlanAnswer.NOT_ATTENDED)
+        val notAttended = assertIs<AgendaMessage.PlanAnswered>(state.value.message)
+        assertNull(notAttended.previous)
+        assertEquals(PlanStatus.NOT_ATTENDED, g.planRepo.plans.value.single().status)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        vm.onUndoPlan(notAttended) // nothing to undo
+        assertEquals(PlanStatus.NOT_ATTENDED, g.planRepo.plans.value.single().status)
     }
 }

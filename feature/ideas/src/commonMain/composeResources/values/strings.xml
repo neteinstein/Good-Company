@@ -59,4 +59,5 @@
     <string name="plans_ideas_title">Ideas for this week</string>
     <string name="plans_ideas_all">All %1$d</string>
     <string name="plans_ideas_empty">No ideas yet. Open them to look for some.</string>
+    <string name="plans_cancelled">Cancelled</string>
 </resources>

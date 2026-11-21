@@ -7,10 +7,13 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
@@ -31,6 +34,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -67,7 +71,8 @@ sealed interface TodayMessage {
     /** The "I'm with…" check-in was saved with these people (first names). */
     data class CheckedIn(val names: List<String>) : TodayMessage
 
-    data object PlanClosed : TodayMessage
+    /** Answered from "How did it go?" (issue #100); Cancel and Delete carry the plan as it was, for Undo. */
+    data class PlanAnswered(val answer: PlanAnswer, val previous: Plan? = null) : TodayMessage
 
     data object PlanSkipped : TodayMessage
 
@@ -160,6 +165,8 @@ class TodayViewModel(
     private val deleteReminder: DeleteReminderUseCase,
     private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
+    private val closePlan: ClosePlanUseCase,
+    private val restorePlan: RestorePlanUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
@@ -345,12 +352,23 @@ class TodayViewModel(
     /** The "I'm with…" sheet saved a meetup with these people. */
     fun onCheckedIn(names: List<String>) = local.update { it.copy(message = TodayMessage.CheckedIn(names)) }
 
-    /** "Did you meet?" → no (a yes opens the "We met" panel). */
-    fun onPlanDidNotHappen(item: AgendaItem.PlanToConfirm) {
+    /**
+     * An answer from "How did it go?" on a plan to confirm (issue #100), for that occurrence. "It happened" opens the
+     * "We met" panel through navigation instead.
+     */
+    fun onAnswerPlan(item: AgendaItem.PlanToConfirm, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer == PlanAnswer.HAPPENED) return
         viewModelScope.launch {
-            confirmPlan(item.plan.id, happened = false, day = item.occurrence)
-            local.update { it.copy(message = TodayMessage.PlanClosed) }
+            val before = closePlan(item.plan.id, answer, day = item.occurrence, wholeSeries = wholeSeries)
+            val undo = before.takeIf { answer == PlanAnswer.CANCEL || answer == PlanAnswer.DELETE }
+            local.update { it.copy(message = TodayMessage.PlanAnswered(answer, undo)) }
         }
+    }
+
+    /** Undo on a plan cancelled or deleted a moment ago. */
+    fun onUndoPlan(message: TodayMessage.PlanAnswered) {
+        val plan = message.previous ?: return
+        viewModelScope.launch { restorePlan(plan) }
     }
 
     /** "Skip this one": takes one date out of a recurring plan; the series goes on. */

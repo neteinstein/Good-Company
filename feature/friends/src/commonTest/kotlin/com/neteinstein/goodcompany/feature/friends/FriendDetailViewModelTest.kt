@@ -20,6 +20,8 @@ import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
@@ -82,7 +84,7 @@ class FriendDetailViewModelTest {
         g.setCatchUpPaused,
         g.savePlan,
         g.confirmPlan,
-        g.cancelPlan,
+        g.closePlan,
         g.restorePlan,
         g.addFeed,
         g.setFriendPhoto,
@@ -354,7 +356,8 @@ class FriendDetailViewModelTest {
         vm.onSavePlan(PlanInput("Dinner", emptyList(), g.clock.today()))
         val plan = g.planRepo.plans.value.single()
         // A yes opens the "We met" panel (issue #47); the friend page only handles the no.
-        vm.onConfirmPlan(plan.id, happened = false)
+        vm.onAnswerPlan(plan, PlanAnswer.DIDNT_HAPPEN)
+        assertEquals(PlanStatus.SKIPPED, g.planRepo.plans.value.single().status)
         assertEquals(FriendDetailMessage.PlanClosed, state.value.message)
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
     }
@@ -529,17 +532,29 @@ class FriendDetailViewModelTest {
         assertEquals(plan.id, state.value.detail!!.plans.single().id)
 
         val current = state.value.detail!!.plans.single()
-        vm.onCancelPlan(current)
+        // Issue #100: cancel keeps it (struck through elsewhere), delete removes it; both with Undo.
+        vm.onAnswerPlan(current, PlanAnswer.CANCEL)
         assertEquals(FriendDetailMessage.PlanCancelled, state.value.message)
         assertTrue(state.value.detail!!.plans.isEmpty())
-        vm.onUndoCancelPlan()
+        assertEquals(PlanStatus.CANCELLED, g.planRepo.plans.value.single().status)
+        vm.onUndoPlan()
         assertEquals(current, state.value.detail!!.plans.single())
+        vm.onMessageShown()
 
-        vm.onConfirmPlan(current.id, happened = true)
-        assertEquals(FriendDetailMessage.PlanLogged, state.value.message)
-        assertTrue(state.value.detail!!.plans.isEmpty())
+        vm.onAnswerPlan(current, PlanAnswer.DELETE)
+        assertEquals(FriendDetailMessage.PlanDeleted, state.value.message)
+        assertTrue(g.planRepo.plans.value.isEmpty())
+        vm.onUndoPlan()
+        assertEquals(current, state.value.detail!!.plans.single())
         vm.onMessageShown()
         assertNull(state.value.undoPlan)
+
+        // "I didn't go" is for group plans only: a plan with just this friend stays open.
+        vm.onAnswerPlan(current, PlanAnswer.NOT_ATTENDED)
+        assertEquals(current, state.value.detail!!.plans.single())
+        // "It happened" is navigation (the "We met" panel): nothing changes here.
+        vm.onAnswerPlan(current, PlanAnswer.HAPPENED)
+        assertEquals(current, state.value.detail!!.plans.single())
     }
 
     @Test

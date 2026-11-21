@@ -57,4 +57,5 @@
     <string name="plans_ideas_title">Idées pour cette semaine</string>
     <string name="plans_ideas_all">Toutes (%1$d)</string>
     <string name="plans_ideas_empty">Pas encore d’idées. Ouvre-les pour en chercher.</string>
+    <string name="plans_cancelled">Annulés</string>
 </resources>

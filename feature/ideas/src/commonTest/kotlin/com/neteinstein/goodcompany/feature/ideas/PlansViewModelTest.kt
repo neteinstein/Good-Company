@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.GiftList
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
@@ -49,7 +50,7 @@ class PlansViewModelTest {
         g.observeYearReviewCard,
         g.savePlan,
         g.confirmPlan,
-        g.cancelPlan,
+        g.closePlan,
         g.restorePlan,
         g.clock,
     )
@@ -107,15 +108,38 @@ class PlansViewModelTest {
         vm.onSavePlan(PlanInput("Long lunch", listOf(ana), LocalDate(2026, 3, 13)))
         assertEquals("Long lunch", g.planRepo.plans.value.single { it.id == lunch.id }.title)
 
-        vm.onCancel(rehearsal)
+        // Issue #100: cancel keeps it, struck through; Undo reopens it.
+        vm.onAnswer(rehearsal, PlanAnswer.CANCEL)
         assertEquals(PlansMessage.Cancelled, state.value.message)
         assertEquals(listOf("Long lunch"), state.value.plans.map { it.title })
-        vm.onUndoCancel()
+        assertEquals(listOf(rehearsal.id), state.value.cancelled.map { it.id })
+        assertEquals(PlanStatus.CANCELLED, g.planRepo.plans.value.single { it.id == rehearsal.id }.status)
+        vm.onUndo()
         assertEquals(2, state.value.plans.size)
+        assertTrue(state.value.cancelled.isEmpty())
         vm.onMessageShown()
         assertNull(state.value.undoPlan)
 
-        vm.onDidNotHappen(state.value.plans.single { it.id == lunch.id })
+        // Delete removes it, with Undo.
+        vm.onAnswer(rehearsal, PlanAnswer.DELETE)
+        assertEquals(PlansMessage.Deleted, state.value.message)
+        assertTrue(g.planRepo.plans.value.none { it.id == rehearsal.id })
+        vm.onUndo()
+        assertEquals(2, state.value.plans.size)
+        vm.onMessageShown()
+
+        // "I didn't go" on a group plan: closed, no check-in.
+        vm.onAnswer(rehearsal, PlanAnswer.NOT_ATTENDED)
+        assertEquals(PlansMessage.NotAttended, state.value.message)
+        assertNull(state.value.undoPlan)
+        assertEquals(PlanStatus.NOT_ATTENDED, g.planRepo.plans.value.single { it.id == rehearsal.id }.status)
+        assertEquals(1, g.hangoutRepo.hangouts.value.size)
+
+        // "It happened" is navigation: nothing changes here.
+        vm.onAnswer(state.value.plans.single(), PlanAnswer.HAPPENED)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single { it.id == lunch.id }.status)
+
+        vm.onAnswer(state.value.plans.single { it.id == lunch.id }, PlanAnswer.DIDNT_HAPPEN)
         assertEquals(PlansMessage.Closed, state.value.message)
         assertEquals(PlanStatus.SKIPPED, g.planRepo.plans.value.single { it.id == lunch.id }.status)
 
@@ -157,5 +181,22 @@ class PlansViewModelTest {
         val march = graph()
         val state2 = collecting(vm(march).state)
         assertNull(state2.value.reviewYear) // only in December
+    }
+
+    @Test
+    fun cancelledPlans_showForAMonth_andCanBeDeleted() = runViewModelTest {
+        val g = graph()
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        val old = g.savePlan(null, "Old", listOf(ana), LocalDate(2026, 1, 1))
+        val recent = g.savePlan(null, "Recent", listOf(ana), LocalDate(2026, 3, 1))
+        g.cancelPlan(old.id)
+        g.cancelPlan(recent.id)
+        assertEquals(listOf(recent.id), state.value.cancelled.map { it.id })
+        vm.onDeleteCancelled(state.value.cancelled.single())
+        assertEquals(PlansMessage.Deleted, state.value.message)
+        assertTrue(state.value.cancelled.isEmpty())
+        vm.onUndo()
+        assertEquals(listOf(recent.id), state.value.cancelled.map { it.id })
     }
 }

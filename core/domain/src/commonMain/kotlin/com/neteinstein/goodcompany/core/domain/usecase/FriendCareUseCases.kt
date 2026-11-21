@@ -99,7 +99,11 @@ class HandleNotificationActionUseCase(
         }
         if (action.isPlan) {
             val occurrence = PlanOccurrence.decode(action.targetId)
-            confirmPlan(occurrence.planId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED, day = occurrence.date)
+            when (action.kind) {
+                // "I didn't go" (issue #100): closes it with no check-in for me.
+                NotificationAction.Kind.PLAN_NOT_ATTENDED -> confirmPlan.notAttended(occurrence.planId, occurrence.date)
+                else -> confirmPlan(occurrence.planId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED, day = occurrence.date)
+            }
             return
         }
         if (action.isGroup) {

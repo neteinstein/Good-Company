@@ -134,6 +134,7 @@ import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
@@ -189,7 +190,9 @@ import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.close
 import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_deleted
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.resources.plan_not_attended
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.remove
@@ -482,11 +485,10 @@ fun FriendDetailScreen(
             onOpenPlanEditor = viewModel::onOpenPlanEditor,
             onDismissPlanEditor = viewModel::onDismissPlanEditor,
             onSavePlan = viewModel::onSavePlan,
-            onConfirmPlan = viewModel::onConfirmPlan,
+            onAnswerPlan = viewModel::onAnswerPlan,
             onSkipPlan = viewModel::onSkipPlan,
             onLogPlan = onLogPlan,
-            onCancelPlan = viewModel::onCancelPlan,
-            onUndoCancelPlan = viewModel::onUndoCancelPlan,
+            onUndoPlan = viewModel::onUndoPlan,
             onAddPlanToCalendar = { plan, friends, circle -> addToCalendar(plan.calendarEntry(friends, circle = circle)) },
         ),
     )
@@ -596,12 +598,12 @@ data class FriendDetailActions(
     val onOpenPlanEditor: (Plan?) -> Unit = {},
     val onDismissPlanEditor: () -> Unit = {},
     val onSavePlan: (PlanInput) -> Unit = {},
-    val onConfirmPlan: (id: String, happened: Boolean) -> Unit = { _, _ -> },
+    /** "How did it go?" and the plan menu (issue #100), except "It happened" (that's [onLogPlan]). */
+    val onAnswerPlan: (Plan, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     val onSkipPlan: (Plan) -> Unit = {},
-    /** "Yes" on a circle plan: open the Log sheet to tick who came (F20). */
+    /** "It happened": open the "We met" panel on that occurrence (a circle plan ticks who came, F20). */
     val onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
-    val onCancelPlan: (Plan) -> Unit = {},
-    val onUndoCancelPlan: () -> Unit = {},
+    val onUndoPlan: () -> Unit = {},
     val onAddPlanToCalendar: (Plan, List<Friend>, FriendGroup?) -> Unit = { _, _, _ -> },
 )
 
@@ -624,6 +626,8 @@ suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: Local
     FriendDetailMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
     FriendDetailMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
     FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
+    FriendDetailMessage.PlanDeleted -> getString(CoreRes.string.plan_deleted)
+    FriendDetailMessage.PlanNotAttended -> getString(CoreRes.string.plan_not_attended)
     FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
     FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
     FriendDetailMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
@@ -714,7 +718,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
                 state.undoLink != null -> actions.onUndoRemoveLink()
                 state.undoCustomField != null -> actions.onUndoRemoveCustomField()
-                state.undoPlan != null -> actions.onUndoCancelPlan()
+                state.undoPlan != null -> actions.onUndoPlan()
             }
         }
         actions.onMessageShown()
@@ -1261,13 +1265,12 @@ private fun ComingUp(f: Friend, state: FriendDetailUiState, actions: FriendDetai
                     plan = plan,
                     friends = with.filterNot { it.id == f.id },
                     today = state.today,
-                    onConfirm = { happened ->
-                        // A yes opens the "We met" panel (issue #47): a person plan as well as a circle plan.
-                        if (happened) actions.onLogPlan(plan.id, plan.date) else actions.onConfirmPlan(plan.id, false)
+                    onAnswer = { answer, whole ->
+                        // "It happened" opens the "We met" panel (issue #47): a person plan as well as a circle plan.
+                        if (answer == PlanAnswer.HAPPENED) actions.onLogPlan(plan.id, plan.date) else actions.onAnswerPlan(plan, answer, whole)
                     },
                     onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
                     onChange = { actions.onOpenPlanEditor(plan) },
-                    onCancel = { actions.onCancelPlan(plan) },
                     circle = circle,
                     onSkip = { actions.onSkipPlan(plan) },
                 )

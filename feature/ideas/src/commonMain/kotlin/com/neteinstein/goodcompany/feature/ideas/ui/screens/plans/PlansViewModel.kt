@@ -7,7 +7,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Plan
-import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -29,7 +30,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface PlansMessage {
@@ -37,7 +40,11 @@ sealed interface PlansMessage {
 
     data object Cancelled : PlansMessage
 
+    data object Deleted : PlansMessage
+
     data object Closed : PlansMessage
+
+    data object NotAttended : PlansMessage
 
     data object Skipped : PlansMessage
 }
@@ -48,6 +55,8 @@ data class PlanEditing(val plan: Plan?)
 data class PlansUiState(
     /** Open plans, one-off and recurring (each at its open occurrence), soonest first; past ones ask "Did you meet?". */
     val plans: List<Plan> = emptyList(),
+    /** Recently cancelled plans (issue #100), kept and shown struck through: the last month and later, latest first. */
+    val cancelled: List<Plan> = emptyList(),
     val friends: List<Friend> = emptyList(),
     /** The circles (for a plan's circle and the editor). */
     val circles: List<FriendGroup> = emptyList(),
@@ -62,7 +71,7 @@ data class PlansUiState(
     /** "Your year in friendship" in December (issue #67), else null. */
     val reviewYear: Int? = null,
     val editing: PlanEditing? = null,
-    /** Plan cancelled a moment ago, offered for undo. */
+    /** Plan cancelled or deleted a moment ago, offered for undo (as it was before). */
     val undoPlan: Plan? = null,
     val isLoading: Boolean = true,
     val message: PlansMessage? = null,
@@ -86,24 +95,26 @@ class PlansViewModel(
     observeReviewYear: ObserveYearReviewCardUseCase,
     private val savePlan: SavePlanUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
-    private val cancelPlan: CancelPlanUseCase,
+    private val closePlan: ClosePlanUseCase,
     private val restorePlan: RestorePlanUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(PlansUiState())
 
-    private val people = combine(observePlans(), observeFriends(), observeGroups()) { plans, friends, groups ->
-        Triple(plans, friends.map { it.friend }, groups.map { it.group })
+    private val people = combine(observePlans(), observePlans.cancelled(), observeFriends(), observeGroups()) { plans, cancelled, friends, groups ->
+        People(plans, cancelled, friends.map { it.friend }, groups.map { it.group })
     }
     private val extras = combine(observeGiftLists(), observeIdeas(), observeSettings(), observeReviewYear()) { gifts, ideas, settings, year ->
         Extras(gifts.current.firstOrNull(), ideas, settings.usableAiKey != null, year)
     }
 
-    val state: StateFlow<PlansUiState> = combine(people, extras, local) { (plans, friends, circles), extras, ui ->
+    val state: StateFlow<PlansUiState> = combine(people, extras, local) { (plans, cancelled, friends, circles), extras, ui ->
         val byId = friends.associateBy { it.id }
         val ideas = if (extras.aiEnabled) extras.ideas else emptyList()
+        val since = clock.today().minus(CANCELLED_DAYS, DateTimeUnit.DAY)
         ui.copy(
             plans = plans,
+            cancelled = cancelled.filter { it.date >= since }.take(CANCELLED_SHOWN),
             friends = friends,
             circles = circles,
             giftList = extras.giftList,
@@ -130,11 +141,30 @@ class PlansViewModel(
         }
     }
 
-    /** "Didn't happen" on a past occurrence. (A yes opens the "We met" panel, through navigation.) */
-    fun onDidNotHappen(plan: Plan) {
+    /**
+     * An answer from "How did it go?" or the row's menu (issue #100) for that occurrence ([Plan.date] on this tab).
+     * "It happened" opens the "We met" panel through navigation instead. Cancel and Delete offer Undo.
+     */
+    fun onAnswer(plan: Plan, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer == PlanAnswer.HAPPENED) return
         viewModelScope.launch {
-            confirmPlan(plan.id, happened = false, day = plan.date)
-            local.update { it.copy(message = PlansMessage.Closed) }
+            val before = closePlan(plan.id, answer, day = plan.date, wholeSeries = wholeSeries)
+            val message = when (answer) {
+                PlanAnswer.DIDNT_HAPPEN, PlanAnswer.HAPPENED -> PlansMessage.Closed
+                PlanAnswer.NOT_ATTENDED -> PlansMessage.NotAttended
+                PlanAnswer.CANCEL -> PlansMessage.Cancelled
+                PlanAnswer.DELETE -> PlansMessage.Deleted
+            }
+            val undo = before.takeIf { answer == PlanAnswer.CANCEL || answer == PlanAnswer.DELETE }
+            local.update { it.copy(undoPlan = undo, message = message) }
+        }
+    }
+
+    /** Delete on a cancelled plan (issue #100), with Undo. */
+    fun onDeleteCancelled(plan: Plan) {
+        viewModelScope.launch {
+            val before = closePlan(plan.id, PlanAnswer.DELETE, wholeSeries = true)
+            local.update { it.copy(undoPlan = before, message = PlansMessage.Deleted) }
         }
     }
 
@@ -146,14 +176,7 @@ class PlansViewModel(
         }
     }
 
-    fun onCancel(plan: Plan) {
-        viewModelScope.launch {
-            cancelPlan(plan.id)
-            local.update { it.copy(undoPlan = plan, message = PlansMessage.Cancelled) }
-        }
-    }
-
-    fun onUndoCancel() {
+    fun onUndo() {
         val plan = local.value.undoPlan ?: return
         viewModelScope.launch {
             restorePlan(plan)
@@ -162,6 +185,13 @@ class PlansViewModel(
     }
 
     fun onMessageShown() = local.update { it.copy(message = null, undoPlan = null) }
+
+    private data class People(
+        val plans: List<Plan>,
+        val cancelled: List<Plan>,
+        val friends: List<Friend>,
+        val circles: List<FriendGroup>,
+    )
 
     private data class Extras(
         val giftList: GiftListSummary?,
@@ -172,5 +202,7 @@ class PlansViewModel(
 
     private companion object {
         const val IDEAS_ON_CARD = 2
+        const val CANCELLED_DAYS = 30
+        const val CANCELLED_SHOWN = 5
     }
 }

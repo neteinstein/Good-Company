@@ -19,6 +19,14 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
 
+- **How a plan ends (issue #100).** `PlanStatus` is PLANNED, HAPPENED, SKIPPED ("Didn't happen"), CANCELLED (kept,
+  struck through on the Plans tab for a month) and NOT_ATTENDED ("I didn't go": group and circle plans only,
+  `Plan.isGroup`; no check-in, so no warmth or rhythm). Every place a plan closes (Plans tab `PlanRow`, person page,
+  Today and Agenda `AgendaRow`) uses the one `PlanCloseSheet` (`:core:ui`); "It happened" stays one tap and opens the
+  "We met" panel, the rest go through `ClosePlanUseCase` (Confirm / `CancelPlanUseCase` / `DeletePlanUseCase`), which
+  returns the plan as it was for Undo (`RestorePlanUseCase`). On a series every answer is for that occurrence; Cancel
+  and Delete ask "this one or the whole series" (`PlanSeriesDialog`), and "this one" just takes the date out.
+
 ## Reference (moved from AGENTS.md)
 
 26. **Timeline and logging (issue #21).** Meetups are `Hangout`s (with an optional `HangoutActivity`, F3); calls, messages,

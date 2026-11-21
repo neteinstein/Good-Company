@@ -83,6 +83,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -95,6 +96,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeletePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
@@ -457,6 +459,8 @@ val appModule = module {
     factoryOf(::SavePlanUseCase)
     factoryOf(::ConfirmPlanUseCase)
     factoryOf(::CancelPlanUseCase)
+    factoryOf(::DeletePlanUseCase)
+    factoryOf(::ClosePlanUseCase)
     factoryOf(::RestorePlanUseCase)
     factoryOf(::SetCatchUpPausedUseCase)
     factoryOf(::RecordAppOpenedUseCase)
@@ -519,7 +523,7 @@ val appModule = module {
             setCatchUpPaused = get(),
             savePlan = get(),
             confirmPlan = get(),
-            cancelPlan = get(),
+            closePlan = get(),
             restorePlan = get(),
             addFeed = get(),
             setPhoto = get(),
@@ -555,7 +559,35 @@ val appModule = module {
     }
     viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)
-    viewModelOf(::TodayViewModel)
+    // More parameters than viewModelOf takes (22).
+    viewModel {
+        TodayViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+        )
+    }
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)
     viewModelOf(::NotificationSettingsViewModel)

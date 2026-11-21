@@ -42,7 +42,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
+import com.neteinstein.goodcompany.core.ui.components.CancelledPlanRow
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.PlanRow
@@ -56,11 +58,14 @@ import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_cancelled
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_deleted
 import com.neteinstein.goodcompany.core.ui.resources.plan_new
+import com.neteinstein.goodcompany.core.ui.resources.plan_not_attended
 import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.plans_cancelled
 import com.neteinstein.goodcompany.feature.ideas.resources.plans_coming_up
 import com.neteinstein.goodcompany.feature.ideas.resources.plans_empty
 import com.neteinstein.goodcompany.feature.ideas.resources.plans_free_body
@@ -103,10 +108,13 @@ fun PlansScreen(
             onOpenYearReview = onOpenYearReview,
             onNewPlan = { viewModel.onOpenEditor(null) },
             onChangePlan = viewModel::onOpenEditor,
-            onConfirm = { plan, happened -> if (happened) onLogPlan(plan.id, plan.date) else viewModel.onDidNotHappen(plan) },
+            // "It happened" opens the "We met" panel on that occurrence; the other answers close it here (issue #100).
+            onAnswer = { plan, answer, whole ->
+                if (answer == PlanAnswer.HAPPENED) onLogPlan(plan.id, plan.date) else viewModel.onAnswer(plan, answer, whole)
+            },
             onSkip = viewModel::onSkip,
-            onCancel = viewModel::onCancel,
-            onUndoCancel = viewModel::onUndoCancel,
+            onDeleteCancelled = viewModel::onDeleteCancelled,
+            onUndo = viewModel::onUndo,
             onAddToCalendar = { plan -> addToCalendar(plan.calendarEntry(state.friendsOf(plan), circle = state.circleOf(plan))) },
             onMessageShown = viewModel::onMessageShown,
         ),
@@ -131,10 +139,10 @@ data class PlansActions(
     val onOpenYearReview: (Int) -> Unit = {},
     val onNewPlan: () -> Unit = {},
     val onChangePlan: (Plan) -> Unit = {},
-    val onConfirm: (Plan, Boolean) -> Unit = { _, _ -> },
+    val onAnswer: (Plan, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     val onSkip: (Plan) -> Unit = {},
-    val onCancel: (Plan) -> Unit = {},
-    val onUndoCancel: () -> Unit = {},
+    val onDeleteCancelled: (Plan) -> Unit = {},
+    val onUndo: () -> Unit = {},
     val onAddToCalendar: (Plan) -> Unit = {},
     val onMessageShown: () -> Unit = {},
 )
@@ -143,7 +151,9 @@ data class PlansActions(
 suspend fun PlansMessage.text(): String = when (this) {
     PlansMessage.Saved -> getString(CoreRes.string.plan_saved)
     PlansMessage.Cancelled -> getString(CoreRes.string.plan_cancelled)
+    PlansMessage.Deleted -> getString(CoreRes.string.plan_deleted)
     PlansMessage.Closed -> getString(CoreRes.string.plan_closed)
+    PlansMessage.NotAttended -> getString(CoreRes.string.plan_not_attended)
     PlansMessage.Skipped -> getString(CoreRes.string.plan_skipped)
 }
 
@@ -154,7 +164,7 @@ fun PlansContent(state: PlansUiState, actions: PlansActions) {
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val result = snackbar.showMessage(message.text(), if (state.undoPlan != null) undo else null)
-        if (result == SnackbarResult.ActionPerformed) actions.onUndoCancel()
+        if (result == SnackbarResult.ActionPerformed) actions.onUndo()
         actions.onMessageShown()
     }
     Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
@@ -201,12 +211,35 @@ fun PlansContent(state: PlansUiState, actions: PlansActions) {
                                     plan = plan,
                                     friends = state.friendsOf(plan),
                                     today = state.today,
-                                    onConfirm = { actions.onConfirm(plan, it) },
+                                    onAnswer = { answer, whole -> actions.onAnswer(plan, answer, whole) },
                                     onAddToCalendar = { actions.onAddToCalendar(plan) },
                                     onChange = { actions.onChangePlan(plan) },
-                                    onCancel = { actions.onCancel(plan) },
                                     circle = state.circleOf(plan),
                                     onSkip = { actions.onSkip(plan) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Issue #100: cancelled plans are kept, struck through.
+            if (state.cancelled.isNotEmpty()) {
+                item(key = "cancelled-h") { SectionHeader(stringResource(Res.string.plans_cancelled)) }
+                item(key = "cancelled") {
+                    Surface(
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ) {
+                        Column(Modifier.padding(vertical = 6.dp)) {
+                            state.cancelled.forEach { plan ->
+                                CancelledPlanRow(
+                                    plan = plan,
+                                    friends = state.friendsOf(plan),
+                                    today = state.today,
+                                    onDelete = { actions.onDeleteCancelled(plan) },
+                                    circle = state.circleOf(plan),
                                 )
                             }
                         }

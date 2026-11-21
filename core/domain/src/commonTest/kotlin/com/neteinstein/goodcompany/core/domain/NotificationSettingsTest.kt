@@ -118,8 +118,14 @@ class NotificationSettingsTest {
         assertEquals(NotificationChannel.BIRTHDAYS, before.channel)
         assertTrue(planned.single { it.id == "plan:p:day" }.persistent)
         assertTrue(planned.single { it.id == "plan:p:ask" }.let { it.persistent && it.whileOpen })
-        // Today's plan and birthdays stay once posted, even when no longer planned.
-        assertFalse(birthday.whileOpen || planned.single { it.id == "plan:p:day" }.whileOpen)
+        // Birthdays stay once posted, even when no longer planned.
+        assertFalse(birthday.whileOpen)
+        // Issue #100: today's plan shares its slot with "did it happen?", so it stays while the plan is open and goes
+        // as soon as it is closed (cancelled, deleted, answered).
+        val day = planned.single { it.id == "plan:p:day" }
+        assertTrue(day.whileOpen)
+        assertEquals("plan:p", day.slot)
+        assertEquals("plan:p", planned.single { it.id == "plan:p:ask" }.slot)
         // A catch-up never is, and goes in the quiet channel.
         val catchUp = planned.first { it.content is NotificationContent.MeetupDue }
         assertFalse(catchUp.persistent)

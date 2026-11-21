@@ -22,6 +22,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -34,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteHangoutUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeletePlaceUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeletePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
@@ -287,6 +289,8 @@ class TestGraph(
     val confirmPlan = ConfirmPlanUseCase(planRepo, friendRepo, checkIn, clock)
     val savePlan = SavePlanUseCase(planRepo, ideaRepo, clock, ids)
     val cancelPlan = CancelPlanUseCase(planRepo)
+    val deletePlan = DeletePlanUseCase(planRepo)
+    val closePlan = ClosePlanUseCase(confirmPlan, cancelPlan, deletePlan)
     val restorePlan = RestorePlanUseCase(planRepo)
     val observePlans = ObservePlansUseCase(planRepo, circles)
     val completeReminder = CompleteReminderUseCase(reminderRepo, clock)
