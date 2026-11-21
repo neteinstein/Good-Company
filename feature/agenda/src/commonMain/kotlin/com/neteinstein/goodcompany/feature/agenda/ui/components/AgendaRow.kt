@@ -1,7 +1,6 @@
 package com.neteinstein.goodcompany.feature.agenda.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -18,10 +17,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.Cake
-import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.EventAvailable
-import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
@@ -30,12 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,10 +37,12 @@ import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LogIcon
-import com.neteinstein.goodcompany.core.ui.components.PlanCloseSheet
+import com.neteinstein.goodcompany.core.ui.components.PlanHappenedButton
+import com.neteinstein.goodcompany.core.ui.components.PlanUpcomingMenu
 import com.neteinstein.goodcompany.core.ui.components.ReminderActionsRow
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderWhen
@@ -57,14 +51,10 @@ import com.neteinstein.goodcompany.core.ui.components.repeatLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
-import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
-import com.neteinstein.goodcompany.core.ui.resources.plan_answer_happened
 import com.neteinstein.goodcompany.core.ui.resources.plan_circle_people
 import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
 import com.neteinstein.goodcompany.core.ui.resources.plan_next_after
-import com.neteinstein.goodcompany.core.ui.resources.plan_other_answer
 import com.neteinstein.goodcompany.core.ui.resources.plan_people_count
-import com.neteinstein.goodcompany.core.ui.resources.plan_skip_one
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.label_big_day
 import com.neteinstein.goodcompany.feature.agenda.resources.label_birthday
@@ -111,6 +101,10 @@ fun AgendaRow(
     onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    /** Edit in the ⋮ of an upcoming plan (issue #136): the plan editor. */
+    onEditPlan: (Plan) -> Unit = {},
+    /** Cancel plan or Delete in the ⋮ of an upcoming plan (issue #136), and whether it is for the whole series. */
+    onAnswerUpcomingPlan: (AgendaItem.PlanUpcoming, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     /** Done · Snooze · Edit · Delete under a reminder (issue #99); none when null. */
     reminders: ReminderCallbacks? = null,
     now: Instant = Instant.DISTANT_PAST,
@@ -279,53 +273,13 @@ fun AgendaRow(
                     }
                 }
                 if (item is AgendaItem.PlanToConfirm) {
-                    var sheet by remember { mutableStateOf(false) }
                     Text(
                         stringResource(CoreRes.string.plan_how_did_it_go),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(top = 6.dp),
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(
-                            onClick = { onAnswerPlan(item, PlanAnswer.HAPPENED, false) },
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                            modifier = Modifier.height(34.dp),
-                        ) { Text(stringResource(CoreRes.string.plan_answer_happened), style = MaterialTheme.typography.labelLarge) }
-                        TextButton(onClick = { sheet = true }, modifier = Modifier.height(34.dp)) {
-                            Text(stringResource(CoreRes.string.plan_other_answer), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    if (sheet) {
-                        PlanCloseSheet(item.plan, onDismiss = { sheet = false }, onAnswer = { answer, whole ->
-                            sheet = false
-                            onAnswerPlan(item, answer, whole)
-                        })
-                    }
-                }
-                if (item is AgendaItem.PlanUpcoming) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TextButton(
-                            onClick = { onAddPlanToCalendar(item) },
-                            contentPadding = PaddingValues(horizontal = 0.dp),
-                            modifier = Modifier.height(34.dp),
-                        ) {
-                            Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(stringResource(CoreRes.string.plan_add_calendar), style = MaterialTheme.typography.labelLarge)
-                        }
-                        // A series: take this date out and keep the rest.
-                        if (item.plan.isRecurring) {
-                            TextButton(
-                                onClick = { onSkipPlan(item) },
-                                contentPadding = PaddingValues(horizontal = 0.dp),
-                                modifier = Modifier.height(34.dp),
-                            ) {
-                                Icon(Icons.Rounded.EventBusy, null, Modifier.size(16.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(CoreRes.string.plan_skip_one), style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    }
+                    // Issue #136: "It happened" in one tap, the other answers behind ▾.
+                    PlanHappenedButton(item.plan, onAnswer = { answer, whole -> onAnswerPlan(item, answer, whole) })
                 }
                 if (item is AgendaItem.ReminderDue && reminders != null) {
                     ReminderWhen(item.reminder, today, zone)
@@ -350,6 +304,17 @@ fun AgendaRow(
                     StackedAvatars(item.friends, size = 26.dp, max = 3)
                 item is AgendaItem.PlanToConfirm && item.friends.size > 1 ->
                     StackedAvatars(item.friends, size = 26.dp, max = 3)
+            }
+            if (item is AgendaItem.PlanUpcoming) {
+                // Issue #136: Edit · Add to calendar · Skip this one · Cancel plan · Delete.
+                PlanUpcomingMenu(
+                    item.plan,
+                    onEdit = { onEditPlan(item.plan) },
+                    onAddToCalendar = { onAddPlanToCalendar(item) },
+                    onSkip = { onSkipPlan(item) },
+                    onAnswer = { answer, whole -> onAnswerUpcomingPlan(item, answer, whole) },
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
             Spacer(Modifier.width(12.dp))
         }

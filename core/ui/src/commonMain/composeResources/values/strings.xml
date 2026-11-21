@@ -342,7 +342,8 @@
     <string name="plan_answer_not_attended">I didn’t go</string>
     <string name="plan_answer_cancel">Cancel</string>
     <string name="plan_answer_delete">Delete</string>
-    <string name="plan_other_answer">Other answer</string>
+    <string name="plan_more_answers">More answers</string>
+    <string name="plan_options">Plan options</string>
     <string name="plan_delete">Delete plan</string>
     <string name="plan_deleted">Plan deleted</string>
     <string name="plan_not_attended">Okay, it doesn’t count for you</string>

@@ -23,10 +23,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
@@ -62,6 +64,9 @@ sealed interface AgendaMessage {
 
     /** One occurrence of a recurring plan skipped; the series goes on. */
     data object PlanSkipped : AgendaMessage
+
+    /** Edited from the ⋮ of an upcoming plan (issue #136). */
+    data object PlanSaved : AgendaMessage
 }
 
 data class AgendaUiState(
@@ -74,6 +79,8 @@ data class AgendaUiState(
     val showReminderEditor: Boolean = false,
     /** The reminder the editor changes; null = a new one. */
     val editingReminder: Reminder? = null,
+    /** The plan open in the plan editor from Edit in its ⋮ (issue #136). */
+    val editingPlan: Plan? = null,
     /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
     val reminderUndo: Reminder? = null,
     val message: AgendaMessage? = null,
@@ -123,6 +130,7 @@ class AgendaViewModel(
     private val confirmPlan: ConfirmPlanUseCase,
     private val closePlan: ClosePlanUseCase,
     private val restorePlan: RestorePlanUseCase,
+    private val savePlan: SavePlanUseCase,
     private val clock: AppClock,
     observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
     observeGroups: ObserveGroupsUseCase,
@@ -275,6 +283,33 @@ class AgendaViewModel(
     fun onUndoPlan(message: AgendaMessage.PlanAnswered) {
         val plan = message.previous ?: return
         viewModelScope.launch { restorePlan(plan) }
+    }
+
+    /** "Edit" in the ⋮ of an upcoming plan (issue #136): the plan editor on it. */
+    fun onEditPlan(plan: Plan) = local.update { it.copy(editingPlan = plan) }
+
+    fun onDismissPlanEditor() = local.update { it.copy(editingPlan = null) }
+
+    /** The plan editor saved: the plan changes in place (a series as a whole), as on the Plans tab. */
+    fun onSavePlan(input: PlanInput) {
+        val plan = local.value.editingPlan ?: return
+        if (input.title.isBlank() || (input.friendIds.isEmpty() && input.circleId == null)) return
+        viewModelScope.launch {
+            savePlan.save(plan.id, input, plan.ideaId)
+            local.update { it.copy(editingPlan = null, message = AgendaMessage.PlanSaved) }
+        }
+    }
+
+    /**
+     * "Cancel plan" or "Delete" in the ⋮ of an upcoming plan (issue #136), for that occurrence or, on a series, the
+     * whole series. Both offer Undo, like the answers on a past plan.
+     */
+    fun onAnswerUpcomingPlan(item: AgendaItem.PlanUpcoming, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer != PlanAnswer.CANCEL && answer != PlanAnswer.DELETE) return
+        viewModelScope.launch {
+            val before = closePlan(item.plan.id, answer, day = item.occurrence, wholeSeries = wholeSeries)
+            local.update { it.copy(message = AgendaMessage.PlanAnswered(answer, before)) }
+        }
     }
 
     /** "Skip this one": takes one date out of a recurring plan; the series goes on. */

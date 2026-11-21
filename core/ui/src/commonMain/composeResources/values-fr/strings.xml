@@ -324,7 +324,7 @@
     <string name="plan_with_names">Avec %1$s</string>
     <string name="plan_add_calendar">Ajouter au calendrier</string>
     <string name="plan_change">Modifier</string>
-    <string name="plan_cancel">Annuler</string>
+    <string name="plan_cancel">Annuler le projet</string>
     <string name="plan_counts_hint">Un projet compte une fois que vous confirmez qu’il a eu lieu.</string>
     <string name="plans_title">Projets</string>
     <string name="plan_saved">Projet enregistré</string>
@@ -337,7 +337,8 @@
     <string name="plan_answer_not_attended">Je n’y étais pas</string>
     <string name="plan_answer_cancel">Annuler</string>
     <string name="plan_answer_delete">Supprimer</string>
-    <string name="plan_other_answer">Autre réponse</string>
+    <string name="plan_more_answers">Autres réponses</string>
+    <string name="plan_options">Options du projet</string>
     <string name="plan_delete">Supprimer le projet</string>
     <string name="plan_deleted">Projet supprimé</string>
     <string name="plan_not_attended">D’accord, ça ne compte pas pour toi</string>

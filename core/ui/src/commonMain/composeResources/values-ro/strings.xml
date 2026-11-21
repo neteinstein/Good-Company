@@ -348,7 +348,8 @@
     <string name="plan_answer_not_attended">N-am mers</string>
     <string name="plan_answer_cancel">Anulează</string>
     <string name="plan_answer_delete">Șterge</string>
-    <string name="plan_other_answer">Alt răspuns</string>
+    <string name="plan_more_answers">Mai multe răspunsuri</string>
+    <string name="plan_options">Opțiunile planului</string>
     <string name="plan_delete">Șterge planul</string>
     <string name="plan_deleted">Plan șters</string>
     <string name="plan_not_attended">Bine, nu contează pentru tine</string>

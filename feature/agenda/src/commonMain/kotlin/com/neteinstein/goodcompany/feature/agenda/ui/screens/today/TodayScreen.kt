@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -61,6 +62,7 @@ import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LogIcon
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -83,6 +85,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
 import com.neteinstein.goodcompany.core.ui.resources.wish_default
@@ -135,6 +138,7 @@ suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = 
     is TodayMessage.CheckedIn -> getString(Res.string.today_logged_with, names.joinToString())
     is TodayMessage.PlanAnswered -> answer.doneText()
     TodayMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
+    TodayMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
     is TodayMessage.AiError -> aiErrorText(error)
     is TodayMessage.LastSeenAnswered -> getString(
         when (answer) {
@@ -200,6 +204,8 @@ fun TodayScreen(
             onUndoPlan = viewModel::onUndoPlan,
             onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
             onSkipPlan = viewModel::onSkipPlan,
+            onEditPlan = viewModel::onEditPlan,
+            onAnswerUpcomingPlan = viewModel::onAnswerUpcomingPlan,
             onOpenAgenda = onOpenAgenda,
             onOpenSettings = onOpenSettings,
             onOpenPeople = onOpenPeople,
@@ -223,6 +229,16 @@ fun TodayScreen(
             onUndoReminder = viewModel::onUndoReminder,
         ),
     )
+    state.editingPlan?.let { plan ->
+        PlanEditor(
+            friends = state.friends,
+            today = state.today,
+            onDismiss = viewModel::onDismissPlanEditor,
+            onSave = viewModel::onSavePlan,
+            initial = plan,
+            circles = state.circles,
+        )
+    }
     if (state.showReminderEditor) {
         ReminderEditor(
             state.friends,
@@ -268,6 +284,8 @@ data class TodayActions(
     val onUndoPlan: (TodayMessage.PlanAnswered) -> Unit = {},
     val onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     val onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    val onEditPlan: (Plan) -> Unit = {},
+    val onAnswerUpcomingPlan: (AgendaItem.PlanUpcoming, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
     val onOpenAgenda: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     val onOpenPeople: () -> Unit = {},
@@ -398,6 +416,8 @@ fun TodayContent(
                         onAnswerPlan = actions.onAnswerPlan,
                         onAddPlanToCalendar = actions.onAddPlanToCalendar,
                         onSkipPlan = actions.onSkipPlan,
+                        onEditPlan = actions.onEditPlan,
+                        onAnswerUpcomingPlan = actions.onAnswerUpcomingPlan,
                         reminders = actions.reminders,
                         now = state.now,
                         zone = state.zone,
