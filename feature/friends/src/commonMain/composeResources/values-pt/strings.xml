@@ -153,7 +153,7 @@
     <string name="event_week">Uma semana antes</string>
     <string name="prefs_pause">Pausar lembretes para estar com</string>
     <string name="prefs_pause_hint">Sem lembretes “hora de estar com” até retomares. O histórico e os aniversários ficam.</string>
-    <string name="prefs_tracking">Acompanhar o contacto</string>
+    <string name="prefs_tracking">Manter o contacto</string>
     <string name="prefs_tracking_hint">Calor, ritmo para estar com e lembretes para pôr a conversa em dia. Desliga para quem vês todos os dias: a cronologia, os lembretes e os aniversários ficam.</string>
     <string name="prefs_contact_counts">Chamadas e conversas contam como estar em contacto</string>
     <string name="prefs_contact_counts_hint">Para amigos longe: uma chamada ou conversa reinicia o ritmo, não só estarem juntos.</string>

@@ -182,8 +182,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     stay null, the person's page and timeline never show it, it isn't a hangout (no warmth, no stats), and a real
     meetup (or any contact when `contactCountsAsCatchUp`) always wins. "Not now" is `AppSettings.lastSeenCardHiddenOn`,
     device-only (`DeviceSettings`, stripped from exports, kept on restore). Acquaintances (#69) must not be asked.
-- **Keep-in-touch tracking (#115).** `Friend.tracksKeepInTouch` (column `friend.tracks_keep_in_touch`, `24.sqm`). Off:
+- **Stay in touch (#115; called "Keep-in-touch tracking" until #132).** `Friend.tracksKeepInTouch` (column `friend.tracks_keep_in_touch`, `24.sqm`). Off:
   `CadenceRules.cadenceFor`/`sourceFor` return null, `Relationships.meetupStatuses` skips them, `Warmth.scoreOrNull`
   is null (so `FriendSummary.warmth` / `FriendDetail.warmth` are nullable), `PeopleDashboard` keeps them in counts but
   out of warmth, trend and cooling, and `Shortcuts` leaves them out. Anything new that nudges or shows warmth must
   respect it. `catchUpPaused`/`snoozedUntil` are the temporary pauses.
+- **Who starts with Stay in touch off (#132).** `StayInTouch` (domain, `usecase/StayInTouch.kt`) holds the rule: kids
+  from `AddKidUseCase` and `KidsAsPeople.convert`, relatives from `AddRelativeAsPersonUseCase`, and anyone who *becomes*
+  your kid or partner (`StayInTouch.offForRelationToMe`: CHILD, STEP_CHILD, DATING, SPOUSE, PARTNER) through
+  `SetRelationToMeUseCase` / `ConfirmKinshipUseCase` (`afterRelationToMe`: only on the change into that set, so a switch
+  turned back on stays on). Undo of "Related to you?" passes the old value back (`SavedEdit.RelationToMeBefore`).
+  Friends added any other way start on; `SaveLinkUseCase` and contact merges never touch it. A new way to create a
+  person from a link must start off too. Migration `28.sqm` applied the same rules once to older data.

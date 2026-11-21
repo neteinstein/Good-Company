@@ -909,6 +909,79 @@ class MigrationTest {
     }
 
     @Test
+    fun version28to29_stayInTouchTurnsOffOnceForKidsPartnersAndTypedInRelatives() = runTest {
+        val driver = driverAt(28)
+        // id, contact id, is_close_friend, relation to me, meet every days, approx last seen
+        val people = listOf(
+            "me_kid" to "'c1', 1, 'CHILD', NULL, NULL", // your own kid from contacts: off (rule 1)
+            "me_step" to "'c2', 1, 'STEP_CHILD', NULL, NULL", // off (rule 1)
+            "me_wife" to "'c3', 1, 'SPOUSE', NULL, NULL", // off (rule 1)
+            "me_bf" to "NULL, 0, 'DATING', NULL, NULL", // off (rule 1)
+            "me_mum" to "'c4', 1, 'PARENT', NULL, NULL", // a parent keeps tracking
+            "me_sis" to "NULL, 1, 'SIBLING', 30, NULL", // a sibling keeps tracking
+            "me_ex" to "'c5', 0, 'EX', NULL, NULL", // an ex isn't a partner: on
+            "rui" to "'c6', 1, NULL, NULL, NULL", // a friend from contacts, a parent: on
+            "leo" to "NULL, 0, NULL, NULL, NULL", // Rui's typed-in kid (CHILD link to): off (rule 2)
+            "eva" to "NULL, 1, NULL, 14, NULL", // typed-in, stored as "Rui is Eva's parent": off (rule 2)
+            "tom" to "'c7', 0, NULL, NULL, NULL", // a kid from contacts keeps tracking
+            "ana" to "NULL, 0, NULL, NULL, NULL", // typed-in, Rui's sister, nothing of her own: off (rule 3)
+            "bia" to "NULL, 0, NULL, NULL, NULL", // typed-in sister with a meetup: on
+            "caio" to "NULL, 0, NULL, NULL, NULL", // typed-in brother with a call: on
+            "dani" to "NULL, 0, NULL, NULL, '2026-10-01'", // answered "When did you last see…?": on
+            "edu" to "NULL, 0, NULL, 21, NULL", // has a rhythm: on
+            "fil" to "NULL, 1, NULL, NULL, NULL", // a real friend (Close) linked as a cousin: on
+            "gil" to "'c8', 0, NULL, NULL, NULL", // from contacts with a plain friend link: on
+            "hugo" to "NULL, 0, NULL, NULL, NULL", // typed-in with a friend link only: on
+            "ines" to "NULL, 0, NULL, NULL, NULL", // typed-in, the from side of an IN_LAW link (Rui is her in-law): on
+            "joao" to "NULL, 0, NULL, NULL, NULL", // typed-in, linked with a type this build doesn't know: on
+        )
+        people.forEachIndexed { i, (id, rest) ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, contact_id, is_close_friend, relation_to_me, meet_every_days,
+                    approx_last_seen, notify_birthday, notes, suggest_events, is_orphaned, catch_up_paused,
+                    contact_counts_as_catch_up)
+                VALUES ('$id', $i, '$id', $rest, 1, '', 0, 0, 0, 0)
+                """.trimIndent(),
+                0,
+            ).await()
+        }
+        listOf(
+            "rui" to "CHILD" to "leo",
+            "eva" to "PARENT" to "rui",
+            "rui" to "CHILD" to "tom",
+            "rui" to "SIBLING" to "ana",
+            "rui" to "SIBLING" to "bia",
+            "rui" to "SIBLING" to "caio",
+            "rui" to "SIBLING" to "dani",
+            "rui" to "SIBLING" to "edu",
+            "rui" to "COUSIN" to "fil",
+            "rui" to "FRIEND" to "gil",
+            "rui" to "FRIEND" to "hugo",
+            "ines" to "IN_LAW" to "rui",
+            "rui" to "GODPARENT" to "joao",
+        ).forEachIndexed { i, (pair, to) ->
+            val (from, type) = pair
+            driver.execute(null, "INSERT INTO person_link (id, from_friend_id, to_friend_id, type) VALUES ('l$i', '$from', '$to', '$type')", 0)
+                .await()
+        }
+        driver.execute(null, "INSERT INTO hangout (id, position, at, note) VALUES ('h1', 0, 1000, '')", 0).await()
+        driver.execute(null, "INSERT INTO hangout_friend VALUES ('h1', 'bia', 0)", 0).await()
+        driver.execute(
+            null,
+            "INSERT INTO interaction (id, friend_id, type, at, note, source) VALUES ('i1', 'caio', 'CALL', 1000, '', 'MANUAL')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 28, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val off = database.readFriends().filterNot { it.tracksKeepInTouch }.mapTo(HashSet()) { it.id.value }
+        assertEquals(setOf("me_kid", "me_step", "me_wife", "me_bf", "leo", "eva", "ana"), off)
+        driver.close()
+    }
+
+    @Test
     fun customActivitiesColumn_unreadableIsNone_blanksAndRepeatsDropped() {
         assertEquals(emptyList(), customActivitiesFromColumn(null))
         assertEquals(emptyList(), customActivitiesFromColumn("not json"))

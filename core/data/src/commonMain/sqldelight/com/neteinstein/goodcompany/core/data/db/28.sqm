@@ -1,0 +1,34 @@
+-- Version 28 → 29 (issue #132): "Stay in touch" off for people added as a reference, once, for the people stored
+-- before the rule (StayInTouch in the domain) applied to new ones. No schema change. Turns tracking off for:
+-- 1. your own kids and partner (relation_to_me CHILD, STEP_CHILD, DATING, SPOUSE or PARTNER), from contacts or not;
+-- 2. someone's kid who was typed in (no contact_id): the target of a CHILD / STEP_CHILD link, or the source of a
+--    PARENT / STEP_PARENT one (a link is stored once, either way round);
+-- 3. a typed-in person (no contact_id) added to someone as family or a partner (the to side of the link, where
+--    "Add kid", "Add as a person" and the link sheet put the new person) who still looks like a reference: an
+--    Acquaintance (is_close_friend 0) with nothing of their own, so no meetup, no call or message log, no rhythm set
+--    on their page and no "When did you last see…?" answer.
+-- Friend and colleague links, exes and link types this version doesn't know don't count for 3. Parents and siblings
+-- from contacts keep tracking.
+
+UPDATE friend SET tracks_keep_in_touch = 0
+WHERE relation_to_me IN ('CHILD', 'STEP_CHILD', 'DATING', 'SPOUSE', 'PARTNER');
+
+UPDATE friend SET tracks_keep_in_touch = 0
+WHERE contact_id IS NULL AND (
+    id IN (SELECT to_friend_id FROM person_link WHERE type IN ('CHILD', 'STEP_CHILD'))
+    OR id IN (SELECT from_friend_id FROM person_link WHERE type IN ('PARENT', 'STEP_PARENT'))
+);
+
+UPDATE friend SET tracks_keep_in_touch = 0
+WHERE contact_id IS NULL
+    AND is_close_friend = 0
+    AND meet_every_days IS NULL
+    AND approx_last_seen IS NULL
+    AND id IN (
+        SELECT to_friend_id FROM person_link WHERE type IN (
+            'PARENT', 'STEP_PARENT', 'CHILD', 'STEP_CHILD', 'SIBLING', 'HALF_SIBLING', 'STEP_SIBLING', 'GRANDPARENT',
+            'GRANDCHILD', 'AUNT_UNCLE', 'NIECE_NEPHEW', 'COUSIN', 'IN_LAW', 'DATING', 'SPOUSE', 'PARTNER'
+        )
+    )
+    AND id NOT IN (SELECT friend_id FROM hangout_friend)
+    AND id NOT IN (SELECT friend_id FROM interaction);

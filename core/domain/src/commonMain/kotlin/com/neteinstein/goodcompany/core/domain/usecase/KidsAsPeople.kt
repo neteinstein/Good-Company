@@ -57,6 +57,7 @@ object KidsAsPeople {
      * people, as the database migration (`10.sqm`) does: each kid keeps their id unless another person already has it (then
      * `<parent id>-<kid id>`), gets their birthday, its reminder from the parent's, their likes and a [LinkType.CHILD]
      * link from the parent, shows in the main list when the parent is family, and takes along the gifts meant for them.
+     * Like any kid added to someone, "Stay in touch" starts off (issue #132).
      * Friends without old kids are returned unchanged, so it is safe to run on any data.
      */
     fun convert(friends: List<Friend>, links: List<PersonLink>): Pair<List<Friend>, List<PersonLink>> {
@@ -79,6 +80,7 @@ object KidsAsPeople {
                     likes = kid.likes,
                     gifts = gifts.map { it.copy(forKidId = null) },
                     showInMyList = showsByDefault(parent),
+                    tracksKeepInTouch = false,
                 )
                 newLinks += PersonLink(LINK_PREFIX + id, parent.id, FriendId(id), LinkType.CHILD, addedAt = kid.addedAt)
             }
@@ -110,6 +112,7 @@ data class KidDraft(
 /**
  * "Add <name>'s kid" (F9): creates the kid as a person of their own, with their own page and birthday reminder,
  * linked to the parent as their child. Returns the new person's id, or null when the parent is gone or the name is blank.
+ * "Stay in touch" starts off (issue #132): you see them with their parent, whether they are a friend's kid or yours.
  */
 class AddKidUseCase(
     private val friends: FriendRepository,
@@ -131,6 +134,7 @@ class AddKidUseCase(
             likesAddedAt = likes.associateWith { now },
             pronouns = draft.pronouns,
             showInMyList = draft.showInMyList,
+            tracksKeepInTouch = false,
         )
         friends.upsert(kid)
         links.upsert(PersonLink(id = ids.next(), from = parentId, to = kid.id, type = LinkType.CHILD, addedAt = now))

@@ -124,7 +124,8 @@ data class Friend(
      */
     val approxLastSeen: LocalDate? = null,
     /**
-     * Issue #115, "Keep-in-touch tracking": on by default. Off is permanent (for someone you see every day, like your
+     * Issue #115, "Stay in touch" (renamed in #132): on by default, but off for people added as a reference (see
+     * [com.neteinstein.goodcompany.core.domain.usecase.StayInTouch]). Off is permanent (for someone you see every day, like your
      * kids): no warmth, no rhythm and no catch-up nudges, and never in Time to catch up, Drifting, Cooling, the widget's
      * "Who's next" or the app shortcuts. The timeline, logging, reminders, birthdays, plans, gifts and notes keep
      * working. [catchUpPaused] and [snoozedUntil] are the temporary pauses and only matter while this is on.

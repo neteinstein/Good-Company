@@ -179,8 +179,8 @@
     <string name="event_week">A week before</string>
     <string name="prefs_pause">Pause catch-up nudges</string>
     <string name="prefs_pause_hint">No “time to see” nudges until you resume. History and birthdays stay.</string>
-    <string name="prefs_tracking">Keep-in-touch tracking</string>
-    <string name="prefs_tracking_hint">Warmth, a meet-up rhythm and catch-up nudges. Turn it off for someone you see every day: their timeline, reminders and birthdays stay.</string>
+    <string name="prefs_tracking">Stay in touch</string>
+    <string name="prefs_tracking_hint">Warmth, a meet-up rhythm and nudges to catch up. Turn it off for someone you see every day: their timeline, reminders and birthdays stay.</string>
     <string name="prefs_contact_counts">Calls and chats count as catching up</string>
     <string name="prefs_contact_counts_hint">For friends far away: a call or chat resets the rhythm, not only meeting up.</string>
     <string name="plans_add">Plan</string>

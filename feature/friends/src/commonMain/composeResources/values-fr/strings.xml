@@ -153,7 +153,7 @@
     <string name="event_week">Une semaine avant</string>
     <string name="prefs_pause">Mettre en pause les rappels</string>
     <string name="prefs_pause_hint">Plus de rappels « à revoir » jusqu’à la reprise. L’historique et les anniversaires restent.</string>
-    <string name="prefs_tracking">Suivi du lien</string>
+    <string name="prefs_tracking">Garder le contact</string>
     <string name="prefs_tracking_hint">Chaleur, rythme de rencontre et rappels pour prendre des nouvelles. Désactive-le pour quelqu’un que tu vois tous les jours : sa chronologie, ses rappels et son anniversaire restent.</string>
     <string name="prefs_contact_counts">Les appels et messages comptent</string>
     <string name="prefs_contact_counts_hint">Pour les amis loin : un appel ou un message relance le rythme, pas seulement se voir.</string>

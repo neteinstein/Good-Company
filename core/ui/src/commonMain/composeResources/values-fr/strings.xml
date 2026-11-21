@@ -689,7 +689,7 @@
     <string name="notif_daily_log_body">Touche pour le noter tant que c’est frais.</string>
     <string name="legend_title">Ce que veulent dire les couleurs</string>
     <string name="legend_ring">L’anneau autour de la photo montre la chaleur de la relation :</string>
-    <string name="legend_no_ring">Pas d’anneau : tu ne suis pas cette personne.</string>
+    <string name="legend_no_ring">Pas d’anneau : “Garder le contact” est désactivé pour cette personne.</string>
     <string name="legend_dots">Un point par cercle dont la personne fait partie, dans la couleur du cercle.</string>
     <string name="legend_got_it">Compris</string>
 </resources>

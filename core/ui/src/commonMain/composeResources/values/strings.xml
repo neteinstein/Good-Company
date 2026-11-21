@@ -682,7 +682,7 @@
     <!-- The People legend (issue #120) -->
     <string name="legend_title">What the colours mean</string>
     <string name="legend_ring">The ring around a photo shows how warm you are with them:</string>
-    <string name="legend_no_ring">No ring: you’re not keeping track of them.</string>
+    <string name="legend_no_ring">No ring: Stay in touch is off for them.</string>
     <string name="legend_dots">One dot per circle they’re in, in the circle’s colour.</string>
     <string name="legend_got_it">Got it</string>
 </resources>

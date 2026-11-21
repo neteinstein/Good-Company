@@ -240,7 +240,7 @@ class ObserveKinshipProposalsUseCase(private val friends: FriendRepository, priv
 class ConfirmKinshipUseCase(private val friends: FriendRepository) {
     suspend operator fun invoke(id: FriendId, relation: LinkType) {
         val friend = friends.get(id) ?: return
-        friends.upsert(friend.copy(relationToMe = relation))
+        friends.upsert(StayInTouch.afterRelationToMe(friend, relation))
     }
 }
 
