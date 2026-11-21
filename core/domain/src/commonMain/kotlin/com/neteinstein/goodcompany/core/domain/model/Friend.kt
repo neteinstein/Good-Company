@@ -55,7 +55,7 @@ data class Friend(
     /** Contact disappeared from the address book; kept because it has app data. */
     val isOrphaned: Boolean = false,
     /**
-     * How close someone is (Inner / Close / Friends / Acquaintances) — gives a default "meet every" cadence without
+     * How close someone is (Closest, stored as [Closeness.INNER] / Close / Friends / Acquaintances) — gives a default "meet every" cadence without
      * per-friend setup. Stored as "circle" (its name before decision D1), so backups and the database are unchanged.
      */
     @SerialName("circle")
@@ -227,7 +227,7 @@ data class ImportantEvent(
 )
 
 /**
- * How close someone is (issue #69): Inner · Close · Friends ([GOOD], stored under its old name) · Acquaintances.
+ * How close someone is (issue #69): Closest ([INNER], shown as Closest since #147) · Close · Friends ([GOOD], stored under its old name) · Acquaintances.
  * The first three are real friends, each with a default cadence (configurable in Settings) so reminders work the
  * moment someone is marked as a real friend. [ACQUAINTANCE] is never a real friend and has no rhythm unless one is set
  * in Settings; birthdays still remind (F10). A per-friend "meet every" value still overrides any default.

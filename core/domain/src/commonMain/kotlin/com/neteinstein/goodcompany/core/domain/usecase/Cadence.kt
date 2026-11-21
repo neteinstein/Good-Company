@@ -10,7 +10,7 @@ import kotlinx.datetime.plus
 
 /**
  * How often you want to see each friend. A per-friend "meet every N days" wins; otherwise a real friend's
- * [Closeness] gives the default (Inner weekly, Close monthly, Friends quarterly — configurable in Settings).
+ * [Closeness] gives the default (Closest weekly, Close monthly, Friends quarterly — configurable in Settings).
  * Acquaintances have none unless [acquaintanceDays] is set in Settings (issue #69), real friend or not.
  */
 data class CadenceRules(

@@ -81,7 +81,7 @@ data class AppSettings(
     val reminderHour: Int = 9,
     /** First-run onboarding completed (or skipped). */
     val onboardingDone: Boolean = false,
-    /** Default "meet every N days" per closeness (Inner / Close / Friends; stored under their old "circle" names). */
+    /** Default "meet every N days" per closeness (Closest / Close / Friends; stored under their old "circle" names). */
     val innerCircleDays: Int = 7,
     val closeCircleDays: Int = 30,
     val goodFriendsDays: Int = 90,
