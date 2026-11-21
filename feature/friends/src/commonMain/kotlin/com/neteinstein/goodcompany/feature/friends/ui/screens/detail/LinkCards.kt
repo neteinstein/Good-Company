@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Handshake
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -50,8 +51,9 @@ import com.neteinstein.goodcompany.core.domain.usecase.of
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.PersonPickerSheet
-import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.SheetTitle
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
 import com.neteinstein.goodcompany.core.ui.l10n.linkCategoryLabel
 import com.neteinstein.goodcompany.core.ui.l10n.linkWord
@@ -155,18 +157,16 @@ internal fun LinkSheet(
         editing.link.remindAnniversary != remind ||
         editing.person.pronouns != pronouns
     ModalBottomSheet(onDismissRequest = { if (draft != null && changed) save() else onDismiss() }) {
-        SaveSheetHeader(
+        SheetTitle(
             if (editing == null) {
                 stringResource(Res.string.link_sheet_title, firstName)
             } else {
                 stringResource(Res.string.link_sheet_edit_title, firstName, editing.person.displayName.substringBefore(' '))
             },
-            onSave = save,
-            saveEnabled = draft != null,
-            modifier = Modifier.padding(horizontal = 20.dp),
+            Modifier.padding(horizontal = 20.dp),
         )
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()
+            Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 20.dp).padding(bottom = 8.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -239,6 +239,7 @@ internal fun LinkSheet(
             )
             if (editing != null) TextButton(onClick = { onRemove(editing.link.id) }) { Text(stringResource(Res.string.link_remove)) }
         }
+        SaveBar(save, enabled = draft != null, color = BottomSheetDefaults.ContainerColor)
     }
     if (choosing) {
         PersonPickerSheet(others, circles, title = stringResource(Res.string.link_search), onDismiss = { choosing = false }, onPick = {

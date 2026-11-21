@@ -24,6 +24,7 @@ import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +48,7 @@ import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlaceState
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.resources.circle_tick_who_came
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
 import com.neteinstein.goodcompany.feature.hangouts.resources.sheet_find
@@ -78,8 +80,10 @@ fun CheckInSheet(
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        // Issue #146: the fields scroll; Save stays pinned under them, above the navigation bar and the keyboard.
         Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).navigationBarsPadding(),
+            Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
+                .padding(bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(Res.string.sheet_title), style = MaterialTheme.typography.headlineSmall)
@@ -155,17 +159,17 @@ fun CheckInSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
             )
-            Button(onClick = onSave, enabled = draft.canSave, modifier = Modifier.fillMaxWidth().height(52.dp)) {
-                Text(
-                    if (draft.selected.isEmpty()) {
-                        stringResource(Res.string.sheet_pick)
-                    } else {
-                        stringResource(Res.string.sheet_log, draft.selected.size)
-                    },
-                )
-            }
-            Spacer(Modifier.height(12.dp))
         }
+        SaveBar(
+            onSave,
+            enabled = draft.canSave,
+            label = if (draft.selected.isEmpty()) {
+                stringResource(Res.string.sheet_pick)
+            } else {
+                stringResource(Res.string.sheet_log, draft.selected.size)
+            },
+            color = BottomSheetDefaults.ContainerColor,
+        )
     }
 }
 

@@ -66,6 +66,7 @@ import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.circlePalette
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.components.showUndo
@@ -101,7 +102,6 @@ import com.neteinstein.goodcompany.core.ui.resources.add as addLabel
 import com.neteinstein.goodcompany.core.ui.resources.back as backLabel
 import com.neteinstein.goodcompany.core.ui.resources.delete as deleteLabel
 import com.neteinstein.goodcompany.core.ui.resources.remove_item as removeItem
-import com.neteinstein.goodcompany.core.ui.resources.save as saveLabel
 import com.neteinstein.goodcompany.core.ui.resources.undo as undoLabel
 
 /** Opened from Together's "Your circles", a long-press on a Home circle chip and the circle pills on a friend page. */
@@ -219,15 +219,8 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
             )
         },
         snackbarHost = { AppSnackbarHost(snackbar) },
-        bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.background) {
-                Button(
-                    onClick = actions.onSave,
-                    enabled = state.canSave,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).height(52.dp),
-                ) { Text(stringResource(CoreRes.string.saveLabel)) }
-            }
-        },
+        // Issue #146: Save in the one SaveBar, above the navigation bar and the keyboard; Delete stays in the top bar.
+        bottomBar = { SaveBar(actions.onSave, enabled = state.canSave) },
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),

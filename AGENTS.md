@@ -231,7 +231,8 @@ before changing that area**, and put new area-specific notes in that skill, not 
 12. **Edge-to-edge.** Android calls `enableEdgeToEdge()`, iOS uses `.ignoresSafeArea()`; Compose `Scaffold`s handle
     insets. Don't add hard-coded status-bar padding.
 13. **Design system first.** Reuse `core:ui` building blocks (`ScreenHeader`, `SectionCard`, `QuickAction`, `ProgressRing`,
-    `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`, `SaveSheetHeader`,
+    `DateBadge`, `StackedAvatars`, `HeartBurst`, `avatarColors`, `TagEditor`, `ReminderEditor`, `SaveBar` (every
+    form's Save: bottom of full-screen editors and of sheets with text fields, above the navigation bar and keyboard),
     `PeoplePickerSheet` / `PersonPickerSheet` / `PeopleFilterRow` for choosing people) and theme tokens
     (`MaterialTheme.colorScheme/typography/shapes`), not ad-hoc colours or sizes. The typeface is Plus Jakarta Sans
     (`core/ui/src/commonMain/composeResources/font`, OFL licence in `docs/licenses/`). Destructive actions get an

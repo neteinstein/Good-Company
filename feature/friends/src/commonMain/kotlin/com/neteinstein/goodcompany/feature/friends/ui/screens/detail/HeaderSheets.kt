@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -41,7 +42,8 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.ui.components.BirthdayDraft
 import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
-import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
+import com.neteinstein.goodcompany.core.ui.components.SheetTitle
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.friends.resources.Res
@@ -191,7 +193,7 @@ internal fun NameDialog(f: Friend, onSave: (String?) -> Unit, onDismiss: () -> U
 
 /**
  * The birthday: day and month, an optional year (F4), and "Remind me of <name>'s birthday", on by default (F10).
- * Saving it empty removes the birthday. Save sits at the top, and closing the sheet saves a valid change (#64); the
+ * Saving it empty removes the birthday. Save sits in the [SaveBar] under the fields, and closing the sheet saves a valid change (#64); the
  * screen offers Undo.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -210,14 +212,9 @@ internal fun BirthdaySheet(f: Friend, latestYear: Int, onSave: (Birthday?, Boole
             if (valid && (draft.toBirthday(latestYear) != f.birthday || notify != f.notifyBirthday)) save() else onDismiss()
         },
     ) {
-        SaveSheetHeader(
-            stringResource(Res.string.birthday_title),
-            onSave = save,
-            saveEnabled = valid,
-            modifier = Modifier.padding(horizontal = 24.dp),
-        )
+        SheetTitle(stringResource(Res.string.birthday_title), Modifier.padding(horizontal = 24.dp))
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 16.dp).navigationBarsPadding()
+            Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 24.dp).padding(bottom = 8.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -246,5 +243,6 @@ internal fun BirthdaySheet(f: Friend, latestYear: Int, onSave: (Birthday?, Boole
                 ) { Text(stringResource(Res.string.birthday_remove), color = MaterialTheme.colorScheme.error) }
             }
         }
+        SaveBar(save, enabled = valid, color = BottomSheetDefaults.ContainerColor)
     }
 }

@@ -58,6 +58,7 @@ import com.neteinstein.goodcompany.core.ui.components.LogSheetState
 import com.neteinstein.goodcompany.core.ui.components.LogTimeChoice
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
 import com.neteinstein.goodcompany.core.ui.components.activityLabel
 import com.neteinstein.goodcompany.core.ui.components.logKindIcon
@@ -173,8 +174,12 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     val startsEmpty = state.startsWithNobody
     var pickingPeople by rememberSaveable { mutableStateOf(startsEmpty) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
-    val haptics = LocalHapticFeedback.current
-    DialogSheet(onDismiss = actions.onDismiss) {
+    DialogSheet(
+        onDismiss = actions.onDismiss,
+        bottomBar = {
+            SaveBar(actions.onSave, enabled = sheet.canSave, label = saveLabel(sheet), color = MaterialTheme.colorScheme.surfaceContainerLow)
+        },
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val circle = sheet.circle
             Text(
@@ -237,14 +242,6 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Button(
-            onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                actions.onSave()
-            },
-            enabled = sheet.canSave,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(saveLabel(sheet)) }
     }
     if (pickingDate) {
         LocalDatePickerDialog(sheet.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = sheet.today)

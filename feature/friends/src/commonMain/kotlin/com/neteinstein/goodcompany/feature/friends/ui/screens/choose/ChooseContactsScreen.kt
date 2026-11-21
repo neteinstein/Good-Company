@@ -57,6 +57,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ContactChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ContactListFilter
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.format.monthShort
 import com.neteinstein.goodcompany.core.ui.platform.rememberContactPicker
 import com.neteinstein.goodcompany.core.ui.resources.date_short
@@ -147,16 +148,12 @@ fun ChooseContactsContent(state: ChooseContactsUiState, actions: ChooseContactsA
         },
         bottomBar = {
             if (state.total > 0) {
-                Surface(color = MaterialTheme.colorScheme.background, tonalElevation = 2.dp) {
-                    Button(
-                        onClick = actions.onSave,
-                        enabled = state.canSave,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).height(52.dp),
-                    ) {
-                        val n = state.selected.size
-                        Text(if (n == 0) stringResource(Res.string.choose_add_none) else pluralStringResource(Res.plurals.choose_add, n, n))
-                    }
-                }
+                val n = state.selected.size
+                SaveBar(
+                    actions.onSave,
+                    enabled = state.canSave,
+                    label = if (n == 0) stringResource(Res.string.choose_add_none) else pluralStringResource(Res.plurals.choose_add, n, n),
+                )
             }
         },
     ) { padding ->
