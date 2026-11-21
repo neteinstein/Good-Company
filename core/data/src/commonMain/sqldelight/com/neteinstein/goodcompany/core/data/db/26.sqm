@@ -1,0 +1,13 @@
+-- Version 26 → 27 (issue #119): photos and videos on a note, kept as a thumbnail plus a reference to the original in
+-- the gallery (never the original). kind and photo_platform are enum names, with no CHECK.
+
+CREATE TABLE journal_media (
+    journal_id TEXT NOT NULL REFERENCES journal_entry(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    thumbnail TEXT NOT NULL,
+    photo_platform TEXT,
+    photo_ref TEXT,
+    PRIMARY KEY (journal_id, id)
+);

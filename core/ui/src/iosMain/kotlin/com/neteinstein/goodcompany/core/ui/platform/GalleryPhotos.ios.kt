@@ -8,8 +8,13 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.suspendCancellableCoroutine
+import platform.AVFoundation.AVAssetImageGenerator
+import platform.AVFoundation.AVURLAsset
+import platform.CoreGraphics.CGImageRelease
 import platform.CoreGraphics.CGSizeMake
+import platform.CoreMedia.CMTimeMake
 import platform.Foundation.NSData
+import platform.Foundation.NSURL
 import platform.Photos.PHAccessLevelReadWrite
 import platform.Photos.PHAsset
 import platform.Photos.PHAuthorizationStatusAuthorized
@@ -72,6 +77,69 @@ private class GalleryPickerDelegate(var onPicked: (PickedPhoto?) -> Unit) :
 }
 
 private const val IMAGE_TYPE = "public.image"
+private const val MOVIE_TYPE = "public.movie"
+
+/**
+ * Photos and videos for a note (issue #119): `PHPicker` on the shared library with both filters, several at once.
+ * A video's preview is its first frame (`AVAssetImageGenerator` on the file the picker hands over for the call).
+ */
+@Composable
+actual fun rememberGalleryMediaPicker(onPicked: (List<PickedMedia>) -> Unit): () -> Unit {
+    val callback = rememberUpdatedState(onPicked)
+    val delegate = remember { MediaPickerDelegate { callback.value(it) } }
+    DisposableEffect(Unit) { onDispose { delegate.onPicked = {} } }
+    return {
+        val config = PHPickerConfiguration(photoLibrary = PHPhotoLibrary.sharedPhotoLibrary())
+        config.filter = PHPickerFilter.anyFilterMatchingSubfilters(listOf(PHPickerFilter.imagesFilter, PHPickerFilter.videosFilter))
+        config.selectionLimit = MAX_NOTE_MEDIA.toLong()
+        val picker = PHPickerViewController(configuration = config)
+        picker.delegate = delegate
+        topViewController()?.presentViewController(picker, animated = true, completion = null)
+    }
+}
+
+private class MediaPickerDelegate(var onPicked: (List<PickedMedia>) -> Unit) :
+    NSObject(),
+    PHPickerViewControllerDelegateProtocol {
+    override fun picker(picker: PHPickerViewController, didFinishPicking: List<*>) {
+        picker.dismissViewControllerAnimated(true, completion = null)
+        val results = didFinishPicking.filterIsInstance<PHPickerResult>()
+        if (results.isEmpty()) {
+            onPicked(emptyList())
+            return
+        }
+        val picked = arrayOfNulls<PickedMedia>(results.size)
+        var left = results.size
+        results.forEachIndexed { i, result ->
+            val ref = result.assetIdentifier?.let { PhotoRef(PhotoPlatform.IOS, it) }
+            val done: (PickedMedia) -> Unit = { media ->
+                dispatch_async(dispatch_get_main_queue()) {
+                    picked[i] = media
+                    left -= 1
+                    if (left == 0) onPicked(picked.filterNotNull())
+                }
+            }
+            if (result.itemProvider.hasItemConformingToTypeIdentifier(MOVIE_TYPE)) {
+                result.itemProvider.loadFileRepresentationForTypeIdentifier(MOVIE_TYPE) { url: NSURL?, _ ->
+                    // The file is only there during this call: take the frame now.
+                    done(PickedMedia(url?.let(::firstFrame)?.let(::uprightJpeg) ?: ByteArray(0), isVideo = true, ref = ref))
+                }
+            } else {
+                result.itemProvider.loadDataRepresentationForTypeIdentifier(IMAGE_TYPE) { data: NSData?, _ ->
+                    done(PickedMedia(data?.let { UIImage(data = it) }?.let(::uprightJpeg) ?: ByteArray(0), isVideo = false, ref = ref))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun firstFrame(url: NSURL): UIImage? {
+    val generator = AVAssetImageGenerator(asset = AVURLAsset(uRL = url, options = null))
+    generator.appliesPreferredTrackTransform = true
+    val image = generator.copyCGImageAtTime(CMTimeMake(value = 0, timescale = 1), actualTime = null, error = null) ?: return null
+    return UIImage.imageWithCGImage(image).also { CGImageRelease(image) }
+}
 
 /**
  * Loads the original through `PHImageManager`. Reading an asset needs photo library access, so it's asked for here,

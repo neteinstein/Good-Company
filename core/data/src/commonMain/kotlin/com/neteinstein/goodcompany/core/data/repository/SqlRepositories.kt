@@ -262,7 +262,8 @@ class SqlInteractionRepository(
     }
 
     override suspend fun upsertJournal(entry: JournalEntry) {
-        db.access { it.writeJournal(entry) }
+        // The note and its media rows together (issue #119).
+        db.transaction { it.writeJournal(entry) }
     }
 
     override suspend fun deleteJournal(id: String) {
@@ -412,10 +413,13 @@ internal data class DeviceSettings(
     val notifications: NotificationSettings = NotificationSettings(),
     /** Issue #98: "Not now" on Today's notifications card. */
     val notificationPrimerDismissed: Boolean = false,
+    /** Issue #119: the note-media explanation was shown. */
+    val mediaExplained: Boolean = false,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         notifications = notifications,
         notificationPrimerDismissed = notificationPrimerDismissed,
+        mediaExplained = mediaExplained,
         keptTagSpellings = keptTagSpellings,
         acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
@@ -452,6 +456,7 @@ internal data class DeviceSettings(
             acquaintanceDays = settings.acquaintanceDays,
             notifications = settings.notifications,
             notificationPrimerDismissed = settings.notificationPrimerDismissed,
+            mediaExplained = settings.mediaExplained,
         )
     }
 }

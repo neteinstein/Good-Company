@@ -112,7 +112,49 @@ class FriendDetailViewModelTest {
         g.restoreTimelineEntry,
         g.storyViews,
         g.importChat,
+        g.prepareNoteMedia,
+        g.saveNote,
+        g.markMediaExplained,
     )
+
+    @Test
+    fun notePopup_addsMediaAsThumbnails_explainsOnce_andSaves() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertFalse(state.value.mediaExplained)
+        vm.onOpenNote(null)
+        val ref = PhotoRef(PhotoPlatform.ANDROID, "content://media/7")
+        vm.onNoteMediaPicked(
+            listOf(
+                com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia(
+                    byteArrayOf(1, 2),
+                    com.neteinstein.goodcompany.core.domain.model.MediaKind.VIDEO,
+                    ref,
+                ),
+                com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia(
+                    ByteArray(0),
+                    com.neteinstein.goodcompany.core.domain.model.MediaKind.PHOTO,
+                    null,
+                ),
+            ),
+        )
+        val editing = state.value.noteEditing!!
+        assertEquals(1, editing.media.size)
+        assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
+        vm.onSaveNote("Our hike", LocalDate(2026, 3, 10))
+        assertNull(state.value.noteEditing)
+        assertEquals(FriendDetailMessage.NoteSaved, state.value.message)
+        val note = g.interactionRepo.journal.value.single()
+        assertEquals("Our hike", note.text)
+        assertEquals(ref, note.media.single().ref)
+        assertTrue(state.value.mediaExplained)
+
+        // Editing opens with its media; removing one and saving keeps the rest.
+        vm.onOpenNote(note)
+        vm.onRemoveNoteMedia(note.media.single().id)
+        vm.onSaveNote("Our hike", LocalDate(2026, 3, 10))
+        assertTrue(g.interactionRepo.journal.value.single().media.isEmpty())
+    }
 
     @Test
     fun socialsAndWebsites_addCleaned_onceEach_andRemoveWithUndo() = runViewModelTest {

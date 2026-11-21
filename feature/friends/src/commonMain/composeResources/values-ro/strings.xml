@@ -543,4 +543,10 @@
     <string name="websites_address">Adresă web</string>
     <string name="complete_socials">Rețele sociale</string>
     <string name="complete_websites">Site</string>
+    <string name="note_new_title">Notă nouă</string>
+    <string name="note_edit_title">Editează nota</string>
+    <string name="note_text">Notă</string>
+    <string name="note_add_media">Adaugă o fotografie sau un videoclip</string>
+    <string name="note_media_explained">Good Company păstrează o mică previzualizare. Originalul rămâne în galeria ta.</string>
+    <string name="note_saved">Notă salvată</string>
 </resources>

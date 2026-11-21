@@ -836,6 +836,50 @@ class MigrationTest {
     }
 
     @Test
+    fun version26to27_notesKeepTheirText_andMediaRoundTrips_unknownKindSkipped() = runTest {
+        val driver = driverAt(26)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 'INNER', 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO journal_entry (id, friend_id, at, text) VALUES ('j', 'ana', 1000, 'Hike')", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 26, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val note = database.readJournal().single()
+        assertEquals("Hike", note.text)
+        assertTrue(note.media.isEmpty())
+
+        val media = listOf(
+            com.neteinstein.goodcompany.core.domain.model.NoteMedia(
+                "m1",
+                com.neteinstein.goodcompany.core.domain.model.MediaKind.VIDEO,
+                com.neteinstein.goodcompany.core.domain.model.ContactPhoto("AQID"),
+                com.neteinstein.goodcompany.core.domain.model.PhotoRef(com.neteinstein.goodcompany.core.domain.model.PhotoPlatform.IOS, "asset-1"),
+            ),
+            com.neteinstein.goodcompany.core.domain.model.NoteMedia(
+                "m2",
+                com.neteinstein.goodcompany.core.domain.model.MediaKind.PHOTO,
+                com.neteinstein.goodcompany.core.domain.model.ContactPhoto("BAUG"),
+            ),
+        )
+        database.writeJournal(note.copy(media = media))
+        assertEquals(media, database.readJournal().single().media)
+        // Replaced, not added to.
+        database.writeJournal(note.copy(media = media.take(1)))
+        assertEquals(media.take(1), database.readJournal().single().media)
+
+        driver.execute(null, "INSERT INTO journal_media VALUES ('j', 'm9', 9, 'HOLOGRAM', 'AQID', NULL, NULL)", 0).await()
+        assertEquals(media.take(1), database.readJournal().single().media)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

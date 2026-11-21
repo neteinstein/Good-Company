@@ -87,7 +87,19 @@ data class JournalEntry(
     val friendId: FriendId,
     val at: Instant,
     val text: String,
+    /** Photos and videos added to the note (issue #119): thumbnails plus links to the originals in the gallery. */
+    val media: List<NoteMedia> = emptyList(),
 )
+
+enum class MediaKind { PHOTO, VIDEO }
+
+/**
+ * A photo or video on a note (issue #119): the app keeps only a small [thumbnail] and, when the platform allowed it,
+ * [ref] to the original in the gallery. Deleted there, only the thumbnail stays. Backups carry both, never the
+ * original; after switching phones the reference no longer opens (a known gap).
+ */
+@Serializable
+data class NoteMedia(val id: String, val kind: MediaKind, val thumbnail: ContactPhoto, val ref: PhotoRef? = null)
 
 /** A chat line kept (bounded) as context for AI taste matching. */
 @Serializable

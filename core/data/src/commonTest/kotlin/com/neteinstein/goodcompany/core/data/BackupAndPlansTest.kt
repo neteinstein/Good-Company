@@ -265,6 +265,36 @@ class BackupAndPlansTest {
     }
 
     @Test
+    fun noteMedia_roundTripsThroughABackup_thumbnailsAndReferencesOnly() = runTest {
+        val from = Stores()
+        from.friends.upsert(friend("ana", "Ana"))
+        val media = listOf(
+            com.neteinstein.goodcompany.core.domain.model.NoteMedia(
+                "m",
+                com.neteinstein.goodcompany.core.domain.model.MediaKind.PHOTO,
+                com.neteinstein.goodcompany.core.domain.model.ContactPhoto("AQID"),
+                com.neteinstein.goodcompany.core.domain.model.PhotoRef(
+                    com.neteinstein.goodcompany.core.domain.model.PhotoPlatform.ANDROID,
+                    "content://x",
+                ),
+            ),
+        )
+        from.interactions.upsertJournal(
+            com.neteinstein.goodcompany.core.domain.model.JournalEntry(
+                "j",
+                com.neteinstein.goodcompany.core.domain.model.FriendId("ana"),
+                from.clock.now(),
+                "Hike",
+                media,
+            ),
+        )
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(media, to.backup.snapshot().journal.single().media)
+    }
+
+    @Test
     fun aBackupFromBeforeDatedNotes_turnsEachNoteIntoOneDatedNote_andBlankNotesMakeNone() = runTest {
         // Written by a build before issue #103: notes are one free-text field per person.
         val old = """

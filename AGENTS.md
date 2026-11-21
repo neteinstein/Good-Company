@@ -258,7 +258,7 @@ before changing that area**, and put new area-specific notes in that skill, not 
     and never writes emails or photos. Details in `area-contacts`.
 23. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
     (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
-    Firebase isn't wired on iOS. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
+    Firebase isn't wired on iOS. Note photos and videos (#119) are a thumbnail plus a gallery link, so after switching phones only the thumbnails remain. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
 24. **SQLite.** Always go through `AppDatabase.access`/`transaction`/`observe`, never `get()` (the web driver can't run
     two statements at once); flags are `INTEGER`. Details in `persistence-change`.

@@ -130,6 +130,11 @@ data class AppSettings(
      * exported, kept on restore.
      */
     val notificationPrimerDismissed: Boolean = false,
+    /**
+     * Issue #119: the one-line "the app keeps a small preview, the original stays in your gallery" was shown, the first
+     * time media went on a note. Device-only: never exported, kept on restore.
+     */
+    val mediaExplained: Boolean = false,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 

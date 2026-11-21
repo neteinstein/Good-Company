@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
@@ -13,6 +14,8 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.MediaKind
+import com.neteinstein.goodcompany.core.domain.model.NoteMedia
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
@@ -43,7 +46,7 @@ internal val PLAN_TABLES = arrayOf("plan", "plan_friend", "plan_skip", "idea", "
 internal val GROUP_TABLES = arrayOf("friend_group", "group_member", "friend")
 internal val INTERACTION_TABLES = arrayOf("interaction", "friend")
 internal val MESSAGE_TABLES = arrayOf("conversation_message", "friend")
-internal val JOURNAL_TABLES = arrayOf("journal_entry", "friend")
+internal val JOURNAL_TABLES = arrayOf("journal_entry", "journal_media", "friend")
 internal val ATTACHMENT_TABLES = arrayOf("attachment", "friend", "friend_group")
 internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
@@ -302,12 +305,31 @@ internal suspend fun GoodCompanyDatabase.readInteractions(): List<DomainInteract
         )
     }
 
-internal suspend fun GoodCompanyDatabase.readJournal(): List<DomainJournalEntry> =
-    interactionQueries.allJournal().awaitAsList().map { DomainJournalEntry(it.id, FriendId(it.friend_id), it.at.toInstant(), it.text) }
+internal suspend fun GoodCompanyDatabase.readJournal(): List<DomainJournalEntry> {
+    // Issue #119: media of an unknown kind is skipped; an unknown platform reads as no reference (thumbnail only).
+    val media = interactionQueries.allJournalMedia().awaitAsList().groupBy { it.journal_id }.mapValues { (_, rows) ->
+        rows.mapNotNull { row ->
+            val kind = enumOrNull<MediaKind>(row.kind) ?: return@mapNotNull null
+            val ref = enumOrNull<PhotoPlatform>(row.photo_platform)?.let { platform -> row.photo_ref?.let { PhotoRef(platform, it) } }
+            NoteMedia(row.id, kind, ContactPhoto(row.thumbnail), ref)
+        }
+    }
+    return interactionQueries.allJournal().awaitAsList().map {
+        DomainJournalEntry(it.id, FriendId(it.friend_id), it.at.toInstant(), it.text, media[it.id].orEmpty())
+    }
+}
 
-/** Adds or replaces [entry] (skipped when its friend is gone). */
+/** Adds or replaces [entry] and its media (skipped when its friend is gone). Call it inside a transaction. */
 internal suspend fun GoodCompanyDatabase.writeJournal(entry: DomainJournalEntry) {
     interactionQueries.upsertJournal(entry.id, entry.friendId.value, entry.at.toColumn(), entry.text)
+    interactionQueries.deleteJournalMedia(entry.id)
+    if (interactionQueries.journalExists(entry.id).awaitAsOne()) {
+        entry.media.forEachIndexed { i, m ->
+            interactionQueries.insertJournalMedia(
+                Journal_media(entry.id, m.id, i.toLong(), m.kind.name, m.thumbnail.base64, m.ref?.platform?.name, m.ref?.value),
+            )
+        }
+    }
 }
 
 internal suspend fun GoodCompanyDatabase.readAttachments(): List<DomainAttachment> =

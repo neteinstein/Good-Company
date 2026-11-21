@@ -141,6 +141,23 @@ class PickedPhoto(val image: ByteArray, val ref: PhotoRef?, val takenOn: LocalDa
 @Composable
 expect fun rememberGalleryPhotoPicker(onPicked: (PickedPhoto?) -> Unit): () -> Unit
 
+/**
+ * A photo or video picked for a note (issue #119): [preview] is an upright JPEG of at most 512 px (empty when it
+ * couldn't be read; for a video, a frame), plus the gallery reference when the platform gives one.
+ */
+class PickedMedia(val preview: ByteArray, val isVideo: Boolean, val ref: PhotoRef?)
+
+/** How many photos and videos one pick may add to a note. */
+const val MAX_NOTE_MEDIA = 10
+
+/**
+ * Returns a launcher for the system picker on photos **and videos**, several at once (issue #119), keeping a gallery
+ * reference like [rememberGalleryPhotoPicker]: Android's Photo Picker, iOS `PHPicker`. The web picks one picture and
+ * keeps no reference. Reports an empty list when cancelled.
+ */
+@Composable
+expect fun rememberGalleryMediaPicker(onPicked: (List<PickedMedia>) -> Unit): () -> Unit
+
 /** What opening a saved photo's original did. */
 sealed interface OpenedPhoto {
     /** Handed to the system viewer (Android). */

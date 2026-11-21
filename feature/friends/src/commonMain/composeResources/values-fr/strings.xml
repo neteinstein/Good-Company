@@ -529,4 +529,10 @@
     <string name="websites_address">Adresse web</string>
     <string name="complete_socials">Réseaux sociaux</string>
     <string name="complete_websites">Site web</string>
+    <string name="note_new_title">Nouvelle note</string>
+    <string name="note_edit_title">Modifier la note</string>
+    <string name="note_text">Note</string>
+    <string name="note_add_media">Ajouter une photo ou une vidéo</string>
+    <string name="note_media_explained">Good Company garde un petit aperçu. L’original reste dans ta galerie.</string>
+    <string name="note_saved">Note enregistrée</string>
 </resources>

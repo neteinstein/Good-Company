@@ -251,6 +251,9 @@ class TestGraph(
     val deleteFriend = DeleteFriendUseCase(friendRepo)
     val syncContacts = SyncContactsUseCase(friendRepo, interactionRepo)
     val importChat = ImportChatUseCase(friendRepo, interactionRepo, clock)
+    val prepareNoteMedia = com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase(PhotoShrinker.None, ids)
+    val saveNote = com.neteinstein.goodcompany.core.domain.usecase.SaveNoteUseCase(interactionRepo, clock, ids)
+    val markMediaExplained = com.neteinstein.goodcompany.core.domain.usecase.MarkMediaExplainedUseCase(settingsRepo)
     val importContactsFile = ImportContactsFileUseCase(friendRepo, ids)
 
     /** Keeps small pictures as they are and can't shrink large ones, like the real one with an unreadable image. */

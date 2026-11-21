@@ -65,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
+import com.neteinstein.goodcompany.core.domain.model.NoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
@@ -223,6 +224,7 @@ fun TimelineEntryRow(
                 }
             }
             v.attachment?.let { AttachmentPreview(it, Modifier.padding(top = 6.dp)) }
+            if (v.media.isNotEmpty()) NoteMediaRow(v.media, Modifier.padding(top = 6.dp))
         }
         trailing?.invoke()
     }
@@ -263,6 +265,8 @@ private data class EntryLook(
     val strong: Boolean = false,
     /** The share it was logged from (D6): shown with its thumbnail. */
     val attachment: Attachment? = null,
+    /** A note's photos and videos (issue #119). */
+    val media: List<NoteMedia> = emptyList(),
 )
 
 @Composable
@@ -318,7 +322,12 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
             attachment = entry.attachment,
         )
     }
-    is TimelineEntry.Journal -> EntryLook(Icons.AutoMirrored.Rounded.MenuBook, stringResource(Res.string.tl_journal), quote = entry.entry.text)
+    is TimelineEntry.Journal -> EntryLook(
+        Icons.AutoMirrored.Rounded.MenuBook,
+        stringResource(Res.string.tl_journal),
+        quote = entry.entry.text.ifBlank { null },
+        media = entry.entry.media,
+    )
     is TimelineEntry.WhatsNew -> EntryLook(Icons.Rounded.AutoAwesome, stringResource(Res.string.tl_whats_new), quote = entry.update.text)
     is TimelineEntry.GiftGiven -> EntryLook(
         Icons.Rounded.CardGiftcard,
