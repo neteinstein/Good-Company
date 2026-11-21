@@ -72,6 +72,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
 import com.neteinstein.goodcompany.core.domain.usecase.SampleData
@@ -827,6 +828,25 @@ abstract class RepositoryContract {
         assertEquals(listOf("Surf", "Board games"), snap.settings.customActivities)
         assertEquals("Surf", snap.hangouts.single().activityName)
         assertEquals("Surf", snap.plans.single().activityName)
+    }
+
+    @Test
+    fun howOptions_roundTripThroughABackup() = runTest {
+        // Issue #152: the built-in ones on, in order, your own, and an entry logged with one of your own.
+        val from = open()
+        from.friends.upsert(friend("ana"))
+        from.interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.OTHER, at(2026, 3, 1), id = "v", label = "Voice note")))
+        from.settings.update { it.copy(logKinds = listOf(LogKind.CALL, LogKind.MEETUP), customLogKinds = listOf("Voice note", "Letter")) }
+        val json = ExportBackupUseCase(from.backup, clock)()
+
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf(LogKind.CALL, LogKind.MEETUP), snap.settings.logKinds)
+        assertEquals(listOf("Voice note", "Letter"), snap.settings.customLogKinds)
+        val entry = snap.interactions.single()
+        assertEquals(InteractionType.OTHER, entry.type)
+        assertEquals("Voice note", entry.label)
     }
 
     @Test

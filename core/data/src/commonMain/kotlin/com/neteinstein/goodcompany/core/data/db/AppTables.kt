@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage as DomainMessage
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup as DomainGroup
@@ -444,6 +445,8 @@ internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings
         homeCircleFilter = row.home_circle_filter,
         activities = activitiesFromColumn(row.activities),
         customActivities = customActivitiesFromColumn(row.custom_activities),
+        logKinds = logKindsFromColumn(row.log_kinds),
+        customLogKinds = customActivitiesFromColumn(row.custom_log_kinds),
     )
     return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
@@ -465,6 +468,18 @@ internal fun customActivitiesFromColumn(column: String?): List<String> = column
 internal fun List<String>.toCustomActivitiesColumn(): String? =
     takeIf { it.isNotEmpty() }?.let { kotlinx.serialization.json.Json.encodeToString(it) }
 
+/**
+ * The built-in "How?" options (issue #152): comma-separated [LogKind] names; unknown names are dropped, and nothing left
+ * (or NULL) means all of them in [LogKind.DEFAULT_ORDER].
+ */
+internal fun logKindsFromColumn(column: String?): List<LogKind> =
+    column?.split(',')?.mapNotNull { name -> enumOrNull<LogKind>(name.trim()) }?.distinct()
+        ?.takeIf { it.isNotEmpty() }
+        ?: LogKind.DEFAULT_ORDER
+
+internal fun List<LogKind>.toLogKindsColumn(): String? =
+    distinct().takeIf { it.isNotEmpty() && it != LogKind.DEFAULT_ORDER }?.joinToString(",") { it.name }
+
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
         User_preferences(
@@ -483,6 +498,8 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             ai_enabled = settings.aiEnabled.toColumn(),
             activities = settings.activities.toActivitiesColumn(),
             custom_activities = settings.customActivities.toCustomActivitiesColumn(),
+            log_kinds = settings.logKinds.toLogKindsColumn(),
+            custom_log_kinds = settings.customLogKinds.toCustomActivitiesColumn(),
         ),
     )
 }

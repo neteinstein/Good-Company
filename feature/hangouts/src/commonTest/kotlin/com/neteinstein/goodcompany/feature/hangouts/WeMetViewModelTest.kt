@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.domain.usecase.LogTimeOfDay
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
@@ -387,6 +388,39 @@ class WeMetViewModelTest {
         }
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
         assertEquals(6, g.interactionRepo.interactions.value.size)
+    }
+
+    @Test
+    fun yourOwnHowOption_logsAnOtherWithItsName_andLeavingItClearsTheName() = runViewModelTest {
+        // Issue #152: your own How options come after the built-in ones turned on, and need no label.
+        g.setLogKinds(listOf(LogKind.MEETUP, LogKind.CALL, LogKind.OTHER))
+        g.customLogKinds.add("Voice note")
+        val vm = vm()
+        val state = collecting(vm.state)
+        val voice = LogKindOption.custom("Voice note")
+        assertEquals(listOf(LogKindOption(LogKind.MEETUP), LogKindOption(LogKind.CALL), LogKindOption(LogKind.OTHER), voice), state.value.kinds)
+
+        vm.onKind(voice)
+        assertEquals(voice, state.value.selected)
+        assertEquals(LogKind.OTHER, state.value.sheet.kind)
+        // Back to the built-in Other: the name goes, so it asks what it was.
+        vm.onKind(LogKindOption(LogKind.OTHER))
+        assertEquals(LogKindOption(LogKind.OTHER), state.value.selected)
+        assertEquals("", state.value.sheet.label)
+        vm.onKind(voice)
+        vm.onSave()
+        val row = g.interactionRepo.interactions.value.single()
+        assertEquals(InteractionType.OTHER, row.type)
+        assertEquals("Voice note", row.label)
+    }
+
+    @Test
+    fun editingAnEntryLoggedWithYourOwnOption_showsThatOption() = runViewModelTest {
+        g.customLogKinds.add("Letter")
+        g.interactionRepo.addAll(listOf(Interaction(ana, InteractionType.OTHER, g.clock.now() - 2.days, id = "o1", label = "letter")))
+        val vm = vm(prefill = LogPrefill(edit = TimelineEntryRef(ana, "interaction-o1")))
+        val state = collecting(vm.state)
+        assertEquals(LogKindOption.custom("Letter"), state.value.selected)
     }
 
     @Test

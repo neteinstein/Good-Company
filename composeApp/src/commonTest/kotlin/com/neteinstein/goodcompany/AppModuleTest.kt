@@ -47,6 +47,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.how.HowOptionsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
@@ -126,6 +127,7 @@ class AppModuleTest {
         assertNotNull(koin.get<CalendarSuggestionsViewModel>())
         assertNotNull(koin.get<TagsViewModel>())
         assertNotNull(koin.get<ActivitiesViewModel>())
+        assertNotNull(koin.get<HowOptionsViewModel>())
         assertNotNull(koin.get<RunWeeklyIdeasUseCase>())
         assertNotNull(koin.get<com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingViewModel>())
         assertNotNull(koin.get<ApplyLaunchOptions>())

@@ -92,6 +92,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CustomActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CustomLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
@@ -223,6 +224,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
@@ -279,6 +281,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.how.HowOptionsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
@@ -410,6 +413,7 @@ val appModule = module {
     factoryOf(::UndoLogUseCase)
     factoryOf(::ObserveActivitiesUseCase)
     factoryOf(::ObserveLogKindsUseCase)
+    factoryOf(::SetLogKindsUseCase)
     factoryOf(::SetActivitiesUseCase)
     factoryOf(::ObserveTimelineUseCase)
     factoryOf(::DeleteTimelineEntryUseCase)
@@ -485,6 +489,7 @@ val appModule = module {
     factoryOf(::DismissPeopleLegendUseCase)
     factoryOf(::SetAgendaViewUseCase)
     factoryOf(::CustomActivitiesUseCase)
+    factoryOf(::CustomLogKindsUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
     factoryOf(::ObserveYearReviewCardUseCase)
     factoryOf(::BackupToDriveUseCase)
@@ -639,6 +644,7 @@ val appModule = module {
     viewModelOf(::PlacesViewModel)
     viewModelOf(::TagsViewModel)
     viewModelOf(::ActivitiesViewModel)
+    viewModelOf(::HowOptionsViewModel)
     viewModel { (year: Int?) -> YearReviewViewModel(year, get(), get()) }
     viewModel { NetworkMapViewModel(get()) }
     viewModel { PeopleDashboardViewModel(get()) }

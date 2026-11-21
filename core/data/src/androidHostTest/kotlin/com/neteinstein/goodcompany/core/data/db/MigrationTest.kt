@@ -30,6 +30,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import java.io.File
@@ -1044,6 +1045,44 @@ class MigrationTest {
         database.writeGroup(choir.copy(approxLastMet = null))
         assertNull(database.readGroups().single().approxLastMet)
         driver.close()
+    }
+
+    @Test
+    fun version31to32_settingsKeepTheirActivities_andStartWithEveryHowOption_andTheyRoundTrip() = runTest {
+        // Issue #152: an existing preferences row, with activities of its own, migrates with the How options at defaults.
+        val driver = driverAt(31)
+        driver.execute(
+            null,
+            "INSERT INTO user_preferences (id, inner_circle_days, close_circle_days, good_friends_days, weekly_digest, digest_day, " +
+                "reminder_hour, weekly_ideas_enabled, home_area, show_warmth, private_notifications, activities, custom_activities) " +
+                "VALUES (1, 7, 30, 90, 1, 1, 9, 0, 'Lisbon', 1, 0, 'WALK,LUNCH', '[\"Surf\"]')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 31, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val before = database.readPreferences(AppSettings())
+        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.LUNCH), before.activities)
+        assertEquals(listOf("Surf"), before.customActivities)
+        assertEquals("Lisbon", before.homeArea)
+        assertEquals(LogKind.DEFAULT_ORDER, before.logKinds)
+        assertTrue(before.customLogKinds.isEmpty())
+
+        database.writePreferences(before.copy(logKinds = listOf(LogKind.EMAIL, LogKind.CALL), customLogKinds = listOf("Voice note", "Letter")))
+        val after = database.readPreferences(AppSettings())
+        assertEquals(listOf(LogKind.EMAIL, LogKind.CALL), after.logKinds)
+        assertEquals(listOf("Voice note", "Letter"), after.customLogKinds)
+        assertEquals(listOf("Surf"), after.customActivities)
+        driver.close()
+    }
+
+    @Test
+    fun logKindsColumn_dropsUnknownNames_andEmptyMeansAllInTheDefaultOrder() {
+        assertEquals(LogKind.DEFAULT_ORDER, logKindsFromColumn(null))
+        assertEquals(LogKind.DEFAULT_ORDER, logKindsFromColumn("CARRIER_PIGEON"))
+        assertEquals(listOf(LogKind.EMAIL, LogKind.CALL), logKindsFromColumn("EMAIL,CARRIER_PIGEON, CALL,EMAIL"))
+        assertNull(LogKind.DEFAULT_ORDER.toLogKindsColumn())
+        assertEquals("EMAIL,CALL", listOf(LogKind.EMAIL, LogKind.CALL).toLogKindsColumn())
     }
 
     @Test

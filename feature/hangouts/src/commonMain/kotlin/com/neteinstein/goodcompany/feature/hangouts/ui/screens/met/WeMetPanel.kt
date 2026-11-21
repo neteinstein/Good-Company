@@ -99,7 +99,7 @@ import org.koin.core.parameter.parametersOf
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 data class WeMetActions(
-    val onKind: (LogKind) -> Unit = {},
+    val onKind: (LogKindOption) -> Unit = {},
     val onLabel: (String) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
     val onTime: (LocalTime?) -> Unit = {},
@@ -194,9 +194,10 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
         )
         Section(stringResource(Res.string.met_who)) { People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true }) }
         Section(stringResource(Res.string.met_how)) {
-            HowRow(state.kinds, sheet.kind, showAllKinds, onToggleAll = { showAllKinds = !showAllKinds }, onKind = actions.onKind)
+            HowRow(state.kinds, state.selected, showAllKinds, onToggleAll = { showAllKinds = !showAllKinds }, onKind = actions.onKind)
         }
-        if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
+        // Issue #152: one of your own How options is already named; only the built-in "Other" asks what it was.
+        if (sheet.kind == LogKind.OTHER && state.selected.name == null) LogOtherLabel(sheet.label, actions.onLabel)
         Section(stringResource(Res.string.met_when)) {
             LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
             LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
@@ -278,13 +279,20 @@ private fun Section(title: String, content: @Composable () -> Unit) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HowRow(kinds: List<LogKindOption>, kind: LogKind, showAll: Boolean, onToggleAll: () -> Unit, onKind: (LogKind) -> Unit) {
+private fun HowRow(
+    kinds: List<LogKindOption>,
+    selected: LogKindOption,
+    showAll: Boolean,
+    onToggleAll: () -> Unit,
+    onKind: (LogKindOption) -> Unit,
+) {
     val shown = if (showAll) kinds else kinds.take(ObserveLogKindsUseCase.SHOWN)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        (shown + kinds.filter { it.kind == kind && it !in shown }).forEach { option ->
+        // The chosen one always shows, even when it is turned off in Settings (issue #152: e.g. editing an old entry).
+        (shown + listOf(selected).filter { it !in shown }).forEach { option ->
             FilterChip(
-                selected = kind == option.kind,
-                onClick = { onKind(option.kind) },
+                selected = option == selected,
+                onClick = { onKind(option) },
                 label = { Text(option.name ?: logKindLabel(option.kind)) },
                 leadingIcon = { Icon(logKindIcon(option.kind), null, Modifier.size(18.dp)) },
             )

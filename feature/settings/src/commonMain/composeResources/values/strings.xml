@@ -227,6 +227,13 @@
     <string name="activities_removed">“%1$s” removed</string>
     <string name="activities_name_blank">Give it a name</string>
     <string name="activities_name_taken">There’s already an activity with that name</string>
+    <string name="how_options">How you keep in touch</string>
+    <string name="how_hint">What the Log popup offers under How. The ones you use most come first, the rest in this order; four show, the others are behind See all. Drag to reorder.</string>
+    <string name="how_yours">Your own</string>
+    <string name="how_yours_hint">Add your own, like Voice note or Letter. Renaming or removing one keeps the name on past entries.</string>
+    <string name="how_add">Add a way</string>
+    <string name="how_rename">Rename</string>
+    <string name="how_name_taken">There’s already one with that name</string>
     <!-- Places without GPS (issue #121) -->
     <string name="places_typed">Without GPS</string>
     <string name="places_pin">Add coordinates (where you are now)</string>

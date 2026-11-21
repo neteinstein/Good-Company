@@ -119,6 +119,9 @@ import org.jetbrains.compose.resources.StringResource
 /** Settings → Activities: what the Log popup offers, in which order (F3). */
 @Serializable data object ActivitiesRoute : AppRoute
 
+/** Settings → How (issue #152): the Log popup's "How?" options, on or off, in order, and your own. */
+@Serializable data object HowOptionsRoute : AppRoute
+
 /** Settings → Calendar suggestions (D3). */
 @Serializable data object CalendarSettingsRoute : AppRoute
 

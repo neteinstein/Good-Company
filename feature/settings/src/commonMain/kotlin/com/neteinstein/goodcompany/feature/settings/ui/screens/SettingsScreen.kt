@@ -94,11 +94,13 @@ import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.rememberPhotoBitmap
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.components.showUndo
@@ -171,6 +173,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.eyebrow
 import com.neteinstein.goodcompany.feature.settings.resources.footer
 import com.neteinstein.goodcompany.feature.settings.resources.home_area
 import com.neteinstein.goodcompany.feature.settings.resources.home_area_placeholder
+import com.neteinstein.goodcompany.feature.settings.resources.how_options
 import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
@@ -299,6 +302,7 @@ fun SettingsScreen(
     onOpenNotifications: () -> Unit = {},
     onOpenTags: () -> Unit = {},
     onOpenActivities: () -> Unit = {},
+    onOpenHowOptions: () -> Unit = {},
     /** Settings is opened from a tab header (issue #65), so it has a back arrow; null hides it. */
     onBack: (() -> Unit)? = null,
     viewModel: SettingsViewModel = koinViewModel(),
@@ -344,6 +348,7 @@ fun SettingsScreen(
             onClearApiKey = viewModel::onClearApiKey,
             onAiEnabledChange = viewModel::onAiEnabledChange,
             onOpenActivities = onOpenActivities,
+            onOpenHowOptions = onOpenHowOptions,
             onBack = onBack,
             onThemeChange = viewModel::onThemeChange,
             onDynamicColorChange = viewModel::onDynamicColorChange,
@@ -414,6 +419,7 @@ data class SettingsActions(
     val onClearApiKey: () -> Unit = {},
     val onAiEnabledChange: (Boolean) -> Unit = {},
     val onOpenActivities: () -> Unit = {},
+    val onOpenHowOptions: () -> Unit = {},
     val onThemeChange: (ThemeMode) -> Unit = {},
     val onDynamicColorChange: (Boolean) -> Unit = {},
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
@@ -671,6 +677,23 @@ fun SettingsContent(
                                         Res.string.activities_count,
                                         s.activities.size + s.customActivities.size,
                                         HangoutActivity.entries.size + s.customActivities.size,
+                                    ),
+                                )
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        // Issue #152: the Log popup's How options, next to Activities and built the same way.
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = actions.onOpenHowOptions),
+                            leadingContent = { Icon(logKindIcon(LogKind.CALL), null) },
+                            headlineContent = { Text(stringResource(Res.string.how_options), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = {
+                                Text(
+                                    stringResource(
+                                        Res.string.activities_count,
+                                        s.logKinds.size + s.customLogKinds.size,
+                                        LogKind.entries.size + s.customLogKinds.size,
                                     ),
                                 )
                             },
