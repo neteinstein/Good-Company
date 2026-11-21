@@ -1,6 +1,8 @@
 -- "Remind me to book tickets for X to go with Y", and the friends each reminder is about.
 -- circle_id (issue #88) is the circle it belongs to, with no foreign key (like plan.circle_id): a deleted circle reads
 -- as none, so Undo on the circle brings its reminders back.
+-- Issue #99: snoozed_until, important (0/1, checked in the mapper: a CHECK on an added column breaks the parser),
+-- repeat_every (a ReminderRepeat name; null = once) and completed_at.
 
 CREATE TABLE reminder (
     id TEXT NOT NULL PRIMARY KEY,
@@ -9,7 +11,11 @@ CREATE TABLE reminder (
     due_at INTEGER,
     done INTEGER NOT NULL CHECK (done IN (0, 1)),
     created_at INTEGER NOT NULL,
-    circle_id TEXT
+    circle_id TEXT,
+    snoozed_until INTEGER,
+    important INTEGER NOT NULL DEFAULT 0,
+    repeat_every TEXT,
+    completed_at INTEGER
 );
 
 CREATE TABLE reminder_friend (
@@ -31,13 +37,18 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM reminder;
 
 upsert:
-INSERT INTO reminder (id, position, title, due_at, done, created_at, circle_id) VALUES ?
+INSERT INTO reminder (id, position, title, due_at, done, created_at, circle_id, snoozed_until, important, repeat_every, completed_at)
+VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     title = excluded.title,
     due_at = excluded.due_at,
     done = excluded.done,
     created_at = excluded.created_at,
-    circle_id = excluded.circle_id;
+    circle_id = excluded.circle_id,
+    snoozed_until = excluded.snoozed_until,
+    important = excluded.important,
+    repeat_every = excluded.repeat_every,
+    completed_at = excluded.completed_at;
 
 deleteFriends:
 DELETE FROM reminder_friend WHERE reminder_id = ?;

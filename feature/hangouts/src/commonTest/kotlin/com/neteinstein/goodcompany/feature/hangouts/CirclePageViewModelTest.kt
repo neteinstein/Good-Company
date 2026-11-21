@@ -4,6 +4,8 @@ import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.CircleUpcoming
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
@@ -44,6 +46,10 @@ class CirclePageViewModelTest {
         g.savePlan,
         g.addReminder,
         g.editReminder,
+        g.completeReminder,
+        g.snoozeReminder,
+        g.deleteReminder,
+        g.restoreReminder,
         g.snooze,
         g.deleteTimelineEntry,
         g.restoreTimelineEntry,
@@ -126,6 +132,30 @@ class CirclePageViewModelTest {
         assertEquals("Book the big hut", edited.title)
         assertEquals(listOf(rui), edited.friendIds)
         assertNull(edited.dueAt)
+    }
+
+    @Test
+    fun aCircleReminder_isDone_snoozed_orDeleted_withUndo_andNoMeetupIsLogged() = runViewModelTest {
+        g.groupRepo.upsert(surf)
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.addReminder("Book the hut", emptyList(), at(2026, 3, 20, 18), circleId = "surf", repeat = ReminderRepeat.YEARLY, important = true)
+        val r = g.reminderRepo.reminders.first().single()
+        val hangoutsBefore = g.hangoutRepo.hangouts.value.size
+        vm.onReminderDone(r)
+        // A yearly one rolls on instead of closing.
+        assertEquals(at(2027, 3, 20, 18), g.reminderRepo.reminders.first().single().dueAt)
+        assertEquals(hangoutsBefore, g.hangoutRepo.hangouts.value.size)
+        assertEquals(CirclePageUndo.ReminderBefore(r), state.value.undo)
+        vm.onUndo()
+        assertEquals(r, g.reminderRepo.reminders.first().single())
+        vm.onSnoozeReminder(r, ReminderSnooze.Tomorrow)
+        assertNull(state.value.undo)
+        assertEquals(at(2026, 3, 11, 9), g.reminderRepo.reminders.first().single().snoozedUntil)
+        vm.onDeleteReminder(g.reminderRepo.reminders.first().single())
+        assertTrue(state.value.page!!.upcoming.none { it is CircleUpcoming.ReminderItem })
+        vm.onUndo()
+        assertEquals(1, g.reminderRepo.reminders.first().size)
     }
 
     @Test

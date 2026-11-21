@@ -26,6 +26,8 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
@@ -34,11 +36,14 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -47,6 +52,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
@@ -56,6 +62,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
@@ -64,11 +71,14 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
+import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -77,10 +87,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toInstant
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
 
@@ -98,6 +105,9 @@ sealed interface FriendDetailMessage {
     data class AiError(val error: Throwable) : FriendDetailMessage
 
     data object ReminderSaved : FriendDetailMessage
+
+    /** Done, snoozed or deleted (issue #99); Done and Delete offer Undo. */
+    data class ReminderChanged(val notice: ReminderNotice) : FriendDetailMessage
 
     data object PlanSaved : FriendDetailMessage
 
@@ -218,6 +228,12 @@ data class FriendDetailUiState(
     val message: FriendDetailMessage? = null,
     val deleted: Boolean = false,
     val showReminderEditor: Boolean = false,
+    /** The reminder the editor changes; null = a new one. */
+    val editingReminder: Reminder? = null,
+    /** Their open reminders and those of their circles (issue #99), soonest first, on "Coming up". */
+    val reminders: List<Reminder> = emptyList(),
+    /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
+    val reminderUndo: Reminder? = null,
     /** "" while the AI is working on gift ideas, null otherwise. */
     val suggestingGiftsFor: String? = null,
     val giftSuggestions: GiftSuggestions? = null,
@@ -272,6 +288,12 @@ class FriendDetailViewModel(
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
     private val suggestGifts: SuggestGiftsUseCase,
     private val addReminder: AddReminderUseCase,
+    private val editReminder: EditReminderUseCase,
+    private val completeReminder: CompleteReminderUseCase,
+    private val snoozeReminder: SnoozeReminderUseCase,
+    private val deleteReminder: DeleteReminderUseCase,
+    private val restoreReminder: RestoreReminderUseCase,
+    observeReminders: ObserveRemindersUseCase,
     private val setCatchUpPaused: SetCatchUpPausedUseCase,
     private val savePlan: SavePlanUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
@@ -297,12 +319,13 @@ class FriendDetailViewModel(
     val state: StateFlow<FriendDetailUiState> = combine(
         observeDetail(friendId),
         observeSettings(),
-        observeAttachments(friendId),
+        observeAttachments(friendId).combine(observeReminders()) { attachments, reminders -> attachments to reminders },
         links.observe(friendId).combine(observeTags()) { linked, tags -> linked to tags },
         local,
-    ) { detail, settings, attachments, (linked, tags), ui ->
+    ) { detail, settings, (attachments, reminders), (linked, tags), ui ->
         ui.copy(
             detail = detail,
+            reminders = reminders.filter { !it.done && it.isFor(friendId, detail?.groups.orEmpty()) },
             attachments = attachments,
             links = linked,
             tags = tags,
@@ -813,17 +836,56 @@ class FriendDetailViewModel(
         }
     }
 
-    fun onOpenReminderEditor() = local.update { it.copy(showReminderEditor = true) }
+    fun onOpenReminderEditor() = local.update { it.copy(showReminderEditor = true, editingReminder = null) }
 
-    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false) }
+    /** "Edit" on one of their reminders (issue #99). */
+    fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
 
-    fun onSaveReminder(title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) {
-        if (title.isBlank()) return
+    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
+
+    /** A new reminder (about this person when nobody else is picked), or the one being edited. */
+    fun onSaveReminder(draft: ReminderDraft) {
+        if (draft.title.isBlank()) return
+        val editing = local.value.editingReminder
         viewModelScope.launch {
-            val due = date?.atTime(LocalTime(hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
-            addReminder(title, friendIds.ifEmpty { listOf(friendId) }, due)
-            local.update { it.copy(showReminderEditor = false, message = FriendDetailMessage.ReminderSaved) }
+            val due = draft.dueAt(clock.timeZone)
+            if (editing == null) {
+                addReminder(draft.title, draft.friendIds.ifEmpty { listOf(friendId) }, due, draft.circleId, draft.repeat, draft.important)
+            } else {
+                editReminder(editing, draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
+            }
+            local.update { it.copy(showReminderEditor = false, editingReminder = null, message = FriendDetailMessage.ReminderSaved) }
         }
+    }
+
+    /** "Done": closes it (a repeating one rolls on). Never asks "did you meet?" (issue #99). */
+    fun onReminderDone(reminder: Reminder) {
+        viewModelScope.launch {
+            val saved = completeReminder(reminder)
+            val notice = ReminderNotice.Done(saved.dueAt.takeIf { !saved.done })
+            local.update { it.copy(reminderUndo = reminder, message = FriendDetailMessage.ReminderChanged(notice)) }
+        }
+    }
+
+    fun onSnoozeReminder(reminder: Reminder, snooze: ReminderSnooze) {
+        viewModelScope.launch {
+            val until = snoozeReminder(reminder, snooze).snoozedUntil ?: return@launch
+            local.update { it.copy(reminderUndo = null, message = FriendDetailMessage.ReminderChanged(ReminderNotice.Snoozed(until))) }
+        }
+    }
+
+    fun onDeleteReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            deleteReminder(reminder.id)
+            local.update { it.copy(reminderUndo = reminder, message = FriendDetailMessage.ReminderChanged(ReminderNotice.Deleted)) }
+        }
+    }
+
+    /** Undo on the Done or Delete snackbar: puts the reminder back as it was. */
+    fun onUndoReminder() {
+        val reminder = local.value.reminderUndo ?: return
+        local.update { it.copy(reminderUndo = null) }
+        viewModelScope.launch { restoreReminder(reminder) }
     }
 
     // --- Rhythm extras ---------------------------------------------------------------------------------------------
@@ -918,6 +980,6 @@ class FriendDetailViewModel(
     }
 
     fun onMessageShown() = local.update {
-        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null, undoSave = null)
+        it.copy(message = null, undoPlan = null, undoCustomField = null, undoAttachment = null, undoLink = null, undoSave = null, reminderUndo = null)
     }
 }

@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
@@ -121,6 +122,11 @@ internal suspend fun GoodCompanyDatabase.readReminders(): List<DomainReminder> {
             row.done.toFlag(),
             row.created_at.toInstant(),
             circleId = row.circle_id,
+            snoozedUntil = row.snoozed_until?.toInstant(),
+            important = row.important.toFlag(),
+            // An unknown name (a newer build or backup) reads as once.
+            repeat = row.repeat_every?.let { enumOrNull<ReminderRepeat>(it) } ?: ReminderRepeat.NONE,
+            completedAt = row.completed_at?.toInstant(),
         )
     }
 }
@@ -137,6 +143,10 @@ internal suspend fun GoodCompanyDatabase.writeReminder(reminder: DomainReminder)
             done = reminder.done.toColumn(),
             created_at = reminder.createdAt.toColumn(),
             circle_id = reminder.circleId,
+            snoozed_until = reminder.snoozedUntil?.toColumn(),
+            important = reminder.important.toColumn(),
+            repeat_every = reminder.repeat.takeUnless { it == ReminderRepeat.NONE }?.name,
+            completed_at = reminder.completedAt?.toColumn(),
         ),
     )
     q.deleteFriends(reminder.id)

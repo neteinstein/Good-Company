@@ -1,0 +1,10 @@
+-- Version 21 → 22 (issue #99): reminders work like a reminders app. snoozed_until moves when a reminder shows and rings
+-- (due_at stays); important keeps it on screen (issue #98's persistent notifications); repeat_every is how often it
+-- comes back (DAILY, WEEKLY, MONTHLY, YEARLY; null = once, an unknown name reads as once); completed_at is when it was
+-- done. Existing reminders: not snoozed, not important, once; done ones keep a null completed_at (the app falls back
+-- to their due date).
+
+ALTER TABLE reminder ADD COLUMN snoozed_until INTEGER;
+ALTER TABLE reminder ADD COLUMN important INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE reminder ADD COLUMN repeat_every TEXT;
+ALTER TABLE reminder ADD COLUMN completed_at INTEGER;

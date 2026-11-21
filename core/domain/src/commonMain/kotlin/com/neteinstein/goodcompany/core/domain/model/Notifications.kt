@@ -19,7 +19,8 @@ sealed interface NotificationContent {
 
     data class EventSoon(val friendName: String, val title: String, val daysBefore: Int) : NotificationContent
 
-    data class ReminderDue(val title: String, val withNames: List<String>) : NotificationContent
+    /** [reminderId] is the target of its Done and Snooze actions (issue #99). */
+    data class ReminderDue(val reminderId: String, val title: String, val withNames: List<String>) : NotificationContent
 
     data class MeetupDue(val friendId: FriendId, val friendName: String, val daysSince: Int?, val everyDays: Int) : NotificationContent
 
@@ -61,7 +62,7 @@ sealed interface NotificationContent {
      * Issue #98: a reminder whose time has passed and that isn't done yet. Asked again at the reminder hour each day
      * (persistent while "Keep important ones on screen" is on) until it is done.
      */
-    data class ReminderOverdue(val title: String, val withNames: List<String>) : NotificationContent
+    data class ReminderOverdue(val reminderId: String, val title: String, val withNames: List<String>) : NotificationContent
 
     /** Issue #98: Settings → Notifications → "Send a test notification". */
     data object Test : NotificationContent
@@ -126,9 +127,9 @@ data class PlannedNotification(
     val channel: NotificationChannel get() = NotificationChannel.of(content.type, persistent)
 }
 
-/** Quick actions offered on catch-up notifications. */
+/** Quick actions offered on notifications: catch-ups, plans and reminders ([targetId] is the reminder's id, issue #99). */
 data class NotificationAction(val kind: Kind, val targetId: String, val isGroup: Boolean = false) {
-    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND, PLAN_HAPPENED, PLAN_SKIPPED }
+    enum class Kind { MET, CALLED, SNOOZE_WEEK, SNOOZE_WEEKEND, PLAN_HAPPENED, PLAN_SKIPPED, REMINDER_DONE, REMINDER_SNOOZE }
 
     val isPlan: Boolean get() = kind == Kind.PLAN_HAPPENED || kind == Kind.PLAN_SKIPPED
 

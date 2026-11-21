@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
@@ -33,6 +34,7 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.AboutEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
@@ -71,6 +73,12 @@ class FriendDetailViewModelTest {
         g.draftBirthdayMessage,
         g.suggestGifts,
         g.addReminder,
+        g.editReminder,
+        g.completeReminder,
+        g.snoozeReminder,
+        g.deleteReminder,
+        g.restoreReminder,
+        g.observeReminders,
         g.setCatchUpPaused,
         g.savePlan,
         g.confirmPlan,
@@ -357,9 +365,38 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         vm.onOpenReminderEditor()
         assertTrue(state.value.showReminderEditor)
-        vm.onSaveReminder("Buy present", emptyList(), LocalDate(2026, 3, 12), 18)
+        vm.onSaveReminder(ReminderDraft("Buy present", emptyList(), LocalDate(2026, 3, 12), 18))
         assertEquals(listOf(FriendId("ana")), reminders.reminders.value.single().friendIds)
         assertTrue(!state.value.showReminderEditor)
+    }
+
+    @Test
+    fun theirRemindersShowOnComingUp_withDoneSnoozeEditDelete() = runViewModelTest {
+        g.groupRepo.upsert(FriendGroup("surf", "Surf", memberIds = listOf(FriendId("ana"))))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveReminder(ReminderDraft("Buy present", emptyList(), LocalDate(2026, 3, 12), 18))
+        g.addReminder("Book the hut", emptyList(), null, circleId = "surf")
+        g.addReminder("Someone else's", listOf(FriendId("rui")), null)
+        // Issue #99: their own reminders and their circles', not other people's.
+        assertEquals(listOf("Buy present", "Book the hut"), state.value.reminders.map { it.title })
+        val present = state.value.reminders.first()
+        vm.onReminderDone(present)
+        assertEquals(listOf("Book the hut"), state.value.reminders.map { it.title })
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertIs<FriendDetailMessage.ReminderChanged>(state.value.message)
+        vm.onUndoReminder()
+        assertEquals(2, state.value.reminders.size)
+        vm.onSnoozeReminder(present, ReminderSnooze.OneHour)
+        assertTrue(state.value.reminders.first { it.id == present.id }.isSnoozed)
+        vm.onEditReminder(present)
+        assertEquals(present, state.value.editingReminder)
+        vm.onSaveReminder(ReminderDraft("Buy a bigger present", listOf(FriendId("ana")), LocalDate(2026, 3, 12), 18))
+        assertTrue(state.value.reminders.any { it.title == "Buy a bigger present" })
+        vm.onDeleteReminder(state.value.reminders.first { it.id == present.id })
+        assertEquals(listOf("Book the hut"), state.value.reminders.map { it.title })
+        vm.onMessageShown()
+        assertNull(state.value.reminderUndo)
     }
 
     @Test
@@ -372,7 +409,7 @@ class FriendDetailViewModelTest {
         assertEquals(listOf(FamilyCircle.ID, "surf"), state.value.detail!!.circles.map { it.id })
         assertEquals(listOf("rui", "zoe"), state.value.detail!!.others.map { it.id.value })
         vm.onOpenReminderEditor()
-        vm.onSaveReminder("Book the trip", listOf(FriendId("ana"), FriendId("zoe")), null, 18)
+        vm.onSaveReminder(ReminderDraft("Book the trip", listOf(FriendId("ana"), FriendId("zoe")), null, 18))
         assertEquals(listOf(FriendId("ana"), FriendId("zoe")), reminders.reminders.value.single().friendIds)
     }
 

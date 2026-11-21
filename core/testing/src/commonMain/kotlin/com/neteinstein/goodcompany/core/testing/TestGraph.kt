@@ -22,6 +22,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
@@ -113,6 +114,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGiftListUseCase
@@ -143,10 +145,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -287,7 +289,10 @@ class TestGraph(
     val cancelPlan = CancelPlanUseCase(planRepo)
     val restorePlan = RestorePlanUseCase(planRepo)
     val observePlans = ObservePlansUseCase(planRepo, circles)
-    val handleNotificationAction = HandleNotificationActionUseCase(checkIn, logCall, snooze, circles, confirmPlan)
+    val completeReminder = CompleteReminderUseCase(reminderRepo, clock)
+    val snoozeReminder = SnoozeReminderUseCase(reminderRepo, clock)
+    val handleNotificationAction =
+        HandleNotificationActionUseCase(checkIn, logCall, snooze, circles, confirmPlan, completeReminder, snoozeReminder)
     val setCatchUpPaused = SetCatchUpPausedUseCase(friendRepo)
     val recordAppOpened = RecordAppOpenedUseCase(settingsRepo, clock)
     val importPickedContacts = ImportPickedContactsUseCase(friendRepo)
@@ -331,7 +336,7 @@ class TestGraph(
     val addReminder = AddReminderUseCase(reminderRepo, clock, ids)
     val editReminder = EditReminderUseCase(reminderRepo)
     val observeCirclePage = ObserveCirclePageUseCase(circles, friendRepo, hangoutRepo, planRepo, reminderRepo, interactionRepo, clock)
-    val setReminderDone = SetReminderDoneUseCase(reminderRepo)
+    val reopenReminder = ReopenReminderUseCase(reminderRepo)
     val deleteReminder = DeleteReminderUseCase(reminderRepo)
     val restoreReminder = RestoreReminderUseCase(reminderRepo)
     val observeAgenda = ObserveAgendaUseCase(friendRepo, reminderRepo, hangoutRepo, settingsRepo, circles, planRepo, interactionRepo, linkRepo, clock)

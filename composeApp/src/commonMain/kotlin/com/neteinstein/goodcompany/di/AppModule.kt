@@ -83,6 +83,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
@@ -175,6 +176,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGiftListUseCase
@@ -206,10 +208,10 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -402,7 +404,9 @@ val appModule = module {
     factoryOf(::ObserveRemindersUseCase)
     factoryOf(::AddReminderUseCase)
     factoryOf(::EditReminderUseCase)
-    factoryOf(::SetReminderDoneUseCase)
+    factoryOf(::CompleteReminderUseCase)
+    factoryOf(::ReopenReminderUseCase)
+    factoryOf(::SnoozeReminderUseCase)
     factoryOf(::DeleteReminderUseCase)
     factoryOf(::RestoreReminderUseCase)
     factoryOf(::ObserveAgendaUseCase)
@@ -506,6 +510,12 @@ val appModule = module {
             draftBirthdayMessage = get(),
             suggestGifts = get(),
             addReminder = get(),
+            editReminder = get(),
+            completeReminder = get(),
+            snoozeReminder = get(),
+            deleteReminder = get(),
+            restoreReminder = get(),
+            observeReminders = get(),
             setCatchUpPaused = get(),
             savePlan = get(),
             confirmPlan = get(),
@@ -533,7 +543,9 @@ val appModule = module {
         LogInteractionViewModel(ids, type, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { (id: String) -> CirclePageViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: String) ->
+        CirclePageViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+    }
     viewModelOf(::GiftListsViewModel)
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)

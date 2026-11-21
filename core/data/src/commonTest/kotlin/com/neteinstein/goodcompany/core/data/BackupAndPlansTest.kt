@@ -35,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
@@ -289,5 +290,37 @@ class BackupAndPlansTest {
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(old))
         assertEquals(emptyList(), again.backup.snapshot().attachments)
         assertEquals(null, again.backup.snapshot().friends.single().gifts.single().url)
+    }
+
+    @Test
+    fun reminderFieldsRoundTripInABackupFile_andOlderBackupsReadAsPlainOnes() = runTest {
+        // Issue #99: snooze, repeat, important and the done time are in the backup; older files restore without them.
+        val from = Stores()
+        val reminder = Reminder(
+            "r",
+            "Water plants",
+            dueAt = at(2026, 3, 20, 18),
+            createdAt = at(2026, 3, 1),
+            snoozedUntil = at(2026, 3, 21, 9),
+            important = true,
+            repeat = ReminderRepeat.MONTHLY,
+            completedAt = null,
+        )
+        from.reminders.upsert(reminder)
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(listOf(reminder), to.backup.snapshot().reminders)
+
+        val oldReminder = """{"id":"r","title":"Call","createdAt":"2026-03-01T12:00:00Z","done":true}"""
+        val old = """{"format":"good-company-backup","version":1,"reminders":[$oldReminder]}"""
+        val again = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(old))
+        val restored = again.backup.snapshot().reminders.single()
+        assertEquals(ReminderRepeat.NONE, restored.repeat)
+        assertEquals(false, restored.important)
+        assertEquals(null, restored.snoozedUntil)
+        assertEquals(null, restored.completedAt)
+        assertTrue(restored.done)
     }
 }

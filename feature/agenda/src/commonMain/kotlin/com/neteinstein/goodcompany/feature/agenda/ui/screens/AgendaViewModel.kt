@@ -7,19 +7,25 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.SetReminderDoneUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
+import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,17 +34,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface AgendaMessage {
     data object ReminderSaved : AgendaMessage
 
-    data object ReminderDeleted : AgendaMessage
+    /** Done, snoozed or deleted (issue #99); Done and Delete offer Undo. */
+    data class Reminder(val notice: ReminderNotice) : AgendaMessage
 
     data class AiError(val error: Throwable) : AgendaMessage
 
@@ -58,7 +63,10 @@ data class AgendaUiState(
     val circles: List<FriendGroup> = emptyList(),
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
-    val recentlyDeleted: Reminder? = null,
+    /** The reminder the editor changes; null = a new one. */
+    val editingReminder: Reminder? = null,
+    /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
+    val reminderUndo: Reminder? = null,
     val message: AgendaMessage? = null,
     /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
@@ -68,6 +76,7 @@ data class AgendaUiState(
     val isDraftingWish: Boolean = false,
     val today: LocalDate = LocalDate(2000, 1, 1),
     val zone: TimeZone = TimeZone.UTC,
+    val now: Instant = Instant.fromEpochMilliseconds(0),
     /** Past meetups from the chosen calendars waiting to be logged (D3); the "From your calendar" card shows when > 0. */
     val calendarCount: Int = 0,
 ) {
@@ -83,6 +92,10 @@ data class AgendaUiState(
         }
 
     val openReminders: Int get() = reminders.count { !it.done }
+
+    /** Open reminders, soonest first; the done ones go in the collapsed "Done" group (issue #99). */
+    val open: List<Reminder> get() = reminders.filterNot { it.done }
+    val done: List<Reminder> get() = reminders.filter { it.done }
 }
 
 class AgendaViewModel(
@@ -92,7 +105,10 @@ class AgendaViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
     private val addReminder: AddReminderUseCase,
-    private val setReminderDone: SetReminderDoneUseCase,
+    private val editReminder: EditReminderUseCase,
+    private val completeReminder: CompleteReminderUseCase,
+    private val reopenReminder: ReopenReminderUseCase,
+    private val snoozeReminder: SnoozeReminderUseCase,
     private val deleteReminder: DeleteReminderUseCase,
     private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
@@ -121,40 +137,67 @@ class AgendaViewModel(
             isLoading = false,
             today = clock.today(),
             zone = clock.timeZone,
+            now = clock.now(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AgendaUiState())
 
-    fun onNewReminder() = local.update { it.copy(showReminderEditor = true) }
+    fun onNewReminder() = local.update { it.copy(showReminderEditor = true, editingReminder = null) }
 
-    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false) }
+    /** "Edit" on a reminder (issue #99). */
+    fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
 
-    /** [date] null = no due date. [hour] is local time. */
-    fun onSaveReminder(title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) {
-        if (title.isBlank()) return
+    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
+
+    /** A new reminder, or the one being edited. */
+    fun onSaveReminder(draft: ReminderDraft) {
+        if (draft.title.isBlank()) return
+        val editing = local.value.editingReminder
         viewModelScope.launch {
-            val due = date?.atTime(LocalTime(hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
-            addReminder(title, friendIds, due)
-            local.update { it.copy(showReminderEditor = false, message = AgendaMessage.ReminderSaved) }
+            val due = draft.dueAt(clock.timeZone)
+            if (editing == null) {
+                addReminder(draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
+            } else {
+                editReminder(editing, draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
+            }
+            local.update { it.copy(showReminderEditor = false, editingReminder = null, message = AgendaMessage.ReminderSaved) }
         }
     }
 
-    fun onToggleDone(reminder: Reminder) {
-        viewModelScope.launch { setReminderDone(reminder, !reminder.done) }
-    }
-
-    fun onDeleteReminder(id: String) {
-        val reminder = state.value.reminders.firstOrNull { it.id == id }
+    /** "Done": closes it (a repeating one rolls on). Never asks "did you meet?" (issue #99). */
+    fun onReminderDone(reminder: Reminder) {
         viewModelScope.launch {
-            deleteReminder(id)
-            local.update { it.copy(recentlyDeleted = reminder, message = AgendaMessage.ReminderDeleted) }
+            val saved = completeReminder(reminder)
+            val notice = ReminderNotice.Done(saved.dueAt.takeIf { !saved.done })
+            local.update { it.copy(reminderUndo = reminder, message = AgendaMessage.Reminder(notice)) }
         }
     }
 
-    fun onUndoDelete() {
-        val reminder = local.value.recentlyDeleted ?: return
+    /** "Not done" in the Done group. */
+    fun onReminderReopen(reminder: Reminder) {
+        viewModelScope.launch { reopenReminder(reminder) }
+    }
+
+    fun onSnoozeReminder(reminder: Reminder, snooze: ReminderSnooze) {
+        viewModelScope.launch {
+            val saved = snoozeReminder(reminder, snooze)
+            val until = saved.snoozedUntil ?: return@launch
+            local.update { it.copy(reminderUndo = null, message = AgendaMessage.Reminder(ReminderNotice.Snoozed(until))) }
+        }
+    }
+
+    fun onDeleteReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            deleteReminder(reminder.id)
+            local.update { it.copy(reminderUndo = reminder, message = AgendaMessage.Reminder(ReminderNotice.Deleted)) }
+        }
+    }
+
+    /** Undo on the Done or Delete snackbar: puts the reminder back as it was. */
+    fun onUndoReminder() {
+        val reminder = local.value.reminderUndo ?: return
         viewModelScope.launch {
             restoreReminder(reminder)
-            local.update { it.copy(recentlyDeleted = null) }
+            local.update { it.copy(reminderUndo = null) }
         }
     }
 
@@ -199,5 +242,5 @@ class AgendaViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null, recentlyDeleted = null) }
+    fun onMessageShown() = local.update { it.copy(message = null, reminderUndo = null) }
 }

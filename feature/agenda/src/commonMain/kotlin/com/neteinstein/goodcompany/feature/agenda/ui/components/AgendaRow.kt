@@ -42,6 +42,9 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.ReminderActionsRow
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
+import com.neteinstein.goodcompany.core.ui.components.ReminderWhen
 import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.repeatLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
@@ -78,9 +81,11 @@ import com.neteinstein.goodcompany.feature.agenda.resources.row_turns
 import com.neteinstein.goodcompany.feature.agenda.resources.row_we_met
 import com.neteinstein.goodcompany.feature.agenda.resources.row_with
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /**
@@ -98,6 +103,10 @@ fun AgendaRow(
     onConfirmPlan: (AgendaItem.PlanToConfirm, happened: Boolean) -> Unit = { _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    /** Done · Snooze · Edit · Delete under a reminder (issue #99); none when null. */
+    reminders: ReminderCallbacks? = null,
+    now: Instant = Instant.DISTANT_PAST,
+    zone: TimeZone = TimeZone.UTC,
 ) {
     val colors = MaterialTheme.colorScheme
     data class Spec(val icon: ImageVector, val tint: Color, val label: String, val title: String, val subtitle: String?, val friend: Friend?)
@@ -300,6 +309,10 @@ fun AgendaRow(
                             }
                         }
                     }
+                }
+                if (item is AgendaItem.ReminderDue && reminders != null) {
+                    ReminderWhen(item.reminder, today, zone)
+                    ReminderActionsRow(item.reminder, reminders, today, zone, now, Modifier.padding(top = 2.dp))
                 }
                 if (item is AgendaItem.GroupOverdue && item.group.memberIds.isNotEmpty()) {
                     FilledTonalButton(

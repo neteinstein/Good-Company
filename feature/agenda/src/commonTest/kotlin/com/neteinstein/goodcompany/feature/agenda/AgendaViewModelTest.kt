@@ -6,6 +6,8 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.testing.Fixtures
@@ -14,6 +16,8 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
+import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaMessage
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
 import kotlinx.datetime.LocalDate
@@ -39,7 +43,10 @@ class AgendaViewModelTest {
         g.observeSettings,
         g.draftBirthdayMessage,
         g.addReminder,
-        g.setReminderDone,
+        g.editReminder,
+        g.completeReminder,
+        g.reopenReminder,
+        g.snoozeReminder,
         g.deleteReminder,
         g.restoreReminder,
         g.confirmPlan,
@@ -55,7 +62,7 @@ class AgendaViewModelTest {
         assertIs<AgendaItem.FriendBirthday>(state.value.agenda.single())
         vm.onNewReminder()
         assertTrue(state.value.showReminderEditor)
-        vm.onSaveReminder("Book tickets", listOf(FriendId("ana")), LocalDate(2026, 3, 11), 18)
+        vm.onSaveReminder(ReminderDraft("Book tickets", listOf(FriendId("ana")), LocalDate(2026, 3, 11), 18))
         assertFalse(state.value.showReminderEditor)
         assertEquals(AgendaMessage.ReminderSaved, state.value.message)
         val r = state.value.reminders.single()
@@ -74,19 +81,78 @@ class AgendaViewModelTest {
     fun doneRemindersLeaveTheAgendaAndCanBeDeleted() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
-        vm.onSaveReminder("Call", emptyList(), LocalDate(2026, 3, 11), 9)
-        vm.onSaveReminder("  ", emptyList(), null, 9)
+        vm.onSaveReminder(ReminderDraft("Call", emptyList(), LocalDate(2026, 3, 11), 9))
+        vm.onSaveReminder(ReminderDraft("  ", emptyList(), null, 9))
         val r = state.value.reminders.single()
-        vm.onToggleDone(r)
+        vm.onReminderDone(r)
         assertTrue(state.value.reminders.single().done)
+        assertEquals(AgendaMessage.Reminder(ReminderNotice.Done(next = null)), state.value.message)
+        // Issue #99: it stays in the "Done" group.
+        assertEquals(listOf(r.id), state.value.done.map { it.id })
+        assertTrue(state.value.open.isEmpty())
         assertTrue(state.value.agenda.none { it is AgendaItem.ReminderDue })
-        vm.onDeleteReminder(r.id)
-        assertEquals(AgendaMessage.ReminderDeleted, state.value.message)
+        val done = state.value.done.single()
+        vm.onMessageShown()
+        vm.onDeleteReminder(done)
+        assertEquals(AgendaMessage.Reminder(ReminderNotice.Deleted), state.value.message)
         assertTrue(state.value.reminders.isEmpty())
-        vm.onUndoDelete()
+        vm.onUndoReminder()
         assertEquals(1, state.value.reminders.size)
         // Restored reminder is still done, so Mar 11 is empty; Mar 12 has Ana's birthday.
         assertEquals(listOf(0, 1), state.value.week.take(3).drop(1).map { it.second })
+    }
+
+    @Test
+    fun doneWithPeople_neverLogsAMeetup_andUndoOpensItAgain() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveReminder(ReminderDraft("Buy flowers", listOf(FriendId("ana")), LocalDate(2026, 3, 11), 9))
+        val r = state.value.reminders.single()
+        vm.onReminderDone(r)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertTrue(g.interactionRepo.interactions.value.isEmpty())
+        assertTrue(state.value.reminderUndo != null)
+        vm.onUndoReminder()
+        assertFalse(state.value.reminders.single().done)
+        assertNull(state.value.reminders.single().completedAt)
+        vm.onReminderDone(state.value.reminders.single())
+        vm.onReminderReopen(state.value.reminders.single())
+        assertFalse(state.value.reminders.single().done)
+    }
+
+    @Test
+    fun aRepeatingReminderRollsOnWhenDone() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveReminder(ReminderDraft("Water plants", emptyList(), LocalDate(2026, 3, 10), 18, repeat = ReminderRepeat.WEEKLY))
+        vm.onReminderDone(state.value.reminders.single())
+        val r = state.value.reminders.single()
+        assertFalse(r.done)
+        assertEquals(at(2026, 3, 17, 18), r.dueAt)
+        assertEquals(AgendaMessage.Reminder(ReminderNotice.Done(next = at(2026, 3, 17, 18))), state.value.message)
+    }
+
+    @Test
+    fun snoozeMovesItInTheAgenda_andEditChangesIt() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveReminder(ReminderDraft("Call the vet", emptyList(), LocalDate(2026, 3, 10), 18))
+        vm.onSnoozeReminder(state.value.reminders.single(), ReminderSnooze.NextWeek)
+        val snoozed = state.value.reminders.single()
+        assertEquals(at(2026, 3, 17, 9), snoozed.snoozedUntil)
+        assertEquals(AgendaMessage.Reminder(ReminderNotice.Snoozed(at(2026, 3, 17, 9))), state.value.message)
+        assertNull(state.value.reminderUndo)
+        assertTrue(state.value.agenda.filterIsInstance<AgendaItem.ReminderDue>().all { it.date == LocalDate(2026, 3, 17) })
+
+        vm.onEditReminder(snoozed)
+        assertEquals(snoozed, state.value.editingReminder)
+        vm.onSaveReminder(ReminderDraft("Call the vet again", emptyList(), LocalDate(2026, 3, 12), 9, important = true))
+        val edited = state.value.reminders.single()
+        assertEquals("Call the vet again", edited.title)
+        assertEquals(at(2026, 3, 12, 9), edited.dueAt)
+        assertNull(edited.snoozedUntil)
+        assertTrue(edited.important)
+        assertNull(state.value.editingReminder)
     }
 
     @Test

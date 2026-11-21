@@ -252,7 +252,7 @@ object CatchUpStoryBuilder {
         friend.notes.trim().takeIf { it.isNotEmpty() }?.let { slides += StorySlide.Notes(it) }
 
         // Their own reminders and those of the circles they're in (issue #88).
-        val todo = reminders.filter { !it.done && it.isFor(friend.id, detail.groups) }.sortedBy { it.dueAt ?: Instant.DISTANT_FUTURE }
+        val todo = reminders.filter { !it.done && it.isFor(friend.id, detail.groups) }.sortedBy { it.nextAt ?: Instant.DISTANT_FUTURE }
         if (todo.isNotEmpty()) slides += StorySlide.ToDo(todo.take(MAX_TODO).map { it.title })
 
         val ideas = detail.ideas.filter { it.kind != IdeaKind.EVENT }.take(MAX_IDEAS)

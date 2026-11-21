@@ -50,6 +50,7 @@ import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
@@ -220,6 +221,31 @@ class SqlRepositoryContractTest : RepositoryContract() {
         assertTrue(s.reminders.reminders.first().isEmpty())
         s.backup.restore(snapshot)
         assertEquals(listOf(reminder, reminder.copy(id = "plain", circleId = null)), s.reminders.reminders.first())
+    }
+
+    @Test
+    fun aRemindersSnoozeRepeatImportantAndDoneTime_surviveARestartAndABackup() = runTest {
+        // Issue #99.
+        val s = open()
+        val reminder = Reminder(
+            "r",
+            "Water plants",
+            dueAt = at(2026, 3, 20, 18),
+            createdAt = at(2026, 3, 1),
+            snoozedUntil = at(2026, 3, 21, 9),
+            important = true,
+            repeat = ReminderRepeat.WEEKLY,
+        )
+        val done = Reminder("d", "Buy flowers", createdAt = at(2026, 3, 1), done = true, completedAt = at(2026, 3, 2))
+        s.reminders.upsert(reminder)
+        s.reminders.upsert(done)
+        assertEquals(listOf(reminder, done), open().reminders.reminders.first())
+        val snapshot = s.backup.snapshot()
+        s.backup.restore(snapshot.copy(reminders = emptyList()))
+        s.backup.restore(snapshot)
+        assertEquals(listOf(reminder, done), s.reminders.reminders.first())
+        s.reminders.delete("r")
+        assertEquals(listOf(done), s.reminders.reminders.first())
     }
 
     // --- Calendar suggestions (D3) ---

@@ -18,6 +18,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A reminder that belongs to a circle (#88, `Reminder.circleId`) is planned for the circle: its text names the circle,
   then its own people (`NotificationPlanner`); who it's for is `Reminder.peopleIds(circles)`, today's members.
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
+- Reminders (#99): plan and sort by `Reminder.nextAt` (`snoozedUntil ?: dueAt`), never `dueAt` alone. Snooze moves only
+  `snoozedUntil`; Done (`CompleteReminderUseCase`) closes a one-off with `completedAt`, or rolls a repeating one to
+  `nextDueAfter` and clears the snooze. `Reminder.important` + the notification setting "keep on screen" is what makes a
+  reminder notification `persistent`. Reminder notifications carry Done and "Snooze 1 hour" actions
+  (`NotificationAction.Kind.REMINDER_DONE/REMINDER_SNOOZE`, handled in `HandleNotificationActionUseCase`); the platform
+  receivers only pass kind + id, so a new action needs no platform code.
 - **Settings → Notifications (issue #98).** `AppSettings.notifications` (`NotificationSettings`: master switch, one
   switch per `NotificationType`, `persistent` = "Keep important ones on screen") lives in `DeviceSettings` (no schema
   change) and travels in backups; `notificationPrimerDismissed` (Today's card) is device-only. `NotificationPlanner`

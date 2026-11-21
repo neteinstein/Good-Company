@@ -7,11 +7,16 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.HideLastSeenCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
@@ -26,11 +31,15 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.domain.util.AppClock
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
+import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,14 +49,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.atTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
+import kotlin.time.Instant
 
 /** One-off feedback for Today's snackbar; the screen turns it into localised text. */
 sealed interface TodayMessage {
     data object ReminderSaved : TodayMessage
+
+    /** Done, snoozed or deleted (issue #99); Done and Delete offer Undo. */
+    data class Reminder(val notice: ReminderNotice) : TodayMessage
 
     data class CallLogged(val name: String) : TodayMessage
 
@@ -88,6 +99,10 @@ data class TodayUiState(
     val circles: List<FriendGroup> = emptyList(),
     val isLoading: Boolean = true,
     val showReminderEditor: Boolean = false,
+    /** The reminder the editor changes; null = a new one. */
+    val editingReminder: Reminder? = null,
+    /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
+    val reminderUndo: Reminder? = null,
     val message: TodayMessage? = null,
     /** AI is on and a key is saved (F1): every AI button checks this. */
     val hasAiKey: Boolean = false,
@@ -98,6 +113,8 @@ data class TodayUiState(
     /** "Your year in friendship" in December (issue #67), else null. */
     val reviewYear: Int? = null,
     val today: LocalDate = LocalDate(2000, 1, 1),
+    val zone: TimeZone = TimeZone.UTC,
+    val now: Instant = Instant.fromEpochMilliseconds(0),
     /** "When did you last see…?" (issue #68): the person asked about now; null hides the card. */
     val lastSeenAsk: Friend? = null,
     /** Where [lastSeenAsk] is in this round ("1 of 12"): answers given since Today opened, plus one. */
@@ -137,6 +154,11 @@ class TodayViewModel(
     observeReviewYear: ObserveYearReviewCardUseCase,
     observeLastSeen: ObserveLastSeenCardUseCase,
     private val addReminder: AddReminderUseCase,
+    private val editReminder: EditReminderUseCase,
+    private val completeReminder: CompleteReminderUseCase,
+    private val snoozeReminder: SnoozeReminderUseCase,
+    private val deleteReminder: DeleteReminderUseCase,
+    private val restoreReminder: RestoreReminderUseCase,
     private val confirmPlan: ConfirmPlanUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
@@ -196,6 +218,8 @@ class TodayViewModel(
             askForNotifications = settings.notifications.enabled && !settings.notificationPrimerDismissed,
             isLoading = false,
             today = today,
+            zone = clock.timeZone,
+            now = clock.now(),
         )
     }
 
@@ -250,17 +274,57 @@ class TodayViewModel(
 
     private fun firstName(id: FriendId): String = state.value.friends.firstOrNull { it.id == id }?.displayName?.substringBefore(' ').orEmpty()
 
-    fun onNewReminder() = local.update { it.copy(showReminderEditor = true) }
+    fun onNewReminder() = local.update { it.copy(showReminderEditor = true, editingReminder = null) }
 
-    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false) }
+    /** "Edit" on a reminder in the week (issue #99). */
+    fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
 
-    /** [date] null = no due date. [hour] is local time. */
-    fun onSaveReminder(title: String, friendIds: List<FriendId>, date: LocalDate?, hour: Int) {
-        if (title.isBlank()) return
+    fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
+
+    /** A new reminder, or the one being edited. */
+    fun onSaveReminder(draft: ReminderDraft) {
+        if (draft.title.isBlank()) return
+        val editing = local.value.editingReminder
         viewModelScope.launch {
-            val due = date?.atTime(LocalTime(hour.coerceIn(0, 23), 0))?.toInstant(clock.timeZone)
-            addReminder(title, friendIds, due)
-            local.update { it.copy(showReminderEditor = false, message = TodayMessage.ReminderSaved) }
+            val due = draft.dueAt(clock.timeZone)
+            if (editing == null) {
+                addReminder(draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
+            } else {
+                editReminder(editing, draft.title, draft.friendIds, due, draft.circleId, draft.repeat, draft.important)
+            }
+            local.update { it.copy(showReminderEditor = false, editingReminder = null, message = TodayMessage.ReminderSaved) }
+        }
+    }
+
+    /** "Done": closes it (a repeating one rolls on). Never asks "did you meet?" (issue #99). */
+    fun onReminderDone(reminder: Reminder) {
+        viewModelScope.launch {
+            val saved = completeReminder(reminder)
+            val notice = ReminderNotice.Done(saved.dueAt.takeIf { !saved.done })
+            local.update { it.copy(reminderUndo = reminder, message = TodayMessage.Reminder(notice)) }
+        }
+    }
+
+    fun onSnoozeReminder(reminder: Reminder, snooze: ReminderSnooze) {
+        viewModelScope.launch {
+            val until = snoozeReminder(reminder, snooze).snoozedUntil ?: return@launch
+            local.update { it.copy(reminderUndo = null, message = TodayMessage.Reminder(ReminderNotice.Snoozed(until))) }
+        }
+    }
+
+    fun onDeleteReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            deleteReminder(reminder.id)
+            local.update { it.copy(reminderUndo = reminder, message = TodayMessage.Reminder(ReminderNotice.Deleted)) }
+        }
+    }
+
+    /** Undo on the Done or Delete snackbar: puts the reminder back as it was. */
+    fun onUndoReminder() {
+        val reminder = local.value.reminderUndo ?: return
+        viewModelScope.launch {
+            restoreReminder(reminder)
+            local.update { it.copy(reminderUndo = null) }
         }
     }
 
@@ -319,5 +383,5 @@ class TodayViewModel(
         }
     }
 
-    fun onMessageShown() = local.update { it.copy(message = null) }
+    fun onMessageShown() = local.update { it.copy(message = null, reminderUndo = null) }
 }

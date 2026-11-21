@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GroupRepository
@@ -71,15 +72,31 @@ class LogCallUseCase(
     }
 }
 
-/** Runs a quick action tapped on a catch-up notification. */
+/**
+ * Runs a quick action tapped on a notification: catch-ups, plans, and reminders (issue #99: Done, and Snooze for an
+ * hour; neither asks "did you meet?").
+ */
 class HandleNotificationActionUseCase(
     private val checkIn: CheckInUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val groups: GroupRepository,
     private val confirmPlan: ConfirmPlanUseCase,
+    private val completeReminder: CompleteReminderUseCase,
+    private val snoozeReminder: SnoozeReminderUseCase,
 ) {
     suspend operator fun invoke(action: NotificationAction) {
+        when (action.kind) {
+            NotificationAction.Kind.REMINDER_DONE -> {
+                completeReminder(action.targetId)
+                return
+            }
+            NotificationAction.Kind.REMINDER_SNOOZE -> {
+                snoozeReminder(action.targetId, ReminderSnooze.OneHour)
+                return
+            }
+            else -> Unit
+        }
         if (action.isPlan) {
             val occurrence = PlanOccurrence.decode(action.targetId)
             confirmPlan(occurrence.planId, happened = action.kind == NotificationAction.Kind.PLAN_HAPPENED, day = occurrence.date)
@@ -92,7 +109,7 @@ class HandleNotificationActionUseCase(
                 }
                 NotificationAction.Kind.SNOOZE_WEEK, NotificationAction.Kind.CALLED -> snooze.group(action.targetId, SnoozeOption.ONE_WEEK)
                 NotificationAction.Kind.SNOOZE_WEEKEND -> snooze.group(action.targetId, SnoozeOption.WEEKEND)
-                NotificationAction.Kind.PLAN_HAPPENED, NotificationAction.Kind.PLAN_SKIPPED -> Unit
+                else -> Unit
             }
             return
         }
@@ -102,7 +119,7 @@ class HandleNotificationActionUseCase(
             NotificationAction.Kind.CALLED -> logCall(id, InteractionSource.NOTIFICATION)
             NotificationAction.Kind.SNOOZE_WEEK -> snooze.friend(id, SnoozeOption.ONE_WEEK)
             NotificationAction.Kind.SNOOZE_WEEKEND -> snooze.friend(id, SnoozeOption.WEEKEND)
-            NotificationAction.Kind.PLAN_HAPPENED, NotificationAction.Kind.PLAN_SKIPPED -> Unit
+            else -> Unit
         }
     }
 }

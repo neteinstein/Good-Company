@@ -59,6 +59,7 @@ import com.neteinstein.goodcompany.core.ui.components.DriftingCard
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
@@ -68,6 +69,7 @@ import com.neteinstein.goodcompany.core.ui.components.YearReviewCard
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.components.showUndo
+import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
@@ -114,14 +116,16 @@ import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /** Localised snackbar text for a [TodayMessage]. */
-suspend fun TodayMessage.text(): String = when (this) {
+suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = LocalDate(2000, 1, 1)): String = when (this) {
     TodayMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
+    is TodayMessage.Reminder -> notice.text(zone, today)
     is TodayMessage.CallLogged -> getString(Res.string.today_call_logged, name)
     is TodayMessage.Snoozed -> getString(Res.string.today_snoozed, name, until.shortLabelText())
     is TodayMessage.CheckedIn -> getString(Res.string.today_logged_with, names.joinToString())
@@ -162,6 +166,8 @@ fun TodayScreen(
     checkInSheet: @Composable (onSaved: (List<String>) -> Unit, onDismiss: () -> Unit) -> Unit,
     /** The December "Your year in friendship" card (issue #67). */
     onOpenYearReview: (Int) -> Unit = {},
+    /** A reminder's circle chip opens the circle's page (issue #99). */
+    onOpenCircle: ((String) -> Unit)? = null,
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -198,6 +204,15 @@ fun TodayScreen(
             onUndoLastSeen = viewModel::onUndoLastSeen,
             onAllowNotifications = enableNotifications,
             onNotificationsNotNow = viewModel::onNotificationsNotNow,
+            reminders = ReminderCallbacks(
+                onDone = viewModel::onReminderDone,
+                onSnooze = viewModel::onSnoozeReminder,
+                onEdit = viewModel::onEditReminder,
+                onDelete = viewModel::onDeleteReminder,
+                onOpenFriend = onOpenFriend,
+                onOpenCircle = onOpenCircle,
+            ),
+            onUndoReminder = viewModel::onUndoReminder,
         ),
     )
     if (checkingIn) {
@@ -210,7 +225,15 @@ fun TodayScreen(
         )
     }
     if (state.showReminderEditor) {
-        ReminderEditor(state.friends, state.today, viewModel::onDismissReminderEditor, viewModel::onSaveReminder, circles = state.circles)
+        ReminderEditor(
+            state.friends,
+            state.today,
+            viewModel::onDismissReminderEditor,
+            viewModel::onSaveReminder,
+            circles = state.circles,
+            initial = state.editingReminder,
+            zone = state.zone,
+        )
     }
     state.wishFor?.let { friend ->
         val firstName = friend.displayName.substringBefore(' ')
@@ -256,6 +279,9 @@ data class TodayActions(
     val onUndoLastSeen: (TodayMessage.LastSeenAnswered) -> Unit = {},
     val onAllowNotifications: () -> Unit = {},
     val onNotificationsNotNow: () -> Unit = {},
+    /** Done · Snooze · Edit · Delete on the week's reminders (issue #99). */
+    val reminders: ReminderCallbacks? = null,
+    val onUndoReminder: () -> Unit = {},
 )
 
 @Composable
@@ -275,8 +301,10 @@ fun TodayContent(
                 actions.onUndoLastSeen(message)
                 return@LaunchedEffect
             }
+        } else if (message is TodayMessage.Reminder && state.reminderUndo != null) {
+            if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoReminder()
         } else {
-            snackbar.showMessage(message.text())
+            snackbar.showMessage(message.text(state.zone, state.today))
         }
         actions.onMessageShown()
     }
@@ -368,6 +396,9 @@ fun TodayContent(
                         onConfirmPlan = actions.onConfirmPlan,
                         onAddPlanToCalendar = actions.onAddPlanToCalendar,
                         onSkipPlan = actions.onSkipPlan,
+                        reminders = actions.reminders,
+                        now = state.now,
+                        zone = state.zone,
                         modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
                     )
                 }

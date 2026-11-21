@@ -151,7 +151,10 @@ import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.PlanRow
 import com.neteinstein.goodcompany.core.ui.components.ProgressRing
+import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
+import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
+import com.neteinstein.goodcompany.core.ui.components.ReminderRow
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.SendMessageSheet
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
@@ -161,6 +164,7 @@ import com.neteinstein.goodcompany.core.ui.components.avatarColors
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.interactionIcon
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
@@ -343,6 +347,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.components.KinshipCard
 import com.neteinstein.goodcompany.feature.friends.ui.components.LifeUpdateDialog
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getPluralString
@@ -461,6 +466,15 @@ fun FriendDetailScreen(
             onOpenReminderEditor = viewModel::onOpenReminderEditor,
             onDismissReminderEditor = viewModel::onDismissReminderEditor,
             onSaveReminder = viewModel::onSaveReminder,
+            reminders = ReminderCallbacks(
+                onDone = viewModel::onReminderDone,
+                onSnooze = viewModel::onSnoozeReminder,
+                onEdit = viewModel::onEditReminder,
+                onDelete = viewModel::onDeleteReminder,
+                onOpenFriend = onOpenFriend,
+                onOpenCircle = onOpenCircle,
+            ),
+            onUndoReminder = viewModel::onUndoReminder,
             onMessageShown = viewModel::onMessageShown,
             onTogglePause = viewModel::onTogglePause,
             onToggleContactCounts = viewModel::onToggleContactCounts,
@@ -571,7 +585,10 @@ data class FriendDetailActions(
     val onWeMet: () -> Unit = {},
     val onOpenReminderEditor: () -> Unit = {},
     val onDismissReminderEditor: () -> Unit = {},
-    val onSaveReminder: (String, List<FriendId>, LocalDate?, Int) -> Unit = { _, _, _, _ -> },
+    val onSaveReminder: (ReminderDraft) -> Unit = {},
+    /** Done · Snooze · Edit · Delete on their reminders (issue #99). */
+    val reminders: ReminderCallbacks = ReminderCallbacks(onDone = {}, onSnooze = { _, _ -> }, onEdit = {}, onDelete = {}),
+    val onUndoReminder: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
     val onTogglePause: () -> Unit = {},
     val onToggleContactCounts: () -> Unit = {},
@@ -591,7 +608,8 @@ data class FriendDetailActions(
 private val RHYTHMS = listOf(7, 14, 30, 90)
 
 /** Localised snackbar text for a [FriendDetailMessage]. */
-suspend fun FriendDetailMessage.text(): String = when (this) {
+suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = LocalDate(2000, 1, 1)): String = when (this) {
+    is FriendDetailMessage.ReminderChanged -> notice.text(zone, today)
     FriendDetailMessage.CallLogged -> getString(Res.string.msg_call_logged_short)
     is FriendDetailMessage.Snoozed -> getString(Res.string.touch_snoozed, until.shortLabelText())
     is FriendDetailMessage.IdeasFound -> if (count ==
@@ -687,10 +705,11 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     LaunchedEffect(state.message) {
         val message = state.message ?: return@LaunchedEffect
         val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null ||
-            state.undoSave != null
-        val result = snackbar.showMessage(message.text(), if (undoable) undoLabel else null)
+            state.undoSave != null || state.reminderUndo != null
+        val result = snackbar.showMessage(message.text(state.zone, state.today), if (undoable) undoLabel else null)
         if (result == SnackbarResult.ActionPerformed) {
             when {
+                state.reminderUndo != null -> actions.onUndoReminder()
                 state.undoSave != null -> actions.onUndoSave()
                 state.undoAttachment != null -> actions.onUndoRemoveAttachment()
                 state.undoLink != null -> actions.onUndoRemoveLink()
@@ -1038,6 +1057,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onSave = actions.onSaveReminder,
                 preselected = setOf(f.id),
                 circles = detail.circles,
+                initial = state.editingReminder,
+                zone = state.zone,
             )
         }
         state.planEditing?.let { editing ->
@@ -1249,6 +1270,20 @@ private fun ComingUp(f: Friend, state: FriendDetailUiState, actions: FriendDetai
                     onCancel = { actions.onCancelPlan(plan) },
                     circle = circle,
                     onSkip = { actions.onSkipPlan(plan) },
+                )
+            }
+            // Issue #99: their reminders (and their circles'), with Done · Snooze · Edit · Delete; the chips open the others.
+            val everyone = (listOf(f) + detail.others).associateBy { it.id }
+            state.reminders.forEach { r ->
+                ReminderRow(
+                    r,
+                    r.friendIds.filterNot { it == f.id }.mapNotNull(everyone::get),
+                    state.today,
+                    state.zone,
+                    state.now,
+                    actions.reminders,
+                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    circle = r.circleId?.let { id -> detail.circles.firstOrNull { it.id == id } },
                 )
             }
             f.importantEvents.filter { it.date >= state.today }.sortedBy { it.date }.take(3).forEach { MomentRow(it, state.today) }

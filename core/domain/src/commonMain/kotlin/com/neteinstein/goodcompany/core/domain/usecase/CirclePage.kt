@@ -79,7 +79,7 @@ object CirclePages {
     /** The circle's open plans and its reminders not done, soonest first (undated reminders last). */
     fun upcoming(group: FriendGroup, plans: List<Plan>, reminders: List<Reminder>, zone: TimeZone): List<CircleUpcoming> {
         val items = plans.filter { it.circleId == group.id && it.status == PlanStatus.PLANNED }.map { CircleUpcoming.PlanItem(it) } +
-            reminders.filter { it.circleId == group.id && !it.done }.map { CircleUpcoming.ReminderItem(it, it.dueAt?.toLocalDate(zone)) }
+            reminders.filter { it.circleId == group.id && !it.done }.map { CircleUpcoming.ReminderItem(it, it.nextAt?.toLocalDate(zone)) }
         return items.sortedWith(compareBy<CircleUpcoming> { it.date == null }.thenBy { it.date })
     }
 

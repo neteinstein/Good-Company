@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.model.NotificationType
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.Reminder
+import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarSuggestion
 import com.neteinstein.goodcompany.core.domain.usecase.NotificationPlanner
 import com.neteinstein.goodcompany.core.domain.usecase.NudgePolicy
@@ -127,12 +128,54 @@ class NotificationSettingsTest {
 
     @Test
     fun aReminderDueLaterIsNotPersistent_untilItIsMarkedImportant() {
-        // The important flag arrives with issue #99; until then a due reminder is a normal one.
         val due = plan(NotificationSettings()).single { it.id == "reminder:soon" }
         assertFalse(due.persistent)
         assertEquals(NotificationChannel.REMINDERS, due.channel)
         assertEquals(at(2026, 3, 12, 18), due.at)
+        // Issue #99: marked important, it stays on screen while it is due (until the end of that day), and goes once done.
+        val important = planWith(reminders.map { if (it.id == "soon") it.copy(important = true) else it })
+            .single { it.id == "reminder:soon" }
+        assertTrue(important.persistent && important.whileOpen)
+        assertEquals(NotificationChannel.IMPORTANT, important.channel)
+        assertEquals(at(2026, 3, 13, 0), important.until)
+        // With "Keep important ones on screen" off, it is a normal one.
+        val off = planWith(reminders.map { it.copy(important = true) }, NotificationSettings(persistent = false))
+            .single { it.id == "reminder:soon" }
+        assertFalse(off.persistent)
     }
+
+    @Test
+    fun aSnoozedReminder_ringsWhenTheSnoozeEnds_andIsntOverdueBeforeThat() {
+        // Issue #99: "late" was due on Mar 8 and is snoozed to tomorrow evening.
+        val snoozed = reminders.map { if (it.id == "late") it.copy(snoozedUntil = at(2026, 3, 11, 20)) else it }
+        val planned = planWith(snoozed)
+        val due = planned.single { it.id == "reminder:late" }
+        assertEquals(at(2026, 3, 11, 20), due.at)
+        assertEquals(NotificationContent.ReminderDue("late", "Call the vet", emptyList()), due.content)
+        val asks = planned.filter { it.content is NotificationContent.ReminderOverdue && it.slot == "reminder:late" }
+        assertEquals("reminder:late:overdue:2026-03-12", asks.first().id)
+    }
+
+    @Test
+    fun aRepeatingReminder_isPlannedForItsNextDateOnly() {
+        val weekly = listOf(Reminder("w", "Water plants", emptyList(), at(2026, 3, 12, 18), createdAt = now, repeat = ReminderRepeat.WEEKLY))
+        val planned = planWith(weekly, NotificationSettings(persistent = false)).filter { it.content.type == NotificationType.REMINDERS }
+        assertEquals(listOf(at(2026, 3, 12, 18)), planned.map { it.at })
+        // Its quick actions target the reminder.
+        assertEquals("w", (planned.single().content as NotificationContent.ReminderDue).reminderId)
+    }
+
+    private fun planWith(list: List<Reminder>, settings: NotificationSettings = NotificationSettings()) = NotificationPlanner.plan(
+        friends,
+        list,
+        emptyList(),
+        now,
+        TimeZone.UTC,
+        reminderHour = 9,
+        plans = plans,
+        policy = NudgePolicy(weeklyDigest = false),
+        notifications = settings,
+    )
 
     @Test
     fun anOverdueReminderIsAskedEachDay_inOneSlot_untilDone() {

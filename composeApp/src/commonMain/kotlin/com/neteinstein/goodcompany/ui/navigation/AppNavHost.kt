@@ -304,6 +304,7 @@ fun AppNavHost(
                     // "I'm with…" lives with the circles (feature modules never depend on each other).
                     checkInSheet = { onSaved, onDismiss -> CheckInSheetHost(onSaved = onSaved, onDismiss = onDismiss) },
                     onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
+                    onOpenCircle = openCircle,
                 )
             }
             // "Everything coming up" (the old Coming up tab), pushed from Today.
@@ -318,6 +319,7 @@ fun AppNavHost(
                         onLogPlan = logPlan,
                         onOpenCalendar = { navController.navigate(CalendarSuggestionsRoute) },
                         onBack = { navController.popBackStack() },
+                        onOpenCircle = openCircle,
                     )
                 }
             }

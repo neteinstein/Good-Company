@@ -75,8 +75,9 @@ object AgendaBuilder {
         }
 
         val byId = friends.associateBy { it.id }
-        reminders.filter { !it.done && it.dueAt != null }.forEach { r ->
-            val due = r.dueAt!!.toLocalDate(zone)
+        // A snoozed reminder shows on the day its snooze ends (issue #99).
+        reminders.filter { !it.done && it.nextAt != null }.forEach { r ->
+            val due = r.nextAt!!.toLocalDate(zone)
             if (due <= end) {
                 // A circle reminder (issue #88) is for the circle's members as they are now.
                 items += AgendaItem.ReminderDue(r, r.peopleIds(groups).mapNotNull(byId::get), maxOf(due, today))
