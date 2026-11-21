@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpPolicyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
@@ -98,6 +99,7 @@ class WeMetViewModel(
     observePlaceBook: ObservePlaceBookUseCase,
     observePlans: ObservePlansUseCase,
     observeLogKinds: ObserveLogKindsUseCase,
+    observeCatchUp: ObserveCatchUpPolicyUseCase,
     logInteraction: LogInteractionUseCase,
     confirmPlan: ConfirmPlanUseCase,
     currentLocation: GetCurrentLocationUseCase,
@@ -127,6 +129,7 @@ class WeMetViewModel(
         clock,
         plan,
         editEntry,
+        observeCatchUp(),
     )
     private val startsWithNobody = friendIds.isEmpty() && circleId == null && plan == null && prefill.edit == null
     private val detailsOpen = MutableStateFlow(false)

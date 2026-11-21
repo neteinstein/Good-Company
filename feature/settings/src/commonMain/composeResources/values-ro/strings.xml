@@ -234,6 +234,8 @@
     <string name="how_add">Adaugă un mod</string>
     <string name="how_rename">Redenumește</string>
     <string name="how_name_taken">Există deja una cu acest nume</string>
+    <string name="how_counts">Contează ca revedere</string>
+    <string name="how_counts_hint">Acestea repornesc numărătoarea pentru cei setați pe „Ca în Setări” în Editează persoana. Întâlnirile contează mereu; înregistrările din jurnal niciodată.</string>
     <string name="places_typed">Fără GPS</string>
     <string name="places_pin">Adaugă coordonate (unde ești acum)</string>
     <string name="places_pinned">„%1$s” are acum coordonate</string>

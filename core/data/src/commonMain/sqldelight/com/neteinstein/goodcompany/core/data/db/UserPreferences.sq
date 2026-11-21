@@ -27,7 +27,12 @@ CREATE TABLE user_preferences (
     log_kinds TEXT,
     -- Your own "How?" options (issue #152): a JSON array of names, in order; NULL = none. An entry logged with one is
     -- an interaction of type OTHER with the name as its label.
-    custom_log_kinds TEXT
+    custom_log_kinds TEXT,
+    -- Decision 2026-11-21 ("Catch-up · what counts"): the built-in ways of keeping in touch that restart the rhythm of
+    -- people on the default, LogKind names comma-separated (NULL = the default set, '' = none; in person always counts).
+    catch_up_kinds TEXT,
+    -- Your own How options that count the same way: a JSON array of names; NULL = none.
+    catch_up_custom_kinds TEXT
 );
 
 get:

@@ -18,6 +18,8 @@ data class CadenceRules(
     val closeDays: Int = 30,
     val goodDays: Int = 90,
     val acquaintanceDays: Int? = null,
+    /** What restarts the rhythm (decision 2026-11-21 "Catch-up · what counts"). */
+    val catchUp: CatchUpPolicy = CatchUpPolicy(),
 ) {
     /** The default rhythm of a level; null for Acquaintances while Settings has none. */
     fun daysFor(closeness: Closeness): Int? = when (closeness) {
@@ -64,6 +66,7 @@ data class CadenceRules(
             settings.closeCircleDays,
             settings.goodFriendsDays,
             settings.acquaintanceDays,
+            CatchUpPolicy(settings.catchUpKinds, settings.catchUpCustomKinds.toSet(), settings.customLogKinds),
         )
     }
 }

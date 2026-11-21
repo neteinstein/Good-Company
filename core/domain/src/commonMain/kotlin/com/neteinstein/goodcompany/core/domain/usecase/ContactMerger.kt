@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -67,7 +68,7 @@ object ContactMerger {
     fun Friend.hasAppData(): Boolean = closeness != Closeness.ACQUAINTANCE || customName != null || customPhoto != null || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
         meetEveryDays != null || suggestEvents || gifts.isNotEmpty() || catchUpPaused || !tracksKeepInTouch ||
-        contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
+        catchUpCounts != CatchUpCounts.DEFAULT || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
         preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||
         drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty() || socials.isNotEmpty() || websites.isNotEmpty()

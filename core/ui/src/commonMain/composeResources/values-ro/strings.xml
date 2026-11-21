@@ -405,7 +405,7 @@
     <string name="log_location_denied">Fără permisiune de localizare. Scrie locul.</string>
     <string name="log_location_unavailable">Nu am putut afla locația ta. Verifică dacă locația e pornită sau scrie locul.</string>
     <string name="log_less">Mai puțin</string>
-    <string name="log_counts_hint">Apelurile, mesajele, emailurile și apelurile video contează ca revedere doar cu comutatorul „Apelurile și mesajele contează” al lui %1$s pornit.</string>
+    <string name="log_counts_hint">Asta nu repornește numărătoarea pentru %1$s. Schimbă ce contează în Editează persoana sau în Setări → Cum.</string>
     <string name="log_journal_footer">O intrare de jurnal este o notă cu dată. Nu contează niciodată ca revedere.</string>
     <string name="activity_lunch">Prânz</string>
     <string name="activity_dinner">Cină</string>

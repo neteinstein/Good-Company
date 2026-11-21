@@ -394,7 +394,7 @@
     <string name="log_location_denied">Pas d’autorisation de localisation. Écris le lieu.</string>
     <string name="log_location_unavailable">Impossible d’obtenir ta position. Vérifie que la localisation est activée, ou écris le lieu.</string>
     <string name="log_less">Moins</string>
-    <string name="log_counts_hint">Les appels, messages, e-mails et appels vidéo ne comptent que si l’option « Les appels et messages comptent » de %1$s est activée.</string>
+    <string name="log_counts_hint">Ceci ne relance pas le compte à rebours de %1$s. Change ce qui compte dans Modifier la personne ou dans Réglages → Comment.</string>
     <string name="log_journal_footer">Une entrée de journal est une note datée. Elle ne compte jamais comme un contact.</string>
     <string name="activity_lunch">Déjeuner</string>
     <string name="activity_dinner">Dîner</string>

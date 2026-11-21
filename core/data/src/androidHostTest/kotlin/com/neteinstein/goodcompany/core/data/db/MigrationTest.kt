@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -30,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -795,7 +797,7 @@ class MigrationTest {
         val ana = database.readFriends().single()
         assertTrue(ana.tracksKeepInTouch)
         assertTrue(ana.catchUpPaused)
-        assertTrue(ana.contactCountsAsCatchUp)
+        assertEquals(CatchUpCounts.ANY_CONTACT, ana.catchUpCounts)
         assertEquals(14, ana.meetEveryDays)
 
         database.writeFriend(ana.copy(tracksKeepInTouch = false), 0)
@@ -1074,6 +1076,55 @@ class MigrationTest {
         assertEquals(listOf("Voice note", "Letter"), after.customLogKinds)
         assertEquals(listOf("Surf"), after.customActivities)
         driver.close()
+    }
+
+    @Test
+    fun version32to33_theCallsCountSwitchBecomesAnyContact_offIsTheDefault_andSettingsStartWithTheDefaultKinds() = runTest {
+        // Decision 2026-11-21 ("Catch-up · what counts").
+        val driver = driverAt(32)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 0, 1), ('bob', 1, 'Bob', 'c2', 1, 1, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(
+            null,
+            "INSERT INTO user_preferences (id, inner_circle_days, close_circle_days, good_friends_days, weekly_digest, digest_day, " +
+                "reminder_hour, weekly_ideas_enabled, home_area, show_warmth, private_notifications, custom_log_kinds) " +
+                "VALUES (1, 7, 30, 90, 1, 1, 9, 0, 'Lisbon', 1, 0, '[\"Voice note\"]')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 32, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val friends = database.readFriends().associateBy { it.id.value }
+        assertEquals(CatchUpCounts.ANY_CONTACT, friends.getValue("ana").catchUpCounts)
+        assertEquals(CatchUpCounts.DEFAULT, friends.getValue("bob").catchUpCounts)
+        val settings = database.readPreferences(AppSettings())
+        assertEquals(CatchUpPolicy.DEFAULT_KINDS, settings.catchUpKinds)
+        assertTrue(settings.catchUpCustomKinds.isEmpty())
+
+        database.writeFriend(friends.getValue("bob").copy(catchUpCounts = CatchUpCounts.IN_PERSON_ONLY), 1)
+        assertEquals(CatchUpCounts.IN_PERSON_ONLY, database.readFriends().single { it.id.value == "bob" }.catchUpCounts)
+        database.writePreferences(settings.copy(catchUpKinds = setOf(LogKind.MEETUP, LogKind.MESSAGE), catchUpCustomKinds = listOf("Voice note")))
+        val after = database.readPreferences(AppSettings())
+        assertEquals(setOf(LogKind.MEETUP, LogKind.MESSAGE), after.catchUpKinds)
+        assertEquals(listOf("Voice note"), after.catchUpCustomKinds)
+        driver.close()
+    }
+
+    @Test
+    fun catchUpKindsColumn_nullIsTheDefault_emptyIsOnlyInPerson_andInPersonAlwaysCounts() {
+        assertEquals(CatchUpPolicy.DEFAULT_KINDS, catchUpKindsFromColumn(null))
+        assertEquals(setOf(LogKind.MEETUP), catchUpKindsFromColumn(""))
+        assertEquals(setOf(LogKind.MEETUP, LogKind.EMAIL), catchUpKindsFromColumn("EMAIL,CARRIER_PIGEON,JOURNAL"))
+        assertNull(CatchUpPolicy.DEFAULT_KINDS.toCatchUpKindsColumn())
+        assertEquals("", setOf(LogKind.MEETUP).toCatchUpKindsColumn())
+        assertEquals("CALL,EMAIL", setOf(LogKind.EMAIL, LogKind.CALL).toCatchUpKindsColumn())
     }
 
     @Test

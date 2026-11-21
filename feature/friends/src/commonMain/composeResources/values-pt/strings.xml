@@ -158,8 +158,13 @@
     <string name="prefs_pause_hint">Sem lembretes “hora de estar com” até retomares. O histórico e os aniversários ficam.</string>
     <string name="prefs_tracking">Manter o contacto</string>
     <string name="prefs_tracking_hint">Calor, ritmo para estar com e lembretes para pôr a conversa em dia. Desliga para quem vês todos os dias: a cronologia, os lembretes e os aniversários ficam.</string>
-    <string name="prefs_contact_counts">Chamadas e conversas contam como estar em contacto</string>
-    <string name="prefs_contact_counts_hint">Para amigos longe: uma chamada ou conversa reinicia o ritmo, não só estarem juntos.</string>
+    <string name="prefs_catch_up_counts">O que conta como estar em contacto</string>
+    <string name="prefs_counts_default">Como nas Definições</string>
+    <string name="prefs_counts_in_person">Só ao vivo</string>
+    <string name="prefs_counts_any">Qualquer contacto</string>
+    <string name="prefs_counts_default_hint">Estarem juntos e as formas ativas em Definições → Como reiniciam a contagem.</string>
+    <string name="prefs_counts_in_person_hint">Só estarem juntos reinicia a contagem.</string>
+    <string name="prefs_counts_any_hint">Qualquer chamada, mensagem ou conversa reinicia a contagem, tal como estarem juntos.</string>
     <string name="plans_add">Planear</string>
     <string name="occasions_title">Boa companhia para</string>
     <string name="occasions_hint">Usado no “Quem está livre para…?” no separador Juntos.</string>

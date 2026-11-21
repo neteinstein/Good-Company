@@ -162,8 +162,13 @@
     <string name="prefs_pause_hint">Fără mementouri „e timpul să vă vedeți” până reiei. Istoricul și zilele de naștere rămân.</string>
     <string name="prefs_tracking">Păstrează legătura</string>
     <string name="prefs_tracking_hint">Căldură, ritm de întâlnire și mementouri ca să vă revedeți. Dezactivează pentru cineva pe care îl vezi zilnic: cronologia, mementourile și ziua de naștere rămân.</string>
-    <string name="prefs_contact_counts">Apelurile și mesajele contează ca revedere</string>
-    <string name="prefs_contact_counts_hint">Pentru prietenii departe: un apel sau un mesaj resetează ritmul, nu doar o întâlnire.</string>
+    <string name="prefs_catch_up_counts">Ce contează ca revedere</string>
+    <string name="prefs_counts_default">Ca în Setări</string>
+    <string name="prefs_counts_in_person">Doar în persoană</string>
+    <string name="prefs_counts_any">Orice contact</string>
+    <string name="prefs_counts_default_hint">Întâlnirile și modurile bifate în Setări → Cum repornesc numărătoarea.</string>
+    <string name="prefs_counts_in_person_hint">Doar întâlnirile repornesc numărătoarea.</string>
+    <string name="prefs_counts_any_hint">Orice apel, mesaj sau conversație repornește numărătoarea, ca o întâlnire.</string>
     <string name="plans_add">Planifică</string>
     <string name="occasions_title">Companie bună pentru</string>
     <string name="occasions_hint">Folosit de „Cine e liber pentru…?” în fila Împreună.</string>

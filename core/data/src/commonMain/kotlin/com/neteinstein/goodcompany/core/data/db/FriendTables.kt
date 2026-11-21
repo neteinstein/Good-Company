@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -116,7 +117,9 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
                 )
             },
             catchUpPaused = row.catch_up_paused.toFlag(),
-            contactCountsAsCatchUp = row.contact_counts_as_catch_up.toFlag(),
+            // Unknown (a newer build) or none → the old switch: on = Any contact, else the default (32.sqm).
+            catchUpCounts = enumOrNull<CatchUpCounts>(row.catch_up_counts)
+                ?: if (row.contact_counts_as_catch_up.toFlag()) CatchUpCounts.ANY_CONTACT else CatchUpCounts.DEFAULT,
             // Unknown occasions are left out.
             occasions = occasions[id].orEmpty().mapNotNull { enumOrNull<Occasion>(it.occasion) },
             lifeUpdates = updates[id].orEmpty().map { LifeUpdate(it.id, it.text, it.added_at.toInstant()) },
@@ -209,7 +212,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             circle = friend.closeness.name,
             snoozed_until = friend.snoozedUntil?.toColumn(),
             catch_up_paused = friend.catchUpPaused.toColumn(),
-            contact_counts_as_catch_up = friend.contactCountsAsCatchUp.toColumn(),
+            contact_counts_as_catch_up = (friend.catchUpCounts == CatchUpCounts.ANY_CONTACT).toColumn(),
             job = friend.job,
             lives_in = friend.livesIn,
             met_place = friend.met?.place,
@@ -224,6 +227,7 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
             dismissed_kinship = friend.dismissedKinship.map { it.name }.sorted().joinToString(","),
             approx_last_seen = friend.approxLastSeen?.toColumn(),
             tracks_keep_in_touch = friend.tracksKeepInTouch.toColumn(),
+            catch_up_counts = friend.catchUpCounts.takeIf { it != CatchUpCounts.DEFAULT }?.name,
         ),
     )
     q.deleteChildren(id).await()

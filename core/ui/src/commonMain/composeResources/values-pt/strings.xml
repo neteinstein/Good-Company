@@ -394,7 +394,7 @@
     <string name="log_location_denied">Sem permissão de localização. Escreve o local.</string>
     <string name="log_location_unavailable">Não foi possível obter a tua localização. Verifica se a localização está ligada, ou escreve o local.</string>
     <string name="log_less">Menos</string>
-    <string name="log_counts_hint">Chamadas, mensagens, emails e videochamadas só contam como estar em contacto com o interruptor “Chamadas e conversas contam” de %1$s ligado.</string>
+    <string name="log_counts_hint">Isto não reinicia a contagem de %1$s. Muda o que conta em Editar pessoa ou em Definições → Como.</string>
     <string name="log_journal_footer">Uma entrada de diário é uma nota com data. Nunca conta como estar em contacto.</string>
     <string name="activity_lunch">Almoço</string>
     <string name="activity_dinner">Jantar</string>

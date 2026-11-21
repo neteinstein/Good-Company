@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -46,17 +47,22 @@ class LastSeenTest {
             friend("answered") { copy(meetEveryDays = 7, approxLastSeen = today) },
             friend("paused") { copy(meetEveryDays = 7, catchUpPaused = true) },
             friend("norhythm"),
-            friend("chatty") { copy(meetEveryDays = 7, contactCountsAsCatchUp = true) },
-            friend("called") { copy(meetEveryDays = 7) },
+            friend("chatty") { copy(meetEveryDays = 7, catchUpCounts = CatchUpCounts.ANY_CONTACT) },
+            friend("called") { copy(meetEveryDays = 7, catchUpCounts = CatchUpCounts.IN_PERSON_ONLY) },
+            friend("phoned") { copy(meetEveryDays = 7) },
+            friend("waved") { copy(meetEveryDays = 7) },
         )
         val hangouts = listOf(Hangout("h", listOf(FriendId("seen")), at(2026, 3, 1)))
         val chats = listOf(
             Interaction(FriendId("chatty"), InteractionType.WHATSAPP, at(2026, 3, 9)),
-            // A call doesn't count for someone whose calls don't count as catching up.
+            // A call doesn't count for someone set to in person only…
             Interaction(FriendId("called"), InteractionType.CALL, at(2026, 3, 9)),
+            // …but does by default (decision 2026-11-21), where "said hi" doesn't.
+            Interaction(FriendId("phoned"), InteractionType.CALL, at(2026, 3, 9)),
+            Interaction(FriendId("waved"), InteractionType.MESSAGE, at(2026, 3, 9)),
         )
         val asked = LastSeenQuestions.pending(friends, hangouts, chats, CadenceRules())
-        assertEquals(listOf("inner", "good", "called", "zed"), asked.map { it.id.value })
+        assertEquals(listOf("inner", "good", "called", "waved", "zed"), asked.map { it.id.value })
     }
 
     @Test

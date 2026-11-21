@@ -399,7 +399,7 @@
     <string name="log_location_denied">No location permission. Type the place instead.</string>
     <string name="log_location_unavailable">Couldn’t get your location. Check that location is on, or type the place.</string>
     <string name="log_less">Less</string>
-    <string name="log_counts_hint">Calls, messages, emails and video calls count as catching up only when %1$s’s “Calls and chats count” switch is on.</string>
+    <string name="log_counts_hint">This won’t restart %1$s’s catch-up countdown. Change what counts in Edit person or in Settings → How.</string>
     <string name="log_journal_footer">A journal entry is a dated note. It never counts as catching up.</string>
     <string name="activity_lunch">Lunch</string>
     <string name="activity_dinner">Dinner</string>

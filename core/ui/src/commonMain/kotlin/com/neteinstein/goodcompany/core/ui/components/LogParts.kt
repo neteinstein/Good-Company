@@ -27,6 +27,7 @@ import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
@@ -87,6 +88,8 @@ data class LogSheetState(
     val zone: TimeZone = TimeZone.UTC,
     /** In person only: the last meetup with everyone chosen ("Last time together: …"). */
     val lastTogether: Instant? = null,
+    /** What counts as catching up (Settings → How, decision 2026-11-21). */
+    val catchUp: CatchUpPolicy = CatchUpPolicy(),
 ) {
     /** Journal entries need text; everything else can be saved as it is. */
     val canSave: Boolean get() = people.isNotEmpty() && !saving && (kind != LogKind.JOURNAL || note.isNotBlank())
@@ -94,8 +97,15 @@ data class LogSheetState(
     /** The current time of day, to the minute (where "Pick a time" starts). */
     val nowTime: LocalTime get() = now.toLocalDateTime(zone).let { LocalTime(it.hour, it.minute) }
 
-    /** Someone the "calls and chats count" hint is about: a picked friend whose switch is off. */
-    val countsHintFor: Friend? get() = if (kind.interactionType?.isRemote == true) people.firstOrNull { !it.contactCountsAsCatchUp } else null
+    /**
+     * Someone the "doesn't restart the countdown" hint is about: a picked friend for whom this way of keeping in touch
+     * doesn't count as catching up ([CatchUpPolicy], their choice in Edit person).
+     */
+    val countsHintFor: Friend? get() = if (kind.isRemote) {
+        people.firstOrNull { !catchUp.countsWhenLogged(it, kind, label.takeIf { kind == LogKind.OTHER }) }
+    } else {
+        null
+    }
 }
 
 @Composable

@@ -5,8 +5,8 @@ import kotlin.time.Instant
 
 /**
  * A kind of contact. [MEETUP] is kept for old data only: meetups are [Hangout]s. Every other type is "contact at a
- * distance": it always adds to warmth (weighted per kind, see `Warmth.weight`) and resets the rhythm only when the
- * friend's "calls and chats count" switch is on. [MESSAGE] is "said hi" on the "Caught up" panel (issue #101),
+ * distance": it always adds to warmth (weighted per kind, see `Warmth.weight`) and resets the rhythm only when
+ * `CatchUpPolicy` counts it for that friend ([Friend.catchUpCounts], Settings → How). [MESSAGE] is "said hi" on the "Caught up" panel (issue #101),
  * [LONG_CHAT] a long text conversation, [GAME] playing online together and [OTHER] anything else, named by
  * [Interaction.label].
  */
