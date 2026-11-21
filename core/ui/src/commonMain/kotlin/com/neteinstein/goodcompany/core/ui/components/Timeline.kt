@@ -58,6 +58,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
@@ -177,6 +180,21 @@ fun namesList(friends: List<Friend>): String {
         1 -> names.single()
         else -> stringResource(Res.string.tl_and, names.dropLast(1).joinToString(", "), names.last())
     }
+}
+
+/** Where the rail runs: the centre of [TimelineEntryRow]'s 40 dp icon, after the row's 16 dp start padding. */
+private val RailX = 36.dp
+
+/**
+ * The timeline's connector line (issue #130) behind a row that isn't a [TimelineEntryRow] (plans, reminders, birthdays,
+ * moments), at the same x as that row's rail, so the whole list reads as one line. The row's leading badge is opaque
+ * and hides it; [fromCentre] starts it halfway down (the first row), [toCentre] stops it there (the last).
+ */
+fun Modifier.timelineRail(color: Color, fromCentre: Boolean = false, toCentre: Boolean = false): Modifier = drawBehind {
+    val x = RailX.toPx()
+    val top = if (fromCentre) size.height / 2 else 0f
+    val bottom = if (toCentre) size.height / 2 else size.height
+    if (bottom > top) drawLine(color, Offset(x, top), Offset(x, bottom), strokeWidth = 2.dp.toPx())
 }
 
 /**

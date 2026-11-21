@@ -46,7 +46,6 @@
     <string name="msg_sample_added">Sample friends added — remove them anytime in Settings</string>
     <string name="msg_vcf_result">%1$d added · %2$d updated · %3$d unchanged</string>
     <string name="msg_vcf_empty">No contacts found in that file.</string>
-    <string name="msg_call_logged_short">Call logged — next nudge in a week</string>
 
     <!-- Friend page -->
     <string name="detail_missing">This friend no longer exists.</string>
@@ -69,16 +68,8 @@
     <string name="wish_title">Birthday wishes for %1$s</string>
     <string name="wish_gift_hint">Gift ideas: %1$s</string>
 
-    <string name="touch_last_together">Last together %1$s</string>
-    <string name="touch_last_caught_up">Last caught up %1$s</string>
-    <string name="touch_never">No meetups logged yet</string>
-    <string name="touch_pick">Pick a closeness or how often you’d like to meet — we’ll nudge you.</string>
-    <string name="touch_overdue">It’s been a while — your goal is %1$s.</string>
-    <plurals name="touch_goal">
-        <item quantity="one">Goal: %1$s · %2$d day to go</item>
-        <item quantity="other">Goal: %1$s · %2$d days to go</item>
-    </plurals>
     <string name="touch_snoozed">Snoozed until %1$s</string>
+    <string name="touch_snooze_title">Snooze nudges</string>
     <string name="touch_unsnooze">Resume</string>
     <string name="touch_circle">Closeness</string>
     <string name="closeness_sheet_title">How close are you to %1$s?</string>
@@ -86,11 +77,7 @@
     <string name="closeness_no_rhythm">No catch-up reminders · birthdays still on</string>
     <string name="touch_custom">Custom rhythm</string>
     <string name="touch_from_circle">From their closeness: %1$s</string>
-    <string name="touch_called">Called</string>
     <string name="warmth_title">Warmth %1$d</string>
-    <string name="contact_met">Met %1$s</string>
-    <string name="contact_call">Call %1$s</string>
-    <string name="contact_whatsapp">WhatsApp %1$s</string>
 
     <string name="tastes_title">Tastes</string>
     <string name="tastes_loves">Loves</string>
@@ -196,8 +183,6 @@
     <string name="prefs_tracking_hint">Warmth, a meet-up rhythm and catch-up nudges. Turn it off for someone you see every day: their timeline, reminders and birthdays stay.</string>
     <string name="prefs_contact_counts">Calls and chats count as catching up</string>
     <string name="prefs_contact_counts_hint">For friends far away: a call or chat resets the rhythm, not only meeting up.</string>
-    <string name="touch_paused">Catch-up nudges are paused.</string>
-    <string name="touch_resume">Resume</string>
     <string name="plans_add">Plan</string>
     <string name="occasions_title">Good company for</string>
     <string name="occasions_hint">Used by “Who’s free for…?” on the Together tab.</string>
@@ -348,6 +333,7 @@
     <string name="timeline_filter_empty">Nothing here with this filter.</string>
     <string name="timeline_log">Log</string>
     <string name="timeline_more_options">More options</string>
+    <string name="timeline_filter">Filter</string>
     <string name="timeline_back">Back</string>
     <string name="timeline_filter_all">All</string>
     <string name="timeline_filter_together">Together</string>
@@ -358,12 +344,6 @@
     <string name="msg_timeline_removed">Removed from the timeline</string>
     <string name="msg_entry_removed">Removed</string>
     <string name="timeline_delete">Delete</string>
-    <string name="contact_message">Message %1$s</string>
-    <string name="contact_email">Email %1$s</string>
-    <string name="contact_video">Video call %1$s</string>
-    <string name="contact_long_chat">Long chat %1$s</string>
-    <string name="contact_game">Played online %1$s</string>
-    <string name="contact_other">In touch %1$s</string>
     <string name="story_last_talk_title">Last time you talked about…</string>
     <string name="choose_title">Choose friends</string>
     <string name="choose_count">%1$d of %2$d</string>

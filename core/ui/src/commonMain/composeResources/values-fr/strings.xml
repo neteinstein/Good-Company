@@ -159,6 +159,7 @@
     <string name="reminder_action_snooze">Reporter</string>
     <string name="reminder_action_edit">Modifier</string>
     <string name="reminder_action_delete">Supprimer</string>
+    <string name="reminder_options">Options du rappel</string>
     <string name="reminder_snooze_hour">1 heure</string>
     <string name="reminder_snooze_tonight">Ce soir</string>
     <string name="reminder_snooze_tomorrow">Demain</string>

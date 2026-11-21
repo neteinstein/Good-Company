@@ -36,11 +36,17 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   those KDocs current.
 - **Together timeline (issue #117).** The person page's Together tab has no Coming up card: `PersonTimeline.build`
   (`usecase/PersonTimeline.kt`) gives `TogetherTimeline(upcoming, past, hasMore)` of `TogetherItem`s. Top to bottom:
-  "+ Make plans" with the rhythm line, upcoming (open plans, open reminders, birthday and moments in the next 30
+  "+ Make plans", upcoming (open plans, open reminders, birthday and moments in the next 30
   days; soonest last), "Today", then every dated thing (logged entries, unlogged shares, closed plans, done
   reminders, past birthdays and moments), newest first, cut at `SHOWN` = 12 with a fade and "Show all" (the full
   timeline screen). A plan that happened is its meetup. The Conversations box's Add imports a chat export
   (`FriendDetailViewModel.onChatPicked`).
+- **Together polish (issue #130).** No catch-up status on Together: the ring, last-together line, Called, snooze and
+  last-contact chips are gone; snooze (weekend / a week), un-snooze and pause sit in Edit person under the rhythm
+  (`CatchUpPause`). Reminders use `ReminderTimelineRow` (`:core:ui`, plan layout, actions in ⋮). Rows that aren't a
+  `TimelineEntryRow` take `Modifier.timelineRail(color, fromCentre, toCentre)` so one line runs at the entry rail's x
+  (36 dp) through both halves; an open plan that's past skips it (its answers sit under the badge). Trailing icons and
+  ⋮ are 40 dp boxes with 20 dp icons everywhere on the timeline.
 - **One Log action (issue #116).** "Caught up", "We met" and "I'm with…" are one **Log** action with one icon, `LogIcon`
   (`Icons.Rounded.EditNote`, `:core:ui` `LogTime.kt`), always beside the word Log. Today's button, quick entries and
   app-icon shortcuts open `WeMetRoute`; with nobody given (`WeMetUiState.startsWithNobody`) it opens on the people

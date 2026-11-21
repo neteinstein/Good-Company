@@ -37,7 +37,6 @@
     <string name="msg_sample_added">Prieteni de exemplu adăugați — îi poți elimina oricând din Setări</string>
     <string name="msg_vcf_result">%1$d adăugați · %2$d actualizați · %3$d neschimbați</string>
     <string name="msg_vcf_empty">Fișierul nu conține contacte.</string>
-    <string name="msg_call_logged_short">Apel înregistrat — următorul memento peste o săptămână</string>
     <string name="detail_missing">Acest prieten nu mai există.</string>
     <string name="detail_back">Înapoi</string>
     <string name="detail_add_birthday">Adaugă ziua de naștere</string>
@@ -57,17 +56,8 @@
     <string name="birthday_send_wishes">Trimite urări</string>
     <string name="wish_title">Urări pentru %1$s</string>
     <string name="wish_gift_hint">Idei de cadou: %1$s</string>
-    <string name="touch_last_together">Împreună ultima dată %1$s</string>
-    <string name="touch_last_caught_up">Ultima dată în legătură %1$s</string>
-    <string name="touch_never">Nicio întâlnire înregistrată încă</string>
-    <string name="touch_pick">Alege apropierea sau cât de des ai vrea să vă vedeți — îți vom aminti.</string>
-    <string name="touch_overdue">A trecut ceva timp — obiectivul tău e %1$s.</string>
-    <plurals name="touch_goal">
-        <item quantity="one">Obiectiv: %1$s · mai e %2$d zi</item>
-        <item quantity="few">Obiectiv: %1$s · mai sunt %2$d zile</item>
-        <item quantity="other">Obiectiv: %1$s · mai sunt %2$d de zile</item>
-    </plurals>
     <string name="touch_snoozed">Amânat până pe %1$s</string>
+    <string name="touch_snooze_title">Amână mementourile</string>
     <string name="touch_unsnooze">Reia</string>
     <string name="touch_circle">Apropiere</string>
     <string name="closeness_sheet_title">Cât de apropiat ești de %1$s?</string>
@@ -75,11 +65,7 @@
     <string name="closeness_no_rhythm">Fără mementouri de revedere · zilele de naștere rămân</string>
     <string name="touch_custom">Ritm propriu</string>
     <string name="touch_from_circle">După apropiere: %1$s</string>
-    <string name="touch_called">Am sunat</string>
     <string name="warmth_title">Căldură %1$d</string>
-    <string name="contact_met">Văzuți %1$s</string>
-    <string name="contact_call">Apel %1$s</string>
-    <string name="contact_whatsapp">WhatsApp %1$s</string>
     <string name="tastes_title">Pasiuni</string>
     <string name="tastes_loves">Adoră</string>
     <string name="tastes_dislikes">Nu-i place</string>
@@ -175,8 +161,6 @@
     <string name="prefs_tracking_hint">Căldură, ritm de întâlnire și mementouri ca să țineți legătura. Oprește-o pentru cineva pe care îl vezi zilnic: cronologia, mementourile și ziua de naștere rămân.</string>
     <string name="prefs_contact_counts">Apelurile și mesajele contează ca revedere</string>
     <string name="prefs_contact_counts_hint">Pentru prietenii departe: un apel sau un mesaj resetează ritmul, nu doar o întâlnire.</string>
-    <string name="touch_paused">Mementourile sunt pe pauză.</string>
-    <string name="touch_resume">Reia</string>
     <string name="plans_add">Planifică</string>
     <string name="occasions_title">Companie bună pentru</string>
     <string name="occasions_hint">Folosit de „Cine e liber pentru…?” în fila Împreună.</string>
@@ -330,6 +314,7 @@
     <string name="timeline_filter_empty">Nimic cu acest filtru.</string>
     <string name="timeline_log">Notează</string>
     <string name="timeline_more_options">Mai multe opțiuni</string>
+    <string name="timeline_filter">Filtrează</string>
     <string name="timeline_back">Înapoi</string>
     <string name="timeline_filter_all">Tot</string>
     <string name="timeline_filter_together">Împreună</string>
@@ -339,12 +324,6 @@
     <string name="timeline_filter_gifts">Cadouri</string>
     <string name="msg_timeline_removed">Eliminat din cronologie</string>
     <string name="timeline_delete">Șterge</string>
-    <string name="contact_message">Mesaj %1$s</string>
-    <string name="contact_email">Email %1$s</string>
-    <string name="contact_video">Apel video %1$s</string>
-    <string name="contact_long_chat">Conversație lungă %1$s</string>
-    <string name="contact_game">Joc online %1$s</string>
-    <string name="contact_other">Legătură %1$s</string>
     <string name="story_last_talk_title">Ultima dată ați vorbit despre…</string>
     <string name="choose_title">Alege prieteni</string>
     <string name="choose_count">%1$d din %2$d</string>

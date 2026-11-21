@@ -26,7 +26,10 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Weekend
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -49,8 +52,10 @@ import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.closenessIcon
+import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.relationToMeLabel
@@ -80,16 +85,21 @@ import com.neteinstein.goodcompany.feature.friends.resources.remove_person
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint
 import com.neteinstein.goodcompany.feature.friends.resources.show_in_my_list_hint_any
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
+import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
 import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
+import com.neteinstein.goodcompany.feature.friends.resources.touch_snooze_title
+import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
+import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
 import org.jetbrains.compose.resources.stringResource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /**
  * "Edit <name>" (issue #103): a full-screen popup from the pencil, so editing the person isn't confused with the page
- * and the in-place editing on About. Name, "Related to you?", the preferred channel, closeness, meet-every, the
- * person's switches and Remove. Every choice saves at once (as edit mode did); Close goes back to the page.
+ * and the in-place editing on About. Name, "Related to you?", the preferred channel, closeness, meet-every with snooze
+ * and pause (issue #130), the person's switches and Remove. Every choice saves at once (as edit mode did); Close goes back to the page.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -189,6 +199,7 @@ internal fun EditPersonDialog(
                             if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
                                 Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
                             }
+                            CatchUpPause(f, goal, state, actions)
                         }
                     }
                     PersonSwitches(f, state, actions)
@@ -210,7 +221,7 @@ internal fun EditPersonDialog(
 
 /**
  * The person's own switches: show in my list (for a kid), birthday notifications, AI events, keep-in-touch tracking, and
- * (while tracking is on) calls count and pause.
+ * (while tracking is on) calls count. Pause sits with the rhythm (issue #130).
  */
 @Composable
 private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
@@ -240,8 +251,8 @@ private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: Frien
                 actions.onToggleSuggestEvents,
             )
         }
-        // Issue #115: the permanent switch. Pause stays the temporary one, and it and "calls count" only matter while
-        // tracking is on, so they're hidden while it is off.
+        // Issue #115: the permanent switch. Pause (with the rhythm) stays the temporary one, and it and "calls count"
+        // only matter while tracking is on, so they're hidden while it is off.
         ToggleRow(
             stringResource(Res.string.prefs_tracking),
             stringResource(Res.string.prefs_tracking_hint),
@@ -255,12 +266,52 @@ private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: Frien
                 f.contactCountsAsCatchUp,
                 actions.onToggleContactCounts,
             )
-            ToggleRow(
-                stringResource(Res.string.prefs_pause),
-                stringResource(Res.string.prefs_pause_hint),
-                f.catchUpPaused,
-                actions.onTogglePause,
-            )
         }
     }
+}
+
+/**
+ * Next to the rhythm (issue #130, moved from Together): snooze for the weekend or a week, or "Snoozed until …" with
+ * Resume, and the pause switch (its state is the switch).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CatchUpPause(f: Friend, goal: Int?, state: FriendDetailUiState, actions: FriendDetailActions) {
+    val snoozedUntil = f.snoozedUntil?.takeIf { it >= state.today }
+    if (!f.catchUpPaused && (snoozedUntil != null || goal != null)) {
+        Label(stringResource(Res.string.touch_snooze_title), Icons.Rounded.Snooze)
+        if (snoozedUntil != null) {
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(Res.string.touch_snoozed, snoozedUntil.shortLabel()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = actions.onClearSnooze) { Text(stringResource(Res.string.touch_unsnooze)) }
+            }
+        } else {
+            FlowRow(
+                Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                AssistChip(
+                    onClick = { actions.onSnooze(SnoozeOption.WEEKEND) },
+                    label = { Text(stringResource(Res.string.snooze_weekend)) },
+                    leadingIcon = { Icon(Icons.Rounded.Weekend, null, Modifier.size(18.dp)) },
+                )
+                AssistChip(
+                    onClick = { actions.onSnooze(SnoozeOption.ONE_WEEK) },
+                    label = { Text(stringResource(Res.string.snooze_week)) },
+                    leadingIcon = { Icon(Icons.Rounded.Snooze, null, Modifier.size(18.dp)) },
+                )
+            }
+        }
+    }
+    ToggleRow(
+        stringResource(Res.string.prefs_pause),
+        stringResource(Res.string.prefs_pause_hint),
+        f.catchUpPaused,
+        actions.onTogglePause,
+    )
 }

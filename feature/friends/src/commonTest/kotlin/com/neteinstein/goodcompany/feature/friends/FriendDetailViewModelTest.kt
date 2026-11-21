@@ -77,7 +77,6 @@ class FriendDetailViewModelTest {
         g.deleteFriend,
         g.setCloseness,
         g.snooze,
-        g.logCall,
         g.generateTalkingPoints,
         g.dismissIdea,
         g.draftBirthdayMessage,
@@ -552,7 +551,7 @@ class FriendDetailViewModelTest {
     }
 
     @Test
-    fun circleSnoozeAndCallShapeTheCatchUpRhythm() = runViewModelTest {
+    fun closenessAndSnoozeShapeTheCatchUpRhythm() = runViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onClosenessChange(Closeness.INNER)
@@ -563,9 +562,23 @@ class FriendDetailViewModelTest {
         assertIs<FriendDetailMessage.Snoozed>(state.value.message)
         vm.onClearSnooze()
         assertNull(state.value.detail!!.friend.snoozedUntil)
-        vm.onCalled()
-        assertEquals(FriendDetailMessage.CallLogged, state.value.message)
-        assertTrue(state.value.detail!!.lastContactByType.isNotEmpty())
+    }
+
+    @Test
+    fun editPerson_snoozesForTheWeekend_unsnoozes_pausesAndResumes() = runViewModelTest {
+        // Issue #130: the catch-up controls live in Edit person, next to the rhythm.
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSnooze(SnoozeOption.WEEKEND)
+        val until = SnoozeOption.WEEKEND.until(g.clock.today())
+        assertEquals(until, state.value.detail!!.friend.snoozedUntil)
+        assertEquals(FriendDetailMessage.Snoozed(until), state.value.message)
+        vm.onClearSnooze()
+        assertNull(state.value.detail!!.friend.snoozedUntil)
+        vm.onTogglePause()
+        assertTrue(state.value.detail!!.friend.catchUpPaused)
+        vm.onTogglePause()
+        assertFalse(state.value.detail!!.friend.catchUpPaused)
     }
 
     @Test

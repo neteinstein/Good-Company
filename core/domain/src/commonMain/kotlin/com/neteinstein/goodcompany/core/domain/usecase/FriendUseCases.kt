@@ -92,7 +92,6 @@ data class FriendDetail(
     val friend: Friend,
     val hangouts: List<HangoutWithFriends>,
     val lastSeen: Instant?,
-    val lastContactByType: Map<InteractionType, Instant>,
     val messageCount: Int,
     val ideas: List<Idea>,
     /** Null when their keep-in-touch tracking is off (issue #115). */
@@ -160,9 +159,6 @@ class ObserveFriendDetailUseCase(
         val byId = all.associateBy { it.id }
         val kids = KidsAsPeople.kidsOf(id, ls, byId)
         val mine = hs.filter { id in it.friendIds }.sortedByDescending { it.at }
-        val byType = ints.filter { it.friendId == id }.groupBy { it.type }.mapValues { (_, v) -> v.maxOf { it.at } }
-            .toMutableMap()
-        mine.firstOrNull()?.let { byType[InteractionType.MEETUP] = it.at }
         FriendDetail(
             friend = friend,
             hangouts = mine.map { h -> HangoutWithFriends(h, h.friendIds.mapNotNull(byId::get)) },
@@ -172,7 +168,6 @@ class ObserveFriendDetailUseCase(
             } else {
                 mine.firstOrNull()?.at
             },
-            lastContactByType = byType,
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },
             warmth = Warmth.scoreOrNull(friend, hs, ints, CadenceRules.from(s).cadenceFor(friend), clock.today(), clock.timeZone),

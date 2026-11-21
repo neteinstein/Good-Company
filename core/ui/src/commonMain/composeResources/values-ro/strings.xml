@@ -166,6 +166,7 @@
     <string name="reminder_action_snooze">Amână</string>
     <string name="reminder_action_edit">Editează</string>
     <string name="reminder_action_delete">Șterge</string>
+    <string name="reminder_options">Opțiunile mementoului</string>
     <string name="reminder_snooze_hour">1 oră</string>
     <string name="reminder_snooze_tonight">Diseară</string>
     <string name="reminder_snooze_tomorrow">Mâine</string>

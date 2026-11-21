@@ -182,8 +182,6 @@ class UseCasesTest {
             clock,
         )(FriendId("ana")).first()!!
         assertEquals(at(2026, 3, 1), detail.lastSeen)
-        assertEquals(at(2026, 3, 5), detail.lastContactByType[InteractionType.CALL])
-        assertEquals(at(2026, 3, 1), detail.lastContactByType[InteractionType.MEETUP])
         assertEquals(listOf("Ana", "Bob"), detail.hangouts.single().friends.map { it.name })
         assertNull(
             ObserveFriendDetailUseCase(
