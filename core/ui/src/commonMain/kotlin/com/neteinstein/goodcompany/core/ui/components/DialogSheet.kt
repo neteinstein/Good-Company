@@ -59,9 +59,16 @@ import kotlin.math.roundToInt
  *
  * Unlike Material's `ModalBottomSheet` it opens no window of its own, so it works the same in a dialog on Android, iOS
  * and the web.
+ *
+ * [bottomBar] (a [SaveBar], issue #146) stays pinned under the scrolling [content], above the navigation bar and the
+ * keyboard, so Save is never only at the end of a scroll.
  */
 @Composable
-fun DialogSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun DialogSheet(
+    onDismiss: () -> Unit,
+    bottomBar: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val dismiss by rememberUpdatedState(onDismiss)
     val density = LocalDensity.current
     val velocityThreshold = with(density) { SheetDrag.VELOCITY_THRESHOLD.toPx() }
@@ -136,15 +143,22 @@ fun DialogSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Un
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
-            SheetColumn(scroll, content)
+            if (bottomBar == null) {
+                SheetColumn(scroll, Modifier.navigationBarsPadding(), content)
+            } else {
+                Column {
+                    SheetColumn(scroll, Modifier.weight(1f, fill = false), content)
+                    bottomBar()
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun SheetColumn(scroll: ScrollState, content: @Composable ColumnScope.() -> Unit) {
+private fun SheetColumn(scroll: ScrollState, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.verticalScroll(scroll).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp),
+        modifier.verticalScroll(scroll).padding(horizontal = 20.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

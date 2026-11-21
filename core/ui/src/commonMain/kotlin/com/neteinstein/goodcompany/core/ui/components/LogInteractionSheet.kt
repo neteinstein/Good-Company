@@ -190,7 +190,10 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
     var pickingDate by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
-    DialogSheet(onDismiss = actions.onDismiss) {
+    DialogSheet(
+        onDismiss = actions.onDismiss,
+        bottomBar = { SaveBar(actions.onSave, enabled = state.canSave, color = MaterialTheme.colorScheme.surfaceContainerLow) },
+    ) {
         val circle = state.circle
         Text(
             if (state.editing) {
@@ -284,9 +287,6 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
             else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.displayName.substringBefore(' ')) }
         }
         hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Button(onClick = actions.onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(Res.string.save))
-        }
     }
     if (pickingDate) {
         LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)

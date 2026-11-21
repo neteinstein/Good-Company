@@ -30,6 +30,7 @@ import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Sms
 import androidx.compose.material.icons.rounded.Work
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -75,8 +76,9 @@ import com.neteinstein.goodcompany.core.ui.components.BirthdayFields
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
-import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.SheetTitle
 import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
@@ -531,18 +533,16 @@ internal fun FamilySheet(
         relative.notifyBirthday != notify
 
     ModalBottomSheet(onDismissRequest = { if (valid && changed) save() else onDismiss() }) {
-        SaveSheetHeader(
+        SheetTitle(
             when {
                 !isNew -> stringResource(Res.string.family_edit_title, name)
                 relation == null -> stringResource(Res.string.kid_add_title, firstName)
                 else -> stringResource(Res.string.family_add_title, firstName)
             },
-            onSave = save,
-            saveEnabled = valid,
-            modifier = Modifier.padding(horizontal = 20.dp),
+            Modifier.padding(horizontal = 20.dp),
         )
         Column(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 16.dp).navigationBarsPadding()
+            Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = 20.dp).padding(bottom = 8.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -593,6 +593,7 @@ internal fun FamilySheet(
                 Switch(checked = notify, onCheckedChange = { notify = it })
             }
         }
+        SaveBar(save, enabled = valid, color = BottomSheetDefaults.ContainerColor)
     }
 }
 

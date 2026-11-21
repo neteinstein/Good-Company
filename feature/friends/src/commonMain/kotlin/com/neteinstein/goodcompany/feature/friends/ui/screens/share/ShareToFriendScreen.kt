@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -83,6 +84,7 @@ import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.PeopleFilterRow
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerMode
 import com.neteinstein.goodcompany.core.ui.components.QuotedText
+import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.attachmentKindLabel
 import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.logKindLabel
@@ -194,7 +196,8 @@ fun ShareToFriendContent(state: ShareUiState, actions: ShareActions) {
     }
     val target = state.target
     Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
-        Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()).imePadding()) {
+        // Issue #146: the navigation bar and the keyboard are consumed here, so the SaveBar below doesn't pad for them twice.
+        Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()).consumeWindowInsets(padding).imePadding()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (target == null) {
                     IconButton(onClick = actions.onCancel) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.closeLabel)) }
@@ -446,14 +449,7 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
             }
             Spacer(Modifier.height(8.dp))
         }
-        Button(
-            onClick = actions.onSave,
-            enabled = !state.isSaving,
-            shape = CircleShape,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 52.dp),
-        ) {
-            Text(stringResource(Res.string.share_save))
-        }
+        SaveBar(actions.onSave, enabled = !state.isSaving, label = stringResource(Res.string.share_save))
     }
     if (pickingDate) {
         LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)

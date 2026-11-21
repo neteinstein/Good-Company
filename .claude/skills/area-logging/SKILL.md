@@ -37,6 +37,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `sheetDialogProperties` (Android `decorFitsSystemWindows = false`; iOS/web `usePlatformInsets = false`, no platform
   scrim), or the scrim stops above the navigation bar. Don't swap in Material's `ModalBottomSheet`: it opens a window of
   its own inside the dialog. A new sheet-in-a-dialog destination should reuse both.
+- Their Save is a `SaveBar` in `DialogSheet`'s `bottomBar` slot (issue #146): pinned under the scrolling fields,
+  above the navigation bar and the keyboard. Don't put Save back at the end of the scroll; the "I'm with…" check-in
+  sheet does the same after a `weight(1f, fill = false)` column.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
 - **Together timeline (issue #117).** The person page's Together tab has no Coming up card: `PersonTimeline.build`
