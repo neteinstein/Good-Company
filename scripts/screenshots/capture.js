@@ -18,8 +18,9 @@ const scenes = [
   { name: 'home', query: '?demo&theme=light&tab=people', viewport: phone },
   { name: 'friend', query: '?demo&theme=light&friend=sample-ana', viewport: phone },
   { name: 'together', query: '?demo&theme=light&tab=circles', viewport: phone },
-  // Taps the "I'm with…" card on Today (CSS px) to show the check-in sheet.
-  { name: 'checkin', query: '?demo&theme=light&tab=today', viewport: phone, clicks: [[300, 30], [335, 144], [76, 316], [240, 364]] },
+  // Taps Today's Log card (CSS px; it sits under the "When did the circle last meet?" card), ticks Pedro and Ana in
+  // "Who was it with?" and taps Done, to show the Log popup.
+  { name: 'checkin', query: '?demo&theme=light&tab=today', viewport: phone, clicks: [[300, 30], [335, 409], [353, 265], [353, 421], [290, 817]] },
   { name: 'agenda', query: '?demo&theme=light&tab=today', viewport: phone },
   { name: 'ideas', query: '?demo&ai&theme=light&tab=plans', viewport: phone },
   { name: 'settings', query: '?demo&theme=light&tab=settings', viewport: phone },
