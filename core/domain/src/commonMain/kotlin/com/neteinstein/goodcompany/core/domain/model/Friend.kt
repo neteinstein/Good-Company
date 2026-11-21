@@ -45,7 +45,10 @@ data class Friend(
      */
     val kids: List<Kid> = emptyList(),
     val importantEvents: List<ImportantEvent> = emptyList(),
-    /** "If I don't meet them in this many days, remind me." Null = no rule. */
+    /**
+     * The custom rhythm: "If I don't meet them in this many days, remind me." Null follows their closeness
+     * ("From closeness"); [RHYTHM_OFF] (0) means no rhythm at all, so no catch-ups (issue #139).
+     */
     val meetEveryDays: Int? = null,
     /** Opt-in for the weekly AI event suggestions. */
     val suggestEvents: Boolean = false,
@@ -159,6 +162,17 @@ data class Friend(
             .take(2)
             .joinToString("") { it.first().uppercase() }
             .ifEmpty { "?" }
+
+    /** The custom rhythm is Off (issue #139): no rhythm, whatever their closeness gives. */
+    val rhythmOff: Boolean get() = meetEveryDays == RHYTHM_OFF
+
+    /** The custom rhythm in days; null when it follows closeness or is Off. */
+    val customRhythm: Int? get() = meetEveryDays?.takeIf { it > 0 }
+
+    companion object {
+        /** [meetEveryDays] for a custom rhythm of Off (issue #139). Null follows closeness. */
+        const val RHYTHM_OFF = 0
+    }
 }
 
 /** A kid as the app stored them before kids became people (F9). Kept only to read old backups. */

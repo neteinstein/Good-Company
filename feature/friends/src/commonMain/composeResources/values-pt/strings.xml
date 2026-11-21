@@ -65,6 +65,9 @@
     <string name="closeness_no_rhythm">Sem lembretes para pôr a conversa em dia · aniversários continuam</string>
     <string name="touch_custom">Ritmo próprio</string>
     <string name="touch_from_circle">Pela proximidade: %1$s</string>
+    <string name="touch_from_closeness">Pela proximidade (%1$s)</string>
+    <string name="touch_from_closeness_none">Pela proximidade (nenhum)</string>
+    <string name="touch_rhythm_off_hint">Desligado: sem ritmo para estar com e sem lembretes para pôr a conversa em dia, seja qual for a proximidade.</string>
     <string name="warmth_title">Calor %1$d</string>
     <string name="tastes_title">Gostos</string>
     <string name="tastes_loves">Adora</string>

@@ -514,8 +514,11 @@ class FriendDetailViewModel(
 
     fun onToggleSuggestEvents() = edit { it.copy(suggestEvents = !it.suggestEvents) }
 
-    /** A custom rhythm that overrides the circle's default (null → back to the circle default). */
-    fun onMeetEveryChange(days: Int?) = edit { it.copy(meetEveryDays = days) }
+    /**
+     * The custom rhythm (issue #139): N days overrides their closeness, null ("From closeness") follows it and
+     * [Friend.RHYTHM_OFF] means no rhythm, so no catch-ups.
+     */
+    fun onMeetEveryChange(days: Int?) = edit { it.copy(meetEveryDays = days?.coerceAtLeast(Friend.RHYTHM_OFF)) }
 
     fun onSnooze(option: SnoozeOption) {
         viewModelScope.launch {

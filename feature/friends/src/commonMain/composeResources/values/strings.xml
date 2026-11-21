@@ -77,6 +77,9 @@
     <string name="closeness_no_rhythm">No catch-up reminders · birthdays still on</string>
     <string name="touch_custom">Custom rhythm</string>
     <string name="touch_from_circle">From their closeness: %1$s</string>
+    <string name="touch_from_closeness">From closeness (%1$s)</string>
+    <string name="touch_from_closeness_none">From closeness (none)</string>
+    <string name="touch_rhythm_off_hint">Off: no meet-up rhythm and no nudges to catch up, whatever their closeness.</string>
     <string name="warmth_title">Warmth %1$d</string>
 
     <string name="tastes_title">Tastes</string>

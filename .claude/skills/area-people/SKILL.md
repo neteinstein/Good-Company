@@ -187,6 +187,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   is null (so `FriendSummary.warmth` / `FriendDetail.warmth` are nullable), `PeopleDashboard` keeps them in counts but
   out of warmth, trend and cooling, and `Shortcuts` leaves them out. Anything new that nudges or shows warmth must
   respect it. `catchUpPaused`/`snoozedUntil` are the temporary pauses.
+- **Custom rhythm Off (#139).** `Friend.meetEveryDays`: null = "From closeness", `Friend.RHYTHM_OFF` (0) = Off, N > 0
+  = custom. Read it through `Friend.rhythmOff` / `Friend.customRhythm` and `CadenceRules.cadenceFor`/`sourceFor` (null
+  for Off), never `meetEveryDays?.takeIf { it > 0 }` (that fell back to closeness). Warmth uses
+  `CadenceRules.warmthDaysFor`, which ignores Off, so turning the rhythm off doesn't change warmth. No schema change:
+  0 fits the existing column and travels in backups.
 - **Who starts with Stay in touch off (#132).** `StayInTouch` (domain, `usecase/StayInTouch.kt`) holds the rule: kids
   from `AddKidUseCase` and `KidsAsPeople.convert`, relatives from `AddRelativeAsPersonUseCase`, and anyone who *becomes*
   your kid or partner (`StayInTouch.offForRelationToMe`: CHILD, STEP_CHILD, DATING, SPOUSE, PARTNER) through

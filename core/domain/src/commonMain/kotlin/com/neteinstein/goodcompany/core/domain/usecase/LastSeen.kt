@@ -49,7 +49,7 @@ object LastSeenQuestions {
             .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && rules.cadenceFor(f) != null }
             // Acquaintances are asked only for a rhythm set on their page, never for the Settings default (#69). Since
             // #86 everyone without a level is one, so this keeps asking whoever was asked before.
-            .filter { f -> f.isCloseFriend || f.meetEveryDays?.takeIf { it > 0 } != null }
+            .filter { f -> f.isCloseFriend || f.customRhythm != null }
             .filter { f -> f.id !in seen && !(f.contactCountsAsCatchUp && f.id in contacted) }
             .sortedWith(compareBy<Friend> { it.closeness.ordinal }.thenBy { it.displayName.lowercase() })
     }

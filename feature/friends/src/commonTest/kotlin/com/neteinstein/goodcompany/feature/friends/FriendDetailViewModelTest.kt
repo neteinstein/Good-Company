@@ -7,6 +7,7 @@ import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -30,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
+import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
@@ -298,6 +300,27 @@ class FriendDetailViewModelTest {
         g.settingsRepo.update { it.copy(aiEnabled = true) }
         assertTrue(state.value.aiEnabled)
         assertTrue(state.value.hasAiKey)
+    }
+
+    @Test
+    fun customRhythm_offFromClosenessOrADays() = runViewModelTest {
+        // Issue #139: Off is stored as Off, From closeness as null, and only Off drops the rhythm.
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onClosenessChange(Closeness.CLOSE)
+        assertEquals(30, state.value.detail!!.cadenceDays)
+        vm.onMeetEveryChange(Friend.RHYTHM_OFF)
+        assertEquals(Friend.RHYTHM_OFF, state.value.detail!!.friend.meetEveryDays)
+        assertNull(state.value.detail!!.cadenceDays)
+        assertNull(state.value.detail!!.cadenceSource)
+        vm.onMeetEveryChange(null)
+        assertNull(state.value.detail!!.friend.meetEveryDays)
+        assertEquals(30, state.value.detail!!.cadenceDays)
+        assertEquals(CadenceRules.Source.CLOSENESS, state.value.detail!!.cadenceSource)
+        vm.onMeetEveryChange(14)
+        assertEquals(14, state.value.detail!!.cadenceDays)
+        vm.onMeetEveryChange(-3) // never stored as a negative rhythm
+        assertEquals(Friend.RHYTHM_OFF, g.friendRepo.get(state.value.detail!!.friend.id)!!.meetEveryDays)
     }
 
     @Test
