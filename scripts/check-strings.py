@@ -5,7 +5,8 @@ Usage: python3 scripts/check-strings.py [--todo]
 
 Checks every values/strings.xml (Compose resources and Android res) against values-pt|es|fr|ro, and every
 iOS en.lproj/*.strings against pt|es|fr|ro.lproj. For each key it checks that the key exists, that the
-placeholders (%1$s, %d, ...) match, and that plurals have the right quantities (ro: one/few/other).
+placeholders (%1$s, %2$d, ...) match, and that plurals have the right quantities (ro: one/few/other).
+In Compose resources (composeResources/), placeholders must be positional: a bare %d / %s / %f is printed as is.
 --todo prints the English text of each missing key, ready to translate.
 Exits 1 when anything is wrong.
 """
@@ -18,6 +19,7 @@ from pathlib import Path
 LANGS = ["pt", "es", "fr", "ro"]
 PLURAL_QUANTITIES = {"pt": {"one", "other"}, "es": {"one", "other"}, "fr": {"one", "other"}, "ro": {"one", "few", "other"}}
 PLACEHOLDER = re.compile(r"%(?:\d+\$)?[sdf]")
+BARE_PLACEHOLDER = re.compile(r"%[sdf]")
 IOS_LINE = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;', re.M)
 
 root = Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip())
@@ -57,6 +59,14 @@ def placeholders(value):
     return sorted(set(p for t in texts for p in PLACEHOLDER.findall(t)))
 
 
+def check_positional(path, strings):
+    """Compose resources only substitute %1$d-style placeholders; a bare %d stays in the text."""
+    for key, value in strings.items():
+        bare = sorted(set(p for p in placeholders(value) if BARE_PLACEHOLDER.fullmatch(p)))
+        if bare:
+            report(path, f"{key}: bare placeholder {bare}, use %1$d / %1$s (Compose resources print bare ones as is)")
+
+
 def english_text(value):
     kind, v = value
     return v if kind == "string" else " | ".join(f"{k}: {t}" for k, t in v.items()) if kind == "plurals" else " | ".join(v)
@@ -66,6 +76,8 @@ def compare(en_path, en, lang, path, other):
     if other is None:
         report(path, "file missing")
         return
+    if "composeResources" in path.parts:
+        check_positional(path, other)
     for key in en.keys() - other.keys():
         report(path, f"missing {key}" + (f"  EN: {english_text(en[key])}" if show_todo else ""))
     for key in other.keys() - en.keys():
@@ -90,6 +102,8 @@ for rel in tracked:
     p = root / rel
     if p.name == "strings.xml" and p.parent.name == "values":
         en = parse_xml(p)
+        if "composeResources" in p.parts:
+            check_positional(p, en)
         for lang in LANGS:
             lp = p.parent.parent / f"values-{lang}" / "strings.xml"
             compare(p, en, lang, lp, parse_xml(lp) if lp.exists() else None)

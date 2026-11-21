@@ -30,7 +30,7 @@ Name keys `<area>_<what>` like their neighbours (`gift_lists_deleted`). Never re
 
 ## 2. Format
 
-- Arguments are positional: `%1$s`, `%2$d`. Same placeholders in every language.
+- Arguments are positional: `%1$s`, `%2$d`. Same placeholders in every language. Compose resources print a bare `%d` / `%s` as is (issue #143); `check-strings.py` fails on one.
 - Plurals: `<plurals>`; English, Portuguese, Spanish, French `one` + `other`; **Romanian `one` + `few` + `other`**
   (`other` for 20+ takes "de": "%1$d de zile"). Call with `pluralStringResource` / `getPluralString`.
 - Typographic apostrophes and quotes: `’` and `“ ”` in every language (no `«»`), never `\'`.
