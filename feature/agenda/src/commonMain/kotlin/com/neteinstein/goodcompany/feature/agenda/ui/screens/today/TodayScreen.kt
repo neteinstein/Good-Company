@@ -386,6 +386,18 @@ fun TodayContent(
                 item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
             }
 
+            // Issue #149 (D 2026-11-21): "Before you meet" sits above "This week", below the top cards.
+            if (state.stories.isNotEmpty()) {
+                item(key = "stories-h") { SectionHeader(stringResource(Res.string.today_before_you_meet)) }
+                item(key = "stories") {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(state.stories, key = { "s-${it.friend.id.value}" }) { b ->
+                            StoryBubbleChip(b, state.today, { actions.onOpenStory(b.friend.id) }, Modifier.animateItem())
+                        }
+                    }
+                }
+            }
+
             item(key = "week-h") { SectionHeader(stringResource(Res.string.today_this_week)) }
             if (!state.isLoading && state.week.isEmpty()) {
                 item(key = "week-empty") {
@@ -454,16 +466,6 @@ fun TodayContent(
                         onSnooze = { actions.onSnooze(id, it) },
                         modifier = Modifier.animateItem(),
                     )
-                }
-            }
-            if (state.stories.isNotEmpty()) {
-                item(key = "stories-h") { SectionHeader(stringResource(Res.string.today_before_you_meet)) }
-                item(key = "stories") {
-                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        items(state.stories, key = { "s-${it.friend.id.value}" }) { b ->
-                            StoryBubbleChip(b, state.today, { actions.onOpenStory(b.friend.id) }, Modifier.animateItem())
-                        }
-                    }
                 }
             }
             if (state.drifting.isNotEmpty()) {
