@@ -50,6 +50,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
                     onboardingDone = true,
                     lastOpenedAt = current.lastOpenedAt,
                     lastSeenCardHiddenOn = current.lastSeenCardHiddenOn,
+                    notificationPrimerDismissed = current.notificationPrimerDismissed,
                     lastDriveBackupAt = current.lastDriveBackupAt,
                     calendarSuggestions = current.calendarSuggestions,
                     calendarIds = current.calendarIds,
@@ -65,6 +66,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository) {
 internal fun AppSettings.withoutDeviceOnly() = copy(
     aiApiKey = null,
     lastSeenCardHiddenOn = null,
+    notificationPrimerDismissed = false,
     calendarSuggestions = false,
     calendarIds = emptyList(),
     calendarOnSince = null,

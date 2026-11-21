@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
+import com.neteinstein.goodcompany.core.data.platform.ReplanNotificationsWorker
 import com.neteinstein.goodcompany.core.data.platform.WeeklyIdeasWorker
 import com.neteinstein.goodcompany.di.initKoin
 import com.neteinstein.goodcompany.shortcuts.AppShortcuts
@@ -17,6 +18,7 @@ class GoodCompanyApp : Application(), KoinComponent {
         FirebaseApp.initializeApp(this)
         initKoin { androidContext(this@GoodCompanyApp) }
         WeeklyIdeasWorker.schedule(this)
+        ReplanNotificationsWorker.schedule(this)
         NextUpWidget.keepUpdated(this, get())
         AppShortcuts.keepUpdated(this, get())
     }

@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.NotificationPlanner
@@ -74,7 +75,16 @@ class NotificationPlannerTest {
             Reminder("b", "Done", emptyList(), at(2026, 3, 11, 18), done = true, createdAt = now),
             Reminder("c", "Past", emptyList(), at(2026, 3, 9), createdAt = now),
         )
-        val planned = NotificationPlanner.plan(listOf(friend("ana")), reminders, emptyList(), now, TimeZone.UTC, 9)
+        // With "Keep important ones on screen" off, an overdue reminder isn't asked again (issue #98).
+        val planned = NotificationPlanner.plan(
+            listOf(friend("ana")),
+            reminders,
+            emptyList(),
+            now,
+            TimeZone.UTC,
+            9,
+            notifications = NotificationSettings(persistent = false),
+        )
         val single = planned.single()
         assertEquals("reminder:a", single.id)
         assertEquals(NotificationContent.ReminderDue("Book tickets", listOf("Ana")), single.content)

@@ -153,6 +153,10 @@
     <string name="notif_reminder_title">⏰ %1$s</string>
     <string name="notif_reminder_with">With %1$s</string>
     <string name="notif_reminder_body">Reminder</string>
+    <string name="notif_reminder_overdue_title">⏰ Still to do: %1$s</string>
+    <string name="notif_reminder_overdue_body">Overdue reminder</string>
+    <string name="notif_test_title">Good Company</string>
+    <string name="notif_test_body">Notifications are working. This is how they’ll look.</string>
     <string name="notif_meet_title">👋 Time to see %1$s</string>
     <plurals name="notif_meet_body">
         <item quantity="one">It’s been %1$d day — you wanted to meet %2$s.</item>

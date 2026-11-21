@@ -103,13 +103,24 @@ actual fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
     fun isGranted(name: String) = ContextCompat.checkSelfPermission(context, name) == PackageManager.PERMISSION_GRANTED
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         // Re-check instead of trusting the result map: it only lists what was asked just now.
-        callback.value(permission.manifestPermissions().filter(context::declares).any(::isGranted))
+        callback.value(
+            if (permission == AppPermission.NOTIFICATIONS) {
+                NotificationManagerCompat.from(context).areNotificationsEnabled()
+            } else {
+                permission.manifestPermissions().filter(context::declares).any(::isGranted)
+            },
+        )
     }
     return {
         val wanted = permission.manifestPermissions().filter(context::declares)
+        val notificationsOn = permission == AppPermission.NOTIFICATIONS && NotificationManagerCompat.from(context).areNotificationsEnabled()
         // Contacts need everything the build declares (sideload: read *and* write); the others need any one.
         val missing = if (permission == AppPermission.CONTACTS) wanted.filterNot(::isGranted) else emptyList()
         when {
+            // Issue #98: below Android 13 there's no runtime permission (POST_NOTIFICATIONS always reads as denied):
+            // the app's switch in system settings is all there is.
+            notificationsOn -> callback.value(true)
+            permission == AppPermission.NOTIFICATIONS && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> callback.value(false)
             wanted.isEmpty() -> callback.value(false)
             permission == AppPermission.CONTACTS && missing.isNotEmpty() -> launcher.launch(missing.toTypedArray())
             wanted.any(::isGranted) -> callback.value(true)
@@ -123,6 +134,20 @@ actual fun rememberNotificationsAllowedCheck(): suspend () -> Boolean {
     val context = LocalContext.current
     // Covers both the Android 13+ runtime permission and the app's notification toggle in system settings.
     return remember<suspend () -> Boolean>(context) { { NotificationManagerCompat.from(context).areNotificationsEnabled() } }
+}
+
+@Composable
+actual fun rememberNotificationSettingsOpener(): () -> Unit {
+    val context = LocalContext.current
+    return remember(context) {
+        {
+            val intent = Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            runCatching { context.startActivity(intent) }
+            Unit
+        }
+    }
 }
 
 @Composable

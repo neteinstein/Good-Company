@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_channel_reminders">Mementouri și zile de naștere</string>
+    <string name="notification_channel_reminders">Mementouri</string>
+    <string name="notification_channel_birthdays">Zile de naștere și zile importante</string>
+    <string name="notification_channel_plans">Planuri</string>
+    <string name="notification_channel_catch_ups">Revederi</string>
+    <string name="notification_channel_important">Importante</string>
     <!-- Written onto the contact by the sideload build (see AndroidContactsWriter). -->
     <string name="contact_kid_birthday">Ziua de naștere a lui %1$s</string>
     <string name="contact_likes">Adoră</string>

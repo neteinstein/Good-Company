@@ -46,6 +46,7 @@ import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
@@ -234,6 +235,21 @@ abstract class RepositoryContract {
         assertEquals(180, open().settings.settings.first().acquaintanceDays)
         open().settings.update { it.copy(acquaintanceDays = null) }
         assertNull(open().settings.settings.first().acquaintanceDays)
+    }
+
+    @Test
+    fun notificationSettings_surviveARestart_andThePrimerStaysOnThisDevice() = runTest {
+        // Issue #98: everything on until changed.
+        assertEquals(NotificationSettings(), open().settings.settings.first().notifications)
+        val changed = NotificationSettings(catchUps = false, calendar = false, persistent = false)
+        open().settings.update { it.copy(notifications = changed, notificationPrimerDismissed = true) }
+        val reopened = open().settings.settings.first()
+        assertEquals(changed, reopened.notifications)
+        assertTrue(reopened.notificationPrimerDismissed)
+        // The switches travel in a backup; "Not now" on Today's card doesn't.
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertTrue("\"catchUps\": false" in json, json)
+        assertFalse("notificationPrimerDismissed" in json)
     }
 
     @Test

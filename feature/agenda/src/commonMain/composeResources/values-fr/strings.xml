@@ -92,4 +92,8 @@
     <string name="last_seen_got_few_months">Noté : %1$s, il y a quelques mois</string>
     <string name="last_seen_got_over_year">Noté : %1$s, il y a plus d’un an</string>
     <string name="last_seen_got_dont_know">Noté : le rythme avec %1$s commence aujourd’hui</string>
+    <string name="notif_primer_title">Active les notifications</string>
+    <string name="notif_primer_body">Pour que les anniversaires, les grands jours, les rappels et les projets t’arrivent même app fermée.</string>
+    <string name="notif_primer_allow">Autoriser</string>
+    <string name="notif_primer_not_now">Pas maintenant</string>
 </resources>

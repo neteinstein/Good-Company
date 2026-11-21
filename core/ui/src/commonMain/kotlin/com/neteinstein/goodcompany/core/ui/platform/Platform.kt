@@ -76,6 +76,26 @@ expect fun rememberPermissionRequester(permission: AppPermission, onResult: (gra
 expect fun rememberNotificationsAllowedCheck(): suspend () -> Boolean
 
 /**
+ * Issue #98: opens this app's notification settings in the system (to turn notifications back on after they were
+ * refused, or to tune the Android channels). Does nothing on the web.
+ */
+@Composable
+expect fun rememberNotificationSettingsOpener(): () -> Unit
+
+/**
+ * Issue #98: asks for notifications, and when the system won't ask again (refused before, or turned off in system
+ * settings) opens the app's notification settings instead. [onResult] gets whether they're allowed after asking.
+ */
+@Composable
+fun rememberNotificationsEnabler(onResult: (granted: Boolean) -> Unit = {}): () -> Unit {
+    val openSettings = rememberNotificationSettingsOpener()
+    return rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
+        onResult(granted)
+        if (!granted) openSettings()
+    }
+}
+
+/**
  * Whether the app may post notifications: null until the first check, then re-checked each time the screen resumes
  * and whenever [refreshKey] changes (bump it after asking for the permission).
  */

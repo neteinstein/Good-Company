@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_channel_reminders">Reminders &amp; birthdays</string>
+    <!-- Notification channels (issue #98). -->
+    <string name="notification_channel_reminders">Reminders</string>
+    <string name="notification_channel_birthdays">Birthdays &amp; big days</string>
+    <string name="notification_channel_plans">Plans</string>
+    <string name="notification_channel_catch_ups">Catch-ups</string>
+    <string name="notification_channel_important">Important</string>
     <!-- Written onto the contact by the sideload build (see AndroidContactsWriter). -->
     <string name="contact_kid_birthday">%1$s’s birthday</string>
     <string name="contact_likes">Loves</string>

@@ -56,10 +56,75 @@ sealed interface NotificationContent {
      * just one ([total] = 1). Shown on this device only.
      */
     data class CalendarMeetups(val names: List<String>, val eventTitle: String?, val total: Int) : NotificationContent
+
+    /**
+     * Issue #98: a reminder whose time has passed and that isn't done yet. Asked again at the reminder hour each day
+     * (persistent while "Keep important ones on screen" is on) until it is done.
+     */
+    data class ReminderOverdue(val title: String, val withNames: List<String>) : NotificationContent
+
+    /** Issue #98: Settings → Notifications → "Send a test notification". */
+    data object Test : NotificationContent
+
+    /** Which switch in Settings → Notifications this belongs to (and, on Android, its channel). */
+    val type: NotificationType
+        get() = when (this) {
+            is FriendBirthday, is KidBirthday, is RelativeBirthday, is Anniversary -> NotificationType.BIRTHDAYS
+            is EventToday, is EventSoon -> NotificationType.EVENTS
+            is ReminderDue, is ReminderOverdue, Test -> NotificationType.REMINDERS
+            is PlanToday, is PlanFollowUp -> NotificationType.PLANS
+            is MeetupDue, is GroupMeetupDue, is CatchUpDigest -> NotificationType.CATCH_UPS
+            is CalendarMeetups -> NotificationType.CALENDAR
+        }
 }
 
-/** A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates. */
-data class PlannedNotification(val id: String, val at: Instant, val content: NotificationContent)
+/** The kinds of notification the user can switch on and off (issue #98). */
+enum class NotificationType { BIRTHDAYS, EVENTS, REMINDERS, PLANS, CATCH_UPS, CALENDAR }
+
+/**
+ * Where a notification is posted on Android (issue #98): Reminders · Birthdays & big days · Plans · Catch-ups (low)
+ * · Important (high, for the persistent ones). iOS has no channels; [IMPORTANT] is its time-sensitive level.
+ */
+enum class NotificationChannel {
+    REMINDERS,
+    BIRTHDAYS,
+    PLANS,
+    CATCH_UPS,
+    IMPORTANT,
+    ;
+
+    companion object {
+        fun of(type: NotificationType, persistent: Boolean): NotificationChannel = when {
+            persistent -> IMPORTANT
+            else -> when (type) {
+                NotificationType.BIRTHDAYS, NotificationType.EVENTS -> BIRTHDAYS
+                NotificationType.REMINDERS -> REMINDERS
+                NotificationType.PLANS -> PLANS
+                NotificationType.CATCH_UPS, NotificationType.CALENDAR -> CATCH_UPS
+            }
+        }
+    }
+}
+
+/**
+ * A local notification to schedule. [id] is stable so rescheduling replaces, never duplicates.
+ *
+ * Issue #98: [persistent] ones stay on screen (Android: ongoing; iOS: time-sensitive) until acted on, and go away by
+ * themselves at [until]. Notifications that share a [slot] replace each other on screen (an overdue reminder asked
+ * again the next day shows once, not twice). A posted [whileOpen] one is taken off the screen as soon as its slot is no
+ * longer planned: the reminder was done or deleted, the plan answered.
+ */
+data class PlannedNotification(
+    val id: String,
+    val at: Instant,
+    val content: NotificationContent,
+    val persistent: Boolean = false,
+    val until: Instant? = null,
+    val slot: String = id,
+    val whileOpen: Boolean = false,
+) {
+    val channel: NotificationChannel get() = NotificationChannel.of(content.type, persistent)
+}
 
 /** Quick actions offered on catch-up notifications. */
 data class NotificationAction(val kind: Kind, val targetId: String, val isGroup: Boolean = false) {
@@ -91,4 +156,13 @@ data class RenderedNotification(
     val actions: List<RenderedAction> = emptyList(),
     /** What the lock screen shows instead of [title]/[body] when notifications are private. Null = not private. */
     val publicText: String? = null,
+    val channel: NotificationChannel = NotificationChannel.REMINDERS,
+    /** Stays on screen until acted on (issue #98); see [PlannedNotification.persistent]. */
+    val persistent: Boolean = false,
+    /** When a persistent notification goes away by itself (the end of its day). */
+    val until: Instant? = null,
+    /** On-screen identity: a newer notification with the same slot replaces the older one. */
+    val slot: String = id,
+    /** Taken off the screen once its slot is no longer planned; see [PlannedNotification.whileOpen]. */
+    val whileOpen: Boolean = false,
 )

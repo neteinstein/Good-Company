@@ -94,4 +94,9 @@
     <string name="last_seen_got_few_months">Got it: %1$s, a few months ago</string>
     <string name="last_seen_got_over_year">Got it: %1$s, over a year ago</string>
     <string name="last_seen_got_dont_know">Got it: %1$s’s rhythm starts today</string>
+    <!-- Today's "Turn on notifications" card (issue #98). -->
+    <string name="notif_primer_title">Turn on notifications</string>
+    <string name="notif_primer_body">So birthdays, big days, reminders and plans reach you even when the app is closed.</string>
+    <string name="notif_primer_allow">Allow</string>
+    <string name="notif_primer_not_now">Not now</string>
 </resources>

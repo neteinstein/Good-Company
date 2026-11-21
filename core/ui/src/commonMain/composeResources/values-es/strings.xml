@@ -621,4 +621,8 @@
         <item quantity="one">%1$d hijo más</item>
         <item quantity="other">%1$d hijos más</item>
     </plurals>
+    <string name="notif_reminder_overdue_title">⏰ Pendiente: %1$s</string>
+    <string name="notif_reminder_overdue_body">Recordatorio atrasado</string>
+    <string name="notif_test_title">Good Company</string>
+    <string name="notif_test_body">Las notificaciones funcionan. Así es como se verán.</string>
 </resources>

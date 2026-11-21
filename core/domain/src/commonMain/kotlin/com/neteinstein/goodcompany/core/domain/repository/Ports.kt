@@ -18,6 +18,9 @@ interface LocationProvider {
 /** Replaces the full set of scheduled local notifications. */
 interface NotificationScheduler {
     suspend fun replaceAll(notifications: List<RenderedNotification>)
+
+    /** Shows one notification right away, outside the schedule (Settings → "Send a test notification", issue #98). */
+    suspend fun showNow(notification: RenderedNotification)
 }
 
 /** Turns a [PlannedNotification] into localised text + actions (implemented with UI string resources). */

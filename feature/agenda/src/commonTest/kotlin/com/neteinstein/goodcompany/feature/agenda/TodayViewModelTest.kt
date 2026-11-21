@@ -1,10 +1,12 @@
 package com.neteinstein.goodcompany.feature.agenda
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -40,11 +42,27 @@ class TodayViewModelTest {
         g.draftBirthdayMessage,
         g.answerLastSeen,
         g.hideLastSeenCard,
+        g.dismissNotificationPrimer,
         g.clock,
         g.observeGroups,
     )
 
     private fun birthday(id: String, month: Int, day: Int): Friend = friend(id) { copy(birthday = Birthday(month, day)) }
+
+    @Test
+    fun theNotificationsCardCanShow_untilNotNow_orNotificationsAreOffInSettings() = runViewModelTest {
+        // Issue #98: the screen adds "the system doesn't allow them"; the state says whether Settings wants them.
+        val g = TestGraph(listOf(friend("ana")))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertTrue(state.value.askForNotifications)
+        vm.onNotificationsNotNow()
+        assertFalse(state.value.askForNotifications)
+        assertTrue(g.settingsRepo.settings.value.notificationPrimerDismissed)
+
+        val off = TestGraph(listOf(friend("ana")), settings = AppSettings(notifications = NotificationSettings(enabled = false)))
+        assertFalse(collecting(vm(off).state).value.askForNotifications)
+    }
 
     @Test
     fun theReminderEditorGetsEveryCircle_forThePeoplePicker() = runViewModelTest {

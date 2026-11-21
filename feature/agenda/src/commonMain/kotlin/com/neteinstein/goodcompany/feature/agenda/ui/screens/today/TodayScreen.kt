@@ -34,6 +34,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -72,7 +73,10 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
+import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.undo
@@ -108,6 +112,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
+import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -162,8 +167,14 @@ fun TodayScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val addToCalendar = rememberCalendarAdder()
     var checkingIn by rememberSaveable { mutableStateOf(false) }
+    // Issue #98: a gentle card instead of a cold system prompt, only while the system doesn't allow notifications.
+    var notificationsAsked by remember { mutableIntStateOf(0) }
+    val enableNotifications = rememberNotificationsEnabler { notificationsAsked++ }
+    val notificationsAllowed = rememberNotificationsAllowed(refreshKey = notificationsAsked)
+    val canNotify = currentPlatformCapabilities().hasBackgroundNotifications
     TodayContent(
         state = state,
+        notificationsBlocked = canNotify && notificationsAllowed == false,
         actions = TodayActions(
             onCheckIn = { checkingIn = true },
             onOpenFriend = onOpenFriend,
@@ -185,6 +196,8 @@ fun TodayScreen(
             onLastSeenAnswer = viewModel::onLastSeenAnswer,
             onLastSeenNotNow = viewModel::onLastSeenNotNow,
             onUndoLastSeen = viewModel::onUndoLastSeen,
+            onAllowNotifications = enableNotifications,
+            onNotificationsNotNow = viewModel::onNotificationsNotNow,
         ),
     )
     if (checkingIn) {
@@ -241,10 +254,18 @@ data class TodayActions(
     val onLastSeenAnswer: (FriendId, LastSeenAnswer) -> Unit = { _, _ -> },
     val onLastSeenNotNow: () -> Unit = {},
     val onUndoLastSeen: (TodayMessage.LastSeenAnswered) -> Unit = {},
+    val onAllowNotifications: () -> Unit = {},
+    val onNotificationsNotNow: () -> Unit = {},
 )
 
 @Composable
-fun TodayContent(state: TodayUiState, actions: TodayActions, modifier: Modifier = Modifier) {
+fun TodayContent(
+    state: TodayUiState,
+    actions: TodayActions,
+    modifier: Modifier = Modifier,
+    /** The system doesn't let the app post notifications (issue #98). */
+    notificationsBlocked: Boolean = false,
+) {
     val snackbar = remember { SnackbarHostState() }
     val undo = stringResource(CoreRes.string.undo)
     LaunchedEffect(state.message) {
@@ -294,6 +315,11 @@ fun TodayContent(state: TodayUiState, actions: TodayActions, modifier: Modifier 
                     )
                 }
                 return@LazyColumn
+            }
+            if (notificationsBlocked && state.askForNotifications) {
+                item(key = "notifications") {
+                    NotificationPrimerCard(actions.onAllowNotifications, actions.onNotificationsNotNow, Modifier.animateItem())
+                }
             }
             state.lastSeenAsk?.let { friend ->
                 item(key = "last-seen") {

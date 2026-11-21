@@ -99,6 +99,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
@@ -192,6 +193,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveLinkUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
@@ -216,6 +218,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UpdateNotificationSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -256,6 +259,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
@@ -403,6 +407,9 @@ val appModule = module {
     factoryOf(::RestoreReminderUseCase)
     factoryOf(::ObserveAgendaUseCase)
     factoryOf(::KeepNotificationsScheduledUseCase)
+    factoryOf(::SendTestNotificationUseCase)
+    factoryOf(::DismissNotificationPrimerUseCase)
+    factoryOf(::UpdateNotificationSettingsUseCase)
     factoryOf(::ObserveIdeasUseCase)
     factoryOf(::DismissIdeaUseCase)
     factoryOf(::GenerateTalkingPointsUseCase)
@@ -539,6 +546,7 @@ val appModule = module {
     viewModelOf(::TodayViewModel)
     viewModelOf(::CalendarSuggestionsViewModel)
     viewModelOf(::CalendarSettingsViewModel)
+    viewModelOf(::NotificationSettingsViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::PlansViewModel)
     viewModelOf(::SettingsViewModel)

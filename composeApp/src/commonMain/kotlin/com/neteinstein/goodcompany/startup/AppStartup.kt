@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -34,7 +35,13 @@ class AppStartup(
         job = scope.launch {
             // Lets catch-up nudges back off when the app isn't being opened (see NudgePolicy).
             runCatching { recordAppOpened() }
-            launch { keepNotificationsScheduled() }
+            // Issue #98: a failure is logged and never stops the rest of the startup work. A failed re-plan inside
+            // the use case is skipped and the next change tries again.
+            launch {
+                keepNotificationsScheduled.onFailure = ::logNotificationFailure
+                runCatching { keepNotificationsScheduled() }
+                    .onFailure { if (it is CancellationException) throw it else logNotificationFailure(it) }
+            }
             launch {
                 runCatching { syncContacts() }
                 runCatching { runWeeklyIdeas() }
@@ -43,4 +50,9 @@ class AppStartup(
             launch { runCatching { refreshFeeds() } }
         }
     }
+}
+
+/** Notifications not being scheduled is otherwise silent; leave a trace in the device log. */
+private fun logNotificationFailure(error: Throwable) {
+    println("GoodCompany: scheduling notifications failed: $error")
 }

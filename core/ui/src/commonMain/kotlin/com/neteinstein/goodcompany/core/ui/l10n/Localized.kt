@@ -77,8 +77,12 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_private
 import com.neteinstein.goodcompany.core.ui.resources.notif_relative_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_overdue_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_overdue_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_reminder_with
+import com.neteinstein.goodcompany.core.ui.resources.notif_test_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_test_title
 import com.neteinstein.goodcompany.core.ui.resources.occasion_birthday
 import com.neteinstein.goodcompany.core.ui.resources.occasion_christmas
 import com.neteinstein.goodcompany.core.ui.resources.occasion_coffee
@@ -163,6 +167,20 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 } else {
                     getString(Res.string.notif_reminder_with, c.withNames.joinToString())
                 },
+                emptyList(),
+            )
+            is NotificationContent.ReminderOverdue -> Triple(
+                getString(Res.string.notif_reminder_overdue_title, c.title),
+                if (c.withNames.isEmpty()) {
+                    getString(Res.string.notif_reminder_overdue_body)
+                } else {
+                    getString(Res.string.notif_reminder_with, c.withNames.joinToString())
+                },
+                emptyList(),
+            )
+            NotificationContent.Test -> Triple(
+                getString(Res.string.notif_test_title),
+                getString(Res.string.notif_test_body),
                 emptyList(),
             )
             is NotificationContent.MeetupDue -> {
