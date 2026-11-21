@@ -1,31 +1,22 @@
 package com.neteinstein.goodcompany.core.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
@@ -39,7 +30,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -190,7 +180,7 @@ fun logKindIcon(kind: LogKind) = kind.interactionType?.let(::interactionIcon) ?:
 
 /**
  * The single "Log" sheet (issue #21, F2/F3): type chips, people, Today / Yesterday / a picked date, the activity and
- * place for a meetup, and a note. Drawn as a bottom sheet over a scrim that dismisses it, so it can live in a dialog
+ * place for a meetup, and a note. Drawn with [DialogSheet] (a scrim, drag down to close), so it can live in a dialog
  * destination on every platform.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -200,122 +190,102 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
     var pickingDate by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = actions.onDismiss),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        Surface(
-            Modifier.widthIn(max = 640.dp).fillMaxWidth().imePadding()
-                // Taps on the sheet itself must not reach the scrim.
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(width = 36.dp, height = 4.dp).background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp)))
-                }
-                val circle = state.circle
-                Text(
-                    if (state.editing) {
-                        stringResource(Res.string.log_title_edit)
-                    } else if (circle != null) {
-                        stringResource(Res.string.log_title_circle, circle.name)
-                    } else {
-                        stringResource(Res.string.log_title, namesList(state.people))
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.semantics { heading() },
+    DialogSheet(onDismiss = actions.onDismiss) {
+        val circle = state.circle
+        Text(
+            if (state.editing) {
+                stringResource(Res.string.log_title_edit)
+            } else if (circle != null) {
+                stringResource(Res.string.log_title_circle, circle.name)
+            } else {
+                stringResource(Res.string.log_title, namesList(state.people))
+            },
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.semantics { heading() },
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            LogKind.entries.forEach { kind ->
+                FilterChip(
+                    selected = state.kind == kind,
+                    onClick = { actions.onKind(kind) },
+                    label = { Text(logKindLabel(kind)) },
+                    leadingIcon = { Icon(logKindIcon(kind), null, Modifier.size(18.dp)) },
                 )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    LogKind.entries.forEach { kind ->
-                        FilterChip(
-                            selected = state.kind == kind,
-                            onClick = { actions.onKind(kind) },
-                            label = { Text(logKindLabel(kind)) },
-                            leadingIcon = { Icon(logKindIcon(kind), null, Modifier.size(18.dp)) },
-                        )
-                    }
-                }
-                if (state.circles.isNotEmpty()) {
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.circles.forEach { g ->
-                            CircleChip(g, selected = circle?.id == g.id, onClick = { actions.onCircle(g.id.takeUnless { circle?.id == it }) })
-                        }
-                    }
-                }
-                if (circle != null) {
-                    CircleMembers(circle, state.circleMembers, state.people.map { it.id }.toSet(), actions.onTogglePerson)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StackedAvatars(state.people, size = 32.dp, max = 4)
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        state.people.joinToString(", ") { it.displayName.substringBefore(' ') },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 2,
-                    )
-                    TextButton(onClick = { pickingPeople = true }) {
-                        Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(Res.string.log_add_people))
-                    }
-                }
-                DateChoice(state, onDate = actions.onDate, onPick = { pickingDate = true })
-                LogTimeChoice(state.time, state.date, state.now, state.zone, actions.onTime, onPick = { pickingTime = true })
-                if (state.kind == LogKind.MEETUP) LogLastTogether(state.lastTogether, state.now, state.zone)
-                if (state.kind == LogKind.MEETUP) {
-                    Text(stringResource(Res.string.log_activity), style = MaterialTheme.typography.labelLarge)
-                    val shown = if (showAllActivities) state.activities else state.activities.take(ObserveActivitiesUseCase.SHOWN)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        (shown + listOfNotNull(state.activity?.takeIf { it !in shown })).forEach { a ->
-                            FilterChip(
-                                selected = state.activity == a,
-                                onClick = { actions.onActivity(a.takeIf { state.activity != a }) },
-                                label = { Text(activityLabel(a)) },
-                                leadingIcon = { Icon(activityIcon(a), null, Modifier.size(18.dp)) },
-                            )
-                        }
-                        if (state.activities.size > ObserveActivitiesUseCase.SHOWN) {
-                            TextButton(onClick = { showAllActivities = !showAllActivities }) {
-                                Text(stringResource(if (showAllActivities) Res.string.log_less else Res.string.log_more))
-                            }
-                        }
-                    }
-                    MeetupPlace(
-                        state.place,
-                        freeTextLabel = stringResource(Res.string.log_place_hint),
-                        onName = actions.onPlaceName,
-                        onUseLocation = actions.onUseLocation,
-                        onClearLocation = actions.onClearLocation,
-                        onChange = actions.onChangePlace,
-                        onAddPerson = actions.onTogglePerson,
-                    )
-                }
-                if (state.kind == LogKind.OTHER) LogOtherLabel(state.label, actions.onLabel)
-                OutlinedTextField(
-                    state.note,
-                    actions.onNote,
-                    Modifier.fillMaxWidth().heightIn(min = 96.dp),
-                    label = {
-                        Text(stringResource(if (state.kind == LogKind.JOURNAL) Res.string.log_journal_hint else Res.string.log_note_hint))
-                    },
-                )
-                val hint = when {
-                    state.kind == LogKind.JOURNAL -> stringResource(Res.string.log_journal_footer)
-                    else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.displayName.substringBefore(' ')) }
-                }
-                hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                Button(onClick = actions.onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(Res.string.save))
+            }
+        }
+        if (state.circles.isNotEmpty()) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                state.circles.forEach { g ->
+                    CircleChip(g, selected = circle?.id == g.id, onClick = { actions.onCircle(g.id.takeUnless { circle?.id == it }) })
                 }
             }
+        }
+        if (circle != null) {
+            CircleMembers(circle, state.circleMembers, state.people.map { it.id }.toSet(), actions.onTogglePerson)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StackedAvatars(state.people, size = 32.dp, max = 4)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                state.people.joinToString(", ") { it.displayName.substringBefore(' ') },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+            )
+            TextButton(onClick = { pickingPeople = true }) {
+                Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(Res.string.log_add_people))
+            }
+        }
+        DateChoice(state, onDate = actions.onDate, onPick = { pickingDate = true })
+        LogTimeChoice(state.time, state.date, state.now, state.zone, actions.onTime, onPick = { pickingTime = true })
+        if (state.kind == LogKind.MEETUP) LogLastTogether(state.lastTogether, state.now, state.zone)
+        if (state.kind == LogKind.MEETUP) {
+            Text(stringResource(Res.string.log_activity), style = MaterialTheme.typography.labelLarge)
+            val shown = if (showAllActivities) state.activities else state.activities.take(ObserveActivitiesUseCase.SHOWN)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                (shown + listOfNotNull(state.activity?.takeIf { it !in shown })).forEach { a ->
+                    FilterChip(
+                        selected = state.activity == a,
+                        onClick = { actions.onActivity(a.takeIf { state.activity != a }) },
+                        label = { Text(activityLabel(a)) },
+                        leadingIcon = { Icon(activityIcon(a), null, Modifier.size(18.dp)) },
+                    )
+                }
+                if (state.activities.size > ObserveActivitiesUseCase.SHOWN) {
+                    TextButton(onClick = { showAllActivities = !showAllActivities }) {
+                        Text(stringResource(if (showAllActivities) Res.string.log_less else Res.string.log_more))
+                    }
+                }
+            }
+            MeetupPlace(
+                state.place,
+                freeTextLabel = stringResource(Res.string.log_place_hint),
+                onName = actions.onPlaceName,
+                onUseLocation = actions.onUseLocation,
+                onClearLocation = actions.onClearLocation,
+                onChange = actions.onChangePlace,
+                onAddPerson = actions.onTogglePerson,
+            )
+        }
+        if (state.kind == LogKind.OTHER) LogOtherLabel(state.label, actions.onLabel)
+        OutlinedTextField(
+            state.note,
+            actions.onNote,
+            Modifier.fillMaxWidth().heightIn(min = 96.dp),
+            label = {
+                Text(stringResource(if (state.kind == LogKind.JOURNAL) Res.string.log_journal_hint else Res.string.log_note_hint))
+            },
+        )
+        val hint = when {
+            state.kind == LogKind.JOURNAL -> stringResource(Res.string.log_journal_footer)
+            else -> state.countsHintFor?.let { stringResource(Res.string.log_counts_hint, it.displayName.substringBefore(' ')) }
+        }
+        hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Button(onClick = actions.onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(Res.string.save))
         }
     }
     if (pickingDate) {

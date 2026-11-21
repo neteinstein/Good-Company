@@ -18,7 +18,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -32,6 +31,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
 import com.neteinstein.goodcompany.core.ui.components.LocalSharedElement
+import com.neteinstein.goodcompany.core.ui.platform.sheetDialogProperties
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaScreen
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSuggestionsScreen
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.today.TodayScreen
@@ -189,7 +189,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
         )
     }
-    dialog<LogInteractionRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
+    dialog<LogInteractionRoute>(dialogProperties = sheetDialogProperties) { entry ->
         val route = entry.toRoute<LogInteractionRoute>()
         LogInteractionScreen(
             friendIds = route.friendIds.map(::FriendId),
@@ -209,7 +209,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onClose = { navController.popBackStack() },
         )
     }
-    dialog<WeMetRoute>(dialogProperties = DialogProperties(usePlatformDefaultWidth = false)) { entry ->
+    dialog<WeMetRoute>(dialogProperties = sheetDialogProperties) { entry ->
         val route = entry.toRoute<WeMetRoute>()
         WeMetPanelScreen(
             friendIds = route.friendIds.map(::FriendId),
