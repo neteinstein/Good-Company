@@ -13,7 +13,29 @@ data class Hangout(
     val note: String = "",
     /** What you did together (F3), picked by icon in the log sheet. */
     val activity: HangoutActivity? = null,
-)
+    /** One of your own activities (issue #121), by name, when [activity] is null. Kept when it's renamed or removed. */
+    val activityName: String? = null,
+) {
+    val activityChoice: ActivityChoice? get() = ActivityChoice.of(activity, activityName)
+}
+
+/**
+ * An activity as the pickers offer it (issue #121): a built-in one or one of your own, by name. Meetups and plans store
+ * a built-in one as [HangoutActivity] and your own as its name, so a past entry keeps its label.
+ */
+sealed interface ActivityChoice {
+    data class BuiltIn(val activity: HangoutActivity) : ActivityChoice
+
+    data class Custom(val name: String) : ActivityChoice
+
+    val builtIn: HangoutActivity? get() = (this as? BuiltIn)?.activity
+    val customName: String? get() = (this as? Custom)?.name
+
+    companion object {
+        fun of(activity: HangoutActivity?, name: String?): ActivityChoice? =
+            activity?.let(::BuiltIn) ?: name?.trim()?.takeIf { it.isNotEmpty() }?.let(::Custom)
+    }
+}
 
 /**
  * What a meetup was (F3). The log sheet shows the six most used first, the rest behind "More". [CULTURE] is cinema,

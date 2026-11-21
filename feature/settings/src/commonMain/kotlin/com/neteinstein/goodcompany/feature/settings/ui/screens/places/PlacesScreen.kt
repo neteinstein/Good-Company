@@ -17,7 +17,9 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.CallMerge
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.LocationOff
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,9 +51,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.PlaceSummary
+import com.neteinstein.goodcompany.core.domain.usecase.TypedPlace
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.back
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.delete
@@ -66,10 +71,17 @@ import com.neteinstein.goodcompany.feature.settings.resources.places_meetups
 import com.neteinstein.goodcompany.feature.settings.resources.places_merge
 import com.neteinstein.goodcompany.feature.settings.resources.places_merge_hint
 import com.neteinstein.goodcompany.feature.settings.resources.places_merge_title
+import com.neteinstein.goodcompany.feature.settings.resources.places_merge_typed_hint
 import com.neteinstein.goodcompany.feature.settings.resources.places_merged
 import com.neteinstein.goodcompany.feature.settings.resources.places_more
 import com.neteinstein.goodcompany.feature.settings.resources.places_nearby
+import com.neteinstein.goodcompany.feature.settings.resources.places_no_location
+import com.neteinstein.goodcompany.feature.settings.resources.places_pin
+import com.neteinstein.goodcompany.feature.settings.resources.places_pinned
+import com.neteinstein.goodcompany.feature.settings.resources.places_plans
 import com.neteinstein.goodcompany.feature.settings.resources.places_rename
+import com.neteinstein.goodcompany.feature.settings.resources.places_renamed
+import com.neteinstein.goodcompany.feature.settings.resources.places_typed
 import com.neteinstein.goodcompany.feature.settings.resources.places_usually
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
@@ -81,11 +93,20 @@ import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 suspend fun PlacesMessage.text(): String = when (this) {
     is PlacesMessage.Deleted -> getString(Res.string.places_deleted, name)
     is PlacesMessage.Merged -> getString(Res.string.places_merged, into)
+    is PlacesMessage.Renamed -> getString(Res.string.places_renamed, to)
+    is PlacesMessage.Pinned -> getString(Res.string.places_pinned, name)
+    PlacesMessage.NoLocation -> getString(Res.string.places_no_location)
 }
 
 @Composable
 fun PlacesScreen(onBack: () -> Unit, viewModel: PlacesViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // "Add coordinates" asks for the location first; the answer goes to the ViewModel with the place's name.
+    var pinning by remember { mutableStateOf<String?>(null) }
+    val requestLocation = rememberPermissionRequester(AppPermission.LOCATION) { granted ->
+        pinning?.let { viewModel.onPinTyped(it, granted) }
+        pinning = null
+    }
     PlacesContent(
         state,
         PlacesActions(
@@ -95,6 +116,11 @@ fun PlacesScreen(onBack: () -> Unit, viewModel: PlacesViewModel = koinViewModel(
             onUndoDelete = viewModel::onUndoDelete,
             onMerge = viewModel::onMerge,
             onMessageShown = viewModel::onMessageShown,
+            onRenameTyped = viewModel::onRenameTyped,
+            onPinTyped = { name ->
+                pinning = name
+                requestLocation()
+            },
         ),
     )
 }
@@ -106,6 +132,9 @@ data class PlacesActions(
     val onUndoDelete: () -> Unit = {},
     val onMerge: (fromId: String, intoId: String) -> Unit = { _, _ -> },
     val onMessageShown: () -> Unit = {},
+    /** Places without GPS (issue #121): rename or merge (a name another one has), and add coordinates. */
+    val onRenameTyped: (from: String, to: String) -> Unit = { _, _ -> },
+    val onPinTyped: (String) -> Unit = {},
 )
 
 /** Settings → Places (F11). Names given to GPS spots; nothing here ever leaves the device. */
@@ -123,6 +152,8 @@ fun PlacesContent(state: PlacesUiState, actions: PlacesActions) {
     }
     var renaming by rememberSaveable { mutableStateOf<String?>(null) }
     var merging by rememberSaveable { mutableStateOf<String?>(null) }
+    var renamingTyped by rememberSaveable { mutableStateOf<String?>(null) }
+    var mergingTyped by rememberSaveable { mutableStateOf<String?>(null) }
     Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
         Column(Modifier.fillMaxSize()) {
             Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -149,7 +180,7 @@ fun PlacesContent(state: PlacesUiState, actions: PlacesActions) {
                             )
                         }
                     }
-                    if (state.places.isEmpty()) {
+                    if (state.places.isEmpty() && state.typed.isEmpty()) {
                         item {
                             EmptyState(
                                 icon = Icons.Rounded.Place,
@@ -167,6 +198,26 @@ fun PlacesContent(state: PlacesUiState, actions: PlacesActions) {
                             onDelete = { actions.onDelete(summary.place.id) },
                         )
                     }
+                    // Issue #121: every place used anywhere, also the ones with no GPS.
+                    if (state.typed.isNotEmpty()) {
+                        item(key = "typed-header") {
+                            Text(
+                                stringResource(Res.string.places_typed),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp).semantics { heading() },
+                            )
+                        }
+                    }
+                    items(state.typed, key = { "typed-${it.name}" }) { place ->
+                        TypedPlaceRow(
+                            place,
+                            canMerge = state.typed.size > 1,
+                            onRename = { renamingTyped = place.name },
+                            onMerge = { mergingTyped = place.name },
+                            onPin = { actions.onPinTyped(place.name) },
+                        )
+                    }
                 }
             }
         }
@@ -175,6 +226,18 @@ fun PlacesContent(state: PlacesUiState, actions: PlacesActions) {
         RenameDialog(summary.place.name, onDismiss = { renaming = null }, onSave = { name ->
             actions.onRename(summary.place.id, name)
             renaming = null
+        })
+    }
+    renamingTyped?.let { name ->
+        RenameDialog(name, onDismiss = { renamingTyped = null }, onSave = { to ->
+            actions.onRenameTyped(name, to)
+            renamingTyped = null
+        })
+    }
+    mergingTyped?.let { name ->
+        TypedMergeDialog(name, state.typed.map { it.name } - name, onDismiss = { mergingTyped = null }, onMerge = { into ->
+            actions.onRenameTyped(name, into)
+            mergingTyped = null
         })
     }
     state.places.firstOrNull { it.place.id == merging }?.let { summary ->
@@ -241,6 +304,84 @@ private fun PlaceRow(summary: PlaceSummary, canMerge: Boolean, onRename: () -> U
                 }
             }
         },
+    )
+}
+
+/** A place with no GPS: its meetups and plans, who you usually meet there; rename, merge, add coordinates. */
+@Composable
+private fun TypedPlaceRow(place: TypedPlace, canMerge: Boolean, onRename: () -> Unit, onMerge: () -> Unit, onPin: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    val details = buildList {
+        if (place.meetups > 0) add(pluralStringResource(Res.plurals.places_meetups, place.meetups, place.meetups))
+        if (place.plans > 0) add(pluralStringResource(Res.plurals.places_plans, place.plans, place.plans))
+        if (place.usually.isNotEmpty()) {
+            add(stringResource(Res.string.places_usually, place.usually.joinToString(", ") { it.displayName.substringBefore(' ') }))
+        }
+    }
+    ListItem(
+        modifier = Modifier.clickable(onClick = onRename),
+        leadingContent = { Icon(Icons.Rounded.LocationOff, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        headlineContent = { Text(place.name, style = MaterialTheme.typography.titleMedium) },
+        supportingContent = { Text(details.joinToString(" · ")) },
+        trailingContent = {
+            Box {
+                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.places_more, place.name)) }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.places_rename)) },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, null) },
+                        onClick = {
+                            menu = false
+                            onRename()
+                        },
+                    )
+                    if (canMerge) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(Res.string.places_merge)) },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Rounded.CallMerge, null) },
+                            onClick = {
+                                menu = false
+                                onMerge()
+                            },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.places_pin)) },
+                        leadingIcon = { Icon(Icons.Rounded.MyLocation, null) },
+                        onClick = {
+                            menu = false
+                            onPin()
+                        },
+                    )
+                }
+            }
+        },
+    )
+}
+
+/** Merge a place with no GPS into another spelling: its meetups and plans take that name. */
+@Composable
+private fun TypedMergeDialog(from: String, others: List<String>, onDismiss: () -> Unit, onMerge: (String) -> Unit) {
+    var into by rememberSaveable { mutableStateOf<String?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(Res.string.places_merge_title, from)) },
+        text = {
+            Column {
+                Text(stringResource(Res.string.places_merge_typed_hint), style = MaterialTheme.typography.bodyMedium)
+                LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                    items(others, key = { it }) { name ->
+                        ListItem(
+                            modifier = Modifier.clickable { into = name },
+                            leadingContent = { RadioButton(selected = into == name, onClick = { into = name }) },
+                            headlineContent = { Text(name) },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { into?.let(onMerge) }, enabled = into != null) { Text(stringResource(Res.string.places_merge)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancel)) } },
     )
 }
 

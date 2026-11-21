@@ -21,6 +21,8 @@ data class Tag(
     val name: String,
     val likedBy: List<String> = emptyList(),
     val dislikedBy: List<String> = emptyList(),
+    /** How many people have it in each list (issue #121): food, drinks, interests, likes, dislikes. */
+    val kinds: Map<TasteGroup, Int> = emptyMap(),
 ) {
     val uses: Int get() = likedBy.size + dislikedBy.size
 
@@ -28,7 +30,17 @@ data class Tag(
     val key: String get() = Tags.normalize(name)
 }
 
+/** The lists a taste can be in on a person's page (issue #121: Your data → Tastes groups them this way). */
+enum class TasteGroup { FOOD, DRINKS, INTERESTS, LIKES, DISLIKES }
+
 object Tags {
+    /** The tags in [group], most used there first; each with [Tag.kinds] for that group's count. */
+    fun inGroup(catalog: List<Tag>, group: TasteGroup): List<Tag> = catalog.filter { (it.kinds[group] ?: 0) > 0 }
+        .sortedWith(compareByDescending<Tag> { it.kinds[group] ?: 0 }.thenBy { it.key }.thenBy { it.name })
+
+    /** How many tags each group has, for the filter chips. */
+    fun groupCounts(catalog: List<Tag>): Map<TasteGroup, Int> = TasteGroup.entries.associateWith { g -> catalog.count { (it.kinds[g] ?: 0) > 0 } }
+
     /** Lower case, trimmed, accents folded ("Pastéis" → "pasteis", "Ș" → "s"), inner spaces collapsed. */
     fun normalize(text: String): String = buildString {
         var lastSpace = false
@@ -49,7 +61,17 @@ object Tags {
         val disliked = LinkedHashMap<String, LinkedHashSet<String>>()
         fun add(map: MutableMap<String, LinkedHashSet<String>>, tags: List<String>, who: String) =
             tags.map(String::trim).filter(String::isNotEmpty).forEach { map.getOrPut(it) { LinkedHashSet() } += who }
+        val kinds = HashMap<String, MutableMap<TasteGroup, Int>>()
+        fun count(tags: List<String>, group: TasteGroup) = tags.map(String::trim).filter(String::isNotEmpty).distinct().forEach {
+            val m = kinds.getOrPut(it) { mutableMapOf() }
+            m[group] = (m[group] ?: 0) + 1
+        }
         friends.forEach { f ->
+            count(f.food, TasteGroup.FOOD)
+            count(f.drinks, TasteGroup.DRINKS)
+            count(f.interests, TasteGroup.INTERESTS)
+            count(f.likes + f.kids.flatMap { it.likes } + f.relatives.flatMap { it.likes }, TasteGroup.LIKES)
+            count(f.dislikes, TasteGroup.DISLIKES)
             // Keyed by id so two friends with the same name still count twice.
             val who = "${f.id.value}\u0000${f.name}"
             add(liked, f.likes + f.food + f.drinks + f.interests, who)
@@ -59,7 +81,7 @@ object Tags {
         }
         fun names(set: Set<String>?) = set.orEmpty().map { it.substringAfter('\u0000') }
         return (liked.keys + disliked.keys)
-            .map { Tag(it, names(liked[it]), names(disliked[it])) }
+            .map { Tag(it, names(liked[it]), names(disliked[it]), kinds[it].orEmpty()) }
             .sortedWith(compareByDescending<Tag> { it.uses }.thenBy { it.key }.thenBy { it.name })
     }
 

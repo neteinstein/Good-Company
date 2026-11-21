@@ -70,6 +70,10 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   "We met" panel, the rest go through `ClosePlanUseCase` (Confirm / `CancelPlanUseCase` / `DeletePlanUseCase`), which
   returns the plan as it was for Undo (`RestorePlanUseCase`). On a series every answer is for that occurrence; Cancel
   and Delete ask "this one or the whole series" (`PlanSeriesDialog`), and "this one" just takes the date out.
+- **Places without GPS (issue #121).** Settings → Your data → Places also lists `TypedPlaces.of`: place names typed on
+  meetups (no `placeId`, or one whose `NamedPlace` is gone) and plans, spellings kept apart. Rename/merge is
+  `RenameTypedPlaceUseCase` (text only, GPS places untouched); "Add coordinates" is `PinTypedPlaceUseCase` with the
+  phone's current location (a new `NamedPlace`, its meetups linked; plans keep their text). Still no geocoding.
 
 ## Reference (moved from AGENTS.md)
 

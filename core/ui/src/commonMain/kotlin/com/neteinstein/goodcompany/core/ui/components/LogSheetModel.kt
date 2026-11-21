@@ -1,8 +1,8 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
-import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
@@ -47,7 +47,7 @@ data class LogDraft(
     val locationProblem: LocationProblem? = null,
     /** "Change" was tapped on a place that named itself: a new name is typed instead. */
     val placeChanged: Boolean = false,
-    val activity: HangoutActivity? = null,
+    val activity: ActivityChoice? = null,
     val saving: Boolean = false,
     val circleId: String? = null,
     /** [LogKind.OTHER] only: what it was ("Sent a postcard"). */
@@ -147,7 +147,7 @@ class LogSheetModel(
                         date = plan.date ?: p.date,
                         note = p.title,
                         placeName = p.place.orEmpty(),
-                        activity = p.activity ?: it.activity,
+                        activity = p.activityChoice ?: it.activity,
                         circleId = p.circleId,
                     )
                 }
@@ -173,7 +173,7 @@ class LogSheetModel(
                 note = request.note,
                 placeName = request.placeName.orEmpty(),
                 location = request.location,
-                activity = request.activity,
+                activity = ActivityChoice.of(request.activity, request.activityName),
                 label = request.label,
                 circleId = null,
                 editing = true,
@@ -212,7 +212,7 @@ class LogSheetModel(
 
     fun onPlaceName(name: String) = mutableDraft.update { it.copy(placeName = name) }
 
-    fun onActivity(activity: HangoutActivity?) = mutableDraft.update { it.copy(activity = activity) }
+    fun onActivity(activity: ActivityChoice?) = mutableDraft.update { it.copy(activity = activity) }
 
     /**
      * "Use my location", once the permission prompt has answered (issue #114: the sheets never asked, so on Android
@@ -259,7 +259,8 @@ class LogSheetModel(
             note = d.note,
             placeName = placeName.takeIf { meetup },
             location = d.location.takeIf { meetup },
-            activity = d.activity.takeIf { meetup },
+            activity = d.activity?.builtIn.takeIf { meetup },
+            activityName = d.activity?.customName.takeIf { meetup },
             label = d.label.takeIf { d.kind == LogKind.OTHER }.orEmpty(),
             time = d.time,
         )

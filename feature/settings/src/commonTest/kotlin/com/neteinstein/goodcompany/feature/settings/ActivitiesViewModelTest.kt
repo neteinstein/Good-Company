@@ -4,19 +4,22 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity.COFFEE
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity.LUNCH
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity.WALK
+import com.neteinstein.goodcompany.core.domain.usecase.ActivityNameProblem
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesViewModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ActivitiesViewModelTest {
     private val g = TestGraph()
 
-    private fun vm() = ActivitiesViewModel(g.observeSettings, g.setActivities)
+    private fun vm() = ActivitiesViewModel(g.observeSettings, g.setActivities, g.customActivities)
 
     @Test
     fun allAreOnByDefault_inTodaysOrder() = runViewModelTest {
@@ -60,5 +63,31 @@ class ActivitiesViewModelTest {
         vm.onMove(0, 5)
         vm.onMove(1, 1)
         assertEquals(listOf(COFFEE, LUNCH, WALK), g.settingsRepo.settings.value.activities)
+    }
+
+    @Test
+    fun yourOwnActivities_addRenameMoveAndRemoveWithUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddCustom("Surf")
+        vm.onAddCustom("Chess")
+        vm.onAddCustom("surf")
+        assertEquals(ActivitiesMessage.NotSaved(ActivityNameProblem.TAKEN), state.value.message)
+        vm.onMessageShown()
+        vm.onRenameCustom("Chess", " ")
+        assertEquals(ActivitiesMessage.NotSaved(ActivityNameProblem.BLANK), state.value.message)
+        vm.onRenameCustom("Chess", "Board games")
+        vm.onMoveCustom(1, 0)
+        assertEquals(listOf("Board games", "Surf"), state.value.custom)
+
+        vm.onRemoveCustom("Board games")
+        assertEquals(ActivitiesMessage.Removed("Board games"), state.value.message)
+        assertEquals(listOf("Surf"), state.value.custom)
+        vm.onUndoRemove()
+        assertEquals(listOf("Board games", "Surf"), state.value.custom)
+        vm.onMessageShown()
+        assertNull(state.value.message)
+        // Built-ins are untouched.
+        assertEquals(HangoutActivity.entries, state.value.enabled)
     }
 }

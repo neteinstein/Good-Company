@@ -51,6 +51,8 @@ data class PlanInput(
     val circleId: String? = null,
     val activity: HangoutActivity? = null,
     val repeat: Repeat? = null,
+    /** One of your own activities, by name (issue #121), when [activity] is null. */
+    val activityName: String? = null,
 )
 
 /**
@@ -73,6 +75,7 @@ class SavePlanUseCase(
         circleId: String? = null,
         activity: HangoutActivity? = null,
         repeat: Repeat? = null,
+        activityName: String? = null,
     ): Plan {
         require(title.isNotBlank()) { "Title required" }
         require(friendIds.isNotEmpty() || circleId != null) { "Pick at least one friend or a circle" }
@@ -88,6 +91,7 @@ class SavePlanUseCase(
             createdAt = existing?.createdAt ?: clock.now(),
             circleId = circleId,
             activity = activity,
+            activityName = activityName?.trim()?.ifBlank { null }.takeIf { activity == null },
             repeat = repeat?.copy(start = date, until = repeat.until?.takeIf { it >= date }),
             skippedDates = if (repeat == null) emptyList() else existing?.skippedDates.orEmpty().filter { it > date },
         )
@@ -106,6 +110,7 @@ class SavePlanUseCase(
         circleId = input.circleId,
         activity = input.activity,
         repeat = input.repeat,
+        activityName = input.activityName,
     )
 }
 
@@ -130,7 +135,7 @@ class ConfirmPlanUseCase(
             val present = plan.friendIds.filter { friends.get(it) != null }
             if (present.isNotEmpty()) {
                 val at = if (on >= clock.today()) clock.now() else on.atTime(LocalTime(NOON, 0)).toInstant(clock.timeZone)
-                checkIn(present, placeName = plan.place, note = plan.title, at = at, activity = plan.activity)
+                checkIn(present, placeName = plan.place, note = plan.title, at = at, activity = plan.activity, activityName = plan.activityName)
             }
         }
         plans.upsert(plan.closeOccurrence(on, status))

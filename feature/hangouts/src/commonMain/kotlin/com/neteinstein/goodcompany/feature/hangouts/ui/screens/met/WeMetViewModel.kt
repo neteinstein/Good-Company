@@ -2,8 +2,8 @@ package com.neteinstein.goodcompany.feature.hangouts.ui.screens.met
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
@@ -48,7 +48,7 @@ data class WeMetDetails(
     val friendIds: List<FriendId>,
     val circleId: String?,
     val date: LocalDate,
-    val activity: HangoutActivity?,
+    val activity: ActivityChoice?,
     val note: String,
     val plan: PlanOccurrence?,
     val placeName: String = "",
@@ -124,7 +124,7 @@ class WeMetViewModel(
 
     fun onTime(time: LocalTime?) = model.onTime(time)
 
-    fun onActivity(activity: HangoutActivity?) = model.onActivity(activity)
+    fun onActivity(activity: ActivityChoice?) = model.onActivity(activity)
 
     fun onTogglePerson(id: FriendId) = model.onTogglePerson(id)
 

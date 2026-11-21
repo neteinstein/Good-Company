@@ -36,3 +36,9 @@ changing the request itself (model id, headers, parameters).
     Restoring a backup keeps this device's switch, like the key. Settings → Activities (F3) edits
     `AppSettings.activities` (the ones on, in order, never empty; `user_preferences.activities`, NULL = all), and
     `ObserveActivitiesUseCase` offers only those to the log sheet.
+    Your own activities (issue #121) are `AppSettings.customActivities` (`user_preferences.custom_activities`, a JSON
+    array, migration `27.sqm`), managed by `CustomActivitiesUseCase` (names compared with `Tags.normalize`). Pickers
+    take `ActivityChoice` (`BuiltIn` or `Custom`); a meetup or plan stores a custom one as text in `activity_name`
+    (`Hangout.activityName` / `Plan.activityName`, only when `activity` is null), so renaming or removing one never
+    rewrites history. Plan editors get the list through `LocalActivityChoices` (provided in `App.kt` from
+    `AppViewModel`).

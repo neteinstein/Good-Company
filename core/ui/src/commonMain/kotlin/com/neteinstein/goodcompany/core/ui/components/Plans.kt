@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -105,6 +106,9 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
+/** The activities plan editors offer (issue #121), provided by the app from Settings; null = the built-in ones. */
+val LocalActivityChoices = androidx.compose.runtime.compositionLocalOf<List<ActivityChoice>?> { null }
+
 /**
  * Create or change a planned meetup: what (title and activity), with whom (a circle, people or both), which day,
  * whether it repeats and (optionally) where. A plan doesn't count as "met" until the user says it happened.
@@ -121,7 +125,7 @@ fun PlanEditor(
     initialTitle: String = "",
     circles: List<FriendGroup> = emptyList(),
     preselectedCircle: String? = null,
-    activities: List<HangoutActivity> = HangoutActivity.entries,
+    activities: List<ActivityChoice> = LocalActivityChoices.current ?: HangoutActivity.entries.map { ActivityChoice.BuiltIn(it) },
     pickerCircles: List<FriendGroup> = circles,
 ) {
     var title by remember { mutableStateOf(initial?.title ?: initialTitle) }
@@ -129,7 +133,7 @@ fun PlanEditor(
     var picking by remember { mutableStateOf(false) }
     var circleId by remember { mutableStateOf(initial?.circleId ?: preselectedCircle) }
     var withCircle by remember { mutableStateOf(circleId != null) }
-    var activity by remember { mutableStateOf(initial?.activity) }
+    var activity by remember { mutableStateOf(initial?.activityChoice) }
     var date by remember { mutableStateOf(initial?.date ?: today.plus(DEFAULT_DAYS_AHEAD, DateTimeUnit.DAY)) }
     var place by remember { mutableStateOf(initial?.place.orEmpty()) }
     var repeat by remember { mutableStateOf(initial?.repeat?.let { RepeatDraft(it.every, it.unit, it.until) }) }
@@ -221,7 +225,8 @@ fun PlanEditor(
                             date = date,
                             place = place.ifBlank { null },
                             circleId = circle?.id,
-                            activity = activity,
+                            activity = activity?.builtIn,
+                            activityName = activity?.customName,
                             repeat = repeat?.let { Repeat(it.every, it.unit, date, it.until) },
                         ),
                     )
@@ -444,7 +449,7 @@ private fun PlanDetails(plan: Plan, friends: List<Friend>, showNames: Boolean, c
         friends.takeIf { showNames && circle == null && it.isNotEmpty() }?.let { fs ->
             stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
         },
-        plan.activity?.let { activityLabel(it) },
+        plan.activityChoice?.let { activityLabel(it) },
         plan.repeat?.let { repeatLabel(it) },
         plan.place,
     )

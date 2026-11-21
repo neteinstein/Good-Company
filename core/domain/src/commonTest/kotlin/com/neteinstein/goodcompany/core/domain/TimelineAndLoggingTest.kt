@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -343,7 +344,14 @@ class TimelineAndLoggingTest {
                 Hangout("d", listOf(ana), at(2026, 3, 4)),
             ),
         )
-        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.MUSIC, HangoutActivity.LUNCH), ranked.take(3))
+        assertEquals(
+            listOf(
+                ActivityChoice.BuiltIn(HangoutActivity.WALK),
+                ActivityChoice.BuiltIn(HangoutActivity.MUSIC),
+                ActivityChoice.BuiltIn(HangoutActivity.LUNCH),
+            ),
+            ranked.take(3),
+        )
         assertEquals(HangoutActivity.entries.size, ranked.size)
     }
 
@@ -354,7 +362,14 @@ class TimelineAndLoggingTest {
         g.hangoutRepo.add(Hangout("b", listOf(ana), at(2026, 3, 2), activity = HangoutActivity.TRIP))
         g.setActivities(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE, HangoutActivity.MUSIC))
         // TRIP is off now: it isn't offered, although an old meetup still has it.
-        assertEquals(listOf(HangoutActivity.MUSIC, HangoutActivity.WALK, HangoutActivity.COFFEE), g.observeActivities().first())
+        assertEquals(
+            listOf(
+                ActivityChoice.BuiltIn(HangoutActivity.MUSIC),
+                ActivityChoice.BuiltIn(HangoutActivity.WALK),
+                ActivityChoice.BuiltIn(HangoutActivity.COFFEE),
+            ),
+            g.observeActivities().first(),
+        )
         assertEquals(HangoutActivity.TRIP, g.hangoutRepo.hangouts.value.single { it.id == "b" }.activity)
 
         g.setActivities(emptyList()) // never none

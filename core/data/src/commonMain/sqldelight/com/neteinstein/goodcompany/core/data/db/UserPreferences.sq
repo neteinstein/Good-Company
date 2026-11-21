@@ -19,7 +19,9 @@ CREATE TABLE user_preferences (
     -- The AI switch (F1). NULL = not chosen yet: on when an API key is saved (people who used AI before the switch).
     ai_enabled INTEGER,
     -- The activities the log sheet offers (F3): HangoutActivity names, comma-separated, in order; NULL = all of them.
-    activities TEXT
+    activities TEXT,
+    -- Your own activities (issue #121): a JSON array of names, in order; NULL = none.
+    custom_activities TEXT
 );
 
 get:

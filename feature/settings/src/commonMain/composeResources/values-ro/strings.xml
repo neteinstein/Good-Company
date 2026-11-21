@@ -100,8 +100,8 @@
     <string name="msg_drive_offline">Nu s-a putut contacta Google Drive. Verifică conexiunea.</string>
     <string name="msg_drive_failed">Ceva n-a mers cu Google Drive. Încearcă din nou.</string>
     <string name="places">Locuri</string>
-    <string name="places_row_hint">Nume date unor puncte GPS</string>
-    <string name="places_intro">Locurile sunt nume pe care le-ai dat unor puncte GPS. Nu părăsesc niciodată telefonul și nu se folosește niciun serviciu de hărți.</string>
+    <string name="places_row_hint">Toate locurile unde v-ați văzut sau plănuiți să vă vedeți</string>
+    <string name="places_intro">Toate locurile din întâlnirile și planurile tale. Locurile cu GPS își spun singure numele când faci check-in în apropiere. Nimic nu părăsește telefonul și nu se folosește niciun serviciu de hărți.</string>
     <string name="places_empty">Încă nu ai locuri. Înregistrează o întâlnire cu locația ta și te vom întreba „Ce loc e acesta?”.</string>
     <string name="places_usually">de obicei %1$s</string>
     <string name="places_nearby">la %1$d m de „%2$s”</string>
@@ -139,9 +139,9 @@
     <string name="cal_row_web">Indisponibil în browser</string>
 
     <!-- Shared tags (F16) -->
-    <string name="tags_row">Etichete</string>
-    <string name="tags_row_hint">Redenumește, unește sau șterge gusturile pentru toți</string>
-    <string name="tags_title">Etichete</string>
+    <string name="tags_row">Pasiuni</string>
+    <string name="tags_row_hint">Mâncare, băuturi, interese, ce le place și ce nu: redenumește, unește sau șterge pentru toți</string>
+    <string name="tags_title">Pasiuni</string>
     <string name="tags_search">Caută etichete</string>
     <string name="tags_same">Pare aceeași etichetă</string>
     <string name="tags_merge">Unește</string>
@@ -177,7 +177,6 @@
     <string name="ai_switch">Funcții AI</string>
     <string name="ai_switch_hint">Planuri săptămânale, subiecte de conversație, sugestii de cadouri și de mesaje, cu propria ta cheie Anthropic.</string>
     <string name="ai_off_note">Cât timp e oprit, nimic din ce are nevoie de AI nu apare în aplicație.</string>
-    <string name="meetups">Întâlniri</string>
     <string name="activities">Activități</string>
     <string name="activities_count">%1$d din %2$d pornite</string>
     <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd șase, celelalte sunt la Mai mult. Trage pentru a reordona.</string>
@@ -219,4 +218,29 @@
     <string name="notif_settings_when">Când și cum</string>
     <string name="notif_type_daily_log">Notează-ți ziua</string>
     <string name="notif_type_daily_log_hint">Un memento zilnic să notezi cu cine ai ținut legătura.</string>
+    <!-- Issue #121 -->
+    <string name="activities_yours">Activitățile tale</string>
+    <string name="activities_yours_hint">Adaugă-le pe ale tale. Dacă redenumești sau elimini una, întâlnirile și planurile trecute își păstrează numele.</string>
+    <string name="activities_add">Adaugă o activitate</string>
+    <string name="activities_rename">Redenumește activitatea</string>
+    <string name="activities_name">Nume</string>
+    <string name="activities_removed">„%1$s” eliminată</string>
+    <string name="activities_name_blank">Dă-i un nume</string>
+    <string name="activities_name_taken">Există deja o activitate cu acest nume</string>
+    <string name="places_typed">Fără GPS</string>
+    <string name="places_pin">Adaugă coordonate (unde ești acum)</string>
+    <string name="places_pinned">„%1$s” are acum coordonate</string>
+    <string name="places_no_location">Nu am putut afla locația ta</string>
+    <string name="places_renamed">Redenumit în „%1$s”</string>
+    <string name="places_merge_typed_hint">Întâlnirile și planurile de acolo primesc numele ales.</string>
+    <string name="tastes_food">Mâncare</string>
+    <string name="tastes_drinks">Băuturi</string>
+    <string name="tastes_interests">Interese</string>
+    <string name="tastes_likes">Îi place</string>
+    <string name="tastes_dislikes">Nu-i place</string>
+    <plurals name="places_plans">
+        <item quantity="one">%1$d plan</item>
+        <item quantity="few">%1$d planuri</item>
+        <item quantity="other">%1$d de planuri</item>
+    </plurals>
 </resources>

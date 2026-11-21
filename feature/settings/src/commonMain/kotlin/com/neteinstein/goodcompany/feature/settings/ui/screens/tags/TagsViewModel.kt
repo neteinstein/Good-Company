@@ -11,6 +11,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.Tags
+import com.neteinstein.goodcompany.core.domain.usecase.TasteGroup
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,8 @@ data class TagsUiState(
     /** Spellings that look like the same tag ("Sushi" · "sushi"), offered for merging. */
     val duplicates: List<List<Tag>> = emptyList(),
     val query: String = "",
+    /** Issue #121: one list at a time (food, drinks, interests, likes, dislikes); null = all. */
+    val group: TasteGroup? = null,
     val isLoading: Boolean = true,
     val message: TagsMessage? = null,
     /** The tag just deleted, offered for undo. */
@@ -42,10 +45,16 @@ data class TagsUiState(
 ) {
     /** [tags] matching [query], ignoring case and accents. */
     val shown: List<Tag>
-        get() = Tags.normalize(query).let { q -> if (q.isEmpty()) tags else tags.filter { q in it.key } }
+        get() {
+            val inGroup = group?.let { Tags.inGroup(tags, it) } ?: tags
+            return Tags.normalize(query).let { q -> if (q.isEmpty()) inGroup else inGroup.filter { q in it.key } }
+        }
+
+    /** How many tags each group's chip counts. */
+    val groupCounts: Map<TasteGroup, Int> get() = Tags.groupCounts(tags)
 }
 
-/** Settings → Tags (F16): rename, merge and delete tags for everyone at once. */
+/** Settings → Your data → Tastes (F16, issue #121): by list, with counts; rename, merge and delete for everyone at once. */
 class TagsViewModel(
     observeTags: ObserveTagsUseCase,
     observeDuplicates: ObserveTagDuplicatesUseCase,
@@ -65,6 +74,9 @@ class TagsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TagsUiState())
 
     fun onQueryChange(query: String) = local.update { it.copy(query = query) }
+
+    /** A group chip; tapping the chosen one again shows them all. */
+    fun onGroupChange(group: TasteGroup?) = local.update { it.copy(group = group.takeIf { g -> g != it.group }) }
 
     /**
      * Renames [tag] to [newName]. When [newName] is another tag's spelling (ignoring case and accents) the two merge

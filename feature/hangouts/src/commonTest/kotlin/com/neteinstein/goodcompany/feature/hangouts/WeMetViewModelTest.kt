@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.hangouts
 
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -108,7 +109,7 @@ class WeMetViewModelTest {
         val state = collecting(vm.state)
         val friday = LocalDate(2026, 3, 6)
         vm.onDate(friday)
-        vm.onActivity(HangoutActivity.LUNCH)
+        vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.LUNCH))
         vm.onOpenNote()
         assertTrue(state.value.noteOpen)
         vm.onNote("Her new job at the studio")
@@ -135,8 +136,8 @@ class WeMetViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         assertEquals(HangoutActivity.entries.size, state.value.sheet.activities.size)
-        vm.onActivity(HangoutActivity.COFFEE)
-        assertEquals(HangoutActivity.COFFEE, state.value.sheet.activity)
+        vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.COFFEE))
+        assertEquals(ActivityChoice.BuiltIn(HangoutActivity.COFFEE), state.value.sheet.activity)
         vm.onActivity(null)
         assertNull(state.value.sheet.activity)
     }
@@ -170,12 +171,12 @@ class WeMetViewModelTest {
         collecting(vm.state)
         val friday = LocalDate(2026, 3, 6)
         vm.onDate(friday)
-        vm.onActivity(HangoutActivity.DINNER)
+        vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.DINNER))
         vm.onNote("Pasta")
         val details = vm.details()
         assertEquals(listOf(ana), details.friendIds)
         assertEquals(friday, details.date)
-        assertEquals(HangoutActivity.DINNER, details.activity)
+        assertEquals(ActivityChoice.BuiltIn(HangoutActivity.DINNER), details.activity)
         assertEquals("Pasta", details.note)
         assertNull(details.circleId)
         assertNull(details.plan)
@@ -271,7 +272,7 @@ class WeMetViewModelTest {
             val state = collecting(vm.state)
             vm.onOpenPlace()
             vm.onPlaceName("Time Out")
-            vm.onActivity(HangoutActivity.LUNCH)
+            vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.LUNCH))
             vm.onKind(kind)
             assertFalse(state.value.placeOpen, "$kind hides the place")
             vm.onOpenNote()
