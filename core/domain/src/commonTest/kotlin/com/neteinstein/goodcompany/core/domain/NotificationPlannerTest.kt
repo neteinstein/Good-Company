@@ -33,10 +33,14 @@ class NotificationPlannerTest {
         // The kid becomes a person with their own reminder, on because Ana's is (F9); the ping keeps its old id.
         val (people, links) = KidsAsPeople.convert(friends, emptyList())
         val planned = NotificationPlanner.plan(people, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9, links = links).withoutDailyLog()
-        assertEquals(listOf("bday:ana:2026-03-20", "kid:k:2026-03-25"), planned.map { it.id })
-        assertEquals(at(2026, 3, 20, 9), planned[0].at)
-        assertEquals(NotificationContent.FriendBirthday("Ana", 36), planned[0].content)
-        assertEquals(listOf("lego"), (planned[1].content as NotificationContent.KidBirthday).likes)
+        assertEquals(
+            listOf("bday-soon:ana:2026-03-20", "bday-soon:k:2026-03-25", "bday:ana:2026-03-20", "kid:k:2026-03-25"),
+            planned.map { it.id },
+        )
+        val onTheDay = planned.filterNot { it.id.startsWith("bday-soon:") } // the heads-up (issue #133) has its own test
+        assertEquals(at(2026, 3, 20, 9), onTheDay[0].at)
+        assertEquals(NotificationContent.FriendBirthday("Ana", 36), onTheDay[0].content)
+        assertEquals(listOf("lego"), (onTheDay[1].content as NotificationContent.KidBirthday).likes)
     }
 
     @Test

@@ -243,4 +243,13 @@
         <item quantity="few">%1$d planuri</item>
         <item quantity="other">%1$d de planuri</item>
     </plurals>
+    <string name="notif_bday_heads_up">Anunță înainte de zilele de naștere</string>
+    <string name="notif_bday_heads_up_off">Oprit</string>
+    <string name="notif_bday_heads_up_week">1 săptămână</string>
+    <string name="notif_bday_heads_up_two_weeks">2 săptămâni</string>
+    <plurals name="notif_bday_heads_up_days">
+        <item quantity="one">%1$d zi</item>
+        <item quantity="few">%1$d zile</item>
+        <item quantity="other">%1$d de zile</item>
+    </plurals>
 </resources>

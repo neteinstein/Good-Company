@@ -97,14 +97,23 @@ object NotificationPlanner {
             persistent: Boolean = false,
             slot: String = id,
             whileOpen: Boolean = false,
+            link: String? = null,
         ) {
             if (!notifications.allows(content.type)) return
             val at = day.atReminderTime()
             if (at > now && day <= end) {
                 // A persistent one goes away by itself when its day is over.
                 val until = if (persistent) day.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone) else null
-                out += PlannedNotification(id, at, content, persistent, until, slot, whileOpen && persistent)
+                out += PlannedNotification(id, at, content, persistent, until, slot, whileOpen && persistent, link)
             }
+        }
+        // Issue #133: "Heads-up before birthdays", N days before every birthday that notifies on the day. Ordinary (never
+        // kept on screen), never throttled, its own id so it never replaces the day's one; a tap opens the person.
+        val headsUp = notifications.birthdayHeadsUpDays.takeIf { it > 0 }
+        fun birthdaySoon(key: String, day: LocalDate, content: (Int) -> NotificationContent.BirthdaySoon) {
+            val days = headsUp ?: return
+            val c = content(days)
+            add("bday-soon:$key:$day", day.minus(days, DateTimeUnit.DAY), c, link = AppLink.person(c.personId))
         }
 
         val parents = KidsAsPeople.parentsById(links, friends)
@@ -124,6 +133,9 @@ object NotificationPlanner {
                     } else {
                         add("bday:${f.id.value}:$d", d, NotificationContent.FriendBirthday(f.displayName, b.ageOn(d)), keepOnScreen)
                     }
+                    birthdaySoon(f.id.value, d) { n ->
+                        NotificationContent.BirthdaySoon(f.displayName, n, b.ageOn(d), f.id, parentName = parent?.displayName)
+                    }
                 }
             }
             // Relatives have their own switch (on by default, brief decision F10), like the friend's own; never throttled.
@@ -136,6 +148,9 @@ object NotificationPlanner {
                         NotificationContent.RelativeBirthday(r.name, f.displayName, r.relation, b.ageOn(d)),
                         keepOnScreen,
                     )
+                    birthdaySoon("${f.id.value}:${r.id}", d) { n ->
+                        NotificationContent.BirthdaySoon(r.name, n, b.ageOn(d), f.id, familyOf = f.displayName)
+                    }
                 }
             }
             f.importantEvents.forEach { e ->

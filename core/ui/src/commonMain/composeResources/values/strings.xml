@@ -180,6 +180,17 @@
         <item quantity="one">Coming up in %1$d day.</item>
         <item quantity="other">Coming up in %1$d days.</item>
     </plurals>
+    <string name="notif_bday_soon_tomorrow">🎂 %1$s’s birthday is tomorrow</string>
+    <string name="notif_bday_soon_week">🎂 %1$s’s birthday is in a week</string>
+    <string name="notif_bday_soon_two_weeks">🎂 %1$s’s birthday is in two weeks</string>
+    <plurals name="notif_bday_soon_days">
+        <item quantity="one">🎂 %2$s’s birthday is in %1$d day</item>
+        <item quantity="other">🎂 %2$s’s birthday is in %1$d days</item>
+    </plurals>
+    <string name="notif_bday_soon_turns">Turns %1$d.</string>
+    <string name="notif_bday_soon_kid">%1$s’s kid.</string>
+    <string name="notif_bday_soon_family">%1$s’s family.</string>
+    <string name="notif_bday_soon_body">Birthday coming up.</string>
     <string name="notif_reminder_title">⏰ %1$s</string>
     <string name="notif_reminder_with">With %1$s</string>
     <string name="notif_reminder_body">Reminder</string>

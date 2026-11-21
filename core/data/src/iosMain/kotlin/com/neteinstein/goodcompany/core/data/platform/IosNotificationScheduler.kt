@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.usecase.AppLink
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.toQuickEntry
 import kotlinx.coroutines.CoroutineScope
@@ -144,7 +145,12 @@ internal class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDel
         // Issue #116: a tap on a notification with an app link (the daily log reminder) opens the Log popup.
         val link = didReceiveNotificationResponse.notification.request.content.userInfo[IosNotificationScheduler.KEY_LINK] as? String
         if (actionId == UNNotificationDefaultActionIdentifier && link != null) {
-            (AppLink.parse(link) as? AppLink.Log)?.let { KoinPlatform.getKoin().get<QuickEntryInbox>().offer(it.toQuickEntry()) }
+            when (val parsed = AppLink.parse(link)) {
+                is AppLink.Log -> KoinPlatform.getKoin().get<QuickEntryInbox>().offer(parsed.toQuickEntry())
+                // Issue #133: a birthday heads-up opens the person's page.
+                is AppLink.Person -> KoinPlatform.getKoin().get<PersonInbox>().offer(parsed.friendId)
+                else -> Unit
+            }
             withCompletionHandler()
             return
         }

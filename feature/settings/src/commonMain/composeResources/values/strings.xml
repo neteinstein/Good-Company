@@ -244,4 +244,12 @@
     <string name="tastes_interests">Interests</string>
     <string name="tastes_likes">Likes</string>
     <string name="tastes_dislikes">Dislikes</string>
+    <string name="notif_bday_heads_up">Heads-up before birthdays</string>
+    <string name="notif_bday_heads_up_off">Off</string>
+    <string name="notif_bday_heads_up_week">1 week</string>
+    <string name="notif_bday_heads_up_two_weeks">2 weeks</string>
+    <plurals name="notif_bday_heads_up_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
 </resources>

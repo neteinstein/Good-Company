@@ -479,265 +479,272 @@ fun SettingsContent(
 
             MyPhotoCard(state.myPhoto, onChoose = actions.onChooseMyPhoto, onRemove = actions.onRemoveMyPhoto)
 
-            SectionCard(stringResource(Res.string.appearance), icon = Icons.Rounded.Palette) {
-                val modes = listOf(
-                    Triple(ThemeMode.SYSTEM, stringResource(Res.string.theme_auto), Icons.Rounded.SettingsBrightness),
-                    Triple(ThemeMode.LIGHT, stringResource(Res.string.theme_light), Icons.Rounded.LightMode),
-                    Triple(ThemeMode.DARK, stringResource(Res.string.theme_dark), Icons.Rounded.DarkMode),
-                )
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    modes.forEachIndexed { i, (mode, label, icon) ->
-                        SegmentedButton(
-                            selected = s.themeMode == mode,
-                            onClick = { actions.onThemeChange(mode) },
-                            shape = SegmentedButtonDefaults.itemShape(i, modes.size),
-                            icon = { Icon(icon, null, Modifier.size(18.dp)) },
-                            label = { Text(label) },
+            SettingsCard.ORDER.forEach { card ->
+                when (card) {
+                    SettingsCard.APPEARANCE -> SectionCard(stringResource(Res.string.appearance), icon = Icons.Rounded.Palette) {
+                        val modes = listOf(
+                            Triple(ThemeMode.SYSTEM, stringResource(Res.string.theme_auto), Icons.Rounded.SettingsBrightness),
+                            Triple(ThemeMode.LIGHT, stringResource(Res.string.theme_light), Icons.Rounded.LightMode),
+                            Triple(ThemeMode.DARK, stringResource(Res.string.theme_dark), Icons.Rounded.DarkMode),
                         )
-                    }
-                }
-                if (capabilities.hasDynamicColor) {
-                    SwitchRow(
-                        stringResource(Res.string.dynamic_color),
-                        stringResource(Res.string.dynamic_color_hint),
-                        s.dynamicColor,
-                        actions.onDynamicColorChange,
-                    )
-                }
-                Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Language, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        stringResource(Res.string.language_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            SectionCard(stringResource(Res.string.circles), icon = Icons.Rounded.Diversity3) {
-                Text(
-                    stringResource(Res.string.circles_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-                listOf(
-                    Closeness.INNER to s.innerCircleDays,
-                    Closeness.CLOSE to s.closeCircleDays,
-                    Closeness.GOOD to s.goodFriendsDays,
-                    Closeness.ACQUAINTANCE to s.acquaintanceDays,
-                ).forEach { (closeness, days) ->
-                    Text(
-                        closenessLabel(closeness),
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(start = 16.dp, top = 10.dp),
-                    )
-                    Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        // Acquaintances have no rhythm by default (issue #69); the real-friend levels always have one.
-                        if (!closeness.isRealFriend) {
-                            FilterChip(
-                                days == null,
-                                { actions.onClosenessDaysChange(closeness, null) },
-                                label = { Text(stringResource(CoreRes.string.cadence_off)) },
-                            )
-                        }
-                        (CIRCLE_OPTIONS + listOfNotNull(days)).distinct().sorted().forEach { d ->
-                            FilterChip(days == d, { actions.onClosenessDaysChange(closeness, d) }, label = { Text(everyNDays(d)) })
-                        }
-                    }
-                }
-                SwitchRow(
-                    stringResource(Res.string.show_warmth),
-                    stringResource(Res.string.show_warmth_hint),
-                    s.showWarmth,
-                    actions.onShowWarmthChange,
-                )
-            }
-
-            SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
-                SwitchRow(stringResource(Res.string.ai_switch), stringResource(Res.string.ai_switch_hint), s.aiEnabled, actions.onAiEnabledChange)
-                if (!s.aiEnabled) {
-                    Text(
-                        stringResource(Res.string.ai_off_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                }
-                // The key, the area and the weekly plans only show while AI is on (F1).
-                if (s.aiEnabled) AiDetails(state, actions)
-            }
-
-            SectionCard(stringResource(Res.string.reminders), icon = Icons.Rounded.Notifications) {
-                if (capabilities.hasBackgroundNotifications && notificationsAllowed == false) {
-                    FilledTonalButton(onClick = actions.onEnableNotifications, modifier = Modifier.padding(horizontal = 16.dp)) {
-                        Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(Res.string.allow_notifications))
-                    }
-                }
-                // Settings → Notifications (issue #98): its own screen.
-                ListItem(
-                    modifier = Modifier.clickable(onClick = actions.onOpenNotifications),
-                    leadingContent = { Icon(Icons.Rounded.Notifications, null) },
-                    headlineContent = { Text(stringResource(Res.string.notif_settings_title), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = {
-                        Text(
-                            stringResource(
-                                when {
-                                    !capabilities.hasBackgroundNotifications -> Res.string.web_notifications
-                                    !s.notifications.enabled -> Res.string.notif_settings_row_off
-                                    else -> Res.string.notif_settings_row_hint
-                                },
-                            ),
-                        )
-                    },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                // Calendar suggestions (D3): Android and iOS only; the web says so here.
-                ListItem(
-                    modifier = if (capabilities.hasCalendar) Modifier.clickable(onClick = actions.onOpenCalendar) else Modifier,
-                    leadingContent = { Icon(Icons.Rounded.CalendarMonth, null) },
-                    headlineContent = { Text(stringResource(Res.string.cal_title), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = {
-                        Text(
-                            stringResource(
-                                when {
-                                    !capabilities.hasCalendar -> Res.string.cal_row_web
-                                    s.calendarSuggestions -> Res.string.cal_row_on
-                                    else -> Res.string.cal_row_off
-                                },
-                            ),
-                        )
-                    },
-                    trailingContent = if (capabilities.hasCalendar) {
-                        { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) }
-                    } else {
-                        null
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-            }
-
-            SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            stringResource(if (state.hasSampleData) Res.string.sample_loaded else Res.string.sample),
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            stringResource(if (state.hasSampleData) Res.string.sample_remove_hint else Res.string.sample_add_hint),
-                        )
-                    },
-                    trailingContent = {
-                        AnimatedContent(state.hasSampleData) { loaded ->
-                            if (loaded) {
-                                OutlinedButton(onClick = actions.onRemoveSampleData) { Text(stringResource(CoreRes.string.remove)) }
-                            } else {
-                                FilledTonalButton(onClick = actions.onLoadSampleData) { Text(stringResource(CoreRes.string.add)) }
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                            modes.forEachIndexed { i, (mode, label, icon) ->
+                                SegmentedButton(
+                                    selected = s.themeMode == mode,
+                                    onClick = { actions.onThemeChange(mode) },
+                                    shape = SegmentedButtonDefaults.itemShape(i, modes.size),
+                                    icon = { Icon(icon, null, Modifier.size(18.dp)) },
+                                    label = { Text(label) },
+                                )
                             }
                         }
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                ListItem(
-                    leadingContent = { Icon(Icons.Rounded.UploadFile, null) },
-                    headlineContent = { Text(stringResource(Res.string.import_vcf), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.import_vcf_hint)) },
-                    trailingContent = { FilledTonalButton(onClick = actions.onImportContactsFile) { Text(stringResource(Res.string.import)) } },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                // Issue #121: activities moved here from their own "Meetups" card.
-                ListItem(
-                    modifier = Modifier.clickable(onClick = actions.onOpenActivities),
-                    leadingContent = { Icon(Icons.Rounded.FavoriteBorder, null) },
-                    headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = {
-                        Text(
-                            stringResource(
-                                Res.string.activities_count,
-                                s.activities.size + s.customActivities.size,
-                                HangoutActivity.entries.size + s.customActivities.size,
-                            ),
-                        )
-                    },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                ListItem(
-                    modifier = Modifier.clickable(onClick = actions.onOpenPlaces),
-                    leadingContent = { Icon(Icons.Rounded.Place, null) },
-                    headlineContent = { Text(stringResource(Res.string.places), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.places_row_hint)) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                ListItem(
-                    leadingContent = { Icon(Icons.AutoMirrored.Rounded.Label, null) },
-                    headlineContent = { Text(stringResource(Res.string.tags_row), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.tags_row_hint)) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable(onClick = actions.onOpenTags),
-                )
-                ListItem(
-                    leadingContent = { Icon(Icons.Rounded.Download, null) },
-                    headlineContent = { Text(stringResource(Res.string.backup_export), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.backup_export_hint)) },
-                    trailingContent = {
-                        FilledTonalButton(onClick = actions.onExportBackup) { Text(stringResource(Res.string.backup_export_button)) }
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                ListItem(
-                    leadingContent = { Icon(Icons.Rounded.Restore, null) },
-                    headlineContent = { Text(stringResource(Res.string.backup_restore), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.backup_restore_hint)) },
-                    trailingContent = {
-                        OutlinedButton(onClick = actions.onRestoreBackup) { Text(stringResource(Res.string.backup_restore_button)) }
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-                if (capabilities.hasGoogleDrive) {
-                    ListItem(
-                        leadingContent = { Icon(Icons.Rounded.CloudUpload, null) },
-                        headlineContent = { Text(stringResource(Res.string.drive_title), style = MaterialTheme.typography.titleSmall) },
-                        supportingContent = {
-                            Text(
-                                s.lastDriveBackupAt?.let { stringResource(Res.string.drive_last, relativePast(it, state.now, state.zone)) }
-                                    ?: stringResource(Res.string.drive_hint),
+                        if (capabilities.hasDynamicColor) {
+                            SwitchRow(
+                                stringResource(Res.string.dynamic_color),
+                                stringResource(Res.string.dynamic_color_hint),
+                                s.dynamicColor,
+                                actions.onDynamicColorChange,
                             )
-                        },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    )
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        FilledTonalButton(onClick = actions.onDriveBackup, enabled = !state.driveBusy) {
-                            Text(stringResource(Res.string.drive_backup_button))
                         }
-                        OutlinedButton(onClick = actions.onDriveRestore, enabled = !state.driveBusy) {
-                            Text(stringResource(Res.string.drive_restore_button))
+                        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Language, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                stringResource(Res.string.language_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
-                        if (state.driveBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    }
+                    SettingsCard.AI -> SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
+                        SwitchRow(
+                            stringResource(Res.string.ai_switch),
+                            stringResource(Res.string.ai_switch_hint),
+                            s.aiEnabled,
+                            actions.onAiEnabledChange,
+                        )
+                        if (!s.aiEnabled) {
+                            Text(
+                                stringResource(Res.string.ai_off_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                            )
+                        }
+                        // The key, the area and the weekly plans only show while AI is on (F1).
+                        if (s.aiEnabled) AiDetails(state, actions)
+                    }
+                    SettingsCard.REMINDERS -> SectionCard(stringResource(Res.string.reminders), icon = Icons.Rounded.Notifications) {
+                        if (capabilities.hasBackgroundNotifications && notificationsAllowed == false) {
+                            FilledTonalButton(onClick = actions.onEnableNotifications, modifier = Modifier.padding(horizontal = 16.dp)) {
+                                Icon(Icons.Rounded.Notifications, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(Res.string.allow_notifications))
+                            }
+                        }
+                        // Settings → Notifications (issue #98): its own screen.
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = actions.onOpenNotifications),
+                            leadingContent = { Icon(Icons.Rounded.Notifications, null) },
+                            headlineContent = { Text(stringResource(Res.string.notif_settings_title), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = {
+                                Text(
+                                    stringResource(
+                                        when {
+                                            !capabilities.hasBackgroundNotifications -> Res.string.web_notifications
+                                            !s.notifications.enabled -> Res.string.notif_settings_row_off
+                                            else -> Res.string.notif_settings_row_hint
+                                        },
+                                    ),
+                                )
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        // Calendar suggestions (D3): Android and iOS only; the web says so here.
+                        ListItem(
+                            modifier = if (capabilities.hasCalendar) Modifier.clickable(onClick = actions.onOpenCalendar) else Modifier,
+                            leadingContent = { Icon(Icons.Rounded.CalendarMonth, null) },
+                            headlineContent = { Text(stringResource(Res.string.cal_title), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = {
+                                Text(
+                                    stringResource(
+                                        when {
+                                            !capabilities.hasCalendar -> Res.string.cal_row_web
+                                            s.calendarSuggestions -> Res.string.cal_row_on
+                                            else -> Res.string.cal_row_off
+                                        },
+                                    ),
+                                )
+                            },
+                            trailingContent = if (capabilities.hasCalendar) {
+                                { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) }
+                            } else {
+                                null
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                    }
+                    SettingsCard.CLOSENESS -> SectionCard(stringResource(Res.string.circles), icon = Icons.Rounded.Diversity3) {
+                        Text(
+                            stringResource(Res.string.circles_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                        listOf(
+                            Closeness.INNER to s.innerCircleDays,
+                            Closeness.CLOSE to s.closeCircleDays,
+                            Closeness.GOOD to s.goodFriendsDays,
+                            Closeness.ACQUAINTANCE to s.acquaintanceDays,
+                        ).forEach { (closeness, days) ->
+                            Text(
+                                closenessLabel(closeness),
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.padding(start = 16.dp, top = 10.dp),
+                            )
+                            Row(
+                                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                // Acquaintances have no rhythm by default (issue #69); the real-friend levels always have one.
+                                if (!closeness.isRealFriend) {
+                                    FilterChip(
+                                        days == null,
+                                        { actions.onClosenessDaysChange(closeness, null) },
+                                        label = { Text(stringResource(CoreRes.string.cadence_off)) },
+                                    )
+                                }
+                                (CIRCLE_OPTIONS + listOfNotNull(days)).distinct().sorted().forEach { d ->
+                                    FilterChip(days == d, { actions.onClosenessDaysChange(closeness, d) }, label = { Text(everyNDays(d)) })
+                                }
+                            }
+                        }
+                        SwitchRow(
+                            stringResource(Res.string.show_warmth),
+                            stringResource(Res.string.show_warmth_hint),
+                            s.showWarmth,
+                            actions.onShowWarmthChange,
+                        )
+                    }
+                    SettingsCard.YOUR_DATA -> SectionCard(stringResource(Res.string.your_data), icon = Icons.Rounded.Storage) {
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    stringResource(if (state.hasSampleData) Res.string.sample_loaded else Res.string.sample),
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    stringResource(if (state.hasSampleData) Res.string.sample_remove_hint else Res.string.sample_add_hint),
+                                )
+                            },
+                            trailingContent = {
+                                AnimatedContent(state.hasSampleData) { loaded ->
+                                    if (loaded) {
+                                        OutlinedButton(onClick = actions.onRemoveSampleData) { Text(stringResource(CoreRes.string.remove)) }
+                                    } else {
+                                        FilledTonalButton(onClick = actions.onLoadSampleData) { Text(stringResource(CoreRes.string.add)) }
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        ListItem(
+                            leadingContent = { Icon(Icons.Rounded.UploadFile, null) },
+                            headlineContent = { Text(stringResource(Res.string.import_vcf), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.import_vcf_hint)) },
+                            trailingContent = {
+                                FilledTonalButton(onClick = actions.onImportContactsFile) { Text(stringResource(Res.string.import)) }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        // Issue #121: activities moved here from their own "Meetups" card.
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = actions.onOpenActivities),
+                            leadingContent = { Icon(Icons.Rounded.FavoriteBorder, null) },
+                            headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = {
+                                Text(
+                                    stringResource(
+                                        Res.string.activities_count,
+                                        s.activities.size + s.customActivities.size,
+                                        HangoutActivity.entries.size + s.customActivities.size,
+                                    ),
+                                )
+                            },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = actions.onOpenPlaces),
+                            leadingContent = { Icon(Icons.Rounded.Place, null) },
+                            headlineContent = { Text(stringResource(Res.string.places), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.places_row_hint)) },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        ListItem(
+                            leadingContent = { Icon(Icons.AutoMirrored.Rounded.Label, null) },
+                            headlineContent = { Text(stringResource(Res.string.tags_row), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.tags_row_hint)) },
+                            trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            modifier = Modifier.clickable(onClick = actions.onOpenTags),
+                        )
+                        ListItem(
+                            leadingContent = { Icon(Icons.Rounded.Download, null) },
+                            headlineContent = { Text(stringResource(Res.string.backup_export), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.backup_export_hint)) },
+                            trailingContent = {
+                                FilledTonalButton(onClick = actions.onExportBackup) { Text(stringResource(Res.string.backup_export_button)) }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        ListItem(
+                            leadingContent = { Icon(Icons.Rounded.Restore, null) },
+                            headlineContent = { Text(stringResource(Res.string.backup_restore), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = { Text(stringResource(Res.string.backup_restore_hint)) },
+                            trailingContent = {
+                                OutlinedButton(onClick = actions.onRestoreBackup) { Text(stringResource(Res.string.backup_restore_button)) }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        if (capabilities.hasGoogleDrive) {
+                            ListItem(
+                                leadingContent = { Icon(Icons.Rounded.CloudUpload, null) },
+                                headlineContent = { Text(stringResource(Res.string.drive_title), style = MaterialTheme.typography.titleSmall) },
+                                supportingContent = {
+                                    Text(
+                                        s.lastDriveBackupAt?.let { stringResource(Res.string.drive_last, relativePast(it, state.now, state.zone)) }
+                                            ?: stringResource(Res.string.drive_hint),
+                                    )
+                                },
+                                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            )
+                            Row(
+                                Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                FilledTonalButton(onClick = actions.onDriveBackup, enabled = !state.driveBusy) {
+                                    Text(stringResource(Res.string.drive_backup_button))
+                                }
+                                OutlinedButton(onClick = actions.onDriveRestore, enabled = !state.driveBusy) {
+                                    Text(stringResource(Res.string.drive_restore_button))
+                                }
+                                if (state.driveBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                            }
+                        }
+                        ListItem(
+                            modifier = Modifier.clickable(onClick = actions.onReplayIntro),
+                            leadingContent = { Icon(Icons.Rounded.Replay, null) },
+                            headlineContent = { Text(stringResource(Res.string.replay_intro), style = MaterialTheme.typography.titleSmall) },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
                     }
                 }
-                ListItem(
-                    modifier = Modifier.clickable(onClick = actions.onReplayIntro),
-                    leadingContent = { Icon(Icons.Rounded.Replay, null) },
-                    headlineContent = { Text(stringResource(Res.string.replay_intro), style = MaterialTheme.typography.titleSmall) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
             }
 
             if (capabilities.hasSelfUpdate) {
@@ -961,5 +968,22 @@ private fun MyPhotoCard(photo: ContactPhoto?, onChoose: () -> Unit, onRemove: ()
             }
             if (photo != null) OutlinedButton(onClick = onRemove) { Text(stringResource(CoreRes.string.remove)) }
         }
+    }
+}
+
+/**
+ * The movable cards on the Settings screen, in the order they show (issue #133: Closeness right after Reminders). Your
+ * photo comes first, and the app update and privacy cards last.
+ */
+enum class SettingsCard {
+    APPEARANCE,
+    AI,
+    REMINDERS,
+    CLOSENESS,
+    YOUR_DATA,
+    ;
+
+    companion object {
+        val ORDER: List<SettingsCard> = listOf(APPEARANCE, AI, REMINDERS, CLOSENESS, YOUR_DATA)
     }
 }

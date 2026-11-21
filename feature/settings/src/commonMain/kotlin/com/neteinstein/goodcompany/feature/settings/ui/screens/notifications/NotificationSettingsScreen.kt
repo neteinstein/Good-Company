@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.NotificationType
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
@@ -68,6 +69,11 @@ import com.neteinstein.goodcompany.feature.settings.resources.digest_day
 import com.neteinstein.goodcompany.feature.settings.resources.digest_hint
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_off
 import com.neteinstein.goodcompany.feature.settings.resources.msg_notifications_on
+import com.neteinstein.goodcompany.feature.settings.resources.notif_bday_heads_up
+import com.neteinstein.goodcompany.feature.settings.resources.notif_bday_heads_up_days
+import com.neteinstein.goodcompany.feature.settings.resources.notif_bday_heads_up_off
+import com.neteinstein.goodcompany.feature.settings.resources.notif_bday_heads_up_two_weeks
+import com.neteinstein.goodcompany.feature.settings.resources.notif_bday_heads_up_week
 import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_allowed
 import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_blocked
 import com.neteinstein.goodcompany.feature.settings.resources.notif_settings_blocked_hint
@@ -106,6 +112,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.isoDayNumber
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
@@ -121,6 +128,7 @@ data class NotificationSettingsActions(
     val onTypeChange: (NotificationType, Boolean) -> Unit = { _, _ -> },
     val onPersistentChange: (Boolean) -> Unit = {},
     val onDailyLogTimeChange: (LocalTime) -> Unit = {},
+    val onBirthdayHeadsUpChange: (Int) -> Unit = {},
     val onReminderHourChange: (Int) -> Unit = {},
     val onWeeklyDigestChange: (Boolean) -> Unit = {},
     val onDigestDayChange: (Int) -> Unit = {},
@@ -153,6 +161,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit, viewModel: NotificationSettin
             onTypeChange = viewModel::onTypeChange,
             onPersistentChange = viewModel::onPersistentChange,
             onDailyLogTimeChange = viewModel::onDailyLogTimeChange,
+            onBirthdayHeadsUpChange = viewModel::onBirthdayHeadsUpChange,
             onReminderHourChange = viewModel::onReminderHourChange,
             onWeeklyDigestChange = viewModel::onWeeklyDigestChange,
             onDigestDayChange = viewModel::onDigestDayChange,
@@ -226,6 +235,9 @@ fun NotificationSettingsContent(
                         icon = row.icon,
                         enabled = n.enabled && !state.loading,
                     )
+                    if (row.type == NotificationType.BIRTHDAYS) {
+                        BirthdayHeadsUp(n.birthdayHeadsUpDays, enabled = n.enabled && n.birthdays && !state.loading, actions.onBirthdayHeadsUpChange)
+                    }
                     if (row.type == NotificationType.DAILY_LOG && n.enabled && n.dailyLog) DailyLogTime(n.dailyLogTime, actions.onDailyLogTimeChange)
                 }
                 SwitchRow(
@@ -271,6 +283,31 @@ fun NotificationSettingsContent(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/** Issue #133: "Heads-up before birthdays" (Off · 1 day · 2 days · 3 days · 1 week · 2 weeks), off while Birthdays is. */
+@Composable
+private fun BirthdayHeadsUp(days: Int, enabled: Boolean, onChange: (Int) -> Unit) {
+    Column(Modifier.padding(start = 56.dp, end = 16.dp, bottom = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(Res.string.notif_bday_heads_up),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        )
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            NotificationSettings.BIRTHDAY_HEADS_UP_CHOICES.forEach { d ->
+                FilterChip(days == d, { onChange(d) }, label = { Text(headsUpLabel(d)) }, enabled = enabled)
+            }
+        }
+    }
+}
+
+@Composable
+private fun headsUpLabel(days: Int): String = when (days) {
+    0 -> stringResource(Res.string.notif_bday_heads_up_off)
+    7 -> stringResource(Res.string.notif_bday_heads_up_week)
+    14 -> stringResource(Res.string.notif_bday_heads_up_two_weeks)
+    else -> pluralStringResource(Res.plurals.notif_bday_heads_up_days, days, days)
 }
 
 /** Issue #116: when the daily log reminder comes: a few evening times, or any time picked. */

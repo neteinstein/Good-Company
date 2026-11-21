@@ -26,6 +26,11 @@ data class NotificationSettings(
     val dailyLog: Boolean = true,
     /** Issue #116: when it comes, in minutes after midnight (21:00 by default). */
     val dailyLogMinute: Int = DEFAULT_DAILY_LOG_MINUTE,
+    /**
+     * Issue #133: "Heads-up before birthdays", how many days before a birthday an early notice comes (0 = off). One of
+     * [BIRTHDAY_HEADS_UP_CHOICES]; a week by default. Only while [birthdays] is on.
+     */
+    val birthdayHeadsUpDays: Int = DEFAULT_BIRTHDAY_HEADS_UP_DAYS,
 ) {
     /** [dailyLogMinute] as a time of day (kept within the day). */
     val dailyLogTime: LocalTime
@@ -54,6 +59,10 @@ data class NotificationSettings(
 
     companion object {
         const val DEFAULT_DAILY_LOG_MINUTE = 21 * 60
+        const val DEFAULT_BIRTHDAY_HEADS_UP_DAYS = 7
+
+        /** Off · 1 day · 2 days · 3 days · 1 week · 2 weeks (issue #133). */
+        val BIRTHDAY_HEADS_UP_CHOICES = listOf(0, 1, 2, 3, 7, 14)
         private const val MINUTES_PER_DAY = 24 * 60
     }
 }

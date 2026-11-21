@@ -714,4 +714,16 @@
     <string name="legend_no_ring">Fără inel: “Păstrează legătura” e dezactivat pentru această persoană.</string>
     <string name="legend_dots">Câte un punct pentru fiecare cerc din care face parte, în culoarea cercului.</string>
     <string name="legend_got_it">Am înțeles</string>
+    <string name="notif_bday_soon_tomorrow">🎂 Ziua lui/ei %1$s e mâine</string>
+    <string name="notif_bday_soon_week">🎂 Ziua lui/ei %1$s e peste o săptămână</string>
+    <string name="notif_bday_soon_two_weeks">🎂 Ziua lui/ei %1$s e peste două săptămâni</string>
+    <plurals name="notif_bday_soon_days">
+        <item quantity="one">🎂 Ziua lui/ei %2$s e peste %1$d zi</item>
+        <item quantity="few">🎂 Ziua lui/ei %2$s e peste %1$d zile</item>
+        <item quantity="other">🎂 Ziua lui/ei %2$s e peste %1$d de zile</item>
+    </plurals>
+    <string name="notif_bday_soon_turns">Împlinește %1$d ani.</string>
+    <string name="notif_bday_soon_kid">Copilul lui/ei %1$s.</string>
+    <string name="notif_bday_soon_family">Familia lui/ei %1$s.</string>
+    <string name="notif_bday_soon_body">Se apropie ziua de naștere.</string>
 </resources>

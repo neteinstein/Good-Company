@@ -57,6 +57,11 @@ class NotificationSettingsViewModel(
     /** Issue #116: when the daily "log your day" reminder comes. */
     fun onDailyLogTimeChange(time: LocalTime) = notifications { it.copy(dailyLogMinute = time.hour * 60 + time.minute) }
 
+    /** Issue #133: "Heads-up before birthdays", days before (0 = off); anything but the offered choices is ignored. */
+    fun onBirthdayHeadsUpChange(days: Int) {
+        if (days in NotificationSettings.BIRTHDAY_HEADS_UP_CHOICES) notifications { it.copy(birthdayHeadsUpDays = days) }
+    }
+
     fun onReminderHourChange(hour: Int) = settings { it.copy(reminderHour = hour.coerceIn(0, 23)) }
 
     fun onWeeklyDigestChange(enabled: Boolean) = settings { it.copy(weeklyDigest = enabled) }

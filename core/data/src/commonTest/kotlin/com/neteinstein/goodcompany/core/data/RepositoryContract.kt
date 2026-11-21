@@ -253,6 +253,16 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun birthdayHeadsUp_isAWeekByDefault_survivesARestart_andTravelsInABackup() = runTest {
+        // Issue #133.
+        assertEquals(7, open().settings.settings.first().notifications.birthdayHeadsUpDays)
+        open().settings.update { it.copy(notifications = it.notifications.copy(birthdayHeadsUpDays = 3)) }
+        assertEquals(3, open().settings.settings.first().notifications.birthdayHeadsUpDays)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertTrue("\"birthdayHeadsUpDays\": 3" in json, json)
+    }
+
+    @Test
     fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
         val friend = richFriend()
         open().friends.upsert(friend)
