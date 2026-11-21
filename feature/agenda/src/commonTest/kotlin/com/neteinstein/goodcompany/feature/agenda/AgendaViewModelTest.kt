@@ -8,10 +8,12 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.testing.Fixtures
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -29,6 +31,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class AgendaViewModelTest {
     private fun graph(apiKey: String? = null) = TestGraph(
@@ -255,5 +258,35 @@ class AgendaViewModelTest {
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
         vm.onUndoPlan(notAttended) // nothing to undo
         assertEquals(PlanStatus.NOT_ATTENDED, g.planRepo.plans.value.single().status)
+    }
+
+    @Test
+    fun aReminderTap_opensItsCircle_itsOnePerson_orItsEditor() = runViewModelTest {
+        // Issue #135.
+        val vm = vm()
+        val state = collecting(vm.state)
+        val created = Instant.fromEpochSeconds(0)
+        val forCircle = Reminder("c", "Book the court", listOf(FriendId("ana")), createdAt = created, circleId = "surf")
+        val forAna = Reminder("a", "Call Ana", listOf(FriendId("ana")), createdAt = created)
+        val forTwo = Reminder("t", "Dinner", listOf(FriendId("ana"), FriendId("rui")), createdAt = created)
+        assertEquals(ReminderTarget.Circle("surf"), vm.onOpenReminder(forCircle))
+        assertEquals(ReminderTarget.Person(FriendId("ana")), vm.onOpenReminder(forAna))
+        assertFalse(state.value.showReminderEditor, "a circle or a person opens their page, not the editor")
+        assertEquals(ReminderTarget.Edit("t"), vm.onOpenReminder(forTwo))
+        assertTrue(state.value.showReminderEditor)
+        assertEquals(forTwo, state.value.editingReminder)
+    }
+
+    @Test
+    fun aReminderNotification_opensItsEditorById_andAnUnknownIdOpensNothing() = runViewModelTest {
+        val reminder = Reminder("t", "Dinner", listOf(FriendId("ana"), FriendId("rui")), createdAt = Instant.fromEpochSeconds(0))
+        g.reminderRepo.upsert(reminder)
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onEditReminderById("gone")
+        assertFalse(state.value.showReminderEditor)
+        vm.onEditReminderById("t")
+        assertTrue(state.value.showReminderEditor)
+        assertEquals(reminder, state.value.editingReminder)
     }
 }

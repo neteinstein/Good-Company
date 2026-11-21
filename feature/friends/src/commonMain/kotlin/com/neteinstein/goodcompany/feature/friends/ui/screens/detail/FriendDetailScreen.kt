@@ -148,6 +148,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
@@ -484,6 +485,13 @@ fun FriendDetailScreen(
                 onDelete = viewModel::onDeleteReminder,
                 onOpenFriend = onOpenFriend,
                 onOpenCircle = onOpenCircle,
+                onOpen = { r ->
+                    when (val target = viewModel.onOpenReminder(r)) {
+                        is ReminderTarget.Circle -> onOpenCircle(target.circleId)
+                        is ReminderTarget.Person -> onOpenFriend(target.friendId)
+                        is ReminderTarget.Edit -> Unit
+                    }
+                },
             ),
             onUndoReminder = viewModel::onUndoReminder,
             onMessageShown = viewModel::onMessageShown,

@@ -100,8 +100,8 @@ import org.jetbrains.compose.resources.StringResource
 /** The Today tab (issue #65): what needs you this week. */
 @Serializable data object TodayRoute : AppRoute
 
-/** "Everything coming up": the full agenda, pushed from Today (issue #65). */
-@Serializable data object AgendaRoute : AppRoute
+/** "Everything coming up", pushed from Today (issue #65); [editReminderId] opens that reminder's editor on arrival (a reminder notification, issue #135). */
+@Serializable data class AgendaRoute(val editReminderId: String? = null) : AppRoute
 
 /** The Plans tab (issue #67): plans, gift lists, "Who's free for…?" and, with AI on, the weekly ideas (was Ideas). */
 @Serializable data object IdeasRoute : AppRoute

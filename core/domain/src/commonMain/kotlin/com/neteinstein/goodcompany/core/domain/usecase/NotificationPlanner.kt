@@ -193,6 +193,8 @@ object NotificationPlanner {
                             persistent,
                             until,
                             whileOpen = persistent,
+                            // Issue #135: a tap opens its circle, its one person or its editor.
+                            link = ReminderTarget.linkFor(r),
                         )
                 }
                 // Overdue (issue #98): asked again at the reminder hour from the day after it was due, until done. Only
@@ -209,6 +211,7 @@ object NotificationPlanner {
                             persistent = true,
                             slot = slot,
                             whileOpen = true,
+                            link = ReminderTarget.linkFor(r),
                         )
                     }
                 }

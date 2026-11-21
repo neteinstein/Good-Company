@@ -5,7 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.usecase.AppLink
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
+import com.neteinstein.goodcompany.core.domain.usecase.OpenInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.toQuickEntry
 import kotlinx.coroutines.CoroutineScope
@@ -147,9 +147,9 @@ internal class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDel
         if (actionId == UNNotificationDefaultActionIdentifier && link != null) {
             when (val parsed = AppLink.parse(link)) {
                 is AppLink.Log -> KoinPlatform.getKoin().get<QuickEntryInbox>().offer(parsed.toQuickEntry())
-                // Issue #133: a birthday heads-up opens the person's page.
-                is AppLink.Person -> KoinPlatform.getKoin().get<PersonInbox>().offer(parsed.friendId)
-                else -> Unit
+                null -> Unit
+                // A birthday heads-up opens the person (issue #133); a reminder its circle, person or editor (#135).
+                else -> KoinPlatform.getKoin().get<OpenInbox>().offer(parsed)
             }
             withCompletionHandler()
             return

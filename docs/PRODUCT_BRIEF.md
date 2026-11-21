@@ -36,13 +36,13 @@ more than one area. When you add a Decision row, add it here too.
   Catch-up · never-logged people · Catch-up · last-seen answers · Catch-up · last-seen date stays hidden · 11-20 Plans · states · Logging · ways to keep in touch *(part → Log from anywhere)* ·
   Timeline · edit and delete · Reminders · like a reminders app · Log from anywhere · Keep-in-touch tracking *(part → 11-21 Stay in touch…)* ·
   Together tab · one timeline *(part → 11-21 Together tab · no status block…)* · Your data · activities, places, tastes ·
-  11-21 Together tab · no status block, catch-up in Edit person
+  11-21 Together tab · no status block, catch-up in Edit person · Reminders · where a tap goes
 - **Notifications, widgets, shortcuts** (`area-notifications-widgets`): 11-07 Snooze and "Called" *(part → 11-21 Together
   tab · no status block…)* · 11-07 Catch-up
   nudges have a budget · 11-07 Privacy options · 11-07 Android widget · 11-07 Owner answers to the follow-up questions
   *(part → D4)* · 11-08 iOS widget · 11-13 D7 · 11-14 App-icon shortcuts · what they offer · App-icon shortcuts · privacy · 11-20 Notifications · settings
   and persistent · Reminders · like a reminders app · Log from anywhere (daily reminder) · Keep-in-touch tracking ·
-  11-21 Birthdays · heads-up before the day · Settings · Closeness after Reminders
+  11-21 Birthdays · heads-up before the day · Settings · Closeness after Reminders · Reminders · where a tap goes
 - **AI** (`area-ai`): 11-06 "AI token" · 11-06 Weekly job · 11-07 Messages are drafted, never sent · 11-07 Occasions
   and offline talking points *(part → F1)* · 11-13 F1 · 11-14 AI switch (F1 as built)
 - **Sharing & gifts** (`area-sharing-gifts`): 11-07 Saved groups (gift ideas & history) · 11-08 Social networks: share
@@ -217,3 +217,4 @@ more than one area. When you add a Decision row, add it here too.
 | 2026-11-21 | **Stay in touch · the name.** The switch "Keep-in-touch tracking" is called **"Stay in touch"** everywhere, in all five languages. Hint: "Warmth, a meet-up rhythm and nudges to catch up. Turn it off for someone you see every day: their timeline, reminders and birthdays stay." People legend: "No ring: Stay in touch is off for them." Text only: stored names (`tracksKeepInTouch`, `tracks_keep_in_touch`) stay. | Owner, issue #132. |
 | 2026-11-21 | **Birthdays · heads-up before the day.** Settings → Notifications gets "Heads-up before birthdays" under the Birthdays switch: Off · 1 day · 2 days · 3 days · 1 week · 2 weeks, **1 week by default**, disabled while Birthdays is off. It covers every birthday that notifies on the day (friends, kids, relatives with their own reminder), including people with Stay in touch off. "Ana’s birthday is in a week", with what they turn when the year is known; a tap opens the person (for a relative, the friend they belong to). Ordinary, never kept on screen, never throttled, with its own id, so the on-the-day notification is unchanged. Anniversaries and big days are unchanged. | Owner, issue #133. |
 | 2026-11-21 | **Settings · Closeness after Reminders.** The Settings cards read Appearance · AI · Reminders · Closeness · Your data · … | Owner, issue #133. |
+| 2026-11-21 | **Reminders · where a tap goes.** A reminder set for a circle opens that circle's page; one for exactly one person (no circle) opens that person; one for several people or for nobody opens its editor, so a tap never does nothing. The same everywhere a reminder can be tapped (Today, Everything coming up, a person's timeline) and for a tap on its notification; on the circle's own page a tap opens the editor. The ⋮ actions and the notification's Done / Snooze are unchanged. *As built:* on a person's own page, their one-person reminder opens the editor (the page is already theirs); the widget has no per-item tap, so it is unchanged. | Owner, issue #135. |

@@ -126,9 +126,12 @@ fun AgendaScreen(
     onBack: (() -> Unit)? = null,
     /** A reminder's circle chip opens the circle's page (issue #99). */
     onOpenCircle: ((String) -> Unit)? = null,
+    /** A reminder notification's tap (issue #135): opens this reminder's editor. */
+    editReminderId: String? = null,
     viewModel: AgendaViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(editReminderId) { editReminderId?.let(viewModel::onEditReminderById) }
     val addToCalendar = rememberCalendarAdder()
     AgendaContent(
         state = state,
@@ -142,6 +145,7 @@ fun AgendaScreen(
             onReopen = viewModel::onReminderReopen,
             onOpenFriend = onOpenFriend,
             onOpenCircle = onOpenCircle,
+            onOpen = { r -> openReminderTarget(viewModel.onOpenReminder(r), onOpenFriend, onOpenCircle) },
         ),
         onMessageShown = viewModel::onMessageShown,
         onUndoReminder = viewModel::onUndoReminder,

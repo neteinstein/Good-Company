@@ -1135,4 +1135,25 @@ class FriendDetailViewModelTest {
         // The old text stays in its field, untouched, while the migration is verified.
         assertEquals("Allergic to peanuts", g.friendRepo.get(ana.id)!!.notes)
     }
+
+    @Test
+    fun aReminderTapOnTheirTimeline_opensTheCircle_orTheEditor() = runViewModelTest {
+        // Issue #135: their own one-person reminder opens the editor (this is already their page).
+        val vm = vm()
+        val state = collecting(vm.state)
+        val created = kotlin.time.Instant.fromEpochSeconds(0)
+        val circle = com.neteinstein.goodcompany.core.domain.model.Reminder(
+            "c",
+            "Surf",
+            listOf(FriendId("ana")),
+            createdAt = created,
+            circleId = "surf",
+        )
+        val own = com.neteinstein.goodcompany.core.domain.model.Reminder("o", "Call", listOf(FriendId("ana")), createdAt = created)
+        assertEquals(com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget.Circle("surf"), vm.onOpenReminder(circle))
+        assertTrue(!state.value.showReminderEditor)
+        assertEquals(com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget.Edit("o"), vm.onOpenReminder(own))
+        assertTrue(state.value.showReminderEditor)
+        assertEquals(own, state.value.editingReminder)
+    }
 }

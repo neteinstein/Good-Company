@@ -42,8 +42,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `BIRTHDAY_HEADS_UP_CHOICES`, 7 by default; in the notification settings JSON, so no schema change and it travels in
   backups). The planner adds `bday-soon:<id>[:<relative id>]:<date>` N days before each birthday that notifies on the
   day, as `NotificationContent.BirthdaySoon` (type BIRTHDAYS, never persistent, never throttled) with
-  `link = AppLink.person(id)`. `goodcompany://person/<id>` goes to `PersonInbox`, which `App.kt` turns into the
-  person's page (Android `MainActivity`, iOS `IosNotificationScheduler` and `handleAppUrl`).
+  `link = AppLink.person(id)`.
+- **Pages opened from a notification (issues #133, #135).** `goodcompany://person/<id>`, `circle/<id>` and
+  `reminder/<id>` go to `OpenInbox` (Android `MainActivity`, iOS `IosNotificationScheduler` and `handleAppUrl`), which
+  `App.kt` turns into the person's page, the circle's page or `AgendaRoute(editReminderId)` (the reminder's editor).
+  Reminder notifications carry `ReminderTarget.linkFor(reminder)`; every reminder tap in the app goes through
+  `ReminderTarget.of` (circle → its page, one person → them, several or nobody → the editor) via
+  `ReminderCallbacks.onOpen`.
 - **Persistent notifications (issue #98).** With `persistent` on, the planner marks these `PlannedNotification.persistent`
   with `until` = the end of their day: reminders marked important (`Reminder.important`, a stub returning false until
   #99 adds the field), overdue reminders (`ReminderOverdue`, asked at the reminder hour each day, `OVERDUE_ASKS` planned

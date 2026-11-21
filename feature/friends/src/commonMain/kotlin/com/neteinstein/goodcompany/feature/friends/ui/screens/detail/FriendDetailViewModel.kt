@@ -68,6 +68,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
@@ -1015,6 +1016,24 @@ class FriendDetailViewModel(
 
     /** "Edit" on one of their reminders (issue #99). */
     fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
+
+    /**
+     * A tap on a reminder on their timeline (issue #135, [ReminderTarget]): a circle's opens the circle (returned for the
+     * screen to open); one for several people, nobody or just this person (whose page this already is) opens the editor.
+     */
+    fun onOpenReminder(reminder: Reminder): ReminderTarget {
+        val target = ReminderTarget.of(reminder).let {
+            if (it is ReminderTarget.Person &&
+                it.friendId == friendId
+            ) {
+                ReminderTarget.Edit(reminder.id)
+            } else {
+                it
+            }
+        }
+        if (target is ReminderTarget.Edit) onEditReminder(reminder)
+        return target
+    }
 
     fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
 

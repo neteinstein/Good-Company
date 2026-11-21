@@ -84,14 +84,21 @@ class QuickEntryInbox {
 
 /**
  * The app's own `goodcompany://` links: `met/<id>` (the iOS widget's "We met": logs straight away), `log` /
- * `log/<id>` (app-icon shortcuts: open the "Log" sheet, with that person picked) and `person/<id>` (a birthday heads-up,
- * issue #133: opens their page). Shared by every platform.
+ * `log/<id>` (app-icon shortcuts: open the "Log" sheet, with that person picked), `person/<id>` (a birthday heads-up,
+ * issue #133: opens their page), and `circle/<id>` / `reminder/<id>` (a reminder notification, issue #135: the circle's
+ * page, or the reminder's editor; see [ReminderTarget]). Shared by every platform.
  */
 sealed interface AppLink {
     data class Met(val friendId: FriendId) : AppLink
 
     /** Opens [friendId]'s page (issue #133); an unknown or deleted id opens nothing. */
     data class Person(val friendId: FriendId) : AppLink
+
+    /** Opens a circle's page (issue #135). */
+    data class Circle(val circleId: String) : AppLink
+
+    /** Opens a reminder's editor (issue #135); an unknown or deleted id opens nothing. */
+    data class Reminder(val reminderId: String) : AppLink
 
     /** [friendId] null opens the sheet with nobody picked; an unknown or deleted id ends up the same way. */
     data class Log(val friendId: FriendId?) : AppLink
@@ -104,6 +111,10 @@ sealed interface AppLink {
 
         fun person(friendId: FriendId): String = PREFIX + "person/" + friendId.value
 
+        fun circle(circleId: String): String = PREFIX + "circle/" + circleId
+
+        fun reminder(reminderId: String): String = PREFIX + "reminder/" + reminderId
+
         fun parse(url: String): AppLink? {
             if (!url.startsWith(PREFIX)) return null
             val parts = url.removePrefix(PREFIX).substringBefore('?').substringBefore('#').split('/').filter { it.isNotEmpty() }
@@ -111,6 +122,8 @@ sealed interface AppLink {
                 "met" -> parts.getOrNull(1)?.let { Met(FriendId(it)) }
                 "log" -> Log(parts.getOrNull(1)?.let(::FriendId))
                 "person" -> parts.getOrNull(1)?.let { Person(FriendId(it)) }
+                "circle" -> parts.getOrNull(1)?.let(::Circle)
+                "reminder" -> parts.getOrNull(1)?.let(::Reminder)
                 else -> null
             }
         }
@@ -118,15 +131,20 @@ sealed interface AppLink {
 }
 
 /**
- * A person's page waiting to open from outside the app (issue #133: a tap on a birthday heads-up), like
- * [QuickEntryInbox]. Platforms [offer] it; the app opens the page (behind the app lock) and [clear]s it. In memory only.
+ * A page waiting to open from outside the app, like [QuickEntryInbox]: a person (issue #133, a birthday heads-up), a
+ * circle or a reminder's editor (issue #135, a reminder notification). Platforms [offer] the link; the app opens it
+ * (behind the app lock) and [clear]s it. Only [AppLink.Person], [AppLink.Circle] and [AppLink.Reminder] are kept.
+ * In memory only.
  */
-class PersonInbox {
-    private val state = MutableStateFlow<FriendId?>(null)
-    val pending: StateFlow<FriendId?> = state.asStateFlow()
+class OpenInbox {
+    private val state = MutableStateFlow<AppLink?>(null)
+    val pending: StateFlow<AppLink?> = state.asStateFlow()
 
-    fun offer(id: FriendId) {
-        state.value = id
+    /** Returns false (and keeps nothing) for a link this inbox doesn't open. */
+    fun offer(link: AppLink): Boolean {
+        if (link !is AppLink.Person && link !is AppLink.Circle && link !is AppLink.Reminder) return false
+        state.value = link
+        return true
     }
 
     fun clear() {
