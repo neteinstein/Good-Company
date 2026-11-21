@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.settings.ui.screens.activities
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -121,6 +122,8 @@ internal fun <T : Any> OrderedOptionsContent(
     message: OrderedOptionsMessage?,
     actions: OrderedOptionsActions<T>,
     maxNameLength: Int = Int.MAX_VALUE,
+    /** More below "Add" (Settings → How: what counts as catching up). */
+    footer: @Composable ColumnScope.() -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val undo = stringResource(CoreRes.string.undo)
@@ -186,6 +189,7 @@ internal fun <T : Any> OrderedOptionsContent(
                 Spacer(Modifier.width(8.dp))
                 Text(texts.add)
             }
+            footer()
             Spacer(Modifier.height(24.dp))
         }
     }

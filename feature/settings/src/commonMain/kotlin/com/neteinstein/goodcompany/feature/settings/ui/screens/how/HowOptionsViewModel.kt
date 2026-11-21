@@ -3,9 +3,12 @@ package com.neteinstein.goodcompany.feature.settings.ui.screens.how
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.usecase.ActivityNameProblem
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.CustomLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpKindUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetLogKindsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +36,16 @@ data class HowOptionsUiState(
     /** Your own How options, in your order. */
     val custom: List<String> = emptyList(),
     val message: HowOptionsMessage? = null,
+    /** What counts as catching up (decision 2026-11-21): the built-in kinds ticked, and your own ticked. */
+    val counting: Set<LogKind> = CatchUpPolicy.DEFAULT_KINDS,
+    val customCounting: Set<String> = emptySet(),
 ) {
+    /** The rows of "Counts as catching up": every contact at a distance that's on, in your order, then your own. */
+    val countable: List<LogKindOption>
+        get() = enabled.filter { it.isRemote }.map { LogKindOption(it) } + custom.map { LogKindOption.custom(it) }
+
+    fun counts(option: LogKindOption): Boolean = option.name?.let { it in customCounting } ?: (option.kind in counting)
+
     /** The last built-in one on can't be turned off. */
     val canTurnOff: Boolean get() = enabled.size > 1
 }
@@ -46,13 +58,21 @@ class HowOptionsViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val setLogKinds: SetLogKindsUseCase,
     private val customLogKinds: CustomLogKindsUseCase,
+    private val setCatchUpKind: SetCatchUpKindUseCase,
 ) : ViewModel() {
     private data class Local(val message: HowOptionsMessage? = null, val removedAt: Int = -1)
 
     private val local = MutableStateFlow(Local())
 
     val state: StateFlow<HowOptionsUiState> = combine(observeSettings(), local) { s, ui ->
-        HowOptionsUiState(s.logKinds, LogKind.DEFAULT_ORDER - s.logKinds.toSet(), s.customLogKinds, ui.message)
+        HowOptionsUiState(
+            s.logKinds,
+            LogKind.DEFAULT_ORDER - s.logKinds.toSet(),
+            s.customLogKinds,
+            ui.message,
+            counting = s.catchUpKinds,
+            customCounting = s.catchUpCustomKinds.toSet(),
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HowOptionsUiState())
 
     fun onAddCustom(name: String) {
@@ -81,6 +101,12 @@ class HowOptionsViewModel(
     }
 
     fun onMessageShown() = local.update { Local() }
+
+    /** Ticks or unticks whether [option] counts as catching up for people on the default. */
+    fun onToggleCounts(option: LogKindOption) {
+        val counts = !state.value.counts(option)
+        viewModelScope.launch { setCatchUpKind(option, counts) }
+    }
 
     private fun notSaved(problem: ActivityNameProblem) = local.update { it.copy(message = HowOptionsMessage.NotSaved(problem)) }
 

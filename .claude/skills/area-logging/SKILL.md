@@ -91,9 +91,20 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   closes that occurrence; `LogResult.Contacts.plan` lets Undo reopen it. Meetups and contacts both go to
   `LoggedMeetupInbox` (the "Logged time with … · Undo" snackbar); journal entries don't.
 - **Warmth weights (issue #101).** `Warmth.weight(type)`: in person and long chat 1.0, video 0.8, call / game / email /
-  WhatsApp / other 0.6, said hi 0.3. Remote contact **always** adds to warmth; the "calls and chats count" switch only
-  decides the rhythm (`Relationships.meetupStatuses`). The person page's ring and pill use `FriendDetail.lastCaughtUp`,
-  the same rule.
+  WhatsApp / other 0.6, said hi 0.3. Remote contact **always** adds to warmth; what counts as catching up only decides
+  the rhythm (`Relationships.meetupStatuses`). The person page's ring and pill use `FriendDetail.lastCaughtUp`, the same
+  rule.
+- **What counts as catching up (decision 2026-11-21).** `CatchUpPolicy` (`usecase/CatchUp.kt`) lives in
+  `CadenceRules.catchUp`, so everything built from `CadenceRules.from(settings)` (Today, the agenda, nudges, the
+  last-seen card, the person page) follows it; `Relationships.lastCaughtUp` is the one place that applies it. Per person
+  `Friend.catchUpCounts` (`CatchUpCounts`: DEFAULT / IN_PERSON_ONLY / ANY_CONTACT; column `friend.catch_up_counts`,
+  migration `32.sqm`; the old `contact_counts_as_catch_up` is still written, 1 = ANY_CONTACT, and `FriendSerializer` maps
+  the old backup key). DEFAULT follows `AppSettings.catchUpKinds` (`user_preferences.catch_up_kinds`; NULL = 
+  `CatchUpPolicy.DEFAULT_KINDS`: call, video, long chat, game) and `catchUpCustomKinds` (your own How options that count;
+  renaming one in `CustomLogKindsUseCase` keeps it counting). In person always counts, journal never; WhatsApp days are
+  "said hi"; call-log calls under `CALL_LOG_MIN_SECONDS` (5 min) don't count on DEFAULT. Settings → How shows the
+  switches below "Your own" (`OrderedOptionsContent`'s `footer`, `SetCatchUpKindUseCase`); Edit person shows the
+  three chips (`CatchUpCountsChoice`). The Log popup's `LogSheetState.countsHintFor` uses the same policy.
 
 - **How a plan ends (issue #100).** `PlanStatus` is PLANNED, HAPPENED, SKIPPED ("Didn't happen"), CANCELLED (kept,
   struck through on the Plans tab for a month) and NOT_ATTENDED ("I didn't go": group and circle plans only,
@@ -115,7 +126,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     emails, video calls, WhatsApp days, long chats, games and "other" are `Interaction`s (`id`, `source`, `note`,
     `durationSeconds`, `batchId`, `messageCount`, `label`); a `JournalEntry` is a dated note that never counts as contact
     (own `journal_entry` table, exposed through `InteractionRepository`). Every non-meetup type always adds to warmth
-    (weighted, see above) and resets the rhythm only with the friend's "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
+    (weighted, see above) and resets the rhythm only when `CatchUpPolicy` counts it for that friend (see above). Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
     `Interaction.automaticId` and a partial unique index, so a re-sync never duplicates them; manual ones never dedupe.
     Logging several people at once writes one row per person sharing a `batchId`. All logging goes through
     `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is the Log popup (`WeMetPanel`, issue #151), hosted

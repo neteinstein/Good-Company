@@ -121,8 +121,8 @@ data class FriendDetail(
     /** Their kids (F9): people linked to them as their child, in the order they were added. */
     val kids: List<LinkedPerson> = emptyList(),
     /**
-     * What the person page's ring and pill count from (issue #101): the last meetup, or, when their calls and chats
-     * count ([Friend.contactCountsAsCatchUp]), the last contact of any kind: the rule of `Relationships.meetupStatuses`.
+     * What the person page's ring and pill count from (issue #101): the last meetup or contact that restarts their
+     * rhythm ([Friend.catchUpCounts]), the rule of `Relationships.meetupStatuses`.
      */
     val lastCaughtUp: Instant? = lastSeen,
     /** Their parents among your people (F9): set for a kid, whose page then offers "Show in my list". */
@@ -163,11 +163,7 @@ class ObserveFriendDetailUseCase(
             friend = friend,
             hangouts = mine.map { h -> HangoutWithFriends(h, h.friendIds.mapNotNull(byId::get)) },
             lastSeen = mine.firstOrNull()?.at,
-            lastCaughtUp = if (friend.contactCountsAsCatchUp) {
-                Relationships.lastContact(mine, ints.filter { it.friendId == id })[id]
-            } else {
-                mine.firstOrNull()?.at
-            },
+            lastCaughtUp = Relationships.lastCaughtUp(listOf(friend), mine, ints.filter { it.friendId == id }, CadenceRules.from(s).catchUp)[id],
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },
             warmth = Warmth.scoreOrNull(friend, hs, ints, CadenceRules.from(s).warmthDaysFor(friend), clock.today(), clock.timeZone),

@@ -399,7 +399,7 @@ private fun Pills(f: Friend, state: FriendDetailUiState, actions: PersonTopActio
         }
         // "Your sister" only when it is set (issue #90); "Related to you?" is asked in Edit person.
         relationToMeLabel(f)?.let { InfoPill(it, icon = Icons.Rounded.FavoriteBorder, emphasized = true) }
-        // Same rule as the rhythm (issue #101): with calls and chats counting, a call is the last catch-up too.
+        // Same rule as the rhythm (issue #101, decision 2026-11-21): a call that counts is the last catch-up too.
         state.detail?.let { d ->
             d.lastCaughtUp?.let {
                 val ago = relativePast(it, state.now, state.zone)

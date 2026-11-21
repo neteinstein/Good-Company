@@ -20,8 +20,9 @@ import kotlin.math.roundToInt
  * - 20 points: how many meetups in the last 90 days vs. what the cadence asks for.
  * - 10 points: contacts at a distance in the last 90 days, weighted the same way (4 full-weight ones = full).
  *
- * Contact at a distance always counts here, whatever the friend's "calls and chats count" switch says; that switch only
- * decides whether it resets the rhythm (decision "Logging · ways to keep in touch", issue #101).
+ * Contact at a distance always counts here, whatever counts as catching up for the friend ([CatchUpPolicy]); that only
+ * decides whether it resets the rhythm (decisions "Logging · ways to keep in touch", issue #101, and "Catch-up · what
+ * counts", 2026-11-21).
  */
 object Warmth {
     enum class Level { WARM, COOLING, FADING }

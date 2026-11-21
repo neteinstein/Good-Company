@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -709,8 +710,8 @@ class FriendDetailViewModelTest {
         assertTrue(state.value.detail!!.friend.catchUpPaused)
         vm.onTogglePause()
         assertFalse(state.value.detail!!.friend.catchUpPaused)
-        vm.onToggleContactCounts()
-        assertTrue(state.value.detail!!.friend.contactCountsAsCatchUp)
+        vm.onSetCatchUpCounts(CatchUpCounts.ANY_CONTACT)
+        assertEquals(CatchUpCounts.ANY_CONTACT, state.value.detail!!.friend.catchUpCounts)
         // Issue #115: tracking off means no warmth and no rhythm on the page; back on brings them back.
         vm.onToggleTracking()
         assertFalse(state.value.detail!!.friend.tracksKeepInTouch)

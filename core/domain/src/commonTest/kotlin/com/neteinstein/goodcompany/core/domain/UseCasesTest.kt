@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -135,7 +136,7 @@ class UseCasesTest {
     }
 
     @Test
-    fun friendDetail_ringFollowsTheRhythmRule_callsCountOnlyWithTheSwitchOn() = runTest {
+    fun friendDetail_ringFollowsTheRhythmRule_whatCountsFollowsTheirChoice() = runTest {
         hangouts.add(Hangout("1", listOf(FriendId("ana")), at(2026, 3, 1)))
         interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.LONG_CHAT, at(2026, 3, 5))))
         suspend fun detail() = ObserveFriendDetailUseCase(
@@ -149,9 +150,12 @@ class UseCasesTest {
             FakePersonLinkRepository(),
             clock,
         )(FriendId("ana")).first()!!
+        // Decision 2026-11-21: a long chat counts by default, not for someone set to in person only.
+        assertEquals(at(2026, 3, 5), detail().lastCaughtUp)
+        friends.upsert(friends.get(FriendId("ana"))!!.copy(catchUpCounts = CatchUpCounts.IN_PERSON_ONLY))
         assertEquals(at(2026, 3, 1), detail().lastCaughtUp)
 
-        friends.upsert(friends.get(FriendId("ana"))!!.copy(contactCountsAsCatchUp = true))
+        friends.upsert(friends.get(FriendId("ana"))!!.copy(catchUpCounts = CatchUpCounts.ANY_CONTACT))
         val on = detail()
         assertEquals(at(2026, 3, 5), on.lastCaughtUp)
         assertEquals(at(2026, 3, 1), on.lastSeen)

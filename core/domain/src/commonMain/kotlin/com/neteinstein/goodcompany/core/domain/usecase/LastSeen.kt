@@ -36,8 +36,8 @@ enum class LastSeenAnswer(val daysAgo: Int) {
 /** Who the last-seen card asks about (issue #68). */
 object LastSeenQuestions {
     /**
-     * People with a catch-up rhythm whose rhythm hasn't started: nothing logged that counts for them (a meetup, or any
-     * contact when calls and chats count) and no answer yet. Paused people and Acquaintances (issue #69, even with a
+     * People with a catch-up rhythm whose rhythm hasn't started: nothing logged that counts for them (a meetup, or a
+     * contact that counts for them, [CatchUpPolicy]) and no answer yet. Paused people and Acquaintances (issue #69, even with a
      * rhythm from Settings) are left out. Closest first, then by name.
      */
     fun pending(
@@ -46,14 +46,13 @@ object LastSeenQuestions {
         interactions: List<Interaction>,
         rules: CadenceRules,
     ): List<Friend> {
-        val seen = Relationships.lastSeen(hangouts).keys
-        val contacted = interactions.mapTo(HashSet()) { it.friendId }
+        val caughtUp = Relationships.lastCaughtUp(friends, hangouts, interactions, rules.catchUp).keys
         return friends
             .filter { f -> !f.catchUpPaused && f.approxLastSeen == null && rules.cadenceFor(f) != null }
             // Acquaintances are asked only for a rhythm set on their page, never for the Settings default (#69). Since
             // #86 everyone without a level is one, so this keeps asking whoever was asked before.
             .filter { f -> f.isCloseFriend || f.customRhythm != null }
-            .filter { f -> f.id !in seen && !(f.contactCountsAsCatchUp && f.id in contacted) }
+            .filter { f -> f.id !in caughtUp }
             .sortedWith(compareBy<Friend> { it.closeness.ordinal }.thenBy { it.displayName.lowercase() })
     }
 

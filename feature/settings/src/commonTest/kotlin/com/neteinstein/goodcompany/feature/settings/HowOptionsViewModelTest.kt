@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.usecase.ActivityNameProblem
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
@@ -17,7 +18,7 @@ import kotlin.test.assertTrue
 class HowOptionsViewModelTest {
     private val g = TestGraph()
 
-    private fun vm() = HowOptionsViewModel(g.observeSettings, g.setLogKinds, g.customLogKinds)
+    private fun vm() = HowOptionsViewModel(g.observeSettings, g.setLogKinds, g.customLogKinds, g.setCatchUpKind)
 
     @Test
     fun allAreOnByDefault_inTheDefaultOrder() = runViewModelTest {
@@ -25,6 +26,30 @@ class HowOptionsViewModelTest {
         assertEquals(LogKind.DEFAULT_ORDER, state.value.enabled)
         assertTrue(state.value.disabled.isEmpty())
         assertTrue(state.value.custom.isEmpty())
+    }
+
+    @Test
+    fun countsAsCatchingUp_listsEveryWayAtADistanceThatsOn_andTicksThem() = runViewModelTest {
+        // Decision 2026-11-21: calls, video, long chats and games count by default; in person and the journal have no row.
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddCustom("Voice note")
+        vm.onToggle(LogKind.EMAIL)
+        assertEquals(
+            listOf(LogKind.CALL, LogKind.VIDEO_CALL, LogKind.MESSAGE, LogKind.LONG_CHAT, LogKind.GAME, LogKind.OTHER).map { LogKindOption(it) } +
+                LogKindOption.custom("Voice note"),
+            state.value.countable,
+        )
+        assertEquals(
+            listOf(true, true, false, true, true, false, false),
+            state.value.countable.map { state.value.counts(it) },
+        )
+        vm.onToggleCounts(LogKindOption(LogKind.MESSAGE))
+        vm.onToggleCounts(LogKindOption(LogKind.CALL))
+        vm.onToggleCounts(LogKindOption.custom("Voice note"))
+        assertTrue(state.value.counts(LogKindOption(LogKind.MESSAGE)))
+        assertFalse(state.value.counts(LogKindOption(LogKind.CALL)))
+        assertEquals(listOf("Voice note"), g.settingsRepo.settings.value.catchUpCustomKinds)
     }
 
     @Test

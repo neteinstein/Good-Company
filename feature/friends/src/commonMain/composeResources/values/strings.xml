@@ -184,8 +184,13 @@
     <string name="prefs_pause_hint">No “time to see” nudges until you resume. History and birthdays stay.</string>
     <string name="prefs_tracking">Stay in touch</string>
     <string name="prefs_tracking_hint">Warmth, a meet-up rhythm and nudges to catch up. Turn it off for someone you see every day: their timeline, reminders and birthdays stay.</string>
-    <string name="prefs_contact_counts">Calls and chats count as catching up</string>
-    <string name="prefs_contact_counts_hint">For friends far away: a call or chat resets the rhythm, not only meeting up.</string>
+    <string name="prefs_catch_up_counts">What counts as catching up</string>
+    <string name="prefs_counts_default">As in Settings</string>
+    <string name="prefs_counts_in_person">In person only</string>
+    <string name="prefs_counts_any">Any contact</string>
+    <string name="prefs_counts_default_hint">Meeting up and the ways ticked in Settings → How restart the countdown.</string>
+    <string name="prefs_counts_in_person_hint">Only meeting up restarts the countdown.</string>
+    <string name="prefs_counts_any_hint">Every call, message or chat restarts the countdown, as well as meeting up.</string>
     <string name="plans_add">Plan</string>
     <string name="occasions_title">Good company for</string>
     <string name="occasions_hint">Used by “Who’s free for…?” on the Together tab.</string>

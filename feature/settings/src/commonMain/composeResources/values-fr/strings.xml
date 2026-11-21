@@ -227,6 +227,8 @@
     <string name="how_add">Ajouter une façon</string>
     <string name="how_rename">Renommer</string>
     <string name="how_name_taken">Il y en a déjà une avec ce nom</string>
+    <string name="how_counts">Compte pour se revoir</string>
+    <string name="how_counts_hint">Ceux-ci relancent le compte à rebours pour les personnes réglées sur « Comme dans Réglages » dans Modifier la personne. Se voir compte toujours ; les entrées du journal jamais.</string>
     <string name="places_typed">Sans GPS</string>
     <string name="places_pin">Ajouter les coordonnées (là où vous êtes)</string>
     <string name="places_pinned">« %1$s » a maintenant des coordonnées</string>

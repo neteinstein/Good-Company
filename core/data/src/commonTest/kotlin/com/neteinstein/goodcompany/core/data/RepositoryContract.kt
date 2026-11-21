@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
@@ -150,7 +151,7 @@ abstract class RepositoryContract {
             Gift("g2", "Lego set", url = "https://shop.example/lego", price = "€35"),
         ),
         catchUpPaused = true,
-        contactCountsAsCatchUp = true,
+        catchUpCounts = CatchUpCounts.ANY_CONTACT,
         occasions = listOf(Occasion.DINNER, Occasion.COFFEE),
         lifeUpdates = listOf(LifeUpdate("u1", "New job", at(2026, 2, 1))),
         likesAddedAt = mapOf("sushi" to at(2026, 2, 2)),

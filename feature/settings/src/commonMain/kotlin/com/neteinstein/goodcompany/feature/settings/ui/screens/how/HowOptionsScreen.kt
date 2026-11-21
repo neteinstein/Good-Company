@@ -1,17 +1,34 @@
 package com.neteinstein.goodcompany.feature.settings.ui.screens.how
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.ActivityNameProblem
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.ui.components.logKindIcon
 import com.neteinstein.goodcompany.core.ui.components.logKindLabel
 import com.neteinstein.goodcompany.feature.settings.resources.Res
 import com.neteinstein.goodcompany.feature.settings.resources.activities_name_blank
 import com.neteinstein.goodcompany.feature.settings.resources.activities_removed
 import com.neteinstein.goodcompany.feature.settings.resources.how_add
+import com.neteinstein.goodcompany.feature.settings.resources.how_counts
+import com.neteinstein.goodcompany.feature.settings.resources.how_counts_hint
 import com.neteinstein.goodcompany.feature.settings.resources.how_hint
 import com.neteinstein.goodcompany.feature.settings.resources.how_name_taken
 import com.neteinstein.goodcompany.feature.settings.resources.how_options
@@ -37,6 +54,7 @@ data class HowOptionsActions(
     val onMoveCustom: (from: Int, to: Int) -> Unit = { _, _ -> },
     val onUndoRemove: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
+    val onToggleCounts: (LogKindOption) -> Unit = {},
 )
 
 /** Localised snackbar text for a [HowOptionsMessage]. */
@@ -66,6 +84,7 @@ fun HowOptionsScreen(onBack: () -> Unit, viewModel: HowOptionsViewModel = koinVi
             onMoveCustom = viewModel::onMoveCustom,
             onUndoRemove = viewModel::onUndoRemove,
             onMessageShown = viewModel::onMessageShown,
+            onToggleCounts = viewModel::onToggleCounts,
         ),
     )
 }
@@ -101,5 +120,37 @@ fun HowOptionsContent(state: HowOptionsUiState, actions: HowOptionsActions) {
             onMessageShown = actions.onMessageShown,
         ),
         maxNameLength = LogInteractionUseCase.LABEL_MAX,
+    ) { CountsAsCatchingUp(state, actions.onToggleCounts) }
+}
+
+/**
+ * Decision 2026-11-21 ("Catch-up · what counts"): which ways of keeping in touch restart the countdown for people on
+ * "As in Settings" (Edit person). In person always counts, so it has no row; journal entries never do.
+ */
+@Composable
+private fun CountsAsCatchingUp(state: HowOptionsUiState, onToggle: (LogKindOption) -> Unit) {
+    Text(
+        stringResource(Res.string.how_counts),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 4.dp).semantics { heading() },
     )
+    Text(
+        stringResource(Res.string.how_counts_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 20.dp),
+    )
+    state.countable.forEach { option ->
+        val name = option.name
+        val label = name ?: logKindLabel(option.kind)
+        val checked = state.counts(option)
+        ListItem(
+            headlineContent = { Text(label) },
+            leadingContent = { Icon(logKindIcon(option.kind), null) },
+            trailingContent = { Switch(checked, { onToggle(option) }) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.toggleable(checked, role = Role.Switch) { onToggle(option) },
+        )
+    }
 }

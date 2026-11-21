@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -98,8 +99,8 @@ class WarmthTest {
 
     @Test
     fun remoteContactCountsWhateverTheCatchUpSwitchSays() {
-        val off = ana.copy(contactCountsAsCatchUp = false)
-        val on = ana.copy(contactCountsAsCatchUp = true)
+        val off = ana.copy(catchUpCounts = CatchUpCounts.IN_PERSON_ONLY)
+        val on = ana.copy(catchUpCounts = CatchUpCounts.ANY_CONTACT)
         val call = listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 9)))
         val a = Warmth.score(off, emptyList(), call, 30, today, TimeZone.UTC)
         assertTrue(a.value > 0)

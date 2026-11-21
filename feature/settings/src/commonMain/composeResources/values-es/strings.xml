@@ -227,6 +227,8 @@
     <string name="how_add">Añadir una forma</string>
     <string name="how_rename">Cambiar el nombre</string>
     <string name="how_name_taken">Ya hay una con ese nombre</string>
+    <string name="how_counts">Cuenta como ponerse al día</string>
+    <string name="how_counts_hint">Estas reinician la cuenta atrás para quien tenga “Como en Ajustes” en Editar persona. Quedar siempre cuenta; las entradas del diario nunca.</string>
     <string name="places_typed">Sin GPS</string>
     <string name="places_pin">Añadir coordenadas (donde estás ahora)</string>
     <string name="places_pinned">“%1$s” ya tiene coordenadas</string>
