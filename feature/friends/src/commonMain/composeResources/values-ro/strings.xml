@@ -469,7 +469,6 @@
     <string name="gift_lists_link">Liste de cadouri</string>
     <!-- People tab (issue #66) -->
     <string name="people_title">Oameni</string>
-    <string name="people_open">Deschide</string>
     <string name="people_level_count">%1$s · %2$d</string>
     <string name="people_empty">Încă nu e nimeni aici.</string>
     <plurals name="people_card_count">
@@ -478,14 +477,9 @@
         <item quantity="other">de persoane</item>
     </plurals>
     <plurals name="people_card_meetups">
-        <item quantity="one">întâlnire în 90 de zile</item>
-        <item quantity="few">întâlniri în 90 de zile</item>
-        <item quantity="other">de întâlniri în 90 de zile</item>
-    </plurals>
-    <plurals name="people_card_cooling">
-        <item quantity="one">%1$d se răcește: %2$s</item>
-        <item quantity="few">%1$d se răcesc: %2$s</item>
-        <item quantity="other">%1$d se răcesc: %2$s</item>
+        <item quantity="one">întâlnire</item>
+        <item quantity="few">întâlniri</item>
+        <item quantity="other">de întâlniri</item>
     </plurals>
     <!-- Circles on a person's page (issue #70) -->
     <string name="circles_sheet_title">Cercuri pentru %1$s</string>
@@ -549,4 +543,9 @@
     <string name="note_add_media">Adaugă o fotografie sau un videoclip</string>
     <string name="note_media_explained">Good Company păstrează o mică previzualizare. Originalul rămâne în galeria ta.</string>
     <string name="note_saved">Notă salvată</string>
+    <string name="people_dashboard">Panou</string>
+    <string name="people_tab_all">Toți</string>
+    <string name="people_tab_friends">Prieteni</string>
+    <string name="people_tab_family">Familie</string>
+    <string name="row_more_circles">+%1$d</string>
 </resources>

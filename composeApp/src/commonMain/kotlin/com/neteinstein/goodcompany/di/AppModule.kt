@@ -103,6 +103,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimerUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DismissPeopleLegendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
@@ -461,6 +462,7 @@ val appModule = module {
     factoryOf(::SetCircleMemberUseCase)
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
+    factoryOf(::DismissPeopleLegendUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
     factoryOf(::ObserveYearReviewCardUseCase)
     factoryOf(::BackupToDriveUseCase)

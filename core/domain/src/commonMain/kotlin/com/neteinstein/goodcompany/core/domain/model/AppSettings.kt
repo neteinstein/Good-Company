@@ -135,6 +135,8 @@ data class AppSettings(
      * time media went on a note. Device-only: never exported, kept on restore.
      */
     val mediaExplained: Boolean = false,
+    /** Issue #120: the one-time legend tip on People (ring and circle-dot colours) was dismissed. Device-only. */
+    val peopleLegendSeen: Boolean = false,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 

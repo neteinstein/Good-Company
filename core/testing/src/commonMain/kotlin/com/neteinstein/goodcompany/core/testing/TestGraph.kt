@@ -329,6 +329,7 @@ class TestGraph(
     val setCircleMember = SetCircleMemberUseCase(circles)
     val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
+    val dismissPeopleLegend = com.neteinstein.goodcompany.core.domain.usecase.DismissPeopleLegendUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeYearReviewCard = ObserveYearReviewCardUseCase(hangoutRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)

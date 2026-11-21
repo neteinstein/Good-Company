@@ -9,7 +9,9 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CircleDots
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
+import com.neteinstein.goodcompany.core.domain.usecase.DismissPeopleLegendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
@@ -22,6 +24,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFiltering
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleOrder
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleTab
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
@@ -50,8 +54,11 @@ sealed interface PeopleSection {
     data class Letter(val letter: Char) : PeopleSection
 }
 
-/** The "Your people" card on top of People (issue #66): a summary of the dashboard. */
-data class YourPeopleSummary(val people: Int, val meetupsLast90Days: Int, val cooling: List<Friend>)
+/**
+ * The "Your people" card on top of People (issues #66, #120): two equal tiles, how many people and how many meetups
+ * (the 90-day window is named in the dashboard, not on the card). No cooling line since #120.
+ */
+data class YourPeopleSummary(val people: Int, val meetupsLast90Days: Int)
 
 /**
  * The ways "Add friend" offers to add someone, in the order the sheet shows them. Both contact options are titled
@@ -107,12 +114,18 @@ data class FriendsUiState(
     val totalCount: Int = 0,
     val query: String = "",
     val sort: PeopleSort = PeopleSort.CLOSENESS,
+    /** All · Friends · Family (issue #120); search, the filter row and the counts work inside it. Not remembered. */
+    val tab: PeopleTab = PeopleTab.ALL,
+    /** Each person's circle dots (issue #120), in the circles' order; people in no circle are missing. */
+    val circleDots: Map<FriendId, CircleDots> = emptyMap(),
+    /** The one-time tip explaining the avatar ring and the circle dots (issue #120). */
+    val showLegendTip: Boolean = false,
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val message: FriendsMessage? = null,
     /** One person was just picked from contacts: the screen opens their page (issue #114), then [FriendsViewModel.onOpenedPicked]. */
     val openPicked: FriendId? = null,
-    /** Warmth dots and "who's cooling" (off in Settings = softer view). */
+    /** The warmth ring on avatars (off in Settings = softer view). */
     val showWarmth: Boolean = true,
     val now: Instant = Instant.DISTANT_PAST,
     val today: LocalDate = LocalDate(2000, 1, 1),
@@ -154,6 +167,7 @@ class FriendsViewModel(
     private val setCircleFilter: SetHomeCircleFilterUseCase,
     observeKinship: ObserveKinshipProposalsUseCase,
     private val parseKinship: ParseKinshipQueryUseCase,
+    private val dismissLegend: DismissPeopleLegendUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendsUiState())
@@ -170,8 +184,8 @@ class FriendsViewModel(
 
     val state: StateFlow<FriendsUiState> = combine(
         observeFriends(),
-        // The card only needs counts and who's cooling, not the 13-week trend.
-        observeDashboard(withTrend = false).map { d -> YourPeopleSummary(d.people, d.meetupsLast90Days, d.cooling.map { it.friend }) },
+        // The card only needs the two counts, not the 13-week trend.
+        observeDashboard(withTrend = false).map { d -> YourPeopleSummary(d.people, d.meetupsLast90Days) }.distinctUntilChanged(),
         combine(observeSettings(), observeCircles(), observeKinship(), kinshipQuery) { settings, circles, proposals, kin ->
             Extras(settings, circles, proposals.size, kin)
         },
@@ -182,8 +196,9 @@ class FriendsViewModel(
         // "My nieces": confirmed kinship only, whoever is hidden from the list (F7).
         val kinship = kin.second.takeIf { kin.first == ui.query }
         // F9: people with "Show in my list" off (friends' kids) stay out unless searched for or in a circle.
+        // Issue #120: the tab first, so search, the filter row and its counts all stay inside it.
         val result = PeopleFiltering.apply(
-            everyone,
+            everyone.filter { ui.tab.includes(it.friend) },
             { it.friend },
             PeopleFilter(circleId = circle?.group?.id, closeness = ui.closeness),
             circles.map { it.group },
@@ -194,7 +209,10 @@ class FriendsViewModel(
         )
         val byName = result.people
         val sections: List<Pair<PeopleSection, List<FriendSummary>>> = when (ui.sort) {
-            PeopleSort.CLOSENESS -> result.byCloseness { it.friend.closeness }.map { (c, people) -> PeopleSection.Level(c) to people }
+            // Issue #120: inside each level, most recent contact first; never contacted last, A–Z.
+            PeopleSort.CLOSENESS -> result.byCloseness { it.friend.closeness }.map { (c, people) ->
+                PeopleSection.Level(c) to PeopleOrder.recentFirst(people, { it.friend }, { it.lastContact ?: it.lastSeen })
+            }
             PeopleSort.NAME -> byName.groupBy { it.friend.displayName.firstOrNull()?.uppercaseChar()?.takeIf(Char::isLetter) ?: '#' }
                 .map { (letter, people) -> PeopleSection.Letter(letter) to people }
         }
@@ -208,6 +226,8 @@ class FriendsViewModel(
             circles = circles.sortedBy { it.group.name.lowercase() },
             circle = circle,
             showWarmth = settings.showWarmth,
+            circleDots = CircleDots.byPerson(circles.map { it.group }),
+            showLegendTip = !settings.peopleLegendSeen,
             kinship = kinship,
             suggestedFamily = proposals,
             isLoading = false,
@@ -218,6 +238,14 @@ class FriendsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FriendsUiState())
 
     fun onQueryChange(query: String) = local.update { it.copy(query = query) }
+
+    /** All · Friends · Family (issue #120). */
+    fun onTabChange(tab: PeopleTab) = local.update { it.copy(tab = tab) }
+
+    /** "Got it" on the legend tip. */
+    fun onLegendDismissed() {
+        viewModelScope.launch { dismissLegend() }
+    }
 
     /** "A–Z" in the ⋮ menu switches between A–Z and grouped by closeness. */
     fun onSortChange(sort: PeopleSort) = local.update { it.copy(sort = sort) }

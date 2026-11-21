@@ -3,13 +3,17 @@ package com.neteinstein.goodcompany.feature.friends
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleTab
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
+import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -43,6 +47,7 @@ class FriendsViewModelTest {
         g.setHomeCircleFilter,
         g.observeKinship,
         g.parseKinshipQuery,
+        g.dismissPeopleLegend,
         g.clock,
     )
 
@@ -271,7 +276,6 @@ class FriendsViewModelTest {
         val dashboard = g.observePeopleDashboard().first()
         assertEquals(dashboard.people, card.people)
         assertEquals(dashboard.meetupsLast90Days, card.meetupsLast90Days)
-        assertEquals(dashboard.cooling.map { it.friend }, card.cooling)
         assertTrue(card.people > 0)
     }
 
@@ -282,7 +286,59 @@ class FriendsViewModelTest {
         assertTrue(state.value.showWarmth)
         g.settingsRepo.update { it.copy(showWarmth = false) }
         assertFalse(state.value.showWarmth)
-        assertTrue(state.value.yourPeople!!.cooling.isEmpty())
+    }
+
+    @Test
+    fun tabs_splitFriendsAndFamily_andSearchStaysInTheTab() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana"),
+                friend("rui") { copy(relationToMe = LinkType.SIBLING) },
+                friend("rita") { copy(relationToMe = LinkType.PARENT) },
+            ),
+        )
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(listOf("Ana", "Rita", "Rui"), state.value.friends.map { it.friend.name })
+        vm.onTabChange(PeopleTab.FAMILY)
+        assertEquals(listOf("Rita", "Rui"), state.value.friends.map { it.friend.name })
+        assertEquals(2, state.value.listedCount)
+        vm.onQueryChange("r")
+        assertEquals(listOf("Rita", "Rui"), state.value.friends.map { it.friend.name })
+        vm.onTabChange(PeopleTab.FRIENDS)
+        assertTrue(state.value.friends.isEmpty())
+        vm.onQueryChange("")
+        assertEquals(listOf("Ana"), state.value.friends.map { it.friend.name })
+    }
+
+    @Test
+    fun withinALevel_mostRecentContactFirst_neverContactedLastAToZ() = runViewModelTest {
+        val g = TestGraph(
+            listOf(friend("ana"), friend("bea"), friend("cal"), friend("dan")),
+            hangouts = listOf(
+                Hangout("1", listOf(FriendId("cal")), at(2026, 3, 1)),
+                Hangout("2", listOf(FriendId("bea")), at(2026, 3, 8)),
+            ),
+        )
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(listOf("Bea", "Cal", "Ana", "Dan"), state.value.sections.single().second.map { it.friend.name })
+        // A–Z stays A–Z.
+        vm.onSortChange(PeopleSort.NAME)
+        assertEquals(listOf("Ana", "Bea", "Cal", "Dan"), state.value.friends.map { it.friend.name })
+    }
+
+    @Test
+    fun circleDots_andTheLegendTipShowsUntilDismissed() = runViewModelTest {
+        g.groupRepo.upsert(FriendGroup("g1", "Surf", memberIds = listOf(FriendId("ana")), color = CircleColor.TEAL))
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(listOf("g1"), state.value.circleDots.getValue(FriendId("ana")).shown.map { it.id })
+        assertNull(state.value.circleDots[FriendId("bob")])
+        assertTrue(state.value.showLegendTip)
+        vm.onLegendDismissed()
+        assertFalse(state.value.showLegendTip)
+        assertTrue(g.settingsRepo.settings.value.peopleLegendSeen)
     }
 
     @Test

@@ -686,4 +686,9 @@
     <string name="log_last_together">Última vez juntos: %1$s</string>
     <string name="notif_daily_log_title">Com quem puseste a conversa em dia hoje?</string>
     <string name="notif_daily_log_body">Toca para registar enquanto te lembras.</string>
+    <string name="legend_title">O que significam as cores</string>
+    <string name="legend_ring">O anel à volta da foto mostra quão próxima está a relação:</string>
+    <string name="legend_no_ring">Sem anel: não estás a acompanhar esta pessoa.</string>
+    <string name="legend_dots">Um ponto por cada círculo onde está, na cor do círculo.</string>
+    <string name="legend_got_it">Percebi</string>
 </resources>

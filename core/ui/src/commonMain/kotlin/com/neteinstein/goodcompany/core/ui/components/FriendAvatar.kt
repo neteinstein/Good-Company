@@ -44,16 +44,19 @@ fun FriendAvatar(
     highlighted: Boolean = false,
     sharedKey: String? = null,
     photo: ContactPhoto? = null,
+    /** The ring's colour (issue #120: warmth on People); null = [highlighted]'s primary ring, or none. */
+    ringColor: Color? = null,
 ) {
     val (start, end) = avatarColors(name)
     val image = rememberPhotoBitmap(photo)
-    val ring by animateDpAsState(if (highlighted) 2.5.dp else 0.dp)
+    val ringed = highlighted || ringColor != null
+    val ring by animateDpAsState(if (ringed) 2.5.dp else 0.dp)
     Box(
         modifier = modifier
             .sharedElement(sharedKey)
             .size(size)
-            .border(ring, MaterialTheme.colorScheme.primary, CircleShape)
-            .padding(ring + if (highlighted) 2.dp else 0.dp)
+            .border(ring, ringColor ?: MaterialTheme.colorScheme.primary, CircleShape)
+            .padding(ring + if (ringed) 2.dp else 0.dp)
             .clip(CircleShape)
             .background(Brush.linearGradient(listOf(start, end))),
         contentAlignment = Alignment.Center,
@@ -82,7 +85,8 @@ fun FriendAvatar(
     size: Dp = 48.dp,
     highlighted: Boolean = false,
     sharedKey: String? = null,
-) = FriendAvatar(friend.displayName, friend.initials, modifier, size, highlighted, sharedKey, friend.avatar)
+    ringColor: Color? = null,
+) = FriendAvatar(friend.displayName, friend.initials, modifier, size, highlighted, sharedKey, friend.avatar, ringColor)
 
 /** Decoded once per photo; null (so initials show) when there's none or it isn't a readable image. */
 @Composable

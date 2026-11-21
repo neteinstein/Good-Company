@@ -415,11 +415,14 @@ internal data class DeviceSettings(
     val notificationPrimerDismissed: Boolean = false,
     /** Issue #119: the note-media explanation was shown. */
     val mediaExplained: Boolean = false,
+    /** Issue #120: the People legend tip was dismissed. */
+    val peopleLegendSeen: Boolean = false,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         notifications = notifications,
         notificationPrimerDismissed = notificationPrimerDismissed,
         mediaExplained = mediaExplained,
+        peopleLegendSeen = peopleLegendSeen,
         keptTagSpellings = keptTagSpellings,
         acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
@@ -457,6 +460,7 @@ internal data class DeviceSettings(
             notifications = settings.notifications,
             notificationPrimerDismissed = settings.notificationPrimerDismissed,
             mediaExplained = settings.mediaExplained,
+            peopleLegendSeen = settings.peopleLegendSeen,
         )
     }
 }

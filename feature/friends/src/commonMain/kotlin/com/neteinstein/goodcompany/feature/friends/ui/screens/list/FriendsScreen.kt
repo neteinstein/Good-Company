@@ -11,9 +11,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +35,7 @@ import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FamilyRestroom
 import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
@@ -59,6 +62,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
@@ -89,13 +95,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.usecase.CircleDots
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PeopleTab
 import com.neteinstein.goodcompany.core.ui.components.AllChip
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.PeopleFilterRow
+import com.neteinstein.goodcompany.core.ui.components.PeopleLegend
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
 import com.neteinstein.goodcompany.core.ui.components.showMessage
@@ -109,6 +118,8 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.legend_got_it
+import com.neteinstein.goodcompany.core.ui.resources.legend_title
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.action_add_friend
 import com.neteinstein.goodcompany.feature.friends.resources.action_close_search
@@ -144,12 +155,14 @@ import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_empty
 import com.neteinstein.goodcompany.feature.friends.resources.msg_vcf_result
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_search
 import com.neteinstein.goodcompany.feature.friends.resources.no_matches_title
-import com.neteinstein.goodcompany.feature.friends.resources.people_card_cooling
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_count
 import com.neteinstein.goodcompany.feature.friends.resources.people_card_meetups
+import com.neteinstein.goodcompany.feature.friends.resources.people_dashboard
 import com.neteinstein.goodcompany.feature.friends.resources.people_empty
 import com.neteinstein.goodcompany.feature.friends.resources.people_level_count
-import com.neteinstein.goodcompany.feature.friends.resources.people_open
+import com.neteinstein.goodcompany.feature.friends.resources.people_tab_all
+import com.neteinstein.goodcompany.feature.friends.resources.people_tab_family
+import com.neteinstein.goodcompany.feature.friends.resources.people_tab_friends
 import com.neteinstein.goodcompany.feature.friends.resources.people_title
 import com.neteinstein.goodcompany.feature.friends.resources.search_placeholder
 import com.neteinstein.goodcompany.feature.friends.resources.sort_name
@@ -228,6 +241,8 @@ fun FriendsScreen(
         addOptions = addFriendOptions(capabilities.hasContactPicker, capabilities.hasContactList),
         actions = FriendsActions(
             onQueryChange = viewModel::onQueryChange,
+            onTabChange = viewModel::onTabChange,
+            onLegendDismissed = viewModel::onLegendDismissed,
             onSortChange = viewModel::onSortChange,
             onSync = requestContacts,
             onImportFile = pickVcf,
@@ -250,6 +265,10 @@ fun FriendsScreen(
 
 data class FriendsActions(
     val onQueryChange: (String) -> Unit = {},
+    /** All · Friends · Family (issue #120). */
+    val onTabChange: (PeopleTab) -> Unit = {},
+    /** "Got it" on the one-time legend tip. */
+    val onLegendDismissed: () -> Unit = {},
     val onSortChange: (PeopleSort) -> Unit = {},
     val onSync: () -> Unit = {},
     val onImportFile: () -> Unit = {},
@@ -458,7 +477,20 @@ fun FriendsContent(
             if (!state.isSearching) {
                 state.yourPeople?.let { yp ->
                     item(key = "your-people") {
-                        YourPeopleCard(yp, state.showWarmth, onOpen = actions.onOpenPeople, onOpenNetwork = actions.onOpenNetwork)
+                        YourPeopleCard(yp, onOpen = actions.onOpenPeople, onOpenNetwork = actions.onOpenNetwork)
+                    }
+                }
+            }
+            // Issue #120: All · Friends · Family; search and the filter row work inside the tab.
+            item(key = "tabs") { PeopleTabs(state.tab, actions.onTabChange) }
+            if (!state.isSearching && state.showLegendTip) {
+                item(key = "legend-tip") {
+                    SectionCard(
+                        stringResource(CoreRes.string.legend_title),
+                        icon = Icons.Rounded.Info,
+                        action = { TextButton(onClick = actions.onLegendDismissed) { Text(stringResource(CoreRes.string.legend_got_it)) } },
+                    ) {
+                        PeopleLegend(Modifier.padding(horizontal = 16.dp), showWarmth = state.showWarmth)
                     }
                 }
             }
@@ -547,6 +579,7 @@ fun FriendsContent(
                         onClick = { actions.onOpenFriend(summary.friend.id) },
                         showWarmth = state.showWarmth,
                         showCloseness = state.sort == PeopleSort.NAME,
+                        circles = state.circleDots[summary.friend.id] ?: CircleDots.None,
                         modifier = Modifier.animateItem(),
                     )
                 }
@@ -591,47 +624,56 @@ private fun CircleFilterRow(state: FriendsUiState, actions: FriendsActions) {
     )
 }
 
-/** "Your people" on top of the list: people, meetups in 90 days and who's cooling; opens the dashboard or the map. */
+/**
+ * "Your people" on top of the list (issue #120): two equal tiles, people and meetups, then the Dashboard and Your
+ * network links under them. No cooling line.
+ */
 @Composable
-private fun YourPeopleCard(summary: YourPeopleSummary, showWarmth: Boolean, onOpen: () -> Unit, onOpenNetwork: () -> Unit) {
-    SectionCard(
-        title = stringResource(Res.string.action_people),
-        icon = Icons.Rounded.Insights,
-        action = { TextButton(onClick = onOpen) { Text(stringResource(Res.string.people_open)) } },
-    ) {
+private fun YourPeopleCard(summary: YourPeopleSummary, onOpen: () -> Unit, onOpenNetwork: () -> Unit) {
+    SectionCard(title = stringResource(Res.string.action_people), icon = Icons.Rounded.Insights) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).padding(horizontal = 16.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            StatTile(summary.people, pluralStringResource(Res.plurals.people_card_count, summary.people), onOpen, Modifier.weight(1f))
+            StatTile(summary.people, pluralStringResource(Res.plurals.people_card_count, summary.people), onOpen, Modifier.weight(1f).fillMaxHeight())
             StatTile(
                 summary.meetupsLast90Days,
                 pluralStringResource(Res.plurals.people_card_meetups, summary.meetupsLast90Days),
                 onOpen,
-                Modifier.weight(1f),
+                Modifier.weight(1f).fillMaxHeight(),
             )
         }
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            val cooling = summary.cooling.takeIf { showWarmth }.orEmpty()
-            Text(
-                if (cooling.isEmpty()) {
-                    ""
-                } else {
-                    pluralStringResource(
-                        Res.plurals.people_card_cooling,
-                        cooling.size,
-                        cooling.size,
-                        cooling.joinToString(", ") { it.displayName.substringBefore(' ') },
-                    )
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
+        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = onOpen) {
+                Icon(Icons.Rounded.Insights, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(Res.string.people_dashboard))
+            }
             TextButton(onClick = onOpenNetwork) {
                 Icon(Icons.Rounded.Hub, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(stringResource(Res.string.action_network))
             }
+        }
+    }
+}
+
+/** All · Friends · Family (issue #120). */
+@Composable
+private fun PeopleTabs(tab: PeopleTab, onTab: (PeopleTab) -> Unit) {
+    val tabs = listOf(
+        PeopleTab.ALL to stringResource(Res.string.people_tab_all),
+        PeopleTab.FRIENDS to stringResource(Res.string.people_tab_friends),
+        PeopleTab.FAMILY to stringResource(Res.string.people_tab_family),
+    )
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        tabs.forEachIndexed { i, (t, label) ->
+            SegmentedButton(
+                selected = tab == t,
+                onClick = { onTab(t) },
+                shape = SegmentedButtonDefaults.itemShape(i, tabs.size),
+                label = { Text(label, maxLines = 1) },
+            )
         }
     }
 }
