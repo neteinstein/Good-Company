@@ -56,6 +56,7 @@
     <string name="detail_birthday_turns">%1$s · turns %2$d</string>
     <string name="detail_birthday_when">%1$s · %2$s</string>
     <string name="detail_seen">Seen %1$s</string>
+    <string name="detail_caught_up">Caught up %1$s</string>
     <string name="detail_orphaned">Not in contacts anymore</string>
     <string name="qa_call">Call</string>
     <string name="qa_text">Text</string>
@@ -69,6 +70,7 @@
     <string name="wish_gift_hint">Gift ideas: %1$s</string>
 
     <string name="touch_last_together">Last together %1$s</string>
+    <string name="touch_last_caught_up">Last caught up %1$s</string>
     <string name="touch_never">No meetups logged yet</string>
     <string name="touch_pick">Pick a closeness or how often you’d like to meet — we’ll nudge you.</string>
     <string name="touch_overdue">It’s been a while — your goal is %1$s.</string>
@@ -368,6 +370,9 @@
     <string name="contact_message">Message %1$s</string>
     <string name="contact_email">Email %1$s</string>
     <string name="contact_video">Video call %1$s</string>
+    <string name="contact_long_chat">Long chat %1$s</string>
+    <string name="contact_game">Played online %1$s</string>
+    <string name="contact_other">In touch %1$s</string>
     <string name="story_last_talk_title">Last time you talked about…</string>
     <string name="choose_title">Choose friends</string>
     <string name="choose_count">%1$d of %2$d</string>
@@ -510,7 +515,7 @@
     <string name="circles_new_with">New circle with %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
     <string name="qa_message">Message</string>
-    <string name="qa_we_met">We met</string>
+    <string name="qa_we_met">Caught up</string>
     <string name="message_sheet_title">Message %1$s</string>
     <string name="tab_summary">Summary</string>
     <string name="tab_about">About</string>

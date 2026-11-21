@@ -29,7 +29,8 @@ import org.jetbrains.compose.resources.StringResource
  * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
  * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met". [circleId] opens on that circle's members, nobody ticked (F20).
  * [plan] answers a plan's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`, issue #43).
- * [note] and [place] (with [date] and [activity]) carry what the "We met" panel had chosen ("More details", issue #47).
+ * [note], [place] and [label] (with [type], [date] and [activity]) carry what the "Caught up" panel had chosen ("More details",
+ * issues #47, #101).
  */
 @Serializable data class LogInteractionRoute(
     val friendIds: List<String>,
@@ -42,10 +43,12 @@ import org.jetbrains.compose.resources.StringResource
     val activity: String? = null,
     val note: String? = null,
     val place: String? = null,
+    /** The "Other" label typed in the "Caught up" panel (issue #101). */
+    val label: String? = null,
 )
 
 /**
- * The small "We met" panel (issue #47, F2): every in-app "We met" opens it. [friendIds] or [circleId] (members listed,
+ * The small "Caught up" panel (issues #47, #101, F2; it was "We met"): every in-app "Caught up" opens it, with "How?" first. [friendIds] or [circleId] (members listed,
  * nobody ticked, F20); [plan] answers that plan occurrence's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`).
  */
 @Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val plan: String? = null)

@@ -135,6 +135,38 @@ class UseCasesTest {
     }
 
     @Test
+    fun friendDetail_ringFollowsTheRhythmRule_callsCountOnlyWithTheSwitchOn() = runTest {
+        hangouts.add(Hangout("1", listOf(FriendId("ana")), at(2026, 3, 1)))
+        interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.LONG_CHAT, at(2026, 3, 5))))
+        suspend fun detail() = ObserveFriendDetailUseCase(
+            friends,
+            hangouts,
+            interactions,
+            ideas,
+            settings,
+            FakeGroupRepository(),
+            FakePlanRepository(),
+            FakePersonLinkRepository(),
+            clock,
+        )(FriendId("ana")).first()!!
+        assertEquals(at(2026, 3, 1), detail().lastCaughtUp)
+
+        friends.upsert(friends.get(FriendId("ana"))!!.copy(contactCountsAsCatchUp = true))
+        val on = detail()
+        assertEquals(at(2026, 3, 5), on.lastCaughtUp)
+        assertEquals(at(2026, 3, 1), on.lastSeen)
+        // The same date Relationships.meetupStatuses counts the rhythm from.
+        val status = com.neteinstein.goodcompany.core.domain.usecase.Relationships.meetupStatuses(
+            listOf(on.friend.copy(meetEveryDays = 30)),
+            hangouts.hangouts.value,
+            clock.today(),
+            clock.timeZone,
+            interactions = interactions.interactions.value,
+        ).single()
+        assertEquals(kotlinx.datetime.LocalDate(2026, 3, 5), status.lastSeenDate)
+    }
+
+    @Test
     fun friendDetail_combinesEverything() = runTest {
         hangouts.add(Hangout("1", listOf(FriendId("ana"), FriendId("bob")), at(2026, 3, 1)))
         interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.CALL, at(2026, 3, 5))))

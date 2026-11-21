@@ -1,0 +1,5 @@
+-- Version 22 → 23 (issue #101): more ways to keep in touch. The interaction types LONG_CHAT, GAME and OTHER need no
+-- schema change (enum columns have no CHECK since 16.sqm); OTHER is named by the new label ("Sent a postcard").
+-- Existing interactions get an empty label.
+
+ALTER TABLE interaction ADD COLUMN label TEXT NOT NULL DEFAULT '';

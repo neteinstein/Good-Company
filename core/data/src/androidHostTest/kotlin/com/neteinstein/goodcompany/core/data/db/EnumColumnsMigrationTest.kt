@@ -167,8 +167,8 @@ class EnumColumnsMigrationTest {
             "UPDATE plan SET status = 'MAYBE'",
             "UPDATE gift_list SET occasion = 'EASTER'",
             "UPDATE gift_list_item SET status = 'WRAPPED'",
-            "INSERT INTO interaction VALUES ('x2', 'ana', 'FAX', 2, '', 'MANUAL', NULL, NULL, NULL)",
-            "INSERT INTO interaction VALUES ('x3', 'ana', 'CALL', 3, '', 'PIGEON', NULL, NULL, NULL)",
+            "INSERT INTO interaction VALUES ('x2', 'ana', 'FAX', 2, '', 'MANUAL', NULL, NULL, NULL, '')",
+            "INSERT INTO interaction VALUES ('x3', 'ana', 'CALL', 3, '', 'PIGEON', NULL, NULL, NULL, '')",
             "INSERT INTO attachment (id, friend_id, kind, at, created_at) VALUES ('a2', 'ana', 'VIDEO', 2, 2)",
             """
             INSERT INTO attachment (id, friend_id, kind, photo_platform, photo_ref, at, counts_as_interaction, interaction_type, created_at)

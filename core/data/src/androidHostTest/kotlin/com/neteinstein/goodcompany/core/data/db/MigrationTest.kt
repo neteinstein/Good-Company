@@ -693,6 +693,43 @@ class MigrationTest {
     }
 
     @Test
+    fun version22to23_interactionsStartWithNoLabel_andTheNewKindsRoundTrip() = runTest {
+        val driver = driverAt(22)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 1, 1, '', 0, 0, 'CLOSE', 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(
+            null,
+            "INSERT INTO interaction (id, friend_id, type, at, note, source) VALUES ('c1', 'ana', 'CALL', 1000, 'Porto', 'MANUAL')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 22, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val old = database.readInteractions().single()
+        assertEquals("Porto", old.note)
+        assertEquals("", old.label)
+
+        val ana = FriendId("ana")
+        val at = Instant.fromEpochMilliseconds(2000)
+        val other = Interaction(ana, InteractionType.OTHER, at, "o1", label = "Sent a postcard")
+        database.writeInteraction(other)
+        database.writeInteraction(Interaction(ana, InteractionType.LONG_CHAT, at, "l1"))
+        database.writeInteraction(Interaction(ana, InteractionType.GAME, at, "g1"))
+        val read = database.readInteractions().associateBy { it.id }
+        assertEquals(other, read["o1"])
+        assertEquals(InteractionType.LONG_CHAT, read["l1"]?.type)
+        assertEquals(InteractionType.GAME, read["g1"]?.type)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

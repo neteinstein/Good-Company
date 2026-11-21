@@ -298,6 +298,7 @@ internal suspend fun GoodCompanyDatabase.readInteractions(): List<DomainInteract
             durationSeconds = it.duration_seconds?.toInt(),
             batchId = it.batch_id,
             messageCount = it.message_count?.toInt(),
+            label = it.label,
         )
     }
 
@@ -375,6 +376,7 @@ internal suspend fun GoodCompanyDatabase.writeInteraction(interaction: DomainInt
         durationSeconds = i.durationSeconds?.toColumn(),
         batchId = i.batchId,
         messageCount = i.messageCount?.toColumn(),
+        label = i.label,
     )
 }
 

@@ -3,7 +3,7 @@
     <string name="app_name">Good Company</string>
     <string name="storage_temporary">Modificările din această filă nu vor fi salvate. Good Company este probabil deschis în altă filă, continuați acolo.</string>
     <!-- iOS app-icon quick action (the Swift side shows what Kotlin hands it). -->
-    <string name="shortcut_log_meetup">Notează o întâlnire</string>
+    <string name="shortcut_log_meetup">Ne-am pus la curent</string>
     <string name="nav_today">Azi</string>
     <string name="nav_people">Oameni</string>
     <string name="nav_circles">Cercuri</string>

@@ -223,8 +223,11 @@ import com.neteinstein.goodcompany.feature.friends.resources.complete_saved
 import com.neteinstein.goodcompany.feature.friends.resources.complete_title
 import com.neteinstein.goodcompany.feature.friends.resources.contact_call
 import com.neteinstein.goodcompany.feature.friends.resources.contact_email
+import com.neteinstein.goodcompany.feature.friends.resources.contact_game
+import com.neteinstein.goodcompany.feature.friends.resources.contact_long_chat
 import com.neteinstein.goodcompany.feature.friends.resources.contact_message
 import com.neteinstein.goodcompany.feature.friends.resources.contact_met
+import com.neteinstein.goodcompany.feature.friends.resources.contact_other
 import com.neteinstein.goodcompany.feature.friends.resources.contact_video
 import com.neteinstein.goodcompany.feature.friends.resources.contact_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.delete_body
@@ -328,6 +331,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
 import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_goal
+import com.neteinstein.goodcompany.feature.friends.resources.touch_last_caught_up
 import com.neteinstein.goodcompany.feature.friends.resources.touch_last_together
 import com.neteinstein.goodcompany.feature.friends.resources.touch_never
 import com.neteinstein.goodcompany.feature.friends.resources.touch_overdue
@@ -1300,7 +1304,9 @@ private fun ComingUp(f: Friend, state: FriendDetailUiState, actions: FriendDetai
 private fun RhythmLine(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
     val detail = state.detail ?: return
     val goal = detail.cadenceDays
-    val days = detail.lastSeen?.toLocalDateTime(state.zone)?.date?.daysUntil(state.today)
+    // The ring follows the rhythm's own rule (issue #101): the last meetup, or any contact when calls and chats count.
+    val last = detail.lastCaughtUp
+    val days = last?.toLocalDateTime(state.zone)?.date?.daysUntil(state.today)
     val snoozedUntil = f.snoozedUntil?.takeIf { it >= state.today }
     Row(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         val progress = when {
@@ -1315,8 +1321,10 @@ private fun RhythmLine(f: Friend, state: FriendDetailUiState, actions: FriendDet
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                detail.lastSeen?.let { stringResource(Res.string.touch_last_together, relativePast(it, state.now, state.zone)) }
-                    ?: stringResource(Res.string.touch_never),
+                last?.let {
+                    val ago = relativePast(it, state.now, state.zone)
+                    stringResource(if (it == detail.lastSeen) Res.string.touch_last_together else Res.string.touch_last_caught_up, ago)
+                } ?: stringResource(Res.string.touch_never),
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
@@ -2039,6 +2047,9 @@ private fun LastContactRow(byType: Map<InteractionType, kotlin.time.Instant>, st
                 InteractionType.MESSAGE -> interactionIcon(type) to stringResource(Res.string.contact_message, ago)
                 InteractionType.EMAIL -> interactionIcon(type) to stringResource(Res.string.contact_email, ago)
                 InteractionType.VIDEO_CALL -> interactionIcon(type) to stringResource(Res.string.contact_video, ago)
+                InteractionType.LONG_CHAT -> interactionIcon(type) to stringResource(Res.string.contact_long_chat, ago)
+                InteractionType.GAME -> interactionIcon(type) to stringResource(Res.string.contact_game, ago)
+                InteractionType.OTHER -> interactionIcon(type) to stringResource(Res.string.contact_other, ago)
             }
             InfoPill(label, icon = icon)
         }

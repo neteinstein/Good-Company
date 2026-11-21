@@ -44,10 +44,12 @@ data class LogDraft(
     val activity: HangoutActivity? = null,
     val saving: Boolean = false,
     val circleId: String? = null,
+    /** [LogKind.OTHER] only: what it was ("Sent a postcard"). */
+    val label: String = "",
 )
 
 /**
- * The state and actions behind the "Log" sheet (issue #21) and the small "We met" panel (issue #47), so both share one
+ * The state and actions behind the "Log" sheet (issue #21) and the small "Caught up" panel (issues #47, #101), so both share one
  * copy of the logic. Each ViewModel owns one and hands it its `viewModelScope`. A saved meetup is offered to
  * [LoggedMeetupInbox] for the app-wide "Logged time with … · Undo" snackbar.
  *
@@ -97,6 +99,7 @@ class LogSheetModel(
             date = d.date,
             today = clock.today(),
             note = d.note,
+            label = d.label,
             place = meetupPlaceState(d.placeName, d.location, d.isLocating, d.placeChanged, places, d.people, everyone),
             activity = d.activity,
             activities = activities,
@@ -155,6 +158,9 @@ class LogSheetModel(
 
     fun onNote(note: String) = mutableDraft.update { it.copy(note = note) }
 
+    /** The "Other" label, at most [LogInteractionUseCase.LABEL_MAX] characters. */
+    fun onLabel(label: String) = mutableDraft.update { it.copy(label = label.take(LogInteractionUseCase.LABEL_MAX)) }
+
     fun onPlaceName(name: String) = mutableDraft.update { it.copy(placeName = name) }
 
     fun onActivity(activity: HangoutActivity?) = mutableDraft.update { it.copy(activity = activity) }
@@ -194,19 +200,25 @@ class LogSheetModel(
                         placeName = placeName.takeIf { meetup },
                         location = d.location.takeIf { meetup },
                         activity = d.activity.takeIf { meetup },
+                        label = d.label.takeIf { d.kind == LogKind.OTHER }.orEmpty(),
                     ),
                 )
             }.getOrNull()
-            // Answering a plan: close that occurrence (the meetup is already logged), remembering it for Undo.
-            val answered = if (result is LogResult.Met && plan != null) {
-                val before = observePlans().first().firstOrNull { it.id == plan.planId }
-                runCatching { confirmPlan(plan.planId, happened = true, day = plan.date, logCheckIn = false) }
-                result.copy(plan = before)
+            // Answering a plan: close that occurrence (the meetup, call or chat is already logged), remembering it for Undo.
+            val before = if (plan != null && (result is LogResult.Met || result is LogResult.Contacts)) {
+                observePlans().first().firstOrNull { it.id == plan.planId }
+                    .also { runCatching { confirmPlan(plan.planId, happened = true, day = plan.date, logCheckIn = false) } }
             } else {
-                result
+                null
+            }
+            val answered = when (result) {
+                is LogResult.Met -> result.copy(plan = before)
+                is LogResult.Contacts -> result.copy(plan = before)
+                else -> result
             }
             mutableDraft.update { it.copy(saving = false) }
-            if (answered is LogResult.Met) loggedMeetups.offer(LoggedMeetup(answered, people))
+            // "Logged time with … · Undo" for meetups and contacts alike (issue #101); journal entries have their own.
+            if (answered is LogResult.Met || answered is LogResult.Contacts) loggedMeetups.offer(LoggedMeetup(answered, people))
             if (answered != null) onSaved()
         }
     }

@@ -8,7 +8,7 @@
     <string name="group_overdue">E timpul să vă adunați · %1$s</string>
     <string name="group_due">Scadent %1$s · %2$s</string>
     <string name="group_snoozed">Amânat până pe %1$s</string>
-    <string name="group_met">Ne-am văzut</string>
+    <string name="group_met">Ne-am pus la curent</string>
     <string name="group_edit">Editează</string>
     <string name="group_delete">Șterge cercul</string>
     <string name="group_snooze_week">Amână o săptămână</string>
@@ -51,8 +51,9 @@
     <string name="circle_members_empty">Adaugă cel puțin un prieten.</string>
     <string name="circle_closeness_note">Aici apropierea doar se vede, nu se editează: ține de persoană. Ritmul unui prieten nu se schimbă niciodată din cauza unui cerc.</string>
     <!-- The small "We met" panel (issue #47) -->
-    <string name="met_title">Te-ai văzut cu %1$s</string>
+    <string name="met_title">La curent cu %1$s</string>
     <string name="met_title_circle">%1$s · cine a venit?</string>
+    <string name="met_how">Cum?</string>
     <string name="met_more_details">Mai multe detalii</string>
     <string name="met_add_note">Adaugă o notă</string>
     <string name="met_add_place">Adaugă un loc</string>
@@ -126,7 +127,7 @@
     <string name="page_together">Împreună</string>
     <string name="page_members_at">%1$d din %2$d</string>
     <string name="page_everyone">Toți</string>
-    <string name="page_empty">Încă nicio întâlnire. Atinge “Ne-am văzut” după ce vă vedeți.</string>
+    <string name="page_empty">Încă nicio întâlnire. Atinge “Ne-am pus la curent” după ce vă vedeți.</string>
     <string name="page_reminder">Memento</string>
     <string name="page_cover">Fotografie de copertă</string>
     <string name="cover_add">Adaugă copertă</string>

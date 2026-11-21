@@ -68,13 +68,17 @@ import com.neteinstein.goodcompany.core.ui.resources.log_journal_footer
 import com.neteinstein.goodcompany.core.ui.resources.log_journal_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_kind_call
 import com.neteinstein.goodcompany.core.ui.resources.log_kind_email
+import com.neteinstein.goodcompany.core.ui.resources.log_kind_game
+import com.neteinstein.goodcompany.core.ui.resources.log_kind_in_person
 import com.neteinstein.goodcompany.core.ui.resources.log_kind_journal
-import com.neteinstein.goodcompany.core.ui.resources.log_kind_message
-import com.neteinstein.goodcompany.core.ui.resources.log_kind_met
+import com.neteinstein.goodcompany.core.ui.resources.log_kind_long_chat
+import com.neteinstein.goodcompany.core.ui.resources.log_kind_other
+import com.neteinstein.goodcompany.core.ui.resources.log_kind_said_hi
 import com.neteinstein.goodcompany.core.ui.resources.log_kind_video
 import com.neteinstein.goodcompany.core.ui.resources.log_less
 import com.neteinstein.goodcompany.core.ui.resources.log_more
 import com.neteinstein.goodcompany.core.ui.resources.log_note_hint
+import com.neteinstein.goodcompany.core.ui.resources.log_other_label
 import com.neteinstein.goodcompany.core.ui.resources.log_people_title
 import com.neteinstein.goodcompany.core.ui.resources.log_pick_date
 import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
@@ -101,6 +105,8 @@ data class LogSheetState(
     val date: LocalDate,
     val today: LocalDate,
     val note: String = "",
+    /** [LogKind.OTHER] only: what it was, in the user's words. */
+    val label: String = "",
     /** Meetups only: where (F11), with "Usually here with". */
     val place: MeetupPlaceState = MeetupPlaceState(),
     val activity: HangoutActivity? = null,
@@ -125,6 +131,7 @@ data class LogSheetActions(
     val onPeople: (List<FriendId>) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
     val onNote: (String) -> Unit = {},
+    val onLabel: (String) -> Unit = {},
     val onPlaceName: (String) -> Unit = {},
     val onUseLocation: () -> Unit = {},
     val onClearLocation: () -> Unit = {},
@@ -142,11 +149,14 @@ data class LogSheetActions(
 @Composable
 fun logKindLabel(kind: LogKind): String = stringResource(
     when (kind) {
-        LogKind.MEETUP -> Res.string.log_kind_met
+        LogKind.MEETUP -> Res.string.log_kind_in_person
         LogKind.CALL -> Res.string.log_kind_call
-        LogKind.MESSAGE -> Res.string.log_kind_message
+        LogKind.MESSAGE -> Res.string.log_kind_said_hi
         LogKind.EMAIL -> Res.string.log_kind_email
         LogKind.VIDEO_CALL -> Res.string.log_kind_video
+        LogKind.LONG_CHAT -> Res.string.log_kind_long_chat
+        LogKind.GAME -> Res.string.log_kind_game
+        LogKind.OTHER -> Res.string.log_kind_other
         LogKind.JOURNAL -> Res.string.log_kind_journal
     },
 )
@@ -258,6 +268,7 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                         onAddPerson = actions.onTogglePerson,
                     )
                 }
+                if (state.kind == LogKind.OTHER) LogOtherLabel(state.label, actions.onLabel)
                 OutlinedTextField(
                     state.note,
                     actions.onNote,
@@ -339,4 +350,16 @@ fun LogDateChoice(date: LocalDate, today: LocalDate, onDate: (LocalDate) -> Unit
             leadingIcon = { Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(18.dp)) },
         )
     }
+}
+
+/** "What was it?" for [LogKind.OTHER] (issue #101): a short free label, shown on the timeline instead of "Other". */
+@Composable
+fun LogOtherLabel(label: String, onLabel: (String) -> Unit) {
+    OutlinedTextField(
+        label,
+        onLabel,
+        Modifier.fillMaxWidth(),
+        label = { Text(stringResource(Res.string.log_other_label)) },
+        singleLine = true,
+    )
 }

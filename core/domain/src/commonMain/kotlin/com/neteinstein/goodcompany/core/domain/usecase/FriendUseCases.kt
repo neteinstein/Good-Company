@@ -117,6 +117,11 @@ data class FriendDetail(
     val lastJournal: JournalEntry? = null,
     /** Their kids (F9): people linked to them as their child, in the order they were added. */
     val kids: List<LinkedPerson> = emptyList(),
+    /**
+     * What the person page's ring and pill count from (issue #101): the last meetup, or, when their calls and chats
+     * count ([Friend.contactCountsAsCatchUp]), the last contact of any kind: the rule of `Relationships.meetupStatuses`.
+     */
+    val lastCaughtUp: Instant? = lastSeen,
     /** Their parents among your people (F9): set for a kid, whose page then offers "Show in my list". */
     val parents: List<Friend> = emptyList(),
     /** What they may be to you (F7), worked out from your relatives' links; null when nothing is proposed. */
@@ -158,6 +163,11 @@ class ObserveFriendDetailUseCase(
             friend = friend,
             hangouts = mine.map { h -> HangoutWithFriends(h, h.friendIds.mapNotNull(byId::get)) },
             lastSeen = mine.firstOrNull()?.at,
+            lastCaughtUp = if (friend.contactCountsAsCatchUp) {
+                Relationships.lastContact(mine, ints.filter { it.friendId == id })[id]
+            } else {
+                mine.firstOrNull()?.at
+            },
             lastContactByType = byType,
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },

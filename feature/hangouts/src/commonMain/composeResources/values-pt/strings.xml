@@ -8,7 +8,7 @@
     <string name="group_overdue">Hora de se juntarem · %1$s</string>
     <string name="group_due">Previsto %1$s · %2$s</string>
     <string name="group_snoozed">Adiado até %1$s</string>
-    <string name="group_met">Estivemos juntos</string>
+    <string name="group_met">Conversa em dia</string>
     <string name="group_edit">Editar</string>
     <string name="group_delete">Apagar círculo</string>
     <string name="group_snooze_week">Adiar uma semana</string>
@@ -49,8 +49,9 @@
     <string name="circle_members_empty">Adiciona pelo menos um amigo.</string>
     <string name="circle_closeness_note">Aqui a proximidade só se vê, não se edita: pertence à pessoa. O ritmo de cada amigo nunca muda por causa de um círculo.</string>
     <!-- The small "We met" panel (issue #47) -->
-    <string name="met_title">Estiveste com %1$s</string>
+    <string name="met_title">Conversa em dia com %1$s</string>
     <string name="met_title_circle">%1$s · quem veio?</string>
+    <string name="met_how">Como?</string>
     <string name="met_more_details">Mais detalhes</string>
     <string name="met_add_note">Adicionar uma nota</string>
     <string name="met_add_place">Adicionar um local</string>
@@ -120,7 +121,7 @@
     <string name="page_together">Juntos</string>
     <string name="page_members_at">%1$d de %2$d</string>
     <string name="page_everyone">Todos</string>
-    <string name="page_empty">Ainda não há encontros. Toca em “Estivemos juntos” depois de estarem juntos.</string>
+    <string name="page_empty">Ainda não há encontros. Toca em “Conversa em dia” depois de estarem juntos.</string>
     <string name="page_reminder">Lembrete</string>
     <string name="page_cover">Foto de capa</string>
     <string name="cover_add">Adicionar capa</string>

@@ -28,13 +28,15 @@ import kotlinx.datetime.LocalDate
 
 /**
  * What the sheet opens with besides people and type: a calendar suggestion's day and activity guess (D3), or what the
- * "We met" panel had chosen when "More details" opened the sheet (issue #47). A future [date] falls back to today.
+ * "Caught up" panel had chosen when "More details" opened the sheet (issues #47, #101). A future [date] falls back to today.
  */
 data class LogPrefill(
     val date: LocalDate? = null,
     val activity: HangoutActivity? = null,
     val note: String? = null,
     val place: String? = null,
+    /** The "Other" label typed in the "Caught up" panel (issue #101). */
+    val label: String? = null,
 )
 
 data class LogInteractionUiState(
@@ -77,6 +79,7 @@ class LogInteractionViewModel(
             placeName = prefill.place.orEmpty(),
             activity = prefill.activity,
             circleId = circleId,
+            label = prefill.label.orEmpty(),
         ),
         observeFriends,
         observeActivities,
@@ -106,6 +109,8 @@ class LogInteractionViewModel(
     fun onDate(date: LocalDate) = model.onDate(date)
 
     fun onNote(note: String) = model.onNote(note)
+
+    fun onLabel(label: String) = model.onLabel(label)
 
     fun onPlaceName(name: String) = model.onPlaceName(name)
 

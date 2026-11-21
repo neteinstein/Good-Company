@@ -208,7 +208,7 @@
         <item quantity="other">El círculo se reunió hace %1$d días.</item>
     </plurals>
     <string name="notif_group_body_never">El círculo aún no se ha reunido.</string>
-    <string name="notif_action_met">Nos vimos</string>
+    <string name="notif_action_met">Puestos al día</string>
     <string name="notif_action_called">Le llamé</string>
     <string name="notif_action_snooze_week">La semana que viene</string>
     <string name="notif_action_snooze_weekend">Este fin de semana</string>
@@ -369,11 +369,15 @@
     <string name="send_email">Correo</string>
     <string name="date_month_year">%1$s %2$d</string>
     <string name="log_title">Registrar con %1$s</string>
-    <string name="log_kind_met">Quedada</string>
+    <string name="log_kind_in_person">En persona</string>
     <string name="log_kind_call">Llamada</string>
-    <string name="log_kind_message">Mensaje</string>
+    <string name="log_kind_said_hi">Saludé</string>
     <string name="log_kind_email">Email</string>
-    <string name="log_kind_video">Videollamada</string>
+    <string name="log_kind_video">Vídeo</string>
+    <string name="log_kind_long_chat">Charla larga</string>
+    <string name="log_kind_game">Jugamos online</string>
+    <string name="log_kind_other">Otro</string>
+    <string name="log_other_label">¿Qué fue?</string>
     <string name="log_kind_journal">Diario</string>
     <string name="log_add_people">Añadir personas</string>
     <string name="log_people_title">¿Con quién fue?</string>
@@ -412,6 +416,9 @@
     <string name="tl_email">Email</string>
     <string name="tl_message">Mensaje</string>
     <string name="tl_whatsapp">Chat de WhatsApp</string>
+    <string name="tl_long_chat">Charla larga</string>
+    <string name="tl_game">Juego online</string>
+    <string name="tl_other">En contacto</string>
     <string name="tl_journal">Diario</string>
     <string name="tl_whats_new">Novedades</string>
     <string name="tl_gift">Regalaste: %1$s</string>
@@ -626,7 +633,7 @@
         <item quantity="other">%1$d días desde que os visteis · objetivo %2$s</item>
     </plurals>
     <string name="catchup_never">Aún no hay encuentros registrados</string>
-    <string name="catchup_met">Nos vimos</string>
+    <string name="catchup_met">Puestos al día</string>
     <string name="catchup_called">Le llamé</string>
     <string name="catchup_snooze_week">Posponer una semana</string>
     <string name="catchup_snooze_weekend">Recuérdamelo el sábado</string>

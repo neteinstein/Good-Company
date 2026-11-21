@@ -178,6 +178,7 @@ fun AppNavHost(
                         activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
                         note = route.note,
                         place = route.place,
+                        label = route.label,
                     ),
                     onClose = { navController.popBackStack() },
                 )
@@ -194,13 +195,14 @@ fun AppNavHost(
                         navController.navigate(
                             LogInteractionRoute(
                                 friendIds = d.friendIds.map { it.value },
-                                type = LogKind.MEETUP.name,
+                                type = d.kind.name,
                                 circleId = d.circleId,
                                 date = d.date.toString(),
                                 activity = d.activity?.name,
                                 note = d.note.ifEmpty { null },
                                 plan = d.plan?.encode(),
                                 place = d.placeName.ifEmpty { null },
+                                label = d.label.ifEmpty { null },
                             ),
                         ) { popUpTo<WeMetRoute> { inclusive = true } }
                     },
