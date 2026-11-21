@@ -19,7 +19,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 /**
- * "Logged time with Rui ✨ · Undo" after the "We met" panel or the Log sheet saved a meetup (issue #47). Hosted once by
+ * "Logged time with Rui ✨ · Undo" after the Log popup saved a meetup (issue #47). Hosted once by
  * the app shell, since the panel has closed by then.
  */
 @Composable

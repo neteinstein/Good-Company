@@ -1,6 +1,6 @@
 ---
 name: area-logging
-description: Rules for recording contact in Good Company - meetups (Hangout, activity, place), calls/messages/emails (Interaction), journal entries, the one Log sheet and the "We met" panel, the timeline, warmth and rhythm counting, automatic sources and dedupe, named places from GPS, and calendar suggestions. Use before touching LogInteractionUseCase, LogInteractionSheet/Route, WeMetRoute, Timeline, Hangout/Interaction/JournalEntry, NamedPlace, CheckInUseCase, CalendarReader or CalendarSuggester.
+description: Rules for recording contact in Good Company - meetups (Hangout, activity, place), calls/messages/emails (Interaction), journal entries, the one Log popup (WeMetPanel), the timeline, warmth and rhythm counting, automatic sources and dedupe, named places from GPS, and calendar suggestions. Use before touching LogInteractionUseCase, LogSheetModel, WeMetRoute/WeMetPanel, ObserveLogKindsUseCase, Timeline, Hangout/Interaction/JournalEntry, NamedPlace, CheckInUseCase, CalendarReader or CalendarSuggester.
 ---
 
 # Area: logging, timeline, places and calendar
@@ -12,11 +12,21 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - **All** logging goes through `LogInteractionUseCase(LogRequest)` and is undone with `UndoLogUseCase`. No screen writes
   hangouts or interactions directly.
 - Choosing a circle lists its members with **nobody ticked** (F20).
-- "+ Add people" on the Log sheet and We met opens `PeoplePickerSheet` (issue #89) with `requireSomeone = true`.
+- **One place to log (issue #151).** The Log popup (`WeMetRoute` → `WeMetPanelScreen`, `:feature:hangouts`) is the
+  only logging UI: `LogInteractionRoute`, `LogInteractionScreen`/`ViewModel` (`:feature:friends`) and the
+  `LogInteractionSheet` composable are gone. Its order is Who → How? → When → What, each under a small `Section` title,
+  then a collapsed "Where · Note" row (`WeMetUiState.detailsOpen`; "Note" alone for remote kinds; open by itself with a
+  note, a place or a journal entry). How? is `ObserveLogKindsUseCase` (every `LogKind`, most used first by what you
+  logged by hand: meetups, manual contacts once per batch, journal entries; automatic rows don't count; ties and nothing
+  logged keep `DEFAULT_ORDER`). What is `ObserveActivitiesUseCase`. Both show `SHOWN` = 4 plus "See all". Issue #152
+  plugs the Settings How list into `ObserveLogKindsUseCase.ranked(usage, configured)` (`LogKindOption.name` for names of
+  your own); the popup only reads `WeMetUiState.kinds`. `LogPrefill` (in the met package) carries `type`, `date`,
+  `activity`/`activityName` and `edit`.
+- "+ Add people" on the Log popup opens `PeoplePickerSheet` (issue #89) with `requireSomeone = true`.
 - Automatic rows (call log, chat import) dedupe through `Interaction.automaticId`; manual rows never dedupe.
 - Places are GPS only: never call a geocoding, place-search or map service.
 - "Use my location" goes through `rememberPermissionRequester(AppPermission.LOCATION, …onLocationPermissionResult)` in
-  every sheet (Log sheet, "Caught up" panel, "I'm with…"), never straight to the provider: without the permission the
+  every sheet (the Log popup, "I'm with…"), never straight to the provider: without the permission the
   Android provider returns null and nothing happened (issue #114). `LogSheetModel` sets `LocationProblem` (denied / no
   fix) and `MeetupPlace` says it under the button. `AndroidLocationProvider` falls back to the newest last-known fix of
   any enabled provider after its 10 s timeout.
@@ -26,15 +36,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Today's last-seen card also asks circles "When did the circle last meet?" (issue #150, after the people); the answer
   (`FriendGroup.approxLastMet`) is never a meetup or a timeline entry. Details in `area-people`.
 - **Editing an entry (issue #102)** goes through `EditTimelineEntryUseCase(entry, LogRequest)` (`usecase/TimelineEdit.kt`);
-  delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log sheet edits meetups,
-  contacts and journal entries (`LogInteractionRoute.edit(friendId, key)` → `LogPrefill.edit` → `LogSheetModel.startEditing`,
+  delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log popup edits meetups,
+  contacts and journal entries (`WeMetRoute.edit(friendId, key)` → `LogPrefill.edit` → `LogSheetModel.startEditing`,
   prefilled by `TimelineEntry.asLogRequest`); news and gifts given edit in their own dialogs; circle shares are delete only.
   Same day keeps the time, another day is noon (today: now), unless a new time is picked (issue #116: then that time). Contact rows keep their ids (an automatic call keeps its
   automatic id, so a re-sync doesn't re-add it); a single row that gains people batches under its own id. A kind change
   across meetup / contact / journal deletes and re-logs at the same instant, and the share it came from is relinked.
   The rows are `EditableTimelineEntry` (`:core:ui`: tap edits, long press or ⋮ → `EditDeleteMenu`), so any screen can host
   the timeline. Edits have no Undo (they save on Save); deletes do.
-- The Log sheet and We met are drawn with `DialogSheet` (`:core:ui`, issue #145): scrim, handle, drag-to-dismiss (on
+- The Log popup is drawn with `DialogSheet` (`:core:ui`, issue #145): scrim, handle, drag-to-dismiss (on
   the sheet, or on its content once scrolled to the top) and the edge-to-edge insets. Their dialog destinations use
   `sheetDialogProperties` (Android `decorFitsSystemWindows = false`; iOS/web `usePlatformInsets = false`, no platform
   scrim), or the scrim stops above the navigation bar. Don't swap in Material's `ModalBottomSheet`: it opens a window of
@@ -42,7 +52,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Their Save is a `SaveBar` in `DialogSheet`'s `bottomBar` slot (issue #146): pinned under the scrolling fields,
   above the navigation bar and the keyboard. Don't put Save back at the end of the scroll; the "I'm with…" check-in
   sheet does the same after a `weight(1f, fill = false)` column.
-- Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
+- Route parameters on `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
 - **Together timeline (issue #117).** The person page's Together tab has no Coming up card: `PersonTimeline.build`
   (`usecase/PersonTimeline.kt`) gives `TogetherTimeline(upcoming, past, hasMore)` of `TogetherItem`s. Top to bottom:
@@ -67,11 +77,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `LocalTimePickerDialog`); today's later chips are disabled. In person shows "Last time together" from
   `PlaceBook.lastTogether(people)`.
 - **"Caught up" (issue #101, was "We met").** The panel behind `WeMetRoute` (code names keep "WeMet"/`MET`) starts with
-  **How?**: `LogKind.CAUGHT_UP` = in person (default), call, video, said hi (`MESSAGE`), long chat, played online
-  (`GAME`), other. A remote kind (`LogKind.isRemote`) is an `Interaction` through `LogInteractionUseCase` and hides
+  **How?**: in person (default), call, video, said hi (`MESSAGE`), long chat, played online (`GAME`), other, and since
+  issue #151 email and journal too (`ObserveLogKindsUseCase.DEFAULT_ORDER`; `LogKind.CAUGHT_UP` is gone). A remote kind (`LogKind.isRemote`) is an `Interaction` through `LogInteractionUseCase` and hides
   activity and place; date and note stay. `OTHER` carries `Interaction.label` (`interaction.label`, migration `22.sqm`,
   at most `LogInteractionUseCase.LABEL_MAX`, kept only for `OTHER`; the timeline shows it instead of "Kept in touch").
-  "More details" carries the kind and label to the Log sheet. A plan's "It happened" answered with a remote kind still
+  A plan's "It happened" answered with a remote kind still
   closes that occurrence; `LogResult.Contacts.plan` lets Undo reopen it. Meetups and contacts both go to
   `LoggedMeetupInbox` (the "Logged time with … · Undo" snackbar); journal entries don't.
 - **Warmth weights (issue #101).** `Warmth.weight(type)`: in person and long chat 1.0, video 0.8, call / game / email /
@@ -102,8 +112,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     (weighted, see above) and resets the rhythm only with the friend's "calls and chats count" switch on. Rows from automatic sources (`InteractionSource.CALL_LOG`, `CHAT_IMPORT`) use
     `Interaction.automaticId` and a partial unique index, so a re-sync never duplicates them; manual ones never dedupe.
     Logging several people at once writes one row per person sharing a `batchId`. All logging goes through
-    `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is `LogInteractionSheet` (`:core:ui`), hosted
-    by the `LogInteractionRoute(friendIds, type)` dialog destination in `AppNavHost` (`type` is a `LogKind` or
+    `LogInteractionUseCase(LogRequest)` (undo with `UndoLogUseCase`); the UI is the Log popup (`WeMetPanel`, issue #151), hosted
+    by the `WeMetRoute(friendIds, circleId, plan, type, …)` dialog destination in `AppNavHost` (`type` is a `LogKind` or
     `InteractionType` name). `Timeline.build` merges hangouts, interactions, journal, "What's new" and gifts given;
     the full list is `FriendTimelineRoute`, and the WhatsApp import lives in its overflow menu. Migration `4.sqm` rebuilt
     `interaction` with ids (old rows get their automatic id and a legacy source) and added the journal and hangout activity.
@@ -125,11 +135,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
     (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
     friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
-    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
+    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `WeMetRoute` with `date` and
     `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
     (`:feature:agenda`, also a card on Coming up).
 - **Dated notes (issue #103).** A person's Notes card (About tab) lists their `JournalEntry`s newest first with their
-  day; "+ Note" opens `LogInteractionRoute(listOf(id), "JOURNAL")`, a tap edits in the Log sheet (`onEditEntry`), ⋮
+  day; a tap edits in the Log popup (`onEditEntry` → `WeMetRoute.edit`), ⋮
   deletes with Undo. The old free-text `Friend.notes` was copied into one entry `note-<friendId>` (migration `23.sqm`,
   dated when it ran; blank notes make none) and is no longer shown or written by the page; the column and its text stay
   until the migration is verified. Older backups (`Backup.notesInJournal` false) and the old JSON store get the same

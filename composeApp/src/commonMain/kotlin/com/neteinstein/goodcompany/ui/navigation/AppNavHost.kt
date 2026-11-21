@@ -39,14 +39,13 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseConta
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsScreen
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionScreen
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryScreen
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeScreen
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LogPrefill
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
@@ -61,7 +60,6 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.Not
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 
 const val APP_VERSION = "1.0.0"
 
@@ -161,9 +159,9 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
                 onOpenStory = { navController.navigate(CatchUpStoryRoute(id, fromFriend = true)) },
                 onOpenFriend = openFriend,
                 onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
-                onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
-                // "+ Note" on Notes (issue #103): a dated note is a journal entry on the Log sheet.
-                onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
+                onLog = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
+                // "+ Note" on Notes (issue #103): a dated note is a journal entry on the Log popup.
+                onEditEntry = { key -> navController.navigate(WeMetRoute.edit(id, key)) },
                 onLogPlan = logPlan,
                 onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
                 // A circle chip opens that circle's page (issue #88).
@@ -185,28 +183,8 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
         FriendTimelineScreen(
             friendId = FriendId(id),
             onBack = { navController.popBackStack() },
-            onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
-            onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
-        )
-    }
-    dialog<LogInteractionRoute>(dialogProperties = sheetDialogProperties) { entry ->
-        val route = entry.toRoute<LogInteractionRoute>()
-        LogInteractionScreen(
-            friendIds = route.friendIds.map(::FriendId),
-            type = route.type,
-            circleId = route.circleId,
-            plan = route.plan,
-            prefill = LogPrefill(
-                date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
-                activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
-                activityName = route.activityName,
-                note = route.note,
-                place = route.place,
-                label = route.label,
-                time = route.time?.let { runCatching { LocalTime.parse(it) }.getOrNull() },
-                edit = route.editKey?.let { key -> route.editFriend?.let { TimelineEntryRef(FriendId(it), key) } },
-            ),
-            onClose = { navController.popBackStack() },
+            onLog = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },
+            onEditEntry = { key -> navController.navigate(WeMetRoute.edit(id, key)) },
         )
     }
     dialog<WeMetRoute>(dialogProperties = sheetDialogProperties) { entry ->
@@ -215,25 +193,14 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             friendIds = route.friendIds.map(::FriendId),
             circleId = route.circleId,
             plan = route.plan,
+            prefill = LogPrefill(
+                type = route.type,
+                date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+                activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
+                activityName = route.activityName,
+                edit = route.editKey?.let { key -> route.editFriend?.let { TimelineEntryRef(FriendId(it), key) } },
+            ),
             onClose = { navController.popBackStack() },
-            onMoreDetails = { d ->
-                // The full Log sheet takes the panel's place, with everything chosen so far.
-                navController.navigate(
-                    LogInteractionRoute(
-                        friendIds = d.friendIds.map { it.value },
-                        type = d.kind.name,
-                        circleId = d.circleId,
-                        date = d.date.toString(),
-                        activity = d.activity?.builtIn?.name,
-                        activityName = d.activity?.customName,
-                        note = d.note.ifEmpty { null },
-                        plan = d.plan?.encode(),
-                        place = d.placeName.ifEmpty { null },
-                        label = d.label.ifEmpty { null },
-                        time = d.time?.toString(),
-                    ),
-                ) { popUpTo<WeMetRoute> { inclusive = true } }
-            },
         )
     }
     composable<CircleEditorRoute>(
@@ -430,7 +397,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onBack = { navController.popBackStack() },
             onLog = { s ->
                 navController.navigate(
-                    LogInteractionRoute(
+                    WeMetRoute(
                         friendIds = s.friends.map { it.id.value },
                         type = LogKind.MEETUP.name,
                         date = s.date.toString(),

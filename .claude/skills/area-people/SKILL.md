@@ -74,7 +74,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   `circlePalette` colours. `PeopleLegend` (`:core:ui`) explains both, in the Dashboard and as a tip until "Got it"
   (`AppSettings.peopleLegendSeen`, device-only). The card is two equal tiles + Dashboard / Your network links.
 - **One people picker (issue #89).** Everywhere people are chosen uses `PeoplePickerSheet` (multiple: reminder,
-  plan, Log sheet, We met, circle editor, gift list) or `PersonPickerSheet` (single: person links), both in `:core:ui`
+  plan, Log popup, circle editor, gift list) or `PersonPickerSheet` (single: person links), both in `:core:ui`
   `components/PeoplePicker.kt`; Share to… embeds its body (`PeopleFilterRow` + `peopleByCloseness`) under its
   suggestions. "I'm with…" keeps its own chips. The filtering is pure domain code: `PeopleFilter` (a circle **or** a
   closeness level, one at a time: `withCircle` resets the level, `withCloseness` clears the circle) and
@@ -150,7 +150,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     (`Relationships.meetupQuorum`: everyone in a circle of 1–2, else half, at least two). The People tab is filtered by
     `AppSettings.homeCircleFilter` (in `user_preferences`; `DeleteGroupUseCase` resets it, an unknown id reads as All):
     the list shows only members, whatever their closeness. Choosing a circle anywhere
-    (check-in sheet, Log sheet, the Circles tab's "We met" → `LogInteractionRoute(emptyList(), "MEETUP", circleId)`) lists its
+    (check-in sheet, the Log popup: the Circles tab's "We met" → `WeMetRoute(circleId = circleId)`) lists its
     members with **nobody ticked** (F20). The editor is `CircleEditorRoute(id?)` in `:feature:hangouts`; delete has Undo
     (`RestoreGroupUseCase`). Migration `5.sqm` added `friend_group.color` (existing groups get colours in turn) and
     `user_preferences.home_circle_filter`.

@@ -158,7 +158,7 @@ enum class PeoplePickerMode { MULTIPLE, SINGLE }
  * kinship, "my cousins", when [kinshipOf] is given), the shared [PeopleFilterRow] (it stays while typing: the search
  * works inside the filter), then everyone grouped by closeness, no cap. People [chosen] when it opened stay on top
  * under "Chosen · N"; "Tick all N" ticks what a filter or search shows. Cancel and "Done · N" stay in reach.
- * [requireSomeone] disables Done with nobody ticked (the Log sheet, We met). [extra] sits above the footer (the gift
+ * [requireSomeone] disables Done with nobody ticked (the Log popup). [extra] sits above the footer (the gift
  * list's budget).
  */
 @Composable

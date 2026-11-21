@@ -33,45 +33,34 @@ import org.jetbrains.compose.resources.StringResource
 @Serializable data class FriendTimelineRoute(val id: String) : AppRoute
 
 /**
- * The "Log" sheet, as a dialog destination: [friendIds] preselected, [type] a `LogKind` or `InteractionType` name
- * (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on "Met". [circleId] opens on that circle's members, nobody ticked (F20).
- * [plan] answers a plan's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`, issue #43).
- * [note], [place] and [label] (with [type], [date] and [activity]) carry what the "Caught up" panel had chosen ("More details",
- * issues #47, #101).
+ * The Log popup (issues #47, #101, #151, F2; it was "We met"): the only place to log. Every in-app "Caught up", "+" and
+ * "Log" opens it, with Who, How?, When and What. [friendIds] or [circleId] (members listed, nobody ticked, F20); [plan]
+ * answers that plan occurrence's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`, issue #43).
+ * [type] is a `LogKind` or `InteractionType` name (e.g. "MEETUP", "CALL", "JOURNAL"); null opens on in person.
+ * [date] and [activity] / [activityName] open it on a calendar suggestion's day and guess (D3).
  * [editFriend] + [editKey] open it in edit mode on that entry of that person's timeline (`TimelineEntry.key`, issue #102):
- * everything else is then ignored, and a gone entry closes the sheet.
+ * everything else is then ignored, and a gone entry closes the popup.
+ * Issue #151 removed the full Log popup (`LogInteractionRoute`): its callers come here.
  */
-@Serializable data class LogInteractionRoute(
-    val friendIds: List<String>,
-    val type: String? = null,
+@Serializable data class WeMetRoute(
+    val friendIds: List<String> = emptyList(),
     val circleId: String? = null,
     val plan: String? = null,
-    /** ISO date to open on (a calendar suggestion's day, or the panel's); null = today. */
+    val type: String? = null,
+    /** ISO date to open on (a calendar suggestion's day); null = today. */
     val date: String? = null,
-    /** A HangoutActivity name (guessed from a calendar event, or picked in the panel). */
+    /** A HangoutActivity name (guessed from a calendar event). */
     val activity: String? = null,
     /** One of your own activities, by name (issue #121), when [activity] is null. */
     val activityName: String? = null,
-    val note: String? = null,
-    val place: String? = null,
-    /** The "Other" label typed in the "Caught up" panel (issue #101). */
-    val label: String? = null,
-    /** Issue #116: the time of day chosen in the panel (`HH:MM`); null = now today, noon on an earlier day. */
-    val time: String? = null,
     val editFriend: String? = null,
     val editKey: String? = null,
 ) : AppRoute {
     companion object {
-        /** The Log sheet editing [key] on [friendId]'s timeline (issue #102). */
-        fun edit(friendId: String, key: String) = LogInteractionRoute(listOf(friendId), editFriend = friendId, editKey = key)
+        /** The popup editing [key] on [friendId]'s timeline (issue #102). */
+        fun edit(friendId: String, key: String) = WeMetRoute(listOf(friendId), editFriend = friendId, editKey = key)
     }
 }
-
-/**
- * The small "Caught up" panel (issues #47, #101, F2; it was "We met"): every in-app "Caught up" opens it, with "How?" first. [friendIds] or [circleId] (members listed,
- * nobody ticked, F20); [plan] answers that plan occurrence's "Did you meet?" (`<planId>@<date>`, `PlanOccurrence`).
- */
-@Serializable data class WeMetRoute(val friendIds: List<String> = emptyList(), val circleId: String? = null, val plan: String? = null) : AppRoute
 
 /**
  * The circle editor (decision D1); [id] null creates a circle. [withFriend] starts a new circle with that person in
@@ -127,7 +116,7 @@ import org.jetbrains.compose.resources.StringResource
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute : AppRoute
 
-/** Settings → Activities: what the log sheet offers, in which order (F3). */
+/** Settings → Activities: what the Log popup offers, in which order (F3). */
 @Serializable data object ActivitiesRoute : AppRoute
 
 /** Settings → Calendar suggestions (D3). */

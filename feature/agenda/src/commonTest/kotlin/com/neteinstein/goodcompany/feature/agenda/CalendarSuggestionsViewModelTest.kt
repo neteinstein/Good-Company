@@ -48,7 +48,7 @@ class CalendarSuggestionsViewModelTest {
     fun yesLogsItOnceAndItIsGone() = runViewModelTest {
         val state = collecting(vm().state)
         val s = state.value.recent.single()
-        // "Log it" opens the log sheet; saving there writes the meetup on the event's day.
+        // "Log it" opens the Log popup; saving there writes the meetup on the event's day.
         g.logInteraction(
             LogRequest(
                 s.friends.map { it.id },

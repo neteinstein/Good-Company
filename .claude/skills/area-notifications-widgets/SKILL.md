@@ -27,7 +27,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   (`notif_action_met`), the widget button (Android `widget_met`, iOS `widget.met`) and the generic app-icon shortcut
   (`shortcut_log_meetup` in `androidApp` and `composeApp`). The `MET` notification action and the widget button
   (`ACTION_MET` on Android, `goodcompany://met/<id>` on iOS) still log an in-person meetup straight away, with no panel;
-  the generic shortcut opens the Log sheet, which has every kind. The How? row lives in the in-app panel.
+  the generic shortcut opens the Log popup, which has every kind (issue #151). The How? row lives in the in-app popup.
 - Reminders (#99): plan and sort by `Reminder.nextAt` (`snoozedUntil ?: dueAt`), never `dueAt` alone. Snooze moves only
   `snoozedUntil`; Done (`CompleteReminderUseCase`) closes a one-off with `completedAt`, or rolls a repeating one to
   `nextDueAfter` and clears the snooze. `Reminder.important` + the notification setting "keep on screen" is what makes a
@@ -81,7 +81,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 28. **App-icon shortcuts (issue #23, D7).** `ObserveShortcutsUseCase` (domain, `Shortcuts.kt`) gives the three most recent
     people by `Relationships.lastContact` (no orphans) and none while app lock or private notifications are on. A picked
     shortcut is a `goodcompany://log[/<friendId>]` link (`AppLink`, shared parser, also `met/<id>` for the iOS widget)
-    → `QuickEntryInbox` → `App.kt` opens `LogInteractionRoute` (under the app lock, like `ShareInbox`). An unknown id opens
+    → `QuickEntryInbox` → `App.kt` opens `WeMetRoute` (the Log popup, under the app lock, like `ShareInbox`). An unknown id opens
     the sheet with nobody picked, and the sheet never saves an id it can't resolve. Android: `shortcuts/AppShortcuts.kt`
     (dynamic shortcuts kept in step from `GoodCompanyApp`, icons from `PhotoBitmaps` or initials on `avatarColorsArgb`),
     the `VIEW goodcompany://log` filter on `MainActivity`, labels in `androidApp/src/main/res/values-*`. Pinned person

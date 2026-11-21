@@ -370,7 +370,6 @@
     <string name="relation_other">Autre</string>
     <string name="send_email">E-mail</string>
     <string name="date_month_year">%1$s %2$d</string>
-    <string name="log_title">Noter avec %1$s</string>
     <string name="log_kind_in_person">En personne</string>
     <string name="log_kind_call">Appel</string>
     <string name="log_kind_said_hi">Dit bonjour</string>
@@ -394,8 +393,6 @@
     <string name="log_clear_location">Retirer la position</string>
     <string name="log_location_denied">Pas d’autorisation de localisation. Écris le lieu.</string>
     <string name="log_location_unavailable">Impossible d’obtenir ta position. Vérifie que la localisation est activée, ou écris le lieu.</string>
-    <string name="log_activity">Qu’avez-vous fait ?</string>
-    <string name="log_more">Plus</string>
     <string name="log_less">Moins</string>
     <string name="log_counts_hint">Les appels, messages, e-mails et appels vidéo ne comptent que si l’option « Les appels et messages comptent » de %1$s est activée.</string>
     <string name="log_journal_footer">Une entrée de journal est une note datée. Elle ne compte jamais comme un contact.</string>
@@ -447,7 +444,6 @@
     <string name="circle_color_magenta">Magenta</string>
     <string name="circle_color_slate">Ardoise</string>
     <string name="circle_tick_who_came">Cochez qui est venu de %1$s.</string>
-    <string name="log_title_circle">Noter une sortie : %1$s</string>
     <string name="attachment_kind_photo">Photo</string>
     <string name="attachment_kind_link">Lien</string>
     <string name="attachment_kind_text">Texte de discussion</string>

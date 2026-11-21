@@ -11,7 +11,7 @@ data class Hangout(
     val at: Instant,
     val place: Place? = null,
     val note: String = "",
-    /** What you did together (F3), picked by icon in the log sheet. */
+    /** What you did together (F3), picked by icon in the Log popup. */
     val activity: HangoutActivity? = null,
     /** One of your own activities (issue #121), by name, when [activity] is null. Kept when it's renamed or removed. */
     val activityName: String? = null,
@@ -38,7 +38,7 @@ sealed interface ActivityChoice {
 }
 
 /**
- * What a meetup was (F3). The log sheet shows the six most used first, the rest behind "More". [CULTURE] is cinema,
+ * What a meetup was (F3). The Log popup shows the four most used first, the rest behind "See all" (issue #151). [CULTURE] is cinema,
  * concerts and theatre; [MUSIC] is playing or singing together; [TRIP] is a trip or an outing.
  */
 enum class HangoutActivity { LUNCH, DINNER, DRINKS, COFFEE, SPORTS, RUNNING, WALK, AT_HOME, CULTURE, MUSIC, TRIP }

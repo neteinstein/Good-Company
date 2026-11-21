@@ -86,6 +86,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
@@ -293,6 +294,7 @@ class TestGraph(
     val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)
     val restoreAttachment = RestoreAttachmentUseCase(interactionRepo)
     val observeActivities = ObserveActivitiesUseCase(hangoutRepo, settingsRepo)
+    val observeLogKinds = ObserveLogKindsUseCase(hangoutRepo, interactionRepo)
     val setActivities = SetActivitiesUseCase(settingsRepo)
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
     val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)

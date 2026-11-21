@@ -168,7 +168,7 @@ class RecurringPlansTest {
         // Not an occurrence: ignored.
         g.confirmPlan(p.id, happened = true, day = LocalDate(2026, 3, 7))
         assertEquals(LocalDate(2026, 3, 6), g.planRepo.plans.value.single().date)
-        // The Log sheet already logged it: close without a second check-in.
+        // The Log popup already logged it: close without a second check-in.
         g.confirmPlan(p.id, happened = true, day = LocalDate(2026, 3, 6), logCheckIn = false)
         assertEquals(1, g.hangoutRepo.hangouts.value.size)
         assertEquals(LocalDate(2026, 3, 13), g.planRepo.plans.value.single().date)

@@ -53,10 +53,13 @@
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">Notează · %1$s</string>
     <string name="met_title_circle">%1$s · cine a venit?</string>
+    <string name="met_who">Cine?</string>
     <string name="met_how">Cum?</string>
-    <string name="met_more_details">Mai multe detalii</string>
-    <string name="met_add_note">Adaugă o notă</string>
-    <string name="met_add_place">Adaugă un loc</string>
+    <string name="met_when">Când?</string>
+    <string name="met_what">Ce?</string>
+    <string name="met_see_all">Vezi tot</string>
+    <string name="met_where_note">Unde · Notă</string>
+    <string name="met_note">Notă</string>
     <string name="met_save_on">Salvează · %1$s</string>
     <plurals name="met_log_people">
         <item quantity="one">Înregistrează %1$d persoană</item>

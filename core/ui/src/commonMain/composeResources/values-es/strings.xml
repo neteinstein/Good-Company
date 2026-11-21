@@ -370,7 +370,6 @@
     <string name="relation_other">Otro</string>
     <string name="send_email">Correo</string>
     <string name="date_month_year">%1$s %2$d</string>
-    <string name="log_title">Registrar con %1$s</string>
     <string name="log_kind_in_person">En persona</string>
     <string name="log_kind_call">Llamada</string>
     <string name="log_kind_said_hi">Saludé</string>
@@ -394,8 +393,6 @@
     <string name="log_clear_location">Quitar ubicación</string>
     <string name="log_location_denied">Sin permiso de ubicación. Escribe el lugar.</string>
     <string name="log_location_unavailable">No se pudo obtener tu ubicación. Comprueba que la ubicación está activada, o escribe el lugar.</string>
-    <string name="log_activity">¿Qué hicisteis?</string>
-    <string name="log_more">Más</string>
     <string name="log_less">Menos</string>
     <string name="log_counts_hint">Las llamadas, mensajes, emails y videollamadas solo cuentan como ponerse al día con el interruptor “Las llamadas y los chats cuentan” de %1$s activado.</string>
     <string name="log_journal_footer">Una entrada de diario es una nota con fecha. Nunca cuenta como ponerse al día.</string>
@@ -447,7 +444,6 @@
     <string name="circle_color_magenta">Magenta</string>
     <string name="circle_color_slate">Pizarra</string>
     <string name="circle_tick_who_came">Marca quién vino de %1$s.</string>
-    <string name="log_title_circle">Registrar quedada: %1$s</string>
     <string name="attachment_kind_photo">Foto</string>
     <string name="attachment_kind_link">Enlace</string>
     <string name="attachment_kind_text">Texto del chat</string>

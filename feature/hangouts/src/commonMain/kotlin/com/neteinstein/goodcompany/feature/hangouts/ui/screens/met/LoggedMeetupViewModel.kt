@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * The app-wide "Logged time with Rui ✨ · Undo" snackbar (issue #47): the "We met" panel and the Log sheet close on
- * save, so the meetup they wrote waits in [LoggedMeetupInbox] until this shows it. Undo removes the hangout and, for a
+ * The app-wide "Logged time with Rui ✨ · Undo" snackbar (issue #47): the Log popup closes on
+ * save, so the meetup it wrote waits in [LoggedMeetupInbox] until this shows it. Undo removes the hangout and, for a
  * plan's "Did you meet?", reopens the plan.
  */
 class LoggedMeetupViewModel(

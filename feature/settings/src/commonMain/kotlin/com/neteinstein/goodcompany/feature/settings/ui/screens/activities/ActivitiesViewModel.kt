@@ -24,7 +24,7 @@ sealed interface ActivitiesMessage {
 }
 
 /**
- * Settings → Activities (F3). [enabled] is what the log sheet offers, in the user's order; [disabled] are the rest,
+ * Settings → Activities (F3). [enabled] is what the Log popup offers, in the user's order; [disabled] are the rest,
  * in the default order, shown below them.
  */
 data class ActivitiesUiState(

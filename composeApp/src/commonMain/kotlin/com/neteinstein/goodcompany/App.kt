@@ -155,7 +155,7 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
     val shareInbox: ShareInbox = koinInject()
     val pendingShare by shareInbox.pending.collectAsStateWithLifecycle()
     LaunchedEffect(pendingShare) { if (pendingShare != null) navController.navigate(ShareRoute) { launchSingleTop = true } }
-    // An app-icon shortcut ("Log a meetup", or one of the recent people): opens the Log sheet, under the app lock.
+    // An app-icon shortcut ("Log a meetup", or one of the recent people): opens the Log popup, under the app lock.
     val quickEntryInbox: QuickEntryInbox = koinInject()
     val pendingEntry by quickEntryInbox.pending.collectAsStateWithLifecycle()
     LaunchedEffect(pendingEntry) {
@@ -203,7 +203,7 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
         } else {
             Scaffold(
                 contentWindowInsets = WindowInsets(0),
-                // "Logged time with … · Undo" after the "We met" panel or the Log sheet (issue #47).
+                // "Logged time with … · Undo" after the Log popup (issue #47).
                 snackbarHost = { LoggedMeetupSnackbar() },
                 bottomBar = {
                     AnimatedVisibility(showChrome, enter = slideInVertically { it }, exit = slideOutVertically { it }) {

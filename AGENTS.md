@@ -45,8 +45,8 @@ core/ui/              Design system: theme (light/dark/dynamic), shared componen
 core/testing/         Fakes + FixedClock + ViewModel test helpers, shared by every module's commonTest.
 feature/onboarding/   First-run intro pager, permission primers, "explore with sample friends"
 feature/friends/      People tab (one list by closeness, "Your people" card) + friend page (quick actions, tastes, kids, events, plans, AI),
-                      friend timeline, the "Log" sheet destination
-feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?", gift lists
+                      friend timeline
+feature/hangouts/     "I'm with…" check-in, history, "last time with these people", circles + the circle editor, "Who's free for…?", gift lists, the Log popup
 feature/agenda/       Today (the first tab: check-in, the next 7 days, catch-ups) + "Everything coming up" (birthdays, kids, events, overdue meetups) + reminders
 feature/ideas/        AI weekly plans
 feature/settings/     Theme, closeness rhythms, API key, notifications (digest, privacy), .vcf import, backup (file + Google Drive), app lock
@@ -311,7 +311,7 @@ Checklists for changes that keep coming back:
 Area notes (load before touching the area):
 - `area-contacts`: picker/list, sync, photos, sideload write-back (gotchas 22, 25).
 - `area-people`: closeness vs. circles, person links, kids, kinship, network map (27, 30, 31, 34, 35).
-- `area-logging`: Log sheet, timeline, places, calendar suggestions (26, 29, 32).
+- `area-logging`: Log popup, timeline, places, calendar suggestions (26, 29, 32).
 - `area-sharing-gifts`: share into the app, attachments, gifts and gift lists (19, 36).
 - `area-notifications-widgets`: nudge budget, widgets, app-icon shortcuts, deep links (16, 18, 28).
 - `area-ai`: the Claude client and the AI switch (10, 33).

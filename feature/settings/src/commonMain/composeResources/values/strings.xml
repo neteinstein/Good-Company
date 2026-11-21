@@ -206,7 +206,7 @@
     <string name="ai_off_note">While this is off, nothing that needs AI is shown anywhere in the app.</string>
     <string name="activities">Activities</string>
     <string name="activities_count">%1$d of %2$d on</string>
-    <string name="activities_hint">What the log sheet offers when you met someone. The ones you use most come first, the rest in this order; six show, the others are behind More. Drag to reorder.</string>
+    <string name="activities_hint">What the Log popup offers when you met someone. The ones you use most come first, the rest in this order; four show, the others are behind See all. Drag to reorder.</string>
     <string name="activities_move_up">Move up</string>
     <string name="activities_move_down">Move down</string>
     <!-- Your photo (issue #71) -->

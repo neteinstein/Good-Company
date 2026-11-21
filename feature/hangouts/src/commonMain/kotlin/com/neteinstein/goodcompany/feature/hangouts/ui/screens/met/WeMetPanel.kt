@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,8 +30,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
@@ -46,7 +43,9 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
 import com.neteinstein.goodcompany.core.ui.components.DialogSheet
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
@@ -70,22 +69,27 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.log_action
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_counts_hint
+import com.neteinstein.goodcompany.core.ui.resources.log_journal_footer
+import com.neteinstein.goodcompany.core.ui.resources.log_journal_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_less
-import com.neteinstein.goodcompany.core.ui.resources.log_more
 import com.neteinstein.goodcompany.core.ui.resources.log_note_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_people_title
 import com.neteinstein.goodcompany.core.ui.resources.log_place_hint
+import com.neteinstein.goodcompany.core.ui.resources.log_title_edit
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_note
-import com.neteinstein.goodcompany.feature.hangouts.resources.met_add_place
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_how
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_log_people
-import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_details
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_more_people
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_note
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_save_on
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_see_all
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_title_circle
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_what
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_when
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_where_note
+import com.neteinstein.goodcompany.feature.hangouts.resources.met_who
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.pluralStringResource
@@ -102,22 +106,18 @@ data class WeMetActions(
     val onActivity: (ActivityChoice?) -> Unit = {},
     val onTogglePerson: (FriendId) -> Unit = {},
     val onPeople: (List<FriendId>) -> Unit = {},
-    val onOpenNote: () -> Unit = {},
-    val onOpenPlace: () -> Unit = {},
+    /** "Where · Note" (issue #151). */
+    val onOpenDetails: () -> Unit = {},
     val onPlaceName: (String) -> Unit = {},
     val onUseLocation: () -> Unit = {},
     val onClearLocation: () -> Unit = {},
     val onChangePlace: () -> Unit = {},
     val onNote: (String) -> Unit = {},
     val onSave: () -> Unit = {},
-    val onMoreDetails: () -> Unit = {},
     val onDismiss: () -> Unit = {},
 )
 
-/**
- * The small "We met" panel as a screen: shown by the `WeMetRoute` dialog destination. [onClose] runs after a save too;
- * [onMoreDetails] swaps it for the full Log sheet with what was chosen so far.
- */
+/** The Log popup as a screen: shown by the `WeMetRoute` dialog destination. [onClose] runs after a save too. */
 @Composable
 fun WeMetPanelScreen(
     friendIds: List<FriendId>,
@@ -125,9 +125,10 @@ fun WeMetPanelScreen(
     /** Answering a plan's "Did you meet?" (`<planId>@<date>`, see [PlanOccurrence]). */
     plan: String?,
     onClose: () -> Unit,
-    onMoreDetails: (WeMetDetails) -> Unit,
-    viewModel: WeMetViewModel = koinViewModel(key = "met-${friendIds.joinToString { it.value }}-$circleId-$plan") {
-        parametersOf(friendIds, circleId, plan?.let(PlanOccurrence::decode))
+    /** A kind, a day and an activity to open on, or a timeline entry to edit (issue #151: the full Log popup's). */
+    prefill: LogPrefill = LogPrefill(),
+    viewModel: WeMetViewModel = koinViewModel(key = "met-${friendIds.joinToString { it.value }}-$circleId-$plan-$prefill") {
+        parametersOf(friendIds, circleId, plan?.let(PlanOccurrence::decode), prefill)
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -144,25 +145,23 @@ fun WeMetPanelScreen(
             onActivity = viewModel::onActivity,
             onTogglePerson = viewModel::onTogglePerson,
             onPeople = viewModel::onPeople,
-            onOpenNote = viewModel::onOpenNote,
-            onOpenPlace = viewModel::onOpenPlace,
+            onOpenDetails = viewModel::onOpenDetails,
             onPlaceName = viewModel::onPlaceName,
             onUseLocation = requestLocation,
             onClearLocation = viewModel::onClearLocation,
             onChangePlace = viewModel::onChangePlace,
             onNote = viewModel::onNote,
             onSave = viewModel::onSave,
-            onMoreDetails = { onMoreDetails(viewModel.details()) },
             onDismiss = onClose,
         ),
     )
 }
 
 /**
- * Issue #47 (F2, F3) and #101: "How?" (in person by default), who, Today / Yesterday / a picked day, the activity as
- * one tap (in person only), "+ Add a note", and Save within reach, so "Caught up" → Save logs today in two taps. A call,
- * a chat or a game hides the activity and the place; "Other" asks what it was. No hidden gestures. Drawn like the Log sheet, with
- * [DialogSheet]: a scrim, drag down to close.
+ * Issues #47, #101 and #151 (F2, F3): Who, "How?", When and What, each with its small title, then a collapsed
+ * "Where · Note" row, and Save within reach, so "Caught up" → Save logs today in two taps. "How?" and What show the
+ * four most used and "See all". A call, a chat or a game hides What and the place; "Other" asks what it was; a journal
+ * entry opens the note. No hidden gestures. Drawn with [DialogSheet]: a scrim, drag down to close.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -171,8 +170,8 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     var pickingDate by rememberSaveable { mutableStateOf(false) }
     var pickingTime by rememberSaveable { mutableStateOf(false) }
     // Issue #116: opened with nobody (Today's Log button, a shortcut, the daily reminder): the people picker comes first.
-    val startsEmpty = state.startsWithNobody
-    var pickingPeople by rememberSaveable { mutableStateOf(startsEmpty) }
+    var pickingPeople by rememberSaveable { mutableStateOf(state.startsWithNobody) }
+    var showAllKinds by rememberSaveable { mutableStateOf(false) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
     DialogSheet(
         onDismiss = actions.onDismiss,
@@ -180,68 +179,67 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
             SaveBar(actions.onSave, enabled = sheet.canSave, label = saveLabel(sheet), color = MaterialTheme.colorScheme.surfaceContainerLow)
         },
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            val circle = sheet.circle
-            Text(
-                if (circle != null) {
-                    stringResource(Res.string.met_title_circle, "${circle.emoji} ${circle.name}".trim())
-                } else if (sheet.people.isEmpty()) {
-                    stringResource(CoreRes.string.log_action)
-                } else {
-                    stringResource(Res.string.met_title, namesList(sheet.people))
-                },
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).semantics { heading() },
-            )
-            TextButton(onClick = actions.onMoreDetails) { Text(stringResource(Res.string.met_more_details)) }
+        val circle = sheet.circle
+        Text(
+            when {
+                sheet.editing -> stringResource(CoreRes.string.log_title_edit)
+                circle != null -> stringResource(Res.string.met_title_circle, "${circle.emoji} ${circle.name}".trim())
+                sheet.people.isEmpty() -> stringResource(CoreRes.string.log_action)
+                else -> stringResource(Res.string.met_title, namesList(sheet.people))
+            },
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().semantics { heading() },
+        )
+        Section(stringResource(Res.string.met_who)) { People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true }) }
+        Section(stringResource(Res.string.met_how)) {
+            HowRow(state.kinds, sheet.kind, showAllKinds, onToggleAll = { showAllKinds = !showAllKinds }, onKind = actions.onKind)
         }
-        // Issue #116: started with nobody, who comes first; otherwise after the date, as before.
-        if (startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
-        HowRow(sheet.kind, actions.onKind)
         if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
-        LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
-        LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
-        if (!startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
-        if (sheet.kind == LogKind.MEETUP) LogLastTogether(sheet.lastTogether, sheet.now, sheet.zone)
-        if (!sheet.kind.isRemote) {
-            Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+        Section(stringResource(Res.string.met_when)) {
+            LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
+            LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
         }
-        if (state.placeOpen) {
-            // The Log sheet's place field (F11): a named place recognises itself and suggests who's usually there.
-            MeetupPlace(
-                sheet.place,
-                freeTextLabel = stringResource(CoreRes.string.log_place_hint),
-                onName = actions.onPlaceName,
-                onUseLocation = actions.onUseLocation,
-                onClearLocation = actions.onClearLocation,
-                onChange = actions.onChangePlace,
-                onAddPerson = actions.onTogglePerson,
-            )
+        if (sheet.kind == LogKind.MEETUP) {
+            LogLastTogether(sheet.lastTogether, sheet.now, sheet.zone)
+            Section(stringResource(Res.string.met_what)) {
+                Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+            }
         }
-        if (state.noteOpen) {
+        if (state.detailsOpen) {
+            if (sheet.kind == LogKind.MEETUP) {
+                // The place field (F11): a named place recognises itself and suggests who's usually there.
+                MeetupPlace(
+                    sheet.place,
+                    freeTextLabel = stringResource(CoreRes.string.log_place_hint),
+                    onName = actions.onPlaceName,
+                    onUseLocation = actions.onUseLocation,
+                    onClearLocation = actions.onClearLocation,
+                    onChange = actions.onChangePlace,
+                    onAddPerson = actions.onTogglePerson,
+                )
+            }
             OutlinedTextField(
                 sheet.note,
                 actions.onNote,
                 Modifier.fillMaxWidth(),
-                label = { Text(stringResource(CoreRes.string.log_note_hint)) },
+                label = {
+                    Text(stringResource(if (sheet.kind == LogKind.JOURNAL) CoreRes.string.log_journal_hint else CoreRes.string.log_note_hint))
+                },
+            )
+        } else {
+            DetailsRow(
+                stringResource(if (sheet.kind == LogKind.MEETUP) Res.string.met_where_note else Res.string.met_note),
+                actions.onOpenDetails,
             )
         }
-        val canAddPlace = !state.placeOpen && !sheet.kind.isRemote
-        if (!state.noteOpen || canAddPlace) {
-            Row {
-                if (!state.noteOpen) AddButton(stringResource(Res.string.met_add_note), actions.onOpenNote)
-                if (canAddPlace) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
-            }
+        val hint = if (sheet.kind == LogKind.JOURNAL) {
+            stringResource(CoreRes.string.log_journal_footer)
+        } else {
+            sheet.countsHintFor?.let { stringResource(CoreRes.string.log_counts_hint, it.displayName.substringBefore(' ')) }
         }
-        sheet.countsHintFor?.let {
-            Text(
-                stringResource(CoreRes.string.log_counts_hint, it.displayName.substringBefore(' ')),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        hint?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
     if (pickingDate) {
         LocalDatePickerDialog(sheet.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = sheet.today)
@@ -265,27 +263,49 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     }
 }
 
-/** "How?" (issue #101): one chip per way of keeping in touch, in person first. */
-@OptIn(ExperimentalLayoutApi::class)
+/** A small title over one part of the popup (issue #151: Who, How?, When, What). */
 @Composable
-private fun HowRow(kind: LogKind, onKind: (LogKind) -> Unit) {
+private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(stringResource(Res.string.met_how), style = MaterialTheme.typography.labelLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            LogKind.CAUGHT_UP.forEach { k ->
-                FilterChip(
-                    selected = kind == k,
-                    onClick = { onKind(k) },
-                    label = { Text(logKindLabel(k)) },
-                    leadingIcon = { Icon(logKindIcon(k), null, Modifier.size(18.dp)) },
-                )
-            }
-        }
+        Text(title, style = MaterialTheme.typography.labelLarge, modifier = Modifier.semantics { heading() })
+        content()
     }
 }
 
+/**
+ * "How?" (issues #101, #151): one chip per way of keeping in touch, most used first; the first
+ * [ObserveLogKindsUseCase.SHOWN] (and the chosen one) on show, the rest behind "See all".
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AddButton(label: String, onClick: () -> Unit) {
+private fun HowRow(kinds: List<LogKindOption>, kind: LogKind, showAll: Boolean, onToggleAll: () -> Unit, onKind: (LogKind) -> Unit) {
+    val shown = if (showAll) kinds else kinds.take(ObserveLogKindsUseCase.SHOWN)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        (shown + kinds.filter { it.kind == kind && it !in shown }).forEach { option ->
+            FilterChip(
+                selected = kind == option.kind,
+                onClick = { onKind(option.kind) },
+                label = { Text(option.name ?: logKindLabel(option.kind)) },
+                leadingIcon = { Icon(logKindIcon(option.kind), null, Modifier.size(18.dp)) },
+            )
+        }
+        if (kinds.size > ObserveLogKindsUseCase.SHOWN) SeeAllChip(showAll, onToggleAll)
+    }
+}
+
+/** "See all" (issue #151), or "Less" once everything shows. */
+@Composable
+private fun SeeAllChip(showingAll: Boolean, onClick: () -> Unit) {
+    AssistChip(
+        onClick = onClick,
+        label = { Text(stringResource(if (showingAll) CoreRes.string.log_less else Res.string.met_see_all)) },
+        leadingIcon = if (showingAll) null else ({ Icon(Icons.Rounded.MoreHoriz, null, Modifier.size(18.dp)) }),
+    )
+}
+
+/** The collapsed "Where · Note" row (issue #151, owner decision 2026-11-21): a tap opens the place and the note. */
+@Composable
+private fun DetailsRow(label: String, onClick: () -> Unit) {
     TextButton(onClick = onClick) {
         Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
         Spacer(Modifier.width(4.dp))
@@ -343,38 +363,30 @@ private fun PersonChip(friend: Friend, selected: Boolean, onClick: () -> Unit) {
     )
 }
 
-/** F3: the six most used activities as tiles, then "More". Tapping the chosen one again clears it. */
+/**
+ * F3 and issue #151: the [ObserveActivitiesUseCase.SHOWN] most used activities as tiles, then "See all". Tapping the
+ * chosen one again clears it.
+ */
 @Composable
 private fun Activities(sheet: LogSheetState, showAll: Boolean, onToggleMore: () -> Unit, onActivity: (ActivityChoice?) -> Unit) {
     val shown = if (showAll) sheet.activities else sheet.activities.take(ObserveActivitiesUseCase.SHOWN)
-    // null is the "More" / "Less" tile.
-    val tiles: List<ActivityChoice?> = shown + listOfNotNull(sheet.activity?.takeIf { it !in shown }) +
-        (if (sheet.activities.size > ObserveActivitiesUseCase.SHOWN) listOf(null) else emptyList())
+    val tiles = shown + listOfNotNull(sheet.activity?.takeIf { it !in shown })
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         tiles.chunked(TILES_PER_ROW).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { a ->
-                    if (a == null) {
-                        Tile(
-                            label = stringResource(if (showAll) CoreRes.string.log_less else CoreRes.string.log_more),
-                            icon = { Icon(Icons.Rounded.MoreHoriz, null) },
-                            selected = false,
-                            onClick = onToggleMore,
-                            modifier = Modifier.weight(1f),
-                        )
-                    } else {
-                        Tile(
-                            label = activityLabel(a),
-                            icon = { Icon(activityIcon(a), null) },
-                            selected = sheet.activity == a,
-                            onClick = { onActivity(a.takeIf { sheet.activity != a }) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    Tile(
+                        label = activityLabel(a),
+                        icon = { Icon(activityIcon(a), null) },
+                        selected = sheet.activity == a,
+                        onClick = { onActivity(a.takeIf { sheet.activity != a }) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
                 repeat(TILES_PER_ROW - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+        if (sheet.activities.size > ObserveActivitiesUseCase.SHOWN) SeeAllChip(showAll, onToggleMore)
     }
 }
 

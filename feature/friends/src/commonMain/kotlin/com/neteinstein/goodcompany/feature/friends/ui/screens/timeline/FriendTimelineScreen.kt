@@ -93,7 +93,7 @@ fun FriendTimelineScreen(
     friendId: FriendId,
     onBack: () -> Unit,
     onLog: () -> Unit,
-    /** The Log sheet in edit mode on this entry ([TimelineEntry.key], issue #102). */
+    /** The Log popup in edit mode on this entry ([TimelineEntry.key], issue #102). */
     onEditEntry: (String) -> Unit = {},
     viewModel: FriendTimelineViewModel = koinViewModel(key = "timeline-${friendId.value}") { parametersOf(friendId) },
 ) {
@@ -119,7 +119,7 @@ fun FriendTimelineScreen(
 data class FriendTimelineActions(
     val onBack: () -> Unit = {},
     val onLog: () -> Unit = {},
-    /** Meetups, contacts and journal entries open the Log sheet in edit mode. */
+    /** Meetups, contacts and journal entries open the Log popup in edit mode. */
     val onEditEntry: (String) -> Unit = {},
     val onEditNews: (TimelineEntry.WhatsNew, String) -> Unit = { _, _ -> },
     val onEditGift: (Gift, title: String, note: String) -> Unit = { _, _, _ -> },
@@ -154,7 +154,7 @@ fun timelineFilterLabel(filter: TimelineFilter): String = stringResource(
 fun FriendTimelineContent(state: FriendTimelineUiState, actions: FriendTimelineActions) {
     val snackbar = remember { SnackbarHostState() }
     val undoLabel = stringResource(CoreRes.string.coreUndo)
-    // News and gifts edit in their own dialogs; everything else in the Log sheet (issue #102).
+    // News and gifts edit in their own dialogs; everything else in the Log popup (issue #102).
     var editingNews by remember { mutableStateOf<TimelineEntry.WhatsNew?>(null) }
     var editingGift by remember { mutableStateOf<TimelineEntry.GiftGiven?>(null) }
     val edit: (TimelineEntry) -> Unit = { entry ->

@@ -56,10 +56,13 @@
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">Log · %1$s</string>
     <string name="met_title_circle">%1$s · who came?</string>
+    <string name="met_who">Who?</string>
     <string name="met_how">How?</string>
-    <string name="met_more_details">More details</string>
-    <string name="met_add_note">Add a note</string>
-    <string name="met_add_place">Add a place</string>
+    <string name="met_when">When?</string>
+    <string name="met_what">What?</string>
+    <string name="met_see_all">See all</string>
+    <string name="met_where_note">Where · Note</string>
+    <string name="met_note">Note</string>
     <string name="met_save_on">Save · %1$s</string>
     <plurals name="met_log_people">
         <item quantity="one">Log %1$d person</item>

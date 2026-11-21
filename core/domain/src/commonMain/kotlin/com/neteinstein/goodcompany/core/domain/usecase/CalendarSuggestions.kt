@@ -83,7 +83,7 @@ object ActivityGuesser {
     }
 }
 
-/** One past event worth logging. "Log it" opens the log sheet with [friends], [date] and [activity]. */
+/** One past event worth logging. "Log it" opens the Log popup with [friends], [date] and [activity]. */
 data class CalendarSuggestion(
     val event: CalendarEvent,
     val friends: List<Friend>,

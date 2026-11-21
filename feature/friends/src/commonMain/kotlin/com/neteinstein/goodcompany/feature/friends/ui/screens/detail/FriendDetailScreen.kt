@@ -360,7 +360,7 @@ fun FriendDetailScreen(
     onOpenFriend: (FriendId) -> Unit = {},
     onOpenTimeline: () -> Unit = {},
     onLog: () -> Unit = {},
-    /** The Log sheet in edit mode on this timeline entry ([TimelineEntry.key], issue #102). */
+    /** The Log popup in edit mode on this timeline entry ([TimelineEntry.key], issue #102). */
     onEditEntry: (String) -> Unit = {},
     /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
     onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
@@ -568,7 +568,7 @@ data class FriendDetailActions(
     val onRenameTaste: (TasteSlot, old: String, new: String) -> Unit = { _, _, _ -> },
     val onDeleteTaste: (TasteSlot, String) -> Unit = { _, _ -> },
     val onEditGift: (id: String, title: String, note: String) -> Unit = { _, _, _ -> },
-    /** Meetups, contacts and journal entries open the Log sheet in edit mode ([TimelineEntry.key]). */
+    /** Meetups, contacts and journal entries open the Log popup in edit mode ([TimelineEntry.key]). */
     val onEditEntry: (String) -> Unit = {},
     val onDeleteEntry: (TimelineEntry) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
@@ -1531,7 +1531,7 @@ private fun AddTasteDialog(firstName: String, tags: List<Tag>, actions: FriendDe
 
 /**
  * Dated notes (issue #103): every note is a journal entry with the day it was written, newest first, and "+ Note" adds
- * one. A tap edits it in the Log sheet; ⋮ or a long press offers Edit and Delete (with Undo), as on the timeline.
+ * one. A tap edits it in the Log popup; ⋮ or a long press offers Edit and Delete (with Undo), as on the timeline.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1874,7 +1874,7 @@ private fun PastItem(
     val date = item.at.toLocalDateTime(state.zone).date
     val line = Modifier.timelineRail(rail, toCentre = last)
     when (item) {
-        // Issue #102: a tap edits (news and gifts in their dialogs, the rest in the Log sheet); ⋮ or a long press offers Delete too.
+        // Issue #102: a tap edits (news and gifts in their dialogs, the rest in the Log popup); ⋮ or a long press offers Delete too.
         is TogetherItem.Entry -> {
             val entry = item.entry
             EditableTimelineEntry(

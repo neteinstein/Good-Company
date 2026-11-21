@@ -82,7 +82,7 @@ class LogSheetModel(
     private val clock: AppClock,
     /** The plan occurrence this log answers, if any. */
     val plan: PlanOccurrence? = null,
-    /** Saves an edited timeline entry (issue #102); only needed by the Log sheet. */
+    /** Saves an edited timeline entry (issue #102). */
     private val editEntry: EditTimelineEntryUseCase? = null,
 ) {
     /** The timeline entry being edited, set by [startEditing]. */
@@ -90,7 +90,7 @@ class LogSheetModel(
 
     private val mutableDraft = MutableStateFlow(initial.copy(people = initial.people.distinct(), date = minOf(initial.date, clock.today())))
 
-    /** What's chosen so far ("More details" carries it over to the full Log sheet). */
+    /** What's chosen so far. */
     val draft: StateFlow<LogDraft> = mutableDraft.asStateFlow()
 
     val sheet: StateFlow<LogSheetState> = combine(

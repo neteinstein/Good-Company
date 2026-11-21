@@ -179,7 +179,7 @@
     <string name="ai_off_note">Cât timp e oprit, nimic din ce are nevoie de AI nu apare în aplicație.</string>
     <string name="activities">Activități</string>
     <string name="activities_count">%1$d din %2$d pornite</string>
-    <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd șase, celelalte sunt la Mai mult. Trage pentru a reordona.</string>
+    <string name="activities_hint">Ce oferă jurnalul când te-ai văzut cu cineva. Cele folosite cel mai des apar primele, restul în această ordine; se văd patru, celelalte sunt la Vezi tot. Trage pentru a reordona.</string>
     <string name="activities_move_up">Mută în sus</string>
     <string name="activities_move_down">Mută în jos</string>
     <!-- Your photo (issue #71) -->

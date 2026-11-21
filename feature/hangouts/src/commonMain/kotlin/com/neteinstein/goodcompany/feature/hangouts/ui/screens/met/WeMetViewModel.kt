@@ -4,17 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogKindOption
 import com.neteinstein.goodcompany.core.domain.usecase.LoggedMeetupInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntryRef
+import com.neteinstein.goodcompany.core.domain.usecase.asLogRequest
+import com.neteinstein.goodcompany.core.domain.usecase.editsInLogSheet
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.LogDraft
 import com.neteinstein.goodcompany.core.ui.components.LogSheetModel
@@ -23,68 +31,84 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
 data class WeMetUiState(
     val sheet: LogSheetState,
-    /** "+ Add a note" was tapped (or there already is one): the note field shows. */
-    val noteOpen: Boolean = false,
-    /** "+ Add a place" was tapped (or one is set): the place field (named places, F11) shows. */
-    val placeOpen: Boolean = false,
+    /**
+     * Issue #151: "Where · Note" was tapped (or a place or note is already set, or it's a journal entry, which needs its
+     * text): the place (in person only) and the note show.
+     */
+    val detailsOpen: Boolean = false,
+    /** "How?", most used first (issue #151): the first [ObserveLogKindsUseCase.SHOWN] on show, the rest behind "See all". */
+    val kinds: List<LogKindOption> = ObserveLogKindsUseCase.DEFAULT_ORDER.map { LogKindOption(it) },
     /** Saved: the panel closes (the app-wide snackbar offers Undo). */
     val done: Boolean = false,
     /**
      * Issue #116: opened with nobody, no circle and no plan (Today's Log button, a shortcut, the daily reminder): the
-     * people picker opens first and "who" leads the panel.
+     * people picker opens first.
      */
     val startsWithNobody: Boolean = false,
 )
 
-/** What "More details" hands to the full Log sheet: everything chosen so far. */
-data class WeMetDetails(
-    val friendIds: List<FriendId>,
-    val circleId: String?,
-    val date: LocalDate,
-    val activity: ActivityChoice?,
-    val note: String,
-    val plan: PlanOccurrence?,
-    val placeName: String = "",
-    /** The "How?" chosen (issue #101), so the full Log sheet opens on the same kind. */
-    val kind: LogKind = LogKind.MEETUP,
-    val label: String = "",
-    /** Issue #116: the time of day chosen (null = now / noon). */
-    val time: LocalTime? = null,
+/**
+ * What the popup opens with besides people, circle and plan (issue #151, it was the full Log popup's): a kind, a calendar
+ * suggestion's day and activity guess (D3), or a timeline entry to edit (issue #102). A future [date] falls back to today.
+ */
+data class LogPrefill(
+    /** A [LogKind] or InteractionType name (see [LogKind.parse]); unknown or null preselects in person. */
+    val type: String? = null,
+    val date: LocalDate? = null,
+    val activity: HangoutActivity? = null,
+    /** One of your own activities (issue #121), when [activity] is null. */
+    val activityName: String? = null,
+    /** Edit this timeline entry instead of logging a new one (issue #102); the rest is then ignored. */
+    val edit: TimelineEntryRef? = null,
 )
 
 /**
- * The small "Caught up" panel (issues #47 and #101, F2/F3) behind `WeMetRoute(friendIds, circleId, plan)`. First
- * "How?" ([LogKind.CAUGHT_UP], in person by default): a remote kind is written as an interaction and has no place or
- * activity, and "Other" takes a short label. Then Today preselected,
- * Yesterday or a picked day (never the future), the activity and an optional note, then Save. A circle lists its
- * members with nobody ticked (F20). [plan] answers that plan occurrence's "Did you meet?" (issue #43): its day,
- * people (a circle plan's members unticked), activity, place and title fill the panel, and saving closes it. The logic is the Log sheet's own [LogSheetModel] (issue #21).
+ * The Log popup (issues #47, #101 and #151, F2/F3) behind `WeMetRoute`: the only place to log. Who, then "How?" (every
+ * [LogKind], most used first, in person by default; a remote kind is written as an interaction and has no place or
+ * activity, "Other" takes a short label, a journal entry needs its text), then When (Today preselected, Yesterday or a
+ * picked day, never the future), then What (the activity, in person only), then a collapsed "Where · Note", then Save.
+ * A circle lists its members with nobody ticked (F20). [plan] answers that plan occurrence's "Did you meet?" (issue #43):
+ * its day, people (a circle plan's members unticked), activity, place and title fill the panel. [prefill] opens it on a
+ * kind, day and activity, or on a timeline entry to edit. The logic is [LogSheetModel] (issue #21); saving goes through
+ * `LogInteractionUseCase`.
  */
 class WeMetViewModel(
     friendIds: List<FriendId>,
     circleId: String?,
     plan: PlanOccurrence?,
+    prefill: LogPrefill,
     observeFriends: ObserveFriendsUseCase,
     observeActivities: ObserveActivitiesUseCase,
     observeCircles: ObserveGroupsUseCase,
     observePlaceBook: ObservePlaceBookUseCase,
     observePlans: ObservePlansUseCase,
+    observeLogKinds: ObserveLogKindsUseCase,
     logInteraction: LogInteractionUseCase,
     confirmPlan: ConfirmPlanUseCase,
     currentLocation: GetCurrentLocationUseCase,
     loggedMeetups: LoggedMeetupInbox,
+    observeTimeline: ObserveTimelineUseCase,
+    editEntry: EditTimelineEntryUseCase,
     clock: AppClock,
 ) : ViewModel() {
     private val model = LogSheetModel(
         viewModelScope,
-        LogDraft(kind = LogKind.MEETUP, people = friendIds, date = clock.today(), circleId = circleId),
+        LogDraft(
+            kind = LogKind.parse(prefill.type) ?: LogKind.MEETUP,
+            people = friendIds,
+            date = prefill.date ?: clock.today(),
+            circleId = circleId,
+            activity = ActivityChoice.of(prefill.activity, prefill.activityName),
+        ),
         observeFriends,
         observeActivities,
         observeCircles,
@@ -96,27 +120,37 @@ class WeMetViewModel(
         loggedMeetups,
         clock,
         plan,
+        editEntry,
     )
-    private val startsWithNobody = friendIds.isEmpty() && circleId == null && plan == null
-    private val noteOpen = MutableStateFlow(false)
-    private val placeOpen = MutableStateFlow(false)
+    private val startsWithNobody = friendIds.isEmpty() && circleId == null && plan == null && prefill.edit == null
+    private val detailsOpen = MutableStateFlow(false)
     private val done = MutableStateFlow(false)
 
-    val state: StateFlow<WeMetUiState> = combine(model.sheet, noteOpen, placeOpen, done) { sheet, note, place, isDone ->
+    init {
+        // Edit mode (issue #102): open on the entry as it is; an entry that's gone (or can't be edited here) closes the popup.
+        prefill.edit?.let { ref ->
+            viewModelScope.launch {
+                val entry = observeTimeline(ref.friendId).first().firstOrNull { it.key == ref.key }
+                val request = entry?.takeIf { it.editsInLogSheet }?.asLogRequest(ref.friendId, clock.timeZone)
+                if (entry == null || request == null) done.value = true else model.startEditing(entry, request)
+            }
+        }
+    }
+
+    val state: StateFlow<WeMetUiState> = combine(model.sheet, observeLogKinds(), detailsOpen, done) { sheet, kinds, open, isDone ->
+        val placeSet = sheet.kind == LogKind.MEETUP &&
+            (sheet.place.name.isNotEmpty() || sheet.place.location != null || sheet.place.isLocating)
         WeMetUiState(
             sheet,
-            noteOpen = note || sheet.note.isNotEmpty(),
-            placeOpen = !sheet.kind.isRemote &&
-                (place || sheet.place.name.isNotEmpty() || sheet.place.location != null || sheet.place.isLocating),
+            detailsOpen = open || sheet.note.isNotEmpty() || placeSet || sheet.kind == LogKind.JOURNAL,
+            kinds = kinds,
             done = isDone,
             startsWithNobody = startsWithNobody,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WeMetUiState(model.sheet.value, startsWithNobody = startsWithNobody))
 
-    /** "How?": in person, a call, a video call, "said hi", a long chat, a game online or something else. */
-    fun onKind(kind: LogKind) {
-        if (kind in LogKind.CAUGHT_UP) model.onKind(kind)
-    }
+    /** "How?": any [LogKind] (issue #151: email and the journal too). */
+    fun onKind(kind: LogKind) = model.onKind(kind)
 
     fun onLabel(label: String) = model.onLabel(label)
 
@@ -130,11 +164,10 @@ class WeMetViewModel(
 
     fun onPeople(ids: List<FriendId>) = model.onPeople(ids)
 
-    fun onOpenNote() = noteOpen.update { true }
+    /** "Where · Note" (issue #151): opens the place and note fields. */
+    fun onOpenDetails() = detailsOpen.update { true }
 
     fun onNote(note: String) = model.onNote(note)
-
-    fun onOpenPlace() = placeOpen.update { true }
 
     fun onPlaceName(name: String) = model.onPlaceName(name)
 
@@ -147,9 +180,4 @@ class WeMetViewModel(
     fun onChangePlace() = model.onChangePlace()
 
     fun onSave() = model.onSave { done.value = true }
-
-    /** Everything chosen so far, for "More details" (the full Log sheet). */
-    fun details(): WeMetDetails = model.draft.value.let {
-        WeMetDetails(it.people, it.circleId, it.date, it.activity, it.note, model.plan, it.placeName, it.kind, it.label, it.time)
-    }
 }
