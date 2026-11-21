@@ -1,10 +1,13 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.HomeWidget
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenQuestions
@@ -75,6 +78,37 @@ class KeepInTouchTrackingTest {
         assertTrue(planned.any { it.id.startsWith("meet:ana") })
         assertTrue(planned.none { it.id.startsWith("meet:kid") })
         assertTrue(planned.any { it.id.startsWith("bday:kid") })
+    }
+
+    // Issue #130: tracking off only stops the keep-in-touch side; their reminders and plans still ring.
+    private val kidReminder = Reminder("r1", "Bring the book", listOf(id("kid")), dueAt = at(2026, 3, 12, 18), createdAt = at(2026, 3, 1))
+    private val kidPlan = Plan("p1", listOf(id("kid")), "Zoo", LocalDate(2026, 3, 14), createdAt = at(2026, 3, 1))
+
+    @Test
+    fun theirRemindersAndPlansAreStillNotified() {
+        val planned = NotificationPlanner.plan(
+            people,
+            listOf(kidReminder),
+            hangouts,
+            at(2026, 3, 10, 8),
+            zone,
+            reminderHour = 9,
+            plans = listOf(kidPlan),
+        )
+        assertTrue(planned.any { it.id.startsWith("reminder:r1") })
+        assertTrue(planned.any { it.id.startsWith("plan:") && it.id.endsWith(":day") })
+    }
+
+    @Test
+    fun theirBirthdayRemindersAndPlansStillShowInTheAgenda() = runTest {
+        val g = TestGraph(friends = people, hangouts = hangouts)
+        g.reminderRepo.upsert(kidReminder)
+        g.planRepo.upsert(kidPlan)
+        val agenda = g.observeAgenda().first()
+        assertTrue(agenda.any { it is AgendaItem.FriendBirthday && it.friend.id == id("kid") })
+        assertTrue(agenda.any { it is AgendaItem.ReminderDue && it.reminder.id == "r1" })
+        assertTrue(agenda.any { it is AgendaItem.PlanUpcoming && it.plan.id == "p1" })
+        assertTrue(agenda.none { it is AgendaItem.MeetupOverdue && it.friend.id == id("kid") })
     }
 
     @Test

@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.CircleDots
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.ui.components.CircleDot
@@ -108,13 +109,15 @@ fun FriendRow(
                     }
                 }
             }
-            // F9: a kid's line says who they are ("Niece · Ana’s daughter") rather than when you were last in touch.
-            val kidOf = summary.parents.firstOrNull()?.let { parent ->
-                listOfNotNull(f.relationToMe?.let { linkWord(it, f.pronouns) }, kidOfLabel(f, parent)).joinToString(" · ")
+            val subtitle = when (val line = RowSubtitle.of(summary)) {
+                // F9: a kid's line says who they are ("Niece · Ana’s daughter") rather than when you were last in touch.
+                is RowSubtitle.KidOf -> listOfNotNull(f.relationToMe?.let { linkWord(it, f.pronouns) }, kidOfLabel(f, line.parent))
+                    .joinToString(" · ")
+                is RowSubtitle.LastInTouch -> stringResource(Res.string.row_last_in_touch, relativePast(line.at, now, zone))
+                is RowSubtitle.Likes -> stringResource(Res.string.row_likes, line.likes.joinToString(limit = 3))
+                RowSubtitle.AddedInApp -> stringResource(Res.string.row_added_in_app)
+                RowSubtitle.FromContacts -> stringResource(Res.string.row_from_contacts)
             }
-            val subtitle = kidOf ?: summary.lastContact?.let { stringResource(Res.string.row_last_in_touch, relativePast(it, now, zone)) }
-                ?: f.likes.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.row_likes, it.joinToString(limit = 3)) }
-                ?: stringResource(if (f.contactId == null) Res.string.row_added_in_app else Res.string.row_from_contacts)
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -131,6 +134,32 @@ fun FriendRow(
                     if (summary.meetupOverdue) InfoPill(stringResource(Res.string.row_catch_up), icon = Icons.Rounded.Schedule)
                 }
             }
+        }
+    }
+}
+
+/**
+ * The People row's second line, first that applies: who a kid is, when you were last in touch (only for people you
+ * keep track of, issue #130), what they like, or where they came from.
+ */
+internal sealed interface RowSubtitle {
+    data class KidOf(val parent: Friend) : RowSubtitle
+
+    data class LastInTouch(val at: Instant) : RowSubtitle
+
+    data class Likes(val likes: List<String>) : RowSubtitle
+
+    data object AddedInApp : RowSubtitle
+
+    data object FromContacts : RowSubtitle
+
+    companion object {
+        fun of(summary: FriendSummary): RowSubtitle {
+            val f = summary.friend
+            return summary.parents.firstOrNull()?.let(::KidOf)
+                ?: summary.lastContact?.takeIf { f.tracksKeepInTouch }?.let(::LastInTouch)
+                ?: f.likes.takeIf { it.isNotEmpty() }?.let(::Likes)
+                ?: if (f.contactId == null) AddedInApp else FromContacts
         }
     }
 }
