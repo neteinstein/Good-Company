@@ -28,6 +28,7 @@ import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlMyPhotoRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlPersonBackgroundRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
@@ -61,6 +62,7 @@ import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.MyPhotoRepository
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PersonBackgroundRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PhotoShrinker
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
@@ -172,6 +174,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.OpenInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonBackgroundUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PinTypedPlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
@@ -344,6 +347,7 @@ val appModule = module {
     singleOf(::SqlSettingsRepository) bind SettingsRepository::class
     // Circles as the app sees them: the stored ones plus the built-in Family circle (F6).
     singleOf(::SqlCircleCoverRepository) bind CircleCoverRepository::class
+    singleOf(::SqlPersonBackgroundRepository) bind PersonBackgroundRepository::class
     single<GroupRepository> { GroupsWithFamilyCircle(SqlGroupRepository(get()), friends = get(), covers = get(), names = get()) }
     singleOf(::SqlPersonLinkRepository) bind PersonLinkRepository::class
     singleOf(::SqlPlanRepository) bind PlanRepository::class
@@ -468,6 +472,7 @@ val appModule = module {
     factory { DeleteGroupUseCase(get(), get(), covers = get()) }
     factory { RestoreGroupUseCase(get(), covers = get()) }
     factoryOf(::CircleCoverUseCases)
+    factoryOf(::PersonBackgroundUseCases)
     factoryOf(::ObserveCirclePageUseCase)
     factoryOf(::SetCircleMemberUseCase)
     factoryOf(::NextCircleColorUseCase)
@@ -551,6 +556,7 @@ val appModule = module {
             addFeed = get(),
             setPhoto = get(),
             removePhoto = get(),
+            backgrounds = get(),
             renameFriend = get(),
             setCircleMember = get(),
             restoreGroup = get(),

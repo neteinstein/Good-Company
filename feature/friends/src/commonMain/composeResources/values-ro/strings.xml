@@ -416,6 +416,11 @@
     <string name="photo_remove_hint_contact">Arată din nou fotografia contactului</string>
     <string name="photo_remove_hint_initials">Arată din nou inițialele</string>
     <string name="photo_contact_untouched">Contactul în sine nu este modificat niciodată.</string>
+    <string name="background_add">Adaugă fundal</string>
+    <string name="background_change">Schimbă fundalul</string>
+    <string name="background_hint">O imagine lată în spatele părții de sus a paginii</string>
+    <string name="background_remove">Elimină fundalul</string>
+    <string name="msg_background_removed">Fundal eliminat</string>
     <string name="name_title">Nume</string>
     <string name="name_contact_hint">În contactele tale: %1$s. Numele pe care îl dai aici este folosit peste tot în Good Company; o sincronizare a contactelor nu îl va schimba.</string>
     <string name="name_restore">Folosește numele contactului</string>

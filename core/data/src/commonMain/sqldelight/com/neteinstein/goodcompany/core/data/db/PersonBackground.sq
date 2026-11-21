@@ -1,0 +1,22 @@
+-- Background images of people's pages (issue #144): one wide JPEG per person (base64, like circle_cover), set in the
+-- app. Its own table so the friend row stays small; a friend save (ON CONFLICT DO UPDATE) and a contact sync never
+-- touch it, and it goes with the person. Part of the backup.
+
+CREATE TABLE person_background (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);
+
+allBackgrounds:
+SELECT * FROM person_background ORDER BY friend_id;
+
+-- Skipped when the person is gone (the foreign key would refuse it).
+put:
+INSERT OR REPLACE INTO person_background (friend_id, image_base64)
+SELECT :friendId, :image WHERE EXISTS (SELECT 1 FROM friend WHERE id = :friendId);
+
+delete:
+DELETE FROM person_background WHERE friend_id = ?;
+
+deleteAll:
+DELETE FROM person_background;

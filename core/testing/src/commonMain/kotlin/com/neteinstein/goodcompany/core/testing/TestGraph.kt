@@ -105,6 +105,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonBackgroundUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
@@ -198,6 +199,7 @@ class TestGraph(
     val giftListRepo = FakeGiftListRepository()
     val myPhotoRepo = FakeMyPhotoRepository()
     val coverRepo = FakeCircleCoverRepository()
+    val backgroundRepo = FakePersonBackgroundRepository(friends = friendRepo)
     val calendarReader = FakeCalendarReader()
     val observeCalendarEvents = ObserveCalendarEventsUseCase(settingsRepo, calendarReader, clock)
     val observeCalendarSuggestions =
@@ -224,6 +226,7 @@ class TestGraph(
         giftListRepo,
         myPhotoRepo,
         coverRepo,
+        backgroundRepo,
     )
 
     val observeFriends = ObserveFriendsUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, linkRepo, clock)
@@ -329,6 +332,9 @@ class TestGraph(
 
     /** Covers keep the first 16 bytes, like [thumbnailShrinker], so tests can tell a shrunk cover. */
     val circleCovers = CircleCoverUseCases(coverRepo) { it.copyOf(minOf(it.size, 16)) }
+
+    /** Backgrounds of people's pages (issue #144) shrink like covers: the first 16 bytes. */
+    val personBackgrounds = PersonBackgroundUseCases(backgroundRepo) { it.copyOf(minOf(it.size, 16)) }
     val setCircleMember = SetCircleMemberUseCase(circles)
     val nextCircleColor = NextCircleColorUseCase(circles)
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)

@@ -1,0 +1,7 @@
+-- Version 29 → 30 (issue #144): a background image for a person's page, app-owned like friend_custom_photo and sized
+-- like a circle's cover. New table, nothing to backfill.
+
+CREATE TABLE person_background (
+    friend_id TEXT NOT NULL PRIMARY KEY REFERENCES friend(id) ON DELETE CASCADE,
+    image_base64 TEXT NOT NULL
+);

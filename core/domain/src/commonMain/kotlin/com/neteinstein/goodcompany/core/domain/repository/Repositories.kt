@@ -182,6 +182,27 @@ interface CircleCoverRepository {
 }
 
 /**
+ * Background images of people's pages (issue #144): one per person, in its own table so the friend row stays small and
+ * a friend save or a contact sync never touches it. It goes when the person goes. Part of the backup.
+ */
+interface PersonBackgroundRepository {
+    /** Every background, by person. */
+    val backgrounds: Flow<Map<FriendId, ContactPhoto>>
+
+    /** Sets or replaces the background of [friendId] (skipped when they're gone); null removes it. */
+    suspend fun set(friendId: FriendId, background: ContactPhoto?)
+
+    companion object {
+        /** No backgrounds, for callers built without the store. */
+        val None: PersonBackgroundRepository = object : PersonBackgroundRepository {
+            override val backgrounds: Flow<Map<FriendId, ContactPhoto>> = flowOf(emptyMap())
+
+            override suspend fun set(friendId: FriendId, background: ContactPhoto?) = Unit
+        }
+    }
+}
+
+/**
  * Links between people (issue #39): each stored once, shown from both sides. A link goes when either person goes.
  * Adding or changing one also mirrors both people's links onto their contacts (sideload build, see [ContactsWriter]).
  */

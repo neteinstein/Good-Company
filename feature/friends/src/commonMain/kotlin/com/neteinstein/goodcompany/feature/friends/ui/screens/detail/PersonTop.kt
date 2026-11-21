@@ -77,6 +77,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.FamilyMember
 import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
 import com.neteinstein.goodcompany.core.ui.components.CircleActionChip
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
+import com.neteinstein.goodcompany.core.ui.components.FadedCover
 import com.neteinstein.goodcompany.core.ui.components.FamilyRing
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
@@ -169,6 +170,8 @@ internal fun PersonTop(f: Friend, state: FriendDetailUiState, family: FamilyArou
         avatarColors(f.displayName)
     }
     Box(Modifier.fillMaxWidth()) {
+        // Issue #144: their background image, if any, under the same gradient, fading into it.
+        FadedCover(state.background, Modifier.matchParentSize())
         Box(
             Modifier.matchParentSize().background(
                 Brush.verticalGradient(listOf(start.copy(alpha = 0.4f), end.copy(alpha = 0.14f), MaterialTheme.colorScheme.background)),

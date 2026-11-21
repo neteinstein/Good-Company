@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
+import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
@@ -63,6 +64,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonBackgroundUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
@@ -163,6 +165,9 @@ sealed interface FriendDetailMessage {
     /** The picked picture couldn't be read (or no picture came back). */
     data object PhotoUnreadable : FriendDetailMessage
 
+    /** The page's background image was removed (issue #144); offered with "Undo". */
+    data object BackgroundRemoved : FriendDetailMessage
+
     /** A "More about" line was deleted; offered with "Undo". */
     data class CustomFieldRemoved(val label: String) : FriendDetailMessage
 
@@ -230,6 +235,9 @@ sealed interface SavedEdit {
 
     data class KidAdded(val id: FriendId) : SavedEdit
 
+    /** The page's background image before it was set or removed (issue #144); null = there was none. */
+    data class BackgroundBefore(val background: ContactPhoto?) : SavedEdit
+
     /** [tracksKeepInTouch] too: becoming your kid or partner turns "Stay in touch" off (issue #132). */
     data class RelationToMeBefore(val relation: LinkType?, val pronouns: Pronouns?, val tracksKeepInTouch: Boolean = true) : SavedEdit
 
@@ -271,6 +279,8 @@ data class NoteEditing(val entry: JournalEntry? = null, val media: List<NoteMedi
 
 data class FriendDetailUiState(
     val detail: FriendDetail? = null,
+    /** The background image behind the top of their page (issue #144); null = the usual gradient only. */
+    val background: ContactPhoto? = null,
     val isLoading: Boolean = true,
     val notFound: Boolean = false,
     /** The AI switch (F1): off hides "Things to talk about" (the topics from notes stay) and every AI button. */
@@ -362,6 +372,7 @@ class FriendDetailViewModel(
     private val addFeed: AddFeedUseCase,
     private val setPhoto: SetFriendPhotoUseCase,
     private val removePhoto: RemoveFriendPhotoUseCase,
+    private val backgrounds: PersonBackgroundUseCases,
     private val renameFriend: RenameFriendUseCase,
     private val setCircleMember: SetCircleMemberUseCase,
     private val restoreGroup: RestoreGroupUseCase,
@@ -388,8 +399,8 @@ class FriendDetailViewModel(
         observeSettings(),
         observeAttachments(friendId).combine(observeReminders()) { attachments, reminders -> attachments to reminders },
         links.observe(friendId).combine(observeTags()) { linked, tags -> linked to tags },
-        local.combine(storyViews.views) { ui, views -> ui to views[friendId] },
-    ) { detail, settings, (attachments, reminders), (linked, tags), (ui, storySeenAt) ->
+        combine(local, storyViews.views, backgrounds.observe(friendId)) { ui, views, background -> Triple(ui, views[friendId], background) },
+    ) { detail, settings, (attachments, reminders), (linked, tags), (ui, storySeenAt, background) ->
         val fresh = detail?.let { d ->
             val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
             CatchUpStoryBuilder.freshItems(d.friend, d.kids).map { it.addedAt }.filter { it > since }
@@ -397,6 +408,7 @@ class FriendDetailViewModel(
         val theirs = reminders.filter { it.isFor(friendId, detail?.groups.orEmpty()) }
         ui.copy(
             detail = detail,
+            background = background,
             reminders = theirs.filter { !it.done },
             together = detail?.let { d ->
                 PersonTimeline.build(d.friend, d.timeline, d.plans + d.closedPlans, theirs, attachments, clock.today(), clock.timeZone)
@@ -466,6 +478,7 @@ class FriendDetailViewModel(
                     f.copy(gifts = f.gifts.map { if (it.id == undo.gift.id) undo.gift else it })
                 }
                 is SavedEdit.KidAdded -> deleteFriend(undo.id)
+                is SavedEdit.BackgroundBefore -> backgrounds.restore(friendId, undo.background)
                 is SavedEdit.NewsBefore -> updateFriend(friendId) { it.copy(lifeUpdates = undo.updates) }
                 is SavedEdit.MomentsBefore -> updateFriend(friendId) { it.copy(importantEvents = undo.events) }
                 is SavedEdit.LinksBefore -> updateFriend(friendId) { it.copy(socials = undo.socials, websites = undo.websites) }
@@ -986,6 +999,26 @@ class FriendDetailViewModel(
     /** Removes the photo set in the app: the contact's photo, or the initials, show again. */
     fun onRemovePhoto() {
         viewModelScope.launch { removePhoto(friendId) }
+    }
+
+    /**
+     * A picture picked and cropped wide for the background of their page (issue #144); null when the picker was
+     * cancelled, empty when the picture couldn't be read. Like a circle's cover, setting or changing it says nothing
+     * (the page shows it); only a remove offers Undo.
+     */
+    fun onBackgroundPicked(image: ByteArray?) {
+        if (image == null) return
+        viewModelScope.launch {
+            if (backgrounds.set(friendId, image).isFailure) say(FriendDetailMessage.PhotoUnreadable)
+        }
+    }
+
+    /** Removes the background image: the page's usual gradient shows again, with Undo. */
+    fun onRemoveBackground() {
+        viewModelScope.launch {
+            val before = backgrounds.remove(friendId) ?: return@launch
+            offerUndo(SavedEdit.BackgroundBefore(before), FriendDetailMessage.BackgroundRemoved)
+        }
     }
 
     // --- Chats and AI talking points -----------------------------------------------------------------------------

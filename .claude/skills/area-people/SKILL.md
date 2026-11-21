@@ -101,6 +101,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   and step-parents above, current romances beside (no exes), kids and step-kids below the name, at most four then "+N";
   siblings stay in the Family card. Circle chips have no ×: leaving a circle is an untick in `CircleSheet`. Message is
   one sheet (`MessageOptions`, preferred first); the preferred channel and "Related to you?" are set only in edit mode.
+- **A person's background image (issue #144).** `person_background(friend_id, image_base64)` (migration `29.sqm`,
+  foreign key with `ON DELETE CASCADE`, `Backup.personBackgrounds`), sized and cropped exactly like a circle's cover
+  (`createCoverShrinker()`, `PhotoCropDialog(shape = CropShape.WIDE)`, `ContactPhoto.cover` limits). Not a `Friend`
+  field: the friend row stays small and a friend save (`ON CONFLICT DO UPDATE`, never a replace) or a contact sync
+  can't drop it. Reads and writes go through `PersonBackgroundUseCases` (set / remove / restore for Undo); the page
+  gets it as `FriendDetailUiState.background` and draws it with `FadedCover` (`:core:ui`) under the header gradient.
+  Added, changed and removed in `PhotoOptionsSheet` (the camera badge, which always opens the sheet since #144).
 - **Everyone has a closeness; no hearts (issue #86).** `Friend.closeness` is non-null, default `ACQUAINTANCE`: every
   way in (contact sync, picker, list, .vcf, Add friend, share-to-new-friend) starts there. "Real friend"
   (`Friend.isCloseFriend`) is derived: `closeness.isRealFriend` (every level but Acquaintances). The `is_close_friend`

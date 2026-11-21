@@ -24,6 +24,7 @@ import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
+import com.neteinstein.goodcompany.core.domain.model.PersonBackground
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
@@ -56,6 +57,7 @@ import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.MyPhotoRepository
 import com.neteinstein.goodcompany.core.domain.repository.NotificationRenderer
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
+import com.neteinstein.goodcompany.core.domain.repository.PersonBackgroundRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
@@ -319,6 +321,7 @@ class FakeBackupRepository(
     private val giftLists: FakeGiftListRepository = FakeGiftListRepository(),
     private val myPhoto: FakeMyPhotoRepository = FakeMyPhotoRepository(),
     private val covers: FakeCircleCoverRepository = FakeCircleCoverRepository(),
+    private val backgrounds: FakePersonBackgroundRepository = FakePersonBackgroundRepository(),
 ) : BackupRepository {
     var restored: Backup? = null
 
@@ -340,6 +343,7 @@ class FakeBackupRepository(
         giftLists = giftLists.state.value,
         myPhoto = myPhoto.photo.value,
         circleCovers = covers.covers.value.map { (id, cover) -> CircleCover(id, cover) },
+        personBackgrounds = backgrounds.backgrounds.first().map { (id, image) -> PersonBackground(id, image) },
     )
 
     override suspend fun restore(backup: Backup) {
@@ -358,6 +362,7 @@ class FakeBackupRepository(
         giftLists.state.value = backup.giftLists
         myPhoto.photo.value = backup.myPhoto
         covers.covers.value = backup.circleCovers.associate { it.circleId to it.cover }
+        backgrounds.stored.value = backup.personBackgrounds.associate { it.friendId to it.image }
         settings.update { backup.settings }
     }
 }
@@ -374,6 +379,27 @@ class FakeCircleCoverRepository(initial: Map<String, ContactPhoto> = emptyMap())
         } else {
             it + (circleId to cover)
         }
+    }
+}
+
+/**
+ * Backgrounds of people's pages (issue #144), in memory. Like the database, it skips people [friends] doesn't have
+ * (when given) and drops a person's background when they are deleted.
+ */
+class FakePersonBackgroundRepository(
+    initial: Map<FriendId, ContactPhoto> = emptyMap(),
+    private val friends: FakeFriendRepository? = null,
+) : PersonBackgroundRepository {
+    /** What is stored, people since deleted included (the flow below hides those, like the foreign key). */
+    val stored = MutableStateFlow(initial)
+
+    override val backgrounds: Flow<Map<FriendId, ContactPhoto>> = friends
+        ?.let { repo -> combine(stored, repo.friends) { all, people -> all.filterKeys { id -> people.any { it.id == id } } } }
+        ?: stored
+
+    override suspend fun set(friendId: FriendId, background: ContactPhoto?) {
+        if (background != null && friends != null && friends.friends.value.none { it.id == friendId }) return
+        stored.update { if (background == null) it - friendId else it + (friendId to background) }
     }
 }
 
