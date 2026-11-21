@@ -407,6 +407,11 @@
     <string name="photo_remove_hint_contact">Vuelve a mostrar la foto del contacto</string>
     <string name="photo_remove_hint_initials">Vuelve a mostrar las iniciales</string>
     <string name="photo_contact_untouched">El contacto en sí nunca se modifica.</string>
+    <string name="background_add">Añadir fondo</string>
+    <string name="background_change">Cambiar fondo</string>
+    <string name="background_hint">Una imagen ancha detrás de la parte de arriba de su página</string>
+    <string name="background_remove">Quitar fondo</string>
+    <string name="msg_background_removed">Fondo quitado</string>
     <string name="name_title">Nombre</string>
     <string name="name_contact_hint">En tus contactos: %1$s. El nombre que pongas aquí se usa en todo Good Company; una sincronización de contactos no lo cambiará.</string>
     <string name="name_restore">Usar el nombre del contacto</string>

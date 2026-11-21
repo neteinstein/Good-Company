@@ -98,6 +98,7 @@ class FriendDetailViewModelTest {
         g.addFeed,
         g.setFriendPhoto,
         g.removeFriendPhoto,
+        g.personBackgrounds,
         g.renameFriend,
         g.setCircleMember,
         g.restoreGroup,
@@ -379,6 +380,41 @@ class FriendDetailViewModelTest {
         vm.onRemovePhoto()
         assertNull(state.value.detail!!.friend.customPhoto)
         assertEquals(contactPhoto, state.value.detail!!.friend.avatar)
+    }
+
+    @Test
+    fun aBackground_isSetChangedAndRemovedWithUndo_andLeavesTheirPhotoAlone() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertNull(state.value.background) // no background: the page looks as before
+
+        vm.onBackgroundPicked(null) // the picker was cancelled
+        assertNull(state.value.background)
+        assertNull(state.value.message)
+        vm.onBackgroundPicked(ByteArray(0)) // a picture the picker couldn't read
+        assertEquals(FriendDetailMessage.PhotoUnreadable, state.value.message)
+        assertNull(state.value.background)
+
+        vm.onMessageShown()
+        vm.onBackgroundPicked(byteArrayOf(1, 2, 3))
+        assertEquals(ContactPhoto.cover(byteArrayOf(1, 2, 3)), state.value.background)
+        assertNull(state.value.message)
+        assertNull(state.value.detail!!.friend.customPhoto) // it isn't their photo
+        vm.onBackgroundPicked(byteArrayOf(4, 5))
+        assertEquals(ContactPhoto.cover(byteArrayOf(4, 5)), state.value.background)
+
+        vm.onRemoveBackground()
+        assertNull(state.value.background)
+        assertEquals(FriendDetailMessage.BackgroundRemoved, state.value.message)
+        vm.onUndoSave()
+        assertEquals(ContactPhoto.cover(byteArrayOf(4, 5)), state.value.background)
+
+        vm.onMessageShown()
+        vm.onRemoveBackground()
+        vm.onMessageShown()
+        vm.onRemoveBackground() // nothing left to remove: nothing said
+        assertNull(state.value.message)
+        assertTrue(g.backgroundRepo.stored.value.isEmpty())
     }
 
     @Test

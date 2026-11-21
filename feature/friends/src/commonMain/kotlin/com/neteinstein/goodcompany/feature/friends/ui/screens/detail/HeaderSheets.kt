@@ -14,9 +14,11 @@ import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Wallpaper
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -43,11 +45,16 @@ import com.neteinstein.goodcompany.core.ui.components.SaveSheetHeader
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.background_add
+import com.neteinstein.goodcompany.feature.friends.resources.background_change
+import com.neteinstein.goodcompany.feature.friends.resources.background_hint
+import com.neteinstein.goodcompany.feature.friends.resources.background_remove
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_remind
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_remind_hint
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_remove
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_title
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_year_hint
+import com.neteinstein.goodcompany.feature.friends.resources.detail_add_photo
 import com.neteinstein.goodcompany.feature.friends.resources.name_contact_hint
 import com.neteinstein.goodcompany.feature.friends.resources.name_restore
 import com.neteinstein.goodcompany.feature.friends.resources.name_title
@@ -62,10 +69,23 @@ import com.neteinstein.goodcompany.feature.friends.resources.photo_sheet_title
 import org.jetbrains.compose.resources.stringResource
 import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
-/** "<name>'s photo" (F14): replace (pick, then crop), adjust the crop, or remove the photo set in the app. */
+/**
+ * "<name>'s photo", from the camera badge on their photo (F14): add or replace (pick, then crop), adjust the crop, or
+ * remove the photo set in the app. Below, the background of their page (issue #144): add or change (pick, then crop
+ * wide like a circle's cover) or remove it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun PhotoOptionsSheet(f: Friend, onReplace: () -> Unit, onAdjust: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
+internal fun PhotoOptionsSheet(
+    f: Friend,
+    hasBackground: Boolean,
+    onReplace: () -> Unit,
+    onAdjust: () -> Unit,
+    onRemove: () -> Unit,
+    onPickBackground: () -> Unit,
+    onRemoveBackground: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(bottom = 16.dp).navigationBarsPadding()) {
             Text(
@@ -75,7 +95,7 @@ internal fun PhotoOptionsSheet(f: Friend, onReplace: () -> Unit, onAdjust: () ->
             )
             val transparent = ListItemDefaults.colors(containerColor = Color.Transparent)
             ListItem(
-                headlineContent = { Text(stringResource(Res.string.photo_replace)) },
+                headlineContent = { Text(stringResource(if (f.avatar == null) Res.string.detail_add_photo else Res.string.photo_replace)) },
                 supportingContent = { Text(stringResource(Res.string.photo_replace_hint)) },
                 leadingContent = { Icon(Icons.Rounded.Image, null) },
                 colors = transparent,
@@ -102,6 +122,22 @@ internal fun PhotoOptionsSheet(f: Friend, onReplace: () -> Unit, onAdjust: () ->
                     leadingContent = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) },
                     colors = transparent,
                     modifier = Modifier.clickable(onClick = onRemove),
+                )
+            }
+            HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(if (hasBackground) Res.string.background_change else Res.string.background_add)) },
+                supportingContent = { Text(stringResource(Res.string.background_hint)) },
+                leadingContent = { Icon(Icons.Rounded.Wallpaper, null) },
+                colors = transparent,
+                modifier = Modifier.clickable(onClick = onPickBackground),
+            )
+            if (hasBackground) {
+                ListItem(
+                    headlineContent = { Text(stringResource(Res.string.background_remove)) },
+                    leadingContent = { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error) },
+                    colors = transparent,
+                    modifier = Modifier.clickable(onClick = onRemoveBackground),
                 )
             }
             if (f.contactId != null) {

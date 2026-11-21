@@ -154,6 +154,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.TogetherItem
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
+import com.neteinstein.goodcompany.core.ui.components.CropShape
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EditDeleteMenu
 import com.neteinstein.goodcompany.core.ui.components.EditableTimelineEntry
@@ -264,6 +265,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.moments_reminder
 import com.neteinstein.goodcompany.feature.friends.resources.moments_title
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
+import com.neteinstein.goodcompany.feature.friends.resources.msg_background_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_invalid
 import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
@@ -377,6 +379,11 @@ fun FriendDetailScreen(
     val pickPhoto = rememberImagePicker { image ->
         if (image != null && image.isNotEmpty()) cropping = image else viewModel.onPhotoPicked(image)
     }
+    // Issue #144: the page's background is cropped wide, like a circle's cover.
+    var croppingBackground by remember { mutableStateOf<ByteArray?>(null) }
+    val pickBackground = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) croppingBackground = image else viewModel.onBackgroundPicked(image)
+    }
     val pickSavedPhoto = rememberGalleryPhotoPicker { picked ->
         picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
     }
@@ -461,6 +468,8 @@ fun FriendDetailScreen(
             onAddPhoto = pickPhoto,
             onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
             onRemovePhoto = viewModel::onRemovePhoto,
+            onPickBackground = pickBackground,
+            onRemoveBackground = viewModel::onRemoveBackground,
             onAddSavedPhoto = pickSavedPhoto,
             onOpenOriginal = photoOpener::open,
             onRemoveAttachment = viewModel::onRemoveAttachment,
@@ -513,6 +522,12 @@ fun FriendDetailScreen(
         PhotoCropDialog(image, onDismiss = { cropping = null }, onCropped = { cropped ->
             cropping = null
             viewModel.onPhotoPicked(cropped)
+        })
+    }
+    croppingBackground?.let { image ->
+        PhotoCropDialog(image, onDismiss = { croppingBackground = null }, shape = CropShape.WIDE, onCropped = { cropped ->
+            croppingBackground = null
+            viewModel.onBackgroundPicked(cropped)
         })
     }
 }
@@ -617,6 +632,9 @@ data class FriendDetailActions(
     val onAdjustCrop: () -> Unit = {},
     /** Removes the photo set in the app. */
     val onRemovePhoto: () -> Unit = {},
+    /** The background of their page (issue #144): pick, then crop wide. */
+    val onPickBackground: () -> Unit = {},
+    val onRemoveBackground: () -> Unit = {},
     val onGenerateIdeas: () -> Unit = {},
     val onDismissIdea: (String) -> Unit = {},
     val onDelete: () -> Unit = {},
@@ -678,6 +696,7 @@ suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: Local
     FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
     FriendDetailMessage.NoteSaved -> getString(Res.string.note_saved)
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
+    FriendDetailMessage.BackgroundRemoved -> getString(Res.string.msg_background_removed)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
     FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
@@ -833,7 +852,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             onBack = actions.onBack,
             onEditPerson = { editingPerson = true },
             onRemove = { confirmDelete = true },
-            onPhoto = { if (f.avatar == null) actions.onAddPhoto() else photoOptions = true },
+            // The badge always opens the options: photo and, since issue #144, the page's background.
+            onPhoto = { photoOptions = true },
             onOpenStory = actions.onOpenStory,
             onEditBirthday = { pickBirthday = true },
             onPickCloseness = { pickLevel = true },
@@ -1108,6 +1128,7 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
         if (photoOptions) {
             PhotoOptionsSheet(
                 f,
+                hasBackground = state.background != null,
                 onReplace = {
                     photoOptions = false
                     actions.onAddPhoto()
@@ -1119,6 +1140,14 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 onRemove = {
                     photoOptions = false
                     actions.onRemovePhoto()
+                },
+                onPickBackground = {
+                    photoOptions = false
+                    actions.onPickBackground()
+                },
+                onRemoveBackground = {
+                    photoOptions = false
+                    actions.onRemoveBackground()
                 },
                 onDismiss = { photoOptions = false },
             )

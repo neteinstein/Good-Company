@@ -327,3 +327,11 @@ data class CustomField(
     val label: String,
     val value: String,
 )
+
+/**
+ * The background image of a person's page (issue #144), as stored and backed up: a wide cover like a circle's
+ * ([ContactPhoto.cover] limits), set in the app. App-owned like [Friend.customPhoto]: a contact sync never touches it
+ * and it is never written to the contact.
+ */
+@Serializable
+data class PersonBackground(val friendId: FriendId, val image: ContactPhoto)

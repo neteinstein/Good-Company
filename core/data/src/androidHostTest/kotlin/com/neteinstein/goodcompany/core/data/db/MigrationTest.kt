@@ -982,6 +982,36 @@ class MigrationTest {
     }
 
     @Test
+    fun version29to30_peopleStartWithNoBackground_andOneRoundTrips() = runTest {
+        val driver = driverAt(29)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 29, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        assertEquals("Ana", database.readFriends().single().name)
+        assertTrue(database.readPersonBackgrounds().isEmpty())
+        val ana = FriendId("ana")
+        database.writePersonBackground(ana, ContactPhoto("AQID"))
+        assertEquals(mapOf(ana to ContactPhoto("AQID")), database.readPersonBackgrounds())
+        database.writePersonBackground(ana, ContactPhoto("BAU="))
+        assertEquals(mapOf(ana to ContactPhoto("BAU=")), database.readPersonBackgrounds())
+        // Someone who isn't stored gets none (the foreign key would refuse it).
+        database.writePersonBackground(FriendId("nobody"), ContactPhoto("AQID"))
+        assertEquals(setOf(ana), database.readPersonBackgrounds().keys)
+        database.writePersonBackground(ana, null)
+        assertTrue(database.readPersonBackgrounds().isEmpty())
+        driver.close()
+    }
+
+    @Test
     fun customActivitiesColumn_unreadableIsNone_blanksAndRepeatsDropped() {
         assertEquals(emptyList(), customActivitiesFromColumn(null))
         assertEquals(emptyList(), customActivitiesFromColumn("not json"))

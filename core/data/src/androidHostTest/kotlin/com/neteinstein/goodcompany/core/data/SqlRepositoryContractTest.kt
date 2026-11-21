@@ -17,6 +17,7 @@ import com.neteinstein.goodcompany.core.data.repository.SqlHangoutRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlIdeaRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlInteractionRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlMyPhotoRepository
+import com.neteinstein.goodcompany.core.data.repository.SqlPersonBackgroundRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPersonLinkRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlPlanRepository
 import com.neteinstein.goodcompany.core.data.repository.SqlReminderRepository
@@ -46,6 +47,7 @@ import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.PersonBackground
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
@@ -205,6 +207,44 @@ class SqlRepositoryContractTest : RepositoryContract() {
         // An older backup without covers clears them.
         s.backup.restore(snapshot.copy(circleCovers = emptyList()))
         assertTrue(covers.covers.first().isEmpty())
+    }
+
+    // --- Backgrounds of people's pages (issue #144) ---
+
+    @Test
+    fun personBackgrounds_setReplaceRemove_surviveAFriendSave_goWithThePerson_andTravelInBackups() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        val backgrounds = SqlPersonBackgroundRepository(db)
+        val first = ContactPhoto.cover(byteArrayOf(1, 2, 3))!!
+        val second = ContactPhoto.cover(byteArrayOf(4, 5))!!
+        val rui = FriendId("rui")
+        assertTrue(backgrounds.backgrounds.first().isEmpty())
+
+        backgrounds.set(ana, first)
+        backgrounds.set(ana, second)
+        backgrounds.set(rui, first)
+        backgrounds.set(FriendId("nobody"), first) // skipped: not a stored person
+        assertEquals(mapOf(ana to second, rui to first), SqlPersonBackgroundRepository(db).backgrounds.first())
+
+        // Saving the person (an edit, a sync) keeps it: the friend row is updated in place, never replaced.
+        s.friends.upsert(s.friends.get(ana)!!.copy(name = "Ana Maria"))
+        assertEquals(second, backgrounds.backgrounds.first()[ana])
+
+        val snapshot = s.backup.snapshot()
+        assertEquals(setOf(PersonBackground(ana, second), PersonBackground(rui, first)), snapshot.personBackgrounds.toSet())
+        backgrounds.set(ana, null)
+        assertEquals(mapOf(rui to first), backgrounds.backgrounds.first())
+
+        s.backup.restore(snapshot)
+        assertEquals(mapOf(ana to second, rui to first), backgrounds.backgrounds.first())
+        // Deleting a person takes their background.
+        s.friends.delete(rui)
+        assertEquals(mapOf(ana to second), backgrounds.backgrounds.first())
+        // An older backup without backgrounds clears them.
+        s.backup.restore(snapshot.copy(personBackgrounds = emptyList()))
+        assertTrue(backgrounds.backgrounds.first().isEmpty())
     }
 
     @Test

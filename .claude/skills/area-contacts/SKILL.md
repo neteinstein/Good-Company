@@ -57,6 +57,11 @@ the Play build is picker-only. When you learn something new about this area, add
     gallery (`rememberImagePicker` → `SetFriendPhotoUseCase`): each picker returns an upright JPEG of at most 512 px (UIKit
     redraw on iOS, EXIF rotation on Android, `createImageBitmap` on the web), since the Skia decoder ignores EXIF.
 
+## A person's background image (issue #144)
+
+App-owned like `customPhoto`: `person_background` is its own table, `ContactCard` knows nothing of it, a sync never
+touches it and it is never written back. Details in `area-people`.
+
 ## Your own photo (issue #71, N7)
 
 Not a contact photo, but it follows the same rules: a `ContactPhoto` thumbnail (`SetMyPhotoUseCase` shrinks through

@@ -52,6 +52,7 @@ internal val PREFERENCE_TABLES = arrayOf("user_preferences")
 internal val CALENDAR_DECISION_TABLES = arrayOf("calendar_decision")
 internal val MY_PHOTO_TABLES = arrayOf("my_photo")
 internal val CIRCLE_COVER_TABLES = arrayOf("circle_cover")
+internal val PERSON_BACKGROUND_TABLES = arrayOf("person_background", "friend")
 
 private fun <T> List<T>.friendIdsBy(key: (T) -> String, friendId: (T) -> String): Map<String, List<FriendId>> =
     groupBy(key).mapValues { (_, rows) -> rows.map { FriendId(friendId(it)) } }
@@ -513,4 +514,19 @@ internal suspend fun GoodCompanyDatabase.readCircleCovers(): Map<String, Contact
 
 internal suspend fun GoodCompanyDatabase.writeCircleCover(circleId: String, cover: ContactPhoto?) {
     if (cover == null) circleCoverQueries.delete(circleId) else circleCoverQueries.put(circleId, cover.base64)
+}
+
+// --- Backgrounds of people's pages (issue #144) ---
+
+internal suspend fun GoodCompanyDatabase.readPersonBackgrounds(): Map<FriendId, ContactPhoto> =
+    personBackgroundQueries.allBackgrounds().awaitAsList()
+        .filter { it.image_base64.isNotBlank() }
+        .associate { FriendId(it.friend_id) to ContactPhoto(it.image_base64) }
+
+internal suspend fun GoodCompanyDatabase.writePersonBackground(friendId: FriendId, background: ContactPhoto?) {
+    if (background == null) {
+        personBackgroundQueries.delete(friendId.value)
+    } else {
+        personBackgroundQueries.put(friendId.value, background.base64)
+    }
 }

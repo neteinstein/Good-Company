@@ -434,6 +434,11 @@
     <string name="photo_remove_hint_contact">Shows the contact photo again</string>
     <string name="photo_remove_hint_initials">Shows the initials again</string>
     <string name="photo_contact_untouched">The contact itself is never changed.</string>
+    <string name="background_add">Add background</string>
+    <string name="background_change">Change background</string>
+    <string name="background_hint">A wide picture behind the top of their page</string>
+    <string name="background_remove">Remove background</string>
+    <string name="msg_background_removed">Background removed</string>
     <string name="name_title">Name</string>
     <string name="name_contact_hint">In your contacts: %1$s. The name you give here is used everywhere in Good Company; a contacts sync won’t change it.</string>
     <string name="name_restore">Use the contact’s name</string>
