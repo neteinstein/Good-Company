@@ -101,9 +101,9 @@
     <string name="gift_list_create">Creează</string>
     <string name="gift_list_missing">Această listă nu mai există.</string>
     <plurals name="gift_lists_people">
-        <item quantity="one">%d persoană</item>
-        <item quantity="few">%d persoane</item>
-        <item quantity="other">%d de persoane</item>
+        <item quantity="one">%1$d persoană</item>
+        <item quantity="few">%1$d persoane</item>
+        <item quantity="other">%1$d de persoane</item>
     </plurals>
     <plurals name="gift_lists_bought">
         <item quantity="one">%1$d din %2$d cadou cumpărat</item>
@@ -111,9 +111,9 @@
         <item quantity="other">%1$d din %2$d de cadouri cumpărate</item>
     </plurals>
     <plurals name="gift_list_pick_ideas">
-        <item quantity="one">Alege din %d idee salvată</item>
-        <item quantity="few">Alege din %d idei salvate</item>
-        <item quantity="other">Alege din %d de idei salvate</item>
+        <item quantity="one">Alege din %1$d idee salvată</item>
+        <item quantity="few">Alege din %1$d idei salvate</item>
+        <item quantity="other">Alege din %1$d de idei salvate</item>
     </plurals>
     <string name="gift_lists_show">Arată lista</string>
     <string name="gift_lists_hide">Ascunde lista</string>

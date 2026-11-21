@@ -99,16 +99,16 @@
     <string name="gift_list_create">Crear</string>
     <string name="gift_list_missing">Esta lista ya no existe.</string>
     <plurals name="gift_lists_people">
-        <item quantity="one">%d persona</item>
-        <item quantity="other">%d personas</item>
+        <item quantity="one">%1$d persona</item>
+        <item quantity="other">%1$d personas</item>
     </plurals>
     <plurals name="gift_lists_bought">
         <item quantity="one">%1$d de %2$d regalo comprado</item>
         <item quantity="other">%1$d de %2$d regalos comprados</item>
     </plurals>
     <plurals name="gift_list_pick_ideas">
-        <item quantity="one">Elegir de %d idea guardada</item>
-        <item quantity="other">Elegir de %d ideas guardadas</item>
+        <item quantity="one">Elegir de %1$d idea guardada</item>
+        <item quantity="other">Elegir de %1$d ideas guardadas</item>
     </plurals>
     <string name="gift_lists_show">Mostrar la lista</string>
     <string name="gift_lists_hide">Ocultar la lista</string>
