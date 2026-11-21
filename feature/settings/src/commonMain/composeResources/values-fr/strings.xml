@@ -235,4 +235,12 @@
         <item quantity="one">%1$d projet</item>
         <item quantity="other">%1$d projets</item>
     </plurals>
+    <string name="notif_bday_heads_up">Prévenir avant les anniversaires</string>
+    <string name="notif_bday_heads_up_off">Non</string>
+    <string name="notif_bday_heads_up_week">1 semaine</string>
+    <string name="notif_bday_heads_up_two_weeks">2 semaines</string>
+    <plurals name="notif_bday_heads_up_days">
+        <item quantity="one">%1$d jour</item>
+        <item quantity="other">%1$d jours</item>
+    </plurals>
 </resources>

@@ -57,6 +57,7 @@ import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
 import com.neteinstein.goodcompany.composeApp.resources.storage_temporary
+import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
@@ -159,6 +160,14 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
         // Issue #116: a shortcut or the daily reminder opens the Log popup (the people picker first when nobody's named).
         navController.navigate(WeMetRoute(entry.friendIds.map { it.value }))
         quickEntryInbox.clear()
+    }
+    // Issue #133: a tap on a birthday heads-up opens the person's page, under the app lock.
+    val personInbox: PersonInbox = koinInject()
+    val pendingPerson by personInbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingPerson) {
+        val id = pendingPerson ?: return@LaunchedEffect
+        navController.navigate(FriendDetailRoute(id.value))
+        personInbox.clear()
     }
 
     BoxWithConstraints {

@@ -52,6 +52,14 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_week
 import com.neteinstein.goodcompany.core.ui.resources.notif_action_snooze_weekend
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_body_age
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_body
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_days
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_family
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_kid
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_tomorrow
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_turns
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_two_weeks
+import com.neteinstein.goodcompany.core.ui.resources.notif_bday_soon_week
 import com.neteinstein.goodcompany.core.ui.resources.notif_bday_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_calendar_many_title
@@ -146,6 +154,20 @@ object ResourceNotificationRenderer : NotificationRenderer {
             is NotificationContent.RelativeBirthday -> Triple(
                 getString(Res.string.notif_relative_title, c.relativeName, c.friendName),
                 c.age?.let { getString(Res.string.notif_kid_body_age, it) } ?: getString(Res.string.notif_kid_body),
+                emptyList(),
+            )
+            is NotificationContent.BirthdaySoon -> Triple(
+                when (c.daysBefore) {
+                    1 -> getString(Res.string.notif_bday_soon_tomorrow, c.name)
+                    7 -> getString(Res.string.notif_bday_soon_week, c.name)
+                    14 -> getString(Res.string.notif_bday_soon_two_weeks, c.name)
+                    else -> getPluralString(Res.plurals.notif_bday_soon_days, c.daysBefore, c.daysBefore, c.name)
+                },
+                listOfNotNull(
+                    c.parentName?.let { getString(Res.string.notif_bday_soon_kid, it) },
+                    c.familyOf?.let { getString(Res.string.notif_bday_soon_family, it) },
+                    c.age?.let { getString(Res.string.notif_bday_soon_turns, it) },
+                ).joinToString(" ").ifEmpty { getString(Res.string.notif_bday_soon_body) },
                 emptyList(),
             )
             is NotificationContent.Anniversary -> Triple(

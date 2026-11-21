@@ -38,6 +38,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   switch per `NotificationType`, `persistent` = "Keep important ones on screen") lives in `DeviceSettings` (no schema
   change) and travels in backups; `notificationPrimerDismissed` (Today's card) is device-only. `NotificationPlanner`
   checks `notifications.allows(content.type)` for every notification: a new `NotificationContent` needs a `type`.
+- **Birthday heads-up (issue #133).** `NotificationSettings.birthdayHeadsUpDays` (0 = off, one of
+  `BIRTHDAY_HEADS_UP_CHOICES`, 7 by default; in the notification settings JSON, so no schema change and it travels in
+  backups). The planner adds `bday-soon:<id>[:<relative id>]:<date>` N days before each birthday that notifies on the
+  day, as `NotificationContent.BirthdaySoon` (type BIRTHDAYS, never persistent, never throttled) with
+  `link = AppLink.person(id)`. `goodcompany://person/<id>` goes to `PersonInbox`, which `App.kt` turns into the
+  person's page (Android `MainActivity`, iOS `IosNotificationScheduler` and `handleAppUrl`).
 - **Persistent notifications (issue #98).** With `persistent` on, the planner marks these `PlannedNotification.persistent`
   with `until` = the end of their day: reminders marked important (`Reminder.important`, a stub returning false until
   #99 adds the field), overdue reminders (`ReminderOverdue`, asked at the reminder hour each day, `OVERDUE_ASKS` planned

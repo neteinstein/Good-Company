@@ -17,6 +17,20 @@ sealed interface NotificationContent {
 
     data class EventToday(val friendName: String, val title: String) : NotificationContent
 
+    /**
+     * Issue #133: a birthday [daysBefore] days away ("Ana’s birthday is in a week"), for a friend, a kid ([parentName])
+     * or a relative ([familyOf]). [age] is what they turn, null when the year is unknown. A tap opens [personId]'s page
+     * (the friend whose relative it is, for a relative).
+     */
+    data class BirthdaySoon(
+        val name: String,
+        val daysBefore: Int,
+        val age: Int?,
+        val personId: FriendId,
+        val parentName: String? = null,
+        val familyOf: String? = null,
+    ) : NotificationContent
+
     data class EventSoon(val friendName: String, val title: String, val daysBefore: Int) : NotificationContent
 
     /** [reminderId] is the target of its Done and Snooze actions (issue #99). */
@@ -87,7 +101,7 @@ sealed interface NotificationContent {
     /** Which switch in Settings → Notifications this belongs to (and, on Android, its channel). */
     val type: NotificationType
         get() = when (this) {
-            is FriendBirthday, is KidBirthday, is RelativeBirthday, is Anniversary -> NotificationType.BIRTHDAYS
+            is FriendBirthday, is KidBirthday, is RelativeBirthday, is BirthdaySoon, is Anniversary -> NotificationType.BIRTHDAYS
             is EventToday, is EventSoon -> NotificationType.EVENTS
             is ReminderDue, is ReminderOverdue, Test -> NotificationType.REMINDERS
             is PlanToday, is PlanFollowUp -> NotificationType.PLANS

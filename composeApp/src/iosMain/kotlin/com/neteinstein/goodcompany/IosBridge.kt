@@ -10,6 +10,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AppLink
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.WidgetSnapshot
@@ -115,6 +116,10 @@ fun handleAppUrl(url: String): Boolean = when (val link = AppLink.parse(url)) {
     }
     is AppLink.Log -> {
         KoinPlatform.getKoin().get<QuickEntryInbox>().offer(link.toQuickEntry())
+        true
+    }
+    is AppLink.Person -> {
+        KoinPlatform.getKoin().get<PersonInbox>().offer(link.friendId)
         true
     }
     null -> false

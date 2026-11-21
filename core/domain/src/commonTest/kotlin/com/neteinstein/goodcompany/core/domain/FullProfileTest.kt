@@ -190,8 +190,13 @@ class FullProfileTest {
     @Test
     fun aRelativesBirthday_isNotifiedOnlyWhenSwitchedOn_evenIfTheFriendsIsOff() {
         val planned = NotificationPlanner.plan(listOf(family), emptyList(), emptyList(), at(2026, 3, 10), zone, reminderHour = 9).withoutDailyLog()
-        assertEquals(listOf("relative:ana:on:2026-03-20"), planned.map { it.id })
-        assertEquals(NotificationContent.RelativeBirthday("Tiago", "Ana", Relation.PARTNER, 38), planned.single().content)
+        assertEquals(listOf("bday-soon:ana:on:2026-03-20", "relative:ana:on:2026-03-20"), planned.map { it.id })
+        assertEquals(
+            NotificationContent.RelativeBirthday("Tiago", "Ana", Relation.PARTNER, 38),
+            planned.single {
+                it.id.startsWith("relative:")
+            }.content,
+        )
     }
 
     @Test

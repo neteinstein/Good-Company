@@ -692,4 +692,15 @@
     <string name="legend_no_ring">Sin anillo: “Mantener el contacto” está apagado para esta persona.</string>
     <string name="legend_dots">Un punto por cada círculo en el que está, en el color del círculo.</string>
     <string name="legend_got_it">Entendido</string>
+    <string name="notif_bday_soon_tomorrow">🎂 El cumpleaños de %1$s es mañana</string>
+    <string name="notif_bday_soon_week">🎂 El cumpleaños de %1$s es dentro de una semana</string>
+    <string name="notif_bday_soon_two_weeks">🎂 El cumpleaños de %1$s es dentro de dos semanas</string>
+    <plurals name="notif_bday_soon_days">
+        <item quantity="one">🎂 El cumpleaños de %2$s es dentro de %1$d día</item>
+        <item quantity="other">🎂 El cumpleaños de %2$s es dentro de %1$d días</item>
+    </plurals>
+    <string name="notif_bday_soon_turns">Cumple %1$d.</string>
+    <string name="notif_bday_soon_kid">Hijo/a de %1$s.</string>
+    <string name="notif_bday_soon_family">Familia de %1$s.</string>
+    <string name="notif_bday_soon_body">Se acerca su cumpleaños.</string>
 </resources>

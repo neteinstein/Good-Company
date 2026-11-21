@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.NotificationType
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsCard
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsMessage
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import kotlin.test.Test
@@ -41,6 +42,30 @@ class NotificationSettingsViewModelTest {
         assertEquals(kotlinx.datetime.LocalTime(21, 0), state.value.settings.notifications.dailyLogTime)
         vm.onDailyLogTimeChange(kotlinx.datetime.LocalTime(20, 30))
         assertEquals(20 * 60 + 30, state.value.settings.notifications.dailyLogMinute)
+    }
+
+    @Test
+    fun theBirthdayHeadsUpIsAWeekByDefault_andTakesOnlyTheOfferedChoices() = runViewModelTest {
+        // Issue #133.
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(7, state.value.settings.notifications.birthdayHeadsUpDays)
+        vm.onBirthdayHeadsUpChange(2)
+        assertEquals(2, state.value.settings.notifications.birthdayHeadsUpDays)
+        vm.onBirthdayHeadsUpChange(5)
+        assertEquals(2, state.value.settings.notifications.birthdayHeadsUpDays)
+        vm.onBirthdayHeadsUpChange(0)
+        assertEquals(0, state.value.settings.notifications.birthdayHeadsUpDays)
+        assertTrue(state.value.settings.notifications.birthdays, "Off for the heads-up leaves the day's notification on")
+    }
+
+    @Test
+    fun theSettingsCardsKeepClosenessRightAfterReminders() {
+        // Issue #133: Appearance · AI · Reminders · Closeness · Your data.
+        assertEquals(
+            listOf(SettingsCard.APPEARANCE, SettingsCard.AI, SettingsCard.REMINDERS, SettingsCard.CLOSENESS, SettingsCard.YOUR_DATA),
+            SettingsCard.ORDER,
+        )
     }
 
     @Test

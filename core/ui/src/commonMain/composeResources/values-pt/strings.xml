@@ -692,4 +692,15 @@
     <string name="legend_no_ring">Sem anel: “Manter o contacto” está desligado para esta pessoa.</string>
     <string name="legend_dots">Um ponto por cada círculo onde está, na cor do círculo.</string>
     <string name="legend_got_it">Percebi</string>
+    <string name="notif_bday_soon_tomorrow">🎂 O aniversário de %1$s é amanhã</string>
+    <string name="notif_bday_soon_week">🎂 O aniversário de %1$s é daqui a uma semana</string>
+    <string name="notif_bday_soon_two_weeks">🎂 O aniversário de %1$s é daqui a duas semanas</string>
+    <plurals name="notif_bday_soon_days">
+        <item quantity="one">🎂 O aniversário de %2$s é daqui a %1$d dia</item>
+        <item quantity="other">🎂 O aniversário de %2$s é daqui a %1$d dias</item>
+    </plurals>
+    <string name="notif_bday_soon_turns">Faz %1$d anos.</string>
+    <string name="notif_bday_soon_kid">Filho/a de %1$s.</string>
+    <string name="notif_bday_soon_family">Família de %1$s.</string>
+    <string name="notif_bday_soon_body">O aniversário está a chegar.</string>
 </resources>
