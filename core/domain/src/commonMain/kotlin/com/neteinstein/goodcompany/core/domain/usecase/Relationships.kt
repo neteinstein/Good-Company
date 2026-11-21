@@ -56,7 +56,8 @@ object Relationships {
      * issue #68). Someone with nothing logged and no answer isn't overdue and has no status (the card asks about them
      * instead; see [LastSeenQuestions]). A real meetup always wins over the approximate date, which only moves the due
      * date: [MeetupStatus.lastSeenDate] and [MeetupStatus.daysSinceLastSeen] stay null until something is logged.
-     * A snooze pushes the due date to the day after it ends. Paused friends are left out. For friends whose calls and
+     * A snooze pushes the due date to the day after it ends. Paused friends and people whose keep-in-touch tracking is
+     * off ([Friend.tracksKeepInTouch]) are left out. For friends whose calls and
      * chats count ([Friend.contactCountsAsCatchUp]), the last contact of any kind from [interactions] resets the
      * rhythm, not only meetups.
      */
@@ -71,7 +72,7 @@ object Relationships {
         val seen = lastSeen(hangouts)
         val contact = if (friends.any { it.contactCountsAsCatchUp }) lastContact(hangouts, interactions) else seen
         return friends.mapNotNull { friend ->
-            if (friend.catchUpPaused) return@mapNotNull null
+            if (friend.catchUpPaused || !friend.tracksKeepInTouch) return@mapNotNull null
             val every = rules.cadenceFor(friend) ?: return@mapNotNull null
             val last = (if (friend.contactCountsAsCatchUp) contact else seen)[friend.id]?.toLocalDate(zone)
             val since = last ?: friend.approxLastSeen ?: return@mapNotNull null

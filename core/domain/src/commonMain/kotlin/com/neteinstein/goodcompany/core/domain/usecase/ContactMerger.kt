@@ -66,7 +66,7 @@ object ContactMerger {
      */
     fun Friend.hasAppData(): Boolean = closeness != Closeness.ACQUAINTANCE || customName != null || customPhoto != null || likes.isNotEmpty() ||
         dislikes.isNotEmpty() || notes.isNotBlank() || kids.isNotEmpty() || importantEvents.isNotEmpty() ||
-        meetEveryDays != null || suggestEvents || gifts.isNotEmpty() || catchUpPaused ||
+        meetEveryDays != null || suggestEvents || gifts.isNotEmpty() || catchUpPaused || !tracksKeepInTouch ||
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
         preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||

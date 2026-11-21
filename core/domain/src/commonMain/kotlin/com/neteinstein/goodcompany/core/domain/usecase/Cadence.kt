@@ -27,9 +27,12 @@ data class CadenceRules(
         Closeness.ACQUAINTANCE -> acquaintanceDays?.takeIf { it > 0 }
     }
 
-    fun cadenceFor(friend: Friend): Int? = friend.meetEveryDays?.takeIf { it > 0 } ?: levelDays(friend)
+    /** Null for someone with no rhythm, and always for someone whose keep-in-touch tracking is off (issue #115). */
+    fun cadenceFor(friend: Friend): Int? =
+        if (!friend.tracksKeepInTouch) null else friend.meetEveryDays?.takeIf { it > 0 } ?: levelDays(friend)
 
     fun sourceFor(friend: Friend): Source? = when {
+        !friend.tracksKeepInTouch -> null
         friend.meetEveryDays?.takeIf { it > 0 } != null -> Source.CUSTOM
         levelDays(friend) != null -> Source.CLOSENESS
         else -> null

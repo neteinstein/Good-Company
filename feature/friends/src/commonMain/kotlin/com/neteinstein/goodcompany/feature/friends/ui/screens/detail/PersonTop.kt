@@ -157,7 +157,8 @@ internal fun callLink(
 ): String? = f.phoneNumbers.firstOrNull()?.filter { it.isDigit() || it == '+' }?.takeIf { it.isNotEmpty() }?.let { "tel:$it" }
 
 /** Warmth shows for real friends while Settings → Show warmth is on (the same rule everywhere on the page). */
-internal fun showsWarmth(f: Friend, state: FriendDetailUiState): Boolean = state.showWarmth && f.isCloseFriend && state.detail != null
+internal fun showsWarmth(f: Friend, state: FriendDetailUiState): Boolean =
+    state.showWarmth && f.isCloseFriend && f.tracksKeepInTouch && state.detail?.warmth != null
 
 @Composable
 internal fun PersonTop(f: Friend, state: FriendDetailUiState, family: FamilyAround, actions: PersonTopActions) {

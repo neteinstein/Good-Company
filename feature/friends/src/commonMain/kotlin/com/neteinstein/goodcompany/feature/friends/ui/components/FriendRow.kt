@@ -68,9 +68,10 @@ fun FriendRow(
     ) {
         Box {
             FriendAvatar(f, highlighted = f.isCloseFriend, sharedKey = "avatar-${f.id.value}")
-            if (f.isCloseFriend && showWarmth) {
-                val warmth = stringResource(Res.string.row_warmth, warmthLabel(summary.warmth.level))
-                WarmthDot(summary.warmth.level, Modifier.align(Alignment.BottomEnd).semantics { contentDescription = warmth }, size = 12.dp)
+            val level = summary.warmth?.level
+            if (f.isCloseFriend && showWarmth && level != null) {
+                val warmth = stringResource(Res.string.row_warmth, warmthLabel(level))
+                WarmthDot(level, Modifier.align(Alignment.BottomEnd).semantics { contentDescription = warmth }, size = 12.dp)
             }
         }
         Spacer(Modifier.width(14.dp))

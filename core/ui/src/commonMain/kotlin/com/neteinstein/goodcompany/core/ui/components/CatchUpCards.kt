@@ -46,6 +46,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
+import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
@@ -140,7 +141,8 @@ fun CatchUpCard(
 @Composable
 fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Unit, modifier: Modifier = Modifier) {
     val f = summary.friend
-    val color = warmthColor(summary.warmth.level)
+    val warmth = summary.warmth ?: Warmth.Score(0, Warmth.Level.FADING)
+    val color = warmthColor(warmth.level)
     Surface(
         onClick = onOpen,
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -148,14 +150,14 @@ fun DriftingCard(summary: FriendSummary, onOpen: () -> Unit, onSnooze: () -> Uni
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(progress = summary.warmth.value / 100f, size = 56.dp, stroke = 4.dp, color = color) {
+            ProgressRing(progress = warmth.value / 100f, size = 56.dp, stroke = 4.dp, color = color) {
                 FriendAvatar(f, size = 44.dp)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(f.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    stringResource(Res.string.catchup_warmth, warmthLabel(summary.warmth.level)),
+                    stringResource(Res.string.catchup_warmth, warmthLabel(warmth.level)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

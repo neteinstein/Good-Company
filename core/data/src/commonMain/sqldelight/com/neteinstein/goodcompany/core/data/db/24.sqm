@@ -1,0 +1,5 @@
+-- Version 24 → 25 (issue #115): keep-in-touch tracking, one switch per person, on by default. Off means no warmth,
+-- no rhythm and no catch-up nudges; the timeline, reminders, birthdays, plans, gifts and notes keep working.
+-- No CHECK: SQLDelight can't parse one naming a column added here (the mapper reads anything but 0 as on).
+
+ALTER TABLE friend ADD COLUMN tracks_keep_in_touch INTEGER NOT NULL DEFAULT 1;

@@ -44,6 +44,8 @@ CREATE TABLE friend (
     dismissed_kinship TEXT NOT NULL DEFAULT '',
     -- Issue #68: the approximate last-seen date (yyyy-mm-dd) from Today's last-seen card; only starts the rhythm.
     approx_last_seen TEXT,
+    -- Issue #115: keep-in-touch tracking (0/1, on by default). Off = no warmth, rhythm or catch-up nudges for them.
+    tracks_keep_in_touch INTEGER NOT NULL DEFAULT 1,
     CHECK ((birthday_month IS NULL) = (birthday_day IS NULL))
 );
 
@@ -259,7 +261,8 @@ INSERT INTO friend (
     id, position, name, contact_id, birthday_month, birthday_day, birthday_year, is_close_friend, notify_birthday,
     notes, meet_every_days, suggest_events, is_orphaned, circle, snoozed_until, catch_up_paused, contact_counts_as_catch_up,
     job, lives_in, met_place, met_on, introduced_by_friend_id, introduced_by_name, preferred_channel,
-    relation_to_me, pronouns, custom_name, show_in_my_list, dismissed_kinship, approx_last_seen
+    relation_to_me, pronouns, custom_name, show_in_my_list, dismissed_kinship, approx_last_seen,
+    tracks_keep_in_touch
 ) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     position = excluded.position,
@@ -290,7 +293,8 @@ ON CONFLICT (id) DO UPDATE SET
     custom_name = excluded.custom_name,
     show_in_my_list = excluded.show_in_my_list,
     dismissed_kinship = excluded.dismissed_kinship,
-    approx_last_seen = excluded.approx_last_seen;
+    approx_last_seen = excluded.approx_last_seen,
+    tracks_keep_in_touch = excluded.tracks_keep_in_touch;
 
 delete:
 DELETE FROM friend WHERE id = ?;

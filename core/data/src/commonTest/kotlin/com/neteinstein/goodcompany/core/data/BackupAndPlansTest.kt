@@ -229,6 +229,24 @@ class BackupAndPlansTest {
     }
 
     @Test
+    fun keepInTouchTracking_roundTripsThroughABackup_andOlderBackupsReadAsOn() = runTest {
+        val from = Stores()
+        from.friends.upsert(friend("kid", "Kid") { copy(tracksKeepInTouch = false) })
+        from.friends.upsert(friend("ana", "Ana"))
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val byId = to.backup.snapshot().friends.associateBy { it.id.value }
+        assertFalse(byId.getValue("kid").tracksKeepInTouch)
+        assertTrue(byId.getValue("ana").tracksKeepInTouch)
+
+        val old = """{"format":"good-company-backup","version":1,"exportedAt":"2026-03-01T10:00:00Z","friends":[{"id":"ana","name":"Ana"}]}"""
+        val older = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(older.backup)(old))
+        assertTrue(older.backup.snapshot().friends.single().tracksKeepInTouch)
+    }
+
+    @Test
     fun aBackupFromBeforeDatedNotes_turnsEachNoteIntoOneDatedNote_andBlankNotesMakeNone() = runTest {
         // Written by a build before issue #103: notes are one free-text field per person.
         val old = """
