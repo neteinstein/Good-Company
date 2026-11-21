@@ -96,4 +96,17 @@
     <string name="notif_primer_body">Para que cumpleaños, días importantes, recordatorios y planes te lleguen aunque la app esté cerrada.</string>
     <string name="notif_primer_allow">Permitir</string>
     <string name="notif_primer_not_now">Ahora no</string>
+    <!-- Issue #138: the month calendar -->
+    <string name="view_calendar">Ver como calendario</string>
+    <string name="view_list">Ver como lista</string>
+    <string name="calendar_previous_month">Mes anterior</string>
+    <string name="calendar_next_month">Mes siguiente</string>
+    <string name="calendar_today">Hoy</string>
+    <string name="calendar_month_year">%1$s de %2$d</string>
+    <string name="calendar_more">+%1$d</string>
+    <string name="calendar_day_empty">Nada este día</string>
+    <plurals name="calendar_day_entries">
+        <item quantity="one">%1$d entrada</item>
+        <item quantity="other">%1$d entradas</item>
+    </plurals>
 </resources>

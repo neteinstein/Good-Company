@@ -148,9 +148,15 @@ data class AppSettings(
     val mediaExplained: Boolean = false,
     /** Issue #120: the one-time legend tip on People (ring and circle-dot colours) was dismissed. Device-only. */
     val peopleLegendSeen: Boolean = false,
+    /** Issue #138: how "Everything coming up" shows, the month calendar by default. Device-only: never exported. */
+    val agendaView: AgendaView = AgendaView.CALENDAR,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 
     /** The key to call the AI with: null while AI is off or no key is saved. Every AI use case goes through this. */
     val usableAiKey: String? get() = aiApiKey?.takeIf { aiEnabled && it.isNotBlank() }
 }
+
+/** The two views of "Everything coming up" (issue #138). */
+@Serializable
+enum class AgendaView { CALENDAR, LIST }

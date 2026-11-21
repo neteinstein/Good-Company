@@ -209,6 +209,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
@@ -472,6 +473,7 @@ val appModule = module {
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::DismissPeopleLegendUseCase)
+    factoryOf(::SetAgendaViewUseCase)
     factoryOf(::CustomActivitiesUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
     factoryOf(::ObserveYearReviewCardUseCase)

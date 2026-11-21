@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.AlarmAdd
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CardGiftcard
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
@@ -49,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
@@ -73,6 +76,7 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.weekdayInitial
 import com.neteinstein.goodcompany.core.ui.format.weekdayLong
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
+import com.neteinstein.goodcompany.core.ui.platform.firstDayOfWeek
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
@@ -84,6 +88,7 @@ import com.neteinstein.goodcompany.core.ui.resources.wish_default
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
 import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_body
 import com.neteinstein.goodcompany.feature.agenda.resources.calendar_card_title
+import com.neteinstein.goodcompany.feature.agenda.resources.calendar_day_empty
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_body
 import com.neteinstein.goodcompany.feature.agenda.resources.empty_title
 import com.neteinstein.goodcompany.feature.agenda.resources.eyebrow
@@ -94,10 +99,14 @@ import com.neteinstein.goodcompany.feature.agenda.resources.reminders_empty
 import com.neteinstein.goodcompany.feature.agenda.resources.reminders_header
 import com.neteinstein.goodcompany.feature.agenda.resources.things_ahead
 import com.neteinstein.goodcompany.feature.agenda.resources.title
+import com.neteinstein.goodcompany.feature.agenda.resources.view_calendar
+import com.neteinstein.goodcompany.feature.agenda.resources.view_list
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
+import com.neteinstein.goodcompany.feature.agenda.ui.components.MonthGrid
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
@@ -168,6 +177,14 @@ fun AgendaScreen(
         onAnswerUpcomingPlan = viewModel::onAnswerUpcomingPlan,
         onOpenCalendar = onOpenCalendar,
         onBack = onBack,
+        calendar = CalendarActions(
+            onSetView = viewModel::onSetView,
+            onPreviousMonth = viewModel::onPreviousMonth,
+            onNextMonth = viewModel::onNextMonth,
+            onToday = viewModel::onToday,
+            onSelectDay = viewModel::onSelectDay,
+        ),
+        firstDayOfWeek = remember { firstDayOfWeek() },
     )
     state.editingPlan?.let { plan ->
         PlanEditor(
@@ -211,6 +228,29 @@ fun AgendaScreen(
     }
 }
 
+/** The calendar's callbacks (issue #138). */
+data class CalendarActions(
+    val onSetView: (AgendaView) -> Unit = {},
+    val onPreviousMonth: () -> Unit = {},
+    val onNextMonth: () -> Unit = {},
+    val onToday: () -> Unit = {},
+    val onSelectDay: (LocalDate) -> Unit = {},
+)
+
+/** Calendar / List in the header (issue #138): shows the view you'd switch to. */
+@Composable
+private fun ViewToggle(view: AgendaView, onSetView: (AgendaView) -> Unit) {
+    if (view == AgendaView.CALENDAR) {
+        IconButton(onClick = { onSetView(AgendaView.LIST) }) {
+            Icon(Icons.AutoMirrored.Rounded.ViewList, stringResource(Res.string.view_list))
+        }
+    } else {
+        IconButton(onClick = { onSetView(AgendaView.CALENDAR) }) {
+            Icon(Icons.Rounded.CalendarMonth, stringResource(Res.string.view_calendar))
+        }
+    }
+}
+
 @Composable
 fun AgendaContent(
     state: AgendaUiState,
@@ -229,6 +269,8 @@ fun AgendaContent(
     onAnswerUpcomingPlan: (AgendaItem.PlanUpcoming, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
     onOpenCalendar: () -> Unit = {},
     onBack: (() -> Unit)? = null,
+    calendar: CalendarActions = CalendarActions(),
+    firstDayOfWeek: DayOfWeek = DayOfWeek.MONDAY,
 ) {
     val undo = stringResource(CoreRes.string.undo)
     val snackbar = remember { SnackbarHostState() }
@@ -269,32 +311,44 @@ fun AgendaContent(
                         else -> pluralStringResource(Res.plurals.things_ahead, n, n)
                     },
                     navigation = onBack?.let { back -> { HeaderBackButton(back) } },
+                    trailing = { ViewToggle(state.view, calendar.onSetView) },
                 )
             }
-            item(key = "week") {
-                WeekStrip(state.week, state.today) { day -> dayIndex[day]?.let { scope.launch { listState.animateScrollToItem(it) } } }
-            }
-            if (state.calendarCount > 0) {
-                item(key = "calendar") { CalendarCard(state.calendarCount, onOpenCalendar) }
-            }
-            if (!state.isLoading && state.agenda.isEmpty()) {
-                item(key = "empty") {
-                    EmptyState(
-                        icon = Icons.Rounded.EventAvailable,
-                        title = stringResource(Res.string.empty_title),
-                        message = stringResource(Res.string.empty_body),
+            if (state.view == AgendaView.CALENDAR) {
+                if (state.calendarCount > 0) {
+                    item(key = "calendar") { CalendarCard(state.calendarCount, onOpenCalendar) }
+                }
+                item(key = "month") {
+                    MonthGrid(
+                        month = state.month,
+                        today = state.today,
+                        selected = state.selectedDay,
+                        byDay = state.calendarByDay,
+                        firstDayOfWeek = firstDayOfWeek,
+                        onPreviousMonth = calendar.onPreviousMonth,
+                        onNextMonth = calendar.onNextMonth,
+                        onToday = calendar.onToday,
+                        onSelectDay = calendar.onSelectDay,
                     )
                 }
-            }
-            state.agendaByDay.forEach { (day, items) ->
-                item(key = "day-$day") {
+                item(key = "picked-${state.selectedDay}") {
                     Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                        DateBadge(day, state.today)
+                        DateBadge(state.selectedDay, state.today)
                         Spacer(Modifier.width(12.dp))
-                        Text(relativeDay(day, state.today), style = MaterialTheme.typography.titleMedium)
+                        Text(relativeDay(state.selectedDay, state.today), style = MaterialTheme.typography.titleMedium)
                     }
                 }
-                items(items, key = { it.key }) {
+                if (!state.isLoading && state.selectedItems.isEmpty()) {
+                    item(key = "picked-empty") {
+                        Text(
+                            stringResource(Res.string.calendar_day_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+                items(state.selectedItems, key = { "c-${it.key}" }) {
                     AgendaRow(
                         it,
                         state.today,
@@ -309,8 +363,54 @@ fun AgendaContent(
                         reminders = reminders,
                         now = state.now,
                         zone = state.zone,
-                        modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
+                        modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
                     )
+                }
+            } else {
+                item(key = "week") {
+                    WeekStrip(state.week, state.today) { day -> dayIndex[day]?.let { scope.launch { listState.animateScrollToItem(it) } } }
+                }
+                if (state.calendarCount > 0) {
+                    item(key = "calendar") { CalendarCard(state.calendarCount, onOpenCalendar) }
+                }
+                if (!state.isLoading && state.agenda.isEmpty()) {
+                    item(key = "empty") {
+                        EmptyState(
+                            icon = Icons.Rounded.EventAvailable,
+                            title = stringResource(Res.string.empty_title),
+                            message = stringResource(Res.string.empty_body),
+                        )
+                    }
+                }
+                state.agendaByDay.forEach { (day, items) ->
+                    item(key = "day-$day") {
+                        Row(
+                            Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            DateBadge(day, state.today)
+                            Spacer(Modifier.width(12.dp))
+                            Text(relativeDay(day, state.today), style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                    items(items, key = { it.key }) {
+                        AgendaRow(
+                            it,
+                            state.today,
+                            onOpenFriend,
+                            onOpenWish = onOpenWish,
+                            onGroupMet = onGroupMet,
+                            onAnswerPlan = onAnswerPlan,
+                            onAddPlanToCalendar = onAddPlanToCalendar,
+                            onSkipPlan = onSkipPlan,
+                            onEditPlan = onEditPlan,
+                            onAnswerUpcomingPlan = onAnswerUpcomingPlan,
+                            reminders = reminders,
+                            now = state.now,
+                            zone = state.zone,
+                            modifier = Modifier.padding(start = 84.dp, end = 16.dp).animateItem(),
+                        )
+                    }
                 }
             }
 

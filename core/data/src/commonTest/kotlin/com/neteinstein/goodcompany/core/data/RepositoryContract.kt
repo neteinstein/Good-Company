@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.source.LogEntry
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
@@ -260,6 +261,21 @@ abstract class RepositoryContract {
         assertEquals(3, open().settings.settings.first().notifications.birthdayHeadsUpDays)
         val json = ExportBackupUseCase(open().backup, clock)()
         assertTrue("\"birthdayHeadsUpDays\": 3" in json, json)
+    }
+
+    @Test
+    fun theAgendaView_isCalendarByDefault_survivesARestart_andStaysOnTheDevice() = runTest {
+        // Issue #138: a device setting; a backup neither carries it nor overwrites it.
+        assertEquals(AgendaView.CALENDAR, open().settings.settings.first().agendaView)
+        open().settings.update { it.copy(agendaView = AgendaView.LIST) }
+        assertEquals(AgendaView.LIST, open().settings.settings.first().agendaView)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertFalse("agendaView" in json, json)
+
+        val to = open()
+        to.settings.update { it.copy(agendaView = AgendaView.LIST) }
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(AgendaView.LIST, to.settings.settings.first().agendaView)
     }
 
     @Test

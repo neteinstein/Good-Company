@@ -110,12 +110,12 @@ fun AgendaRow(
     now: Instant = Instant.DISTANT_PAST,
     zone: TimeZone = TimeZone.UTC,
 ) {
-    val colors = MaterialTheme.colorScheme
     data class Spec(val icon: ImageVector, val tint: Color, val label: String, val title: String, val subtitle: String?, val friend: Friend?)
+    val tint = item.tint()
     val spec = when (item) {
         is AgendaItem.FriendBirthday -> Spec(
             Icons.Rounded.Cake,
-            Color(0xFFF2A100),
+            tint,
             stringResource(Res.string.label_birthday),
             stringResource(Res.string.row_birthday, item.friend.displayName),
             listOfNotNull(
@@ -126,7 +126,7 @@ fun AgendaRow(
         )
         is AgendaItem.KidBirthday -> Spec(
             Icons.Rounded.ChildCare,
-            Color(0xFF00A88F),
+            tint,
             stringResource(Res.string.label_kid_birthday),
             stringResource(Res.string.row_kid, item.kid.displayName, item.parent.displayName.substringBefore(' ')),
             listOfNotNull(
@@ -139,7 +139,7 @@ fun AgendaRow(
         )
         is AgendaItem.RelativeBirthday -> Spec(
             Icons.Rounded.Cake,
-            Color(0xFF00A88F),
+            tint,
             stringResource(Res.string.label_birthday),
             stringResource(Res.string.row_relative, item.relative.name, item.friend.displayName.substringBefore(' ')),
             listOfNotNull(
@@ -150,7 +150,7 @@ fun AgendaRow(
         )
         is AgendaItem.Anniversary -> Spec(
             Icons.Rounded.Favorite,
-            colors.primary,
+            tint,
             stringResource(Res.string.label_big_day),
             anniversaryTitle(item.first.displayName.substringBefore(' '), item.second.displayName.substringBefore(' ')),
             item.years?.takeIf { it > 0 }?.let { pluralStringResource(CoreRes.plurals.anniversary_years, it, it) }.orEmpty(),
@@ -158,7 +158,7 @@ fun AgendaRow(
         )
         is AgendaItem.FriendEvent -> Spec(
             Icons.Rounded.Favorite,
-            colors.primary,
+            tint,
             stringResource(Res.string.label_big_day),
             stringResource(Res.string.row_ping, item.friend.displayName),
             item.event.title,
@@ -166,7 +166,7 @@ fun AgendaRow(
         )
         is AgendaItem.ReminderDue -> Spec(
             Icons.Rounded.Alarm,
-            Color(0xFF7E57C2),
+            tint,
             stringResource(Res.string.label_reminder),
             item.reminder.title,
             item.friends.takeIf {
@@ -176,7 +176,7 @@ fun AgendaRow(
         )
         is AgendaItem.MeetupOverdue -> Spec(
             Icons.Rounded.Schedule,
-            colors.error,
+            tint,
             stringResource(Res.string.label_catch_up),
             stringResource(Res.string.row_see, item.friend.displayName),
             item.daysSince?.let { pluralStringResource(Res.plurals.row_days_since, it, it) } ?: stringResource(Res.string.row_never),
@@ -184,7 +184,7 @@ fun AgendaRow(
         )
         is AgendaItem.GroupOverdue -> Spec(
             Icons.Rounded.Groups,
-            colors.secondary,
+            tint,
             stringResource(Res.string.label_group),
             "${item.group.emoji} ${item.group.name}",
             item.members.joinToString { it.displayName.substringBefore(' ') }.let { names ->
@@ -194,7 +194,7 @@ fun AgendaRow(
         )
         is AgendaItem.PlanUpcoming -> Spec(
             Icons.Rounded.EventAvailable,
-            PLAN_GREEN,
+            tint,
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
@@ -219,7 +219,7 @@ fun AgendaRow(
         )
         is AgendaItem.PlanToConfirm -> Spec(
             Icons.Rounded.EventAvailable,
-            PLAN_GREEN,
+            tint,
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
@@ -322,3 +322,22 @@ fun AgendaRow(
 }
 
 private val PLAN_GREEN = Color(0xFF2E7D32)
+
+/** The colour of each kind of entry (issue #138: the calendar's markers use the same ones as the rows). */
+@Composable
+internal fun AgendaItem.tint(): Color {
+    val colors = MaterialTheme.colorScheme
+    return when (this) {
+        is AgendaItem.FriendBirthday -> BIRTHDAY_SUNFLOWER
+        is AgendaItem.KidBirthday, is AgendaItem.RelativeBirthday -> KID_TEAL
+        is AgendaItem.Anniversary, is AgendaItem.FriendEvent -> colors.primary
+        is AgendaItem.ReminderDue -> REMINDER_VIOLET
+        is AgendaItem.MeetupOverdue -> colors.error
+        is AgendaItem.GroupOverdue -> colors.secondary
+        is AgendaItem.PlanUpcoming, is AgendaItem.PlanToConfirm -> PLAN_GREEN
+    }
+}
+
+private val BIRTHDAY_SUNFLOWER = Color(0xFFF2A100)
+private val KID_TEAL = Color(0xFF00A88F)
+private val REMINDER_VIOLET = Color(0xFF7E57C2)
