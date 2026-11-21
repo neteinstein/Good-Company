@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.Serializable
@@ -129,6 +130,16 @@ data class AppSettings(
     val activities: List<HangoutActivity> = HangoutActivity.entries,
     /** Your own activities (issue #121), in your order, offered after the built-in ones. */
     val customActivities: List<String> = emptyList(),
+    /**
+     * The built-in "How?" options the Log popup offers (issue #152), in the user's order (the tiebreak below "most used
+     * first"); never empty. Defaults to all of them in [LogKind.DEFAULT_ORDER].
+     */
+    val logKinds: List<LogKind> = LogKind.DEFAULT_ORDER,
+    /**
+     * Your own "How?" options (issue #152), in your order, offered after the built-in ones. An entry logged with one is
+     * an [InteractionType.OTHER] interaction with the name as its [Interaction.label].
+     */
+    val customLogKinds: List<String> = emptyList(),
     /**
      * Issue #68: the day "Not now" hid Today's "When did you last see…?" card; it shows again the next day.
      * Device-only like [lastOpenedAt]: never exported, kept on restore.

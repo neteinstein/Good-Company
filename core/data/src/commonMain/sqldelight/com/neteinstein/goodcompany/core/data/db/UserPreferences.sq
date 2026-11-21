@@ -21,7 +21,13 @@ CREATE TABLE user_preferences (
     -- The activities the log sheet offers (F3): HangoutActivity names, comma-separated, in order; NULL = all of them.
     activities TEXT,
     -- Your own activities (issue #121): a JSON array of names, in order; NULL = none.
-    custom_activities TEXT
+    custom_activities TEXT,
+    -- The built-in "How?" options the Log popup offers (issue #152): LogKind names, comma-separated, in order;
+    -- NULL = all of them, in the default order.
+    log_kinds TEXT,
+    -- Your own "How?" options (issue #152): a JSON array of names, in order; NULL = none. An entry logged with one is
+    -- an interaction of type OTHER with the name as its label.
+    custom_log_kinds TEXT
 );
 
 get:

@@ -1,0 +1,5 @@
+-- Version 31 → 32 (issue #152): the Log popup's "How?" options, configurable like the activities (F3, issue #121).
+-- The built-in ones turned on, in order (NULL = all, in the default order), and your own as a JSON array of names.
+-- Entries logged with your own are interactions of type OTHER carrying the name as their label, so nothing else changes.
+ALTER TABLE user_preferences ADD COLUMN log_kinds TEXT;
+ALTER TABLE user_preferences ADD COLUMN custom_log_kinds TEXT;

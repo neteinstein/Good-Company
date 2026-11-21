@@ -59,6 +59,12 @@ enum class LogKind(val interactionType: InteractionType?) {
             InteractionType.WHATSAPP.name -> MESSAGE
             else -> entries.firstOrNull { it.name == name }
         }
+
+        /**
+         * The "How?" order with nothing logged and nothing set in Settings (issues #151, #152): the popup's old row (in
+         * person first), then email and the journal.
+         */
+        val DEFAULT_ORDER: List<LogKind> = listOf(MEETUP, CALL, VIDEO_CALL, MESSAGE, LONG_CHAT, GAME, OTHER, EMAIL, JOURNAL)
     }
 }
 
@@ -234,58 +240,93 @@ class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private 
 }
 
 /**
- * One "How?" option on the Log popup (issue #151). [name] is a name of your own for it (null = the built-in label);
- * nothing sets it yet: the configurable How list (issue #152) will.
+ * One "How?" option on the Log popup (issue #151). [name] is one of your own How options (issue #152, Settings → How):
+ * it is logged as [LogKind.OTHER] with the name as its label. Null = the built-in [kind] with its own label.
  */
-data class LogKindOption(val kind: LogKind, val name: String? = null)
+data class LogKindOption(val kind: LogKind, val name: String? = null) {
+    init {
+        require(name == null || kind == LogKind.OTHER) { "Only Other carries a name of your own" }
+    }
+
+    companion object {
+        /** Your own How option called [name]. */
+        fun custom(name: String) = LogKindOption(LogKind.OTHER, name)
+    }
+}
 
 /**
- * The Log popup's "How?" options, most used first (issue #151): every [LogKind], the first [SHOWN] on show and the rest
- * behind "See all". Usage is what you logged yourself: each meetup, each manual contact (a contact with several
- * people, one [Interaction.batchId], counts once) and each journal entry; call-log and chat-import rows don't count.
- * Ties, and everything with nothing logged, keep the configured order: [DEFAULT_ORDER] until Settings has its own
- * list (issue #152 plugs it in through [ranked]'s `configured`, without touching the popup).
+ * The Log popup's "How?" options, most used first (issue #151): the built-in kinds turned on in Settings
+ * ([AppSettings.logKinds]) and your own ([AppSettings.customLogKinds], issue #152), the first [SHOWN] on show and the rest
+ * behind "See all". Usage is what you logged yourself: each meetup, each manual contact (a contact with several people,
+ * one [Interaction.batchId], counts once) and each journal entry; call-log and chat-import rows don't count. An "Other"
+ * contact whose label is one of your own How options counts for that option, not for "Other". Ties, and everything with
+ * nothing logged, keep the configured order: the built-in ones in your order, then your own.
  */
-class ObserveLogKindsUseCase(private val hangouts: HangoutRepository, private val interactions: InteractionRepository) {
-    operator fun invoke(): Flow<List<LogKindOption>> = combine(hangouts.hangouts, interactions.interactions, interactions.journal) { hs, ins, js ->
-        ranked(usage(hs, ins, js))
+class ObserveLogKindsUseCase(
+    private val hangouts: HangoutRepository,
+    private val interactions: InteractionRepository,
+    private val settings: SettingsRepository,
+) {
+    operator fun invoke(): Flow<List<LogKindOption>> = combine(
+        hangouts.hangouts,
+        interactions.interactions,
+        interactions.journal,
+        settings.settings.map { it.logKinds to it.customLogKinds }.distinctUntilChanged(),
+    ) { hs, ins, js, (enabled, custom) ->
+        ranked(usage(hs, ins, js, custom), configured(enabled, custom))
     }.distinctUntilChanged()
 
     companion object {
         const val SHOWN = 4
 
-        /** The order with nothing logged: the popup's old row (in person first), then email and the journal. */
-        val DEFAULT_ORDER: List<LogKind> = listOf(
-            LogKind.MEETUP,
-            LogKind.CALL,
-            LogKind.VIDEO_CALL,
-            LogKind.MESSAGE,
-            LogKind.LONG_CHAT,
-            LogKind.GAME,
-            LogKind.OTHER,
-            LogKind.EMAIL,
-            LogKind.JOURNAL,
-        )
+        /** The order with nothing logged and nothing set: see [LogKind.DEFAULT_ORDER]. */
+        val DEFAULT_ORDER: List<LogKind> get() = LogKind.DEFAULT_ORDER
 
-        /** How many times each kind was logged by hand. */
-        fun usage(hangouts: List<Hangout>, interactions: List<Interaction>, journal: List<JournalEntry>): Map<LogKind, Int> {
-            val counts = mutableMapOf<LogKind, Int>()
-            if (hangouts.isNotEmpty()) counts[LogKind.MEETUP] = hangouts.size
+        /** The options Settings turned on, in order: the built-in ones, then your own. */
+        fun configured(enabled: List<LogKind> = LogKind.DEFAULT_ORDER, custom: List<String> = emptyList()): List<LogKindOption> =
+            enabled.distinct().map { LogKindOption(it) } + custom.distinct().map { LogKindOption.custom(it) }
+
+        /**
+         * How many times each option was logged by hand. An "Other" contact labelled with one of [custom] (ignoring case
+         * and accents) counts for that option, under the name as it is in [custom].
+         */
+        fun usage(
+            hangouts: List<Hangout>,
+            interactions: List<Interaction>,
+            journal: List<JournalEntry>,
+            custom: List<String> = emptyList(),
+        ): Map<LogKindOption, Int> {
+            val counts = mutableMapOf<LogKindOption, Int>()
+            fun count(option: LogKindOption) {
+                counts[option] = (counts[option] ?: 0) + 1
+            }
+            val own = custom.associateBy { Tags.normalize(it) }
+            if (hangouts.isNotEmpty()) counts[LogKindOption(LogKind.MEETUP)] = hangouts.size
             interactions.filterNot { it.source.isAutomatic }
                 .distinctBy { it.batchId ?: it.id.ifBlank { "${it.friendId.value}-${it.type}-${it.at}" } }
                 .forEach { i ->
                     val kind = LogKind.parse(i.type.name) ?: return@forEach
-                    counts[kind] = (counts[kind] ?: 0) + 1
+                    val name = if (kind == LogKind.OTHER && i.label.isNotBlank()) own[Tags.normalize(i.label)] else null
+                    count(LogKindOption(kind, name))
                 }
-            if (journal.isNotEmpty()) counts[LogKind.JOURNAL] = journal.size
+            if (journal.isNotEmpty()) counts[LogKindOption(LogKind.JOURNAL)] = journal.size
             return counts
         }
 
-        /** [configured] (on, in order, with any names of your own), the most used first; ties keep that order. */
+        /** [configured] (on, in order), the most used first; ties keep that order. */
         fun ranked(
-            usage: Map<LogKind, Int>,
-            configured: List<LogKindOption> = DEFAULT_ORDER.map { LogKindOption(it) },
-        ): List<LogKindOption> = configured.distinctBy { it.kind }.sortedByDescending { usage[it.kind] ?: 0 }
+            usage: Map<LogKindOption, Int>,
+            configured: List<LogKindOption> = configured(),
+        ): List<LogKindOption> = configured.distinct().sortedByDescending { usage[it] ?: 0 }
+    }
+}
+
+/** Saves the built-in "How?" options the Log popup offers, in this order (issue #152). Ignored when it would leave none. */
+class SetLogKindsUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(kinds: List<LogKind>) {
+        val list = kinds.distinct()
+        if (list.isEmpty()) return
+        settings.update { it.copy(logKinds = list) }
     }
 }
 

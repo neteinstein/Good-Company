@@ -28,6 +28,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CustomLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
@@ -148,6 +149,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetGiftBudgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetHomeCircleFilterUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetPronounsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetRelationToMeUseCase
@@ -294,7 +296,9 @@ class TestGraph(
     val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)
     val restoreAttachment = RestoreAttachmentUseCase(interactionRepo)
     val observeActivities = ObserveActivitiesUseCase(hangoutRepo, settingsRepo)
-    val observeLogKinds = ObserveLogKindsUseCase(hangoutRepo, interactionRepo)
+    val observeLogKinds = ObserveLogKindsUseCase(hangoutRepo, interactionRepo, settingsRepo)
+    val setLogKinds = SetLogKindsUseCase(settingsRepo)
+    val customLogKinds = CustomLogKindsUseCase(settingsRepo)
     val setActivities = SetActivitiesUseCase(settingsRepo)
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)
     val deleteTimelineEntry = DeleteTimelineEntryUseCase(friendRepo, hangoutRepo, interactionRepo)

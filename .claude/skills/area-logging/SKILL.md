@@ -18,9 +18,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   then a collapsed "Where · Note" row (`WeMetUiState.detailsOpen`; "Note" alone for remote kinds; open by itself with a
   note, a place or a journal entry). How? is `ObserveLogKindsUseCase` (every `LogKind`, most used first by what you
   logged by hand: meetups, manual contacts once per batch, journal entries; automatic rows don't count; ties and nothing
-  logged keep `DEFAULT_ORDER`). What is `ObserveActivitiesUseCase`. Both show `SHOWN` = 4 plus "See all". Issue #152
-  plugs the Settings How list into `ObserveLogKindsUseCase.ranked(usage, configured)` (`LogKindOption.name` for names of
-  your own); the popup only reads `WeMetUiState.kinds`. `LogPrefill` (in the met package) carries `type`, `date`,
+  logged keep the configured order). What is `ObserveActivitiesUseCase`. Both show `SHOWN` = 4 plus "See all".
+- **How? options in Settings (issue #152).** `ObserveLogKindsUseCase` ranks `AppSettings.logKinds` (built-in, in your
+  order, never empty, default `LogKind.DEFAULT_ORDER`; column `user_preferences.log_kinds`, migration `31.sqm`), then
+  `customLogKinds` (`custom_log_kinds`, a JSON array, edited by `CustomLogKindsUseCase`, at most `LABEL_MAX` characters).
+  One of your own is `LogKindOption.custom(name)`: logged as `LogKind.OTHER` with the name as `Interaction.label` (no new
+  type), so renaming or removing it keeps past entries; usage counts an Other by its label (`Tags.normalize`). The popup
+  selects by option (`WeMetViewModel.onKind(LogKindOption)`, `WeMetUiState.selected`), asks for a label only on the
+  built-in Other, and always shows the chosen chip even when it is off. Settings → Your data → How sits next to
+  Activities; both screens are `OrderedOptionsContent` (`:feature:settings`), so keep them in step. `LogPrefill` (in the met package) carries `type`, `date`,
   `activity`/`activityName` and `edit`.
 - "+ Add people" on the Log popup opens `PeoplePickerSheet` (issue #89) with `requireSomeone = true`.
 - Automatic rows (call log, chat import) dedupe through `Interaction.automaticId`; manual rows never dedupe.

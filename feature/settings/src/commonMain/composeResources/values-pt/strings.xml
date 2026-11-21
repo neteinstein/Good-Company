@@ -220,6 +220,13 @@
     <string name="activities_removed">“%1$s” removida</string>
     <string name="activities_name_blank">Dá-lhe um nome</string>
     <string name="activities_name_taken">Já há uma atividade com esse nome</string>
+    <string name="how_options">Como manténs o contacto</string>
+    <string name="how_hint">O que o registo oferece em Como?. As que usas mais aparecem primeiro, as outras por esta ordem; mostram-se quatro, o resto fica em Ver tudo. Arrasta para reordenar.</string>
+    <string name="how_yours">As tuas</string>
+    <string name="how_yours_hint">Acrescenta as tuas, como Mensagem de voz ou Carta. Mudar o nome ou remover uma mantém o nome nos registos passados.</string>
+    <string name="how_add">Adicionar forma</string>
+    <string name="how_rename">Mudar o nome</string>
+    <string name="how_name_taken">Já há uma com esse nome</string>
     <string name="places_typed">Sem GPS</string>
     <string name="places_pin">Adicionar coordenadas (onde estás agora)</string>
     <string name="places_pinned">“%1$s” já tem coordenadas</string>

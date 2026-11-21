@@ -56,6 +56,7 @@ import com.neteinstein.goodcompany.feature.review.ui.screens.network.PeopleDashb
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.activities.ActivitiesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.CalendarSettingsScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.how.HowOptionsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesScreen
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsScreen
@@ -366,6 +367,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onOpenNotifications = { navController.navigate(NotificationSettingsRoute) { launchSingleTop = true } },
             onOpenTags = { navController.navigate(TagsRoute) },
             onOpenActivities = { navController.navigate(ActivitiesRoute) },
+            onOpenHowOptions = { navController.navigate(HowOptionsRoute) },
         )
     }
     composable<PlacesRoute>(
@@ -408,6 +410,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
         )
     }
     composable<ActivitiesRoute> { ActivitiesScreen(onBack = { navController.popBackStack() }) }
+    composable<HowOptionsRoute> { HowOptionsScreen(onBack = { navController.popBackStack() }) }
     // Settings → Your data → Tags (F16). It was navigated to but never registered (issue #114: the tap crashed).
     composable<TagsRoute>(
         enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },

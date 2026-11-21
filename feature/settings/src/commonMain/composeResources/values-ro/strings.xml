@@ -227,6 +227,13 @@
     <string name="activities_removed">„%1$s” eliminată</string>
     <string name="activities_name_blank">Dă-i un nume</string>
     <string name="activities_name_taken">Există deja o activitate cu acest nume</string>
+    <string name="how_options">Cum păstrezi legătura</string>
+    <string name="how_hint">Ce oferă jurnalul la Cum?. Cele folosite cel mai des apar primele, restul în această ordine; se văd patru, celelalte sunt la Vezi tot. Trage pentru a reordona.</string>
+    <string name="how_yours">Ale tale</string>
+    <string name="how_yours_hint">Adaugă-le pe ale tale, ca Mesaj vocal sau Scrisoare. Dacă redenumești sau elimini una, înregistrările trecute își păstrează numele.</string>
+    <string name="how_add">Adaugă un mod</string>
+    <string name="how_rename">Redenumește</string>
+    <string name="how_name_taken">Există deja una cu acest nume</string>
     <string name="places_typed">Fără GPS</string>
     <string name="places_pin">Adaugă coordonate (unde ești acum)</string>
     <string name="places_pinned">„%1$s” are acum coordonate</string>

@@ -220,6 +220,13 @@
     <string name="activities_removed">« %1$s » retirée</string>
     <string name="activities_name_blank">Donnez-lui un nom</string>
     <string name="activities_name_taken">Une activité porte déjà ce nom</string>
+    <string name="how_options">Comment vous gardez le contact</string>
+    <string name="how_hint">Ce que propose le journal sous Comment ?. Les plus utilisées d’abord, les autres dans cet ordre ; quatre sont affichées, le reste est sous Tout voir. Faites glisser pour réordonner.</string>
+    <string name="how_yours">Les vôtres</string>
+    <string name="how_yours_hint">Ajoutez les vôtres, comme Message vocal ou Lettre. Renommer ou retirer l’une d’elles garde son nom sur les entrées passées.</string>
+    <string name="how_add">Ajouter une façon</string>
+    <string name="how_rename">Renommer</string>
+    <string name="how_name_taken">Il y en a déjà une avec ce nom</string>
     <string name="places_typed">Sans GPS</string>
     <string name="places_pin">Ajouter les coordonnées (là où vous êtes)</string>
     <string name="places_pinned">« %1$s » a maintenant des coordonnées</string>
