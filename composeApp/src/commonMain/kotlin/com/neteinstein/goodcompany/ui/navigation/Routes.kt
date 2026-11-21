@@ -113,11 +113,6 @@ import org.jetbrains.compose.resources.StringResource
 /** "Suggested family": kinship worked out from the links, confirmed with one tap (issue #41). */
 @Serializable data object SuggestedFamilyRoute
 
-/** Gift lists per occasion (F8): from the Plans tab (issue #67) and from a friend's gift card. */
-@Serializable data object GiftListsRoute
-
-@Serializable data class GiftListRoute(val id: String)
-
 /** Settings → Places (F11). */
 @Serializable data object PlacesRoute
 

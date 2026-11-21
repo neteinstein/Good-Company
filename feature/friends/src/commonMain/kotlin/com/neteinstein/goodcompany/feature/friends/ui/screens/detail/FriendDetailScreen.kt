@@ -1807,7 +1807,7 @@ private fun Gifts(
                 }
             }
         }
-        // F8: gift lists per occasion live on the Together tab; this is the way there from a person.
+        // F8: gift lists per occasion live on the Plans tab (issue #104); this opens the list this person is on there.
         TextButton(onClick = actions.onOpenGiftLists, modifier = Modifier.padding(horizontal = 8.dp)) {
             Icon(Icons.Rounded.Checklist, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))

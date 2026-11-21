@@ -96,7 +96,13 @@ data class GiftListSummary(val list: GiftList, val people: List<Friend>, val tot
     val allGiven: Boolean get() = gifts > 0 && given == gifts
 }
 
-data class GiftListsOverview(val current: List<GiftListSummary> = emptyList(), val past: List<GiftListSummary> = emptyList())
+data class GiftListsOverview(val current: List<GiftListSummary> = emptyList(), val past: List<GiftListSummary> = emptyList()) {
+    /**
+     * The list a person's "Gift lists" link opens on the Plans tab (issue #104): the soonest current list they're on,
+     * else their latest past one; null when they're on none.
+     */
+    fun listFor(friendId: FriendId): String? = (current + past).firstOrNull { s -> s.people.any { it.id == friendId } }?.list?.id
+}
 
 /** The sums and rows behind the gift-list screens. Pure. */
 object GiftListMath {

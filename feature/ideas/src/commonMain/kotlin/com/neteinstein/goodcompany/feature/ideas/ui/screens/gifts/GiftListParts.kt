@@ -1,4 +1,4 @@
-package com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts
+package com.neteinstein.goodcompany.feature.ideas.ui.screens.gifts
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,18 +41,18 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.occasionLabel
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.save
-import com.neteinstein.goodcompany.feature.hangouts.resources.Res
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_create
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_date
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_name
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_name_hint
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_date
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_no_occasion
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_list_occasion
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_status_action
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_status_bought
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_status_given
-import com.neteinstein.goodcompany.feature.hangouts.resources.gift_status_to_buy
+import com.neteinstein.goodcompany.feature.ideas.resources.Res
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_create
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_date
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_name
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_name_hint
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_no_date
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_no_occasion
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_list_occasion
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_status_action
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_status_bought
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_status_given
+import com.neteinstein.goodcompany.feature.ideas.resources.gift_status_to_buy
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs

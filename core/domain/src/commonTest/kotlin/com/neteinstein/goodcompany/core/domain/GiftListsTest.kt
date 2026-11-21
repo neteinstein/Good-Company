@@ -225,6 +225,22 @@ class GiftListsTest {
     }
 
     @Test
+    fun aPersonsLink_opensTheirSoonestCurrentList_elseTheirLatestPastOne() = runTest {
+        val g = graph()
+        val old = g.giftLists.create("Christmas 2025", GiftOccasion.CHRISTMAS, LocalDate(2025, 12, 25))!!
+        val now = g.newList()
+        val santa = g.giftLists.create("Secret Santa", null, null)!!
+        g.giftLists.addPeople(old, listOf(FriendId("ana"), FriendId("bruno")))
+        g.giftLists.addPeople(santa, listOf(FriendId("tomas")))
+        g.giftLists.addPeople(now, listOf(FriendId("tomas")))
+
+        val overview = g.observeGiftLists().first()
+        assertEquals(now, overview.listFor(FriendId("tomas")))
+        assertEquals(old, overview.listFor(FriendId("ana")))
+        assertNull(overview.listFor(FriendId("nobody")))
+    }
+
+    @Test
     fun backup_carriesGiftLists() = runTest {
         val g = graph()
         val id = g.newList()

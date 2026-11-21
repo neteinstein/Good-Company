@@ -51,8 +51,6 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.CheckInSheetHost
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeScreen
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListScreen
-import com.neteinstein.goodcompany.feature.hangouts.ui.screens.gifts.GiftListsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetPanelScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageScreen
 import com.neteinstein.goodcompany.feature.ideas.ui.screens.IdeasScreen
@@ -73,6 +71,9 @@ const val APP_VERSION = "1.0.0"
 /** Saved-state key: how many people "Choose friends" added, read by Home. */
 private const val CONTACTS_ADDED = "contacts_added"
 private const val DELETE_CIRCLE = "delete_circle"
+
+/** Saved-state key on the Plans tab: the person whose gift list a "Gift lists" link should open (issue #104). */
+private const val GIFT_LISTS_FOR = "gift_lists_for"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -155,7 +156,11 @@ fun AppNavHost(
                         // A circle chip opens that circle's page (issue #88).
                         onOpenCircle = openCircle,
                         onNewCircle = { navController.navigate(CircleEditorRoute(withFriend = id)) },
-                        onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
+                        // Issue #104: gift lists live on the Plans tab; the link opens the list they're on there.
+                        onOpenGiftLists = {
+                            navController.navigateTopLevel(TopLevelDestination.PLANS)
+                            runCatching { navController.getBackStackEntry<IdeasRoute>().savedStateHandle[GIFT_LISTS_FOR] = id }
+                        },
                     )
                 }
             }
@@ -331,11 +336,15 @@ fun AppNavHost(
                     )
                 }
             }
-            composable<IdeasRoute> {
+            composable<IdeasRoute> { entry ->
                 // Plans (issue #67): works with AI off; the weekly ideas card shows only while AI is on (F1).
+                // Gift lists open in place here (issue #104); a person's "Gift lists" link sets GIFT_LISTS_FOR.
+                val giftListsFor by entry.savedStateHandle.getStateFlow(GIFT_LISTS_FOR, "").collectAsStateWithLifecycle()
                 PlansScreen(
                     onOpenSettings = openSettings,
-                    onOpenGiftLists = { navController.navigate(GiftListsRoute) { launchSingleTop = true } },
+                    onOpenFriend = openFriend,
+                    showGiftListsFor = giftListsFor.takeIf { it.isNotEmpty() }?.let(::FriendId),
+                    onShowGiftListsHandled = { entry.savedStateHandle[GIFT_LISTS_FOR] = "" },
                     onOpenWhosFree = { navController.navigate(WhosFreeRoute) { launchSingleTop = true } },
                     onOpenIdeas = { navController.navigate(WeeklyIdeasRoute) { launchSingleTop = true } },
                     onOpenYearReview = { navController.navigate(YearReviewRoute(it)) },
@@ -448,25 +457,6 @@ fun AppNavHost(
                 popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
             ) {
                 SuggestedFamilyScreen(onBack = { navController.popBackStack() }, onOpenFriend = openFriend)
-            }
-            composable<GiftListsRoute>(
-                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
-                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
-            ) {
-                GiftListsScreen(onBack = { navController.popBackStack() }, onOpenList = { navController.navigate(GiftListRoute(it)) })
-            }
-            composable<GiftListRoute>(
-                enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
-                popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
-            ) { entry ->
-                val id = entry.toRoute<GiftListRoute>().id
-                GiftListScreen(
-                    listId = id,
-                    onBack = { navController.popBackStack() },
-                    onOpenFriend = openFriend,
-                    // A duplicate replaces the list it was made from on the back stack.
-                    onOpenList = { copy -> navController.navigate(GiftListRoute(copy)) { popUpTo<GiftListRoute> { inclusive = true } } },
-                )
             }
         }
     }
