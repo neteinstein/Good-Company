@@ -67,7 +67,7 @@ internal suspend fun GoodCompanyDatabase.readHangouts(): List<DomainHangout> {
             Place(row.place_name, row.place_latitude, row.place_longitude, row.place_id)
         }
         val activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } }
-        DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note, activity)
+        DomainHangout(row.id, friends[row.id].orEmpty(), row.at.toInstant(), place, row.note, activity, row.activity_name.takeIf { activity == null })
     }
 }
 
@@ -85,6 +85,7 @@ internal suspend fun GoodCompanyDatabase.writeHangout(hangout: DomainHangout) {
             note = hangout.note,
             activity = hangout.activity?.name,
             place_id = hangout.place?.placeId,
+            activity_name = hangout.activityName.takeIf { hangout.activity == null },
         ),
     )
     q.deleteFriends(hangout.id)
@@ -221,6 +222,7 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             createdAt = row.created_at.toInstant(),
             circleId = row.circle_id,
             activity = row.activity?.let { a -> HangoutActivity.entries.firstOrNull { it.name == a } },
+            activityName = row.activity_name,
             repeat = repeat,
             skippedDates = if (repeat == null) emptyList() else skips[row.id].orEmpty(),
         )
@@ -245,6 +247,7 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
         repeatUnit = plan.repeat?.unit?.name,
         repeatStart = plan.repeat?.start?.toColumn(),
         repeatUntil = plan.repeat?.until?.toColumn(),
+        activityName = plan.activityName.takeIf { plan.activity == null },
     )
     q.deleteFriends(plan.id)
     plan.friendIds.forEachIndexed { i, f -> q.insertFriend(plan.id, f.value, i.toLong()) }
@@ -437,6 +440,7 @@ internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings
         privateNotifications = row.private_notifications.toFlag(),
         homeCircleFilter = row.home_circle_filter,
         activities = activitiesFromColumn(row.activities),
+        customActivities = customActivitiesFromColumn(row.custom_activities),
     )
     return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
@@ -449,6 +453,14 @@ internal fun activitiesFromColumn(column: String?): List<HangoutActivity> =
 
 internal fun List<HangoutActivity>.toActivitiesColumn(): String? =
     distinct().takeIf { it.isNotEmpty() && it != HangoutActivity.entries }?.joinToString(",") { it.name }
+
+/** Your own activities (issue #121): a JSON array of names; NULL or unreadable = none. Blanks and repeats are dropped. */
+internal fun customActivitiesFromColumn(column: String?): List<String> = column
+    ?.let { runCatching { kotlinx.serialization.json.Json.decodeFromString<List<String>>(it) }.getOrNull() }
+    .orEmpty().map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+
+internal fun List<String>.toCustomActivitiesColumn(): String? =
+    takeIf { it.isNotEmpty() }?.let { kotlinx.serialization.json.Json.encodeToString(it) }
 
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
@@ -467,6 +479,7 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             home_circle_filter = settings.homeCircleFilter,
             ai_enabled = settings.aiEnabled.toColumn(),
             activities = settings.activities.toActivitiesColumn(),
+            custom_activities = settings.customActivities.toCustomActivitiesColumn(),
         ),
     )
 }

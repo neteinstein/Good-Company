@@ -199,6 +199,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             prefill = LogPrefill(
                 date = route.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
                 activity = HangoutActivity.entries.firstOrNull { it.name == route.activity },
+                activityName = route.activityName,
                 note = route.note,
                 place = route.place,
                 label = route.label,
@@ -223,7 +224,8 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
                         type = d.kind.name,
                         circleId = d.circleId,
                         date = d.date.toString(),
-                        activity = d.activity?.name,
+                        activity = d.activity?.builtIn?.name,
+                        activityName = d.activity?.customName,
                         note = d.note.ifEmpty { null },
                         plan = d.plan?.encode(),
                         place = d.placeName.ifEmpty { null },

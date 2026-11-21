@@ -118,6 +118,8 @@ data class AppSettings(
     val aiEnabled: Boolean = false,
     /** The activities the log sheet offers (F3), in the user's order; never empty. Defaults to all of them. */
     val activities: List<HangoutActivity> = HangoutActivity.entries,
+    /** Your own activities (issue #121), in your order, offered after the built-in ones. */
+    val customActivities: List<String> = emptyList(),
     /**
      * Issue #68: the day "Not now" hid Today's "When did you last see…?" card; it shows again the next day.
      * Device-only like [lastOpenedAt]: never exported, kept on restore.

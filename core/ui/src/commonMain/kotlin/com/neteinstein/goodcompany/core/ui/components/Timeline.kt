@@ -60,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
@@ -139,6 +140,19 @@ fun activityIcon(activity: HangoutActivity): ImageVector = when (activity) {
     HangoutActivity.CULTURE -> Icons.Rounded.TheaterComedy
     HangoutActivity.MUSIC -> Icons.Rounded.MusicNote
     HangoutActivity.TRIP -> Icons.Rounded.Luggage
+}
+
+/** A built-in activity's label, or your own activity's name (issue #121). */
+@Composable
+fun activityLabel(choice: ActivityChoice): String = when (choice) {
+    is ActivityChoice.BuiltIn -> activityLabel(choice.activity)
+    is ActivityChoice.Custom -> choice.name
+}
+
+/** A built-in activity's icon; your own activities share one (issue #121). */
+fun activityIcon(choice: ActivityChoice): ImageVector = when (choice) {
+    is ActivityChoice.BuiltIn -> activityIcon(choice.activity)
+    is ActivityChoice.Custom -> Icons.Rounded.Interests
 }
 
 /** The icon for a kind of contact (meetups use [Icons.Rounded.Groups]). */
@@ -274,7 +288,7 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
     is TimelineEntry.Meetup -> {
         val h = entry.hangout
         val place = h.place?.label
-        val activity = h.activity?.let { activityLabel(it) }
+        val activity = h.activityChoice?.let { activityLabel(it) }
         val title = when {
             activity != null && place != null -> stringResource(Res.string.tl_activity_at, activity, place)
             activity != null -> activity
@@ -282,7 +296,7 @@ private fun describe(entry: TimelineEntry): EntryLook = when (entry) {
             else -> stringResource(Res.string.tl_together)
         }
         EntryLook(
-            icon = h.activity?.let(::activityIcon) ?: Icons.Rounded.Groups,
+            icon = h.activityChoice?.let { activityIcon(it) } ?: Icons.Rounded.Groups,
             title = title,
             detail = entry.others.takeIf { it.isNotEmpty() }?.let { stringResource(Res.string.tl_with, namesList(it)) },
             quote = h.note.trim().ifEmpty { null },

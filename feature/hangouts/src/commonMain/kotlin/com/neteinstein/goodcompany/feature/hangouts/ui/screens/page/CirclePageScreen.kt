@@ -564,7 +564,7 @@ private fun EntryRow(page: CirclePage, entry: TimelineEntry, zone: TimeZone, las
 private fun MeetupRow(page: CirclePage, entry: TimelineEntry.Meetup, zone: TimeZone, modifier: Modifier, actions: CirclePageActions) {
     val h = entry.hangout
     val place = h.place?.label
-    val activity = h.activity?.let { activityLabel(it) }
+    val activity = h.activityChoice?.let { activityLabel(it) }
     val title = when {
         activity != null && place != null -> stringResource(CoreRes.string.tl_activity_at, activity, place)
         activity != null -> activity
@@ -579,7 +579,7 @@ private fun MeetupRow(page: CirclePage, entry: TimelineEntry.Meetup, zone: TimeZ
     Row(modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.Top) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary) {
             Icon(
-                h.activity?.let(::activityIcon) ?: Icons.Rounded.Groups,
+                h.activityChoice?.let { activityIcon(it) } ?: Icons.Rounded.Groups,
                 null,
                 Modifier.padding(9.dp).size(20.dp),
                 tint = MaterialTheme.colorScheme.onPrimary,

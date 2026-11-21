@@ -1,0 +1,5 @@
+-- Version 27 → 28 (issue #121): your own activities. Their names are a list in user_preferences, and a meetup or a
+-- plan stores the name it was given, so renaming or removing one keeps past entries' labels.
+ALTER TABLE hangout ADD COLUMN activity_name TEXT;
+ALTER TABLE plan ADD COLUMN activity_name TEXT;
+ALTER TABLE user_preferences ADD COLUMN custom_activities TEXT;

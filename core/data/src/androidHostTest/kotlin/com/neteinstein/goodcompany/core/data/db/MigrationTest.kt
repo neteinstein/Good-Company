@@ -880,6 +880,44 @@ class MigrationTest {
     }
 
     @Test
+    fun version27to28_meetupsPlansAndSettingsStartWithNoOwnActivity_andTheyRoundTrip() = runTest {
+        val driver = driverAt(27)
+        driver.execute(null, "INSERT INTO hangout (id, position, at, note, activity) VALUES ('h1', 0, 1000, '', 'WALK')", 0).await()
+        driver.execute(
+            null,
+            "INSERT INTO plan (id, position, title, date, status, created_at, activity) VALUES ('p1', 0, 'Lunch', '2026-12-01', 'PLANNED', 1000, 'LUNCH')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 27, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val walk = database.readHangouts().single()
+        assertEquals(HangoutActivity.WALK, walk.activity)
+        assertNull(walk.activityName)
+        assertNull(database.readPlans().single().activityName)
+        assertTrue(database.readPreferences(AppSettings()).customActivities.isEmpty())
+
+        val surf = Hangout("h2", emptyList(), Instant.fromEpochSeconds(2), activityName = "Surf")
+        database.writeHangout(surf)
+        assertEquals("Surf", database.readHangouts().single { it.id == "h2" }.activityName)
+        val plan = database.readPlans().single().copy(activity = null, activityName = "Board games")
+        database.writePlan(plan)
+        assertEquals(plan, database.readPlans().single())
+        database.writePreferences(database.readPreferences(AppSettings()).copy(customActivities = listOf("Surf", "Board games")))
+        assertEquals(listOf("Surf", "Board games"), database.readPreferences(AppSettings()).customActivities)
+        driver.close()
+    }
+
+    @Test
+    fun customActivitiesColumn_unreadableIsNone_blanksAndRepeatsDropped() {
+        assertEquals(emptyList(), customActivitiesFromColumn(null))
+        assertEquals(emptyList(), customActivitiesFromColumn("not json"))
+        assertEquals(listOf("Surf", "Chess"), customActivitiesFromColumn("""[" Surf", "", "Chess", "Surf"]"""))
+        assertNull(emptyList<String>().toCustomActivitiesColumn())
+        assertEquals(listOf("Surf"), customActivitiesFromColumn(listOf("Surf").toCustomActivitiesColumn()))
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

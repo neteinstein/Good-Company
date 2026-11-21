@@ -31,11 +31,15 @@ data class Plan(
     val circleId: String? = null,
     /** What you're doing (F3); carried into the check-in. */
     val activity: HangoutActivity? = null,
+    /** One of your own activities, by name (issue #121), when [activity] is null. */
+    val activityName: String? = null,
     val repeat: Repeat? = null,
     /** Later occurrences of the series taken out one by one ("Skip this one"), after [date]. */
     val skippedDates: List<LocalDate> = emptyList(),
 ) {
     val isRecurring: Boolean get() = repeat != null
+
+    val activityChoice: ActivityChoice? get() = ActivityChoice.of(activity, activityName)
 
     /** With more than one person or a circle: only then "I didn't go" is offered (issue #100). */
     val isGroup: Boolean get() = circleId != null || friendIds.size > 1

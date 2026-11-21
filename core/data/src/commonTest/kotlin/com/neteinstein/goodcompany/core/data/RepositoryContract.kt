@@ -769,6 +769,24 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun yourOwnActivities_roundTripThroughABackup() = runTest {
+        // Issue #121: the list in settings, and the name on a meetup and a plan.
+        val from = open()
+        from.friends.upsert(friend("ana"))
+        from.hangouts.add(Hangout("h", listOf(FriendId("ana")), at(2026, 3, 1), activityName = "Surf"))
+        from.plans.upsert(Plan("p", listOf(FriendId("ana")), "Waves", LocalDate(2026, 3, 14), createdAt = at(2026, 3, 1), activityName = "Surf"))
+        from.settings.update { it.copy(customActivities = listOf("Surf", "Board games")) }
+        val json = ExportBackupUseCase(from.backup, clock)()
+
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf("Surf", "Board games"), snap.settings.customActivities)
+        assertEquals("Surf", snap.hangouts.single().activityName)
+        assertEquals("Surf", snap.plans.single().activityName)
+    }
+
+    @Test
     fun theSampleCircle_roundTripsThroughABackup() = runTest {
         val sample = SampleData.build(clock)
         val s = open()

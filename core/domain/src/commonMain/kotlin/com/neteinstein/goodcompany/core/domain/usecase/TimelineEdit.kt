@@ -38,6 +38,7 @@ fun TimelineEntry.asLogRequest(friendId: FriendId, zone: TimeZone): LogRequest? 
         placeName = hangout.place?.label,
         location = hangout.place?.point,
         activity = hangout.activity,
+        activityName = hangout.activityName,
     )
     is TimelineEntry.Contact -> LogRequest(
         friendIds = listOf(interaction.friendId) + others.map { it.id },
@@ -109,7 +110,21 @@ class EditTimelineEntryUseCase(
         val at = instantFor(h.at, request)
         if (request.kind == LogKind.MEETUP) {
             val place = if (samePlace(h.place, request.placeName, request.location)) h.place else checkIn.place(request.placeName, request.location)
-            hangouts.add(h.copy(friendIds = people, at = at, place = place, note = request.note.trim(), activity = request.activity))
+            hangouts.add(
+                h.copy(
+                    friendIds = people,
+                    at = at,
+                    place = place,
+                    note = request.note.trim(),
+                    activity = request.activity,
+                    activityName = request.activityName?.trim()?.ifBlank {
+                        null
+                    }.takeIf {
+                        request.activity ==
+                            null
+                    },
+                ),
+            )
         } else {
             requireText(request)
             hangouts.delete(h.id)

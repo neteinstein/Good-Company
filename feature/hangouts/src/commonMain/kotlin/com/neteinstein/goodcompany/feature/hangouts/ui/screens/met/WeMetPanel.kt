@@ -53,9 +53,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
-import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
@@ -109,7 +109,7 @@ data class WeMetActions(
     val onLabel: (String) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
     val onTime: (LocalTime?) -> Unit = {},
-    val onActivity: (HangoutActivity?) -> Unit = {},
+    val onActivity: (ActivityChoice?) -> Unit = {},
     val onTogglePerson: (FriendId) -> Unit = {},
     val onPeople: (List<FriendId>) -> Unit = {},
     val onOpenNote: () -> Unit = {},
@@ -379,10 +379,10 @@ private fun PersonChip(friend: Friend, selected: Boolean, onClick: () -> Unit) {
 
 /** F3: the six most used activities as tiles, then "More". Tapping the chosen one again clears it. */
 @Composable
-private fun Activities(sheet: LogSheetState, showAll: Boolean, onToggleMore: () -> Unit, onActivity: (HangoutActivity?) -> Unit) {
+private fun Activities(sheet: LogSheetState, showAll: Boolean, onToggleMore: () -> Unit, onActivity: (ActivityChoice?) -> Unit) {
     val shown = if (showAll) sheet.activities else sheet.activities.take(ObserveActivitiesUseCase.SHOWN)
     // null is the "More" / "Less" tile.
-    val tiles: List<HangoutActivity?> = shown + listOfNotNull(sheet.activity?.takeIf { it !in shown }) +
+    val tiles: List<ActivityChoice?> = shown + listOfNotNull(sheet.activity?.takeIf { it !in shown }) +
         (if (sheet.activities.size > ObserveActivitiesUseCase.SHOWN) listOf(null) else emptyList())
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         tiles.chunked(TILES_PER_ROW).forEach { row ->

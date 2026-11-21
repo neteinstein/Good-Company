@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
@@ -67,7 +68,7 @@ class LogInteractionViewModelTest {
         val vm = vm(listOf(rui), type = "MEETUP", prefill = LogPrefill(friday, HangoutActivity.LUNCH))
         val state = collecting(vm.state)
         assertEquals(friday, state.value.sheet.date)
-        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        assertEquals(ActivityChoice.BuiltIn(HangoutActivity.LUNCH), state.value.sheet.activity)
         vm.onSave()
         val h = g.hangoutRepo.hangouts.value.single()
         assertEquals(listOf(rui), h.friendIds)
@@ -92,7 +93,7 @@ class LogInteractionViewModelTest {
         assertEquals(listOf("ana"), state.value.sheet.people.map { it.id.value })
         assertEquals(HangoutActivity.entries.size, state.value.sheet.activities.size)
         vm.onPeople(listOf(ana, rui, ana))
-        vm.onActivity(HangoutActivity.COFFEE)
+        vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.COFFEE))
         vm.onPlaceName("Café")
         vm.onNote("  catch-up  ")
         vm.onSave()
@@ -107,9 +108,12 @@ class LogInteractionViewModelTest {
     fun theSheetOffersOnlyTheActivitiesTurnedOnInSettings() = runViewModelTest {
         g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.WALK, HangoutActivity.COFFEE)) }
         val state = collecting(vm().state)
-        assertEquals(listOf(HangoutActivity.WALK, HangoutActivity.COFFEE), state.value.sheet.activities)
+        assertEquals(
+            listOf(ActivityChoice.BuiltIn(HangoutActivity.WALK), ActivityChoice.BuiltIn(HangoutActivity.COFFEE)),
+            state.value.sheet.activities,
+        )
         g.settingsRepo.update { it.copy(activities = listOf(HangoutActivity.TRIP)) }
-        assertEquals(listOf(HangoutActivity.TRIP), state.value.sheet.activities)
+        assertEquals(listOf(ActivityChoice.BuiltIn(HangoutActivity.TRIP)), state.value.sheet.activities)
     }
 
     @Test
@@ -132,7 +136,7 @@ class LogInteractionViewModelTest {
         vm.onDate(today.plus(DatePeriod(days = 3)))
         assertEquals(today, state.value.sheet.date)
         vm.onDate(today.plus(DatePeriod(days = -1)))
-        vm.onActivity(HangoutActivity.DINNER)
+        vm.onActivity(ActivityChoice.BuiltIn(HangoutActivity.DINNER))
         vm.onSave()
         assertTrue(state.value.done)
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
@@ -275,7 +279,7 @@ class LogInteractionViewModelTest {
         assertEquals("Climbing crowd", sheet.circle?.name)
         assertEquals(listOf(ana, rui), sheet.circleMembers.map { it.id })
         assertTrue(sheet.people.isEmpty(), "nobody is ticked to start with")
-        assertEquals(HangoutActivity.SPORTS, sheet.activity)
+        assertEquals(ActivityChoice.BuiltIn(HangoutActivity.SPORTS), sheet.activity)
         assertEquals(start, sheet.date)
         assertEquals("Fábrica", sheet.place.name)
         assertFalse(sheet.canSave)
@@ -295,7 +299,7 @@ class LogInteractionViewModelTest {
         val vm = vm(prefill = LogPrefill(date = friday, activity = HangoutActivity.LUNCH, note = "Her new job", place = "Time Out"))
         val state = collecting(vm.state)
         assertEquals(friday, state.value.sheet.date)
-        assertEquals(HangoutActivity.LUNCH, state.value.sheet.activity)
+        assertEquals(ActivityChoice.BuiltIn(HangoutActivity.LUNCH), state.value.sheet.activity)
         assertEquals("Her new job", state.value.sheet.note)
         assertEquals("Time Out", state.value.sheet.place.name)
         vm.onSave()

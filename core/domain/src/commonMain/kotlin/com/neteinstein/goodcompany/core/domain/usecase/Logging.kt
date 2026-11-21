@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -77,6 +78,8 @@ data class LogRequest(
     val placeName: String? = null,
     val location: GeoPoint? = null,
     val activity: HangoutActivity? = null,
+    /** Meetups only: one of your own activities, by name (issue #121), when [activity] is null. */
+    val activityName: String? = null,
     /** Contacts only: where the log came from (the share screen passes [InteractionSource.SHARE]). */
     val source: InteractionSource = InteractionSource.MANUAL,
     val durationSeconds: Int? = null,
@@ -152,7 +155,7 @@ class LogInteractionUseCase(
         val note = request.note.trim()
         return when (val kind = request.kind) {
             LogKind.MEETUP -> LogResult.Met(
-                checkIn(people, request.placeName, request.location, note, at, request.activity),
+                checkIn(people, request.placeName, request.location, note, at, request.activity, request.activityName),
             )
             LogKind.JOURNAL -> {
                 require(note.isNotEmpty()) { "A journal entry needs text" }
@@ -210,20 +213,28 @@ class UndoLogUseCase(
 }
 
 /**
- * The meetup activities in the order the log sheet shows them (F3): only the ones turned on in Settings
- * ([AppSettings.activities]), the most used first (ties keep the user's order), so the first six are the ones on show
- * and the rest sit behind "More". An old meetup whose activity is now off keeps it; it just isn't offered.
+ * The meetup activities in the order the log sheet shows them (F3): the built-in ones turned on in Settings
+ * ([AppSettings.activities]) and your own ([AppSettings.customActivities], issue #121), the most used first (ties keep
+ * that order), so the first six are the ones on show and the rest sit behind "More". An old meetup whose activity is
+ * now off or removed keeps it; it just isn't offered.
  */
 class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private val settings: SettingsRepository) {
-    operator fun invoke(): Flow<List<HangoutActivity>> =
-        combine(hangouts.hangouts, settings.settings.map { it.activities }.distinctUntilChanged()) { hs, enabled -> ranked(hs, enabled) }
+    operator fun invoke(): Flow<List<ActivityChoice>> = combine(
+        hangouts.hangouts,
+        settings.settings.map { it.activities to it.customActivities }.distinctUntilChanged(),
+    ) { hs, (enabled, custom) -> ranked(hs, enabled, custom) }
 
     companion object {
         const val SHOWN = 6
 
-        fun ranked(hangouts: List<Hangout>, enabled: List<HangoutActivity> = HangoutActivity.entries): List<HangoutActivity> {
-            val counts = hangouts.mapNotNull { it.activity }.groupingBy { it }.eachCount()
-            return enabled.distinct().sortedByDescending { counts[it] ?: 0 }
+        fun ranked(
+            hangouts: List<Hangout>,
+            enabled: List<HangoutActivity> = HangoutActivity.entries,
+            custom: List<String> = emptyList(),
+        ): List<ActivityChoice> {
+            val counts = hangouts.mapNotNull { it.activityChoice }.groupingBy { it }.eachCount()
+            val all = enabled.distinct().map { ActivityChoice.BuiltIn(it) } + custom.distinct().map { ActivityChoice.Custom(it) }
+            return all.sortedByDescending { counts[it] ?: 0 }
         }
     }
 }

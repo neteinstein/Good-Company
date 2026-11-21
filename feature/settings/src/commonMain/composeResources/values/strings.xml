@@ -133,8 +133,8 @@
     <string name="msg_drive_offline">Couldn’t reach Google Drive. Check your connection.</string>
     <string name="msg_drive_failed">Something went wrong with Google Drive. Try again.</string>
     <string name="places">Places</string>
-    <string name="places_row_hint">Names you gave to GPS spots</string>
-    <string name="places_intro">Places are names you gave to GPS spots. They never leave your phone and no map service is used.</string>
+    <string name="places_row_hint">Every place you met or plan to meet</string>
+    <string name="places_intro">Every place on your meetups and plans. Places with GPS name themselves when you check in nearby. Nothing leaves your phone and no map service is used.</string>
     <string name="places_empty">No places yet. Check in with your location and you’ll be asked “What place is this?”.</string>
     <string name="places_usually">usually %1$s</string>
     <string name="places_nearby">%1$d m from “%2$s”</string>
@@ -170,9 +170,9 @@
     <string name="cal_row_web">Not available in the browser</string>
 
     <!-- Shared tags (F16) -->
-    <string name="tags_row">Tags</string>
-    <string name="tags_row_hint">Rename, merge or delete likes and dislikes for everyone</string>
-    <string name="tags_title">Tags</string>
+    <string name="tags_row">Tastes</string>
+    <string name="tags_row_hint">Food, drinks, interests, likes and dislikes: rename, merge or delete them for everyone</string>
+    <string name="tags_title">Tastes</string>
     <string name="tags_search">Search tags</string>
     <string name="tags_same">Looks like the same tag</string>
     <string name="tags_merge">Merge</string>
@@ -204,7 +204,6 @@
     <string name="ai_switch">AI features</string>
     <string name="ai_switch_hint">Weekly plans, talking points, gift and message suggestions, using your own Anthropic key.</string>
     <string name="ai_off_note">While this is off, nothing that needs AI is shown anywhere in the app.</string>
-    <string name="meetups">Meetups</string>
     <string name="activities">Activities</string>
     <string name="activities_count">%1$d of %2$d on</string>
     <string name="activities_hint">What the log sheet offers when you met someone. The ones you use most come first, the rest in this order; six show, the others are behind More. Drag to reorder.</string>
@@ -219,4 +218,30 @@
     <string name="msg_my_photo_removed">Photo removed</string>
     <string name="notif_type_daily_log">Log your day</string>
     <string name="notif_type_daily_log_hint">A daily nudge to log who you caught up with.</string>
+    <!-- Your own activities (issue #121) -->
+    <string name="activities_yours">Your activities</string>
+    <string name="activities_yours_hint">Add your own. Renaming or removing one keeps the name on past meetups and plans.</string>
+    <string name="activities_add">Add activity</string>
+    <string name="activities_rename">Rename activity</string>
+    <string name="activities_name">Name</string>
+    <string name="activities_removed">“%1$s” removed</string>
+    <string name="activities_name_blank">Give it a name</string>
+    <string name="activities_name_taken">There’s already an activity with that name</string>
+    <!-- Places without GPS (issue #121) -->
+    <string name="places_typed">Without GPS</string>
+    <string name="places_pin">Add coordinates (where you are now)</string>
+    <string name="places_pinned">“%1$s” now has coordinates</string>
+    <string name="places_no_location">Couldn’t get your location</string>
+    <string name="places_renamed">Renamed to “%1$s”</string>
+    <string name="places_merge_typed_hint">Its meetups and plans take the name you pick.</string>
+    <plurals name="places_plans">
+        <item quantity="one">%1$d plan</item>
+        <item quantity="other">%1$d plans</item>
+    </plurals>
+    <!-- Tastes by list (issue #121) -->
+    <string name="tastes_food">Food</string>
+    <string name="tastes_drinks">Drinks</string>
+    <string name="tastes_interests">Interests</string>
+    <string name="tastes_likes">Likes</string>
+    <string name="tastes_dislikes">Dislikes</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
 import com.neteinstein.goodcompany.core.domain.model.Place
@@ -19,7 +20,17 @@ import kotlin.test.assertTrue
 class PlacesViewModelTest {
     private val g = TestGraph(friends = listOf(friend("marta", "Marta Lopes"), friend("rui")))
 
-    private fun vm() = PlacesViewModel(g.observePlaces, g.renamePlace, g.deletePlace, g.restorePlace, g.mergePlaces)
+    private fun vm() = PlacesViewModel(
+        g.observePlaces,
+        g.renamePlace,
+        g.deletePlace,
+        g.restorePlace,
+        g.mergePlaces,
+        g.observeTypedPlaces,
+        g.renameTypedPlace,
+        g.pinTypedPlace,
+        g.currentLocation,
+    )
 
     private suspend fun seed() {
         g.hangoutRepo.upsertPlace(NamedPlace("marta", "Marta’s house", 38.7139, -9.1394))
@@ -61,5 +72,30 @@ class PlacesViewModelTest {
         vm.onUndoDelete()
         assertEquals(3, state.value.places.single().meetups)
         assertNull(state.value.recentlyDeleted)
+    }
+
+    @Test
+    fun placesWithoutGps_renameMergeAndAddCoordinates() = runViewModelTest {
+        g.hangoutRepo.add(Hangout("t1", listOf(FriendId("rui")), at(2026, 3, 4), Place("Café Nata")))
+        g.hangoutRepo.add(Hangout("t2", listOf(FriendId("rui")), at(2026, 3, 5), Place("cafe nata")))
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(setOf("Café Nata", "cafe nata"), state.value.typed.map { it.name }.toSet())
+
+        vm.onRenameTyped("cafe nata", "Café Nata")
+        assertEquals(PlacesMessage.Merged("Café Nata"), state.value.message)
+        assertEquals(2, state.value.typed.single().meetups)
+        vm.onRenameTyped("Café Nata", "Nata")
+        assertEquals(PlacesMessage.Renamed("Nata"), state.value.message)
+
+        vm.onPinTyped("Nata", allowed = false)
+        assertEquals(PlacesMessage.NoLocation, state.value.message)
+        vm.onPinTyped("Nata", allowed = true) // no fix
+        assertEquals(PlacesMessage.NoLocation, state.value.message)
+        g.location.point = GeoPoint(38.7, -9.1)
+        vm.onPinTyped("Nata", allowed = true)
+        assertEquals(PlacesMessage.Pinned("Nata"), state.value.message)
+        assertTrue(state.value.typed.isEmpty())
+        assertEquals(listOf("Nata"), state.value.places.map { it.place.name })
     }
 }

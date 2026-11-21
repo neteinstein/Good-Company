@@ -2,9 +2,11 @@ package com.neteinstein.goodcompany
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.startup.AppStartup
@@ -24,6 +26,8 @@ data class AppUiState(
     val isReady: Boolean = false,
     val storageIsTemporary: Boolean = false,
     val myPhoto: ContactPhoto? = null,
+    /** What the plan editors offer (issue #121): the built-in activities that are on and your own. */
+    val activities: List<ActivityChoice>? = null,
 )
 
 /** Root ViewModel: theme settings and your photo for the whole app, and kicks off [AppStartup]. */
@@ -31,6 +35,7 @@ class AppViewModel(
     observeSettings: ObserveSettingsUseCase,
     isStorageTemporary: IsStorageTemporaryUseCase,
     observeMyPhoto: ObserveMyPhotoUseCase,
+    observeActivities: ObserveActivitiesUseCase,
     startup: AppStartup,
 ) : ViewModel() {
     val state: StateFlow<AppUiState> =
@@ -38,8 +43,9 @@ class AppViewModel(
             observeSettings(),
             flow { emit(isStorageTemporary()) }.onStart { emit(false) },
             observeMyPhoto().onStart { emit(null) },
-        ) { settings, temporary, photo ->
-            AppUiState(settings, isReady = true, storageIsTemporary = temporary, myPhoto = photo)
+            observeActivities().onStart { emit(emptyList()) },
+        ) { settings, temporary, photo, activities ->
+            AppUiState(settings, isReady = true, storageIsTemporary = temporary, myPhoto = photo, activities = activities.ifEmpty { null })
         }.stateIn(viewModelScope, SharingStarted.Eagerly, AppUiState())
 
     init {

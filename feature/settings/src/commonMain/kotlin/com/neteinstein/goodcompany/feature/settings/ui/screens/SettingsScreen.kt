@@ -175,7 +175,6 @@ import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
-import com.neteinstein.goodcompany.feature.settings.resources.meetups
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
@@ -573,16 +572,6 @@ fun SettingsContent(
                 if (s.aiEnabled) AiDetails(state, actions)
             }
 
-            SectionCard(stringResource(Res.string.meetups), icon = Icons.Rounded.FavoriteBorder) {
-                ListItem(
-                    modifier = Modifier.clickable(onClick = actions.onOpenActivities),
-                    headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
-                    supportingContent = { Text(stringResource(Res.string.activities_count, s.activities.size, HangoutActivity.entries.size)) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-            }
-
             SectionCard(stringResource(Res.string.reminders), icon = Icons.Rounded.Notifications) {
                 if (capabilities.hasBackgroundNotifications && notificationsAllowed == false) {
                     FilledTonalButton(onClick = actions.onEnableNotifications, modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -664,6 +653,23 @@ fun SettingsContent(
                     headlineContent = { Text(stringResource(Res.string.import_vcf), style = MaterialTheme.typography.titleSmall) },
                     supportingContent = { Text(stringResource(Res.string.import_vcf_hint)) },
                     trailingContent = { FilledTonalButton(onClick = actions.onImportContactsFile) { Text(stringResource(Res.string.import)) } },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                // Issue #121: activities moved here from their own "Meetups" card.
+                ListItem(
+                    modifier = Modifier.clickable(onClick = actions.onOpenActivities),
+                    leadingContent = { Icon(Icons.Rounded.FavoriteBorder, null) },
+                    headlineContent = { Text(stringResource(Res.string.activities), style = MaterialTheme.typography.titleSmall) },
+                    supportingContent = {
+                        Text(
+                            stringResource(
+                                Res.string.activities_count,
+                                s.activities.size + s.customActivities.size,
+                                HangoutActivity.entries.size + s.customActivities.size,
+                            ),
+                        )
+                    },
+                    trailingContent = { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null) },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 )
                 ListItem(

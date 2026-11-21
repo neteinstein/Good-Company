@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.log
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
@@ -41,6 +42,8 @@ import kotlinx.datetime.LocalTime
 data class LogPrefill(
     val date: LocalDate? = null,
     val activity: HangoutActivity? = null,
+    /** One of your own activities (issue #121), when [activity] is null. */
+    val activityName: String? = null,
     val note: String? = null,
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */
@@ -91,7 +94,7 @@ class LogInteractionViewModel(
             date = prefill.date ?: clock.today(),
             note = prefill.note.orEmpty(),
             placeName = prefill.place.orEmpty(),
-            activity = prefill.activity,
+            activity = ActivityChoice.of(prefill.activity, prefill.activityName),
             circleId = circleId,
             label = prefill.label.orEmpty(),
             time = prefill.time,
@@ -143,7 +146,7 @@ class LogInteractionViewModel(
 
     fun onPlaceName(name: String) = model.onPlaceName(name)
 
-    fun onActivity(activity: HangoutActivity?) = model.onActivity(activity)
+    fun onActivity(activity: ActivityChoice?) = model.onActivity(activity)
 
     fun onUseLocation() = model.onUseLocation()
 

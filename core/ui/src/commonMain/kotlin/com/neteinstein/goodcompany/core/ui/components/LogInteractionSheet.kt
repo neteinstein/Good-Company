@@ -55,6 +55,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -118,9 +119,9 @@ data class LogSheetState(
     val label: String = "",
     /** Meetups only: where (F11), with "Usually here with". */
     val place: MeetupPlaceState = MeetupPlaceState(),
-    val activity: HangoutActivity? = null,
+    val activity: ActivityChoice? = null,
     /** Most used first (F3): the first [ObserveActivitiesUseCase.SHOWN] are on show, the rest behind "More". */
-    val activities: List<HangoutActivity> = HangoutActivity.entries,
+    val activities: List<ActivityChoice> = HangoutActivity.entries.map { ActivityChoice.BuiltIn(it) },
     val saving: Boolean = false,
     /** Circles to pick from (decision D1). */
     val circles: List<FriendGroup> = emptyList(),
@@ -161,7 +162,7 @@ data class LogSheetActions(
     val onClearLocation: () -> Unit = {},
     /** "Change" on a place that named itself: type another name. */
     val onChangePlace: () -> Unit = {},
-    val onActivity: (HangoutActivity?) -> Unit = {},
+    val onActivity: (ActivityChoice?) -> Unit = {},
     /** Picks a circle (null or the same one again = none). */
     val onCircle: (String?) -> Unit = {},
     /** Ticks or unticks someone (a circle member who came). */

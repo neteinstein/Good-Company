@@ -31,10 +31,12 @@ class CheckInUseCase(
         note: String = "",
         at: Instant? = null,
         activity: HangoutActivity? = null,
+        activityName: String? = null,
     ): Hangout {
         require(friendIds.isNotEmpty()) { "Pick at least one friend" }
         val place = place(placeName, location)
-        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity)
+        val name = activityName?.trim()?.ifBlank { null }.takeIf { activity == null }
+        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity, name)
         hangouts.add(hangout)
         return hangout
     }

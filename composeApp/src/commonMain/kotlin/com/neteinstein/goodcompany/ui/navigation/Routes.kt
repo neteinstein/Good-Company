@@ -50,6 +50,8 @@ import org.jetbrains.compose.resources.StringResource
     val date: String? = null,
     /** A HangoutActivity name (guessed from a calendar event, or picked in the panel). */
     val activity: String? = null,
+    /** One of your own activities, by name (issue #121), when [activity] is null. */
+    val activityName: String? = null,
     val note: String? = null,
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */

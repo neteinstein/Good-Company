@@ -88,6 +88,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmKinshipUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CreateGiftListUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CustomActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DecideCalendarSuggestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
@@ -166,10 +167,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagDuplicatesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveTypedPlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.PinTypedPlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
@@ -182,6 +185,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenamePlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameTagUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RenameTypedPlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
@@ -406,6 +410,9 @@ val appModule = module {
     factoryOf(::ObservePlaceBookUseCase)
     factoryOf(::ObservePlacesUseCase)
     factoryOf(::RenamePlaceUseCase)
+    factoryOf(::ObserveTypedPlacesUseCase)
+    factoryOf(::RenameTypedPlaceUseCase)
+    factoryOf(::PinTypedPlaceUseCase)
     factoryOf(::DeletePlaceUseCase)
     factoryOf(::RestorePlaceUseCase)
     factoryOf(::MergePlacesUseCase)
@@ -463,6 +470,7 @@ val appModule = module {
     factoryOf(::NextCircleColorUseCase)
     factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::DismissPeopleLegendUseCase)
+    factoryOf(::CustomActivitiesUseCase)
     factoryOf(::ObserveYearInReviewUseCase)
     factoryOf(::ObserveYearReviewCardUseCase)
     factoryOf(::BackupToDriveUseCase)

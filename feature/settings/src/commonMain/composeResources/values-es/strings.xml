@@ -99,8 +99,8 @@
     <string name="msg_drive_offline">No se ha podido contactar con Google Drive. Revisa la conexión.</string>
     <string name="msg_drive_failed">Algo ha fallado con Google Drive. Vuelve a intentarlo.</string>
     <string name="places">Lugares</string>
-    <string name="places_row_hint">Nombres que diste a puntos GPS</string>
-    <string name="places_intro">Los lugares son nombres que diste a puntos GPS. Nunca salen de tu teléfono y no se usa ningún servicio de mapas.</string>
+    <string name="places_row_hint">Todos los sitios donde quedaste o piensas quedar</string>
+    <string name="places_intro">Todos los sitios de tus quedadas y planes. Los sitios con GPS se nombran solos cuando haces check-in cerca. Nada sale de tu teléfono y no se usa ningún servicio de mapas.</string>
     <string name="places_empty">Aún no hay lugares. Registra un encuentro con tu ubicación y te preguntaremos “¿Qué lugar es este?”.</string>
     <string name="places_usually">normalmente %1$s</string>
     <string name="places_nearby">a %1$d m de “%2$s”</string>
@@ -136,9 +136,9 @@
     <string name="cal_row_web">No disponible en el navegador</string>
 
     <!-- Shared tags (F16) -->
-    <string name="tags_row">Etiquetas</string>
-    <string name="tags_row_hint">Renombrar, unir o borrar gustos para todos</string>
-    <string name="tags_title">Etiquetas</string>
+    <string name="tags_row">Gustos</string>
+    <string name="tags_row_hint">Comida, bebidas, intereses, lo que les gusta y lo que no: cambia el nombre, une o borra para todos</string>
+    <string name="tags_title">Gustos</string>
     <string name="tags_search">Buscar etiquetas</string>
     <string name="tags_same">Parece la misma etiqueta</string>
     <string name="tags_merge">Unir</string>
@@ -170,7 +170,6 @@
     <string name="ai_switch">Funciones de IA</string>
     <string name="ai_switch_hint">Planes semanales, temas de conversación, sugerencias de regalos y de mensajes, con tu propia clave de Anthropic.</string>
     <string name="ai_off_note">Mientras esté desactivado, nada que necesite IA aparece en la app.</string>
-    <string name="meetups">Quedadas</string>
     <string name="activities">Actividades</string>
     <string name="activities_count">%1$d de %2$d activadas</string>
     <string name="activities_hint">Lo que ofrece el registro cuando has visto a alguien. Las que más usas salen primero, las demás en este orden; se muestran seis, el resto está en Más. Arrastra para reordenar.</string>
@@ -212,4 +211,28 @@
     <string name="notif_settings_when">Cuándo y cómo</string>
     <string name="notif_type_daily_log">Registra tu día</string>
     <string name="notif_type_daily_log_hint">Un aviso diario para registrar con quién te pusiste al día.</string>
+    <!-- Issue #121 -->
+    <string name="activities_yours">Tus actividades</string>
+    <string name="activities_yours_hint">Añade las tuyas. Al cambiar el nombre o quitar una, las quedadas y planes pasados conservan su nombre.</string>
+    <string name="activities_add">Añadir actividad</string>
+    <string name="activities_rename">Cambiar el nombre de la actividad</string>
+    <string name="activities_name">Nombre</string>
+    <string name="activities_removed">“%1$s” quitada</string>
+    <string name="activities_name_blank">Ponle un nombre</string>
+    <string name="activities_name_taken">Ya hay una actividad con ese nombre</string>
+    <string name="places_typed">Sin GPS</string>
+    <string name="places_pin">Añadir coordenadas (donde estás ahora)</string>
+    <string name="places_pinned">“%1$s” ya tiene coordenadas</string>
+    <string name="places_no_location">No se pudo obtener tu ubicación</string>
+    <string name="places_renamed">Nombre cambiado a “%1$s”</string>
+    <string name="places_merge_typed_hint">Sus quedadas y planes toman el nombre que elijas.</string>
+    <string name="tastes_food">Comida</string>
+    <string name="tastes_drinks">Bebidas</string>
+    <string name="tastes_interests">Intereses</string>
+    <string name="tastes_likes">Le gusta</string>
+    <string name="tastes_dislikes">No le gusta</string>
+    <plurals name="places_plans">
+        <item quantity="one">%1$d plan</item>
+        <item quantity="other">%1$d planes</item>
+    </plurals>
 </resources>

@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.model.Kid
+import com.neteinstein.goodcompany.core.domain.usecase.TasteGroup
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -92,5 +93,19 @@ class TagsViewModelTest {
         assertEquals(listOf("sushi"), all().first { it.id.value == "pedro" }.dislikes)
         assertEquals(listOf("sushi"), all().first { it.id.value == "leo" }.likes)
         assertNull(state.value.undo)
+    }
+
+    @Test
+    fun tastesByList_withCounts_andAllAgain() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(1, state.value.groupCounts[TasteGroup.FOOD])
+        assertEquals(1, state.value.groupCounts[TasteGroup.DISLIKES])
+        vm.onGroupChange(TasteGroup.FOOD)
+        assertEquals(listOf("Ramen"), state.value.shown.map { it.name })
+        vm.onGroupChange(TasteGroup.INTERESTS)
+        assertEquals(listOf("hiking"), state.value.shown.map { it.name })
+        vm.onGroupChange(null)
+        assertEquals(5, state.value.shown.size)
     }
 }

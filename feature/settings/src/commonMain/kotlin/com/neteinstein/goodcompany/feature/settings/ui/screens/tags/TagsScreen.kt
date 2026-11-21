@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -23,6 +24,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.Tags
+import com.neteinstein.goodcompany.core.domain.usecase.TasteGroup
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.feature.settings.resources.Res
@@ -74,6 +77,11 @@ import com.neteinstein.goodcompany.feature.settings.resources.tags_same
 import com.neteinstein.goodcompany.feature.settings.resources.tags_search
 import com.neteinstein.goodcompany.feature.settings.resources.tags_title
 import com.neteinstein.goodcompany.feature.settings.resources.tags_will_merge
+import com.neteinstein.goodcompany.feature.settings.resources.tastes_dislikes
+import com.neteinstein.goodcompany.feature.settings.resources.tastes_drinks
+import com.neteinstein.goodcompany.feature.settings.resources.tastes_food
+import com.neteinstein.goodcompany.feature.settings.resources.tastes_interests
+import com.neteinstein.goodcompany.feature.settings.resources.tastes_likes
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -101,6 +109,7 @@ fun TagsScreen(onBack: () -> Unit, viewModel: TagsViewModel = koinViewModel()) {
         TagsActions(
             onBack = onBack,
             onQueryChange = viewModel::onQueryChange,
+            onGroupChange = viewModel::onGroupChange,
             onRename = viewModel::onRename,
             onMerge = viewModel::onMerge,
             onKeepBoth = viewModel::onKeepBoth,
@@ -114,6 +123,8 @@ fun TagsScreen(onBack: () -> Unit, viewModel: TagsViewModel = koinViewModel()) {
 data class TagsActions(
     val onBack: () -> Unit = {},
     val onQueryChange: (String) -> Unit = {},
+    /** Issue #121: food, drinks, interests, likes, dislikes (null = all). */
+    val onGroupChange: (TasteGroup?) -> Unit = {},
     val onRename: (Tag, String) -> Unit = { _, _ -> },
     val onMerge: (List<Tag>) -> Unit = {},
     val onKeepBoth: (List<Tag>) -> Unit = {},
@@ -162,6 +173,23 @@ fun TagsContent(state: TagsUiState, actions: TagsActions) {
                         shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                     )
+                }
+            }
+            if (state.tags.isNotEmpty()) {
+                item(key = "groups") {
+                    // Issue #121: one list at a time, each chip with how many tastes it has.
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(TasteGroup.entries, key = { it.name }) { g ->
+                            FilterChip(
+                                selected = state.group == g,
+                                onClick = { actions.onGroupChange(g) },
+                                label = { Text(stringResource(CoreRes.string.chipCount, tasteGroupLabel(g), state.groupCounts[g] ?: 0)) },
+                            )
+                        }
+                    }
                 }
             }
             items(state.duplicates, key = { group -> "dup-" + Tags.signature(group.map { it.name }) }) { group ->
@@ -290,3 +318,15 @@ private fun EditTagDialog(tag: Tag, others: List<Tag>, onDismiss: () -> Unit, on
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.cancelLabel)) } },
     )
 }
+
+/** A taste list's name (issue #121). */
+@Composable
+private fun tasteGroupLabel(group: TasteGroup): String = stringResource(
+    when (group) {
+        TasteGroup.FOOD -> Res.string.tastes_food
+        TasteGroup.DRINKS -> Res.string.tastes_drinks
+        TasteGroup.INTERESTS -> Res.string.tastes_interests
+        TasteGroup.LIKES -> Res.string.tastes_likes
+        TasteGroup.DISLIKES -> Res.string.tastes_dislikes
+    },
+)

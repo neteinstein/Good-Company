@@ -10,7 +10,9 @@ CREATE TABLE hangout (
     note TEXT NOT NULL,
     activity TEXT,
     -- The named place (F11) this meetup was at; see NamedPlace.sq.
-    place_id TEXT
+    place_id TEXT,
+    -- One of your own activities (issue #121), by name, when activity is NULL.
+    activity_name TEXT
 );
 
 CREATE TABLE hangout_friend (
@@ -35,7 +37,7 @@ nextPosition:
 SELECT coalesce(max(position), -1) + 1 FROM hangout;
 
 upsert:
-INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note, activity, place_id) VALUES ?
+INSERT INTO hangout (id, position, at, place_name, place_latitude, place_longitude, note, activity, place_id, activity_name) VALUES ?
 ON CONFLICT (id) DO UPDATE SET
     at = excluded.at,
     place_name = excluded.place_name,
@@ -43,7 +45,8 @@ ON CONFLICT (id) DO UPDATE SET
     place_longitude = excluded.place_longitude,
     note = excluded.note,
     activity = excluded.activity,
-    place_id = excluded.place_id;
+    place_id = excluded.place_id,
+    activity_name = excluded.activity_name;
 
 -- Renaming or merging a named place: its meetups take the new id and name.
 relinkPlace:
