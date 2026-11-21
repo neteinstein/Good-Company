@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.NotificationPlanner
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -31,7 +32,7 @@ class NotificationPlannerTest {
         )
         // The kid becomes a person with their own reminder, on because Ana's is (F9); the ping keeps its old id.
         val (people, links) = KidsAsPeople.convert(friends, emptyList())
-        val planned = NotificationPlanner.plan(people, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9, links = links)
+        val planned = NotificationPlanner.plan(people, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9, links = links).withoutDailyLog()
         assertEquals(listOf("bday:ana:2026-03-20", "kid:k:2026-03-25"), planned.map { it.id })
         assertEquals(at(2026, 3, 20, 9), planned[0].at)
         assertEquals(NotificationContent.FriendBirthday("Ana", 36), planned[0].content)
@@ -42,14 +43,14 @@ class NotificationPlannerTest {
     fun aNewFriendWithABirthday_getsAReminder_withNoAgeWithoutAYear() {
         // F10: on by default; F4: no year, no age (the name shown is the one given in the app, F19).
         val friends = listOf(friend("ana") { copy(birthday = Birthday(3, 14), customName = "Aninhas") })
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9).withoutDailyLog()
         assertEquals(NotificationContent.FriendBirthday("Aninhas", null), planned.single { it.id.startsWith("bday:ana") }.content)
     }
 
     @Test
     fun todaysBirthdayAfterReminderHourIsSkipped() {
         val friends = listOf(friend("ana") { copy(notifyBirthday = true, birthday = Birthday(3, 10)) })
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9).withoutDailyLog()
         assertTrue(planned.none { it.id.startsWith("bday:ana:2026-03-10") })
     }
 
@@ -57,7 +58,7 @@ class NotificationPlannerTest {
     fun importantEventPingsOnTheDayAndBefore() {
         val friends =
             listOf(friend("ana") { copy(importantEvents = listOf(ImportantEvent("e", "Surgery", LocalDate(2026, 3, 20), remindDaysBefore = 2))) })
-        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9)
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, reminderHour = 9).withoutDailyLog()
         assertEquals(listOf("event:e:before", "event:e:day"), planned.map { it.id })
         assertEquals(at(2026, 3, 18, 9), planned[0].at)
     }
@@ -84,7 +85,7 @@ class NotificationPlannerTest {
             TimeZone.UTC,
             9,
             notifications = NotificationSettings(persistent = false),
-        )
+        ).withoutDailyLog()
         val single = planned.single()
         assertEquals("reminder:a", single.id)
         assertEquals(NotificationContent.ReminderDue("a", "Book tickets", listOf("Ana")), single.content)
@@ -97,7 +98,7 @@ class NotificationPlannerTest {
             friend("rui") { copy(meetEveryDays = 30) },
         )
         val hangouts = listOf(Hangout("h", listOf(com.neteinstein.goodcompany.core.domain.model.FriendId("rui")), at(2026, 3, 1)))
-        val planned = NotificationPlanner.plan(friends, emptyList(), hangouts, now, TimeZone.UTC, 9)
+        val planned = NotificationPlanner.plan(friends, emptyList(), hangouts, now, TimeZone.UTC, 9).withoutDailyLog()
         assertEquals(listOf("meet:ana:2026-03-11", "meet:rui:2026-03-31"), planned.map { it.id })
     }
 
@@ -105,8 +106,8 @@ class NotificationPlannerTest {
     fun planIsDeterministic() {
         val friends = listOf(friend("ana") { copy(notifyBirthday = true, birthday = Birthday(4, 1), meetEveryDays = 10) })
         assertEquals(
-            NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, 9),
-            NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, 9),
+            NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, 9).withoutDailyLog(),
+            NotificationPlanner.plan(friends, emptyList(), emptyList(), now, TimeZone.UTC, 9).withoutDailyLog(),
         )
     }
 }

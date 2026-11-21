@@ -39,7 +39,7 @@
         <item quantity="other">%1$s · %2$d days since the circle met</item>
     </plurals>
     <string name="row_send_wishes">Send wishes</string>
-    <string name="row_we_met">Caught up</string>
+    <string name="row_we_met">Log</string>
     <string name="wish_title">Birthday wishes for %1$s</string>
     <string name="wish_gift_hint">Gift ideas: %1$s</string>
 
@@ -69,9 +69,9 @@
     <string name="today_drifting">Drifting apart</string>
     <string name="today_drifting_hint">You used to be closer. A quick message goes a long way.</string>
     <string name="today_logged_with">Logged time with %1$s ✨</string>
-    <string name="today_checkin_title">I’m with…</string>
+    <string name="today_checkin_title">Log</string>
     <string name="today_title">Today</string>
-    <string name="today_checkin_body">Log who you’re with now</string>
+    <string name="today_checkin_body">Who did you catch up with? Now or earlier today.</string>
     <string name="today_this_week">This week</string>
     <string name="today_nothing_week">Nothing in the next 7 days</string>
     <string name="today_everything">Everything coming up</string>

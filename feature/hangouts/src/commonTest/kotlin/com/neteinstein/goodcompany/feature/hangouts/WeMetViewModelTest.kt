@@ -2,11 +2,14 @@ package com.neteinstein.goodcompany.feature.hangouts
 
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogTimeOfDay
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -16,6 +19,7 @@ import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupV
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,6 +47,40 @@ class WeMetViewModelTest {
         g.loggedMeetups,
         g.clock,
     )
+
+    @Test
+    fun todaysLogButton_startsWithNobody_picksPeople_andLogsALongChatThisMorning() = runViewModelTest {
+        // Issue #116: Rui was in touch last, so he comes first in the picker.
+        g.interactionRepo.addAll(listOf(Interaction(rui, InteractionType.CALL, at(2026, 3, 9), id = "c1")))
+        val vm = vm(ids = emptyList())
+        val state = collecting(vm.state)
+        assertTrue(state.value.startsWithNobody)
+        assertFalse(state.value.sheet.canSave)
+        assertEquals(listOf(rui, ana), state.value.sheet.recentFirst.map { it.id })
+
+        vm.onPeople(listOf(ana, rui))
+        vm.onKind(LogKind.LONG_CHAT)
+        vm.onTime(LogTimeOfDay.MORNING.time)
+        assertEquals(LocalTime(9, 0), state.value.sheet.time)
+        assertEquals(LocalTime(9, 0), vm.details().time)
+        vm.onSave()
+
+        assertTrue(state.value.done)
+        val rows = g.interactionRepo.interactions.value.filter { it.type == InteractionType.LONG_CHAT }
+        assertEquals(setOf(ana, rui), rows.map { it.friendId }.toSet())
+        assertTrue(rows.all { it.at == at(2026, 3, 10, 9) })
+    }
+
+    @Test
+    fun openedForSomeone_doesNotStartWithThePicker_andShowsTheLastTimeTogether() = runViewModelTest {
+        g.hangoutRepo.add(Hangout("h", listOf(ana, rui), at(2026, 3, 1)))
+        val vm = vm(ids = listOf(ana, rui))
+        val state = collecting(vm.state)
+        assertFalse(state.value.startsWithNobody)
+        assertEquals(at(2026, 3, 1), state.value.sheet.lastTogether)
+        vm.onKind(LogKind.CALL)
+        assertNull(state.value.sheet.lastTogether)
+    }
 
     @Test
     fun weMetThenSaveLogsTodayInTwoTaps() = runViewModelTest {

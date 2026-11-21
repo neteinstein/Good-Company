@@ -208,7 +208,7 @@
         <item quantity="other">O círculo juntou-se há %1$d dias.</item>
     </plurals>
     <string name="notif_group_body_never">O círculo ainda não se juntou.</string>
-    <string name="notif_action_met">Conversa em dia</string>
+    <string name="notif_action_met">Registar</string>
     <string name="notif_action_called">Liguei</string>
     <string name="notif_action_snooze_week">Próxima semana</string>
     <string name="notif_action_snooze_weekend">Este fim de semana</string>
@@ -635,7 +635,7 @@
         <item quantity="other">%1$d dias desde o último encontro · objetivo %2$s</item>
     </plurals>
     <string name="catchup_never">Ainda sem encontros registados</string>
-    <string name="catchup_met">Conversa em dia</string>
+    <string name="catchup_met">Registar</string>
     <string name="catchup_called">Liguei-lhe</string>
     <string name="catchup_snooze_week">Adiar uma semana</string>
     <string name="catchup_snooze_weekend">Lembrar-me no sábado</string>
@@ -676,4 +676,14 @@
     <string name="notif_test_body">As notificações estão a funcionar. É assim que vão aparecer.</string>
     <string name="tl_entry_options">Editar ou apagar</string>
     <string name="log_title_edit">Editar registo</string>
+    <string name="log_action">Registar</string>
+    <string name="log_time_now">Agora</string>
+    <string name="log_time_morning">Manhã</string>
+    <string name="log_time_lunch">Almoço</string>
+    <string name="log_time_afternoon">Tarde</string>
+    <string name="log_time_evening">Noite</string>
+    <string name="log_time_pick">Escolher hora</string>
+    <string name="log_last_together">Última vez juntos: %1$s</string>
+    <string name="notif_daily_log_title">Com quem puseste a conversa em dia hoje?</string>
+    <string name="notif_daily_log_body">Toca para registar enquanto te lembras.</string>
 </resources>

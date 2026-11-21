@@ -198,7 +198,7 @@
         <item quantity="other">The circle last met %1$d days ago.</item>
     </plurals>
     <string name="notif_group_body_never">The circle hasn’t met up yet.</string>
-    <string name="notif_action_met">Caught up</string>
+    <string name="notif_action_met">Log</string>
     <string name="notif_action_called">Called</string>
     <string name="notif_action_snooze_week">Next week</string>
     <string name="notif_action_snooze_weekend">This weekend</string>
@@ -632,7 +632,7 @@
         <item quantity="other">%1$d days since you met · goal %2$s</item>
     </plurals>
     <string name="catchup_never">No meetup logged yet</string>
-    <string name="catchup_met">Caught up</string>
+    <string name="catchup_met">Log</string>
     <string name="catchup_called">Called them</string>
     <string name="catchup_snooze_week">Snooze a week</string>
     <string name="catchup_snooze_weekend">Remind me Saturday</string>
@@ -667,4 +667,15 @@
         <item quantity="one">%1$d more kid</item>
         <item quantity="other">%1$d more kids</item>
     </plurals>
+    <!-- Issue #116: one Log action, the time row, the daily reminder -->
+    <string name="log_action">Log</string>
+    <string name="log_time_now">Now</string>
+    <string name="log_time_morning">Morning</string>
+    <string name="log_time_lunch">Lunch</string>
+    <string name="log_time_afternoon">Afternoon</string>
+    <string name="log_time_evening">Evening</string>
+    <string name="log_time_pick">Pick a time</string>
+    <string name="log_last_together">Last time together: %1$s</string>
+    <string name="notif_daily_log_title">Who did you catch up with today?</string>
+    <string name="notif_daily_log_body">Tap to log it while it’s fresh.</string>
 </resources>

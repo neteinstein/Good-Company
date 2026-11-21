@@ -67,6 +67,7 @@ import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionHeader
@@ -326,7 +327,11 @@ private fun CircleCard(status: Relationships.GroupStatus, state: HangoutsUiState
                         containerColor = if (overdue) palette.onAccent else palette.onAccent.copy(alpha = 0.2f),
                         contentColor = if (overdue) palette.accent else palette.onAccent,
                     ),
-                ) { Text(stringResource(Res.string.group_met), style = MaterialTheme.typography.labelLarge, maxLines = 1) }
+                ) {
+                    Icon(LogIcon, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(Res.string.group_met), style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                }
             }
         }
     }

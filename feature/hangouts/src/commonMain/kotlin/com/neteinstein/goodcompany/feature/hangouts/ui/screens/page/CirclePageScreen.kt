@@ -89,6 +89,7 @@ import com.neteinstein.goodcompany.core.ui.components.CircleBackdrop
 import com.neteinstein.goodcompany.core.ui.components.CircleReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.CropShape
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.PhotoCropDialog
 import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.QuickAction
@@ -446,7 +447,7 @@ private fun Actions(page: CirclePage, actions: CirclePageActions) {
     val haptics = LocalHapticFeedback.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         QuickAction(
-            Icons.Rounded.Groups,
+            LogIcon,
             stringResource(Res.string.group_met),
             onClick = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)

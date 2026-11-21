@@ -41,7 +41,7 @@
         <item quantity="other">%1$s · %2$d de zile de când s-a întâlnit cercul</item>
     </plurals>
     <string name="row_send_wishes">Trimite urări</string>
-    <string name="row_we_met">Ne-am pus la curent</string>
+    <string name="row_we_met">Notează</string>
     <string name="wish_title">Urări pentru %1$s</string>
     <string name="wish_gift_hint">Idei de cadou: %1$s</string>
     <string name="msg_reminder_saved">Memento salvat</string>
@@ -71,9 +71,9 @@
     <string name="today_drifting">Vă îndepărtați</string>
     <string name="today_drifting_hint">Ați fost mai apropiați. Un mesaj scurt face minuni.</string>
     <string name="today_logged_with">Timp cu %1$s înregistrat ✨</string>
-    <string name="today_checkin_title">Sunt cu…</string>
+    <string name="today_checkin_title">Notează</string>
     <string name="today_title">Azi</string>
-    <string name="today_checkin_body">Notează cu cine ești acum</string>
+    <string name="today_checkin_body">Cu cine ai ținut legătura? Acum sau mai devreme azi.</string>
     <string name="today_this_week">Săptămâna asta</string>
     <string name="today_nothing_week">Nimic în următoarele 7 zile</string>
     <string name="today_everything">Tot ce urmează</string>

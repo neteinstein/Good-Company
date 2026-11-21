@@ -74,6 +74,7 @@ class NotificationSettingsTest {
                 NotificationType.REMINDERS,
                 NotificationType.PLANS,
                 NotificationType.CATCH_UPS,
+                NotificationType.DAILY_LOG,
             ),
             types,
         )
@@ -86,11 +87,18 @@ class NotificationSettingsTest {
 
     @Test
     fun eachTypeSwitchRemovesOnlyThatType() {
-        listOf(NotificationType.BIRTHDAYS, NotificationType.EVENTS, NotificationType.REMINDERS, NotificationType.PLANS, NotificationType.CATCH_UPS)
+        listOf(
+            NotificationType.BIRTHDAYS,
+            NotificationType.EVENTS,
+            NotificationType.REMINDERS,
+            NotificationType.PLANS,
+            NotificationType.CATCH_UPS,
+            NotificationType.DAILY_LOG,
+        )
             .forEach { type ->
                 val types = plan(NotificationSettings().with(type, false)).types()
                 assertFalse(type in types, "$type still planned")
-                assertEquals(4, types.size, "only $type should go")
+                assertEquals(5, types.size, "only $type should go")
             }
     }
 

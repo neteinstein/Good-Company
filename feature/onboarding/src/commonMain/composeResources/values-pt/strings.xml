@@ -2,7 +2,7 @@
 <resources>
     <string name="page1_title">A tua gente,\nsempre presente</string>
     <string name="page1_body">Um pequeno CRM para a amizade. Guarda o que os teus amigos adoram, os nomes dos filhos e as datas que importam — tudo no teu dispositivo.</string>
-    <string name="page2_title">Um toque:\n“Estou com…”</string>
+    <string name="page2_title">Um toque:\n“Registar”</string>
     <string name="page2_body">Regista com quem estás e onde. Vê a última vez que estiveste com qualquer grupo — e quem não vês há algum tempo.</string>
     <string name="page3_title">Nunca percas\no que importa</string>
     <string name="page3_body">Aniversários, a cirurgia de um amigo, “comprar bilhetes com o Rui” — lembretes suaves na hora certa, e ideias com IA para fazerem juntos.</string>

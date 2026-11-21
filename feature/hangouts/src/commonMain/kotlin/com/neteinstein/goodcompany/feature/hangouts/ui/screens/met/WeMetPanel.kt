@@ -61,9 +61,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.LocalTimePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
+import com.neteinstein.goodcompany.core.ui.components.LogLastTogether
 import com.neteinstein.goodcompany.core.ui.components.LogOtherLabel
 import com.neteinstein.goodcompany.core.ui.components.LogSheetState
+import com.neteinstein.goodcompany.core.ui.components.LogTimeChoice
 import com.neteinstein.goodcompany.core.ui.components.MeetupPlace
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerSheet
 import com.neteinstein.goodcompany.core.ui.components.activityIcon
@@ -74,6 +77,7 @@ import com.neteinstein.goodcompany.core.ui.components.namesList
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
+import com.neteinstein.goodcompany.core.ui.resources.log_action
 import com.neteinstein.goodcompany.core.ui.resources.log_add_people
 import com.neteinstein.goodcompany.core.ui.resources.log_counts_hint
 import com.neteinstein.goodcompany.core.ui.resources.log_less
@@ -93,6 +97,7 @@ import com.neteinstein.goodcompany.feature.hangouts.resources.met_save_on
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_title
 import com.neteinstein.goodcompany.feature.hangouts.resources.met_title_circle
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -103,6 +108,7 @@ data class WeMetActions(
     val onKind: (LogKind) -> Unit = {},
     val onLabel: (String) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
+    val onTime: (LocalTime?) -> Unit = {},
     val onActivity: (HangoutActivity?) -> Unit = {},
     val onTogglePerson: (FriendId) -> Unit = {},
     val onPeople: (List<FriendId>) -> Unit = {},
@@ -144,6 +150,7 @@ fun WeMetPanelScreen(
             onKind = viewModel::onKind,
             onLabel = viewModel::onLabel,
             onDate = viewModel::onDate,
+            onTime = viewModel::onTime,
             onActivity = viewModel::onActivity,
             onTogglePerson = viewModel::onTogglePerson,
             onPeople = viewModel::onPeople,
@@ -172,7 +179,10 @@ fun WeMetPanelScreen(
 fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     val sheet = state.sheet
     var pickingDate by rememberSaveable { mutableStateOf(false) }
-    var pickingPeople by rememberSaveable { mutableStateOf(false) }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
+    // Issue #116: opened with nobody (Today's Log button, a shortcut, the daily reminder): the people picker comes first.
+    val startsEmpty = state.startsWithNobody
+    var pickingPeople by rememberSaveable { mutableStateOf(startsEmpty) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
     Box(
@@ -199,6 +209,8 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                     Text(
                         if (circle != null) {
                             stringResource(Res.string.met_title_circle, "${circle.emoji} ${circle.name}".trim())
+                        } else if (sheet.people.isEmpty()) {
+                            stringResource(CoreRes.string.log_action)
                         } else {
                             stringResource(Res.string.met_title, namesList(sheet.people))
                         },
@@ -209,10 +221,14 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
                     )
                     TextButton(onClick = actions.onMoreDetails) { Text(stringResource(Res.string.met_more_details)) }
                 }
+                // Issue #116: started with nobody, who comes first; otherwise after the date, as before.
+                if (startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
                 HowRow(sheet.kind, actions.onKind)
                 if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
                 LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
-                People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
+                LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
+                if (!startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
+                if (sheet.kind == LogKind.MEETUP) LogLastTogether(sheet.lastTogether, sheet.now, sheet.zone)
                 if (!sheet.kind.isRemote) {
                     Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
                 }
@@ -264,9 +280,12 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     if (pickingDate) {
         LocalDatePickerDialog(sheet.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = sheet.today)
     }
+    if (pickingTime) {
+        LocalTimePickerDialog(sheet.time ?: sheet.nowTime, onDismiss = { pickingTime = false }, onPicked = actions.onTime)
+    }
     if (pickingPeople) {
         PeoplePickerSheet(
-            sheet.everyone,
+            sheet.recentFirst,
             sheet.circles,
             chosen = sheet.people.map { it.id },
             onDismiss = { pickingPeople = false },

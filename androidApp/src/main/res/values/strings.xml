@@ -11,7 +11,7 @@
     <string name="widget_nothing">Nothing coming up</string>
     <string name="widget_see">Time to see %1$s</string>
     <string name="widget_caught_up">All caught up 💛</string>
-    <string name="widget_met">Caught up</string>
+    <string name="widget_met">Log</string>
     <string name="widget_private">Open Good Company to see what’s next</string>
     <plurals name="widget_in_days">
         <item quantity="one">In %1$d day</item>
@@ -19,6 +19,6 @@
     </plurals>
     <string name="share_target_label">Save to a friend</string>
     <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
-    <string name="shortcut_log_meetup">Caught up</string>
-    <string name="shortcut_log_meetup_short">Caught up</string>
+    <string name="shortcut_log_meetup">Log</string>
+    <string name="shortcut_log_meetup_short">Log</string>
 </resources>

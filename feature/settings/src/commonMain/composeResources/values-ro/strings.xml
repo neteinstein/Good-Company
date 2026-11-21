@@ -217,4 +217,6 @@
     <string name="notif_settings_persistent">Păstrează-le pe cele importante pe ecran</string>
     <string name="notif_settings_persistent_hint">Mementourile marcate ca importante, cele întârziate, zilele de naștere și zilele importante de azi și planul de azi rămân până faci ceva. Mementourile întârziate revin în fiecare zi.</string>
     <string name="notif_settings_when">Când și cum</string>
+    <string name="notif_type_daily_log">Notează-ți ziua</string>
+    <string name="notif_type_daily_log_hint">Un memento zilnic să notezi cu cine ai ținut legătura.</string>
 </resources>

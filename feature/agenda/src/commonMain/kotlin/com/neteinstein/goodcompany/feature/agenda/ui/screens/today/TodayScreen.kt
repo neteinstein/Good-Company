@@ -60,6 +60,7 @@ import com.neteinstein.goodcompany.core.ui.components.DriftingCard
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderSettingsButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
@@ -147,8 +148,7 @@ suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = 
 }
 
 /**
- * The Today tab (issue #65). [checkInSheet] is the "I'm with…" sheet, supplied by the app shell (it lives with the
- * circles): it calls `onSaved` with the first names it logged, or `onDismiss`.
+ * The Today tab (issue #65). Its Log button (issue #116, was "I'm with…") opens the Log popup through [onLog].
  */
 @Composable
 fun TodayScreen(
@@ -165,7 +165,8 @@ fun TodayScreen(
     onOpenSettings: () -> Unit,
     /** No people yet: the People tab, where they're added. */
     onOpenPeople: () -> Unit,
-    checkInSheet: @Composable (onSaved: (List<String>) -> Unit, onDismiss: () -> Unit) -> Unit,
+    /** Issue #116: the Log button: the Log popup with the people picker first. */
+    onLog: () -> Unit,
     /** The December "Your year in friendship" card (issue #67). */
     onOpenYearReview: (Int) -> Unit = {},
     /** A reminder's circle chip opens the circle's page (issue #99). */
@@ -174,7 +175,6 @@ fun TodayScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val addToCalendar = rememberCalendarAdder()
-    var checkingIn by rememberSaveable { mutableStateOf(false) }
     // Issue #98: a gentle card instead of a cold system prompt, only while the system doesn't allow notifications.
     var notificationsAsked by remember { mutableIntStateOf(0) }
     val enableNotifications = rememberNotificationsEnabler { notificationsAsked++ }
@@ -184,7 +184,7 @@ fun TodayScreen(
         state = state,
         notificationsBlocked = canNotify && notificationsAllowed == false,
         actions = TodayActions(
-            onCheckIn = { checkingIn = true },
+            onCheckIn = onLog,
             onOpenFriend = onOpenFriend,
             onOpenStory = onOpenStory,
             onWeMet = onWeMet,
@@ -221,15 +221,6 @@ fun TodayScreen(
             onUndoReminder = viewModel::onUndoReminder,
         ),
     )
-    if (checkingIn) {
-        checkInSheet(
-            { names ->
-                checkingIn = false
-                viewModel.onCheckedIn(names)
-            },
-            { checkingIn = false },
-        )
-    }
     if (state.showReminderEditor) {
         ReminderEditor(
             state.friends,
@@ -476,7 +467,7 @@ fun TodayContent(
     }
 }
 
-/** "I'm with… · Log who you're with now": opens the check-in sheet (from Together). */
+/** Issue #116: "Log · Who did you catch up with?": opens the Log popup with the people picker first. */
 @Composable
 private fun CheckInCard(onClick: () -> Unit) {
     val haptics = LocalHapticFeedback.current
@@ -498,7 +489,7 @@ private fun CheckInCard(onClick: () -> Unit) {
             Text(stringResource(Res.string.today_checkin_body), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
         }
         Box(Modifier.size(44.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.primary)
+            Icon(LogIcon, null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

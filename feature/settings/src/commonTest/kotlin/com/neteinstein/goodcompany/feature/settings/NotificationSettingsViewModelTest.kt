@@ -29,9 +29,18 @@ class NotificationSettingsViewModelTest {
         val n = state.value.settings.notifications
         assertFalse(n.enabled)
         assertFalse(n.persistent)
-        assertEquals(NotificationSettings(false, false, false, false, false, false, false, false), n)
+        assertEquals(NotificationSettings(false, false, false, false, false, false, false, false, dailyLog = false), n)
         vm.onTypeChange(NotificationType.PLANS, true)
         assertTrue(state.value.settings.notifications.plans)
+    }
+
+    @Test
+    fun theDailyLogTimeIsSaved() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(kotlinx.datetime.LocalTime(21, 0), state.value.settings.notifications.dailyLogTime)
+        vm.onDailyLogTimeChange(kotlinx.datetime.LocalTime(20, 30))
+        assertEquals(20 * 60 + 30, state.value.settings.notifications.dailyLogMinute)
     }
 
     @Test

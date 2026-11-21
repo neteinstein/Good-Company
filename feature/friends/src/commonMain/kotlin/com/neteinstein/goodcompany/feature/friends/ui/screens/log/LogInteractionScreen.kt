@@ -37,6 +37,7 @@ fun LogInteractionScreen(
             onKind = viewModel::onKind,
             onPeople = viewModel::onPeople,
             onDate = viewModel::onDate,
+            onTime = viewModel::onTime,
             onNote = viewModel::onNote,
             onLabel = viewModel::onLabel,
             onPlaceName = viewModel::onPlaceName,

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Event
@@ -37,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,14 +49,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.NotificationType
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
+import com.neteinstein.goodcompany.core.ui.components.LocalTimePickerDialog
+import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.ScreenHeader
 import com.neteinstein.goodcompany.core.ui.components.SectionCard
+import com.neteinstein.goodcompany.core.ui.components.hhmm
 import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.format.weekdayShort
 import com.neteinstein.goodcompany.core.ui.platform.currentPlatformCapabilities
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationSettingsOpener
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsAllowed
 import com.neteinstein.goodcompany.core.ui.platform.rememberNotificationsEnabler
+import com.neteinstein.goodcompany.core.ui.resources.log_time_pick
 import com.neteinstein.goodcompany.feature.settings.resources.Res
 import com.neteinstein.goodcompany.feature.settings.resources.allow_notifications
 import com.neteinstein.goodcompany.feature.settings.resources.digest
@@ -81,6 +87,8 @@ import com.neteinstein.goodcompany.feature.settings.resources.notif_type_calenda
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_calendar_hint
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_catch_ups
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_catch_ups_hint
+import com.neteinstein.goodcompany.feature.settings.resources.notif_type_daily_log
+import com.neteinstein.goodcompany.feature.settings.resources.notif_type_daily_log_hint
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_events
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_events_hint
 import com.neteinstein.goodcompany.feature.settings.resources.notif_type_plans
@@ -94,11 +102,13 @@ import com.neteinstein.goodcompany.feature.settings.resources.quiet_note
 import com.neteinstein.goodcompany.feature.settings.resources.web_notifications
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SwitchRow
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.isoDayNumber
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import com.neteinstein.goodcompany.core.ui.resources.Res as CoreRes
 
 suspend fun NotificationSettingsMessage.text(): String = when (this) {
     is NotificationSettingsMessage.Permission -> getString(if (granted) Res.string.msg_notifications_on else Res.string.msg_notifications_off)
@@ -110,6 +120,7 @@ data class NotificationSettingsActions(
     val onEnabledChange: (Boolean) -> Unit = {},
     val onTypeChange: (NotificationType, Boolean) -> Unit = { _, _ -> },
     val onPersistentChange: (Boolean) -> Unit = {},
+    val onDailyLogTimeChange: (LocalTime) -> Unit = {},
     val onReminderHourChange: (Int) -> Unit = {},
     val onWeeklyDigestChange: (Boolean) -> Unit = {},
     val onDigestDayChange: (Int) -> Unit = {},
@@ -141,6 +152,7 @@ fun NotificationSettingsScreen(onBack: () -> Unit, viewModel: NotificationSettin
             onEnabledChange = viewModel::onEnabledChange,
             onTypeChange = viewModel::onTypeChange,
             onPersistentChange = viewModel::onPersistentChange,
+            onDailyLogTimeChange = viewModel::onDailyLogTimeChange,
             onReminderHourChange = viewModel::onReminderHourChange,
             onWeeklyDigestChange = viewModel::onWeeklyDigestChange,
             onDigestDayChange = viewModel::onDigestDayChange,
@@ -162,7 +174,11 @@ private val typeRows = listOf(
     TypeRow(NotificationType.PLANS, Icons.Rounded.EventAvailable, Res.string.notif_type_plans, Res.string.notif_type_plans_hint),
     TypeRow(NotificationType.CATCH_UPS, Icons.Rounded.Favorite, Res.string.notif_type_catch_ups, Res.string.notif_type_catch_ups_hint),
     TypeRow(NotificationType.CALENDAR, Icons.Rounded.CalendarMonth, Res.string.notif_type_calendar, Res.string.notif_type_calendar_hint),
+    TypeRow(NotificationType.DAILY_LOG, LogIcon, Res.string.notif_type_daily_log, Res.string.notif_type_daily_log_hint),
 )
+
+/** Issue #116: the quick times for the daily log reminder (21:00 is the default); any other is picked. */
+private val DAILY_LOG_TIMES = listOf(LocalTime(19, 0), LocalTime(20, 0), LocalTime(21, 0), LocalTime(22, 0))
 
 /**
  * Stateless content. [supported] is false on the web (no background notifications); [allowed] is null until the
@@ -210,6 +226,7 @@ fun NotificationSettingsContent(
                         icon = row.icon,
                         enabled = n.enabled && !state.loading,
                     )
+                    if (row.type == NotificationType.DAILY_LOG && n.enabled && n.dailyLog) DailyLogTime(n.dailyLogTime, actions.onDailyLogTimeChange)
                 }
                 SwitchRow(
                     stringResource(Res.string.notif_settings_persistent),
@@ -254,6 +271,26 @@ fun NotificationSettingsContent(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/** Issue #116: when the daily log reminder comes: a few evening times, or any time picked. */
+@Composable
+private fun DailyLogTime(time: LocalTime, onChange: (LocalTime) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    Row(
+        Modifier.horizontalScroll(rememberScrollState()).padding(start = 56.dp, end = 16.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        DAILY_LOG_TIMES.forEach { t -> FilterChip(time == t, { onChange(t) }, label = { Text(t.hhmm()) }) }
+        val other = time !in DAILY_LOG_TIMES
+        FilterChip(
+            other,
+            { picking = true },
+            label = { Text(if (other) time.hhmm() else stringResource(CoreRes.string.log_time_pick)) },
+            leadingIcon = { Icon(Icons.Rounded.AccessTime, null, Modifier.size(18.dp)) },
+        )
+    }
+    if (picking) LocalTimePickerDialog(time, onDismiss = { picking = false }, onPicked = onChange)
 }
 
 /** Whether notifications are allowed, with a way to fix it, the system settings and a test notification. */

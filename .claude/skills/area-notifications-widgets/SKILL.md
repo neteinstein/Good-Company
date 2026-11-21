@@ -10,7 +10,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 ## Before you change anything
 
 - Catch-up nudges go only through `NudgePolicy` in `NotificationPlanner`. Birthdays, events, reminders and plans are
-  never throttled.
+  never throttled. Nor is the daily "log your day" reminder (issue #116, `NotificationType.DAILY_LOG`, on by default at
+  21:00, `NotificationSettings.dailyLogMinute`): 3 days ahead in slot `daily-log`, REMINDERS channel, and it carries
+  `PlannedNotification.link = AppLink.log()`, which Android puts on the tap intent and iOS hands to `QuickEntryInbox`.
 - Privacy: with private notifications or app lock on, widgets hide photos and shortcuts show nobody.
 - Android and iOS widgets show the same `ObserveHomeWidgetUseCase` data; change both (iOS keeps pace with Android).
 - Texts: notifications are rendered in `:core:ui` (`ResourceNotificationRenderer`); widget and shortcut labels are

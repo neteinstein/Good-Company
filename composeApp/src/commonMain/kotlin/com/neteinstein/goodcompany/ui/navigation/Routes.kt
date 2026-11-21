@@ -54,6 +54,8 @@ import org.jetbrains.compose.resources.StringResource
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */
     val label: String? = null,
+    /** Issue #116: the time of day chosen in the panel (`HH:MM`); null = now today, noon on an earlier day. */
+    val time: String? = null,
     val editFriend: String? = null,
     val editKey: String? = null,
 ) : AppRoute {

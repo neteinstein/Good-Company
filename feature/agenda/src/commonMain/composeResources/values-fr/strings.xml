@@ -38,7 +38,7 @@
         <item quantity="other">%1$s · %2$d jours depuis que le cercle s’est réuni</item>
     </plurals>
     <string name="row_send_wishes">Souhaiter</string>
-    <string name="row_we_met">Nouvelles prises</string>
+    <string name="row_we_met">Noter</string>
     <string name="wish_title">Vœux pour %1$s</string>
     <string name="wish_gift_hint">Idées cadeaux : %1$s</string>
     <string name="msg_reminder_saved">Rappel enregistré</string>
@@ -67,9 +67,9 @@
     <string name="today_drifting">Vous vous éloignez</string>
     <string name="today_drifting_hint">Vous étiez plus proches. Un petit message peut tout changer.</string>
     <string name="today_logged_with">Moment avec %1$s enregistré ✨</string>
-    <string name="today_checkin_title">Je suis avec…</string>
+    <string name="today_checkin_title">Noter</string>
     <string name="today_title">Aujourd’hui</string>
-    <string name="today_checkin_body">Note avec qui tu es maintenant</string>
+    <string name="today_checkin_body">Avec qui as-tu pris des nouvelles ? Maintenant ou plus tôt.</string>
     <string name="today_this_week">Cette semaine</string>
     <string name="today_nothing_week">Rien dans les 7 prochains jours</string>
     <string name="today_everything">Tout ce qui arrive</string>

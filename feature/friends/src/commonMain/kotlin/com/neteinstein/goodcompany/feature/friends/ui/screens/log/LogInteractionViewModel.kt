@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 /**
  * What the sheet opens with besides people and type: a calendar suggestion's day and activity guess (D3), or what the
@@ -44,6 +45,8 @@ data class LogPrefill(
     val place: String? = null,
     /** The "Other" label typed in the "Caught up" panel (issue #101). */
     val label: String? = null,
+    /** Issue #116: the time of day chosen in the panel. */
+    val time: LocalTime? = null,
     /** Edit this timeline entry instead of logging a new one (issue #102); the rest is then ignored. */
     val edit: TimelineEntryRef? = null,
 )
@@ -91,6 +94,7 @@ class LogInteractionViewModel(
             activity = prefill.activity,
             circleId = circleId,
             label = prefill.label.orEmpty(),
+            time = prefill.time,
         ),
         observeFriends,
         observeActivities,
@@ -130,6 +134,8 @@ class LogInteractionViewModel(
     fun onTogglePerson(id: FriendId) = model.onTogglePerson(id)
 
     fun onDate(date: LocalDate) = model.onDate(date)
+
+    fun onTime(time: LocalTime?) = model.onTime(time)
 
     fun onNote(note: String) = model.onNote(note)
 

@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.NudgePolicy
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
@@ -36,7 +37,7 @@ class NudgesAndPlansTest {
     )
 
     private fun plan(policy: NudgePolicy, friends: List<Friend> = overdue, plans: List<Plan> = emptyList()) =
-        NotificationPlanner.plan(friends, emptyList(), emptyList(), now, zone, 9, horizonDays = 20, plans = plans, policy = policy)
+        NotificationPlanner.plan(friends, emptyList(), emptyList(), now, zone, 9, horizonDays = 20, plans = plans, policy = policy).withoutDailyLog()
 
     @Test
     fun perFriendNudgesAreCappedAtOneADay() {
@@ -78,7 +79,7 @@ class NudgesAndPlansTest {
             9,
             horizonDays = 10,
             policy = NudgePolicy(),
-        )
+        ).withoutDailyLog()
         assertEquals("digest:2026-03-21", planned.first().id)
         assertEquals(LocalDate(2026, 3, 16), NudgePolicy(digestDay = 1).nextDigestDay(today))
     }

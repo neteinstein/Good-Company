@@ -70,8 +70,9 @@ sealed interface HangoutsMessage {
 data class PlanDraft(val circleId: String)
 
 /**
- * The Circles tab (issue #67, was Together; only the circles since issue #88) and the "I'm with…" sheet
- * ([CheckInSheetHost]). Meetups show on each circle's page and on each person's timeline.
+ * The Circles tab (issue #67, was Together; only the circles since issue #88). The "I'm with…" sheet's draft is still
+ * here, but nothing opens it since issue #116 (Today's button opens the Log popup). Meetups show on each circle's page
+ * and on each person's timeline.
  */
 data class HangoutsUiState(
     /** Close friends first — the check-in picker. */

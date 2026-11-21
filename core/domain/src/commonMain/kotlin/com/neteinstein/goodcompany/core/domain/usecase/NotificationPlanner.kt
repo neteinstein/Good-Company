@@ -58,6 +58,9 @@ object NotificationPlanner {
     const val CALENDAR_HOUR = 20
     const val CALENDAR_DELAY_MINUTES = 30
 
+    /** How many days of the daily log reminder are planned ahead (issue #116; re-planning adds the next ones). */
+    const val DAILY_LOG_DAYS = 3
+
     /** How many daily asks an overdue reminder has planned ahead (re-planning adds the next ones). */
     const val OVERDUE_ASKS = 3
 
@@ -229,6 +232,18 @@ object NotificationPlanner {
                         slot = "plan:$key",
                         whileOpen = true,
                     )
+                }
+            }
+        }
+
+        // --- Issue #116: the daily "log your day" reminder at its own time. Its own type and switch, never throttled by
+        // the catch-up budget. The next few days are planned; re-planning adds the next ones. A tap opens the Log popup.
+        if (notifications.allows(NotificationType.DAILY_LOG)) {
+            val time = notifications.dailyLogTime
+            (0 until DAILY_LOG_DAYS).map { today.plus(it, DateTimeUnit.DAY) }.forEach { day ->
+                val at = day.atTime(time).toInstant(zone)
+                if (at > now && day <= end) {
+                    out += PlannedNotification("daily-log:$day", at, NotificationContent.DailyLog, slot = "daily-log", link = AppLink.log())
                 }
             }
         }

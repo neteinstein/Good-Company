@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 /** What's typed or picked in a log so far; the friends themselves come from the repository. */
 data class LogDraft(
@@ -52,6 +54,8 @@ data class LogDraft(
     val label: String = "",
     /** Editing a timeline entry (issue #102) rather than logging a new one. */
     val editing: Boolean = false,
+    /** Issue #116: the time of day (a quick chip or a picked time); null = now today, noon on an earlier day. */
+    val time: LocalTime? = null,
 )
 
 /**
@@ -103,10 +107,20 @@ class LogSheetModel(
         val byId = friends.associateBy { it.friend.id }
         val circle = circles.firstOrNull { it.group.id == d.circleId }
         val everyone = friends.map { it.friend }
+        val chosen = d.people.mapNotNull { byId[it]?.friend }
         LogSheetState(
             kind = d.kind,
-            people = d.people.mapNotNull { byId[it]?.friend },
+            people = chosen,
             everyone = everyone.sortedBy { it.displayName.lowercase() },
+            // Issue #116: the people picker lists whoever you were last in touch with first.
+            recentFirst = friends.sortedWith(
+                compareByDescending<FriendSummary> { it.lastContact }
+                    .thenBy { it.friend.displayName.lowercase() },
+            ).map { it.friend },
+            time = d.time,
+            now = clock.now(),
+            zone = clock.timeZone,
+            lastTogether = if (d.kind == LogKind.MEETUP) places.lastTogether(chosen.map { it.id }) else null,
             date = d.date,
             today = clock.today(),
             note = d.note,
@@ -163,6 +177,7 @@ class LogSheetModel(
                 label = request.label,
                 circleId = null,
                 editing = true,
+                time = request.time,
             )
         }
     }
@@ -183,6 +198,9 @@ class LogSheetModel(
             it.copy(people = it.people + id)
         }
     }
+
+    /** Issue #116: Now (null), a quick time of day or a picked time. */
+    fun onTime(time: LocalTime?) = mutableDraft.update { it.copy(time = time) }
 
     /** Future days can't be picked; they fall back to today. */
     fun onDate(date: LocalDate) = mutableDraft.update { it.copy(date = minOf(date, clock.today())) }
@@ -243,6 +261,7 @@ class LogSheetModel(
             location = d.location.takeIf { meetup },
             activity = d.activity.takeIf { meetup },
             label = d.label.takeIf { d.kind == LogKind.OTHER }.orEmpty(),
+            time = d.time,
         )
         val edited = editing
         if (edited != null && editEntry != null) {

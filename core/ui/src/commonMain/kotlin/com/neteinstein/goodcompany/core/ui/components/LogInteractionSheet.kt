@@ -96,8 +96,12 @@ import com.neteinstein.goodcompany.core.ui.resources.ok
 import com.neteinstein.goodcompany.core.ui.resources.save
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 import androidx.compose.material.icons.automirrored.rounded.MenuBook as JournalIcon
 
 /** What the "Log" sheet shows. Built by its ViewModel; the sheet itself is stateless apart from open dialogs. */
@@ -125,9 +129,20 @@ data class LogSheetState(
     val circleMembers: List<Friend> = emptyList(),
     /** Editing a timeline entry (issue #102): the title says so. */
     val editing: Boolean = false,
+    /** Issue #116: everyone, whoever you were last in touch with first (the people picker's order). */
+    val recentFirst: List<Friend> = everyone,
+    /** Issue #116: the time of day chosen (null = now today, noon on an earlier day). */
+    val time: LocalTime? = null,
+    val now: Instant = Instant.DISTANT_PAST,
+    val zone: TimeZone = TimeZone.UTC,
+    /** In person only: the last meetup with everyone chosen ("Last time together: …"). */
+    val lastTogether: Instant? = null,
 ) {
     /** Journal entries need text; everything else can be saved as it is. */
     val canSave: Boolean get() = people.isNotEmpty() && !saving && (kind != LogKind.JOURNAL || note.isNotBlank())
+
+    /** The current time of day, to the minute (where "Pick a time" starts). */
+    val nowTime: LocalTime get() = now.toLocalDateTime(zone).let { LocalTime(it.hour, it.minute) }
 
     /** Someone the "calls and chats count" hint is about: a picked friend whose switch is off. */
     val countsHintFor: Friend? get() = if (kind.interactionType?.isRemote == true) people.firstOrNull { !it.contactCountsAsCatchUp } else null
@@ -137,6 +152,8 @@ data class LogSheetActions(
     val onKind: (LogKind) -> Unit = {},
     val onPeople: (List<FriendId>) -> Unit = {},
     val onDate: (LocalDate) -> Unit = {},
+    /** Issue #116: Now (null), a quick time of day or a picked time. */
+    val onTime: (LocalTime?) -> Unit = {},
     val onNote: (String) -> Unit = {},
     val onLabel: (String) -> Unit = {},
     val onPlaceName: (String) -> Unit = {},
@@ -180,6 +197,7 @@ fun logKindIcon(kind: LogKind) = kind.interactionType?.let(::interactionIcon) ?:
 fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
     var pickingPeople by rememberSaveable { mutableStateOf(false) }
     var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
     Box(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
@@ -249,6 +267,8 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
                     }
                 }
                 DateChoice(state, onDate = actions.onDate, onPick = { pickingDate = true })
+                LogTimeChoice(state.time, state.date, state.now, state.zone, actions.onTime, onPick = { pickingTime = true })
+                if (state.kind == LogKind.MEETUP) LogLastTogether(state.lastTogether, state.now, state.zone)
                 if (state.kind == LogKind.MEETUP) {
                     Text(stringResource(Res.string.log_activity), style = MaterialTheme.typography.labelLarge)
                     val shown = if (showAllActivities) state.activities else state.activities.take(ObserveActivitiesUseCase.SHOWN)
@@ -300,9 +320,12 @@ fun LogInteractionSheet(state: LogSheetState, actions: LogSheetActions) {
     if (pickingDate) {
         LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)
     }
+    if (pickingTime) {
+        LocalTimePickerDialog(state.time ?: state.nowTime, onDismiss = { pickingTime = false }, onPicked = actions.onTime)
+    }
     if (pickingPeople) {
         PeoplePickerSheet(
-            state.everyone,
+            state.recentFirst,
             state.circles,
             chosen = state.people.map { it.id },
             onDismiss = { pickingPeople = false },

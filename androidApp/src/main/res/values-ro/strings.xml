@@ -11,7 +11,7 @@
     <string name="widget_nothing">Nimic în curând</string>
     <string name="widget_see">E timpul să-l/s-o vezi pe %1$s</string>
     <string name="widget_caught_up">Totul la zi 💛</string>
-    <string name="widget_met">La curent</string>
+    <string name="widget_met">Notează</string>
     <string name="widget_private">Deschide Good Company ca să vezi ce urmează</string>
     <plurals name="widget_in_days">
         <item quantity="one">Peste %1$d zi</item>
@@ -20,6 +20,6 @@
     </plurals>
     <string name="share_target_label">Salvează la un prieten</string>
     <!-- App-icon shortcuts (long-press the icon). People use their own names. -->
-    <string name="shortcut_log_meetup">Ne-am pus la curent</string>
-    <string name="shortcut_log_meetup_short">La curent</string>
+    <string name="shortcut_log_meetup">Notează</string>
+    <string name="shortcut_log_meetup_short">Notează</string>
 </resources>

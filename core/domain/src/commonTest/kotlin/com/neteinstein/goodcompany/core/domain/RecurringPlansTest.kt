@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
+import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -230,7 +231,7 @@ class RecurringPlansTest {
             plans = listOf(p),
             // An app that hasn't been opened for months: catch-ups stop, plans don't (gotcha 16).
             policy = NudgePolicy(weeklyDigest = false, lastOpenedAt = at(2025, 1, 1)),
-        )
+        ).withoutDailyLog()
         assertEquals(
             listOf(
                 "plan:p@2026-03-09:ask",
@@ -258,7 +259,7 @@ class RecurringPlansTest {
             TimeZone.UTC,
             9,
             plans = listOf(plan(LocalDate(2026, 3, 12), friendIds = listOf(ana))),
-        )
+        ).withoutDailyLog()
         assertEquals(listOf("plan:p:day", "plan:p:ask"), planned.map { it.id })
         assertEquals("p", assertIs<NotificationContent.PlanFollowUp>(planned[1].content).target)
     }
