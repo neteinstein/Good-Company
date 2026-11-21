@@ -141,6 +141,7 @@
     <string name="reminder_action_snooze">Snooze</string>
     <string name="reminder_action_edit">Edit</string>
     <string name="reminder_action_delete">Delete</string>
+    <string name="reminder_options">Reminder options</string>
     <string name="reminder_snooze_hour">1 hour</string>
     <string name="reminder_snooze_tonight">Tonight</string>
     <string name="reminder_snooze_tomorrow">Tomorrow</string>

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,11 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EventRepeat
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.Snooze
 import androidx.compose.material.icons.rounded.Undo
@@ -27,6 +31,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -39,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -54,6 +60,7 @@ import com.neteinstein.goodcompany.core.ui.format.relativeDayText
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.cancel
+import com.neteinstein.goodcompany.core.ui.resources.plan_with_names
 import com.neteinstein.goodcompany.core.ui.resources.reminder_action_delete
 import com.neteinstein.goodcompany.core.ui.resources.reminder_action_done
 import com.neteinstein.goodcompany.core.ui.resources.reminder_action_edit
@@ -64,6 +71,7 @@ import com.neteinstein.goodcompany.core.ui.resources.reminder_msg_deleted
 import com.neteinstein.goodcompany.core.ui.resources.reminder_msg_done
 import com.neteinstein.goodcompany.core.ui.resources.reminder_msg_next
 import com.neteinstein.goodcompany.core.ui.resources.reminder_msg_snoozed
+import com.neteinstein.goodcompany.core.ui.resources.reminder_options
 import com.neteinstein.goodcompany.core.ui.resources.reminder_slot
 import com.neteinstein.goodcompany.core.ui.resources.reminder_snooze_hour
 import com.neteinstein.goodcompany.core.ui.resources.reminder_snooze_next_week
@@ -80,6 +88,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Instant
@@ -174,6 +183,91 @@ fun ReminderRow(
             }
             ReminderActionsRow(reminder, callbacks, today, zone, now)
         }
+    }
+}
+
+/**
+ * A reminder as a timeline line (issue #130), laid out like [PlanRow]: the day where a plan's date goes (a bell when it
+ * has none), the title, then the time, repeat, importance and who it's about in one line, and Done · Snooze · Edit ·
+ * Delete in a ⋮ menu (the caller offers Undo on Delete).
+ */
+@Composable
+fun ReminderTimelineRow(
+    reminder: Reminder,
+    people: List<Friend>,
+    today: LocalDate,
+    zone: TimeZone,
+    now: Instant,
+    callbacks: ReminderCallbacks,
+    modifier: Modifier = Modifier,
+    circle: FriendGroup? = null,
+) {
+    var menu by remember { mutableStateOf(false) }
+    var snoozing by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
+    val shownAt = reminder.snoozedUntil ?: reminder.dueAt
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (shownAt != null) {
+            DateBadge(shownAt.toLocalDateTime(zone).date, today)
+        } else {
+            Box(
+                Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Rounded.NotificationsNone, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(reminder.title, style = MaterialTheme.typography.titleSmall)
+            val details = listOfNotNull(
+                reminder.snoozedUntil?.let { stringResource(Res.string.reminder_snoozed_until, it.toLocalDateTime(zone).timeLabel()) }
+                    ?: reminder.dueAt?.toLocalDateTime(zone)?.timeLabel(),
+                reminder.repeat.takeIf { reminder.isRepeating }?.let { reminderRepeatLabel(it) },
+                stringResource(Res.string.reminder_important_short).takeIf { reminder.important },
+                circle?.let { "${it.emoji} ${it.name}" },
+                people.takeIf { circle == null && it.isNotEmpty() }?.let { fs ->
+                    stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
+                },
+            )
+            if (details.isNotEmpty()) {
+                Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Box {
+            IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
+                Icon(Icons.Rounded.MoreVert, stringResource(Res.string.reminder_options), Modifier.size(20.dp))
+            }
+            DropdownMenu(menu, onDismissRequest = { menu = false }) {
+                fun item(label: StringResource, icon: ImageVector, onClick: () -> Unit): @Composable () -> Unit = {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(label)) },
+                        leadingIcon = { Icon(icon, null) },
+                        onClick = {
+                            menu = false
+                            onClick()
+                        },
+                    )
+                }
+                item(Res.string.reminder_action_done, Icons.Rounded.Check) { callbacks.onDone(reminder) }()
+                item(Res.string.reminder_action_snooze, Icons.Rounded.Snooze) { snoozing = true }()
+                item(Res.string.reminder_action_edit, Icons.Rounded.Edit) { callbacks.onEdit(reminder) }()
+                item(Res.string.reminder_action_delete, Icons.Rounded.DeleteOutline) { callbacks.onDelete(reminder) }()
+            }
+            SnoozeMenu(
+                expanded = snoozing,
+                tonight = now < today.atTime(LocalTime(SnoozeReminderUseCase.TONIGHT_HOUR, 0)).toInstant(zone),
+                onDismiss = { snoozing = false },
+                onPick = { snooze ->
+                    snoozing = false
+                    if (snooze == null) picking = true else callbacks.onSnooze(reminder, snooze)
+                },
+            )
+        }
+    }
+    if (picking) {
+        SnoozeTimeDialog(today, zone, onDismiss = { picking = false }, onPicked = { at ->
+            picking = false
+            callbacks.onSnooze(reminder, ReminderSnooze.Until(at))
+        })
     }
 }
 

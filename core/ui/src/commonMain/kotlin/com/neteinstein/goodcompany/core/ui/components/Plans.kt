@@ -366,7 +366,10 @@ fun PlanRow(
             }
             if (!isPast) {
                 var menu by remember { mutableStateOf(false) }
-                IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.plan_change)) }
+                // Issue #130: the timeline's ⋮ size, so plans, reminders, birthdays and entries line up.
+                IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Rounded.MoreVert, stringResource(Res.string.plan_change), Modifier.size(20.dp))
+                }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
                     fun item(label: StringResource, icon: ImageVector, onClick: () -> Unit): @Composable () -> Unit = {
                         DropdownMenuItem(

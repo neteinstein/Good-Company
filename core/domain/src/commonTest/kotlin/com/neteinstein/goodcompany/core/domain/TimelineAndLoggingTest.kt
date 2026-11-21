@@ -330,8 +330,6 @@ class TimelineAndLoggingTest {
         val detail = g.observeFriendDetail(ana).first()!!
         assertEquals(anaTimeline().map { it.key }, detail.timeline.map { it.key })
         assertEquals("j1", detail.lastJournal?.id)
-        assertEquals(at(2026, 2, 27), detail.lastContactByType[InteractionType.EMAIL])
-        assertEquals(at(2026, 3, 4), detail.lastContactByType[InteractionType.VIDEO_CALL])
     }
 
     @Test

@@ -159,6 +159,7 @@
     <string name="reminder_action_snooze">Posponer</string>
     <string name="reminder_action_edit">Editar</string>
     <string name="reminder_action_delete">Eliminar</string>
+    <string name="reminder_options">Opciones del recordatorio</string>
     <string name="reminder_snooze_hour">1 hora</string>
     <string name="reminder_snooze_tonight">Esta noche</string>
     <string name="reminder_snooze_tomorrow">Mañana</string>

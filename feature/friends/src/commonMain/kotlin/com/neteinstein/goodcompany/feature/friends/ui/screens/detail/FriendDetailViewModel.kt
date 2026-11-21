@@ -57,7 +57,6 @@ import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseC
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
-import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.MarkMediaExplainedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
@@ -111,8 +110,6 @@ import kotlin.time.Instant
 
 /** One-off feedback for the snackbar; the screen turns it into localised text. */
 sealed interface FriendDetailMessage {
-
-    data object CallLogged : FriendDetailMessage
 
     data class Snoozed(val until: LocalDate) : FriendDetailMessage
 
@@ -344,7 +341,6 @@ class FriendDetailViewModel(
     private val deleteFriend: DeleteFriendUseCase,
     private val setCloseness: SetClosenessUseCase,
     private val snooze: SnoozeCatchUpUseCase,
-    private val logCall: LogCallUseCase,
     private val generateTalkingPoints: GenerateTalkingPointsUseCase,
     private val dismissIdea: DismissIdeaUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
@@ -528,13 +524,6 @@ class FriendDetailViewModel(
 
     fun onClearSnooze() {
         viewModelScope.launch { snooze.clearFriend(friendId) }
-    }
-
-    fun onCalled() {
-        viewModelScope.launch {
-            logCall(friendId)
-            say(FriendDetailMessage.CallLogged)
-        }
     }
 
     /** The birthday sheet: day and month, an optional year (F4), and the reminder switch (on by default, F10). */

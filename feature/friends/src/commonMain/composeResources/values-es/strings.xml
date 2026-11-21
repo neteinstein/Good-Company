@@ -37,7 +37,6 @@
     <string name="msg_sample_added">Amigos de ejemplo añadidos — quítalos cuando quieras en Ajustes</string>
     <string name="msg_vcf_result">%1$d añadidos · %2$d actualizados · %3$d sin cambios</string>
     <string name="msg_vcf_empty">No hay contactos en ese archivo.</string>
-    <string name="msg_call_logged_short">Llamada registrada — próximo aviso en una semana</string>
     <string name="detail_missing">Este amigo ya no existe.</string>
     <string name="detail_back">Atrás</string>
     <string name="detail_add_birthday">Añadir cumpleaños</string>
@@ -57,16 +56,8 @@
     <string name="birthday_send_wishes">Felicitar</string>
     <string name="wish_title">Felicitación para %1$s</string>
     <string name="wish_gift_hint">Ideas de regalo: %1$s</string>
-    <string name="touch_last_together">Os visteis por última vez %1$s</string>
-    <string name="touch_last_caught_up">Último contacto %1$s</string>
-    <string name="touch_never">Aún no hay encuentros registrados</string>
-    <string name="touch_pick">Elige la cercanía o cada cuánto quieres veros — te lo recordaremos.</string>
-    <string name="touch_overdue">Ha pasado un tiempo — tu objetivo es %1$s.</string>
-    <plurals name="touch_goal">
-        <item quantity="one">Objetivo: %1$s · falta %2$d día</item>
-        <item quantity="other">Objetivo: %1$s · faltan %2$d días</item>
-    </plurals>
     <string name="touch_snoozed">Pospuesto hasta el %1$s</string>
+    <string name="touch_snooze_title">Posponer avisos</string>
     <string name="touch_unsnooze">Reanudar</string>
     <string name="touch_circle">Cercanía</string>
     <string name="closeness_sheet_title">¿Qué tan cerca estás de %1$s?</string>
@@ -74,11 +65,7 @@
     <string name="closeness_no_rhythm">Sin recordatorios para poneros al día · los cumpleaños siguen</string>
     <string name="touch_custom">Ritmo propio</string>
     <string name="touch_from_circle">Por su cercanía: %1$s</string>
-    <string name="touch_called">Le llamé</string>
     <string name="warmth_title">Calidez %1$d</string>
-    <string name="contact_met">Os visteis %1$s</string>
-    <string name="contact_call">Llamada %1$s</string>
-    <string name="contact_whatsapp">WhatsApp %1$s</string>
     <string name="tastes_title">Gustos</string>
     <string name="tastes_loves">Le encanta</string>
     <string name="tastes_dislikes">No le gusta</string>
@@ -170,8 +157,6 @@
     <string name="prefs_tracking_hint">Calidez, un ritmo para quedar y avisos para poneros al día. Apágalo para quien ves cada día: su cronología, recordatorios y cumpleaños se quedan.</string>
     <string name="prefs_contact_counts">Las llamadas y los chats cuentan como ponerse al día</string>
     <string name="prefs_contact_counts_hint">Para amigos lejos: una llamada o un chat reinicia el ritmo, no solo quedar.</string>
-    <string name="touch_paused">Los avisos están en pausa.</string>
-    <string name="touch_resume">Reactivar</string>
     <string name="plans_add">Planear</string>
     <string name="occasions_title">Buena compañía para</string>
     <string name="occasions_hint">Se usa en «¿Quién se apunta a…?» en la pestaña Juntos.</string>
@@ -322,6 +307,7 @@
     <string name="timeline_filter_empty">Nada con este filtro.</string>
     <string name="timeline_log">Registrar</string>
     <string name="timeline_more_options">Más opciones</string>
+    <string name="timeline_filter">Filtrar</string>
     <string name="timeline_back">Atrás</string>
     <string name="timeline_filter_all">Todo</string>
     <string name="timeline_filter_together">Juntos</string>
@@ -331,12 +317,6 @@
     <string name="timeline_filter_gifts">Regalos</string>
     <string name="msg_timeline_removed">Eliminado de la cronología</string>
     <string name="timeline_delete">Eliminar</string>
-    <string name="contact_message">Mensaje %1$s</string>
-    <string name="contact_email">Email %1$s</string>
-    <string name="contact_video">Videollamada %1$s</string>
-    <string name="contact_long_chat">Charla larga %1$s</string>
-    <string name="contact_game">Juego online %1$s</string>
-    <string name="contact_other">En contacto %1$s</string>
     <string name="story_last_talk_title">La última vez hablasteis de…</string>
     <string name="choose_title">Elegir amigos</string>
     <string name="choose_count">%1$d de %2$d</string>

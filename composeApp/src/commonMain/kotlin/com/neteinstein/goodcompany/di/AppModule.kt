@@ -528,7 +528,6 @@ val appModule = module {
             deleteFriend = get(),
             setCloseness = get(),
             snooze = get(),
-            logCall = get(),
             generateTalkingPoints = get(),
             dismissIdea = get(),
             draftBirthdayMessage = get(),
