@@ -30,7 +30,7 @@ data class PeopleFilter(val circleId: String? = null, val closeness: Closeness? 
  * [levelCounts]), which ignore the filter and the search.
  */
 data class FilteredPeople<T>(val people: List<T>, val everyoneCount: Int, val levelCounts: Map<Closeness, Int>) {
-    /** [people] under their closeness headings, Inner first; empty levels are left out. */
+    /** [people] under their closeness headings, Closest ([Closeness.INNER]) first; empty levels are left out. */
     fun byCloseness(closenessOf: (T) -> Closeness): List<Pair<Closeness, List<T>>> = Closeness.entries.mapNotNull { c ->
         people.filter { closenessOf(it) == c }.takeIf { it.isNotEmpty() }?.let { c to it }
     }

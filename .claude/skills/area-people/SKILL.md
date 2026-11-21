@@ -1,6 +1,6 @@
 ---
 name: area-people
-description: Rules for how Good Company models people and their relationships - closeness (Inner/Close/Good, still stored as "circle") vs. circles (FriendGroup), person links and relation to me, the built-in Family circle, kids as people, automatic kinship proposals and kinship search, and the network map / "Your people" dashboard. Use before touching Closeness, FriendGroup, PersonLink, LinkType, KidsAsPeople, Kinship, Network or PeopleDashboard code or screens.
+description: Rules for how Good Company models people and their relationships - closeness (Closest/Close/Friends/Acquaintances, still stored as "circle") vs. circles (FriendGroup), person links and relation to me, the built-in Family circle, kids as people, automatic kinship proposals and kinship search, and the network map / "Your people" dashboard. Use before touching Closeness, FriendGroup, PersonLink, LinkType, KidsAsPeople, Kinship, Network or PeopleDashboard code or screens.
 ---
 
 # Area: people, circles and family
@@ -123,13 +123,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   field, exported in backups like `keptTagSpellings`, so no schema change); `CadenceRules.daysFor` is nullable for that
   reason. They keep birthday reminders (F10). Today's last-seen card asks about an Acquaintance only for a rhythm set on
   their page (`meetEveryDays`), never for the Settings default; since #86 the people who had no level are Acquaintances,
-  so this keeps asking whoever was asked before. Labels: Inner · Close · Friends · Acquaintances; the `circle_*` string
+  so this keeps asking whoever was asked before. Labels: Closest · Close · Friends · Acquaintances (the top level is `INNER`, shown as Closest in English since #147; the other languages say “intimates”); the `circle_*` string
   keys stay.
 
 ## Reference (moved from AGENTS.md)
 
 27. **Closeness and circles (issue #22, D1).** Two separate ideas, mind the names. **Closeness** is the enum `Closeness`
-    (Inner / Close / Friends / Acquaintances, one per friend, `Friend.closeness`; the third is still stored as `GOOD`): it used to be `Circle` / `Friend.circle`, and it is
+    (Closest / Close / Friends / Acquaintances, one per friend, `Friend.closeness`; the third is still stored as `GOOD`): it used to be `Circle` / `Friend.circle`, and it is
     still stored as `circle` (`@SerialName("circle")`, the `friend.circle` column, the `circle_*` string keys and the
     `*CircleDays` settings), so backups and the database didn't change. **Circles** are the free-form groups: the UI says
     "circle", the code and tables keep `FriendGroup` / `friend_group` / `group_member` / `*Group*` use cases. A circle has an
