@@ -59,6 +59,7 @@ import com.neteinstein.goodcompany.core.data.db.writeReminder
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
@@ -417,12 +418,15 @@ internal data class DeviceSettings(
     val mediaExplained: Boolean = false,
     /** Issue #120: the People legend tip was dismissed. */
     val peopleLegendSeen: Boolean = false,
+    /** Issue #138: Calendar or List on "Everything coming up". */
+    val agendaView: AgendaView = AgendaView.CALENDAR,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         notifications = notifications,
         notificationPrimerDismissed = notificationPrimerDismissed,
         mediaExplained = mediaExplained,
         peopleLegendSeen = peopleLegendSeen,
+        agendaView = agendaView,
         keptTagSpellings = keptTagSpellings,
         acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
@@ -461,6 +465,7 @@ internal data class DeviceSettings(
             notificationPrimerDismissed = settings.notificationPrimerDismissed,
             mediaExplained = settings.mediaExplained,
             peopleLegendSeen = settings.peopleLegendSeen,
+            agendaView = settings.agendaView,
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
@@ -55,6 +56,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository, private val cl
                     notificationPrimerDismissed = current.notificationPrimerDismissed,
                     mediaExplained = current.mediaExplained,
                     peopleLegendSeen = current.peopleLegendSeen,
+                    agendaView = current.agendaView,
                     lastDriveBackupAt = current.lastDriveBackupAt,
                     calendarSuggestions = current.calendarSuggestions,
                     calendarIds = current.calendarIds,
@@ -73,6 +75,7 @@ internal fun AppSettings.withoutDeviceOnly() = copy(
     notificationPrimerDismissed = false,
     mediaExplained = false,
     peopleLegendSeen = false,
+    agendaView = AgendaView.CALENDAR,
     calendarSuggestions = false,
     calendarIds = emptyList(),
     calendarOnSince = null,

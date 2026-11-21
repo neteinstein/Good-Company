@@ -206,7 +206,8 @@ class ObserveAgendaUseCase(
     private val links: PersonLinkRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<List<AgendaItem>> = combine(
+    /** [horizonDays]: how far ahead (issue #138: the calendar asks for the whole month it shows). */
+    operator fun invoke(horizonDays: Int = AgendaBuilder.DEFAULT_HORIZON_DAYS): Flow<List<AgendaItem>> = combine(
         friends.friends,
         reminders.reminders,
         hangouts.hangouts,
@@ -224,6 +225,7 @@ class ObserveAgendaUseCase(
             plans = ps,
             interactions = ints,
             links = ls,
+            horizonDays = horizonDays,
         )
     }
 }

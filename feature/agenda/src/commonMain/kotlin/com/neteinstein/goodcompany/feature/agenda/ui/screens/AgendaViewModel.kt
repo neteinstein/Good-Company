@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.agenda.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -11,12 +12,14 @@ import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AgendaBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.MonthCalendar
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
@@ -29,18 +32,24 @@ import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
 import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
@@ -95,7 +104,27 @@ data class AgendaUiState(
     val now: Instant = Instant.fromEpochMilliseconds(0),
     /** Past meetups from the chosen calendars waiting to be logged (D3); the "From your calendar" card shows when > 0. */
     val calendarCount: Int = 0,
+    /** Issue #138: Calendar (the default) or List, remembered on this device. */
+    val view: AgendaView = AgendaView.CALENDAR,
+    /** The month the calendar shows, in months from today's month. */
+    val monthOffset: Int = 0,
+    /** The day picked in the calendar; null = today. */
+    val pickedDay: LocalDate? = null,
+    /** Everything up to the end of the month the calendar shows (the list keeps its usual window, [agenda]). */
+    val calendarAgenda: List<AgendaItem> = emptyList(),
 ) {
+    /** The first day of the month the calendar shows. */
+    val month: LocalDate get() = MonthCalendar.plusMonths(today, monthOffset)
+
+    /** The day whose entries are listed under the grid. */
+    val selectedDay: LocalDate get() = pickedDay ?: today
+
+    /** The calendar's entries by day; overdue ones sit on today, as in the list. */
+    val calendarByDay: Map<LocalDate, List<AgendaItem>> get() = MonthCalendar.byDay(calendarAgenda)
+
+    /** The entries of [selectedDay], in agenda order. */
+    val selectedItems: List<AgendaItem> get() = calendarByDay[selectedDay].orEmpty()
+
     /** Agenda grouped by day, preserving order. */
     val agendaByDay: List<Pair<LocalDate, List<AgendaItem>>>
         get() = agenda.groupBy { it.date }.toList()
@@ -131,14 +160,22 @@ class AgendaViewModel(
     private val closePlan: ClosePlanUseCase,
     private val restorePlan: RestorePlanUseCase,
     private val savePlan: SavePlanUseCase,
+    private val setAgendaView: SetAgendaViewUseCase,
     private val clock: AppClock,
     observeCalendarSuggestions: ObserveCalendarSuggestionsUseCase,
     observeGroups: ObserveGroupsUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(AgendaUiState())
 
+    // Issue #138: the calendar can look past the list's window, so the agenda reaches the end of the month it shows.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val wideAgenda = local.map { it.monthOffset }.distinctUntilChanged().flatMapLatest { offset ->
+        val today = clock.today()
+        observeAgenda(MonthCalendar.horizonFor(MonthCalendar.plusMonths(today, offset), today))
+    }
+
     val state: StateFlow<AgendaUiState> = combine(
-        observeAgenda(),
+        wideAgenda,
         observeReminders(),
         observeFriends(),
         combine(observeSettings(), observeCalendarSuggestions(), observeGroups()) { settings, calendar, groups ->
@@ -146,11 +183,14 @@ class AgendaViewModel(
         },
         local,
     ) { agenda, reminders, friends, (settings, calendarCount, circles), ui ->
+        val listEnd = clock.today().plus(AgendaBuilder.DEFAULT_HORIZON_DAYS, DateTimeUnit.DAY)
         ui.copy(
+            view = settings.agendaView,
+            calendarAgenda = agenda,
             circles = circles,
             calendarCount = calendarCount,
             hasAiKey = settings.usableAiKey != null,
-            agenda = agenda,
+            agenda = agenda.filter { it.date <= listEnd },
             reminders = reminders,
             friends = friends.map { it.friend },
             isLoading = false,
@@ -159,6 +199,35 @@ class AgendaViewModel(
             now = clock.now(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AgendaUiState())
+
+    // --- Calendar (issue #138) ---
+
+    /** The Calendar / List toggle in the top bar; remembered on this device. */
+    fun onSetView(view: AgendaView) {
+        viewModelScope.launch { setAgendaView(view) }
+    }
+
+    /** ‹ or a swipe to the right: the month before, its first day picked (today, in today's month). */
+    fun onPreviousMonth() = showMonth(local.value.monthOffset - 1)
+
+    /** › or a swipe to the left: the month after. */
+    fun onNextMonth() = showMonth(local.value.monthOffset + 1)
+
+    /** "Today": back to this month, today picked. */
+    fun onToday() = local.update { it.copy(monthOffset = 0, pickedDay = null) }
+
+    /** A day cell: lists its entries; a day of the month before or after moves the calendar there. */
+    fun onSelectDay(day: LocalDate) {
+        val today = clock.today()
+        val offset = (day.year - today.year) * 12 + (day.month.ordinal - today.month.ordinal)
+        local.update { it.copy(monthOffset = offset, pickedDay = day.takeIf { d -> d != today }) }
+    }
+
+    private fun showMonth(offset: Int) {
+        val today = clock.today()
+        val first = MonthCalendar.plusMonths(today, offset)
+        local.update { it.copy(monthOffset = offset, pickedDay = if (offset == 0) null else first) }
+    }
 
     fun onNewReminder() = local.update { it.copy(showReminderEditor = true, editingReminder = null) }
 

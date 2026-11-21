@@ -334,6 +334,7 @@ class TestGraph(
     val setHomeCircleFilter = SetHomeCircleFilterUseCase(settingsRepo)
     val customActivities = com.neteinstein.goodcompany.core.domain.usecase.CustomActivitiesUseCase(settingsRepo)
     val dismissPeopleLegend = com.neteinstein.goodcompany.core.domain.usecase.DismissPeopleLegendUseCase(settingsRepo)
+    val setAgendaView = com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase(settingsRepo)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeYearReviewCard = ObserveYearReviewCardUseCase(hangoutRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)

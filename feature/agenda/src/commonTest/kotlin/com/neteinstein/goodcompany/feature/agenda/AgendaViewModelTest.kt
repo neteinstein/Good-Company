@@ -1,11 +1,13 @@
 package com.neteinstein.goodcompany.feature.agenda
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -25,6 +27,7 @@ import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
 import com.neteinstein.goodcompany.core.ui.components.ReminderNotice
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaMessage
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.AgendaViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,6 +62,7 @@ class AgendaViewModelTest {
         g.closePlan,
         g.restorePlan,
         g.savePlan,
+        g.setAgendaView,
         g.clock,
         g.observeCalendarSuggestions,
         g.observeGroups,
@@ -358,5 +362,63 @@ class AgendaViewModelTest {
         vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.DIDNT_HAPPEN)
         assertNull(state.value.message)
         assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+    }
+
+    @Test
+    fun calendar_isTheDefaultView_andTheToggleIsRemembered() = runViewModelTest {
+        // Issue #138.
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(AgendaView.CALENDAR, state.value.view)
+        vm.onSetView(AgendaView.LIST)
+        assertEquals(AgendaView.LIST, state.value.view)
+        assertEquals(AgendaView.LIST, g.settingsRepo.settings.first().agendaView)
+        vm.onSetView(AgendaView.CALENDAR)
+        assertEquals(AgendaView.CALENDAR, state.value.view)
+    }
+
+    @Test
+    fun calendar_opensOnToday_aTapPicksADay_andMonthsMove() = runViewModelTest {
+        // Issue #138. Today is 10 March 2026; Ana's birthday is on the 12th.
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(LocalDate(2026, 3, 1), state.value.month)
+        assertEquals(LocalDate(2026, 3, 10), state.value.selectedDay)
+
+        vm.onSelectDay(LocalDate(2026, 3, 12))
+        assertEquals(LocalDate(2026, 3, 12), state.value.selectedDay)
+        assertIs<AgendaItem.FriendBirthday>(state.value.selectedItems.single())
+
+        vm.onNextMonth()
+        assertEquals(LocalDate(2026, 4, 1), state.value.month)
+        assertEquals(LocalDate(2026, 4, 1), state.value.selectedDay)
+        vm.onPreviousMonth()
+        vm.onPreviousMonth()
+        assertEquals(LocalDate(2026, 2, 1), state.value.month)
+
+        // A day of the month after, from the grid's last row, moves the calendar there.
+        vm.onSelectDay(LocalDate(2026, 3, 2))
+        assertEquals(LocalDate(2026, 3, 1), state.value.month)
+        vm.onToday()
+        assertEquals(LocalDate(2026, 3, 1), state.value.month)
+        assertEquals(LocalDate(2026, 3, 10), state.value.selectedDay)
+    }
+
+    @Test
+    fun calendar_showsLaterMonths_theListKeepsItsWindow_andOverdueStaysOnToday() = runViewModelTest {
+        // Issue #138: a birthday in September is past the list's two months but shows when the calendar gets there.
+        g.friendRepo.upsert(friend("eva") { copy(closeness = Closeness.CLOSE, birthday = Birthday(9, 2)) })
+        g.hangoutRepo.add(Hangout("h", listOf(FriendId("rui")), Fixtures.at(2025, 10, 1)))
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("rui"))!!.copy(closeness = Closeness.CLOSE))
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertTrue(state.value.agenda.none { it.date == LocalDate(2026, 9, 2) })
+        repeat(6) { vm.onNextMonth() }
+        assertEquals(LocalDate(2026, 9, 1), state.value.month)
+        assertTrue(state.value.calendarByDay.getValue(LocalDate(2026, 9, 2)).any { it is AgendaItem.FriendBirthday })
+        assertTrue(state.value.agenda.none { it.date == LocalDate(2026, 9, 2) }, "the list keeps its window")
+
+        vm.onToday()
+        assertTrue(state.value.selectedItems.any { it is AgendaItem.MeetupOverdue && it.friend.id == FriendId("rui") })
     }
 }

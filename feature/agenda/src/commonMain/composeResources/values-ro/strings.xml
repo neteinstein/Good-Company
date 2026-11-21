@@ -100,4 +100,18 @@
     <string name="notif_primer_body">Ca zilele de naștere, zilele importante, mementourile și planurile să ajungă la tine chiar și cu aplicația închisă.</string>
     <string name="notif_primer_allow">Permite</string>
     <string name="notif_primer_not_now">Nu acum</string>
+    <!-- Issue #138: the month calendar -->
+    <string name="view_calendar">Afișează ca calendar</string>
+    <string name="view_list">Afișează ca listă</string>
+    <string name="calendar_previous_month">Luna anterioară</string>
+    <string name="calendar_next_month">Luna următoare</string>
+    <string name="calendar_today">Azi</string>
+    <string name="calendar_month_year">%1$s %2$d</string>
+    <string name="calendar_more">+%1$d</string>
+    <string name="calendar_day_empty">Nimic în această zi</string>
+    <plurals name="calendar_day_entries">
+        <item quantity="one">%1$d intrare</item>
+        <item quantity="few">%1$d intrări</item>
+        <item quantity="other">%1$d de intrări</item>
+    </plurals>
 </resources>
