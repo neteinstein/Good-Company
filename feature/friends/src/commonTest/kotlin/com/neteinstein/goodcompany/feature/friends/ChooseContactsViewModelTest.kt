@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.friends
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.ContactListFilter
 import com.neteinstein.goodcompany.core.domain.usecase.PickedContactsResult
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -72,7 +73,9 @@ class ChooseContactsViewModelTest {
         vm.onToggle("1")
         vm.onToggle("2")
         vm.onSave()
-        assertEquals(PickedContactsResult(2, 0), vm.state.value.saved)
+        assertEquals(PickedContactsResult(2, 0, listOf(FriendId("contact-1"), FriendId("contact-2"))), vm.state.value.saved)
+        // Several people: no single page to open (issue #114).
+        assertNull(vm.state.value.saved?.single)
         assertEquals(setOf("1", "2", "4"), g.friendRepo.friends.value.mapNotNull { it.contactId }.toSet())
         assertEquals(listOf(setOf("1", "2")), g.friendRepo.photoRequests)
         assertEquals(listOf(false), g.friendRepo.contactReads)
@@ -95,6 +98,8 @@ class ChooseContactsViewModelTest {
         vm.onPicked(emptyList())
         assertNull(vm.state.value.saved)
         vm.onPicked(listOf(ContactRecord("9", "Eva", emptyList(), null)))
-        assertEquals(PickedContactsResult(1, 0), vm.state.value.saved)
+        assertEquals(PickedContactsResult(1, 0, listOf(FriendId("contact-9"))), vm.state.value.saved)
+        // One person added: the screen opens their page (issue #114).
+        assertEquals(FriendId("contact-9"), vm.state.value.saved?.single)
     }
 }

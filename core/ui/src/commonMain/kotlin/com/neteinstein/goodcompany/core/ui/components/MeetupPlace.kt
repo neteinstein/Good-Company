@@ -40,6 +40,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.PlaceBook
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.log_clear_location
 import com.neteinstein.goodcompany.core.ui.resources.log_locating
+import com.neteinstein.goodcompany.core.ui.resources.log_location_denied
+import com.neteinstein.goodcompany.core.ui.resources.log_location_unavailable
 import com.neteinstein.goodcompany.core.ui.resources.log_use_location
 import com.neteinstein.goodcompany.core.ui.resources.place_add_person
 import com.neteinstein.goodcompany.core.ui.resources.place_change
@@ -54,12 +56,23 @@ import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
+/** Why "Use my location" gave no fix (issue #114). */
+enum class LocationProblem {
+    /** The permission was refused: type the place instead. */
+    DENIED,
+
+    /** Location is off, or no fix came in time. */
+    UNAVAILABLE,
+}
+
 /** Where a meetup was (F11), as both check-in sheets show it. Built by their ViewModels. */
 data class MeetupPlaceState(
     /** Typed by hand: free text without a GPS fix, the new place's name with one. */
     val name: String = "",
     val location: GeoPoint? = null,
     val isLocating: Boolean = false,
+    /** Shown under "Use my location" when the last try found nothing. */
+    val locationProblem: LocationProblem? = null,
     /** The named place the fix is in (null after "Change"): the meetup takes its name by itself. */
     val match: NamedPlaces.Match? = null,
     /** No named place covers the fix: "What place is this?" is asked for the first time. */
@@ -112,6 +125,18 @@ fun MeetupPlace(
                         label = { Text(stringResource(Res.string.log_use_location)) },
                         leadingIcon = { Icon(Icons.Rounded.MyLocation, null, Modifier.size(18.dp)) },
                     )
+                    state.locationProblem?.let { problem ->
+                        Text(
+                            stringResource(
+                                when (problem) {
+                                    LocationProblem.DENIED -> Res.string.log_location_denied
+                                    LocationProblem.UNAVAILABLE -> Res.string.log_location_unavailable
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
         }
@@ -214,6 +239,7 @@ fun meetupPlaceState(
     book: PlaceBook,
     picked: Collection<FriendId>,
     everyone: List<Friend>,
+    locationProblem: LocationProblem? = null,
 ): MeetupPlaceState {
     val found = book.match(location)
     val match = found.takeUnless { changed }
@@ -222,6 +248,7 @@ fun meetupPlaceState(
         name = name,
         location = location,
         isLocating = isLocating,
+        locationProblem = locationProblem.takeIf { location == null },
         match = match,
         firstTimeHere = location != null && found == null,
         suggested = match?.let { m -> book.usualPeople(m.place.id, picked).mapNotNull(byId::get) }.orEmpty(),

@@ -18,6 +18,8 @@ the Play build is picker-only. When you learn something new about this area, add
 - Photos: thumbnails only, through `PhotoShrinker`; contact-owned like the birthday (`ContactMerger`).
 - Notes (issue #103): `ContactCard.notes` still comes from the legacy `Friend.notes` text, which the app no longer
   edits (notes are dated journal entries now); new dated notes are not written to the contact.
+- Picking **one** person (list or system picker) opens their page; several keep the "Added N" snackbar
+  (`PickedContactsResult.picked` / `single`, issue #114). Onboarding ignores it.
 - Tests: `ContactRowPlannerTest`, `ContactWriteBackTest` (`core/data/src/commonTest`), plus domain tests for `ContactCard`.
 
 ## Reference (moved from AGENTS.md)

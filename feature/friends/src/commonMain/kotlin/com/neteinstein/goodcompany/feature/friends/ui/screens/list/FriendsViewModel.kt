@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.usecase.AddFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
@@ -109,6 +110,8 @@ data class FriendsUiState(
     val isLoading: Boolean = true,
     val isSyncing: Boolean = false,
     val message: FriendsMessage? = null,
+    /** One person was just picked from contacts: the screen opens their page (issue #114), then [FriendsViewModel.onOpenedPicked]. */
+    val openPicked: FriendId? = null,
     /** Warmth dots and "who's cooling" (off in Settings = softer view). */
     val showWarmth: Boolean = true,
     val now: Instant = Instant.DISTANT_PAST,
@@ -279,9 +282,13 @@ class FriendsViewModel(
         if (records.isEmpty()) return
         viewModelScope.launch {
             val result = importPickedContacts(records)
-            local.update { it.copy(message = FriendsMessage.ContactsPicked(result)) }
+            val single = result.single
+            local.update { if (single != null) it.copy(openPicked = single) else it.copy(message = FriendsMessage.ContactsPicked(result)) }
         }
     }
+
+    /** The page of the one person picked was opened. */
+    fun onOpenedPicked() = local.update { it.copy(openPicked = null) }
 
     fun onAddFriend(name: String) {
         if (name.isBlank()) return

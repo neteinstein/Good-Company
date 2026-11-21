@@ -378,12 +378,14 @@
     <string name="log_search">Search</string>
     <string name="log_today">Today</string>
     <string name="log_yesterday">Yesterday</string>
-    <string name="log_pick_date">Pick a date</string>
+    <string name="log_pick_date">Other day</string>
     <string name="log_note_hint">A note (optional)</string>
     <string name="log_journal_hint">What did you talk about?</string>
     <string name="log_place_hint">Place (optional)</string>
     <string name="log_use_location">Use my location</string>
     <string name="log_clear_location">Remove location</string>
+    <string name="log_location_denied">No location permission. Type the place instead.</string>
+    <string name="log_location_unavailable">Couldn’t get your location. Check that location is on, or type the place.</string>
     <string name="log_activity">What did you do?</string>
     <string name="log_more">More</string>
     <string name="log_less">Less</string>

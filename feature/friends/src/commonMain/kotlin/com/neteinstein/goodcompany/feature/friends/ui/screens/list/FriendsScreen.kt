@@ -73,14 +73,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -192,6 +197,12 @@ fun FriendsScreen(
             onChosenShown()
         }
     }
+    LaunchedEffect(state.openPicked) {
+        state.openPicked?.let {
+            viewModel.onOpenedPicked()
+            onOpenFriend(it)
+        }
+    }
     val requestContacts = rememberPermissionRequester(AppPermission.CONTACTS, viewModel::onContactsPermissionResult)
     val pickVcf = rememberTextFilePicker(FileKind.VCARD, onPicked = viewModel::onContactsFilePicked)
     val pickContacts = rememberContactPicker(onPicked = viewModel::onContactsPicked)
@@ -291,6 +302,17 @@ fun FriendsContent(
     // Only "Type it in" (the web): straight to the name dialog, as before.
     val openAdd = { if (addOptions == listOf(AddFriendOption.TYPE_IT_IN)) showAdd = true else showAddSheet = true }
     var searchOpen by rememberSaveable { mutableStateOf(false) }
+    // Issue #114: tapping the search icon focuses the field and opens the keyboard.
+    val searchFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    var focusSearch by remember { mutableStateOf(false) }
+    LaunchedEffect(focusSearch) {
+        if (!focusSearch) return@LaunchedEffect
+        withFrameNanos { } // the field is laid out first
+        runCatching { searchFocus.requestFocus() }
+        keyboard?.show()
+        focusSearch = false
+    }
     var menuOpen by remember { mutableStateOf(false) }
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -315,7 +337,7 @@ fun FriendsContent(
                             if (!isEmpty) {
                                 FilledTonalIconButton(onClick = {
                                     searchOpen = !searchOpen
-                                    if (!searchOpen) actions.onQueryChange("")
+                                    if (searchOpen) focusSearch = true else actions.onQueryChange("")
                                 }) {
                                     Icon(
                                         if (searchOpen) Icons.Rounded.Close else Icons.Rounded.Search,
@@ -402,13 +424,15 @@ fun FriendsContent(
                     TextField(
                         value = state.query,
                         onValueChange = actions.onQueryChange,
-                        placeholder = { Text(stringResource(Res.string.search_placeholder)) },
+                        // One line, whatever the language (issue #114): the hint is cut, never wrapped.
+                        placeholder = { Text(stringResource(Res.string.search_placeholder), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         leadingIcon = { Icon(Icons.Rounded.Search, null) },
                         singleLine = true,
+                        maxLines = 1,
                         shape = MaterialTheme.shapes.extraLarge,
                         colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp).focusRequester(searchFocus),
                     )
                 }
             }

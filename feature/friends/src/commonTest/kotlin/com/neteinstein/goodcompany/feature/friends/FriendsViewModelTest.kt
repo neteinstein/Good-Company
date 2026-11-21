@@ -336,8 +336,26 @@ class FriendsViewModelTest {
         vm.onContactsPicked(emptyList())
         assertNull(state.value.message)
         vm.onContactsPicked(listOf(ContactRecord("9", "Zoe Lima", listOf("+351 1"), null)))
-        assertEquals(FriendsMessage.ContactsPicked(PickedContactsResult(added = 1, updated = 0)), state.value.message)
         assertEquals(Closeness.ACQUAINTANCE, g.friendRepo.get(FriendId("contact-9"))!!.closeness)
+    }
+
+    @Test
+    fun oneContactPicked_opensTheirPage_severalShowTheSnackbar() = runViewModelTest {
+        // Issue #114: adding a single person opens their page; several keep the "Added N" message.
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onContactsPicked(listOf(ContactRecord("9", "Zoe Lima", listOf("+351 1"), null)))
+        assertEquals(FriendId("contact-9"), state.value.openPicked)
+        assertNull(state.value.message)
+        vm.onOpenedPicked()
+        assertNull(state.value.openPicked)
+
+        vm.onContactsPicked(listOf(ContactRecord("10", "Rita", emptyList(), null), ContactRecord("11", "Tó", emptyList(), null)))
+        assertNull(state.value.openPicked)
+        assertEquals(
+            FriendsMessage.ContactsPicked(PickedContactsResult(2, 0, listOf(FriendId("contact-10"), FriendId("contact-11")))),
+            state.value.message,
+        )
     }
 
     @Test

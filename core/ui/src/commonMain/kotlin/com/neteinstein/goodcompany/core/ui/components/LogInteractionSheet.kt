@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -33,6 +34,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -48,8 +50,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
@@ -340,21 +344,46 @@ private fun CircleMembers(circle: FriendGroup, members: List<Friend>, ticked: Se
 @Composable
 private fun DateChoice(state: LogSheetState, onDate: (LocalDate) -> Unit, onPick: () -> Unit) = LogDateChoice(state.date, state.today, onDate, onPick)
 
-/** Today / Yesterday / a picked date, as on the Log sheet (also used by the share screen). */
+/**
+ * Today / Yesterday / a picked date, as on the Log sheet and the "Caught up" panel (also used by the share screen).
+ * Issue #114: one line and one height in every language; the third chip says "Other day" and, if even that doesn't
+ * fit, shows only its calendar icon (its label stays as the content description).
+ */
 @Composable
 fun LogDateChoice(date: LocalDate, today: LocalDate, onDate: (LocalDate) -> Unit, onPick: () -> Unit) {
     val yesterday = today.minus(1, DateTimeUnit.DAY)
     val other = date != today && date != yesterday
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        FilterChip(date == today, onClick = { onDate(today) }, label = { Text(stringResource(Res.string.log_today)) })
-        FilterChip(date == yesterday, onClick = { onDate(yesterday) }, label = { Text(stringResource(Res.string.log_yesterday)) })
+    val chip = Modifier.height(FilterChipDefaults.Height)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        FilterChip(date == today, onClick = { onDate(today) }, label = { OneLine(stringResource(Res.string.log_today)) }, modifier = chip)
+        FilterChip(date == yesterday, onClick = { onDate(yesterday) }, label = { OneLine(stringResource(Res.string.log_yesterday)) }, modifier = chip)
+        val pickLabel = stringResource(Res.string.log_pick_date)
+        var iconOnly by remember { mutableStateOf(false) }
         FilterChip(
             other,
             onClick = onPick,
-            label = { Text(if (other) date.shortLabel() else stringResource(Res.string.log_pick_date)) },
+            label = {
+                when {
+                    other -> OneLine(date.shortLabel())
+                    !iconOnly -> OneLine(pickLabel, onOverflow = { iconOnly = true })
+                }
+            },
             leadingIcon = { Icon(Icons.Rounded.CalendarMonth, null, Modifier.size(18.dp)) },
+            modifier = chip.semantics { contentDescription = pickLabel },
         )
     }
+}
+
+/** A chip label that never wraps; [onOverflow] runs when it doesn't fit. */
+@Composable
+private fun OneLine(text: String, onOverflow: () -> Unit = {}) {
+    Text(
+        text,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (it.hasVisualOverflow) onOverflow() },
+    )
 }
 
 /** "What was it?" for [LogKind.OTHER] (issue #101): a short free label, shown on the timeline instead of "Other". */

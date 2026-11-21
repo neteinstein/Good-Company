@@ -16,6 +16,7 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
+import com.neteinstein.goodcompany.core.ui.components.LocationProblem
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import kotlinx.datetime.DatePeriod
@@ -162,6 +163,28 @@ class LogInteractionViewModelTest {
         assertNull(state.value.sheet.place.location)
         vm.onKind(LogKind.EMAIL)
         assertEquals(LogKind.EMAIL, state.value.sheet.kind)
+    }
+
+    @Test
+    fun useLocation_afterThePermission_fillsTheCoordinates_andSaysWhyWhenItCant() = runViewModelTest {
+        // Issue #114: the sheet asks for the permission first; a refusal or no fix says so under the button.
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onLocationPermissionResult(granted = false)
+        assertEquals(LocationProblem.DENIED, state.value.sheet.place.locationProblem)
+        assertNull(state.value.sheet.place.location)
+
+        g.location.point = null
+        vm.onLocationPermissionResult(granted = true)
+        assertEquals(LocationProblem.UNAVAILABLE, state.value.sheet.place.locationProblem)
+
+        val here = GeoPoint(38.7139, -9.1394)
+        g.location.point = here
+        vm.onPlaceName("Home")
+        vm.onLocationPermissionResult(granted = true)
+        assertEquals(here, state.value.sheet.place.location)
+        assertEquals("Home", state.value.sheet.place.name)
+        assertNull(state.value.sheet.place.locationProblem)
     }
 
     @Test

@@ -8,6 +8,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.ui.components.LogInteractionSheet
 import com.neteinstein.goodcompany.core.ui.components.LogSheetActions
+import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -26,6 +28,8 @@ fun LogInteractionScreen(
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Ask for location first (issue #114): without the permission the provider just returns nothing.
+    val requestLocation = rememberPermissionRequester(AppPermission.LOCATION, viewModel::onLocationPermissionResult)
     LaunchedEffect(state.done) { if (state.done) onClose() }
     LogInteractionSheet(
         state.sheet,
@@ -36,7 +40,7 @@ fun LogInteractionScreen(
             onNote = viewModel::onNote,
             onLabel = viewModel::onLabel,
             onPlaceName = viewModel::onPlaceName,
-            onUseLocation = viewModel::onUseLocation,
+            onUseLocation = requestLocation,
             onClearLocation = viewModel::onClearLocation,
             onChangePlace = viewModel::onChangePlace,
             onActivity = viewModel::onActivity,

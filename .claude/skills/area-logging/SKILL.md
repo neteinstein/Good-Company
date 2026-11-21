@@ -15,6 +15,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - "+ Add people" on the Log sheet and We met opens `PeoplePickerSheet` (issue #89) with `requireSomeone = true`.
 - Automatic rows (call log, chat import) dedupe through `Interaction.automaticId`; manual rows never dedupe.
 - Places are GPS only: never call a geocoding, place-search or map service.
+- "Use my location" goes through `rememberPermissionRequester(AppPermission.LOCATION, …onLocationPermissionResult)` in
+  every sheet (Log sheet, "Caught up" panel, "I'm with…"), never straight to the provider: without the permission the
+  Android provider returns null and nothing happened (issue #114). `LogSheetModel` sets `LocationProblem` (denied / no
+  fix) and `MeetupPlace` says it under the button. `AndroidLocationProvider` falls back to the newest last-known fix of
+  any enabled provider after its 10 s timeout.
+- The date chips (`LogDateChoice`) stay one line and one height in every language: "Other day" (`log_pick_date`)
+  falls back to its calendar icon when it doesn't fit (issue #114). Keep that label short.
 - Calendar events live in memory: never stored, backed up, or sent to the AI.
 - **Editing an entry (issue #102)** goes through `EditTimelineEntryUseCase(entry, LogRequest)` (`usecase/TimelineEdit.kt`);
   delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log sheet edits meetups,

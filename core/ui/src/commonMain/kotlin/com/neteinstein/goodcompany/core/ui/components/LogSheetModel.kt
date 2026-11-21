@@ -41,6 +41,8 @@ data class LogDraft(
     val placeName: String = "",
     val location: GeoPoint? = null,
     val isLocating: Boolean = false,
+    /** Why "Use my location" found nothing (issue #114); cleared by the next try. */
+    val locationProblem: LocationProblem? = null,
     /** "Change" was tapped on a place that named itself: a new name is typed instead. */
     val placeChanged: Boolean = false,
     val activity: HangoutActivity? = null,
@@ -109,7 +111,7 @@ class LogSheetModel(
             today = clock.today(),
             note = d.note,
             label = d.label,
-            place = meetupPlaceState(d.placeName, d.location, d.isLocating, d.placeChanged, places, d.people, everyone),
+            place = meetupPlaceState(d.placeName, d.location, d.isLocating, d.placeChanged, places, d.people, everyone, d.locationProblem),
             activity = d.activity,
             activities = activities,
             saving = d.saving,
@@ -194,11 +196,25 @@ class LogSheetModel(
 
     fun onActivity(activity: HangoutActivity?) = mutableDraft.update { it.copy(activity = activity) }
 
+    /**
+     * "Use my location", once the permission prompt has answered (issue #114: the sheets never asked, so on Android
+     * nothing happened). Denied or no fix shows why under the button.
+     */
+    fun onLocationPermissionResult(granted: Boolean) {
+        if (granted) onUseLocation() else mutableDraft.update { it.copy(locationProblem = LocationProblem.DENIED) }
+    }
+
     fun onUseLocation() {
-        mutableDraft.update { it.copy(isLocating = true) }
+        mutableDraft.update { it.copy(isLocating = true, locationProblem = null) }
         scope.launch {
-            val point = currentLocation()
-            mutableDraft.update { it.copy(isLocating = false, location = point ?: it.location) }
+            val point = runCatching { currentLocation() }.getOrNull()
+            mutableDraft.update {
+                it.copy(
+                    isLocating = false,
+                    location = point ?: it.location,
+                    locationProblem = LocationProblem.UNAVAILABLE.takeIf { point == null },
+                )
+            }
         }
     }
 

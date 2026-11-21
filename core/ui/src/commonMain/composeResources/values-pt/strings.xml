@@ -384,12 +384,14 @@
     <string name="log_search">Pesquisar</string>
     <string name="log_today">Hoje</string>
     <string name="log_yesterday">Ontem</string>
-    <string name="log_pick_date">Escolher data</string>
+    <string name="log_pick_date">Outro dia</string>
     <string name="log_note_hint">Uma nota (opcional)</string>
     <string name="log_journal_hint">Sobre o que falaram?</string>
     <string name="log_place_hint">Local (opcional)</string>
     <string name="log_use_location">Usar a minha localização</string>
     <string name="log_clear_location">Remover localização</string>
+    <string name="log_location_denied">Sem permissão de localização. Escreve o local.</string>
+    <string name="log_location_unavailable">Não foi possível obter a tua localização. Verifica se a localização está ligada, ou escreve o local.</string>
     <string name="log_activity">O que fizeram?</string>
     <string name="log_more">Mais</string>
     <string name="log_less">Menos</string>

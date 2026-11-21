@@ -141,7 +141,14 @@ class RecordAppOpenedUseCase(private val settings: SettingsRepository, private v
     suspend operator fun invoke() = settings.update { it.copy(lastOpenedAt = clock.now()) }
 }
 
-data class PickedContactsResult(val added: Int, val updated: Int)
+/**
+ * What picking contacts did. [picked] is every friend the picked contacts are now (added, updated or already there, in
+ * order): when it is just one, the screen opens their page (issue #114).
+ */
+data class PickedContactsResult(val added: Int, val updated: Int, val picked: List<FriendId> = emptyList()) {
+    /** The one person picked, if only one was. */
+    val single: FriendId? get() = picked.singleOrNull()
+}
 
 /**
  * Adds people chosen in the system contact picker (no address-book permission needed). They start as Acquaintances
@@ -151,14 +158,16 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
     suspend operator fun invoke(records: List<ContactRecord>): PickedContactsResult {
         var added = 0
         var updated = 0
+        val picked = mutableListOf<FriendId>()
         records.filter { it.name.isNotBlank() }.distinctBy { it.contactId }.forEach { r ->
             val current = friends.friends.first()
             val match = current.firstOrNull { it.contactId == r.contactId }
                 ?: current.firstOrNull { it.name.equals(r.name.trim(), ignoreCase = true) }
             if (match == null) {
+                val id = FriendId("contact-${r.contactId}")
                 friends.upsert(
                     Friend(
-                        id = FriendId("contact-${r.contactId}"),
+                        id = id,
                         name = r.name.trim(),
                         contactId = r.contactId,
                         phoneNumbers = r.phoneNumbers.distinct(),
@@ -168,7 +177,9 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     ),
                 )
                 added++
+                picked += id
             } else {
+                picked += match.id
                 val merged = match.copy(
                     contactId = match.contactId ?: r.contactId,
                     phoneNumbers = (match.phoneNumbers + r.phoneNumbers).distinct(),
@@ -186,7 +197,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                 }
             }
         }
-        return PickedContactsResult(added, updated)
+        return PickedContactsResult(added, updated, picked)
     }
 }
 

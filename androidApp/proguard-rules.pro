@@ -12,6 +12,10 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# Navigation routes keep their names, so "Destination with route … cannot be found" names the route in a release crash
+# (issue #114: it said "ln5", which was TagsRoute, never registered). AppRoutesTest checks every route is registered.
+-keepnames class * implements com.neteinstein.goodcompany.ui.navigation.AppRoute
+
 # WorkManager instantiates workers reflectively by class name (also covered by WorkManager's own rules).
 -keep class * extends androidx.work.ListenableWorker {
     public <init>(android.content.Context, androidx.work.WorkerParameters);

@@ -384,12 +384,14 @@
     <string name="log_search">Rechercher</string>
     <string name="log_today">Aujourd’hui</string>
     <string name="log_yesterday">Hier</string>
-    <string name="log_pick_date">Choisir une date</string>
+    <string name="log_pick_date">Autre jour</string>
     <string name="log_note_hint">Une note (facultatif)</string>
     <string name="log_journal_hint">De quoi avez-vous parlé ?</string>
     <string name="log_place_hint">Lieu (facultatif)</string>
     <string name="log_use_location">Utiliser ma position</string>
     <string name="log_clear_location">Retirer la position</string>
+    <string name="log_location_denied">Pas d’autorisation de localisation. Écris le lieu.</string>
+    <string name="log_location_unavailable">Impossible d’obtenir ta position. Vérifie que la localisation est activée, ou écris le lieu.</string>
     <string name="log_activity">Qu’avez-vous fait ?</string>
     <string name="log_more">Plus</string>
     <string name="log_less">Moins</string>

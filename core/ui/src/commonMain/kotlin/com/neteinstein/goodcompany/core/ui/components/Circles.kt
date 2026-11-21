@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -180,6 +181,25 @@ fun AllChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Mod
     }
 }
 
+/**
+ * A chip that does something next to a row of [CircleChip]s ("✎ Circles" on a person's page): the same height, corners,
+ * padding and type as an unselected circle chip (issue #114: an `AssistChip` was taller and wider).
+ */
+@Composable
+fun CircleActionChip(label: String, icon: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ChipSurface(
+        selected = false,
+        selectedColor = MaterialTheme.colorScheme.secondaryContainer,
+        onSelectedColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        onClick = onClick,
+        modifier = modifier,
+        role = Role.Button,
+    ) {
+        Icon(icon, null, Modifier.size(18.dp))
+        ChipLabel(label)
+    }
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChipSurface(
@@ -189,13 +209,14 @@ private fun ChipSurface(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
+    role: Role = Role.Checkbox,
     content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
         modifier = modifier
             .heightIn(min = 36.dp)
-            .semantics { this.selected = selected }
-            .combinedClickable(role = Role.Checkbox, onClick = onClick, onLongClick = onLongClick),
+            .semantics { if (role == Role.Checkbox) this.selected = selected }
+            .combinedClickable(role = role, onClick = onClick, onLongClick = onLongClick),
         shape = MaterialTheme.shapes.small,
         color = if (selected) selectedColor else MaterialTheme.colorScheme.surface,
         contentColor = if (selected) onSelectedColor else MaterialTheme.colorScheme.onSurface,

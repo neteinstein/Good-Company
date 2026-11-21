@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.ContactChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ContactListFilter
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
@@ -89,7 +90,7 @@ import com.neteinstein.goodcompany.core.ui.resources.back as backLabel
  * [onBack] leaves without saving anyone. When the list is empty (access off) the system contact picker is offered.
  */
 @Composable
-fun ChooseContactsScreen(onBack: () -> Unit, onDone: (added: Int) -> Unit, viewModel: ChooseContactsViewModel = koinViewModel()) {
+fun ChooseContactsScreen(onBack: () -> Unit, onDone: (added: Int, single: FriendId?) -> Unit, viewModel: ChooseContactsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var opened by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -98,7 +99,7 @@ fun ChooseContactsScreen(onBack: () -> Unit, onDone: (added: Int) -> Unit, viewM
             viewModel.onOpened()
         }
     }
-    LaunchedEffect(state.saved) { state.saved?.let { onDone(it.added) } }
+    LaunchedEffect(state.saved) { state.saved?.let { onDone(it.added, it.single) } }
     val pick = rememberContactPicker(onPicked = viewModel::onPicked)
     ChooseContactsContent(
         state = state,
