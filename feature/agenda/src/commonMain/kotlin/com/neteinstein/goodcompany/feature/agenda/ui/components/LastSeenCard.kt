@@ -22,10 +22,13 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Friend
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
+import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.feature.agenda.resources.Res
+import com.neteinstein.goodcompany.feature.agenda.resources.last_met_title
 import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_dont_know
 import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_few_months
 import com.neteinstein.goodcompany.feature.agenda.resources.last_seen_not_now
@@ -49,10 +52,59 @@ private val datedAnswers: List<Pair<LastSeenAnswer, StringResource>> = listOf(
  * "When did you last see Rui?" (issue #68): one person at a time, one tap answers. [position] of [total] is shown as
  * "1 of 12". "Not now" hides the card until tomorrow.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LastSeenCard(
     friend: Friend,
+    position: Int,
+    total: Int,
+    onAnswer: (LastSeenAnswer) -> Unit,
+    onNotNow: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LastSeenCardBody(
+        leading = { FriendAvatar(friend, size = 44.dp) },
+        title = stringResource(Res.string.last_seen_title, friend.displayName.substringBefore(' ')),
+        detail = closenessLabel(friend.closeness),
+        position = position,
+        total = total,
+        onAnswer = onAnswer,
+        onNotNow = onNotNow,
+        modifier = modifier,
+    )
+}
+
+/**
+ * "When did the circle last meet?" (issue #150): the same card and answers for a circle whose reminder is on and that
+ * has no meetup logged. The answer only starts the circle's rhythm.
+ */
+@Composable
+fun LastMetCard(
+    circle: FriendGroup,
+    members: List<Friend>,
+    position: Int,
+    total: Int,
+    onAnswer: (LastSeenAnswer) -> Unit,
+    onNotNow: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LastSeenCardBody(
+        leading = { StackedAvatars(members, size = 28.dp, max = 3) },
+        title = stringResource(Res.string.last_met_title),
+        detail = "${circle.emoji} ${circle.name}",
+        position = position,
+        total = total,
+        onAnswer = onAnswer,
+        onNotNow = onNotNow,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LastSeenCardBody(
+    leading: @Composable () -> Unit,
+    title: String,
+    detail: String,
     position: Int,
     total: Int,
     onAnswer: (LastSeenAnswer) -> Unit,
@@ -72,20 +124,12 @@ fun LastSeenCard(
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FriendAvatar(friend, size = 44.dp)
+                leading()
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        stringResource(Res.string.last_seen_title, friend.displayName.substringBefore(' ')),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     val progress = stringResource(Res.string.last_seen_progress, position, total)
-                    Text(
-                        "${closenessLabel(friend.closeness)} · $progress",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Text("$detail · $progress", style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             FlowRow(

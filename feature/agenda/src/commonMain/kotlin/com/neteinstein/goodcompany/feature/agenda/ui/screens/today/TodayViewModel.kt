@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
@@ -36,6 +37,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseC
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
@@ -43,6 +45,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
+import com.neteinstein.goodcompany.core.domain.usecase.TurnOffCircleRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
@@ -86,6 +89,12 @@ sealed interface TodayMessage {
 
     /** The last-seen card stored [answer] for [id] (issue #68); Undo puts back [previous]. */
     data class LastSeenAnswered(val id: FriendId, val name: String, val answer: LastSeenAnswer, val previous: LocalDate?) : TodayMessage
+
+    /** The last-seen card stored [answer] for the circle [id] (issue #150); Undo puts back [previous]. */
+    data class LastMetAnswered(val id: String, val name: String, val answer: LastSeenAnswer, val previous: LocalDate?) : TodayMessage
+
+    /** "Turn off reminders for this circle" from its row (issue #150); Undo puts [previous] back as it was. */
+    data class CircleRemindersOff(val previous: FriendGroup) : TodayMessage
 }
 
 /**
@@ -131,6 +140,10 @@ data class TodayUiState(
     val now: Instant = Instant.fromEpochMilliseconds(0),
     /** "When did you last see…?" (issue #68): the person asked about now; null hides the card. */
     val lastSeenAsk: Friend? = null,
+    /** "When did the circle last meet?" (issue #150): asked once no person is left ([lastSeenAsk] is null). */
+    val lastMetAsk: FriendGroup? = null,
+    /** The members of [lastMetAsk], for its avatars. */
+    val lastMetMembers: List<Friend> = emptyList(),
     /** Where [lastSeenAsk] is in this round ("1 of 12"): answers given since Today opened, plus one. */
     val lastSeenPosition: Int = 0,
     /** Answers given since Today opened plus everyone still to ask. */
@@ -185,6 +198,9 @@ class TodayViewModel(
     private val dismissNotificationPrimer: DismissNotificationPrimerUseCase,
     private val clock: AppClock,
     observeGroups: ObserveGroupsUseCase,
+    private val answerLastMet: AnswerLastMetUseCase,
+    private val turnOffCircleReminders: TurnOffCircleRemindersUseCase,
+    private val restoreGroup: RestoreGroupUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(TodayUiState())
 
@@ -250,10 +266,14 @@ class TodayViewModel(
 
     private fun TodayUiState.withLastSeen(card: LastSeenCard): TodayUiState {
         val ask = card.current
+        val circle = card.currentCircle
+        val asking = ask != null || circle != null
         return copy(
             lastSeenAsk = ask,
-            lastSeenPosition = if (ask == null) 0 else lastSeenAnswered + 1,
-            lastSeenTotal = if (ask == null) 0 else lastSeenAnswered + card.pending.size,
+            lastMetAsk = circle,
+            lastMetMembers = circle?.let { c -> c.memberIds.mapNotNull { id -> friends.firstOrNull { it.id == id } } }.orEmpty(),
+            lastSeenPosition = if (asking) lastSeenAnswered + 1 else 0,
+            lastSeenTotal = if (asking) lastSeenAnswered + card.pendingCount else 0,
         )
     }
 
@@ -277,6 +297,50 @@ class TodayViewModel(
             answerLastSeen.undo(message.id, message.previous)
             local.update { it.copy(lastSeenAnswered = (it.lastSeenAnswered - 1).coerceAtLeast(0), message = null) }
         }
+    }
+
+    /** An answer about a circle (issue #150): it only starts the circle's rhythm; the card moves on, with Undo. */
+    fun onLastMetAnswer(id: String, answer: LastSeenAnswer) {
+        viewModelScope.launch {
+            val circle = state.value.circles.firstOrNull { it.id == id }
+            answerLastMet(id, answer) ?: return@launch
+            local.update {
+                it.copy(
+                    lastSeenAnswered = it.lastSeenAnswered + 1,
+                    message = TodayMessage.LastMetAnswered(id, circle?.name.orEmpty(), answer, circle?.approxLastMet),
+                )
+            }
+        }
+    }
+
+    /** Undo on a circle's answer: the circle is asked again. */
+    fun onUndoLastMet(message: TodayMessage.LastMetAnswered) {
+        viewModelScope.launch {
+            answerLastMet.undo(message.id, message.previous)
+            local.update { it.copy(lastSeenAnswered = (it.lastSeenAnswered - 1).coerceAtLeast(0), message = null) }
+        }
+    }
+
+    /** Snooze in the ⋮ of a circle's row (issue #150): the same choices as people. */
+    fun onSnoozeCircle(id: String, option: SnoozeOption) {
+        viewModelScope.launch {
+            snooze.group(id, option)
+            val name = state.value.circles.firstOrNull { it.id == id }?.name.orEmpty()
+            local.update { it.copy(message = TodayMessage.Snoozed(name, option.until(clock.today()))) }
+        }
+    }
+
+    /** "Turn off reminders for this circle" in the ⋮ of its row (issue #150), with Undo. */
+    fun onCircleRemindersOff(id: String) {
+        viewModelScope.launch {
+            val before = turnOffCircleReminders(id) ?: return@launch
+            local.update { it.copy(message = TodayMessage.CircleRemindersOff(before)) }
+        }
+    }
+
+    /** Undo on "Reminders off": the circle's reminder (and snooze) come back. */
+    fun onUndoCircleRemindersOff(message: TodayMessage.CircleRemindersOff) {
+        viewModelScope.launch { restoreGroup(message.previous) }
     }
 
     /** "Not now": the card goes away until tomorrow. */

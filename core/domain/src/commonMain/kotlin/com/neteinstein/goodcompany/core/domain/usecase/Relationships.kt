@@ -95,7 +95,10 @@ object Relationships {
         /** Last time the circle met: the newest hangout with enough of its members ([meetupQuorum]). */
         val lastTogether: Instant?,
         val daysSince: Int?,
-        /** Null when the group has no cadence. */
+        /**
+         * Null when the group has no cadence, or when its rhythm hasn't started: nothing logged and no answer to
+         * "When did the circle last meet?" yet (issue #150).
+         */
         val dueDate: LocalDate?,
     ) {
         fun isOverdue(today: LocalDate) = dueDate != null && dueDate <= today
@@ -114,7 +117,10 @@ object Relationships {
             val last = lastCircleMeetup(hangouts, g.memberIds.toSet())
             val lastDate = last?.toLocalDate(zone)
             val every = g.meetEveryDays?.takeIf { it > 0 }
-            val baseDue = every?.let { lastDate?.plus(it, DateTimeUnit.DAY) ?: today }
+            // Issue #150 (D 2026-11-21): like people, a circle with nothing logged isn't overdue; its rhythm starts
+            // from the last-seen card's answer ([FriendGroup.approxLastMet]). A real meetup always wins.
+            val since = lastDate ?: g.approxLastMet
+            val baseDue = every?.let { e -> since?.plus(e, DateTimeUnit.DAY) }
             val snooze = g.snoozedUntil?.takeIf { it >= today }
             GroupStatus(
                 group = g,

@@ -517,7 +517,7 @@ abstract class RepositoryContract {
         val s = open()
         s.friends.upsert(friend("ana"))
         s.friends.upsert(friend("rui"))
-        val crew = FriendGroup("g", "Crew", "🎲", listOf(ana, rui), 30, LocalDate(2026, 4, 1))
+        val crew = FriendGroup("g", "Crew", "🎲", listOf(ana, rui), 30, LocalDate(2026, 4, 1), approxLastMet = LocalDate(2026, 3, 1))
         s.groups.upsert(crew)
         s.groups.upsert(FriendGroup("h", "Family"))
         s.groups.upsert(crew.copy(name = "Crew 2", memberIds = listOf(rui)))

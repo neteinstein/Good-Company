@@ -23,6 +23,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - The date chips (`LogDateChoice`) stay one line and one height in every language: "Other day" (`log_pick_date`)
   falls back to its calendar icon when it doesn't fit (issue #114). Keep that label short.
 - Calendar events live in memory: never stored, backed up, or sent to the AI.
+- Today's last-seen card also asks circles "When did the circle last meet?" (issue #150, after the people); the answer
+  (`FriendGroup.approxLastMet`) is never a meetup or a timeline entry. Details in `area-people`.
 - **Editing an entry (issue #102)** goes through `EditTimelineEntryUseCase(entry, LogRequest)` (`usecase/TimelineEdit.kt`);
   delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log sheet edits meetups,
   contacts and journal entries (`LogInteractionRoute.edit(friendId, key)` → `LogPrefill.edit` → `LogSheetModel.startEditing`,

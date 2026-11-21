@@ -79,6 +79,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
@@ -232,6 +233,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TurnOffCircleRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoSaveShareUseCase
@@ -427,6 +429,8 @@ val appModule = module {
     factoryOf(::ObserveMeetupStatusUseCase)
     factoryOf(::ObserveLastSeenCardUseCase)
     factoryOf(::AnswerLastSeenUseCase)
+    factoryOf(::AnswerLastMetUseCase)
+    factoryOf(::TurnOffCircleRemindersUseCase)
     factoryOf(::HideLastSeenCardUseCase)
     factoryOf(::ObserveRemindersUseCase)
     factoryOf(::AddReminderUseCase)
@@ -616,6 +620,9 @@ val appModule = module {
     // More parameters than viewModelOf takes (22).
     viewModel {
         TodayViewModel(
+            get(),
+            get(),
+            get(),
             get(),
             get(),
             get(),

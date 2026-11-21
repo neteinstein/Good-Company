@@ -64,6 +64,9 @@ class TodayViewModelTest {
         g.dismissNotificationPrimer,
         g.clock,
         g.observeGroups,
+        g.answerLastMet,
+        g.turnOffCircleReminders,
+        g.restoreGroup,
     )
 
     private fun birthday(id: String, month: Int, day: Int): Friend = friend(id) { copy(birthday = Birthday(month, day)) }
@@ -222,6 +225,70 @@ class TodayViewModelTest {
         vm.onLastSeenAnswer(FriendId("bob"), LastSeenAnswer.DONT_KNOW)
         assertNull(state.value.lastSeenAsk)
         assertEquals(LocalDate(2026, 3, 10), g.friendRepo.get(FriendId("bob"))?.approxLastSeen)
+    }
+
+    // --- Circles (issue #150) ---
+
+    @Test
+    fun lastSeenCard_asksACircleAfterThePeople_andTheAnswerOnlyStartsItsRhythm() = runViewModelTest {
+        val g = TestGraph(listOf(friend("ana", "Ana Lima") { copy(meetEveryDays = 30) }, friend("bob", "Bob")))
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", "🎶", listOf(FriendId("ana"), FriendId("bob")), meetEveryDays = 15))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(FriendId("ana"), state.value.lastSeenAsk?.id)
+        assertNull(state.value.lastMetAsk)
+        assertEquals(2, state.value.lastSeenTotal)
+        // Never met and never answered: no circle row on Today.
+        assertTrue(state.value.week.none { it is AgendaItem.GroupOverdue })
+
+        vm.onLastSeenAnswer(FriendId("ana"), LastSeenAnswer.THIS_WEEK)
+        assertNull(state.value.lastSeenAsk)
+        assertEquals("choir", state.value.lastMetAsk?.id)
+        assertEquals(listOf("ana", "bob"), state.value.lastMetMembers.map { it.id.value })
+        assertEquals(2, state.value.lastSeenPosition)
+        assertEquals(2, state.value.lastSeenTotal)
+
+        vm.onLastMetAnswer("choir", LastSeenAnswer.FEW_MONTHS)
+        val answered = assertIs<TodayMessage.LastMetAnswered>(state.value.message)
+        assertEquals(TodayMessage.LastMetAnswered("choir", "Choir", LastSeenAnswer.FEW_MONTHS, null), answered)
+        assertNull(state.value.lastMetAsk)
+        assertEquals(LocalDate(2025, 12, 10), g.groupRepo.groups.value.single().approxLastMet)
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        val row = state.value.week.filterIsInstance<AgendaItem.GroupOverdue>().single()
+        assertNull(row.daysSince)
+
+        vm.onUndoLastMet(answered)
+        assertNull(g.groupRepo.groups.value.single().approxLastMet)
+        assertEquals("choir", state.value.lastMetAsk?.id)
+    }
+
+    @Test
+    fun aCirclesRow_canBeSnoozed_orHaveItsRemindersTurnedOff_withUndo() = runViewModelTest {
+        val g = TestGraph(listOf(friend("ana"), friend("bob")))
+        val choir =
+            FriendGroup("choir", "Choir", "🎶", listOf(FriendId("ana"), FriendId("bob")), meetEveryDays = 15, approxLastMet = LocalDate(2026, 1, 1))
+        g.groupRepo.upsert(choir)
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        assertEquals(1, state.value.week.count { it is AgendaItem.GroupOverdue })
+
+        // The same snoozes as people: until Saturday (the test clock is Tuesday 10 March).
+        vm.onSnoozeCircle("choir", SnoozeOption.WEEKEND)
+        assertEquals(TodayMessage.Snoozed("Choir", LocalDate(2026, 3, 14)), state.value.message)
+        assertEquals(LocalDate(2026, 3, 14), g.groupRepo.groups.value.single().snoozedUntil)
+        assertTrue(state.value.week.none { it is AgendaItem.GroupOverdue })
+        vm.onMessageShown()
+
+        g.groupRepo.upsert(choir)
+        vm.onCircleRemindersOff("choir")
+        val off = assertIs<TodayMessage.CircleRemindersOff>(state.value.message)
+        assertEquals(choir, off.previous)
+        assertNull(g.groupRepo.groups.value.single().meetEveryDays)
+        assertTrue(state.value.week.none { it is AgendaItem.GroupOverdue })
+
+        vm.onUndoCircleRemindersOff(off)
+        assertEquals(15, g.groupRepo.groups.value.single().meetEveryDays)
+        assertEquals(1, state.value.week.count { it is AgendaItem.GroupOverdue })
     }
 
     @Test

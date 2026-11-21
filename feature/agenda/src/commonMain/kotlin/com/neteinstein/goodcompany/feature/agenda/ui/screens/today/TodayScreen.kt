@@ -105,6 +105,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.today_call_logged
 import com.neteinstein.goodcompany.feature.agenda.resources.today_catch_up
 import com.neteinstein.goodcompany.feature.agenda.resources.today_checkin_body
 import com.neteinstein.goodcompany.feature.agenda.resources.today_checkin_title
+import com.neteinstein.goodcompany.feature.agenda.resources.today_circle_reminders_off
 import com.neteinstein.goodcompany.feature.agenda.resources.today_drifting
 import com.neteinstein.goodcompany.feature.agenda.resources.today_drifting_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.today_empty_action
@@ -119,6 +120,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.today_title
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
+import com.neteinstein.goodcompany.feature.agenda.ui.components.LastMetCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.openReminderTarget
@@ -140,16 +142,17 @@ suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = 
     TodayMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
     TodayMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
     is TodayMessage.AiError -> aiErrorText(error)
-    is TodayMessage.LastSeenAnswered -> getString(
-        when (answer) {
-            LastSeenAnswer.THIS_WEEK -> Res.string.last_seen_got_this_week
-            LastSeenAnswer.THIS_MONTH -> Res.string.last_seen_got_this_month
-            LastSeenAnswer.FEW_MONTHS -> Res.string.last_seen_got_few_months
-            LastSeenAnswer.OVER_A_YEAR -> Res.string.last_seen_got_over_year
-            LastSeenAnswer.DONT_KNOW -> Res.string.last_seen_got_dont_know
-        },
-        name,
-    )
+    is TodayMessage.LastSeenAnswered -> getString(answer.gotIt(), name)
+    is TodayMessage.LastMetAnswered -> getString(answer.gotIt(), name)
+    is TodayMessage.CircleRemindersOff -> getString(Res.string.today_circle_reminders_off, previous.name)
+}
+
+private fun LastSeenAnswer.gotIt() = when (this) {
+    LastSeenAnswer.THIS_WEEK -> Res.string.last_seen_got_this_week
+    LastSeenAnswer.THIS_MONTH -> Res.string.last_seen_got_this_month
+    LastSeenAnswer.FEW_MONTHS -> Res.string.last_seen_got_few_months
+    LastSeenAnswer.OVER_A_YEAR -> Res.string.last_seen_got_over_year
+    LastSeenAnswer.DONT_KNOW -> Res.string.last_seen_got_dont_know
 }
 
 /**
@@ -215,6 +218,11 @@ fun TodayScreen(
             onLastSeenAnswer = viewModel::onLastSeenAnswer,
             onLastSeenNotNow = viewModel::onLastSeenNotNow,
             onUndoLastSeen = viewModel::onUndoLastSeen,
+            onLastMetAnswer = viewModel::onLastMetAnswer,
+            onUndoLastMet = viewModel::onUndoLastMet,
+            onSnoozeCircle = viewModel::onSnoozeCircle,
+            onCircleRemindersOff = viewModel::onCircleRemindersOff,
+            onUndoCircleRemindersOff = viewModel::onUndoCircleRemindersOff,
             onAllowNotifications = enableNotifications,
             onNotificationsNotNow = viewModel::onNotificationsNotNow,
             reminders = ReminderCallbacks(
@@ -295,6 +303,13 @@ data class TodayActions(
     val onLastSeenAnswer: (FriendId, LastSeenAnswer) -> Unit = { _, _ -> },
     val onLastSeenNotNow: () -> Unit = {},
     val onUndoLastSeen: (TodayMessage.LastSeenAnswered) -> Unit = {},
+    /** "When did the circle last meet?" (issue #150). */
+    val onLastMetAnswer: (String, LastSeenAnswer) -> Unit = { _, _ -> },
+    val onUndoLastMet: (TodayMessage.LastMetAnswered) -> Unit = {},
+    /** Snooze and "Turn off reminders for this circle" in the ⋮ of a circle's row (issue #150). */
+    val onSnoozeCircle: (String, SnoozeOption) -> Unit = { _, _ -> },
+    val onCircleRemindersOff: (String) -> Unit = {},
+    val onUndoCircleRemindersOff: (TodayMessage.CircleRemindersOff) -> Unit = {},
     val onAllowNotifications: () -> Unit = {},
     val onNotificationsNotNow: () -> Unit = {},
     /** Done · Snooze · Edit · Delete on the week's reminders (issue #99). */
@@ -319,6 +334,13 @@ fun TodayContent(
                 actions.onUndoLastSeen(message)
                 return@LaunchedEffect
             }
+        } else if (message is TodayMessage.LastMetAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) {
+                actions.onUndoLastMet(message)
+                return@LaunchedEffect
+            }
+        } else if (message is TodayMessage.CircleRemindersOff) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) actions.onUndoCircleRemindersOff(message)
         } else if (message is TodayMessage.PlanAnswered && message.previous != null) {
             if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoPlan(message)
         } else if (message is TodayMessage.Reminder && state.reminderUndo != null) {
@@ -381,6 +403,19 @@ fun TodayContent(
                     )
                 }
             }
+            state.lastMetAsk?.let { circle ->
+                item(key = "last-met") {
+                    LastMetCard(
+                        circle,
+                        state.lastMetMembers,
+                        state.lastSeenPosition,
+                        state.lastSeenTotal,
+                        onAnswer = { actions.onLastMetAnswer(circle.id, it) },
+                        onNotNow = actions.onLastSeenNotNow,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
             if (state.showCheckIn) item(key = "check-in") { CheckInCard(actions.onCheckIn) }
             state.reviewYear?.let { year ->
                 item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
@@ -425,6 +460,8 @@ fun TodayContent(
                         actions.onOpenFriend,
                         onOpenWish = actions.onOpenWish,
                         onGroupMet = actions.onGroupMet,
+                        onSnoozeCircle = actions.onSnoozeCircle,
+                        onCircleRemindersOff = actions.onCircleRemindersOff,
                         onAnswerPlan = actions.onAnswerPlan,
                         onAddPlanToCalendar = actions.onAddPlanToCalendar,
                         onSkipPlan = actions.onSkipPlan,

@@ -76,4 +76,5 @@
     <string name="msg_cover_unreadable">Impossible de lire cette image</string>
     <string name="msg_entry_deleted">Retiré de la chronologie</string>
     <string name="msg_reminder_saved">Rappel enregistré</string>
+    <string name="page_counted">Compté pour le rappel</string>
 </resources>

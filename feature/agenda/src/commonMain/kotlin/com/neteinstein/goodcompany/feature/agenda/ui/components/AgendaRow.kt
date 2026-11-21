@@ -21,13 +21,24 @@ import androidx.compose.material.icons.rounded.ChildCare
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotificationsOff
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Snooze
+import androidx.compose.material.icons.rounded.Weekend
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +50,7 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LogIcon
 import com.neteinstein.goodcompany.core.ui.components.PlanHappenedButton
@@ -51,6 +63,8 @@ import com.neteinstein.goodcompany.core.ui.components.repeatLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
+import com.neteinstein.goodcompany.core.ui.resources.catchup_snooze_week
+import com.neteinstein.goodcompany.core.ui.resources.catchup_snooze_weekend
 import com.neteinstein.goodcompany.core.ui.resources.plan_circle_people
 import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
 import com.neteinstein.goodcompany.core.ui.resources.plan_next_after
@@ -64,9 +78,13 @@ import com.neteinstein.goodcompany.feature.agenda.resources.label_kid_birthday
 import com.neteinstein.goodcompany.feature.agenda.resources.label_plan
 import com.neteinstein.goodcompany.feature.agenda.resources.label_reminder
 import com.neteinstein.goodcompany.feature.agenda.resources.row_birthday
+import com.neteinstein.goodcompany.feature.agenda.resources.row_circle_more
+import com.neteinstein.goodcompany.feature.agenda.resources.row_circle_reminders_off
 import com.neteinstein.goodcompany.feature.agenda.resources.row_days_since
 import com.neteinstein.goodcompany.feature.agenda.resources.row_gift_idea
-import com.neteinstein.goodcompany.feature.agenda.resources.row_group_days
+import com.neteinstein.goodcompany.feature.agenda.resources.row_group_last_met
+import com.neteinstein.goodcompany.feature.agenda.resources.row_group_no_meetup
+import com.neteinstein.goodcompany.feature.agenda.resources.row_group_rhythm
 import com.neteinstein.goodcompany.feature.agenda.resources.row_kid
 import com.neteinstein.goodcompany.feature.agenda.resources.row_loves
 import com.neteinstein.goodcompany.feature.agenda.resources.row_never
@@ -97,6 +115,10 @@ fun AgendaRow(
     modifier: Modifier = Modifier,
     onOpenWish: (FriendId) -> Unit = {},
     onGroupMet: (String) -> Unit = {},
+    /** Snooze in the ⋮ of a circle's row (issue #150); no ⋮ when null. */
+    onSnoozeCircle: ((String, SnoozeOption) -> Unit)? = null,
+    /** "Turn off reminders for this circle" in the same ⋮ (issue #150). */
+    onCircleRemindersOff: ((String) -> Unit)? = null,
     /** "How did it go?" on a past plan (issue #100): the answer and whether it is for the whole series. */
     onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
@@ -187,9 +209,15 @@ fun AgendaRow(
             tint,
             stringResource(Res.string.label_group),
             "${item.group.emoji} ${item.group.name}",
-            item.members.joinToString { it.displayName.substringBefore(' ') }.let { names ->
-                item.daysSince?.let { pluralStringResource(Res.plurals.row_group_days, it, names, it) } ?: names
-            },
+            // Issue #150: why it's here ("Every 15 days · last met 40 days ago"), then who is in it.
+            listOfNotNull(
+                listOfNotNull(
+                    item.group.meetEveryDays?.let { pluralStringResource(Res.plurals.row_group_rhythm, it, it) },
+                    item.daysSince?.let { pluralStringResource(Res.plurals.row_group_last_met, it, it) }
+                        ?: stringResource(Res.string.row_group_no_meetup),
+                ).joinToString(" · "),
+                item.members.joinToString { it.displayName.substringBefore(' ') }.takeIf { it.isNotBlank() },
+            ).joinToString("\n"),
             null,
         )
         is AgendaItem.PlanUpcoming -> Spec(
@@ -257,7 +285,7 @@ fun AgendaRow(
                         it,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -316,7 +344,52 @@ fun AgendaRow(
                     modifier = Modifier.padding(start = 4.dp),
                 )
             }
+            if (item is AgendaItem.GroupOverdue && onSnoozeCircle != null && onCircleRemindersOff != null) {
+                CircleRowMenu(
+                    onSnooze = { onSnoozeCircle(item.group.id, it) },
+                    onRemindersOff = { onCircleRemindersOff(item.group.id) },
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
             Spacer(Modifier.width(12.dp))
+        }
+    }
+}
+
+/** The ⋮ of a circle's row (issue #150): the same snoozes as people, and "Turn off reminders for this circle". */
+@Composable
+private fun CircleRowMenu(onSnooze: (SnoozeOption) -> Unit, onRemindersOff: () -> Unit, modifier: Modifier = Modifier) {
+    var menu by remember { mutableStateOf(false) }
+    Box(modifier) {
+        // The timeline's ⋮ size (issue #130), like a plan's.
+        IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Rounded.MoreVert, stringResource(Res.string.row_circle_more), Modifier.size(20.dp))
+        }
+        DropdownMenu(menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(CoreRes.string.catchup_snooze_weekend)) },
+                leadingIcon = { Icon(Icons.Rounded.Weekend, null) },
+                onClick = {
+                    menu = false
+                    onSnooze(SnoozeOption.WEEKEND)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(CoreRes.string.catchup_snooze_week)) },
+                leadingIcon = { Icon(Icons.Rounded.Snooze, null) },
+                onClick = {
+                    menu = false
+                    onSnooze(SnoozeOption.ONE_WEEK)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(Res.string.row_circle_reminders_off)) },
+                leadingIcon = { Icon(Icons.Rounded.NotificationsOff, null) },
+                onClick = {
+                    menu = false
+                    onRemindersOff()
+                },
+            )
         }
     }
 }

@@ -76,4 +76,5 @@
     <string name="msg_cover_unreadable">Não foi possível ler essa imagem</string>
     <string name="msg_entry_deleted">Removido da cronologia</string>
     <string name="msg_reminder_saved">Lembrete guardado</string>
+    <string name="page_counted">Contou para o lembrete</string>
 </resources>

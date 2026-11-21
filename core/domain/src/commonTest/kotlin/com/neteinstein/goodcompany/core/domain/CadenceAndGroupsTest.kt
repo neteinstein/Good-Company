@@ -128,9 +128,31 @@ class CadenceAndGroupsTest {
     }
 
     @Test
-    fun overdueGroupsShowInAgendaAndNotifications() {
+    fun aCircleWithNothingLogged_isNotOverdue_untilAskedWhenItLastMet() {
+        // Issue #150 (D 2026-11-21): like people, no meetup and no answer means no due date, no row, no nudge.
         val friends = listOf(friend("ana"), friend("rui"))
         val group = FriendGroup("g", "Crew", "🎲", friends.map { it.id }, meetEveryDays = 7)
+        assertNull(Relationships.groupStatuses(listOf(group), friends, emptyList(), today, TimeZone.UTC).single().dueDate)
+        assertTrue(AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC, groups = listOf(group)).isEmpty())
+        val planned = NotificationPlanner.plan(friends, emptyList(), emptyList(), at(2026, 3, 10), TimeZone.UTC, 9, groups = listOf(group))
+        assertTrue(planned.withoutDailyLog().isEmpty())
+
+        // An answer starts the rhythm; a real meetup (with the quorum) wins over it.
+        val answered = group.copy(approxLastMet = LocalDate(2026, 3, 1))
+        assertEquals(LocalDate(2026, 3, 8), Relationships.groupStatuses(listOf(answered), friends, emptyList(), today, TimeZone.UTC).single().dueDate)
+        val met = listOf(Hangout("h", friends.map { it.id }, at(2026, 3, 5)))
+        val status = Relationships.groupStatuses(listOf(answered), friends, met, today, TimeZone.UTC).single()
+        assertEquals(LocalDate(2026, 3, 12), status.dueDate)
+        assertEquals(5, status.daysSince)
+        // A meetup with only one of them doesn't count, so the answer still decides.
+        val one = listOf(Hangout("h", listOf(friends[0].id), at(2026, 3, 5)))
+        assertEquals(LocalDate(2026, 3, 8), Relationships.groupStatuses(listOf(answered), friends, one, today, TimeZone.UTC).single().dueDate)
+    }
+
+    @Test
+    fun overdueGroupsShowInAgendaAndNotifications() {
+        val friends = listOf(friend("ana"), friend("rui"))
+        val group = FriendGroup("g", "Crew", "🎲", friends.map { it.id }, meetEveryDays = 7, approxLastMet = LocalDate(2026, 3, 3))
         val agenda = AgendaBuilder.build(friends, emptyList(), emptyList(), today, TimeZone.UTC, groups = listOf(group))
         val item = agenda.single() as AgendaItem.GroupOverdue
         assertEquals("Crew", item.group.name)

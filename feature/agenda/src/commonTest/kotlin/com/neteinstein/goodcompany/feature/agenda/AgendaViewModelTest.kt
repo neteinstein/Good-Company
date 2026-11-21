@@ -193,7 +193,10 @@ class AgendaViewModelTest {
 
     @Test
     fun overdueGroupIsListed_andTheAgendaNeverLogsAMeetupItself() = runViewModelTest {
-        g.groupRepo.upsert(FriendGroup("g1", "Surf", "🏄", listOf(FriendId("ana"), FriendId("rui")), meetEveryDays = 14))
+        // Issue #150: a circle with nothing logged starts its rhythm from "When did the circle last meet?".
+        g.groupRepo.upsert(
+            FriendGroup("g1", "Surf", "🏄", listOf(FriendId("ana"), FriendId("rui")), meetEveryDays = 14, approxLastMet = LocalDate(2026, 1, 1)),
+        )
         val vm = vm()
         val state = collecting(vm.state)
         assertTrue(state.value.agenda.any { it is AgendaItem.GroupOverdue })

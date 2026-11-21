@@ -34,11 +34,20 @@
         <item quantity="other">%1$d days since you met</item>
     </plurals>
     <string name="row_never">No meetup logged yet</string>
-    <plurals name="row_group_days">
-        <item quantity="one">%1$s · %2$d day since the circle met</item>
-        <item quantity="other">%1$s · %2$d days since the circle met</item>
-    </plurals>
     <string name="row_send_wishes">Send wishes</string>
+    <plurals name="row_group_rhythm">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
+    </plurals>
+    <plurals name="row_group_last_met">
+        <item quantity="one">last met %1$d day ago</item>
+        <item quantity="other">last met %1$d days ago</item>
+    </plurals>
+    <string name="row_group_no_meetup">no meetup logged yet</string>
+    <string name="row_circle_more">Circle options</string>
+    <string name="row_circle_reminders_off">Turn off reminders for this circle</string>
+    <string name="today_circle_reminders_off">Reminders off for %1$s</string>
+    <string name="last_met_title">When did the circle last meet?</string>
     <string name="row_we_met">Log</string>
     <string name="wish_title">Birthday wishes for %1$s</string>
     <string name="wish_gift_hint">Gift ideas: %1$s</string>

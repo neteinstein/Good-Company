@@ -1,0 +1,4 @@
+-- Version 30 → 31 (issue #150): the answer to Today's "When did the circle last meet?" (decision 2026-11-21), an
+-- ISO date that only starts a circle's rhythm, like friend.approx_last_seen. Existing circles have no answer.
+
+ALTER TABLE friend_group ADD COLUMN approx_last_met TEXT;

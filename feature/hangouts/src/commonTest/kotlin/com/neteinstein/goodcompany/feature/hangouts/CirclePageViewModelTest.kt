@@ -35,7 +35,7 @@ class CirclePageViewModelTest {
     private val surf = FriendGroup("surf", "Surf", "🏄", listOf(ana, rui), meetEveryDays = 21)
     private val g = TestGraph(
         listOf(friend("ana"), friend("rui"), friend("eva")),
-        hangouts = listOf(Hangout("h1", listOf(ana, rui), at(2026, 3, 1)), Hangout("h2", listOf(ana), at(2026, 3, 2))),
+        hangouts = listOf(Hangout("h1", listOf(ana, rui), at(2026, 3, 1)), Hangout("h2", listOf(FriendId("eva")), at(2026, 3, 2))),
     )
 
     private fun vm(id: String = "surf") = CirclePageViewModel(

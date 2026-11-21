@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.Closeness
+import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -98,5 +99,97 @@ class LastSeenTest {
         val imported = (1..40).map { friend("p$it") { copy(closeness = Closeness.CLOSE) } }
         assertTrue(Relationships.meetupStatuses(imported, emptyList(), today, TimeZone.UTC).none { it.isOverdue(today) })
         assertEquals(40, LastSeenQuestions.pending(imported, emptyList(), emptyList(), CadenceRules()).size)
+    }
+
+    // --- "When did the circle last meet?" (issue #150) ---
+
+    private val ana = FriendId("ana")
+    private val bob = FriendId("bob")
+
+    @Test
+    fun circlesWithAReminderAndNothingLogged_areAskedAfterPeople_byName() {
+        val choir = FriendGroup("choir", "Choir", memberIds = listOf(ana, bob), meetEveryDays = 15)
+        val off = FriendGroup("off", "Book club", memberIds = listOf(ana, bob))
+        val empty = FriendGroup("empty", "Empty", meetEveryDays = 15)
+        val answered = FriendGroup("answered", "Answered", memberIds = listOf(ana), meetEveryDays = 15, approxLastMet = today)
+        val met = FriendGroup("met", "Met", memberIds = listOf(ana, bob), meetEveryDays = 15)
+        val climbing = FriendGroup("climb", "Climbing", memberIds = listOf(ana, bob), meetEveryDays = 7)
+        // Only one of the two came: that meetup doesn't count for the circle (the quorum), so it is still asked.
+        val hangouts = listOf(Hangout("h", listOf(ana, bob), at(2026, 3, 1)))
+        val metOnlyAna = listOf(Hangout("h", listOf(ana), at(2026, 3, 1)))
+        assertEquals(
+            listOf("choir", "climb"),
+            LastSeenQuestions.pendingCircles(listOf(choir, off, empty, answered, climbing), metOnlyAna).map { it.id },
+        )
+        assertTrue(LastSeenQuestions.pendingCircles(listOf(met), hangouts).isEmpty())
+    }
+
+    @Test
+    fun theCardAsksCirclesOnceNoPersonIsLeft() = runTest {
+        val g = TestGraph(listOf(friend("ana") { copy(meetEveryDays = 30) }, friend("bob")))
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", memberIds = listOf(ana, bob), meetEveryDays = 15))
+        var card = g.observeLastSeenCard().first()
+        assertEquals(ana, card.current?.id)
+        assertNull(card.currentCircle)
+        assertEquals(2, card.pendingCount)
+
+        g.answerLastSeen(ana, LastSeenAnswer.THIS_WEEK)
+        card = g.observeLastSeenCard().first()
+        assertNull(card.current)
+        assertEquals("choir", card.currentCircle?.id)
+        assertEquals(1, card.pendingCount)
+    }
+
+    @Test
+    fun answeringACircle_startsItsRhythmOnly_andUndoAsksAgain() = runTest {
+        val g = TestGraph(listOf(friend("ana"), friend("bob")))
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", memberIds = listOf(ana, bob), meetEveryDays = 15))
+        assertFalse(g.observeGroups().first().single().isOverdue(today))
+
+        assertEquals(LocalDate(2025, 2, 3), g.answerLastMet("choir", LastSeenAnswer.OVER_A_YEAR))
+        val status = g.observeGroups().first().single()
+        assertTrue(status.isOverdue(today))
+        // Not a meetup: nothing logged, no "last together", no days since.
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+        assertNull(status.lastTogether)
+        assertNull(status.daysSince)
+        assertNull(g.observeLastSeenCard().first().currentCircle)
+
+        g.answerLastMet.undo("choir")
+        assertNull(g.groupRepo.groups.value.single().approxLastMet)
+        assertEquals("choir", g.observeLastSeenCard().first().currentCircle?.id)
+        assertNull(g.answerLastMet("gone", LastSeenAnswer.THIS_WEEK))
+    }
+
+    @Test
+    fun turningOffACirclesReminders_keepsTheRest_andRestoreUndoesIt() = runTest {
+        val g = TestGraph(listOf(friend("ana"), friend("bob")))
+        val choir = FriendGroup(
+            "choir",
+            "Choir",
+            memberIds = listOf(ana, bob),
+            meetEveryDays = 15,
+            snoozedUntil = LocalDate(2026, 3, 14),
+            approxLastMet = LocalDate(2026, 1, 1),
+        )
+        g.groupRepo.upsert(choir)
+        assertEquals(choir, g.turnOffCircleReminders("choir"))
+        val off = g.groupRepo.groups.value.single()
+        assertNull(off.meetEveryDays)
+        assertNull(off.snoozedUntil)
+        assertEquals(listOf(ana, bob), off.memberIds)
+        assertFalse(g.observeGroups().first().single().isOverdue(today))
+
+        g.restoreGroup(choir)
+        assertEquals(choir, g.groupRepo.groups.value.single())
+        assertNull(g.turnOffCircleReminders("gone"))
+    }
+
+    @Test
+    fun savingACircle_keepsItsLastMetAnswer() = runTest {
+        val g = TestGraph(listOf(friend("ana")))
+        g.groupRepo.upsert(FriendGroup("choir", "Choir", memberIds = listOf(ana), meetEveryDays = 15, approxLastMet = LocalDate(2026, 1, 1)))
+        g.saveGroup("choir", "Choir!", "🎶", com.neteinstein.goodcompany.core.domain.model.CircleColor.TEAL, listOf(ana), 21)
+        assertEquals(LocalDate(2026, 1, 1), g.groupRepo.groups.value.single().approxLastMet)
     }
 }

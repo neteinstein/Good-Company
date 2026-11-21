@@ -1012,6 +1012,41 @@ class MigrationTest {
     }
 
     @Test
+    fun version30to31_circlesStartWithNoLastMetAnswer_andOneRoundTrips() = runTest {
+        val driver = driverAt(30)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+        driver.execute(
+            null,
+            "INSERT INTO friend_group (id, position, name, emoji, meet_every_days, snoozed_until, color) VALUES ('choir', 0, 'Choir', '🎶', 15, '2026-11-30', 'TEAL')",
+            0,
+        ).await()
+        driver.execute(null, "INSERT INTO group_member (group_id, friend_id, position) VALUES ('choir', 'ana', 0)", 0).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 30, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val choir = database.readGroups().single()
+        assertEquals("Choir", choir.name)
+        assertEquals(15, choir.meetEveryDays)
+        assertEquals(LocalDate(2026, 11, 30), choir.snoozedUntil)
+        assertEquals(listOf(FriendId("ana")), choir.memberIds)
+        assertNull(choir.approxLastMet)
+
+        database.writeGroup(choir.copy(approxLastMet = LocalDate(2026, 11, 6)))
+        assertEquals(LocalDate(2026, 11, 6), database.readGroups().single().approxLastMet)
+        database.writeGroup(choir.copy(approxLastMet = null))
+        assertNull(database.readGroups().single().approxLastMet)
+        driver.close()
+    }
+
+    @Test
     fun customActivitiesColumn_unreadableIsNone_blanksAndRepeatsDropped() {
         assertEquals(emptyList(), customActivitiesFromColumn(null))
         assertEquals(emptyList(), customActivitiesFromColumn("not json"))

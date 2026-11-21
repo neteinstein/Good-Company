@@ -71,6 +71,7 @@
     <string name="page_together">Together</string>
     <string name="page_members_at">%1$d of %2$d</string>
     <string name="page_everyone">Everyone</string>
+    <string name="page_counted">Counted for the reminder</string>
     <string name="page_empty">No meetups yet. Tap “Caught up” after you get together.</string>
     <string name="page_reminder">Reminder</string>
     <string name="page_cover">Cover photo</string>

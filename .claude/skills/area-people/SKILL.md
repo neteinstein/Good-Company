@@ -30,12 +30,23 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   "Who's free for…?" is `WhosFreeRoute` (`:feature:hangouts`, `free/`).
 - **A circle's page (issue #88)** is `CirclePageRoute(id)` → `CirclePageScreen`/`CirclePageViewModel`
   (`:feature:hangouts`, `page/`), built by `ObserveCirclePageUseCase` / `CirclePages` (domain, pure): status, "Coming up"
-  (the circle's `PLANNED` plans and its reminders not done, undated last) and the timeline (meetups that reach
-  `meetupQuorum` with **today's** members, everyone who came listed members first; shares saved to the circle, one
+  (the circle's `PLANNED` plans and its reminders not done, undated last) and the timeline (since #150 **every** meetup
+  with at least one of **today's** members; `CirclePage.countedAt` marks the ones that reach `meetupQuorum`, shown as
+  "Counted for the reminder" while the reminder is on; everyone who came listed members first; shares saved to the circle, one
   logged as a meetup shown on it once). Family has a page too (no Edit, no delete). It emits null when the circle is
   gone and the page closes. Delete from the page pops back to the tab and hands the id over (`DELETE_CIRCLE` on the
   tab's `savedStateHandle`), so the tab's snackbar offers Undo. Circle chips on a person's page open it. Tapping a
   meetup does nothing (there is no meetup screen); a long press deletes it with Undo.
+- **Circle rhythm and Today's circle rows (issue #150, D 2026-11-21).** A circle with `meetEveryDays` but no meetup
+  that reaches the quorum and no `FriendGroup.approxLastMet` has **no due date** (`GroupStatus.dueDate` null): no
+  Today row, no nudge. Today's last-seen card asks "When did the circle last meet?" (`LastSeenQuestions.pendingCircles`,
+  `LastSeenCard.currentCircle`, after every person; `AnswerLastMetUseCase`, same `LastSeenAnswer`s) and stores
+  `approxLastMet` (`friend_group.approx_last_met`, migration `30.sqm`, in backups through `FriendGroup`). Like people's
+  answer it only moves the due date: `lastTogether`/`daysSince` stay null, nothing on a timeline. `SaveGroupUseCase`
+  keeps it. The row (`AgendaRow`, `GroupOverdue`) says "Every N days · last met X days ago" / "· no meetup logged yet"
+  and has a ⋮ (only where the caller passes `onSnoozeCircle`/`onCircleRemindersOff`, today only on Today): the people's
+  snoozes and "Turn off reminders for this circle" (`TurnOffCircleRemindersUseCase`, clears rhythm and snooze; Undo =
+  `RestoreGroupUseCase`). The quorum is unchanged.
 - **Circle reminders (#88).** `Reminder.circleId` (column `reminder.circle_id`, migration `20.sqm`, no foreign key)
   makes a reminder belong to a circle: `Reminder.peopleIds(circles)` is its own people plus the circle's **current**
   members (so someone who joins later sees it), used by the agenda, a member's page and notifications. A deleted

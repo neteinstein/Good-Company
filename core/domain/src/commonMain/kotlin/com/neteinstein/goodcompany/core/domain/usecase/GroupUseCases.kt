@@ -36,7 +36,7 @@ class ObserveGroupsUseCase(
 class SaveGroupUseCase(private val groups: GroupRepository, private val ids: IdGenerator) {
     /**
      * Creates (id null) or updates a circle. Needs a name and at least one member. [meetEveryDays] is the optional
-     * "Remind me when we haven't met" goal (null or 0 = off). An update keeps the circle's snooze.
+     * "Remind me when we haven't met" goal (null or 0 = off). An update keeps the circle's snooze and its last-met answer.
      */
     suspend operator fun invoke(
         id: String?,
@@ -56,6 +56,7 @@ class SaveGroupUseCase(private val groups: GroupRepository, private val ids: IdG
             memberIds = members.distinct(),
             meetEveryDays = meetEveryDays?.takeIf { it > 0 },
             snoozedUntil = existing?.snoozedUntil,
+            approxLastMet = existing?.approxLastMet,
             color = color,
         )
         groups.upsert(group)
@@ -149,5 +150,18 @@ class SetCircleMemberUseCase(private val groups: GroupRepository) {
         if (group.isBuiltIn || (friendId in group.memberIds) == member) return null
         groups.upsert(group.copy(memberIds = if (member) group.memberIds + friendId else group.memberIds - friendId))
         return group
+    }
+}
+
+/**
+ * "Turn off reminders for this circle" in the ⋮ of its row on Today (issue #150): the circle's "Remind me when we
+ * haven't met" goes off (and its snooze with it). Returns the circle as it was, for Undo ([RestoreGroupUseCase]); null
+ * when it is gone.
+ */
+class TurnOffCircleRemindersUseCase(private val groups: GroupRepository) {
+    suspend operator fun invoke(id: String): FriendGroup? {
+        val g = groups.groups.first().firstOrNull { it.id == id } ?: return null
+        groups.upsert(g.copy(meetEveryDays = null, snoozedUntil = null))
+        return g
     }
 }

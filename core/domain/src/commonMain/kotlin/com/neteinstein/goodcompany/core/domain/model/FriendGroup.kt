@@ -12,6 +12,10 @@ import kotlinx.serialization.Transient
  * [meetEveryDays] is the optional "Remind me when we haven't met" goal (null = off, the default for new circles).
  * A circle never changes a member's own rhythm.
  *
+ * [approxLastMet] is the answer to Today's "When did the circle last meet?" (issue #150, decision 2026-11-21): a
+ * circle with its reminder on and no meetup logged isn't overdue until it is answered. It only starts the rhythm: it is
+ * not a meetup and never shows on a timeline. A real meetup always wins.
+ *
  * [cover] is the circle's cover photo (issue #88), kept in its own table keyed by circle id (so the built-in Family
  * circle can have one too) and filled in when circles are read. It isn't part of the circle's JSON: backups carry covers
  * in [Backup.circleCovers].
@@ -24,6 +28,8 @@ data class FriendGroup(
     val memberIds: List<FriendId> = emptyList(),
     val meetEveryDays: Int? = null,
     val snoozedUntil: LocalDate? = null,
+    /** Missing in older backups. */
+    val approxLastMet: LocalDate? = null,
     /** Missing in backups made before circles had colours: those restore as [CircleColor.PURPLE]. */
     val color: CircleColor = CircleColor.PURPLE,
     @Transient val cover: ContactPhoto? = null,
