@@ -50,12 +50,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
 import com.neteinstein.goodcompany.core.ui.components.HeaderBackButton
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.ReminderCallbacks
 import com.neteinstein.goodcompany.core.ui.components.ReminderEditor
 import com.neteinstein.goodcompany.core.ui.components.ReminderRow
@@ -74,6 +76,7 @@ import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.resources.plan_closed
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
+import com.neteinstein.goodcompany.core.ui.resources.plan_saved
 import com.neteinstein.goodcompany.core.ui.resources.plan_skipped
 import com.neteinstein.goodcompany.core.ui.resources.reminders_done_group
 import com.neteinstein.goodcompany.core.ui.resources.undo
@@ -112,6 +115,7 @@ suspend fun AgendaMessage.text(zone: TimeZone, today: LocalDate): String = when 
     AgendaMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
     is AgendaMessage.PlanAnswered -> answer.doneText()
     AgendaMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
+    AgendaMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
 }
 
 @Composable
@@ -160,9 +164,21 @@ fun AgendaScreen(
         onUndoPlan = viewModel::onUndoPlan,
         onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
         onSkipPlan = viewModel::onSkipPlan,
+        onEditPlan = viewModel::onEditPlan,
+        onAnswerUpcomingPlan = viewModel::onAnswerUpcomingPlan,
         onOpenCalendar = onOpenCalendar,
         onBack = onBack,
     )
+    state.editingPlan?.let { plan ->
+        PlanEditor(
+            friends = state.friends,
+            today = state.today,
+            onDismiss = viewModel::onDismissPlanEditor,
+            onSave = viewModel::onSavePlan,
+            initial = plan,
+            circles = state.circles,
+        )
+    }
     if (state.showReminderEditor) {
         ReminderEditor(
             state.friends,
@@ -209,6 +225,8 @@ fun AgendaContent(
     onUndoPlan: (AgendaMessage.PlanAnswered) -> Unit = {},
     onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
     onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    onEditPlan: (Plan) -> Unit = {},
+    onAnswerUpcomingPlan: (AgendaItem.PlanUpcoming, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
     onOpenCalendar: () -> Unit = {},
     onBack: (() -> Unit)? = null,
 ) {
@@ -286,6 +304,8 @@ fun AgendaContent(
                         onAnswerPlan = onAnswerPlan,
                         onAddPlanToCalendar = onAddPlanToCalendar,
                         onSkipPlan = onSkipPlan,
+                        onEditPlan = onEditPlan,
+                        onAnswerUpcomingPlan = onAnswerUpcomingPlan,
                         reminders = reminders,
                         now = state.now,
                         zone = state.zone,

@@ -15,19 +15,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.EventAvailable
-import androidx.compose.material.icons.rounded.EventBusy
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -66,10 +56,6 @@ import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.every_n_days
 import com.neteinstein.goodcompany.core.ui.resources.plan_activity
-import com.neteinstein.goodcompany.core.ui.resources.plan_add_calendar
-import com.neteinstein.goodcompany.core.ui.resources.plan_answer_happened
-import com.neteinstein.goodcompany.core.ui.resources.plan_cancel
-import com.neteinstein.goodcompany.core.ui.resources.plan_change
 import com.neteinstein.goodcompany.core.ui.resources.plan_counts_hint
 import com.neteinstein.goodcompany.core.ui.resources.plan_delete
 import com.neteinstein.goodcompany.core.ui.resources.plan_edit
@@ -77,7 +63,6 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_months
 import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_weeks
 import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
 import com.neteinstein.goodcompany.core.ui.resources.plan_new
-import com.neteinstein.goodcompany.core.ui.resources.plan_other_answer
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_add_end
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_custom
@@ -89,7 +74,6 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_days
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_months
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_weeks
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_until
-import com.neteinstein.goodcompany.core.ui.resources.plan_skip_one
 import com.neteinstein.goodcompany.core.ui.resources.plan_title_label
 import com.neteinstein.goodcompany.core.ui.resources.plan_title_placeholder
 import com.neteinstein.goodcompany.core.ui.resources.plan_when
@@ -102,7 +86,6 @@ import com.neteinstein.goodcompany.core.ui.resources.save
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
-import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -331,10 +314,10 @@ fun repeatLabel(every: Int, unit: RepeatUnit): String = when (unit) {
 fun repeatLabel(repeat: Repeat): String = repeatLabel(repeat.every, repeat.unit)
 
 /**
- * One plan (one occurrence of a recurring plan): date, title, who, how often and where. Past ones ask "How did it go?"
- * (issue #100: "It happened" in one tap, the rest in [PlanCloseSheet]); upcoming ones offer add-to-calendar, change,
- * "Skip this one" (a series), cancel and delete. [onAnswer] gets the answer for [occurrence] and whether it is for the
- * whole series.
+ * One plan (one occurrence of a recurring plan): date, title, who, how often and where. One whose date has come asks
+ * "How did it go?" with "It happened ▾" ([PlanHappenedButton], issues #100, #136); one not yet past has the
+ * [PlanUpcomingMenu] ⋮: Edit ([onChange]) · Add to calendar · Skip this one (a series) · Cancel plan · Delete. Today's
+ * occurrence has both. [onAnswer] gets the answer for [occurrence] and whether it is for the whole series.
  */
 @Composable
 fun PlanRow(
@@ -351,11 +334,6 @@ fun PlanRow(
     onSkip: () -> Unit = {},
 ) {
     val isPast = occurrence < today
-    var sheet by remember { mutableStateOf(false) }
-    var series by remember { mutableStateOf<PlanAnswer?>(null) }
-    fun answer(a: PlanAnswer) {
-        if (plan.asksForSeries(a)) series = a else onAnswer(a, false)
-    }
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             DateBadge(occurrence, today)
@@ -364,59 +342,16 @@ fun PlanRow(
                 Text(plan.title, style = MaterialTheme.typography.titleSmall)
                 PlanDetails(plan, friends, showNames, circle)
             }
-            if (!isPast) {
-                var menu by remember { mutableStateOf(false) }
-                // Issue #130: the timeline's ⋮ size, so plans, reminders, birthdays and entries line up.
-                IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Rounded.MoreVert, stringResource(Res.string.plan_change), Modifier.size(20.dp))
-                }
-                DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                    fun item(label: StringResource, icon: ImageVector, onClick: () -> Unit): @Composable () -> Unit = {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(label)) },
-                            leadingIcon = { Icon(icon, null) },
-                            onClick = {
-                                menu = false
-                                onClick()
-                            },
-                        )
-                    }
-                    if (occurrence == today) item(Res.string.plan_how_did_it_go, Icons.Rounded.TaskAlt) { sheet = true }()
-                    item(Res.string.plan_add_calendar, Icons.Rounded.CalendarMonth, onAddToCalendar)()
-                    item(Res.string.plan_change, Icons.Rounded.EditCalendar, onChange)()
-                    if (plan.isRecurring) item(Res.string.plan_skip_one, Icons.Rounded.EventBusy, onSkip)()
-                    item(Res.string.plan_cancel, Icons.Rounded.Close) { answer(PlanAnswer.CANCEL) }()
-                    item(Res.string.plan_delete, Icons.Rounded.DeleteOutline) { answer(PlanAnswer.DELETE) }()
-                }
-            }
+            if (!isPast) PlanUpcomingMenu(plan, onEdit = onChange, onAddToCalendar = onAddToCalendar, onSkip = onSkip, onAnswer = onAnswer)
         }
-        if (isPast) {
+        if (occurrence <= today) {
             Text(
                 stringResource(Res.string.plan_how_did_it_go),
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(top = 6.dp),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = { onAnswer(PlanAnswer.HAPPENED, false) }) {
-                    Icon(Icons.Rounded.Check, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(Res.string.plan_answer_happened))
-                }
-                TextButton(onClick = { sheet = true }) { Text(stringResource(Res.string.plan_other_answer)) }
-            }
+            PlanHappenedButton(plan, onAnswer)
         }
-    }
-    if (sheet) {
-        PlanCloseSheet(plan, onDismiss = { sheet = false }, onAnswer = { a, whole ->
-            sheet = false
-            onAnswer(a, whole)
-        })
-    }
-    series?.let { a ->
-        PlanSeriesDialog(a, onDismiss = { series = null }, onPick = { whole ->
-            series = null
-            onAnswer(a, whole)
-        })
     }
 }
 

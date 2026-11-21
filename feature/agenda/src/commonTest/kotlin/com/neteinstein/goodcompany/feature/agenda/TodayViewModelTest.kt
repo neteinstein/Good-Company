@@ -11,7 +11,10 @@ import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
+import com.neteinstein.goodcompany.core.domain.model.Repeat
+import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -28,6 +31,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -51,6 +55,7 @@ class TodayViewModelTest {
         g.confirmPlan,
         g.closePlan,
         g.restorePlan,
+        g.savePlan,
         g.logCall,
         g.snooze,
         g.draftBirthdayMessage,
@@ -287,5 +292,59 @@ class TodayViewModelTest {
         assertEquals(ReminderTarget.Edit("n"), vm.onOpenReminder(nobody))
         assertTrue(state.value.showReminderEditor)
         assertEquals(nobody, state.value.editingReminder)
+    }
+
+    @Test
+    fun itHappenedMenu_onToday_iDidntGoAndDelete() = runViewModelTest {
+        // Issue #136.
+        val g = TestGraph(listOf(friend("ana"), friend("rui")))
+        val two = listOf(FriendId("ana"), FriendId("rui"))
+        val dinner = g.savePlan(null, "Dinner", two, LocalDate(2026, 3, 9))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        fun ask() = state.value.week.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        vm.onAnswerPlan(ask(), PlanAnswer.NOT_ATTENDED)
+        assertEquals(TodayMessage.PlanAnswered(PlanAnswer.NOT_ATTENDED), state.value.message)
+        assertEquals(PlanStatus.NOT_ATTENDED, g.planRepo.plans.value.single().status)
+
+        val lunch = g.savePlan(null, "Lunch", two, LocalDate(2026, 3, 9))
+        vm.onAnswerPlan(ask(), PlanAnswer.DELETE)
+        val deleted = assertIs<TodayMessage.PlanAnswered>(state.value.message)
+        assertEquals(lunch, deleted.previous)
+        assertEquals(listOf(dinner.id), g.planRepo.plans.value.map { it.id })
+        vm.onUndoPlan(deleted)
+        assertEquals(setOf(dinner.id, lunch.id), g.planRepo.plans.value.map { it.id }.toSet())
+    }
+
+    @Test
+    fun upcomingPlanMenu_onToday_editSkipCancelAndDelete() = runViewModelTest {
+        // Issue #136.
+        val g = TestGraph(listOf(friend("ana")))
+        val start = LocalDate(2026, 3, 12)
+        val run = g.savePlan(null, "Run", listOf(FriendId("ana")), start, repeat = Repeat(1, RepeatUnit.DAY, start))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        fun upcoming() = state.value.week.filterIsInstance<AgendaItem.PlanUpcoming>()
+
+        vm.onEditPlan(run)
+        assertEquals(run, state.value.editingPlan)
+        vm.onSavePlan(PlanInput("Long run", listOf(FriendId("ana")), start, repeat = run.repeat))
+        assertNull(state.value.editingPlan)
+        assertEquals(TodayMessage.PlanSaved, state.value.message)
+        assertEquals("Long run", g.planRepo.plans.value.single().title)
+
+        vm.onSkipPlan(upcoming().first())
+        assertEquals(TodayMessage.PlanSkipped, state.value.message)
+        assertEquals(LocalDate(2026, 3, 13), upcoming().first().occurrence)
+
+        vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.CANCEL, wholeSeries = true)
+        val cancelled = assertIs<TodayMessage.PlanAnswered>(state.value.message)
+        assertEquals(PlanStatus.CANCELLED, g.planRepo.plans.value.single().status)
+        vm.onUndoPlan(cancelled)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
+
+        vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.DELETE, wholeSeries = true)
+        assertNotNull(assertIs<TodayMessage.PlanAnswered>(state.value.message).previous)
+        assertTrue(g.planRepo.plans.value.isEmpty())
     }
 }

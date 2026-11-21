@@ -337,7 +337,8 @@
     <string name="plan_answer_not_attended">No fui</string>
     <string name="plan_answer_cancel">Cancelar</string>
     <string name="plan_answer_delete">Eliminar</string>
-    <string name="plan_other_answer">Otra respuesta</string>
+    <string name="plan_more_answers">Más respuestas</string>
+    <string name="plan_options">Opciones del plan</string>
     <string name="plan_delete">Eliminar plan</string>
     <string name="plan_deleted">Plan eliminado</string>
     <string name="plan_not_attended">Vale, no cuenta para ti</string>

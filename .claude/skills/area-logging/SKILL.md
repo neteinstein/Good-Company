@@ -72,7 +72,9 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - **How a plan ends (issue #100).** `PlanStatus` is PLANNED, HAPPENED, SKIPPED ("Didn't happen"), CANCELLED (kept,
   struck through on the Plans tab for a month) and NOT_ATTENDED ("I didn't go": group and circle plans only,
   `Plan.isGroup`; no check-in, so no warmth or rhythm). Every place a plan closes (Plans tab `PlanRow`, person page,
-  Today and Agenda `AgendaRow`) uses the one `PlanCloseSheet` (`:core:ui`); "It happened" stays one tap and opens the
+  Today and Agenda `AgendaRow`) uses the one `PlanHappenedButton` (`:core:ui`, issue #136: [ It happened | ▾ ], the
+  other answers from `Plan.otherAnswers()` in the ▾ menu; no sheet); upcoming rows use `PlanUpcomingMenu` (⋮: Edit ·
+  Add to calendar · Skip this one · Cancel plan · Delete). "It happened" stays one tap and opens the
   "We met" panel, the rest go through `ClosePlanUseCase` (Confirm / `CancelPlanUseCase` / `DeletePlanUseCase`), which
   returns the plan as it was for Undo (`RestorePlanUseCase`). On a series every answer is for that occurrence; Cancel
   and Delete ask "this one or the whole series" (`PlanSeriesDialog`), and "this one" just takes the date out.

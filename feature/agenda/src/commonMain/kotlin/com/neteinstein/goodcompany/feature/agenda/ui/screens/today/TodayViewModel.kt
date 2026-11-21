@@ -33,10 +33,12 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
@@ -77,6 +79,9 @@ sealed interface TodayMessage {
 
     data object PlanSkipped : TodayMessage
 
+    /** Edited from the ⋮ of an upcoming plan (issue #136). */
+    data object PlanSaved : TodayMessage
+
     data class AiError(val error: Throwable) : TodayMessage
 
     /** The last-seen card stored [answer] for [id] (issue #68); Undo puts back [previous]. */
@@ -107,6 +112,9 @@ data class TodayUiState(
     val showReminderEditor: Boolean = false,
     /** The reminder the editor changes; null = a new one. */
     val editingReminder: Reminder? = null,
+
+    /** The plan open in the plan editor from Edit in its ⋮ (issue #136). */
+    val editingPlan: Plan? = null,
     /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
     val reminderUndo: Reminder? = null,
     val message: TodayMessage? = null,
@@ -168,6 +176,7 @@ class TodayViewModel(
     private val confirmPlan: ConfirmPlanUseCase,
     private val closePlan: ClosePlanUseCase,
     private val restorePlan: RestorePlanUseCase,
+    private val savePlan: SavePlanUseCase,
     private val logCall: LogCallUseCase,
     private val snooze: SnoozeCatchUpUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
@@ -378,6 +387,33 @@ class TodayViewModel(
     fun onUndoPlan(message: TodayMessage.PlanAnswered) {
         val plan = message.previous ?: return
         viewModelScope.launch { restorePlan(plan) }
+    }
+
+    /** "Edit" in the ⋮ of an upcoming plan (issue #136): the plan editor on it. */
+    fun onEditPlan(plan: Plan) = local.update { it.copy(editingPlan = plan) }
+
+    fun onDismissPlanEditor() = local.update { it.copy(editingPlan = null) }
+
+    /** The plan editor saved: the plan changes in place (a series as a whole), as on the Plans tab. */
+    fun onSavePlan(input: PlanInput) {
+        val plan = local.value.editingPlan ?: return
+        if (input.title.isBlank() || (input.friendIds.isEmpty() && input.circleId == null)) return
+        viewModelScope.launch {
+            savePlan.save(plan.id, input, plan.ideaId)
+            local.update { it.copy(editingPlan = null, message = TodayMessage.PlanSaved) }
+        }
+    }
+
+    /**
+     * "Cancel plan" or "Delete" in the ⋮ of an upcoming plan (issue #136), for that occurrence or, on a series, the
+     * whole series. Both offer Undo, like the answers on a past plan.
+     */
+    fun onAnswerUpcomingPlan(item: AgendaItem.PlanUpcoming, answer: PlanAnswer, wholeSeries: Boolean = false) {
+        if (answer != PlanAnswer.CANCEL && answer != PlanAnswer.DELETE) return
+        viewModelScope.launch {
+            val before = closePlan(item.plan.id, answer, day = item.occurrence, wholeSeries = wholeSeries)
+            local.update { it.copy(message = TodayMessage.PlanAnswered(answer, before)) }
+        }
     }
 
     /** "Skip this one": takes one date out of a recurring plan; the series goes on. */

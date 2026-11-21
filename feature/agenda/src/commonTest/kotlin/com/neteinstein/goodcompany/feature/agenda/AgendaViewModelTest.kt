@@ -13,6 +13,7 @@ import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.testing.Fixtures
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
@@ -57,6 +58,7 @@ class AgendaViewModelTest {
         g.confirmPlan,
         g.closePlan,
         g.restorePlan,
+        g.savePlan,
         g.clock,
         g.observeCalendarSuggestions,
         g.observeGroups,
@@ -288,5 +290,73 @@ class AgendaViewModelTest {
         vm.onEditReminderById("t")
         assertTrue(state.value.showReminderEditor)
         assertEquals(reminder, state.value.editingReminder)
+    }
+
+    @Test
+    fun itHappenedMenu_eachAnswerClosesThatPlan() = runViewModelTest {
+        // Issue #136: Didn't happen · I didn't go · Cancel plan · Delete behind ▾.
+        val vm = vm()
+        val state = collecting(vm.state)
+        fun ask() = state.value.agenda.filterIsInstance<AgendaItem.PlanToConfirm>().single()
+        val two = listOf(FriendId("ana"), FriendId("rui"))
+        listOf(PlanAnswer.DIDNT_HAPPEN to PlanStatus.SKIPPED, PlanAnswer.NOT_ATTENDED to PlanStatus.NOT_ATTENDED).forEach { (answer, status) ->
+            val p = g.savePlan(null, "Dinner $answer", two, LocalDate(2026, 3, 9))
+            vm.onAnswerPlan(ask(), answer)
+            assertEquals(AgendaMessage.PlanAnswered(answer), state.value.message)
+            assertEquals(status, g.planRepo.plans.value.single { it.id == p.id }.status)
+        }
+        assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+
+        val lunch = g.savePlan(null, "Lunch", two, LocalDate(2026, 3, 9))
+        vm.onAnswerPlan(ask(), PlanAnswer.CANCEL)
+        val cancelled = assertIs<AgendaMessage.PlanAnswered>(state.value.message)
+        assertEquals(lunch, cancelled.previous)
+        assertEquals(PlanStatus.CANCELLED, g.planRepo.plans.value.single { it.id == lunch.id }.status)
+        vm.onUndoPlan(cancelled)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single { it.id == lunch.id }.status)
+    }
+
+    @Test
+    fun upcomingPlanMenu_editCancelAndDelete_withUndo() = runViewModelTest {
+        // Issue #136: Edit · Add to calendar · Skip this one · Cancel plan · Delete in the ⋮.
+        val start = LocalDate(2026, 3, 14)
+        val climbing = g.savePlan(null, "Climbing", listOf(FriendId("ana")), start, repeat = Repeat(1, RepeatUnit.WEEK, start))
+        val vm = vm()
+        val state = collecting(vm.state)
+        fun upcoming() = state.value.agenda.filterIsInstance<AgendaItem.PlanUpcoming>()
+
+        vm.onEditPlan(climbing)
+        assertEquals(climbing, state.value.editingPlan)
+        vm.onSavePlan(PlanInput("", listOf(FriendId("ana")), start))
+        assertEquals(climbing, state.value.editingPlan, "a blank title doesn't save")
+        vm.onSavePlan(PlanInput("Bouldering", listOf(FriendId("ana")), start, repeat = climbing.repeat))
+        assertNull(state.value.editingPlan)
+        assertEquals(AgendaMessage.PlanSaved, state.value.message)
+        assertEquals("Bouldering", g.planRepo.plans.value.single().title)
+        assertEquals(climbing.id, g.planRepo.plans.value.single().id)
+        vm.onEditPlan(climbing)
+        vm.onDismissPlanEditor()
+        assertNull(state.value.editingPlan)
+
+        // Cancel just this one: the date comes out, the series goes on; Undo puts it back.
+        vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.CANCEL, wholeSeries = false)
+        val one = assertIs<AgendaMessage.PlanAnswered>(state.value.message)
+        assertEquals(PlanAnswer.CANCEL, one.answer)
+        assertEquals(LocalDate(2026, 3, 21), upcoming().first().occurrence)
+        vm.onUndoPlan(one)
+        assertEquals(start, upcoming().first().occurrence)
+
+        // Delete the whole series; Undo brings it back.
+        vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.DELETE, wholeSeries = true)
+        val deleted = assertIs<AgendaMessage.PlanAnswered>(state.value.message)
+        assertTrue(g.planRepo.plans.value.isEmpty())
+        vm.onUndoPlan(deleted)
+        assertEquals("Bouldering", g.planRepo.plans.value.single().title)
+
+        // Only Cancel and Delete are answers in the ⋮.
+        vm.onMessageShown()
+        vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.DIDNT_HAPPEN)
+        assertNull(state.value.message)
+        assertEquals(PlanStatus.PLANNED, g.planRepo.plans.value.single().status)
     }
 }
