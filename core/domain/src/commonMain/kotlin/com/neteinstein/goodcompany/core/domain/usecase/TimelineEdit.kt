@@ -20,14 +20,14 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-/** Which entry of whose timeline to edit (`LogInteractionRoute` in edit mode, issue #102). [key] is [TimelineEntry.key]. */
+/** Which entry of whose timeline to edit (`WeMetRoute` in edit mode, issue #102). [key] is [TimelineEntry.key]. */
 data class TimelineEntryRef(val friendId: FriendId, val key: String)
 
-/** Whether the Log sheet can edit [this] (meetups, contacts and journal entries; news has its own dialog). */
+/** Whether the Log popup can edit [this] (meetups, contacts and journal entries; news has its own dialog). */
 val TimelineEntry.editsInLogSheet: Boolean
     get() = this is TimelineEntry.Meetup || this is TimelineEntry.Contact || this is TimelineEntry.Journal
 
-/** What the Log sheet opens with when it edits [this]: the same fields a new log would have. Null when it can't. */
+/** What the Log popup opens with when it edits [this]: the same fields a new log would have. Null when it can't. */
 fun TimelineEntry.asLogRequest(friendId: FriendId, zone: TimeZone): LogRequest? = when (this) {
     is TimelineEntry.Meetup -> LogRequest(
         friendIds = hangout.friendIds,
@@ -66,7 +66,7 @@ private val Place.point: GeoPoint?
     }
 
 /**
- * Edits a timeline entry (issue #102): its date, kind, people, place, activity and note, as the Log sheet has them in
+ * Edits a timeline entry (issue #102): its date, kind, people, place, activity and note, as the Log popup has them in
  * [request]. The same day keeps the entry's time; a time from the time row (issue #116) moves it there; without one,
  * another day moves it to noon (today: now); no future days.
  *
@@ -182,7 +182,7 @@ class EditTimelineEntryUseCase(
         friends.upsert(f.copy(lifeUpdates = f.lifeUpdates.map { if (it.id == entry.update.id) it.copy(text = text, addedAt = at) else it }))
     }
 
-    /** Journal entries and news need text, as on the Log sheet. */
+    /** Journal entries and news need text, as on the Log popup. */
     private fun requireText(request: LogRequest): String {
         val text = request.note.trim()
         require(request.kind != LogKind.JOURNAL || text.isNotEmpty()) { "A journal entry needs text" }

@@ -80,7 +80,7 @@ suspend fun CalendarSuggestionsMessage.text(): String = when (this) {
 
 data class CalendarSuggestionsActions(
     val onBack: () -> Unit = {},
-    /** Opens the log sheet prefilled with the suggestion's people, day and activity guess. */
+    /** Opens the Log popup prefilled with the suggestion's people, day and activity guess. */
     val onLog: (CalendarSuggestion) -> Unit = {},
     val onNo: (CalendarSuggestion) -> Unit = {},
     val onNever: (CalendarSuggestion) -> Unit = {},

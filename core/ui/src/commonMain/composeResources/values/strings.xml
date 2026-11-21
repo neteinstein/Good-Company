@@ -375,7 +375,6 @@
     <string name="relation_other">Other</string>
     <string name="send_email">Email</string>
     <string name="date_month_year">%1$s %2$d</string>
-    <string name="log_title">Log with %1$s</string>
     <string name="log_kind_in_person">In person</string>
     <string name="log_kind_call">Call</string>
     <string name="log_kind_said_hi">Said hi</string>
@@ -399,8 +398,6 @@
     <string name="log_clear_location">Remove location</string>
     <string name="log_location_denied">No location permission. Type the place instead.</string>
     <string name="log_location_unavailable">Couldn’t get your location. Check that location is on, or type the place.</string>
-    <string name="log_activity">What did you do?</string>
-    <string name="log_more">More</string>
     <string name="log_less">Less</string>
     <string name="log_counts_hint">Calls, messages, emails and video calls count as catching up only when %1$s’s “Calls and chats count” switch is on.</string>
     <string name="log_journal_footer">A journal entry is a dated note. It never counts as catching up.</string>
@@ -453,7 +450,6 @@
     <string name="circle_color_magenta">Magenta</string>
     <string name="circle_color_slate">Slate</string>
     <string name="circle_tick_who_came">Tick who came from %1$s.</string>
-    <string name="log_title_circle">Log a %1$s meetup</string>
     <string name="log_title_edit">Edit entry</string>
     <string name="attachment_kind_photo">Photo</string>
     <string name="attachment_kind_link">Link</string>

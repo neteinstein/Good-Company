@@ -36,7 +36,7 @@ data class CalendarSuggestionsUiState(
 }
 
 /**
- * "From your calendar" (D3): past events with friends, each answered **Log it** (the screen opens the log sheet with
+ * "From your calendar" (D3): past events with friends, each answered **Log it** (the screen opens the Log popup with
  * the people, the day and a guessed activity; once logged the suggestion goes away by itself), **No**, or **Never for
  * this series** (repeating events). Answers are kept, with Undo.
  */

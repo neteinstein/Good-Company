@@ -119,7 +119,7 @@ class SavePlanUseCase(
  * the plan's people and activity (it then counts towards rhythms and warmth); a no just closes it. Either way a
  * recurring plan moves on to its next occurrence ([Plan.closeOccurrence]). Planned dates never count as met on their own.
  *
- * A circle plan asks who came instead (the Log sheet, members unticked, F20): that sheet logs the meetup itself and
+ * A circle plan asks who came instead (the Log popup, members unticked, F20): that sheet logs the meetup itself and
  * then calls this with [logCheckIn] false.
  */
 class ConfirmPlanUseCase(

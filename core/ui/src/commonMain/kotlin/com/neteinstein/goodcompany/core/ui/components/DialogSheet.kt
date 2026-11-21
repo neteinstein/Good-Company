@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * A bottom sheet drawn inside a dialog destination (issue #145), for the Log sheet and the "We met" panel: a scrim that
+ * A bottom sheet drawn inside a dialog destination (issue #145), for the Log popup: a scrim that
  * dismisses it on a tap, a handle, and a sheet that follows a downward drag (on the sheet, or on its content once that
  * is scrolled to the top) and closes when let go far or fast enough. Host it with
  * [com.neteinstein.goodcompany.core.ui.platform.sheetDialogProperties] so it draws edge to edge: the scrim covers the

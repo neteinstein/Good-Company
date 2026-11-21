@@ -172,7 +172,7 @@
     <string name="ai_off_note">Mientras esté desactivado, nada que necesite IA aparece en la app.</string>
     <string name="activities">Actividades</string>
     <string name="activities_count">%1$d de %2$d activadas</string>
-    <string name="activities_hint">Lo que ofrece el registro cuando has visto a alguien. Las que más usas salen primero, las demás en este orden; se muestran seis, el resto está en Más. Arrastra para reordenar.</string>
+    <string name="activities_hint">Lo que ofrece el registro cuando has visto a alguien. Las que más usas salen primero, las demás en este orden; se muestran cuatro, el resto está en Ver todo. Arrastra para reordenar.</string>
     <string name="activities_move_up">Subir</string>
     <string name="activities_move_down">Bajar</string>
     <!-- Your photo (issue #71) -->

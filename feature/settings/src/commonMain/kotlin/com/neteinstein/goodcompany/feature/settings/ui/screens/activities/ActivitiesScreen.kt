@@ -119,7 +119,7 @@ suspend fun ActivitiesMessage.text(): String = when (this) {
     )
 }
 
-/** Settings → Activities (F3): which activities the log sheet offers, and in what order. */
+/** Settings → Activities (F3): which activities the Log popup offers, and in what order. */
 @Composable
 fun ActivitiesScreen(onBack: () -> Unit, viewModel: ActivitiesViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()

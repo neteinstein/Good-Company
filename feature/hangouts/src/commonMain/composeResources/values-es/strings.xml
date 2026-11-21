@@ -51,10 +51,13 @@
     <!-- The small "We met" panel (issue #47) -->
     <string name="met_title">Registrar · %1$s</string>
     <string name="met_title_circle">%1$s · ¿quién vino?</string>
+    <string name="met_who">¿Quién?</string>
     <string name="met_how">¿Cómo?</string>
-    <string name="met_more_details">Más detalles</string>
-    <string name="met_add_note">Añadir una nota</string>
-    <string name="met_add_place">Añadir un lugar</string>
+    <string name="met_when">¿Cuándo?</string>
+    <string name="met_what">¿Qué?</string>
+    <string name="met_see_all">Ver todo</string>
+    <string name="met_where_note">Dónde · Nota</string>
+    <string name="met_note">Nota</string>
     <string name="met_save_on">Guardar · %1$s</string>
     <plurals name="met_log_people">
         <item quantity="one">Registrar %1$d persona</item>

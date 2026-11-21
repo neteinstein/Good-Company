@@ -458,7 +458,7 @@ internal fun contactIcon(f: Friend) = if (MessageOptions.showsPhone(f.preferredC
 
 /**
  * Pinned under the top: the bar the top shrinks into once it has scrolled away ([collapsed]: back, small avatar,
- * name, the contact button; "+" for the Log sheet on Together), then the two tabs.
+ * name, the contact button; "+" for the Log popup on Together), then the two tabs.
  */
 @Composable
 internal fun PinnedTabs(f: Friend, tab: PersonTab, onTab: (PersonTab) -> Unit, collapsed: Boolean, actions: PersonTopActions) {

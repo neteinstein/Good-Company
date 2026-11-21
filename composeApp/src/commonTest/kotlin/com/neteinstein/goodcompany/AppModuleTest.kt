@@ -28,14 +28,13 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseConta
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LogPrefill
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageViewModel
@@ -101,16 +100,6 @@ class AppModuleTest {
         assertNotNull(koin.get<FriendDetailViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<FriendTimelineViewModel> { parametersOf(FriendId("x")) })
         assertNotNull(koin.get<SuggestedFamilyViewModel>())
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(listOf(FriendId("x")), "CALL", null, null, LogPrefill()) })
-        assertNotNull(koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), null, "circle-1", null, LogPrefill()) })
-        assertNotNull(
-            koin.get<LogInteractionViewModel> { parametersOf(emptyList<FriendId>(), "MEETUP", null, PlanOccurrence("p1", null), LogPrefill()) },
-        )
-        assertNotNull(
-            koin.get<LogInteractionViewModel> {
-                parametersOf(emptyList<FriendId>(), null, "circle-1", null, LogPrefill(activity = HangoutActivity.LUNCH, note = "n", place = "p"))
-            },
-        )
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null, null) })
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf("circle-1", null) })
         assertNotNull(koin.get<CircleEditorViewModel> { parametersOf(null, FriendId("ana")) })
@@ -118,8 +107,13 @@ class AppModuleTest {
         assertNotNull(koin.get<CirclePageViewModel> { parametersOf("circle-1") })
         assertNotNull(koin.get<HangoutsViewModel>())
         assertNotNull(koin.get<WhosFreeViewModel>())
-        assertNotNull(koin.get<WeMetViewModel> { parametersOf(listOf(FriendId("x")), null, null) })
-        assertNotNull(koin.get<WeMetViewModel> { parametersOf(emptyList<FriendId>(), "circle-1", PlanOccurrence("plan-1", null)) })
+        assertNotNull(koin.get<WeMetViewModel> { parametersOf(listOf(FriendId("x")), null, null, LogPrefill()) })
+        assertNotNull(koin.get<WeMetViewModel> { parametersOf(emptyList<FriendId>(), "circle-1", PlanOccurrence("plan-1", null), LogPrefill()) })
+        assertNotNull(
+            koin.get<WeMetViewModel> {
+                parametersOf(listOf(FriendId("x")), null, null, LogPrefill(type = "JOURNAL", activity = HangoutActivity.LUNCH))
+            },
+        )
         assertNotNull(koin.get<LoggedMeetupViewModel>())
         assertNotNull(koin.get<AgendaViewModel>())
         assertNotNull(koin.get<TodayViewModel>())

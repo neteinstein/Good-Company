@@ -33,7 +33,7 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlin.time.Instant
 
-/** What the log sheet records: a meetup ([MEETUP], a hangout), a contact at a distance, or a journal entry. */
+/** What the Log popup records: a meetup ([MEETUP], a hangout), a contact at a distance, or a journal entry. */
 enum class LogKind(val interactionType: InteractionType?) {
     MEETUP(InteractionType.MEETUP),
     CALL(InteractionType.CALL),
@@ -51,14 +51,8 @@ enum class LogKind(val interactionType: InteractionType?) {
 
     companion object {
         /**
-         * The "How?" row of the "Caught up" panel (issue #101), in order: in person (the default), call, video,
-         * said hi, long chat, played online, other. Email and the journal stay on the full Log sheet.
-         */
-        val CAUGHT_UP = listOf(MEETUP, CALL, VIDEO_CALL, MESSAGE, LONG_CHAT, GAME, OTHER)
-
-        /**
-         * The kind named by `LogInteractionRoute.type`: a [LogKind] name or an [InteractionType] name ("WHATSAPP" logs
-         * a message). Null or unknown → null (the sheet then preselects [MEETUP]).
+         * The kind named by `WeMetRoute.type`: a [LogKind] name or an [InteractionType] name ("WHATSAPP" logs
+         * a message). Null or unknown → null (the popup then preselects [MEETUP]).
          */
         fun parse(name: String?): LogKind? = when (name) {
             null -> null
@@ -92,7 +86,7 @@ data class LogRequest(
     val time: LocalTime? = null,
 )
 
-/** Issue #116: the quick times of day on the Log sheet's time row, besides "Now" and "Pick a time". */
+/** Issue #116: the quick times of day on the Log popup's time row, besides "Now" and "Pick a time". */
 enum class LogTimeOfDay(val time: LocalTime) {
     MORNING(LocalTime(9, 0)),
     LUNCH(LocalTime(13, 0)),
@@ -213,9 +207,9 @@ class UndoLogUseCase(
 }
 
 /**
- * The meetup activities in the order the log sheet shows them (F3): the built-in ones turned on in Settings
+ * The meetup activities in the order the Log popup shows them (F3): the built-in ones turned on in Settings
  * ([AppSettings.activities]) and your own ([AppSettings.customActivities], issue #121), the most used first (ties keep
- * that order), so the first six are the ones on show and the rest sit behind "More". An old meetup whose activity is
+ * that order), so the first [SHOWN] are the ones on show and the rest sit behind "See all" (issue #151). An old meetup whose activity is
  * now off or removed keeps it; it just isn't offered.
  */
 class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private val settings: SettingsRepository) {
@@ -225,7 +219,7 @@ class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private 
     ) { hs, (enabled, custom) -> ranked(hs, enabled, custom) }
 
     companion object {
-        const val SHOWN = 6
+        const val SHOWN = 4
 
         fun ranked(
             hangouts: List<Hangout>,
@@ -239,7 +233,63 @@ class ObserveActivitiesUseCase(private val hangouts: HangoutRepository, private 
     }
 }
 
-/** Saves the activities the log sheet offers, in this order (F3). Ignored when it would leave none. */
+/**
+ * One "How?" option on the Log popup (issue #151). [name] is a name of your own for it (null = the built-in label);
+ * nothing sets it yet: the configurable How list (issue #152) will.
+ */
+data class LogKindOption(val kind: LogKind, val name: String? = null)
+
+/**
+ * The Log popup's "How?" options, most used first (issue #151): every [LogKind], the first [SHOWN] on show and the rest
+ * behind "See all". Usage is what you logged yourself: each meetup, each manual contact (a contact with several
+ * people, one [Interaction.batchId], counts once) and each journal entry; call-log and chat-import rows don't count.
+ * Ties, and everything with nothing logged, keep the configured order: [DEFAULT_ORDER] until Settings has its own
+ * list (issue #152 plugs it in through [ranked]'s `configured`, without touching the popup).
+ */
+class ObserveLogKindsUseCase(private val hangouts: HangoutRepository, private val interactions: InteractionRepository) {
+    operator fun invoke(): Flow<List<LogKindOption>> = combine(hangouts.hangouts, interactions.interactions, interactions.journal) { hs, ins, js ->
+        ranked(usage(hs, ins, js))
+    }.distinctUntilChanged()
+
+    companion object {
+        const val SHOWN = 4
+
+        /** The order with nothing logged: the popup's old row (in person first), then email and the journal. */
+        val DEFAULT_ORDER: List<LogKind> = listOf(
+            LogKind.MEETUP,
+            LogKind.CALL,
+            LogKind.VIDEO_CALL,
+            LogKind.MESSAGE,
+            LogKind.LONG_CHAT,
+            LogKind.GAME,
+            LogKind.OTHER,
+            LogKind.EMAIL,
+            LogKind.JOURNAL,
+        )
+
+        /** How many times each kind was logged by hand. */
+        fun usage(hangouts: List<Hangout>, interactions: List<Interaction>, journal: List<JournalEntry>): Map<LogKind, Int> {
+            val counts = mutableMapOf<LogKind, Int>()
+            if (hangouts.isNotEmpty()) counts[LogKind.MEETUP] = hangouts.size
+            interactions.filterNot { it.source.isAutomatic }
+                .distinctBy { it.batchId ?: it.id.ifBlank { "${it.friendId.value}-${it.type}-${it.at}" } }
+                .forEach { i ->
+                    val kind = LogKind.parse(i.type.name) ?: return@forEach
+                    counts[kind] = (counts[kind] ?: 0) + 1
+                }
+            if (journal.isNotEmpty()) counts[LogKind.JOURNAL] = journal.size
+            return counts
+        }
+
+        /** [configured] (on, in order, with any names of your own), the most used first; ties keep that order. */
+        fun ranked(
+            usage: Map<LogKind, Int>,
+            configured: List<LogKindOption> = DEFAULT_ORDER.map { LogKindOption(it) },
+        ): List<LogKindOption> = configured.distinctBy { it.kind }.sortedByDescending { usage[it.kind] ?: 0 }
+    }
+}
+
+/** Saves the activities the Log popup offers, in this order (F3). Ignored when it would leave none. */
 class SetActivitiesUseCase(private val settings: SettingsRepository) {
     suspend operator fun invoke(activities: List<HangoutActivity>) {
         val list = activities.distinct()
@@ -255,7 +305,7 @@ class SetActivitiesUseCase(private val settings: SettingsRepository) {
 data class LoggedMeetup(val result: LogResult, val people: List<Friend>)
 
 /**
- * The last meetup or contact logged from the "Caught up" panel or the Log sheet (F2), until the app-wide snackbar has shown it.
+ * The last meetup or contact logged from the "Caught up" panel or the Log popup (F2), until the app-wide snackbar has shown it.
  * The sheet closes on save, so the snackbar that offers Undo lives outside it.
  */
 class LoggedMeetupInbox {

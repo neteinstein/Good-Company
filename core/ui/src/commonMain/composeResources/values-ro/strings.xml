@@ -381,7 +381,6 @@
     <string name="relation_other">Altul</string>
     <string name="send_email">Email</string>
     <string name="date_month_year">%1$s %2$d</string>
-    <string name="log_title">Notează cu %1$s</string>
     <string name="log_kind_in_person">În persoană</string>
     <string name="log_kind_call">Apel</string>
     <string name="log_kind_said_hi">Am salutat</string>
@@ -405,8 +404,6 @@
     <string name="log_clear_location">Elimină locația</string>
     <string name="log_location_denied">Fără permisiune de localizare. Scrie locul.</string>
     <string name="log_location_unavailable">Nu am putut afla locația ta. Verifică dacă locația e pornită sau scrie locul.</string>
-    <string name="log_activity">Ce ați făcut?</string>
-    <string name="log_more">Mai mult</string>
     <string name="log_less">Mai puțin</string>
     <string name="log_counts_hint">Apelurile, mesajele, emailurile și apelurile video contează ca revedere doar cu comutatorul „Apelurile și mesajele contează” al lui %1$s pornit.</string>
     <string name="log_journal_footer">O intrare de jurnal este o notă cu dată. Nu contează niciodată ca revedere.</string>
@@ -459,7 +456,6 @@
     <string name="circle_color_magenta">Magenta</string>
     <string name="circle_color_slate">Ardezie</string>
     <string name="circle_tick_who_came">Bifează cine a venit din %1$s.</string>
-    <string name="log_title_circle">Notează o întâlnire: %1$s</string>
     <string name="attachment_kind_photo">Fotografie</string>
     <string name="attachment_kind_link">Link</string>
     <string name="attachment_kind_text">Text din conversație</string>

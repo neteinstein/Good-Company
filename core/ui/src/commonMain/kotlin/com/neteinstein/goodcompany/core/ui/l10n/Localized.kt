@@ -275,7 +275,7 @@ object ResourceNotificationRenderer : NotificationRenderer {
                     RenderedAction(action, getString(label))
                 },
             )
-            // On this device only (D3). No quick actions: "Log it" needs the log sheet, so a tap opens the app.
+            // On this device only (D3). No quick actions: "Log it" needs the Log popup, so a tap opens the app.
             is NotificationContent.CalendarMeetups -> {
                 val single = c.eventTitle?.takeIf { c.total == 1 }
                 if (single != null) {

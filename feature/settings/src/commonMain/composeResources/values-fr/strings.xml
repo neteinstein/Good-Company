@@ -172,7 +172,7 @@
     <string name="ai_off_note">Tant que c’est désactivé, rien qui demande l’IA n’apparaît dans l’app.</string>
     <string name="activities">Activités</string>
     <string name="activities_count">%1$d sur %2$d activées</string>
-    <string name="activities_hint">Ce que propose le journal quand vous avez vu quelqu’un. Les plus utilisées d’abord, les autres dans cet ordre ; six sont affichées, le reste est sous Plus. Faites glisser pour réordonner.</string>
+    <string name="activities_hint">Ce que propose le journal quand vous avez vu quelqu’un. Les plus utilisées d’abord, les autres dans cet ordre ; quatre sont affichées, le reste est sous Tout voir. Faites glisser pour réordonner.</string>
     <string name="activities_move_up">Monter</string>
     <string name="activities_move_down">Descendre</string>
     <!-- Your photo (issue #71) -->

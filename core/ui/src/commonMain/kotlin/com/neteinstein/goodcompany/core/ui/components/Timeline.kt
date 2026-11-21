@@ -263,7 +263,7 @@ fun TimelineEntryRow(
 }
 
 /**
- * A timeline line you can change (issue #102): a tap runs [onEdit] (the Log sheet in edit mode, the news dialog, or the
+ * A timeline line you can change (issue #102): a tap runs [onEdit] (the Log popup in edit mode, the news dialog, or the
  * gift), a long press or ⋮ offers Edit and, when [onDelete] is set, Delete (the caller offers Undo). Used on a person's
  * page and on the full timeline; it knows nothing about either.
  */

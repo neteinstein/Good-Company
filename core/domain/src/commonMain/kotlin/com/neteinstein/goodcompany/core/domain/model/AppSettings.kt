@@ -125,7 +125,7 @@ data class AppSettings(
      * message suggestions, and the weekly job. Turned on for people who already had a key when it was introduced.
      */
     val aiEnabled: Boolean = false,
-    /** The activities the log sheet offers (F3), in the user's order; never empty. Defaults to all of them. */
+    /** The activities the Log popup offers (F3), in the user's order; never empty. Defaults to all of them. */
     val activities: List<HangoutActivity> = HangoutActivity.entries,
     /** Your own activities (issue #121), in your order, offered after the built-in ones. */
     val customActivities: List<String> = emptyList(),

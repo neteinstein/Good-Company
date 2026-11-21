@@ -67,7 +67,7 @@ data class QuickEntry(val friendIds: List<FriendId> = emptyList(), val kind: Log
 
 /**
  * Quick entries waiting to open the "Log" sheet (like [ShareInbox]). Platforms [offer] what a shortcut asked for; the
- * app opens `LogInteractionRoute` (behind the app lock, when it's on) and [clear]s it. In memory only.
+ * app opens the Log popup (`WeMetRoute`) (behind the app lock, when it's on) and [clear]s it. In memory only.
  */
 class QuickEntryInbox {
     private val state = MutableStateFlow<QuickEntry?>(null)

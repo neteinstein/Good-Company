@@ -153,6 +153,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveHomeWidgetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveKinshipProposalsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveLogKindsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMeetupStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveNetworkMapUseCase
@@ -258,14 +259,13 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseConta
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.FriendDetailViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.family.SuggestedFamilyViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.list.FriendsViewModel
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogInteractionViewModel
-import com.neteinstein.goodcompany.feature.friends.ui.screens.log.LogPrefill
 import com.neteinstein.goodcompany.feature.friends.ui.screens.share.ShareToFriendViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.story.CatchUpStoryViewModel
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.HangoutsViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.circle.CircleEditorViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.free.WhosFreeViewModel
+import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LogPrefill
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.WeMetViewModel
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.page.CirclePageViewModel
@@ -409,6 +409,7 @@ val appModule = module {
     factoryOf(::LogInteractionUseCase)
     factoryOf(::UndoLogUseCase)
     factoryOf(::ObserveActivitiesUseCase)
+    factoryOf(::ObserveLogKindsUseCase)
     factoryOf(::SetActivitiesUseCase)
     factoryOf(::ObserveTimelineUseCase)
     factoryOf(::DeleteTimelineEntryUseCase)
@@ -583,27 +584,6 @@ val appModule = module {
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::SuggestedFamilyViewModel)
-    viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
-        LogInteractionViewModel(
-            ids,
-            type,
-            circleId,
-            plan,
-            prefill,
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-            get(),
-        )
-    }
     viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (id: String) ->
         CirclePageViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
@@ -612,8 +592,8 @@ val appModule = module {
     viewModel { (id: String) -> GiftListViewModel(id, get(), get(), get(), get(), get(), get()) }
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::WhosFreeViewModel)
-    viewModel { (ids: List<FriendId>, circleId: String?, plan: PlanOccurrence?) ->
-        WeMetViewModel(ids, circleId, plan, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+    viewModel { (ids: List<FriendId>, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
+        WeMetViewModel(ids, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)
