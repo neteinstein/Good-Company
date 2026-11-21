@@ -530,9 +530,17 @@
     <string name="circles_edit">Circles</string>
     <string name="tastes_add_title">Add to %1$s’s tastes</string>
     <string name="tastes_edit_title">Edit taste</string>
-    <string name="coming_up_title">Coming up</string>
     <string name="talk_title">To talk about</string>
     <string name="news_add">Add news</string>
     <string name="relation_to_me_pick">Tap to choose (sister, cousin…)</string>
     <string name="tastes_other_likes">Other likes</string>
+    <!-- Together timeline (issue #117) -->
+    <string name="together_make_plans">Make plans</string>
+    <string name="together_today">Today</string>
+    <string name="together_show_all">Show all</string>
+    <string name="together_turned">Turned %1$d</string>
+    <string name="together_plan_skipped">Skipped</string>
+    <string name="together_plan_cancelled">Cancelled</string>
+    <string name="together_plan_not_attended">You didn’t go</string>
+    <string name="together_reminder_done">Reminder done</string>
 </resources>

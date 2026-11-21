@@ -111,7 +111,57 @@ class FriendDetailViewModelTest {
         g.deleteTimelineEntry,
         g.restoreTimelineEntry,
         g.storyViews,
+        g.importChat,
     )
+
+    @Test
+    fun together_hasPlansAboveToday_andClosedPlansAndDoneRemindersBelow() = runViewModelTest {
+        val created = g.clock.now()
+        g.planRepo.upsert(
+            com.neteinstein.goodcompany.core.domain.model.Plan("p", listOf(FriendId("ana")), "Lunch", LocalDate(2026, 3, 12), createdAt = created),
+        )
+        g.planRepo.upsert(
+            com.neteinstein.goodcompany.core.domain.model.Plan(
+                "x",
+                listOf(FriendId("ana")),
+                "Cinema",
+                LocalDate(2026, 3, 1),
+                status = PlanStatus.CANCELLED,
+                createdAt = created,
+            ),
+        )
+        reminders.upsert(
+            com.neteinstein.goodcompany.core.domain.model.Reminder(
+                "r",
+                "Call back",
+                listOf(FriendId("ana")),
+                created,
+                done = true,
+                createdAt = created,
+                completedAt = created,
+            ),
+        )
+        val vm = vm()
+        val state = collecting(vm.state)
+        val together = state.value.together
+        assertEquals(listOf("plan-p"), together.upcoming.map { it.key })
+        assertEquals(listOf("reminder-r", "plan-x"), together.past.map { it.key }.filterNot { it.startsWith("birthday") })
+        // Open reminders still feed the editor; done ones only the timeline.
+        assertTrue(state.value.reminders.isEmpty())
+    }
+
+    @Test
+    fun conversationsAdd_importsAChatExport() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onChatPicked(null)
+        assertNull(state.value.message)
+        vm.onChatPicked("not a chat")
+        assertEquals(FriendDetailMessage.ChatInvalid, state.value.message)
+        vm.onChatPicked("01/03/2026, 10:00 - Ana: hi")
+        assertEquals(FriendDetailMessage.ChatImported(1, "Ana"), state.value.message)
+        assertEquals(1, state.value.detail!!.messageCount)
+    }
 
     @Test
     fun circleSheet_listsStoredCircles_andATickSavesWithUndo() = runViewModelTest {

@@ -546,6 +546,7 @@ val appModule = module {
             deleteEntry = get(),
             restoreEntry = get(),
             storyViews = get(),
+            importChat = get(),
         )
     }
     viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }

@@ -109,6 +109,8 @@ data class FriendDetail(
     val topics: List<TopicHint> = emptyList(),
     /** Planned meetups with this friend (or a circle they're in) that haven't happened yet. */
     val plans: List<Plan> = emptyList(),
+    /** Plans with them (or a circle they're in) that are closed: happened, skipped, cancelled, not attended (issue #117). */
+    val closedPlans: List<Plan> = emptyList(),
     /** Everyone else, A–Z: who could have introduced you (the "introduced by" picker and link). */
     val others: List<Friend> = emptyList(),
     /** "More about" labels already used on other friends, most used first: suggestions for a new field. */
@@ -183,6 +185,9 @@ class ObserveFriendDetailUseCase(
             plans = ps.filter { p ->
                 p.status == PlanStatus.PLANNED && (id in p.friendIds || gs.any { it.id == p.circleId && id in it.memberIds })
             }.sortedBy { it.date },
+            closedPlans = ps.filter { p ->
+                p.status != PlanStatus.PLANNED && (id in p.friendIds || gs.any { it.id == p.circleId && id in it.memberIds })
+            },
             others = all.filter { it.id != id }.sortedBy { it.displayName.lowercase() },
             customFieldLabels = customFieldLabels(all.filter { it.id != id }),
             timeline = Timeline.build(id, all, hs, ints, journal, clock.timeZone, attachments),

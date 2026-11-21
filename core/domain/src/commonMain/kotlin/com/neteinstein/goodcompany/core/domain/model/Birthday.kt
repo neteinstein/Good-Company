@@ -24,7 +24,8 @@ data class Birthday(val month: Int, val day: Int, val year: Int? = null) {
         on.year - y - if (hadBirthday) 0 else 1
     }
 
-    private fun onYear(y: Int): LocalDate {
+    /** This birthday in year [y] (Feb 29 falls back to Feb 28 in non-leap years). */
+    fun onYear(y: Int): LocalDate {
         val maxDay = daysInMonth(y, month)
         return LocalDate(y, Month(month), minOf(day, maxDay))
     }

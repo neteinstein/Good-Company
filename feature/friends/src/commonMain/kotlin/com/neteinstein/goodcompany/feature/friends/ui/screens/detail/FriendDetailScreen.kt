@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Diversity3
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
@@ -52,6 +53,7 @@ import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.RssFeed
 import androidx.compose.material.icons.rounded.Snooze
+import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material.icons.rounded.ThumbDown
 import androidx.compose.material.icons.rounded.ThumbUp
 import androidx.compose.material.icons.rounded.Weekend
@@ -63,7 +65,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -95,6 +99,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
@@ -125,15 +130,18 @@ import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
+import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
+import com.neteinstein.goodcompany.core.domain.usecase.TogetherItem
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.DateBadge
 import com.neteinstein.goodcompany.core.ui.components.EditDeleteMenu
@@ -170,6 +178,7 @@ import com.neteinstein.goodcompany.core.ui.platform.rememberCalendarAdder
 import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoOpener
 import com.neteinstein.goodcompany.core.ui.platform.rememberGalleryPhotoPicker
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
+import com.neteinstein.goodcompany.core.ui.platform.rememberTextFilePicker
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.close
@@ -192,12 +201,12 @@ import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_soo
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_today
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_banner_tomorrow
 import com.neteinstein.goodcompany.feature.friends.resources.birthday_send_wishes
+import com.neteinstein.goodcompany.feature.friends.resources.birthday_title
 import com.neteinstein.goodcompany.feature.friends.resources.chat_count
 import com.neteinstein.goodcompany.feature.friends.resources.chat_how
 import com.neteinstein.goodcompany.feature.friends.resources.chat_title
 import com.neteinstein.goodcompany.feature.friends.resources.closeness_no_rhythm
 import com.neteinstein.goodcompany.feature.friends.resources.closeness_sheet_title
-import com.neteinstein.goodcompany.feature.friends.resources.coming_up_title
 import com.neteinstein.goodcompany.feature.friends.resources.complete_about
 import com.neteinstein.goodcompany.feature.friends.resources.complete_family
 import com.neteinstein.goodcompany.feature.friends.resources.complete_feeds
@@ -248,6 +257,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.moments_title
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_as_person
 import com.neteinstein.goodcompany.feature.friends.resources.msg_added_to_news
 import com.neteinstein.goodcompany.feature.friends.resources.msg_call_logged_short
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_imported
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_invalid
+import com.neteinstein.goodcompany.feature.friends.resources.msg_chat_matched
 import com.neteinstein.goodcompany.feature.friends.resources.msg_entry_removed
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_added
 import com.neteinstein.goodcompany.feature.friends.resources.msg_feed_error
@@ -272,6 +284,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.plans_add
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
+import com.neteinstein.goodcompany.feature.friends.resources.story_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.talk_title
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_add_title
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_dislikes_placeholder
@@ -288,6 +301,14 @@ import com.neteinstein.goodcompany.feature.friends.resources.timeline_empty
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_log
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_more_options
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_title
+import com.neteinstein.goodcompany.feature.friends.resources.together_make_plans
+import com.neteinstein.goodcompany.feature.friends.resources.together_plan_cancelled
+import com.neteinstein.goodcompany.feature.friends.resources.together_plan_not_attended
+import com.neteinstein.goodcompany.feature.friends.resources.together_plan_skipped
+import com.neteinstein.goodcompany.feature.friends.resources.together_reminder_done
+import com.neteinstein.goodcompany.feature.friends.resources.together_show_all
+import com.neteinstein.goodcompany.feature.friends.resources.together_today
+import com.neteinstein.goodcompany.feature.friends.resources.together_turned
 import com.neteinstein.goodcompany.feature.friends.resources.topics_ai
 import com.neteinstein.goodcompany.feature.friends.resources.topics_from_notes
 import com.neteinstein.goodcompany.feature.friends.resources.touch_called
@@ -357,6 +378,7 @@ fun FriendDetailScreen(
         picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
     }
     val photoOpener = rememberGalleryPhotoOpener()
+    val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
     val addToCalendar = rememberCalendarAdder()
     LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
     FriendDetailContent(
@@ -417,6 +439,7 @@ fun FriendDetailScreen(
             onDismissWish = viewModel::onDismissWish,
             onPersonaliseWish = viewModel::onPersonaliseWish,
             onOpenTimeline = onOpenTimeline,
+            onImportChat = pickChat,
             onLog = onLog,
             onOpenCircle = onOpenCircle,
             onSetInCircle = viewModel::onSetInCircle,
@@ -549,6 +572,8 @@ data class FriendDetailActions(
     val onDismissWish: () -> Unit = {},
     val onPersonaliseWish: () -> Unit = {},
     val onOpenTimeline: () -> Unit = {},
+    /** The Conversations box's Add (issue #117): pick a chat export. */
+    val onImportChat: () -> Unit = {},
     val onLog: () -> Unit = {},
     /** A circle chip: People filtered by that circle. */
     val onOpenCircle: (String) -> Unit = {},
@@ -620,6 +645,10 @@ suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: Local
     FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
     FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
     FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
+    is FriendDetailMessage.ChatImported -> getPluralString(Res.plurals.msg_chat_imported, messages, messages).let { base ->
+        sender?.let { getString(Res.string.msg_chat_matched, base, it) } ?: base
+    }
+    FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
     FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
     is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
     FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
@@ -797,7 +826,6 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
             ProfileSections.shown(tab, f, facts).forEach { card ->
                 item(key = card.name) {
                     when (card) {
-                        PersonCard.COMING_UP -> ComingUp(f, state, actions)
                         PersonCard.TO_TALK_ABOUT -> ToTalkAbout(f, state, actions, onAddNews = { addingNews = true }, onEdit = { pageEdit = it })
                         PersonCard.TASTES -> Tastes(f, actions, onAdd = { addingTaste = true }, onEdit = { pageEdit = it })
                         PersonCard.NOTES -> Notes(detail.timeline, state, actions)
@@ -844,8 +872,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             onSeeAll = { seeAllSaved = true },
                         )
                         PersonCard.FEEDS -> Feeds(f, state, actions, onAdd = { addingFeed = true })
-                        PersonCard.CONVERSATIONS -> Conversations(detail.messageCount)
-                        PersonCard.TIMELINE -> TimelineCard(detail.timeline, state, actions, onEdit = { pageEdit = it })
+                        PersonCard.CONVERSATIONS -> Conversations(detail.messageCount, onAdd = actions.onImportChat)
+                        PersonCard.TIMELINE -> TimelineCard(f, state, actions, onEdit = { pageEdit = it })
                     }
                 }
             }
@@ -1158,64 +1186,6 @@ private fun BirthdayBanner(firstName: String, date: LocalDate, today: LocalDate,
                 modifier = Modifier.weight(1f),
             )
             Button(onClick = onWish) { Text(stringResource(Res.string.birthday_send_wishes)) }
-        }
-    }
-}
-
-/**
- * Together's first entry (issues #90, #103): the birthday banner, then "Coming up": "Plan something" and the next
- * plans, their reminders, upcoming moments and the catch-up rhythm line with "I called" and snooze. The catch-up
- * story is the ring on the photo now.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ComingUp(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
-    val detail = state.detail ?: return
-    val firstName = f.displayName.substringBefore(' ')
-    Column {
-        val nextBirthday = f.birthday?.nextOccurrence(state.today)
-        if (nextBirthday != null && state.today.daysUntil(nextBirthday) in 0..7) {
-            BirthdayBanner(firstName, nextBirthday, state.today, actions.onOpenWish)
-        }
-        SectionCard(
-            stringResource(Res.string.coming_up_title),
-            icon = Icons.Rounded.EventAvailable,
-            action = { TextButton(onClick = { actions.onOpenPlanEditor(null) }) { Text(stringResource(Res.string.plans_add)) } },
-        ) {
-            val people = (listOf(f) + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
-            detail.plans.forEach { plan ->
-                val with = plan.friendIds.mapNotNull(people::get)
-                val circle = detail.groups.firstOrNull { it.id == plan.circleId }
-                PlanRow(
-                    plan = plan,
-                    friends = with.filterNot { it.id == f.id },
-                    today = state.today,
-                    onAnswer = { answer, whole ->
-                        // "It happened" opens the "We met" panel (issue #47): a person plan as well as a circle plan.
-                        if (answer == PlanAnswer.HAPPENED) actions.onLogPlan(plan.id, plan.date) else actions.onAnswerPlan(plan, answer, whole)
-                    },
-                    onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
-                    onChange = { actions.onOpenPlanEditor(plan) },
-                    circle = circle,
-                    onSkip = { actions.onSkipPlan(plan) },
-                )
-            }
-            // Issue #99: their reminders (and their circles'), with Done · Snooze · Edit · Delete; the chips open the others.
-            val everyone = (listOf(f) + detail.others).associateBy { it.id }
-            state.reminders.forEach { r ->
-                ReminderRow(
-                    r,
-                    r.friendIds.filterNot { it == f.id }.mapNotNull(everyone::get),
-                    state.today,
-                    state.zone,
-                    state.now,
-                    actions.reminders,
-                    Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                    circle = r.circleId?.let { id -> detail.circles.firstOrNull { it.id == id } },
-                )
-            }
-            f.importantEvents.filter { it.date >= state.today }.sortedBy { it.date }.take(3).forEach { MomentRow(it, state.today) }
-            RhythmLine(f, state, actions)
         }
     }
 }
@@ -1668,10 +1638,15 @@ private fun MomentRow(
     }
 }
 
-/** Together: the imported WhatsApp chat count, or how to import one. */
+/** Together: the imported WhatsApp chat count, or how to import one; Add imports a chat export (issue #117). */
 @Composable
-private fun Conversations(messageCount: Int) {
-    SectionCard(stringResource(Res.string.chat_title), icon = Icons.Rounded.Forum) {
+private fun Conversations(messageCount: Int, onAdd: () -> Unit) {
+    SectionCard(
+        stringResource(Res.string.chat_title),
+        icon = Icons.Rounded.Forum,
+        // Issue #117: Add reads a chat export, as the full timeline's ⋮ does.
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
         Text(
             if (messageCount > 0) pluralStringResource(Res.plurals.chat_count, messageCount, messageCount) else stringResource(Res.string.chat_how),
             style = MaterialTheme.typography.bodyMedium,
@@ -1682,24 +1657,139 @@ private fun Conversations(messageCount: Int) {
 }
 
 /**
- * Together: the whole timeline in place (no "See all"); "+" opens the Log sheet. ⋮ still opens the timeline screen for
- * what only it does (filters, swipe to delete, importing a WhatsApp export).
+ * Together's timeline (issue #117), top to bottom: the birthday banner when it's close, "+ Make plans" with the
+ * catch-up line under it, the upcoming plans, reminders, birthday and moments (soonest last, right above "Today"),
+ * the "Today" marker, then the last [PersonTimeline.SHOWN] past entries; more fade out into "Show all" (the full
+ * timeline). "+" in the header logs; ⋮ opens the full timeline (filters, chat import).
  */
 @Composable
-private fun TimelineCard(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit) {
-    SectionCard(
-        stringResource(Res.string.timeline_title),
-        icon = Icons.Rounded.Diversity3,
-        action = {
-            Row {
-                IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
-                IconButton(onClick = actions.onOpenTimeline) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.timeline_more_options)) }
+private fun TimelineCard(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit) {
+    val detail = state.detail ?: return
+    val together = state.together
+    val firstName = f.displayName.substringBefore(' ')
+    Column {
+        val nextBirthday = f.birthday?.nextOccurrence(state.today)
+        if (nextBirthday != null && state.today.daysUntil(nextBirthday) in 0..7) {
+            BirthdayBanner(firstName, nextBirthday, state.today, actions.onOpenWish)
+        }
+        SectionCard(
+            stringResource(Res.string.timeline_title),
+            icon = Icons.Rounded.Diversity3,
+            action = {
+                Row {
+                    IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
+                    IconButton(onClick = actions.onOpenTimeline) { Icon(Icons.Rounded.MoreVert, stringResource(Res.string.timeline_more_options)) }
+                }
+            },
+        ) {
+            MakePlans(onClick = { actions.onOpenPlanEditor(null) })
+            RhythmLine(f, state, actions)
+            together.upcoming.forEach { item -> UpcomingItem(item, f, state, actions) }
+            TodayMarker()
+            if (together.past.isEmpty()) Hint(stringResource(Res.string.timeline_empty))
+            together.past.forEachIndexed { i, item ->
+                val fades = together.hasMore && i == together.past.lastIndex
+                Box {
+                    PastItem(item, state, actions, onEdit, last = i == together.past.lastIndex)
+                    if (fades) {
+                        val bg = MaterialTheme.colorScheme.surfaceContainerLow
+                        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(bg.copy(alpha = 0f), bg))))
+                    }
+                }
             }
-        },
+            if (together.hasMore) {
+                TextButton(onClick = actions.onOpenTimeline, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text(stringResource(Res.string.together_show_all))
+                }
+            }
+        }
+    }
+}
+
+/** "+ Make plans": the plan editor (issue #117); the catch-up line sits under it. */
+@Composable
+private fun MakePlans(onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (timeline.isEmpty()) Hint(stringResource(Res.string.timeline_empty))
+        FilledTonalIconButton(onClick = onClick) { Icon(Icons.Rounded.Add, null) }
+        Spacer(Modifier.width(12.dp))
+        Text(stringResource(Res.string.together_make_plans), style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+/** The "Today" line between what's coming and what happened. */
+@Composable
+private fun TodayMarker() {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(Res.string.together_today),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.width(10.dp))
+        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+    }
+}
+
+@Composable
+private fun UpcomingItem(item: TogetherItem, f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
+    val detail = state.detail ?: return
+    when (item) {
+        is TogetherItem.OpenPlan -> {
+            val plan = item.plan
+            val people = (listOf(f) + detail.others + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
+            val with = plan.friendIds.mapNotNull(people::get)
+            val circle = detail.groups.firstOrNull { it.id == plan.circleId }
+            PlanRow(
+                plan = plan,
+                friends = with.filterNot { it.id == f.id },
+                today = state.today,
+                onAnswer = { answer, whole ->
+                    // "It happened" opens the Log popup (issue #47): a person plan as well as a circle plan.
+                    if (answer == PlanAnswer.HAPPENED) actions.onLogPlan(plan.id, plan.date) else actions.onAnswerPlan(plan, answer, whole)
+                },
+                onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
+                onChange = { actions.onOpenPlanEditor(plan) },
+                circle = circle,
+                onSkip = { actions.onSkipPlan(plan) },
+            )
+        }
+        // Issue #99: their reminders (and their circles'), with Done · Snooze · Edit · Delete; the chips open the others.
+        is TogetherItem.OpenReminder -> {
+            val everyone = (listOf(f) + detail.others).associateBy { it.id }
+            val r = item.reminder
+            ReminderRow(
+                r,
+                r.friendIds.filterNot { it == f.id }.mapNotNull(everyone::get),
+                state.today,
+                state.zone,
+                state.now,
+                actions.reminders,
+                Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                circle = r.circleId?.let { id -> detail.circles.firstOrNull { it.id == id } },
+            )
+        }
+        is TogetherItem.Moment -> MomentRow(item.event, state.today)
+        is TogetherItem.Birthday -> DatedRow(
+            item.date,
+            state.today,
+            Icons.Rounded.Cake,
+            stringResource(Res.string.birthday_title),
+            item.age?.let { stringResource(Res.string.story_birthday_turns, it) } ?: relativeDay(item.date, state.today),
+        )
+        else -> Unit
+    }
+}
+
+@Composable
+private fun PastItem(item: TogetherItem, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit, last: Boolean) {
+    val date = item.at.toLocalDateTime(state.zone).date
+    when (item) {
         // Issue #102: a tap edits (news and gifts in their dialogs, the rest in the Log sheet); ⋮ or a long press offers Delete too.
-        timeline.forEachIndexed { i, entry ->
+        is TogetherItem.Entry -> {
+            val entry = item.entry
             EditableTimelineEntry(
                 entry,
                 state.zone,
@@ -1712,9 +1802,52 @@ private fun TimelineCard(timeline: List<TimelineEntry>, state: FriendDetailUiSta
                     }
                 },
                 onDelete = if (entry.deletable) ({ actions.onDeleteEntry(entry) }) else null,
-                last = i == timeline.lastIndex,
+                last = last,
             )
         }
+        is TogetherItem.ClosedPlan -> DatedRow(
+            date,
+            state.today,
+            Icons.Rounded.EventBusy,
+            item.plan.title,
+            stringResource(
+                when (item.plan.status) {
+                    PlanStatus.CANCELLED -> Res.string.together_plan_cancelled
+                    PlanStatus.NOT_ATTENDED -> Res.string.together_plan_not_attended
+                    else -> Res.string.together_plan_skipped
+                },
+            ),
+        )
+        is TogetherItem.DoneReminder -> DatedRow(
+            date,
+            state.today,
+            Icons.Rounded.TaskAlt,
+            item.reminder.title,
+            stringResource(Res.string.together_reminder_done),
+        )
+        is TogetherItem.Birthday -> DatedRow(
+            date,
+            state.today,
+            Icons.Rounded.Cake,
+            stringResource(Res.string.birthday_title),
+            item.age?.let { stringResource(Res.string.together_turned, it) } ?: relativeDay(date, state.today),
+        )
+        is TogetherItem.Moment -> MomentRow(item.event, state.today)
+        else -> Unit
+    }
+}
+
+/** A dated line of the Together timeline that isn't a logged entry: a closed plan, a done reminder, a birthday. */
+@Composable
+private fun DatedRow(date: LocalDate, today: LocalDate, icon: ImageVector, title: String, detail: String) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        DateBadge(date, today)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
     }
 }
 

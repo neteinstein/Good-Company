@@ -49,6 +49,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FeedNotFoundException
 import com.neteinstein.goodcompany.core.domain.usecase.FriendDetail
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LinkDraft
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
@@ -58,6 +59,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
+import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RenameFriendUseCase
@@ -80,6 +82,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
+import com.neteinstein.goodcompany.core.domain.usecase.TogetherTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -138,6 +141,11 @@ sealed interface FriendDetailMessage {
     data object FeedError : FriendDetailMessage
 
     data object AddedToNews : FriendDetailMessage
+
+    /** The Conversations box's Add (issue #117): a chat export read. */
+    data class ChatImported(val messages: Int, val sender: String?) : FriendDetailMessage
+
+    data object ChatInvalid : FriendDetailMessage
 
     /** Something deleted from the page (issue #102); offered with "Undo". */
     data object Removed : FriendDetailMessage
@@ -258,8 +266,10 @@ data class FriendDetailUiState(
     val showReminderEditor: Boolean = false,
     /** The reminder the editor changes; null = a new one. */
     val editingReminder: Reminder? = null,
-    /** Their open reminders and those of their circles (issue #99), soonest first, on "Coming up". */
+    /** Their open reminders and those of their circles (issue #99), soonest first. */
     val reminders: List<Reminder> = emptyList(),
+    /** The Together timeline (issue #117): Make plans, upcoming, Today, the last [PersonTimeline.SHOWN] past entries. */
+    val together: TogetherTimeline = TogetherTimeline(),
     /** The reminder as it was before Done or Delete, for the snackbar's Undo. */
     val reminderUndo: Reminder? = null,
     /** "" while the AI is working on gift ideas, null otherwise. */
@@ -346,6 +356,7 @@ class FriendDetailViewModel(
     private val deleteEntry: DeleteTimelineEntryUseCase,
     private val restoreEntry: RestoreTimelineEntryUseCase,
     storyViews: StoryViews,
+    private val importChat: ImportChatUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendDetailUiState())
 
@@ -360,9 +371,13 @@ class FriendDetailViewModel(
             val since = d.lastSeen ?: (clock.now() - CatchUpStoryBuilder.FALLBACK_FRESH_DAYS.days)
             CatchUpStoryBuilder.freshItems(d.friend, d.kids).map { it.addedAt }.filter { it > since }
         }.orEmpty()
+        val theirs = reminders.filter { it.isFor(friendId, detail?.groups.orEmpty()) }
         ui.copy(
             detail = detail,
-            reminders = reminders.filter { !it.done && it.isFor(friendId, detail?.groups.orEmpty()) },
+            reminders = theirs.filter { !it.done },
+            together = detail?.let { d ->
+                PersonTimeline.build(d.friend, d.timeline, d.plans + d.closedPlans, theirs, attachments, clock.today(), clock.timeZone)
+            } ?: TogetherTimeline(),
             attachments = attachments,
             links = linked,
             tags = tags,
@@ -1104,6 +1119,15 @@ class FriendDetailViewModel(
         viewModelScope.launch {
             restoreAttachment(attachment)
             local.update { it.copy(undoAttachment = null) }
+        }
+    }
+
+    /** The Conversations box's Add (issue #117): the picked chat export, imported as on the full timeline. */
+    fun onChatPicked(text: String?) {
+        if (text.isNullOrBlank()) return
+        viewModelScope.launch {
+            val result = importChat(friendId, text)
+            say(if (result.messages == 0) FriendDetailMessage.ChatInvalid else FriendDetailMessage.ChatImported(result.messages, result.friendSender))
         }
     }
 
