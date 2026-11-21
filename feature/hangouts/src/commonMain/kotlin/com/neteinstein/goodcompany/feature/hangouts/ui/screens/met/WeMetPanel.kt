@@ -1,27 +1,16 @@
 package com.neteinstein.goodcompany.feature.hangouts.ui.screens.met
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -38,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,6 +47,7 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
+import com.neteinstein.goodcompany.core.ui.components.DialogSheet
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LocalTimePickerDialog
@@ -171,8 +160,8 @@ fun WeMetPanelScreen(
 /**
  * Issue #47 (F2, F3) and #101: "How?" (in person by default), who, Today / Yesterday / a picked day, the activity as
  * one tap (in person only), "+ Add a note", and Save within reach, so "Caught up" → Save logs today in two taps. A call,
- * a chat or a game hides the activity and the place; "Other" asks what it was. No hidden gestures. Drawn like the Log sheet: a bottom panel over
- * a scrim that dismisses it.
+ * a chat or a game hides the activity and the place; "Other" asks what it was. No hidden gestures. Drawn like the Log sheet, with
+ * [DialogSheet]: a scrim, drag down to close.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -185,97 +174,77 @@ fun WeMetPanel(state: WeMetUiState, actions: WeMetActions) {
     var pickingPeople by rememberSaveable { mutableStateOf(startsEmpty) }
     var showAllActivities by rememberSaveable { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = actions.onDismiss),
-        contentAlignment = Alignment.BottomCenter,
-    ) {
-        Surface(
-            Modifier.widthIn(max = 640.dp).fillMaxWidth().imePadding()
-                // Taps on the panel itself must not reach the scrim.
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = {}),
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Box(Modifier.size(width = 36.dp, height = 4.dp).background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp)))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val circle = sheet.circle
-                    Text(
-                        if (circle != null) {
-                            stringResource(Res.string.met_title_circle, "${circle.emoji} ${circle.name}".trim())
-                        } else if (sheet.people.isEmpty()) {
-                            stringResource(CoreRes.string.log_action)
-                        } else {
-                            stringResource(Res.string.met_title, namesList(sheet.people))
-                        },
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).semantics { heading() },
-                    )
-                    TextButton(onClick = actions.onMoreDetails) { Text(stringResource(Res.string.met_more_details)) }
-                }
-                // Issue #116: started with nobody, who comes first; otherwise after the date, as before.
-                if (startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
-                HowRow(sheet.kind, actions.onKind)
-                if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
-                LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
-                LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
-                if (!startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
-                if (sheet.kind == LogKind.MEETUP) LogLastTogether(sheet.lastTogether, sheet.now, sheet.zone)
-                if (!sheet.kind.isRemote) {
-                    Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
-                }
-                if (state.placeOpen) {
-                    // The Log sheet's place field (F11): a named place recognises itself and suggests who's usually there.
-                    MeetupPlace(
-                        sheet.place,
-                        freeTextLabel = stringResource(CoreRes.string.log_place_hint),
-                        onName = actions.onPlaceName,
-                        onUseLocation = actions.onUseLocation,
-                        onClearLocation = actions.onClearLocation,
-                        onChange = actions.onChangePlace,
-                        onAddPerson = actions.onTogglePerson,
-                    )
-                }
-                if (state.noteOpen) {
-                    OutlinedTextField(
-                        sheet.note,
-                        actions.onNote,
-                        Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(CoreRes.string.log_note_hint)) },
-                    )
-                }
-                val canAddPlace = !state.placeOpen && !sheet.kind.isRemote
-                if (!state.noteOpen || canAddPlace) {
-                    Row {
-                        if (!state.noteOpen) AddButton(stringResource(Res.string.met_add_note), actions.onOpenNote)
-                        if (canAddPlace) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
-                    }
-                }
-                sheet.countsHintFor?.let {
-                    Text(
-                        stringResource(CoreRes.string.log_counts_hint, it.displayName.substringBefore(' ')),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Button(
-                    onClick = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        actions.onSave()
-                    },
-                    enabled = sheet.canSave,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                ) { Text(saveLabel(sheet)) }
+    DialogSheet(onDismiss = actions.onDismiss) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val circle = sheet.circle
+            Text(
+                if (circle != null) {
+                    stringResource(Res.string.met_title_circle, "${circle.emoji} ${circle.name}".trim())
+                } else if (sheet.people.isEmpty()) {
+                    stringResource(CoreRes.string.log_action)
+                } else {
+                    stringResource(Res.string.met_title, namesList(sheet.people))
+                },
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            TextButton(onClick = actions.onMoreDetails) { Text(stringResource(Res.string.met_more_details)) }
+        }
+        // Issue #116: started with nobody, who comes first; otherwise after the date, as before.
+        if (startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
+        HowRow(sheet.kind, actions.onKind)
+        if (sheet.kind == LogKind.OTHER) LogOtherLabel(sheet.label, actions.onLabel)
+        LogDateChoice(sheet.date, sheet.today, actions.onDate, onPick = { pickingDate = true })
+        LogTimeChoice(sheet.time, sheet.date, sheet.now, sheet.zone, actions.onTime, onPick = { pickingTime = true })
+        if (!startsEmpty) People(sheet, actions.onTogglePerson, onAdd = { pickingPeople = true })
+        if (sheet.kind == LogKind.MEETUP) LogLastTogether(sheet.lastTogether, sheet.now, sheet.zone)
+        if (!sheet.kind.isRemote) {
+            Activities(sheet, showAllActivities, onToggleMore = { showAllActivities = !showAllActivities }, onActivity = actions.onActivity)
+        }
+        if (state.placeOpen) {
+            // The Log sheet's place field (F11): a named place recognises itself and suggests who's usually there.
+            MeetupPlace(
+                sheet.place,
+                freeTextLabel = stringResource(CoreRes.string.log_place_hint),
+                onName = actions.onPlaceName,
+                onUseLocation = actions.onUseLocation,
+                onClearLocation = actions.onClearLocation,
+                onChange = actions.onChangePlace,
+                onAddPerson = actions.onTogglePerson,
+            )
+        }
+        if (state.noteOpen) {
+            OutlinedTextField(
+                sheet.note,
+                actions.onNote,
+                Modifier.fillMaxWidth(),
+                label = { Text(stringResource(CoreRes.string.log_note_hint)) },
+            )
+        }
+        val canAddPlace = !state.placeOpen && !sheet.kind.isRemote
+        if (!state.noteOpen || canAddPlace) {
+            Row {
+                if (!state.noteOpen) AddButton(stringResource(Res.string.met_add_note), actions.onOpenNote)
+                if (canAddPlace) AddButton(stringResource(Res.string.met_add_place), actions.onOpenPlace)
             }
         }
+        sheet.countsHintFor?.let {
+            Text(
+                stringResource(CoreRes.string.log_counts_hint, it.displayName.substringBefore(' ')),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Button(
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                actions.onSave()
+            },
+            enabled = sheet.canSave,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+        ) { Text(saveLabel(sheet)) }
     }
     if (pickingDate) {
         LocalDatePickerDialog(sheet.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = sheet.today)

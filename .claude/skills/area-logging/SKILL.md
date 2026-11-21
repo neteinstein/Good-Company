@@ -32,6 +32,11 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   across meetup / contact / journal deletes and re-logs at the same instant, and the share it came from is relinked.
   The rows are `EditableTimelineEntry` (`:core:ui`: tap edits, long press or ⋮ → `EditDeleteMenu`), so any screen can host
   the timeline. Edits have no Undo (they save on Save); deletes do.
+- The Log sheet and We met are drawn with `DialogSheet` (`:core:ui`, issue #145): scrim, handle, drag-to-dismiss (on
+  the sheet, or on its content once scrolled to the top) and the edge-to-edge insets. Their dialog destinations use
+  `sheetDialogProperties` (Android `decorFitsSystemWindows = false`; iOS/web `usePlatformInsets = false`, no platform
+  scrim), or the scrim stops above the navigation bar. Don't swap in Material's `ModalBottomSheet`: it opens a window of
+  its own inside the dialog. A new sheet-in-a-dialog destination should reuse both.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
 - **Together timeline (issue #117).** The person page's Together tab has no Coming up card: `PersonTimeline.build`
