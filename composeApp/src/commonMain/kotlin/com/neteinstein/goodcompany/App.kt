@@ -57,7 +57,8 @@ import androidx.navigation.compose.rememberNavController
 import com.neteinstein.goodcompany.composeApp.resources.Res
 import com.neteinstein.goodcompany.composeApp.resources.app_name
 import com.neteinstein.goodcompany.composeApp.resources.storage_temporary
-import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
+import com.neteinstein.goodcompany.core.domain.usecase.AppLink
+import com.neteinstein.goodcompany.core.domain.usecase.OpenInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
@@ -71,8 +72,10 @@ import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupSnackbar
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
+import com.neteinstein.goodcompany.ui.navigation.AgendaRoute
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
+import com.neteinstein.goodcompany.ui.navigation.CirclePageRoute
 import com.neteinstein.goodcompany.ui.navigation.FriendDetailRoute
 import com.neteinstein.goodcompany.ui.navigation.SettingsRoute
 import com.neteinstein.goodcompany.ui.navigation.ShareRoute
@@ -161,13 +164,18 @@ private fun AppScaffold(launch: LaunchOptions, aiEnabled: Boolean) {
         navController.navigate(WeMetRoute(entry.friendIds.map { it.value }))
         quickEntryInbox.clear()
     }
-    // Issue #133: a tap on a birthday heads-up opens the person's page, under the app lock.
-    val personInbox: PersonInbox = koinInject()
-    val pendingPerson by personInbox.pending.collectAsStateWithLifecycle()
-    LaunchedEffect(pendingPerson) {
-        val id = pendingPerson ?: return@LaunchedEffect
-        navController.navigate(FriendDetailRoute(id.value))
-        personInbox.clear()
+    // A tap on a notification that opens a page, under the app lock: a birthday heads-up opens the person (issue #133);
+    // a reminder opens its circle, its one person or its editor (issue #135, ReminderTarget).
+    val openInbox: OpenInbox = koinInject()
+    val pendingOpen by openInbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingOpen) {
+        when (val link = pendingOpen ?: return@LaunchedEffect) {
+            is AppLink.Person -> navController.navigate(FriendDetailRoute(link.friendId.value))
+            is AppLink.Circle -> navController.navigate(CirclePageRoute(link.circleId)) { launchSingleTop = true }
+            is AppLink.Reminder -> navController.navigate(AgendaRoute(editReminderId = link.reminderId)) { launchSingleTop = true }
+            else -> Unit
+        }
+        openInbox.clear()
     }
 
     BoxWithConstraints {

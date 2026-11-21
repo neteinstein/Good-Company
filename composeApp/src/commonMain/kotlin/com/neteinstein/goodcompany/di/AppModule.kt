@@ -170,8 +170,8 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTypedPlacesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.OpenInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
-import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PinTypedPlaceUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
@@ -323,7 +323,7 @@ val appModule = module {
     single<AppUpdateSource> { GitHubReleaseUpdateSource(get()) }
     single { ShareInbox() }
     single { QuickEntryInbox() }
-    single { PersonInbox() }
+    single { OpenInbox() }
     single { LoggedMeetupInbox() }
 
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---

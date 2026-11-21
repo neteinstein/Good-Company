@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.ReopenReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -107,7 +109,7 @@ data class AgendaUiState(
 
 class AgendaViewModel(
     observeAgenda: ObserveAgendaUseCase,
-    observeReminders: ObserveRemindersUseCase,
+    private val observeReminders: ObserveRemindersUseCase,
     observeFriends: ObserveFriendsUseCase,
     observeSettings: ObserveSettingsUseCase,
     private val draftBirthdayMessage: DraftBirthdayMessageUseCase,
@@ -154,6 +156,19 @@ class AgendaViewModel(
 
     /** "Edit" on a reminder (issue #99). */
     fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
+
+    /** A reminder notification asked for this reminder's editor (issue #135); an unknown id opens nothing. */
+    fun onEditReminderById(id: String) {
+        viewModelScope.launch { observeReminders().first().firstOrNull { it.id == id }?.let(::onEditReminder) }
+    }
+
+    /**
+     * A tap on a reminder (issue #135): returns where it goes ([ReminderTarget]); for one with several people or nobody
+     * the editor opens here, the screen opens a circle or a person.
+     */
+    fun onOpenReminder(reminder: Reminder): ReminderTarget = ReminderTarget.of(reminder).also {
+        if (it is ReminderTarget.Edit) onEditReminder(reminder)
+    }
 
     fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
 

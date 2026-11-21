@@ -34,6 +34,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveStoryBubblesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Relationships
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
@@ -285,6 +286,14 @@ class TodayViewModel(
 
     /** "Edit" on a reminder in the week (issue #99). */
     fun onEditReminder(reminder: Reminder) = local.update { it.copy(showReminderEditor = true, editingReminder = reminder) }
+
+    /**
+     * A tap on a reminder (issue #135): returns where it goes ([ReminderTarget]); for one with several people or nobody
+     * the editor opens here, the screen opens a circle or a person.
+     */
+    fun onOpenReminder(reminder: Reminder): ReminderTarget = ReminderTarget.of(reminder).also {
+        if (it is ReminderTarget.Edit) onEditReminder(reminder)
+    }
 
     fun onDismissReminderEditor() = local.update { it.copy(showReminderEditor = false, editingReminder = null) }
 

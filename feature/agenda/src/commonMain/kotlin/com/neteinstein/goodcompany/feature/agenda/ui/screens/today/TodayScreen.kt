@@ -118,6 +118,7 @@ import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
+import com.neteinstein.goodcompany.feature.agenda.ui.screens.openReminderTarget
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.getString
@@ -217,6 +218,7 @@ fun TodayScreen(
                 onDelete = viewModel::onDeleteReminder,
                 onOpenFriend = onOpenFriend,
                 onOpenCircle = onOpenCircle,
+                onOpen = { r -> openReminderTarget(viewModel.onOpenReminder(r), onOpenFriend, onOpenCircle) },
             ),
             onUndoReminder = viewModel::onUndoReminder,
         ),

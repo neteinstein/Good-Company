@@ -506,6 +506,8 @@ private fun UpcomingRow(item: CircleUpcoming, state: CirclePageUiState, actions:
                 onEdit = actions.onOpenReminder,
                 onDelete = actions.onDeleteReminder,
                 onOpenFriend = actions.onOpenFriend,
+                // Issue #135: on its circle's page a tap opens the reminder's editor.
+                onOpen = actions.onOpenReminder,
             ),
             Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )

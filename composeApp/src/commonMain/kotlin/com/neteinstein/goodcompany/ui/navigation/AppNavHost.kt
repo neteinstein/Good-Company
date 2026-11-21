@@ -328,7 +328,7 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
             onWeMet = weMet,
             onCircleMet = circleMet,
             onLogPlan = logPlan,
-            onOpenAgenda = { navController.navigate(AgendaRoute) { launchSingleTop = true } },
+            onOpenAgenda = { navController.navigate(AgendaRoute()) { launchSingleTop = true } },
             onOpenSettings = openSettings,
             onOpenPeople = { navController.navigateTopLevel(TopLevelDestination.PEOPLE) },
             // Issue #116: "I'm with…" became Log: the Log popup with nobody picked, the people picker first.
@@ -341,9 +341,11 @@ internal fun AppGraph.appDestinations(nav: () -> NavHostController, shared: () -
     composable<AgendaRoute>(
         enterTransition = { slideInHorizontally { it / 3 } + fadeIn() },
         popExitTransition = { slideOutHorizontally { it / 3 } + fadeOut() },
-    ) {
+    ) { entry ->
+        val editReminderId = entry.toRoute<AgendaRoute>().editReminderId
         ProvideSharedElements(shared(), this) {
             AgendaScreen(
+                editReminderId = editReminderId,
                 onOpenFriend = openFriend,
                 onCircleMet = circleMet,
                 onLogPlan = logPlan,

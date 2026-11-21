@@ -238,9 +238,11 @@ fun AgendaRow(
             item.friends.singleOrNull(),
         )
     }
+    // A reminder goes where ReminderTarget says (issue #135), never just to its first person.
+    val openReminder = (item as? AgendaItem.ReminderDue)?.let { r -> reminders?.onOpen?.let { open -> { open(r.reminder) } } }
     Surface(
-        onClick = { spec.friend?.let { onOpenFriend(it.id) } },
-        enabled = spec.friend != null,
+        onClick = { openReminder?.invoke() ?: spec.friend?.let { onOpenFriend(it.id) } },
+        enabled = openReminder != null || (item !is AgendaItem.ReminderDue && spec.friend != null),
         modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,

@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.neteinstein.goodcompany.core.domain.usecase.AppLink
-import com.neteinstein.goodcompany.core.domain.usecase.PersonInbox
+import com.neteinstein.goodcompany.core.domain.usecase.OpenInbox
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.toQuickEntry
@@ -17,7 +17,7 @@ import org.koin.android.ext.android.inject
 class MainActivity : ComponentActivity() {
     private val shareInbox: ShareInbox by inject()
     private val quickEntryInbox: QuickEntryInbox by inject()
-    private val personInbox: PersonInbox by inject()
+    private val openInbox: OpenInbox by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
     /**
      * `goodcompany://log[/<friendId>]` from an app-icon shortcut: opens the Log sheet (behind the app lock).
-     * `goodcompany://person/<friendId>` from a birthday heads-up (issue #133): opens their page.
+     * `goodcompany://person/<id>`, `circle/<id>` and `reminder/<id>` from a notification (issues #133, #135): open that page.
      */
     private fun receiveShortcut(intent: Intent?) {
         if (intent?.action != Intent.ACTION_VIEW) return
@@ -51,8 +51,8 @@ class MainActivity : ComponentActivity() {
                 quickEntryInbox.offer(link.toQuickEntry())
                 AppShortcuts.reportUsed(this, link)
             }
-            is AppLink.Person -> personInbox.offer(link.friendId)
-            else -> Unit
+            null -> Unit
+            else -> openInbox.offer(link)
         }
     }
 }

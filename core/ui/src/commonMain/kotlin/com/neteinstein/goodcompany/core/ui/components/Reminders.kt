@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -105,6 +106,11 @@ data class ReminderCallbacks(
     val onReopen: (Reminder) -> Unit = {},
     val onOpenFriend: (FriendId) -> Unit = {},
     val onOpenCircle: ((String) -> Unit)? = null,
+    /**
+     * A tap on the reminder itself (issue #135): its circle, its one person or its editor
+     * ([com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget]). Null where the row isn't tappable.
+     */
+    val onOpen: ((Reminder) -> Unit)? = null,
 )
 
 /** The snackbar line after a reminder action; Done and Delete come with Undo. */
@@ -150,7 +156,9 @@ fun ReminderRow(
     circle: FriendGroup? = null,
 ) {
     Surface(
-        modifier.fillMaxWidth(),
+        onClick = { callbacks.onOpen?.invoke(reminder) },
+        enabled = callbacks.onOpen != null,
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = if (reminder.done) MaterialTheme.colorScheme.surfaceContainerLowest else MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
@@ -206,7 +214,12 @@ fun ReminderTimelineRow(
     var snoozing by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf(false) }
     val shownAt = reminder.snoozedUntil ?: reminder.dueAt
-    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    val open = callbacks.onOpen
+    Row(
+        modifier.fillMaxWidth().then(if (open != null) Modifier.clickable { open(reminder) } else Modifier)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (shownAt != null) {
             DateBadge(shownAt.toLocalDateTime(zone).date, today)
         } else {

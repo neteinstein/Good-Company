@@ -9,8 +9,10 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.NotificationSettings
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
@@ -28,6 +30,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Instant
 
 class TodayViewModelTest {
     // The test clock says Tuesday 10 March 2026.
@@ -262,5 +265,27 @@ class TodayViewModelTest {
         assertEquals(TodayMessage.PlanAnswered(PlanAnswer.DIDNT_HAPPEN), state.value.message)
         assertEquals(PlanStatus.SKIPPED, g.planRepo.plans.value.single().status)
         assertTrue(g.hangoutRepo.hangouts.value.isEmpty())
+    }
+
+    @Test
+    fun aReminderTap_opensItsCircle_itsOnePerson_orItsEditor() = runViewModelTest {
+        // Issue #135: a circle's reminder never opens one of its people.
+        val g = TestGraph(listOf(friend("ana"), friend("rui")))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        val created = Instant.fromEpochSeconds(0)
+        assertEquals(
+            ReminderTarget.Circle("surf"),
+            vm.onOpenReminder(Reminder("c", "Wax the boards", listOf(FriendId("rui"), FriendId("ana")), createdAt = created, circleId = "surf")),
+        )
+        assertEquals(
+            ReminderTarget.Person(FriendId("rui")),
+            vm.onOpenReminder(Reminder("r", "Call Rui", listOf(FriendId("rui")), createdAt = created)),
+        )
+        assertFalse(state.value.showReminderEditor)
+        val nobody = Reminder("n", "Water the plants", createdAt = created)
+        assertEquals(ReminderTarget.Edit("n"), vm.onOpenReminder(nobody))
+        assertTrue(state.value.showReminderEditor)
+        assertEquals(nobody, state.value.editingReminder)
     }
 }
