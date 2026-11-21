@@ -106,6 +106,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DismissNotificationPrimer
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -390,6 +391,7 @@ val appModule = module {
     factoryOf(::ObserveTimelineUseCase)
     factoryOf(::DeleteTimelineEntryUseCase)
     factoryOf(::RestoreTimelineEntryUseCase)
+    factoryOf(::EditTimelineEntryUseCase)
     factoryOf(::DeleteHangoutUseCase)
     factoryOf(::RestoreHangoutUseCase)
     factoryOf(::ObservePlaceBookUseCase)
@@ -539,12 +541,32 @@ val appModule = module {
             links = get(),
             clock = get(),
             ids = get(),
+            deleteEntry = get(),
+            restoreEntry = get(),
         )
     }
-    viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get()) }
+    viewModel { (id: FriendId) -> FriendTimelineViewModel(id, get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::SuggestedFamilyViewModel)
     viewModel { (ids: List<FriendId>, type: String?, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
-        LogInteractionViewModel(ids, type, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        LogInteractionViewModel(
+            ids,
+            type,
+            circleId,
+            plan,
+            prefill,
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+        )
     }
     viewModel { (id: String?, withFriend: FriendId?) -> CircleEditorViewModel(id, withFriend, get(), get(), get(), get(), get(), get(), get()) }
     viewModel { (id: String) ->

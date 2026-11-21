@@ -530,4 +530,8 @@
     <string name="talk_title">De vorbit</string>
     <string name="news_add">Adaugă o noutate</string>
     <string name="relation_to_me_pick">Atinge ca să alegi (soră, văr…)</string>
+    <string name="tastes_edit_title">Editează pasiunea</string>
+    <string name="gifts_edit">Editează cadoul</string>
+    <string name="event_edit_title">Editează momentul</string>
+    <string name="msg_entry_removed">Eliminat</string>
 </resources>

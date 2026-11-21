@@ -401,6 +401,7 @@
     <string name="activity_music">Music</string>
     <string name="activity_trip">Trip or outing</string>
     <string name="tl_together">Together</string>
+    <string name="tl_entry_options">Edit or delete</string>
     <string name="tl_activity_at">%1$s at %2$s</string>
     <string name="tl_with">with %1$s</string>
     <string name="tl_and">%1$s and %2$s</string>
@@ -438,6 +439,7 @@
     <string name="circle_color_slate">Slate</string>
     <string name="circle_tick_who_came">Tick who came from %1$s.</string>
     <string name="log_title_circle">Log a %1$s meetup</string>
+    <string name="log_title_edit">Edit entry</string>
     <string name="attachment_kind_photo">Photo</string>
     <string name="attachment_kind_link">Link</string>
     <string name="attachment_kind_text">Chat text</string>

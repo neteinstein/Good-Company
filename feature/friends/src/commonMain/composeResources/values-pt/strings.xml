@@ -515,4 +515,8 @@
     <string name="talk_title">Para conversar</string>
     <string name="news_add">Adicionar novidade</string>
     <string name="relation_to_me_pick">Toca para escolher (irmã, primo…)</string>
+    <string name="tastes_edit_title">Editar gosto</string>
+    <string name="gifts_edit">Editar prenda</string>
+    <string name="event_edit_title">Editar momento</string>
+    <string name="msg_entry_removed">Removido</string>
 </resources>

@@ -33,16 +33,21 @@ class CheckInUseCase(
         activity: HangoutActivity? = null,
     ): Hangout {
         require(friendIds.isNotEmpty()) { "Pick at least one friend" }
+        val place = place(placeName, location)
+        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity)
+        hangouts.add(hangout)
+        return hangout
+    }
+
+    /** Where a meetup was: a named place near [location] (F11), a typed name, bare coordinates, or nothing. */
+    suspend fun place(placeName: String?, location: GeoPoint?): Place? {
         val name = placeName?.trim()?.ifBlank { null }
         val named = location?.let { namedPlace(name, it) }
-        val place = if (name == null && location == null) {
+        return if (name == null && location == null) {
             null
         } else {
             Place(named?.name ?: name, location?.latitude, location?.longitude, named?.id)
         }
-        val hangout = Hangout(ids.next(), friendIds.distinct(), at ?: clock.now(), place, note.trim(), activity)
-        hangouts.add(hangout)
-        return hangout
     }
 
     /**

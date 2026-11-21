@@ -1,17 +1,21 @@
 package com.neteinstein.goodcompany.feature.friends
 
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
+import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
+import com.neteinstein.goodcompany.core.testing.Fixtures
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
 import com.neteinstein.goodcompany.core.testing.runViewModelTest
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineMessage
 import com.neteinstein.goodcompany.feature.friends.ui.screens.timeline.FriendTimelineViewModel
+import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -24,7 +28,7 @@ class FriendTimelineViewModelTest {
     private val ana = FriendId("ana")
     private val g = TestGraph(listOf(friend("ana"), friend("rui")))
 
-    private fun vm() = FriendTimelineViewModel(
+    private fun vm(g: TestGraph = this.g) = FriendTimelineViewModel(
         ana,
         g.observeTimeline,
         g.observeFriends,
@@ -32,6 +36,8 @@ class FriendTimelineViewModelTest {
         g.restoreTimelineEntry,
         g.importChat,
         g.clock,
+        g.editTimelineEntry,
+        g.updateFriend,
     )
 
     private suspend fun seed() {
@@ -91,5 +97,40 @@ class FriendTimelineViewModelTest {
         val day = state.value.months.flatMap { it.entries }.single()
         assertIs<TimelineEntry.Contact>(day)
         assertEquals(InteractionType.WHATSAPP, day.interaction.type)
+    }
+
+    @Test
+    fun newsAndGiftsEditInPlace_blankTextChangesNothing() = runViewModelTest {
+        val g = TestGraph(
+            listOf(
+                friend("ana") {
+                    copy(
+                        lifeUpdates = listOf(LifeUpdate("u1", "New job", Fixtures.at(2026, 3, 1))),
+                        gifts = listOf(Gift("g1", "Book", note = "Signed", givenOn = LocalDate(2026, 2, 1))),
+                    )
+                },
+            ),
+        )
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        val entries = state.value.months.flatMap { it.entries }
+        val news = entries.filterIsInstance<TimelineEntry.WhatsNew>().single()
+        val gift = entries.filterIsInstance<TimelineEntry.GiftGiven>().single()
+
+        vm.onEditNews(news, "Started at the museum")
+        vm.onEditNews(news, " ")
+        vm.onEditGift(gift.gift, " Poster ", "Framed")
+        vm.onEditGift(gift.gift, "", "x")
+
+        val ana = g.friendRepo.get(this@FriendTimelineViewModelTest.ana)!!
+        assertEquals("Started at the museum", ana.lifeUpdates.single().text)
+        assertEquals(Fixtures.at(2026, 3, 1), ana.lifeUpdates.single().addedAt)
+        val edited = ana.gifts.single()
+        assertEquals("Poster", edited.title)
+        assertEquals("Framed", edited.note)
+        assertEquals(LocalDate(2026, 2, 1), edited.givenOn)
+        // The timeline follows.
+        val titles = state.value.months.flatMap { it.entries }.filterIsInstance<TimelineEntry.GiftGiven>().map { it.gift.title }
+        assertEquals(listOf("Poster"), titles)
     }
 }

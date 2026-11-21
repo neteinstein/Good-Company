@@ -672,4 +672,6 @@
     <string name="notif_reminder_overdue_body">Rappel en retard</string>
     <string name="notif_test_title">Good Company</string>
     <string name="notif_test_body">Les notifications fonctionnent. Voici à quoi elles ressembleront.</string>
+    <string name="tl_entry_options">Modifier ou supprimer</string>
+    <string name="log_title_edit">Modifier l’entrée</string>
 </resources>

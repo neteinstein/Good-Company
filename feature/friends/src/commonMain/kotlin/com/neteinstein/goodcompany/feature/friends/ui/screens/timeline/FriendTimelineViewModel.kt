@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.LogKind
+import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
@@ -13,6 +17,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.Timeline
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineFilter
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineMonth
+import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -50,7 +55,7 @@ data class FriendTimelineUiState(
     val today: LocalDate = LocalDate(2000, 1, 1),
 )
 
-/** "Ana's timeline": every entry, filter chips, delete with Undo, and the WhatsApp import in the overflow menu. */
+/** "Ana's timeline": every entry, filter chips, edit (issue #102), delete with Undo, and the WhatsApp import in the overflow menu. */
 class FriendTimelineViewModel(
     private val friendId: FriendId,
     observeTimeline: ObserveTimelineUseCase,
@@ -59,6 +64,8 @@ class FriendTimelineViewModel(
     private val restoreEntry: RestoreTimelineEntryUseCase,
     private val importChat: ImportChatUseCase,
     private val clock: AppClock,
+    private val editEntry: EditTimelineEntryUseCase,
+    private val updateFriend: UpdateFriendUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendTimelineUiState())
 
@@ -92,6 +99,22 @@ class FriendTimelineViewModel(
         viewModelScope.launch {
             restoreEntry(entry)
             local.update { it.copy(undo = null) }
+        }
+    }
+
+    /** "What's new" edited in its dialog (issue #102): the text changes, the date stays. */
+    fun onEditNews(entry: TimelineEntry.WhatsNew, text: String) {
+        if (text.isBlank()) return
+        viewModelScope.launch { runCatching { editEntry(entry, LogRequest(listOf(friendId), LogKind.JOURNAL, note = text)) } }
+    }
+
+    /** A gift given opens the gift (issue #102): its title and note change; it stays given. */
+    fun onEditGift(gift: Gift, title: String, note: String) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            updateFriend(friendId) { f ->
+                f.copy(gifts = f.gifts.map { if (it.id == gift.id) it.copy(title = title.trim(), note = note.trim()) else it })
+            }
         }
     }
 

@@ -42,6 +42,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteFriendUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DeleteReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.DeleteTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DismissIdeaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
@@ -64,6 +65,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestoreAttachmentUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreGroupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
@@ -75,6 +77,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Tag
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateFriendUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -133,6 +136,9 @@ sealed interface FriendDetailMessage {
     data object FeedError : FriendDetailMessage
 
     data object AddedToNews : FriendDetailMessage
+
+    /** Something deleted from the page (issue #102); offered with "Undo". */
+    data object Removed : FriendDetailMessage
 
     /** The picked picture couldn't be read (or no picture came back). */
     data object PhotoUnreadable : FriendDetailMessage
@@ -211,7 +217,22 @@ sealed interface SavedEdit {
 
     /** A circle as it was before they were put in or taken out (issue #70). */
     data class CircleBefore(val circle: FriendGroup) : SavedEdit
+
+    /** "What's new" before a line was deleted (issue #102). */
+    data class NewsBefore(val updates: List<LifeUpdate>) : SavedEdit
+
+    /** Important moments before one was deleted (issue #102). */
+    data class MomentsBefore(val events: List<ImportantEvent>) : SavedEdit
+
+    /** Every taste list before one was deleted (issue #102). */
+    data class TastesBefore(val friend: Friend) : SavedEdit
+
+    /** A timeline entry deleted from the person's page (issue #102). */
+    data class EntryRemoved(val entry: TimelineEntry) : SavedEdit
 }
+
+/** Where a taste chip lives on Tastes: the three kinds, likes and dislikes. */
+enum class TasteSlot { FOOD, DRINK, INTEREST, LIKE, DISLIKE }
 
 /** A deleted "More about" line and where it was, kept for "Undo". */
 data class RemovedCustomField(val field: CustomField, val index: Int)
@@ -318,6 +339,8 @@ class FriendDetailViewModel(
     private val links: PersonLinkUseCases,
     private val clock: AppClock,
     private val ids: IdGenerator,
+    private val deleteEntry: DeleteTimelineEntryUseCase,
+    private val restoreEntry: RestoreTimelineEntryUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(FriendDetailUiState())
 
@@ -357,7 +380,11 @@ class FriendDetailViewModel(
     private fun say(message: FriendDetailMessage) = local.update { it.copy(message = message) }
 
     /** Like [edit], then "Saved" with Undo; [before] records what the change replaces. Nothing changed, nothing said. */
-    private fun editWithUndo(before: (Friend) -> SavedEdit, transform: (Friend) -> Friend) {
+    private fun editWithUndo(
+        before: (Friend) -> SavedEdit,
+        message: FriendDetailMessage = FriendDetailMessage.Saved,
+        transform: (Friend) -> Friend,
+    ) {
         viewModelScope.launch {
             var undo: SavedEdit? = null
             updateFriend(friendId) { f ->
@@ -365,7 +392,7 @@ class FriendDetailViewModel(
                 if (next != f) undo = before(f)
                 next
             }
-            undo?.let { saved -> local.update { it.copy(undoSave = saved, message = FriendDetailMessage.Saved) } }
+            undo?.let { saved -> local.update { it.copy(undoSave = saved, message = message) } }
         }
     }
 
@@ -393,6 +420,23 @@ class FriendDetailViewModel(
                     f.copy(gifts = f.gifts.map { if (it.id == undo.gift.id) undo.gift else it })
                 }
                 is SavedEdit.KidAdded -> deleteFriend(undo.id)
+                is SavedEdit.NewsBefore -> updateFriend(friendId) { it.copy(lifeUpdates = undo.updates) }
+                is SavedEdit.MomentsBefore -> updateFriend(friendId) { it.copy(importantEvents = undo.events) }
+                is SavedEdit.TastesBefore -> updateFriend(friendId) { f ->
+                    val t = undo.friend
+                    f.copy(
+                        food = t.food,
+                        foodAddedAt = t.foodAddedAt,
+                        drinks = t.drinks,
+                        drinksAddedAt = t.drinksAddedAt,
+                        interests = t.interests,
+                        interestsAddedAt = t.interestsAddedAt,
+                        likes = t.likes,
+                        likesAddedAt = t.likesAddedAt,
+                        dislikes = t.dislikes,
+                    )
+                }
+                is SavedEdit.EntryRemoved -> restoreEntry(undo.entry)
                 is SavedEdit.CircleBefore -> restoreGroup(undo.circle)
                 is SavedEdit.RelationToMeBefore -> links.setRelationToMe(friendId, undo.relation, undo.pronouns)
                 is SavedEdit.LinkBefore -> {
@@ -610,6 +654,34 @@ class FriendDetailViewModel(
         }
     }
 
+    /** A taste chip renamed in its dialog (issue #102): same place in its list; a name it already has just merges. */
+    fun onRenameTaste(slot: TasteSlot, old: String, new: String) {
+        val name = new.trim()
+        if (name.isEmpty() || name == old) return
+        fun List<String>.renamed() = map { if (it == old) name else it }.distinct()
+        fun Map<String, Instant>.renamed() = this[old]?.let { at -> (this - old) + (name to (this[name] ?: at)) } ?: this
+        edit { f ->
+            when (slot) {
+                TasteSlot.FOOD -> f.copy(food = f.food.renamed(), foodAddedAt = f.foodAddedAt.renamed())
+                TasteSlot.DRINK -> f.copy(drinks = f.drinks.renamed(), drinksAddedAt = f.drinksAddedAt.renamed())
+                TasteSlot.INTEREST -> f.copy(interests = f.interests.renamed(), interestsAddedAt = f.interestsAddedAt.renamed())
+                TasteSlot.LIKE -> f.copy(likes = f.likes.renamed(), likesAddedAt = f.likesAddedAt.renamed())
+                TasteSlot.DISLIKE -> f.copy(dislikes = f.dislikes.renamed())
+            }
+        }
+    }
+
+    /** A taste chip deleted (issue #102), with Undo. */
+    fun onDeleteTaste(slot: TasteSlot, value: String) = editWithUndo(before = { SavedEdit.TastesBefore(it) }, FriendDetailMessage.Removed) { f ->
+        when (slot) {
+            TasteSlot.FOOD -> f.copy(food = f.food - value, foodAddedAt = f.foodAddedAt - value)
+            TasteSlot.DRINK -> f.copy(drinks = f.drinks - value, drinksAddedAt = f.drinksAddedAt - value)
+            TasteSlot.INTEREST -> f.copy(interests = f.interests - value, interestsAddedAt = f.interestsAddedAt - value)
+            TasteSlot.LIKE -> f.copy(likes = f.likes - value, likesAddedAt = f.likesAddedAt - value)
+            TasteSlot.DISLIKE -> f.copy(dislikes = f.dislikes - value)
+        }
+    }
+
     // --- "More about" (custom fields) ---------------------------------------------------------------------------------
 
     fun onSaveCustomField(id: String?, label: String, value: String) {
@@ -685,7 +757,22 @@ class FriendDetailViewModel(
         edit { f -> f.copy(importantEvents = (f.importantEvents + event).sortedBy { it.date }) }
     }
 
-    fun onRemoveEvent(id: String) = edit { f -> f.copy(importantEvents = f.importantEvents.filterNot { it.id == id }) }
+    /** Deletes an important moment, with Undo (issue #102). */
+    fun onRemoveEvent(id: String) = editWithUndo(before = { SavedEdit.MomentsBefore(it.importantEvents) }, FriendDetailMessage.Removed) { f ->
+        f.copy(importantEvents = f.importantEvents.filterNot { it.id == id })
+    }
+
+    /** An important moment edited in its dialog (issue #102). */
+    fun onEditEvent(id: String, title: String, date: LocalDate, remindDaysBefore: Int) {
+        if (title.isBlank()) return
+        edit { f ->
+            f.copy(
+                importantEvents = f.importantEvents.map {
+                    if (it.id == id) it.copy(title = title.trim(), date = date, remindDaysBefore = remindDaysBefore.coerceAtLeast(0)) else it
+                }.sortedBy { it.date },
+            )
+        }
+    }
 
     // --- What's new (life updates) ----------------------------------------------------------------------------------
 
@@ -696,7 +783,16 @@ class FriendDetailViewModel(
         edit { f -> f.copy(lifeUpdates = f.lifeUpdates + update) }
     }
 
-    fun onRemoveLifeUpdate(id: String) = edit { f -> f.copy(lifeUpdates = f.lifeUpdates.filterNot { it.id == id }) }
+    /** Deletes a "What's new" line, with Undo (issue #102). */
+    fun onRemoveLifeUpdate(id: String) = editWithUndo(before = { SavedEdit.NewsBefore(it.lifeUpdates) }, FriendDetailMessage.Removed) { f ->
+        f.copy(lifeUpdates = f.lifeUpdates.filterNot { it.id == id })
+    }
+
+    /** A "What's new" line edited in its dialog (issue #102): the text changes, when you heard it doesn't. */
+    fun onEditLifeUpdate(id: String, text: String) {
+        if (text.isBlank()) return
+        edit { f -> f.copy(lifeUpdates = f.lifeUpdates.map { if (it.id == id) it.copy(text = text.trim()) else it }) }
+    }
 
     // --- Blogs & feeds -----------------------------------------------------------------------------------------------
 
@@ -733,6 +829,21 @@ class FriendDetailViewModel(
         if (title.isBlank()) return
         val gift = Gift(ids.next(), title.trim(), note.trim())
         edit { f -> f.copy(gifts = f.gifts + gift) }
+    }
+
+    /** A gift's title and note edited (a gift given opens here from the timeline, issue #102). */
+    fun onEditGift(id: String, title: String, note: String) {
+        if (title.isBlank()) return
+        edit { f -> f.copy(gifts = f.gifts.map { if (it.id == id) it.copy(title = title.trim(), note = note.trim()) else it }) }
+    }
+
+    /** Deletes a timeline entry from the page's History (issue #102), with Undo. Gifts given aren't deleted here. */
+    fun onDeleteEntry(entry: TimelineEntry) {
+        if (!entry.deletable) return
+        viewModelScope.launch {
+            deleteEntry(entry)
+            offerUndo(SavedEdit.EntryRemoved(entry), FriendDetailMessage.Removed)
+        }
     }
 
     fun onRemoveGift(id: String) = edit { f -> f.copy(gifts = f.gifts.filterNot { it.id == id }) }

@@ -694,4 +694,6 @@
     <string name="notif_reminder_overdue_body">Memento întârziat</string>
     <string name="notif_test_title">Good Company</string>
     <string name="notif_test_body">Notificările funcționează. Așa vor arăta.</string>
+    <string name="tl_entry_options">Editează sau șterge</string>
+    <string name="log_title_edit">Editează intrarea</string>
 </resources>

@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogInteractionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
@@ -17,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlaceBookUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +48,8 @@ data class LogDraft(
     val circleId: String? = null,
     /** [LogKind.OTHER] only: what it was ("Sent a postcard"). */
     val label: String = "",
+    /** Editing a timeline entry (issue #102) rather than logging a new one. */
+    val editing: Boolean = false,
 )
 
 /**
@@ -72,7 +76,12 @@ class LogSheetModel(
     private val clock: AppClock,
     /** The plan occurrence this log answers, if any. */
     val plan: PlanOccurrence? = null,
+    /** Saves an edited timeline entry (issue #102); only needed by the Log sheet. */
+    private val editEntry: EditTimelineEntryUseCase? = null,
 ) {
+    /** The timeline entry being edited, set by [startEditing]. */
+    private var editing: TimelineEntry? = null
+
     private val mutableDraft = MutableStateFlow(initial.copy(people = initial.people.distinct(), date = minOf(initial.date, clock.today())))
 
     /** What's chosen so far ("More details" carries it over to the full Log sheet). */
@@ -107,6 +116,7 @@ class LogSheetModel(
             circles = circles.map { it.group }.sortedBy { it.name.lowercase() },
             circle = circle?.group,
             circleMembers = circle?.members.orEmpty(),
+            editing = d.editing,
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5_000), initialSheet())
 
@@ -135,6 +145,25 @@ class LogSheetModel(
     fun prefill(
         transform: (LogDraft) -> LogDraft,
     ) = mutableDraft.update { d -> transform(d).let { it.copy(people = it.people.distinct(), date = minOf(it.date, clock.today())) } }
+
+    /** Opens the sheet on [entry] as [request] has it (issue #102); saving then edits it instead of logging anew. */
+    fun startEditing(entry: TimelineEntry, request: LogRequest) {
+        editing = entry
+        prefill {
+            it.copy(
+                kind = request.kind,
+                people = request.friendIds,
+                date = request.date ?: it.date,
+                note = request.note,
+                placeName = request.placeName.orEmpty(),
+                location = request.location,
+                activity = request.activity,
+                label = request.label,
+                circleId = null,
+                editing = true,
+            )
+        }
+    }
 
     fun onKind(kind: LogKind) = mutableDraft.update { it.copy(kind = kind) }
 
@@ -188,22 +217,28 @@ class LogSheetModel(
         // Only people who exist: an app-icon shortcut can name someone deleted since (goodcompany://log/<id>).
         val people = current.people
         mutableDraft.update { it.copy(saving = true) }
+        val meetup = d.kind == LogKind.MEETUP
+        val request = LogRequest(
+            friendIds = people.map { it.id },
+            kind = d.kind,
+            date = d.date,
+            note = d.note,
+            placeName = placeName.takeIf { meetup },
+            location = d.location.takeIf { meetup },
+            activity = d.activity.takeIf { meetup },
+            label = d.label.takeIf { d.kind == LogKind.OTHER }.orEmpty(),
+        )
+        val edited = editing
+        if (edited != null && editEntry != null) {
+            scope.launch {
+                val saved = runCatching { editEntry.invoke(edited, request) }.isSuccess
+                mutableDraft.update { it.copy(saving = false) }
+                if (saved) onSaved()
+            }
+            return
+        }
         scope.launch {
-            val meetup = d.kind == LogKind.MEETUP
-            val result = runCatching {
-                logInteraction(
-                    LogRequest(
-                        friendIds = people.map { it.id },
-                        kind = d.kind,
-                        date = d.date,
-                        note = d.note,
-                        placeName = placeName.takeIf { meetup },
-                        location = d.location.takeIf { meetup },
-                        activity = d.activity.takeIf { meetup },
-                        label = d.label.takeIf { d.kind == LogKind.OTHER }.orEmpty(),
-                    ),
-                )
-            }.getOrNull()
+            val result = runCatching { logInteraction(request) }.getOrNull()
             // Answering a plan: close that occurrence (the meetup, call or chat is already logged), remembering it for Undo.
             val before = if (plan != null && (result is LogResult.Met || result is LogResult.Contacts)) {
                 observePlans().first().firstOrNull { it.id == plan.planId }

@@ -12,6 +12,8 @@ import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
+import com.neteinstein.goodcompany.core.domain.model.Interaction
+import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
@@ -44,6 +46,7 @@ import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.LinkEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.PlanEditing
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.RelativeEdit
 import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.SavedEdit
+import com.neteinstein.goodcompany.feature.friends.ui.screens.detail.TasteSlot
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -100,6 +103,8 @@ class FriendDetailViewModelTest {
         g.personLinks,
         g.clock,
         g.ids,
+        g.deleteTimelineEntry,
+        g.restoreTimelineEntry,
     )
 
     @Test
@@ -882,5 +887,78 @@ class FriendDetailViewModelTest {
         assertEquals(LinkType.COLLEAGUE, state.value.links.single().role)
         vm.onUndoSave()
         assertEquals(link, state.value.links.single().link)
+    }
+
+    // --- Issue #102: edit and delete every entry ------------------------------------------------------------------
+
+    @Test
+    fun newsEditsInPlace_andDeleteOffersUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddLifeUpdate("New job")
+        val id = g.friendRepo.get(FriendId("ana"))!!.lifeUpdates.single().id
+        vm.onEditLifeUpdate(id, " Promoted ")
+        assertEquals("Promoted", g.friendRepo.get(FriendId("ana"))!!.lifeUpdates.single().text)
+
+        vm.onRemoveLifeUpdate(id)
+        assertTrue(g.friendRepo.get(FriendId("ana"))!!.lifeUpdates.isEmpty())
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals("Promoted", g.friendRepo.get(FriendId("ana"))!!.lifeUpdates.single().text)
+    }
+
+    @Test
+    fun momentsEditInPlace_andDeleteOffersUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddEvent("Exam", g.clock.today(), 1)
+        val id = g.friendRepo.get(FriendId("ana"))!!.importantEvents.single().id
+        vm.onEditEvent(id, "Final exam", g.clock.today(), 3)
+        val edited = g.friendRepo.get(FriendId("ana"))!!.importantEvents.single()
+        assertEquals("Final exam", edited.title)
+        assertEquals(3, edited.remindDaysBefore)
+
+        vm.onRemoveEvent(id)
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals(listOf(edited), g.friendRepo.get(FriendId("ana"))!!.importantEvents)
+    }
+
+    @Test
+    fun tastesRenameInPlace_andDeleteOffersUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddTastes(TasteKind.FOOD, listOf("sushi", "ramen"))
+        vm.onRenameTaste(TasteSlot.FOOD, "sushi", " sashimi ")
+        vm.onRenameTaste(TasteSlot.LIKE, "jazz", "blues")
+        val f = g.friendRepo.get(FriendId("ana"))!!
+        assertEquals(listOf("sashimi", "ramen"), f.food)
+        assertTrue("sashimi" in f.foodAddedAt && "sushi" !in f.foodAddedAt)
+        assertEquals(listOf("blues"), f.likes)
+
+        vm.onDeleteTaste(TasteSlot.FOOD, "ramen")
+        assertEquals(listOf("sashimi"), g.friendRepo.get(FriendId("ana"))!!.food)
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals(listOf("sashimi", "ramen"), g.friendRepo.get(FriendId("ana"))!!.food)
+    }
+
+    @Test
+    fun aTimelineEntryDeletedOnThePageComesBackWithUndo_andGiftsEditInPlace() = runViewModelTest {
+        g.interactionRepo.addAll(listOf(Interaction(FriendId("ana"), InteractionType.CALL, g.clock.now(), id = "c1")))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val call = state.value.detail!!.timeline.first { it.key == "interaction-c1" }
+        vm.onDeleteEntry(call)
+        assertTrue(g.interactionRepo.interactions.value.isEmpty())
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals(listOf("c1"), g.interactionRepo.interactions.value.map { it.id })
+
+        vm.onSaveGift("Book", "")
+        val gift = g.friendRepo.get(FriendId("ana"))!!.gifts.single()
+        vm.onEditGift(gift.id, "Signed book", "From Porto")
+        assertEquals("Signed book", g.friendRepo.get(FriendId("ana"))!!.gifts.single().title)
+        assertEquals("From Porto", g.friendRepo.get(FriendId("ana"))!!.gifts.single().note)
     }
 }

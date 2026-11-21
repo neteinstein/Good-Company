@@ -16,6 +16,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Automatic rows (call log, chat import) dedupe through `Interaction.automaticId`; manual rows never dedupe.
 - Places are GPS only: never call a geocoding, place-search or map service.
 - Calendar events live in memory: never stored, backed up, or sent to the AI.
+- **Editing an entry (issue #102)** goes through `EditTimelineEntryUseCase(entry, LogRequest)` (`usecase/TimelineEdit.kt`);
+  delete stays `DeleteTimelineEntryUseCase` with `RestoreTimelineEntryUseCase` for Undo. The Log sheet edits meetups,
+  contacts and journal entries (`LogInteractionRoute.edit(friendId, key)` → `LogPrefill.edit` → `LogSheetModel.startEditing`,
+  prefilled by `TimelineEntry.asLogRequest`); news and gifts given edit in their own dialogs; circle shares are delete only.
+  Same day keeps the time, another day is noon (today: now). Contact rows keep their ids (an automatic call keeps its
+  automatic id, so a re-sync doesn't re-add it); a single row that gains people batches under its own id. A kind change
+  across meetup / contact / journal deletes and re-logs at the same instant, and the share it came from is relinked.
+  The rows are `EditableTimelineEntry` (`:core:ui`: tap edits, long press or ⋮ → `EditDeleteMenu`), so any screen can host
+  the timeline. Edits have no Undo (they save on Save); deletes do.
 - Route parameters on `LogInteractionRoute` / `WeMetRoute` are documented in `composeApp/.../navigation/Routes.kt`; keep
   those KDocs current.
 - **"Caught up" (issue #101, was "We met").** The panel behind `WeMetRoute` (code names keep "WeMet"/`MET`) starts with
