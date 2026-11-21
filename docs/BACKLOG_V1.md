@@ -1,8 +1,8 @@
 # Backlog V1 – o que ainda falta (14-11-2026)
 
 > Base: `origin/main` @ `86e8fd1` (depois dos PRs #28–#33). Fonte: as decisões datadas em
-> [`PRODUCT_BRIEF.md`](PRODUCT_BRIEF.md) (D1–D8, C1–C2, F1–F20 e as de 14-11) e a
-> [análise de lacunas](GAP_ANALYSIS_V1.md). C2 diz que a V1 inclui tudo, sem fases.
+> [`PRODUCT_BRIEF.md`](PRODUCT_BRIEF.md) (D1–D8, C1–C2, F1–F20 e as de 14-11).
+> C2 diz que a V1 inclui tudo, sem fases.
 > Já feito: perfil completo (#20), timeline e "Log" (#21), círculos (#22), atalhos do ícone (#23),
 > partilha com anexos (#24), lista de contactos com checkboxes (#25), SQLite (#14), fotos (#15).
 
