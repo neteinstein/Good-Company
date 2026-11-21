@@ -689,7 +689,7 @@
     <string name="notif_daily_log_body">Toca para registrarlo mientras lo recuerdas.</string>
     <string name="legend_title">Qué significan los colores</string>
     <string name="legend_ring">El anillo alrededor de la foto muestra lo cálida que está la relación:</string>
-    <string name="legend_no_ring">Sin anillo: no estás siguiendo a esta persona.</string>
+    <string name="legend_no_ring">Sin anillo: “Mantener el contacto” está apagado para esta persona.</string>
     <string name="legend_dots">Un punto por cada círculo en el que está, en el color del círculo.</string>
     <string name="legend_got_it">Entendido</string>
 </resources>

@@ -229,7 +229,8 @@ sealed interface SavedEdit {
 
     data class KidAdded(val id: FriendId) : SavedEdit
 
-    data class RelationToMeBefore(val relation: LinkType?, val pronouns: Pronouns?) : SavedEdit
+    /** [tracksKeepInTouch] too: becoming your kid or partner turns "Stay in touch" off (issue #132). */
+    data class RelationToMeBefore(val relation: LinkType?, val pronouns: Pronouns?, val tracksKeepInTouch: Boolean = true) : SavedEdit
 
     /** [previous] null = the link was new; [other]'s pronouns are set from the same sheet. */
     data class LinkBefore(val savedId: String, val previous: PersonLink?, val other: FriendId, val otherPronouns: Pronouns?) : SavedEdit
@@ -483,7 +484,7 @@ class FriendDetailViewModel(
                 }
                 is SavedEdit.EntryRemoved -> restoreEntry(undo.entry)
                 is SavedEdit.CircleBefore -> restoreGroup(undo.circle)
-                is SavedEdit.RelationToMeBefore -> links.setRelationToMe(friendId, undo.relation, undo.pronouns)
+                is SavedEdit.RelationToMeBefore -> links.setRelationToMe(friendId, undo.relation, undo.pronouns, undo.tracksKeepInTouch)
                 is SavedEdit.LinkBefore -> {
                     val previous = undo.previous
                     if (previous == null) links.delete(undo.savedId) else links.restore(previous)
@@ -655,7 +656,7 @@ class FriendDetailViewModel(
         viewModelScope.launch {
             links.setRelationToMe(friendId, relation, pronouns)
             if (friend != null && (friend.relationToMe != relation || friend.pronouns != pronouns)) {
-                offerUndo(SavedEdit.RelationToMeBefore(friend.relationToMe, friend.pronouns))
+                offerUndo(SavedEdit.RelationToMeBefore(friend.relationToMe, friend.pronouns, friend.tracksKeepInTouch))
             }
         }
     }

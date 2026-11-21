@@ -153,7 +153,7 @@
     <string name="event_week">Una semana antes</string>
     <string name="prefs_pause">Pausar avisos para quedar</string>
     <string name="prefs_pause_hint">Sin avisos de «toca quedar» hasta que lo reactives. El historial y los cumpleaños se quedan.</string>
-    <string name="prefs_tracking">Seguimiento del contacto</string>
+    <string name="prefs_tracking">Mantener el contacto</string>
     <string name="prefs_tracking_hint">Calidez, un ritmo para quedar y avisos para poneros al día. Apágalo para quien ves cada día: su cronología, recordatorios y cumpleaños se quedan.</string>
     <string name="prefs_contact_counts">Las llamadas y los chats cuentan como ponerse al día</string>
     <string name="prefs_contact_counts_hint">Para amigos lejos: una llamada o un chat reinicia el ritmo, no solo quedar.</string>

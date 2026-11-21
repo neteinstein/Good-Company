@@ -142,11 +142,16 @@ class RestoreLinkUseCase(private val links: PersonLinkRepository) {
     suspend operator fun invoke(link: PersonLink) = links.upsert(link)
 }
 
-/** "Rui is your…" (F6): what a friend is to you, and the words used for them. A family relation puts them in Family. */
+/**
+ * "Rui is your…" (F6): what a friend is to you, and the words used for them. A family relation puts them in Family.
+ * Becoming your kid or partner turns "Stay in touch" off (issue #132, [StayInTouch.afterRelationToMe]);
+ * [tracksKeepInTouch] sets it instead (Undo puts the earlier value back).
+ */
 class SetRelationToMeUseCase(private val friends: FriendRepository) {
-    suspend operator fun invoke(id: FriendId, relation: LinkType?, pronouns: Pronouns?) {
+    suspend operator fun invoke(id: FriendId, relation: LinkType?, pronouns: Pronouns?, tracksKeepInTouch: Boolean? = null) {
         val friend = friends.get(id) ?: return
-        friends.upsert(friend.copy(relationToMe = relation, pronouns = pronouns))
+        val related = StayInTouch.afterRelationToMe(friend, relation).copy(pronouns = pronouns)
+        friends.upsert(tracksKeepInTouch?.let { related.copy(tracksKeepInTouch = it) } ?: related)
     }
 }
 
@@ -162,6 +167,7 @@ class SetPronounsUseCase(private val friends: FriendRepository) {
  * "Add as a person" (question 1): turns one of a friend's relatives into a friend of their own, linked to them, and
  * takes the relative off the friend (the link replaces it). Name, birthday and its reminder, likes and note come along.
  * Pets and "other" relatives can't be added this way (see [PersonLinks.typeFor]). Returns the new friend's id.
+ * They are a reference, not someone you keep up with yourself, so "Stay in touch" starts off (issue #132).
  */
 class AddRelativeAsPersonUseCase(
     private val friends: FriendRepository,
@@ -182,6 +188,7 @@ class AddRelativeAsPersonUseCase(
             notifyBirthday = relative.notifyBirthday,
             likes = relative.likes,
             likesAddedAt = relative.likes.associateWith { now },
+            tracksKeepInTouch = false,
         )
         friends.upsert(person)
         // The relative's note becomes their first dated note (issue #103): free-text notes are no longer shown.
