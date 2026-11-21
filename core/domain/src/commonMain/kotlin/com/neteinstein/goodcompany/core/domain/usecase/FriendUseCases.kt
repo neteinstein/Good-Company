@@ -78,7 +78,7 @@ class ObserveFriendsUseCase(
                 lastContact = contact[f.id],
                 nextBirthday = f.birthday?.nextOccurrence(today),
                 meetupOverdue = f.id in overdue,
-                warmth = Warmth.scoreOrNull(f, hs, ints, cadence, today, clock.timeZone),
+                warmth = Warmth.scoreOrNull(f, hs, ints, rules.warmthDaysFor(f), today, clock.timeZone),
                 cadenceDays = cadence,
                 parents = parents[f.id].orEmpty(),
             )
@@ -170,7 +170,7 @@ class ObserveFriendDetailUseCase(
             },
             messageCount = msgs.count { it.friendId == id },
             ideas = ideaList.filter { id in it.friendIds && !it.dismissed }.sortedByDescending { it.createdAt },
-            warmth = Warmth.scoreOrNull(friend, hs, ints, CadenceRules.from(s).cadenceFor(friend), clock.today(), clock.timeZone),
+            warmth = Warmth.scoreOrNull(friend, hs, ints, CadenceRules.from(s).warmthDaysFor(friend), clock.today(), clock.timeZone),
             cadenceDays = CadenceRules.from(s).cadenceFor(friend),
             cadenceSource = CadenceRules.from(s).sourceFor(friend),
             groups = gs.filter { id in it.memberIds },

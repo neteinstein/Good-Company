@@ -90,6 +90,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
 import com.neteinstein.goodcompany.feature.friends.resources.touch_circle
 import com.neteinstein.goodcompany.feature.friends.resources.touch_custom
 import com.neteinstein.goodcompany.feature.friends.resources.touch_from_circle
+import com.neteinstein.goodcompany.feature.friends.resources.touch_from_closeness
+import com.neteinstein.goodcompany.feature.friends.resources.touch_from_closeness_none
+import com.neteinstein.goodcompany.feature.friends.resources.touch_rhythm_off_hint
 import com.neteinstein.goodcompany.feature.friends.resources.touch_snooze_title
 import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
@@ -186,9 +189,21 @@ internal fun EditPersonDialog(
                                 Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
+                                // Issue #139: From closeness (null) · Off (no rhythm) · a custom rhythm.
+                                val level = state.cadenceRules.levelDays(f)
                                 FilterChip(
                                     f.meetEveryDays == null,
                                     { actions.onMeetEveryChange(null) },
+                                    label = {
+                                        Text(
+                                            level?.let { stringResource(Res.string.touch_from_closeness, everyNDays(it).lowercaseFirst()) }
+                                                ?: stringResource(Res.string.touch_from_closeness_none),
+                                        )
+                                    },
+                                )
+                                FilterChip(
+                                    f.rhythmOff,
+                                    { actions.onMeetEveryChange(Friend.RHYTHM_OFF) },
                                     label = { Text(stringResource(CoreRes.string.cadence_off)) },
                                 )
                                 RHYTHMS.forEach { d ->
@@ -196,7 +211,9 @@ internal fun EditPersonDialog(
                                 }
                             }
                             val goal = detail.cadenceDays
-                            if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
+                            if (f.rhythmOff) {
+                                Hint(stringResource(Res.string.touch_rhythm_off_hint))
+                            } else if (detail.cadenceSource == CadenceRules.Source.CLOSENESS && goal != null) {
                                 Hint(stringResource(Res.string.touch_from_circle, everyNDays(goal)))
                             }
                             CatchUpPause(f, goal, state, actions)
@@ -315,3 +332,6 @@ private fun CatchUpPause(f: Friend, goal: Int?, state: FriendDetailUiState, acti
         actions.onTogglePause,
     )
 }
+
+/** "Every 2 weeks" → "every 2 weeks", for the From closeness chip. */
+private fun String.lowercaseFirst(): String = replaceFirstChar { it.lowercaseChar() }

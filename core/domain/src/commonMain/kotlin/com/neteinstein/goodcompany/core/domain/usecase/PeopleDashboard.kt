@@ -93,7 +93,7 @@ data class PeopleDashboard(
             val people = friends.filter { isYours(it, it.id in inCircles) }
             val rules = CadenceRules.from(settings)
             val show = settings.showWarmth
-            fun warmthOn(f: Friend, day: LocalDate) = Warmth.score(f, hangouts, interactions, rules.cadenceFor(f), day, zone).value
+            fun warmthOn(f: Friend, day: LocalDate) = Warmth.score(f, hangouts, interactions, rules.warmthDaysFor(f), day, zone).value
             val compareDay = today.minus(COMPARE_DAYS, DateTimeUnit.DAY)
             // Issue #115: people whose keep-in-touch tracking is off have no warmth, so they're in no average or trend
             // and never cooling; they still count as people.

@@ -227,7 +227,7 @@ class ObserveNetworkMapUseCase(
             val today = clock.today()
             val warmth = if (s.showWarmth) {
                 fs.filter { it.tracksKeepInTouch }
-                    .associate { it.id to Warmth.score(it, hs, ints, rules.cadenceFor(it), today, clock.timeZone).value }
+                    .associate { it.id to Warmth.score(it, hs, ints, rules.warmthDaysFor(it), today, clock.timeZone).value }
             } else {
                 null
             }

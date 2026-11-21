@@ -65,6 +65,9 @@
     <string name="closeness_no_rhythm">Pas de rappels pour se revoir · les anniversaires restent</string>
     <string name="touch_custom">Rythme personnalisé</string>
     <string name="touch_from_circle">Selon leur proximité : %1$s</string>
+    <string name="touch_from_closeness">Selon la proximité (%1$s)</string>
+    <string name="touch_from_closeness_none">Selon la proximité (aucun)</string>
+    <string name="touch_rhythm_off_hint">Désactivé : pas de rythme de rencontre ni de rappels pour prendre des nouvelles, quelle que soit sa proximité.</string>
     <string name="warmth_title">Chaleur %1$d</string>
     <string name="tastes_title">Goûts</string>
     <string name="tastes_loves">Adore</string>

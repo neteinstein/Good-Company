@@ -27,18 +27,33 @@ data class CadenceRules(
         Closeness.ACQUAINTANCE -> acquaintanceDays?.takeIf { it > 0 }
     }
 
-    /** Null for someone with no rhythm, and always for someone whose keep-in-touch tracking is off (issue #115). */
-    fun cadenceFor(friend: Friend): Int? =
-        if (!friend.tracksKeepInTouch) null else friend.meetEveryDays?.takeIf { it > 0 } ?: levelDays(friend)
+    /**
+     * Null for someone with no rhythm: their custom rhythm is Off ([Friend.RHYTHM_OFF], issue #139), or it follows a
+     * level that has none, and always while keep-in-touch tracking is off (issue #115). A custom rhythm wins over the
+     * closeness one; null [Friend.meetEveryDays] follows closeness.
+     */
+    fun cadenceFor(friend: Friend): Int? = when {
+        !friend.tracksKeepInTouch -> null
+        friend.rhythmOff -> null
+        else -> friend.customRhythm ?: levelDays(friend)
+    }
 
     fun sourceFor(friend: Friend): Source? = when {
-        !friend.tracksKeepInTouch -> null
-        friend.meetEveryDays?.takeIf { it > 0 } != null -> Source.CUSTOM
+        !friend.tracksKeepInTouch || friend.rhythmOff -> null
+        friend.customRhythm != null -> Source.CUSTOM
         levelDays(friend) != null -> Source.CLOSENESS
         else -> null
     }
 
-    private fun levelDays(friend: Friend): Int? =
+    /**
+     * The rhythm Warmth measures against (issue #139): like [cadenceFor], but a custom Off still uses the closeness
+     * rhythm, so turning catch-ups off doesn't change how warm someone reads.
+     */
+    fun warmthDaysFor(friend: Friend): Int? =
+        if (!friend.tracksKeepInTouch) null else friend.customRhythm ?: levelDays(friend)
+
+    /** The rhythm a person's closeness gives them (what "From closeness" means on their page); null when it has none. */
+    fun levelDays(friend: Friend): Int? =
         daysFor(friend.closeness)
 
     enum class Source { CUSTOM, CLOSENESS }

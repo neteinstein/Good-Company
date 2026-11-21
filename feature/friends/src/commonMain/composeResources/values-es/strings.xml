@@ -65,6 +65,9 @@
     <string name="closeness_no_rhythm">Sin recordatorios para poneros al día · los cumpleaños siguen</string>
     <string name="touch_custom">Ritmo propio</string>
     <string name="touch_from_circle">Por su cercanía: %1$s</string>
+    <string name="touch_from_closeness">Por cercanía (%1$s)</string>
+    <string name="touch_from_closeness_none">Por cercanía (ninguno)</string>
+    <string name="touch_rhythm_off_hint">Apagado: sin ritmo para quedar ni avisos para poneros al día, sea cual sea su cercanía.</string>
     <string name="warmth_title">Calidez %1$d</string>
     <string name="tastes_title">Gustos</string>
     <string name="tastes_loves">Le encanta</string>

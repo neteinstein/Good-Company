@@ -263,6 +263,23 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun aCustomRhythmOfOff_staysOffAfterARestart_andThroughABackup() = runTest {
+        // Issue #139: 0 is Off (no rhythm), null follows closeness; neither turns into the other.
+        val from = open()
+        from.friends.upsert(friend("off") { copy(meetEveryDays = Friend.RHYTHM_OFF) })
+        from.friends.upsert(friend("level") { copy(meetEveryDays = null) })
+        from.friends.upsert(friend("weekly") { copy(meetEveryDays = 7) })
+        val back = open().friends.friends.first().associate { it.id.value to it.meetEveryDays }
+        assertEquals(mapOf("off" to 0, "level" to null, "weekly" to 7), back)
+
+        val json = ExportBackupUseCase(open().backup, clock)()
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val restored = to.backup.snapshot().friends.associate { it.id.value to it.meetEveryDays }
+        assertEquals(mapOf("off" to 0, "level" to null, "weekly" to 7), restored)
+    }
+
+    @Test
     fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
         val friend = richFriend()
         open().friends.upsert(friend)

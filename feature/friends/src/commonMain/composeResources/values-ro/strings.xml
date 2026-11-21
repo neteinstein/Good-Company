@@ -65,6 +65,9 @@
     <string name="closeness_no_rhythm">Fără mementouri de revedere · zilele de naștere rămân</string>
     <string name="touch_custom">Ritm propriu</string>
     <string name="touch_from_circle">După apropiere: %1$s</string>
+    <string name="touch_from_closeness">După apropiere (%1$s)</string>
+    <string name="touch_from_closeness_none">După apropiere (niciunul)</string>
+    <string name="touch_rhythm_off_hint">Dezactivat: fără ritm de întâlnire și fără mementouri ca să vă revedeți, indiferent de apropiere.</string>
     <string name="warmth_title">Căldură %1$d</string>
     <string name="tastes_title">Pasiuni</string>
     <string name="tastes_loves">Adoră</string>
