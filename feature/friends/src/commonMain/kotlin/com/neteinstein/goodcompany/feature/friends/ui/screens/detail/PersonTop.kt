@@ -35,11 +35,10 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -56,7 +55,6 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,18 +75,24 @@ import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyMember
+import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
 import com.neteinstein.goodcompany.core.ui.components.FamilyRing
 import com.neteinstein.goodcompany.core.ui.components.FriendAvatar
 import com.neteinstein.goodcompany.core.ui.components.InfoPill
 import com.neteinstein.goodcompany.core.ui.components.QuickAction
+import com.neteinstein.goodcompany.core.ui.components.StoryRingBox
+import com.neteinstein.goodcompany.core.ui.components.WarmthMeter
 import com.neteinstein.goodcompany.core.ui.components.avatarColors
+import com.neteinstein.goodcompany.core.ui.components.closenessIcon
+import com.neteinstein.goodcompany.core.ui.components.warmthColor
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDayPhrase
 import com.neteinstein.goodcompany.core.ui.format.relativePast
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.closenessLabel
 import com.neteinstein.goodcompany.core.ui.l10n.relationToMeLabel
+import com.neteinstein.goodcompany.core.ui.l10n.warmthLabel
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.about_preferred_badge
 import com.neteinstein.goodcompany.feature.friends.resources.circles_edit
@@ -102,10 +106,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.detail_caught_up
 import com.neteinstein.goodcompany.feature.friends.resources.detail_more_options
 import com.neteinstein.goodcompany.feature.friends.resources.detail_orphaned
 import com.neteinstein.goodcompany.feature.friends.resources.detail_seen
-import com.neteinstein.goodcompany.feature.friends.resources.edit_done
 import com.neteinstein.goodcompany.feature.friends.resources.edit_person
-import com.neteinstein.goodcompany.feature.friends.resources.editing_title
 import com.neteinstein.goodcompany.feature.friends.resources.message_sheet_title
+import com.neteinstein.goodcompany.feature.friends.resources.news_add
 import com.neteinstein.goodcompany.feature.friends.resources.photo_sheet_title
 import com.neteinstein.goodcompany.feature.friends.resources.qa_call
 import com.neteinstein.goodcompany.feature.friends.resources.qa_email
@@ -115,22 +118,27 @@ import com.neteinstein.goodcompany.feature.friends.resources.qa_text
 import com.neteinstein.goodcompany.feature.friends.resources.qa_we_met
 import com.neteinstein.goodcompany.feature.friends.resources.qa_whatsapp
 import com.neteinstein.goodcompany.feature.friends.resources.remove_person
+import com.neteinstein.goodcompany.feature.friends.resources.story_open
 import com.neteinstein.goodcompany.feature.friends.resources.tab_about
-import com.neteinstein.goodcompany.feature.friends.resources.tab_history
-import com.neteinstein.goodcompany.feature.friends.resources.tab_summary
+import com.neteinstein.goodcompany.feature.friends.resources.tab_together
 import com.neteinstein.goodcompany.feature.friends.resources.timeline_log
+import com.neteinstein.goodcompany.feature.friends.resources.warmth_title
 import org.jetbrains.compose.resources.stringResource
 
-// The top of a person's page (issue #90): the top bar, the family around the photo, the pills, circles and the four
-// actions; the bar the top shrinks into and the tabs pinned under it; and the Message sheet.
+// The top of a person's page (issues #90, #103): the top bar, the family around the photo (with the story ring), the
+// info box (closeness, warmth, birthday, last seen, circles) and the actions; the bar the top shrinks into and the
+// tabs pinned under it; and the Message sheet.
 
 /** What the top of the page does; the content composable wires these to sheets and the ViewModel. */
 internal class PersonTopActions(
     val onBack: () -> Unit,
-    val onStartEditing: () -> Unit,
-    val onDoneEditing: () -> Unit,
+    /** The pencil: the Edit person popup (issue #103). */
+    val onEditPerson: () -> Unit,
     val onRemove: () -> Unit,
+    /** The camera badge: pick a photo, or replace, crop or remove it. */
     val onPhoto: () -> Unit,
+    /** The photo itself: their catch-up story (issue #103, the Instagram model). */
+    val onOpenStory: () -> Unit,
     val onEditBirthday: () -> Unit,
     val onPickCloseness: () -> Unit,
     val onOpenCircle: (String) -> Unit,
@@ -140,6 +148,7 @@ internal class PersonTopActions(
     val onMessage: () -> Unit,
     val onWeMet: () -> Unit,
     val onRemind: () -> Unit,
+    val onAddNews: () -> Unit,
     val onLog: () -> Unit,
 )
 
@@ -148,44 +157,49 @@ internal fun callLink(
     f: Friend,
 ): String? = f.phoneNumbers.firstOrNull()?.filter { it.isDigit() || it == '+' }?.takeIf { it.isNotEmpty() }?.let { "tel:$it" }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Warmth shows for real friends while Settings → Show warmth is on (the same rule everywhere on the page). */
+internal fun showsWarmth(f: Friend, state: FriendDetailUiState): Boolean = state.showWarmth && f.isCloseFriend && state.detail != null
+
 @Composable
-internal fun PersonTop(
-    f: Friend,
-    state: FriendDetailUiState,
-    family: FamilyAround,
-    editing: Boolean,
-    actions: PersonTopActions,
-) {
-    val (start, end) = avatarColors(f.displayName)
+internal fun PersonTop(f: Friend, state: FriendDetailUiState, family: FamilyAround, actions: PersonTopActions) {
+    // Issue #103: the area behind the photo is tinted by warmth (theme tokens only); without warmth, their colours.
+    val warmth = state.detail?.warmth?.takeIf { showsWarmth(f, state) }
+    val (start, end) = if (warmth != null) {
+        warmthColor(warmth.level).let { it to it }
+    } else {
+        avatarColors(f.displayName)
+    }
     Box(Modifier.fillMaxWidth()) {
         Box(
             Modifier.matchParentSize().background(
-                Brush.verticalGradient(listOf(start.copy(alpha = 0.4f), end.copy(alpha = 0.16f), MaterialTheme.colorScheme.background)),
+                Brush.verticalGradient(listOf(start.copy(alpha = 0.4f), end.copy(alpha = 0.14f), MaterialTheme.colorScheme.background)),
             ),
         )
         Column(Modifier.fillMaxWidth().statusBarsPadding().animateContentSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (editing) EditingBar(f, actions.onDoneEditing) else ViewBar(f, actions)
+            ViewBar(f, actions)
             val photoLabel = if (f.avatar == null) {
                 stringResource(Res.string.detail_add_photo)
             } else {
                 stringResource(Res.string.photo_sheet_title, f.displayName.substringBefore(' '))
             }
+            val storyLabel = stringResource(Res.string.story_open, f.displayName.substringBefore(' '))
             FamilyRing(
                 family = family,
                 today = state.today,
                 onOpen = actions.onOpenFamily,
                 onMore = actions.onMoreFamily,
                 photo = {
-                    // F14: the avatar (and its camera badge) is always tappable: pick a photo, or replace, crop or remove it.
+                    // The photo opens their story; the camera badge keeps the photo options (F14).
                     Box {
-                        FriendAvatar(
-                            f,
-                            size = 112.dp,
-                            highlighted = f.isCloseFriend,
-                            sharedKey = "avatar-${f.id.value}",
-                            modifier = Modifier.clip(CircleShape).clickable(onClickLabel = photoLabel, onClick = actions.onPhoto),
-                        )
+                        StoryRingBox(state.storyRing) {
+                            FriendAvatar(
+                                f,
+                                size = 112.dp,
+                                highlighted = f.isCloseFriend && state.storyRing == StoryRing.NONE,
+                                sharedKey = "avatar-${f.id.value}",
+                                modifier = Modifier.clip(CircleShape).clickable(onClickLabel = storyLabel, onClick = actions.onOpenStory),
+                            )
+                        }
                         Surface(
                             onClick = actions.onPhoto,
                             shape = CircleShape,
@@ -207,11 +221,10 @@ internal fun PersonTop(
                     )
                 },
             )
-            Pills(f, state, actions)
-            Spacer(Modifier.height(10.dp))
-            Circles(state, actions)
-            Spacer(Modifier.height(16.dp))
-            FourActions(f, actions)
+            Spacer(Modifier.height(12.dp))
+            InfoBox(f, state, actions)
+            Spacer(Modifier.height(12.dp))
+            TopActions(f, actions)
             Spacer(Modifier.height(12.dp))
         }
     }
@@ -225,7 +238,7 @@ private fun ViewBar(f: Friend, actions: PersonTopActions) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(Res.string.detail_back))
         }
         Spacer(Modifier.weight(1f))
-        FilledTonalIconButton(onClick = actions.onStartEditing, colors = glass) {
+        FilledTonalIconButton(onClick = actions.onEditPerson, colors = glass) {
             Icon(Icons.Rounded.Edit, stringResource(Res.string.edit_person, f.displayName.substringBefore(' ')))
         }
         RemoveMenu(f, actions.onRemove) { open ->
@@ -255,49 +268,61 @@ private fun RemoveMenu(f: Friend, onRemove: () -> Unit, anchor: @Composable (ope
     }
 }
 
-/** "Editing <name>" · Done, at the top and in the collapsed bar while the page is in edit mode. */
+/**
+ * The box under the photo and family (issue #103): closeness with its icon (opens the closeness picker) and, next to
+ * it, the warmth bar; then the birthday, "Your sister", the last catch-up; then their circles.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EditingBar(f: Friend, onDone: () -> Unit) {
+private fun InfoBox(f: Friend, state: FriendDetailUiState, actions: PersonTopActions) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                ClosenessButton(f, actions.onPickCloseness)
+                val warmth = state.detail?.warmth
+                if (warmth != null && showsWarmth(f, state)) {
+                    WarmthMeter(
+                        warmth,
+                        label = stringResource(Res.string.warmth_title, warmth.value) + " · " + warmthLabel(warmth.level),
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+            Pills(f, state, actions)
+            Circles(state, actions)
+        }
+    }
+}
+
+/** Their level with its icon; a tap opens the closeness picker (issue #86). */
+@Composable
+private fun ClosenessButton(f: Friend, onPick: () -> Unit) {
+    val changeLevel = stringResource(Res.string.closeness_change)
     Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+        Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .clickable(onClickLabel = changeLevel, onClick = onPick)
+            .padding(start = 10.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Edit, null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(12.dp))
-        Text(
-            stringResource(Res.string.editing_title, f.displayName.substringBefore(' ')),
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Button(onClick = onDone) { Text(stringResource(Res.string.edit_done)) }
+        Icon(closenessIcon(f.closeness), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(closenessLabel(f.closeness), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+        Icon(Icons.Rounded.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Pills(f: Friend, state: FriendDetailUiState, actions: PersonTopActions) {
-    // Issue #86: their level sits under the name and opens the closeness picker.
-    val changeLevel = stringResource(Res.string.closeness_change)
-    Row(
-        Modifier
-            .padding(top = 4.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .clickable(onClickLabel = changeLevel, onClick = actions.onPickCloseness)
-            .padding(start = 12.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(closenessLabel(f.closeness), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
-        Icon(Icons.Rounded.ArrowDropDown, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
-    }
-    Spacer(Modifier.height(8.dp))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(horizontal = 16.dp),
-    ) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         val birthdayText = f.birthday?.let { b ->
             val next = b.nextOccurrence(state.today)
             val base = if (isFarDate(next, state.today)) {
@@ -310,7 +335,7 @@ private fun Pills(f: Friend, state: FriendDetailUiState, actions: PersonTopActio
         Box(Modifier.clip(CircleShape).clickable(onClick = actions.onEditBirthday)) {
             InfoPill(birthdayText, icon = if (f.birthday != null) Icons.Rounded.Cake else Icons.Rounded.Edit, emphasized = f.birthday != null)
         }
-        // "Your sister" only when it is set (issue #90); "Related to you?" is asked in edit mode.
+        // "Your sister" only when it is set (issue #90); "Related to you?" is asked in Edit person.
         relationToMeLabel(f)?.let { InfoPill(it, icon = Icons.Rounded.FavoriteBorder, emphasized = true) }
         // Same rule as the rhythm (issue #101): with calls and chats counting, a call is the last catch-up too.
         state.detail?.let { d ->
@@ -331,11 +356,7 @@ private fun Pills(f: Friend, state: FriendDetailUiState, actions: PersonTopActio
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Circles(state: FriendDetailUiState, actions: PersonTopActions) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(horizontal = 16.dp),
-    ) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         state.detail?.groups.orEmpty().forEach { g ->
             CircleChip(g, selected = true, onClick = { actions.onOpenCircle(g.id) }, showDot = false)
         }
@@ -347,9 +368,9 @@ private fun Circles(state: FriendDetailUiState, actions: PersonTopActions) {
     }
 }
 
-/** Message · Call · We met · Remind (decision "Person page · one Message button"). */
+/** Message · Call · Caught up · Remind · Add news (decision "Person page · one Message button"; Add news: issue #103). */
 @Composable
-private fun FourActions(f: Friend, actions: PersonTopActions) {
+private fun TopActions(f: Friend, actions: PersonTopActions) {
     val uri = LocalUriHandler.current
     val haptics = LocalHapticFeedback.current
     val lead = MessageOptions.lead(f.preferredChannel)
@@ -377,28 +398,20 @@ private fun FourActions(f: Friend, actions: PersonTopActions) {
             actions.onWeMet()
         }, emphasized = lead == LeadAction.WE_MET, modifier = Modifier.weight(1f))
         QuickAction(Icons.Rounded.AlarmAdd, stringResource(Res.string.qa_remind), onClick = actions.onRemind, modifier = Modifier.weight(1f))
+        QuickAction(Icons.Rounded.NewReleases, stringResource(Res.string.news_add), onClick = actions.onAddNews, modifier = Modifier.weight(1f))
     }
 }
 
 /**
  * Pinned under the top: the bar the top shrinks into once it has scrolled away ([collapsed]: back, small avatar,
- * name, Message, Call; "+" for the Log sheet on History; "Editing <name>" · Done in edit mode), then the three tabs.
+ * name, Message, Call; "+" for the Log sheet on Together), then the two tabs.
  */
 @Composable
-internal fun PinnedTabs(
-    f: Friend,
-    tab: PersonTab,
-    onTab: (PersonTab) -> Unit,
-    collapsed: Boolean,
-    editing: Boolean,
-    actions: PersonTopActions,
-) {
+internal fun PinnedTabs(f: Friend, tab: PersonTab, onTab: (PersonTab) -> Unit, collapsed: Boolean, actions: PersonTopActions) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Column {
             AnimatedVisibility(collapsed) {
-                Column(Modifier.statusBarsPadding()) {
-                    if (editing) EditingBar(f, actions.onDoneEditing) else CollapsedBar(f, tab, actions)
-                }
+                Column(Modifier.statusBarsPadding()) { CollapsedBar(f, tab, actions) }
             }
             PrimaryTabRow(selectedTabIndex = tab.ordinal, containerColor = Color.Transparent) {
                 PersonTab.entries.forEach { t ->
@@ -409,9 +422,8 @@ internal fun PinnedTabs(
                             Text(
                                 stringResource(
                                     when (t) {
-                                        PersonTab.SUMMARY -> Res.string.tab_summary
+                                        PersonTab.TOGETHER -> Res.string.tab_together
                                         PersonTab.ABOUT -> Res.string.tab_about
-                                        PersonTab.HISTORY -> Res.string.tab_history
                                     },
                                 ),
                             )
@@ -438,7 +450,7 @@ private fun CollapsedBar(f: Friend, tab: PersonTab, actions: PersonTopActions) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        if (tab == PersonTab.HISTORY) {
+        if (tab == PersonTab.TOGETHER) {
             IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
         }
         IconButton(onClick = actions.onMessage, enabled = MessageOptions.of(f).isNotEmpty()) {
@@ -511,19 +523,5 @@ internal fun MessageSheet(f: Friend, onDismiss: () -> Unit) {
                 )
             }
         }
-    }
-}
-
-/** Remove <name> at the bottom of edit mode (the same confirm dialog as ⋮). */
-@Composable
-internal fun RemovePersonButton(f: Friend, onRemove: () -> Unit) {
-    TextButton(
-        onClick = onRemove,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-    ) {
-        Icon(Icons.Rounded.Delete, null, Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(Res.string.remove_person, f.displayName))
     }
 }

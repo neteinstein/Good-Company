@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.LinkCategory
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
@@ -9,6 +10,7 @@ import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
+import com.neteinstein.goodcompany.core.domain.repository.InteractionRepository
 import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -164,6 +166,7 @@ class SetPronounsUseCase(private val friends: FriendRepository) {
 class AddRelativeAsPersonUseCase(
     private val friends: FriendRepository,
     private val links: PersonLinkRepository,
+    private val interactions: InteractionRepository,
     private val clock: AppClock,
     private val ids: IdGenerator,
 ) {
@@ -179,9 +182,10 @@ class AddRelativeAsPersonUseCase(
             notifyBirthday = relative.notifyBirthday,
             likes = relative.likes,
             likesAddedAt = relative.likes.associateWith { now },
-            notes = relative.note.trim(),
         )
         friends.upsert(person)
+        // The relative's note becomes their first dated note (issue #103): free-text notes are no longer shown.
+        relative.note.trim().takeIf { it.isNotEmpty() }?.let { interactions.upsertJournal(JournalEntry(ids.next(), person.id, now, it)) }
         links.upsert(PersonLink(id = ids.next(), from = friendId, to = person.id, type = type, addedAt = now))
         friends.upsert(friend.copy(relatives = friend.relatives.filterNot { it.id == relativeId }))
         return person.id

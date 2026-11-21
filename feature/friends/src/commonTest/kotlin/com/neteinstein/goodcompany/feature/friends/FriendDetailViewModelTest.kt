@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.GiftOccasion
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.InteractionType
 import com.neteinstein.goodcompany.core.domain.model.Introducer
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
@@ -32,8 +33,11 @@ import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyCircle
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
 import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
+import com.neteinstein.goodcompany.core.domain.usecase.NotesToJournal
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
+import com.neteinstein.goodcompany.core.domain.usecase.StoryRing
+import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.TestGraph
 import com.neteinstein.goodcompany.core.testing.collecting
@@ -54,6 +58,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 
 class FriendDetailViewModelTest {
     private fun graph(apiKey: String? = null, withKid: Boolean = false) = TestGraph(
@@ -105,6 +110,7 @@ class FriendDetailViewModelTest {
         g.ids,
         g.deleteTimelineEntry,
         g.restoreTimelineEntry,
+        g.storyViews,
     )
 
     @Test
@@ -269,6 +275,7 @@ class FriendDetailViewModelTest {
         val state = collecting(vm.state)
         val now = g.clock.now()
         assertEquals(0, state.value.freshCount)
+        assertEquals(StoryRing.NONE, state.value.storyRing)
 
         vm.onAddLifeUpdate("  New job at a studio ")
         vm.onAddLifeUpdate(" ")
@@ -282,6 +289,11 @@ class FriendDetailViewModelTest {
         assertEquals(mapOf("climbing" to now), f.likesAddedAt)
         assertEquals(now, state.value.detail!!.kids.single().link.addedAt)
         assertEquals(now, f.importantEvents.single().addedAt)
+        assertEquals(4, state.value.freshCount)
+        // Issue #103: the ring on the photo is bright until their story is opened, then grey.
+        assertEquals(StoryRing.FRESH, state.value.storyRing)
+        g.storyViews.markSeen(FriendId("ana"), now)
+        assertEquals(StoryRing.SEEN, state.value.storyRing)
         assertEquals(4, state.value.freshCount)
 
         vm.onRemoveLike("climbing")
@@ -960,5 +972,29 @@ class FriendDetailViewModelTest {
         vm.onEditGift(gift.id, "Signed book", "From Porto")
         assertEquals("Signed book", g.friendRepo.get(FriendId("ana"))!!.gifts.single().title)
         assertEquals("From Porto", g.friendRepo.get(FriendId("ana"))!!.gifts.single().note)
+    }
+
+    @Test
+    fun oldNotesShowAsADatedNote_newestFirst_andADeletedNoteComesBackWithUndo() = runViewModelTest {
+        // Issue #103: after the migration Ana's free-text notes are one dated note; the old field is never shown again.
+        val ana = friend("ana") { copy(notes = "Allergic to peanuts") }
+        g = TestGraph(listOf(ana))
+        val migrated = NotesToJournal.entries(listOf(ana), emptyList(), g.clock.now() - 2.days).single()
+        g.interactionRepo.upsertJournal(migrated)
+        g.interactionRepo.upsertJournal(JournalEntry("j2", ana.id, g.clock.now(), "Talked about Porto"))
+        val vm = vm()
+        val state = collecting(vm.state)
+
+        val notes = state.value.detail!!.timeline.filterIsInstance<TimelineEntry.Journal>()
+        assertEquals(listOf("Talked about Porto", "Allergic to peanuts"), notes.map { it.entry.text })
+        assertEquals("journal-note-ana", notes.last().key)
+
+        vm.onDeleteEntry(notes.last())
+        assertEquals(listOf("j2"), g.interactionRepo.journal.value.map { it.id })
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals(setOf("j2", "note-ana"), g.interactionRepo.journal.value.mapTo(HashSet()) { it.id })
+        // The old text stays in its field, untouched, while the migration is verified.
+        assertEquals("Allergic to peanuts", g.friendRepo.get(ana.id)!!.notes)
     }
 }

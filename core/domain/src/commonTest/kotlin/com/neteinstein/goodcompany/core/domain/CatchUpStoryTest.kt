@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.IdeaKind
 import com.neteinstein.goodcompany.core.domain.model.ImportantEvent
+import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.Kid
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.Place
@@ -14,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.usecase.CatchUpStoryBuilder
 import com.neteinstein.goodcompany.core.domain.usecase.FreshItem
+import com.neteinstein.goodcompany.core.domain.usecase.NotesToJournal
 import com.neteinstein.goodcompany.core.domain.usecase.StorySlide
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -35,7 +37,6 @@ class CatchUpStoryTest {
             likes = listOf("Jazz", "Bouldering"),
             dislikes = listOf("Crowds"),
             likesAddedAt = mapOf("Bouldering" to at(2026, 3, 8), "Jazz" to at(2025, 1, 1)),
-            notes = "Partner: Tiago",
             kids = listOf(
                 Kid("k1", "Leo", Birthday(3, 25, 2019), likes = listOf("Dinosaurs")),
                 Kid("k2", "Mia", Birthday(1, 1, 2026), addedAt = at(2026, 3, 1)),
@@ -67,6 +68,9 @@ class CatchUpStoryTest {
                 Idea("i2", listOf(ana.id), IdeaKind.EVENT, "Jazz fest", "Go together", createdAt = at(2026, 3, 9)),
             ),
         )
+        // Issue #103: what used to be the free-text notes is a dated note; the newest note is "last time you talked".
+        g.interactionRepo.upsertJournal(JournalEntry(NotesToJournal.idFor(ana), ana.id, at(2026, 1, 1), "Partner: Tiago"))
+        g.interactionRepo.upsertJournal(JournalEntry("j2", ana.id, at(2026, 2, 1), "Talked about Porto"))
         val story = g.observeCatchUpStory(ana.id).first()!!
         val slides = story.slides
 

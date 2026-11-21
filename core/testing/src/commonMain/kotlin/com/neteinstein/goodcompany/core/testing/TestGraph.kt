@@ -152,6 +152,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetShowInMyListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeCatchUpUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
@@ -305,7 +306,7 @@ class TestGraph(
     val listContacts = ListContactsUseCase(friendRepo)
     val saveChosenContacts = SaveChosenContactsUseCase(friendRepo, importPickedContacts)
     val exportBackup = ExportBackupUseCase(backupRepo, clock)
-    val restoreBackup = RestoreBackupUseCase(backupRepo)
+    val restoreBackup = RestoreBackupUseCase(backupRepo, clock)
     val cloudStore = FakeCloudBackupStore()
     val backupToDrive = BackupToDriveUseCase(exportBackup, cloudStore, settingsRepo, clock)
     val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
@@ -394,7 +395,8 @@ class TestGraph(
     val restoreLink = RestoreLinkUseCase(linkRepo)
     val setRelationToMe = SetRelationToMeUseCase(friendRepo)
     val setPronouns = SetPronounsUseCase(friendRepo)
-    val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, clock, ids)
+    val storyViews = StoryViews()
+    val addRelativeAsPerson = AddRelativeAsPersonUseCase(friendRepo, linkRepo, interactionRepo, clock, ids)
     val addKid = AddKidUseCase(friendRepo, linkRepo, clock, ids)
     val setShowInMyList = SetShowInMyListUseCase(friendRepo)
     val observeKinship = ObserveKinshipProposalsUseCase(friendRepo, linkRepo)

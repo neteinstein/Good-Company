@@ -22,7 +22,7 @@ class CatchUpStoryViewModelTest {
 
     @Test
     fun tapsThroughTheStoryAndFinishesAfterTheLastSlide() = runViewModelTest {
-        val vm = CatchUpStoryViewModel(FriendId("ana"), g.observeCatchUpStory, g.clock)
+        val vm = CatchUpStoryViewModel(FriendId("ana"), g.observeCatchUpStory, g.clock, g.storyViews)
         val state = collecting(vm.state)
         // Intro, the new job, tastes, outro.
         assertEquals(4, state.value.slideCount)
@@ -45,7 +45,7 @@ class CatchUpStoryViewModelTest {
 
     @Test
     fun missingFriend() = runViewModelTest {
-        val vm = CatchUpStoryViewModel(FriendId("nobody"), g.observeCatchUpStory, g.clock)
+        val vm = CatchUpStoryViewModel(FriendId("nobody"), g.observeCatchUpStory, g.clock, g.storyViews)
         val state = collecting(vm.state)
         assertTrue(state.value.notFound)
         assertEquals(0, state.value.slideCount)

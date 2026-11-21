@@ -83,3 +83,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `LogInteractionRoute` with `date` and
     `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
     (`:feature:agenda`, also a card on Coming up).
+- **Dated notes (issue #103).** A person's Notes card (About tab) lists their `JournalEntry`s newest first with their
+  day; "+ Note" opens `LogInteractionRoute(listOf(id), "JOURNAL")`, a tap edits in the Log sheet (`onEditEntry`), ⋮
+  deletes with Undo. The old free-text `Friend.notes` was copied into one entry `note-<friendId>` (migration `23.sqm`,
+  dated when it ran; blank notes make none) and is no longer shown or written by the page; the column and its text stay
+  until the migration is verified. Older backups (`Backup.notesInJournal` false) and the old JSON store get the same
+  rule through `NotesToJournal.convert` (dated at the backup's `exportedAt`); exports set the flag so a restore never
+  converts twice. "Add as a person" turns the relative's note into a dated note. The story's Notes slide shows the
+  `note-<id>` entry while it exists and isn't the last talk.
+

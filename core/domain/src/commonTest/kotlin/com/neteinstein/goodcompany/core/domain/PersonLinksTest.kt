@@ -202,7 +202,8 @@ class PersonLinksTest {
         val person = g.friendRepo.get(id)!!
         assertEquals("Graça Costa", person.name)
         assertEquals(listOf("roses"), person.likes)
-        assertEquals("lives in Braga", person.notes)
+        assertEquals("", person.notes)
+        assertEquals(listOf("lives in Braga"), g.interactionRepo.journal.first().filter { it.friendId == id }.map { it.text })
         assertTrue(person.notifyBirthday)
         val link = g.linkRepo.links.first().single()
         assertEquals(LinkType.PARENT, link.roleSeenBy(rui))

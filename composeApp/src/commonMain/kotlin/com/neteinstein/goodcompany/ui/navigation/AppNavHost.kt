@@ -147,6 +147,8 @@ fun AppNavHost(
                         onOpenFriend = openFriend,
                         onOpenTimeline = { navController.navigate(FriendTimelineRoute(id)) },
                         onLog = { navController.navigate(LogInteractionRoute(listOf(id))) },
+                        // "+ Note" on Notes (issue #103): a dated note is a journal entry on the Log sheet.
+                        onAddNote = { navController.navigate(LogInteractionRoute(listOf(id), LogKind.JOURNAL.name)) },
                         onEditEntry = { key -> navController.navigate(LogInteractionRoute.edit(id, key)) },
                         onLogPlan = logPlan,
                         onWeMet = { navController.navigate(WeMetRoute(friendIds = listOf(id))) },

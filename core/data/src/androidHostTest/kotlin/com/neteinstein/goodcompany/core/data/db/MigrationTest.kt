@@ -730,6 +730,53 @@ class MigrationTest {
     }
 
     @Test
+    fun version23to24_turnsNotesIntoOneDatedNoteEach_keepsTheText_andBlankNotesMakeNone() = runTest {
+        val driver = driverAt(23)
+        val notes = mapOf(
+            "ana" to "Partner: Tiago.\nAllergic to peanuts.  ",
+            "rui" to "",
+            "bia" to " \n\t \r\n",
+            "joao" to "Moved to Porto",
+        )
+        notes.entries.forEachIndexed { i, (id, text) ->
+            driver.execute(
+                null,
+                """
+                INSERT INTO friend (id, position, name, is_close_friend, notify_birthday, notes, suggest_events,
+                    is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+                VALUES (?, $i, ?, 1, 1, ?, 0, 0, 'CLOSE', 0, 0)
+                """.trimIndent(),
+                3,
+            ) {
+                bindString(0, id)
+                bindString(1, id)
+                bindString(2, text)
+            }.await()
+        }
+        // João already has a dated note: it stays as it was.
+        driver.execute(
+            null,
+            "INSERT INTO journal_entry (id, friend_id, at, text) VALUES ('j1', 'joao', 1000, 'Talked about the move')",
+            0,
+        ).await()
+
+        val before = System.currentTimeMillis()
+        GoodCompanyDatabase.Schema.migrate(driver, 23, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val journal = database.readJournal()
+        assertEquals(setOf("note-ana", "note-joao", "j1"), journal.mapTo(HashSet()) { it.id })
+        val ana = journal.single { it.id == "note-ana" }
+        assertEquals(FriendId("ana"), ana.friendId)
+        assertEquals(notes["ana"], ana.text) // exactly as typed, nothing trimmed
+        assertTrue(ana.at.toEpochMilliseconds() >= before / 1000 * 1000, "dated when the migration ran")
+        assertEquals("Moved to Porto", journal.single { it.id == "note-joao" }.text)
+        assertEquals(Instant.fromEpochMilliseconds(1000), journal.single { it.id == "j1" }.at)
+        // The old column keeps its text until the migration is verified.
+        assertEquals(notes["ana"], database.readFriends().single { it.id == FriendId("ana") }.notes)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

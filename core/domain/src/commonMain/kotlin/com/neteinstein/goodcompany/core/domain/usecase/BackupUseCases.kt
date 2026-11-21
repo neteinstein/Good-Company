@@ -14,6 +14,8 @@ class ExportBackupUseCase(private val backups: BackupRepository, private val clo
             format = Backup.FORMAT,
             version = Backup.VERSION,
             exportedAt = clock.now(),
+            // Issue #103: this build keeps notes as journal entries, so a restore never converts them again.
+            notesInJournal = true,
             settings = snapshot.settings.withoutDeviceOnly(),
         )
         return BackupJson.encodeToString(Backup.serializer(), clean)
@@ -34,15 +36,15 @@ sealed interface RestoreResult {
  * Replaces all app data with a backup. Device-specific settings that a backup shouldn't move (the AI key and the AI
  * switch that goes with it, the app lock, onboarding state) stay as they are on this device.
  */
-class RestoreBackupUseCase(private val backups: BackupRepository) {
+class RestoreBackupUseCase(private val backups: BackupRepository, private val clock: AppClock = AppClock.System) {
     suspend operator fun invoke(raw: String): RestoreResult {
         val backup = runCatching { BackupJson.decodeFromString(Backup.serializer(), raw) }.getOrNull()
             ?.takeIf { it.format == Backup.FORMAT && it.version <= Backup.VERSION }
             ?: return RestoreResult.NotABackup
         val current = backups.snapshot().settings
-        // An old backup's kids come back as people (F9).
+        // An old backup's kids come back as people (F9), and its free-text notes as dated notes (issue #103).
         backups.restore(
-            KidsAsPeople.convert(backup).copy(
+            NotesToJournal.convert(KidsAsPeople.convert(backup), clock.now()).copy(
                 settings = backup.settings.copy(
                     aiApiKey = current.aiApiKey,
                     aiEnabled = current.aiEnabled,

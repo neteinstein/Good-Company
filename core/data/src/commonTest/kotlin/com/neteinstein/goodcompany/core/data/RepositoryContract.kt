@@ -751,6 +751,24 @@ abstract class RepositoryContract {
     }
 
     @Test
+    fun anOlderBackup_bringsItsNotesBackAsDatedNotes_andTheFreeTextStays() = runTest {
+        // Issue #103: before dated notes a backup had one free-text note per person and no "notesInJournal".
+        val old = """
+            {"format": "good-company-backup", "version": 1, "friends": [
+                {"id": "ana", "name": "Ana", "notes": "Loves hiking"},
+                {"id": "bob", "name": "Bob", "notes": " "}
+            ]}
+        """.trimIndent()
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup, clock)(old))
+        val restored = to.backup.snapshot()
+        val note = restored.journal.single()
+        assertEquals(JournalEntry("note-ana", FriendId("ana"), clock.now(), "Loves hiking"), note)
+        assertEquals("Loves hiking", restored.friends.single { it.id == FriendId("ana") }.notes)
+        assertEquals(listOf(note), to.interactions.journal.first())
+    }
+
+    @Test
     fun theSampleCircle_roundTripsThroughABackup() = runTest {
         val sample = SampleData.build(clock)
         val s = open()
