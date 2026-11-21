@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.AlternateEmail
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Cake
 import androidx.compose.material.icons.rounded.Call
@@ -46,6 +47,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Interests
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.MoreVert
@@ -132,6 +134,8 @@ import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
+import com.neteinstein.goodcompany.core.domain.model.SocialLink
+import com.neteinstein.goodcompany.core.domain.model.SocialNetwork
 import com.neteinstein.goodcompany.core.domain.model.TasteKind
 import com.neteinstein.goodcompany.core.domain.usecase.CadenceRules
 import com.neteinstein.goodcompany.core.domain.usecase.FamilyAround
@@ -161,6 +165,7 @@ import com.neteinstein.goodcompany.core.ui.components.TagEditor
 import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.interactionIcon
 import com.neteinstein.goodcompany.core.ui.components.showMessage
+import com.neteinstein.goodcompany.core.ui.components.socialIcon
 import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.isFarDate
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
@@ -215,7 +220,9 @@ import com.neteinstein.goodcompany.feature.friends.resources.complete_moments
 import com.neteinstein.goodcompany.feature.friends.resources.complete_more
 import com.neteinstein.goodcompany.feature.friends.resources.complete_occasions
 import com.neteinstein.goodcompany.feature.friends.resources.complete_saved
+import com.neteinstein.goodcompany.feature.friends.resources.complete_socials
 import com.neteinstein.goodcompany.feature.friends.resources.complete_title
+import com.neteinstein.goodcompany.feature.friends.resources.complete_websites
 import com.neteinstein.goodcompany.feature.friends.resources.contact_call
 import com.neteinstein.goodcompany.feature.friends.resources.contact_email
 import com.neteinstein.goodcompany.feature.friends.resources.contact_game
@@ -284,6 +291,8 @@ import com.neteinstein.goodcompany.feature.friends.resources.plans_add
 import com.neteinstein.goodcompany.feature.friends.resources.saved_removed
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_week
 import com.neteinstein.goodcompany.feature.friends.resources.snooze_weekend
+import com.neteinstein.goodcompany.feature.friends.resources.socials_hint
+import com.neteinstein.goodcompany.feature.friends.resources.socials_title
 import com.neteinstein.goodcompany.feature.friends.resources.story_birthday_turns
 import com.neteinstein.goodcompany.feature.friends.resources.talk_title
 import com.neteinstein.goodcompany.feature.friends.resources.tastes_add_title
@@ -323,9 +332,13 @@ import com.neteinstein.goodcompany.feature.friends.resources.touch_pick
 import com.neteinstein.goodcompany.feature.friends.resources.touch_resume
 import com.neteinstein.goodcompany.feature.friends.resources.touch_snoozed
 import com.neteinstein.goodcompany.feature.friends.resources.touch_unsnooze
+import com.neteinstein.goodcompany.feature.friends.resources.websites_hint
+import com.neteinstein.goodcompany.feature.friends.resources.websites_title
 import com.neteinstein.goodcompany.feature.friends.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.friends.resources.wish_title
 import com.neteinstein.goodcompany.feature.friends.ui.components.AddFeedDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.AddSocialDialog
+import com.neteinstein.goodcompany.feature.friends.ui.components.AddWebsiteDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.GiftGivenDialog
 import com.neteinstein.goodcompany.feature.friends.ui.components.ImportantEventDialog
@@ -408,6 +421,10 @@ fun FriendDetailScreen(
             onDeleteEntry = viewModel::onDeleteEntry,
             onAddFeed = viewModel::onAddFeed,
             onRemoveFeed = viewModel::onRemoveFeed,
+            onAddSocial = viewModel::onAddSocial,
+            onRemoveSocial = viewModel::onRemoveSocial,
+            onAddWebsite = viewModel::onAddWebsite,
+            onRemoveWebsite = viewModel::onRemoveWebsite,
             onFeedPostToNews = viewModel::onFeedPostToNews,
             onClosenessChange = viewModel::onClosenessChange,
             onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
@@ -538,6 +555,10 @@ data class FriendDetailActions(
     val onDeleteEntry: (TimelineEntry) -> Unit = {},
     val onAddFeed: (String) -> Unit = {},
     val onRemoveFeed: (String) -> Unit = {},
+    val onAddSocial: (SocialNetwork, String) -> Unit = { _, _ -> },
+    val onRemoveSocial: (SocialLink) -> Unit = {},
+    val onAddWebsite: (String) -> Unit = {},
+    val onRemoveWebsite: (String) -> Unit = {},
     val onFeedPostToNews: (String) -> Unit = {},
     val onClosenessChange: (Closeness) -> Unit = {},
     val onToggleBirthdayNotifications: () -> Unit = {},
@@ -674,6 +695,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
     var addingGift by rememberSaveable { mutableStateOf(false) }
     var addingNews by rememberSaveable { mutableStateOf(false) }
     var addingFeed by rememberSaveable { mutableStateOf(false) }
+    var addingSocial by rememberSaveable { mutableStateOf(false) }
+    var addingWebsite by rememberSaveable { mutableStateOf(false) }
     var addingTaste by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.feedAdded) { addingFeed = false }
     var givingGift by remember { mutableStateOf<Gift?>(null) }
@@ -776,6 +799,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 PersonCard.GIFTS -> addingGift = true
                 PersonCard.SAVED -> actions.onAddSavedPhoto()
                 PersonCard.FEEDS -> addingFeed = true
+                PersonCard.SOCIALS -> addingSocial = true
+                PersonCard.WEBSITES -> addingWebsite = true
                 PersonCard.OCCASIONS -> editingOccasions = true
                 else -> Unit
             }
@@ -871,6 +896,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                             onOpen = openAttachment,
                             onSeeAll = { seeAllSaved = true },
                         )
+                        PersonCard.SOCIALS -> SocialsCard(f, onAdd = { addingSocial = true }, onRemove = actions.onRemoveSocial)
+                        PersonCard.WEBSITES -> WebsitesCard(f, onAdd = { addingWebsite = true }, onRemove = actions.onRemoveWebsite)
                         PersonCard.FEEDS -> Feeds(f, state, actions, onAdd = { addingFeed = true })
                         PersonCard.CONVERSATIONS -> Conversations(detail.messageCount, onAdd = actions.onImportChat)
                         PersonCard.TIMELINE -> TimelineCard(f, state, actions, onEdit = { pageEdit = it })
@@ -978,6 +1005,8 @@ fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions
                 addingEvent = false
             }
         }
+        if (addingSocial) AddSocialDialog(onDismiss = { addingSocial = false }, onAdd = { network, input -> actions.onAddSocial(network, input) })
+        if (addingWebsite) AddWebsiteDialog(onDismiss = { addingWebsite = false }, onAdd = actions.onAddWebsite)
         if (addingFeed) {
             AddFeedDialog(busy = state.isAddingFeed, onDismiss = { addingFeed = false }, onAdd = actions.onAddFeed)
         }
@@ -1161,6 +1190,65 @@ private fun Feeds(f: Friend, state: FriendDetailUiState, actions: FriendDetailAc
                 )
             }
         }
+    }
+}
+
+/** About: their profiles (issue #118), each with its logo; tap opens it, × removes it (with Undo). */
+@Composable
+private fun SocialsCard(f: Friend, onAdd: () -> Unit, onRemove: (SocialLink) -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.socials_title),
+        icon = Icons.Rounded.AlternateEmail,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.socials.isEmpty()) Hint(stringResource(Res.string.socials_hint))
+        f.socials.forEach { link ->
+            LinkLine(socialIcon(link.network), link.network.displayName, link.handle, onOpen = { runCatching { uri.openUri(link.url) } }) {
+                onRemove(link)
+            }
+        }
+    }
+}
+
+/** About: their websites (issue #118), before Blogs & feeds. They open in the browser; the app never loads them. */
+@Composable
+private fun WebsitesCard(f: Friend, onAdd: () -> Unit, onRemove: (String) -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.websites_title),
+        icon = Icons.Rounded.Language,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.websites.isEmpty()) Hint(stringResource(Res.string.websites_hint))
+        f.websites.forEach { url ->
+            val shown = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/')
+            LinkLine(Icons.Rounded.Language, shown, null, onOpen = { runCatching { uri.openUri(url) } }) { onRemove(url) }
+        }
+    }
+}
+
+@Composable
+private fun LinkLine(icon: ImageVector, title: String, detail: String?, onOpen: () -> Unit, onRemove: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            detail?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, title)) }
     }
 }
 
@@ -1527,6 +1615,8 @@ private fun CompleteProfile(firstName: String, missing: List<PersonCard>, onPick
                     PersonCard.GIFTS -> Res.string.complete_gifts
                     PersonCard.SAVED -> Res.string.complete_saved
                     PersonCard.FEEDS -> Res.string.complete_feeds
+                    PersonCard.SOCIALS -> Res.string.complete_socials
+                    PersonCard.WEBSITES -> Res.string.complete_websites
                     else -> null
                 } ?: return@forEach
                 AssistChip(

@@ -803,6 +803,39 @@ class MigrationTest {
     }
 
     @Test
+    fun version25to26_socialsAndWebsitesStartEmpty_roundTrip_andAnUnknownNetworkIsSkipped() = runTest {
+        val driver = driverAt(25)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, circle, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 'INNER', 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 25, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertTrue(ana.socials.isEmpty())
+        assertTrue(ana.websites.isEmpty())
+
+        val socials = listOf(
+            com.neteinstein.goodcompany.core.domain.model.SocialLink(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.X, "ana"),
+            com.neteinstein.goodcompany.core.domain.model.SocialLink(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.INSTAGRAM, "ana.s"),
+        )
+        database.writeFriend(ana.copy(socials = socials, websites = listOf("https://ana.pt", "https://blog.ana.pt")), 0)
+        val back = database.readFriends().single()
+        assertEquals(socials, back.socials)
+        assertEquals(listOf("https://ana.pt", "https://blog.ana.pt"), back.websites)
+
+        driver.execute(null, "INSERT INTO friend_link VALUES ('ana', 'MYSPACE', 9, 'ana')", 0).await()
+        assertEquals(socials, database.readFriends().single().socials)
+        driver.close()
+    }
+
+    @Test
     fun activitiesColumn_dropsUnknownNames_andEmptyMeansAll() {
         assertEquals(HangoutActivity.entries, activitiesFromColumn(null))
         assertEquals(HangoutActivity.entries, activitiesFromColumn("BOWLING"))

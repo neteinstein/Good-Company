@@ -491,9 +491,7 @@
     <string name="circles_sheet_title">Cercuri pentru %1$s</string>
     <string name="circles_new_with">Cerc nou cu %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
-    <string name="qa_message">Mesaj</string>
     <string name="qa_we_met">Notează</string>
-    <string name="message_sheet_title">Mesaj pentru %1$s</string>
     <string name="tab_about">Despre</string>
     <string name="edit_done">Gata</string>
     <string name="edit_person">Editează: %1$s</string>
@@ -532,4 +530,17 @@
     <string name="together_plan_cancelled">Anulat</string>
     <string name="together_plan_not_attended">Nu ai mers</string>
     <string name="together_reminder_done">Memento făcut</string>
+    <!-- Contact and links (issue #118) -->
+    <string name="qa_contact">Contactează</string>
+    <string name="contact_sheet_title">Contactează: %1$s</string>
+    <string name="socials_title">Rețele sociale</string>
+    <string name="socials_hint">Instagram, LinkedIn și alte profiluri: butoane lângă fotografie.</string>
+    <string name="socials_add">Adaugă un profil</string>
+    <string name="socials_handle">Nume de utilizator sau link</string>
+    <string name="websites_title">Site</string>
+    <string name="websites_hint">Site-ul sau portofoliul. Se deschide în browser; aplicația nu îl încarcă niciodată.</string>
+    <string name="websites_add">Adaugă un site</string>
+    <string name="websites_address">Adresă web</string>
+    <string name="complete_socials">Rețele sociale</string>
+    <string name="complete_websites">Site</string>
 </resources>

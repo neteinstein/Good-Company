@@ -44,6 +44,22 @@ object MessageOptions {
         return options.sortedBy { if (it.preferred) 0 else 1 }
     }
 
+    /**
+     * The one contact button's sheet (issue #118): Call, WhatsApp, Text (with a number), Email (with an address), the
+     * [preferred] channel first with its badge. Empty when there is neither: the button is then disabled.
+     */
+    fun contact(phone: String?, email: String?, preferred: ContactChannel?): List<MessageOption> {
+        val number = phone?.takeIf { it.isNotBlank() }
+        val call = number?.let { MessageOption(ContactChannel.CALL, it, preferred == ContactChannel.CALL) }
+        return (listOfNotNull(call) + of(phone, email, preferred)).sortedBy { if (it.preferred) 0 else 1 }
+    }
+
+    fun contact(friend: Friend): List<MessageOption> =
+        contact(friend.phoneNumbers.firstOrNull(), friend.emails.firstOrNull()?.address, friend.preferredChannel)
+
+    /** The contact button shows the phone when Call is preferred, the chat bubble otherwise (issue #118). */
+    fun showsPhone(preferred: ContactChannel?): Boolean = preferred == ContactChannel.CALL
+
     fun of(friend: Friend): List<MessageOption> = of(friend.phoneNumbers.firstOrNull(), friend.emails.firstOrNull()?.address, friend.preferredChannel)
 
     /**
@@ -87,6 +103,12 @@ enum class PersonCard(val tab: PersonTab) {
     MOMENTS(PersonTab.ABOUT),
     GIFTS(PersonTab.ABOUT),
     SAVED(PersonTab.ABOUT),
+
+    /** Their profiles (issue #118); the buttons themselves are beside the photo. */
+    SOCIALS(PersonTab.ABOUT),
+
+    /** Their websites, before Blogs & feeds (issue #118). */
+    WEBSITES(PersonTab.ABOUT),
     FEEDS(PersonTab.ABOUT),
 }
 
@@ -109,6 +131,8 @@ object ProfileSections {
         PersonCard.MOMENTS,
         PersonCard.GIFTS,
         PersonCard.SAVED,
+        PersonCard.SOCIALS,
+        PersonCard.WEBSITES,
         PersonCard.FEEDS,
     )
 
@@ -126,6 +150,8 @@ object ProfileSections {
         PersonCard.MOMENTS -> friend.importantEvents.isEmpty()
         PersonCard.GIFTS -> friend.gifts.isEmpty()
         PersonCard.SAVED -> facts.savedCount == 0
+        PersonCard.SOCIALS -> friend.socials.isEmpty()
+        PersonCard.WEBSITES -> friend.websites.isEmpty()
         PersonCard.FEEDS -> friend.feeds.isEmpty()
     }
 

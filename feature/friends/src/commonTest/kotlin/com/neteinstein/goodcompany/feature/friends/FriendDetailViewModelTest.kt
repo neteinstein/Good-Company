@@ -115,6 +115,32 @@ class FriendDetailViewModelTest {
     )
 
     @Test
+    fun socialsAndWebsites_addCleaned_onceEach_andRemoveWithUndo() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onAddSocial(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.INSTAGRAM, "https://www.instagram.com/ana/")
+        vm.onAddSocial(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.INSTAGRAM, "@ana")
+        vm.onAddSocial(com.neteinstein.goodcompany.core.domain.model.SocialNetwork.X, "  ")
+        vm.onAddWebsite("ana.pt")
+        vm.onAddWebsite("https://ana.pt")
+        val ana = g.friendRepo.get(FriendId("ana"))!!
+        val insta = com.neteinstein.goodcompany.core.domain.model.SocialLink(
+            com.neteinstein.goodcompany.core.domain.model.SocialNetwork.INSTAGRAM,
+            "ana",
+        )
+        assertEquals(listOf(insta), ana.socials)
+        assertEquals(listOf("https://ana.pt"), ana.websites)
+
+        vm.onRemoveSocial(insta)
+        assertTrue(g.friendRepo.get(FriendId("ana"))!!.socials.isEmpty())
+        assertEquals(FriendDetailMessage.Removed, state.value.message)
+        vm.onUndoSave()
+        assertEquals(listOf(insta), g.friendRepo.get(FriendId("ana"))!!.socials)
+        vm.onRemoveWebsite("https://ana.pt")
+        assertTrue(g.friendRepo.get(FriendId("ana"))!!.websites.isEmpty())
+    }
+
+    @Test
     fun together_hasPlansAboveToday_andClosedPlansAndDoneRemindersBelow() = runViewModelTest {
         val created = g.clock.now()
         g.planRepo.upsert(

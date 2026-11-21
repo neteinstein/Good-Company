@@ -70,5 +70,5 @@ object ContactMerger {
         contactCountsAsCatchUp || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
         preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||
-        drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty()
+        drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty() || socials.isNotEmpty() || websites.isNotEmpty()
 }

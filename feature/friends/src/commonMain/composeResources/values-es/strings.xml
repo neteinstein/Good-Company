@@ -477,9 +477,7 @@
     <string name="circles_sheet_title">Círculos de %1$s</string>
     <string name="circles_new_with">Nuevo círculo con %1$s</string>
     <!-- Person page: view and edit, three tabs, one Message button (issue #90) -->
-    <string name="qa_message">Mensaje</string>
     <string name="qa_we_met">Registrar</string>
-    <string name="message_sheet_title">Mensaje a %1$s</string>
     <string name="tab_about">Sobre</string>
     <string name="edit_done">Hecho</string>
     <string name="edit_person">Editar a %1$s</string>
@@ -518,4 +516,17 @@
     <string name="together_plan_cancelled">Cancelado</string>
     <string name="together_plan_not_attended">No fuiste</string>
     <string name="together_reminder_done">Recordatorio hecho</string>
+    <!-- Contact and links (issue #118) -->
+    <string name="qa_contact">Contactar</string>
+    <string name="contact_sheet_title">Contactar a %1$s</string>
+    <string name="socials_title">Redes sociales</string>
+    <string name="socials_hint">Su Instagram, LinkedIn y otros perfiles: botones junto a la foto.</string>
+    <string name="socials_add">Añadir un perfil</string>
+    <string name="socials_handle">Usuario o enlace</string>
+    <string name="websites_title">Sitio web</string>
+    <string name="websites_hint">Su web o portafolio. Se abre en tu navegador; la app nunca la carga.</string>
+    <string name="websites_add">Añadir un sitio web</string>
+    <string name="websites_address">Dirección web</string>
+    <string name="complete_socials">Redes sociales</string>
+    <string name="complete_websites">Sitio web</string>
 </resources>

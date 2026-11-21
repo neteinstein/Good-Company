@@ -19,6 +19,8 @@ import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
+import com.neteinstein.goodcompany.core.domain.model.SocialLink
+import com.neteinstein.goodcompany.core.domain.model.SocialNetwork
 import com.neteinstein.goodcompany.core.domain.model.closenessFrom
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
 import kotlinx.datetime.LocalDate
@@ -27,10 +29,13 @@ import com.neteinstein.goodcompany.core.domain.model.Friend as DomainFriend
 import com.neteinstein.goodcompany.core.domain.model.Gift as DomainGift
 import com.neteinstein.goodcompany.core.domain.model.Relative as DomainRelative
 
+/** The `friend_link.kind` of a website (the others are [SocialNetwork] names). */
+private const val WEBSITE_KIND = "WEBSITE"
+
 /** Tables that make up a friend. Observers of friends listen to all of them. */
 internal val FRIEND_TABLES = arrayOf(
     "friend", "friend_phone", "friend_taste", "friend_occasion", "important_event", "gift",
-    "life_update", "feed", "feed_item", "friend_photo", "friend_custom_photo",
+    "life_update", "feed", "feed_item", "friend_link", "friend_photo", "friend_custom_photo",
     "friend_email", "relative", "relative_like", "custom_field",
 )
 
@@ -63,6 +68,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
     val updates = q.allLifeUpdates().awaitAsList().groupBy { it.friend_id }
     val feedItems = q.allFeedItems().awaitAsList().groupBy { it.friend_id to it.feed_url }
     val feeds = q.allFeeds().awaitAsList().groupBy { it.friend_id }
+    val links = q.allLinks().awaitAsList().groupBy { it.friend_id }
     val photos = q.allPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val customPhotos = q.allCustomPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val emails = q.allEmails().awaitAsList().groupBy { it.friend_id }
@@ -115,6 +121,10 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             occasions = occasions[id].orEmpty().mapNotNull { enumOrNull<Occasion>(it.occasion) },
             lifeUpdates = updates[id].orEmpty().map { LifeUpdate(it.id, it.text, it.added_at.toInstant()) },
             likesAddedAt = likes.mapNotNull { like -> like.added_at?.let { like.taste to it.toInstant() } }.toMap(),
+            // Issue #118: an unknown network (a newer build) is skipped.
+            socials = links[id].orEmpty().filter { it.kind != WEBSITE_KIND }.sortedBy { it.position }
+                .mapNotNull { row -> enumOrNull<SocialNetwork>(row.kind)?.let { SocialLink(it, row.address) } },
+            websites = links[id].orEmpty().filter { it.kind == WEBSITE_KIND }.sortedBy { it.position }.map { it.address },
             feeds = feeds[id].orEmpty().map { feed ->
                 FriendFeed(
                     url = feed.url,
@@ -240,6 +250,9 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
         q.insertGift(Gift(id, g.id, i.toLong(), g.title, g.note, g.givenOn?.toColumn(), g.occasion?.name, g.url, g.price))
     }
     friend.lifeUpdates.forEachIndexed { i, u -> q.insertLifeUpdate(Life_update(id, u.id, i.toLong(), u.text, u.addedAt.toColumn())) }
+    // Socials keep one running position so their order survives across networks.
+    friend.socials.forEachIndexed { i, link -> q.insertLink(Friend_link(id, link.network.name, i.toLong(), link.handle)) }
+    friend.websites.forEachIndexed { i, url -> q.insertLink(Friend_link(id, WEBSITE_KIND, i.toLong(), url)) }
     friend.feeds.forEachIndexed { i, feed ->
         q.insertFeed(Feed(id, feed.url, i.toLong(), feed.title, feed.siteUrl, feed.checkedAt?.toColumn()))
         feed.items.forEachIndexed { j, item ->

@@ -130,6 +130,10 @@ data class Friend(
      * working. [catchUpPaused] and [snoozedUntil] are the temporary pauses and only matter while this is on.
      */
     val tracksKeepInTouch: Boolean = true,
+    /** Their profiles on social networks (issue #118), in the order added: round brand buttons beside the photo. */
+    val socials: List<SocialLink> = emptyList(),
+    /** Their websites (issue #118): opened in the browser, never fetched by the app. */
+    val websites: List<String> = emptyList(),
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true
