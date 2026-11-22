@@ -4,6 +4,9 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.BackupKey
+import com.neteinstein.goodcompany.core.domain.model.BackupKeySlot
+import com.neteinstein.goodcompany.core.domain.model.BackupProtection
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.CircleCover
@@ -22,6 +25,7 @@ import com.neteinstein.goodcompany.core.domain.model.Idea
 import com.neteinstein.goodcompany.core.domain.model.Interaction
 import com.neteinstein.goodcompany.core.domain.model.JournalEntry
 import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.NewBackupKey
 import com.neteinstein.goodcompany.core.domain.model.NotificationAction
 import com.neteinstein.goodcompany.core.domain.model.NotificationContent
 import com.neteinstein.goodcompany.core.domain.model.PersonBackground
@@ -34,6 +38,8 @@ import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
+import com.neteinstein.goodcompany.core.domain.repository.BackupCrypto
+import com.neteinstein.goodcompany.core.domain.repository.BackupKeyRepository
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
@@ -41,7 +47,9 @@ import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.CloudSpace
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DecryptedBackup
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -560,34 +568,106 @@ class FakeFeedFetcher(val pages: MutableMap<String, String> = mutableMapOf()) : 
     }
 }
 
-/** In-memory Google Drive: one map of files; [failure] makes every call throw. */
+/** In-memory Google Drive: one list of files across both spaces; [failure] makes every call throw. */
 class FakeCloudBackupStore : CloudBackupStore {
-    data class File(val id: String, val name: String, val content: String, val modifiedAt: Instant?)
+    data class File(
+        val id: String,
+        val name: String,
+        val content: String,
+        val modifiedAt: Instant?,
+        val space: CloudSpace = CloudSpace.APP_DATA,
+        val trashed: Boolean = false,
+    )
 
     val files = mutableListOf<File>()
     val tokens = mutableListOf<String>()
     var failure: CloudBackupFailure? = null
     var now: Instant? = null
 
-    override suspend fun save(accessToken: String, fileName: String, content: String): CloudBackupInfo {
+    private fun find(fileName: String, space: CloudSpace) = files.lastOrNull { it.name == fileName && it.space == space && !it.trashed }
+
+    override suspend fun save(accessToken: String, fileName: String, content: String, space: CloudSpace): CloudBackupInfo {
         tokens += accessToken
         failure?.let { throw it }
-        val existing = files.lastOrNull { it.name == fileName }
-        val file = File(existing?.id ?: "drive-${files.size + 1}", fileName, content, now)
+        val existing = find(fileName, space)
+        val file = File(existing?.id ?: "drive-${files.size + 1}", fileName, content, now, space)
         if (existing != null) files[files.indexOf(existing)] = file else files += file
         return CloudBackupInfo(file.id, file.modifiedAt)
     }
 
-    override suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo? {
+    override suspend fun latest(accessToken: String, fileName: String, space: CloudSpace): CloudBackupInfo? {
         tokens += accessToken
         failure?.let { throw it }
-        return files.lastOrNull { it.name == fileName }?.let { CloudBackupInfo(it.id, it.modifiedAt) }
+        return find(fileName, space)?.let { CloudBackupInfo(it.id, it.modifiedAt) }
     }
 
     override suspend fun download(accessToken: String, id: String): String {
         tokens += accessToken
         failure?.let { throw it }
         return files.first { it.id == id }.content
+    }
+
+    override suspend fun trash(accessToken: String, id: String) {
+        tokens += accessToken
+        failure?.let { throw it }
+        val file = files.first { it.id == id }
+        files[files.indexOf(file)] = file.copy(trashed = true)
+    }
+}
+
+/** The backup key kept in memory, like the key-value store keeps it on a device. */
+class FakeBackupKeyRepository(initial: BackupProtection = BackupProtection()) : BackupKeyRepository {
+    val state = MutableStateFlow(initial)
+    override val protection: Flow<BackupProtection> = state
+
+    override suspend fun current(): BackupProtection = state.value
+
+    override suspend fun update(transform: (BackupProtection) -> BackupProtection) = state.update(transform)
+}
+
+/**
+ * Reversible stand-in for the real cipher (which `:core:data` tests): the secrets sit in the "file" next to the
+ * reversed document, so tests can check which secret opens what without real crypto. Never secure; tests only.
+ */
+class FakeBackupCrypto : BackupCrypto {
+    private var made = 0
+
+    override suspend fun newKey(password: String): NewBackupKey {
+        made++
+        val recovery = "RECOVERY-$made"
+        val key = BackupKey(
+            dataKey = "data-key-$made",
+            slots = listOf(slot(BackupKeySlot.Kind.PASSWORD, password), slot(BackupKeySlot.Kind.RECOVERY, recovery)),
+        )
+        return NewBackupKey(key, recovery)
+    }
+
+    override suspend fun changePassword(key: BackupKey, newPassword: String): BackupKey =
+        key.copy(slots = listOf(slot(BackupKeySlot.Kind.PASSWORD, newPassword)) + key.slots.filter { it.kind != BackupKeySlot.Kind.PASSWORD })
+
+    override suspend fun unlocks(key: BackupKey, secret: String): Boolean = key.slots.any { it.wrapped == secret }
+
+    override suspend fun encrypt(key: BackupKey, json: String): String =
+        (listOf(PREFIX, key.dataKey) + key.slots.map { "${it.kind}=${it.wrapped}" } + json.reversed()).joinToString(SEPARATOR)
+
+    override fun isEncrypted(raw: String): Boolean = raw.startsWith(PREFIX + SEPARATOR)
+
+    override suspend fun decrypt(raw: String, secret: String): DecryptedBackup? {
+        if (!isEncrypted(raw)) return null
+        val parts = raw.split(SEPARATOR, limit = 5)
+        val slots = parts.subList(2, 4).map { part ->
+            val (kind, value) = part.split("=", limit = 2)
+            slot(BackupKeySlot.Kind.valueOf(kind), value)
+        }
+        val key = BackupKey(parts[1], slots)
+        return if (unlocks(key, secret)) DecryptedBackup(parts[4].reversed(), key) else null
+    }
+
+    private fun slot(kind: BackupKeySlot.Kind, secret: String) = BackupKeySlot(kind, 1, "salt", wrapped = secret, mac = "mac")
+
+    private companion object {
+        const val PREFIX = "FAKE-ENCRYPTED"
+        const val SEPARATOR = "\u0000"
     }
 }
 

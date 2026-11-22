@@ -1,11 +1,13 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.BackupKey
 import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.LinkType
+import com.neteinstein.goodcompany.core.domain.model.NewBackupKey
 import com.neteinstein.goodcompany.core.domain.model.PlannedNotification
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import kotlin.time.Instant
@@ -156,19 +158,58 @@ class CloudBackupFailure(val reason: Reason, detail: String? = null) : Exception
     }
 }
 
+/** Where in the user's Google Drive a backup lives (D5). */
+enum class CloudSpace {
+    /** The app's private folder (`drive.appdata`): hidden from the Drive UI. Where encrypted backups go. */
+    APP_DATA,
+
+    /** A visible file in My Drive (`drive.file`): only the old plain "Good Company backup.json" lives here. */
+    VISIBLE,
+}
+
 /**
- * The user's Google Drive, reached with an OAuth access token the UI obtained (scope `drive.file`: the app sees
- * only the files it created). There is no server of ours in between.
+ * The user's Google Drive, reached with an OAuth access token the UI obtained (scopes `drive.appdata` and
+ * `drive.file`: the app sees only its private folder and the files it created). There is no server of ours in between.
  */
 interface CloudBackupStore {
-    /** Creates the backup file, or replaces the newest one with the same [fileName]. */
-    suspend fun save(accessToken: String, fileName: String, content: String): CloudBackupInfo
+    /** Creates the backup file in [space], or replaces the newest one with the same [fileName] there. */
+    suspend fun save(accessToken: String, fileName: String, content: String, space: CloudSpace = CloudSpace.APP_DATA): CloudBackupInfo
 
-    /** The newest backup file called [fileName], or null when there isn't one. */
-    suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo?
+    /** The newest backup file called [fileName] in [space], or null when there isn't one. */
+    suspend fun latest(accessToken: String, fileName: String, space: CloudSpace = CloudSpace.APP_DATA): CloudBackupInfo?
 
     suspend fun download(accessToken: String, id: String): String
+
+    /** Moves a file to the Drive bin (the user can still get it back from there for 30 days). */
+    suspend fun trash(accessToken: String, id: String)
 }
+
+/**
+ * D4 (issue #165): encrypts backups. The key is derived on the device from the password (PBKDF2); see
+ * `CryptographyBackupCrypto` in `:core:data` for the format and parameters.
+ */
+interface BackupCrypto {
+    /** A new random backup key, wrapped by [password] and by a new recovery key. */
+    suspend fun newKey(password: String): NewBackupKey
+
+    /** [key] with its password slot re-made for [newPassword]; the data key and the recovery slot stay. */
+    suspend fun changePassword(key: BackupKey, newPassword: String): BackupKey
+
+    /** Whether [secret] (the password or the recovery key) opens [key]. */
+    suspend fun unlocks(key: BackupKey, secret: String): Boolean
+
+    /** The backup document [json], encrypted with [key], as the text of a backup file. */
+    suspend fun encrypt(key: BackupKey, json: String): String
+
+    /** Whether [raw] is an encrypted backup file (whatever its key). */
+    fun isEncrypted(raw: String): Boolean
+
+    /** Opens an encrypted backup file with the password or the recovery key; null when [secret] doesn't open it. */
+    suspend fun decrypt(raw: String, secret: String): DecryptedBackup?
+}
+
+/** An opened backup file: the backup document, and the key it was made with (for a device that has none yet). */
+data class DecryptedBackup(val json: String, val key: BackupKey)
 
 /** Where the sideload build learns about newer builds of itself (the `test-build` GitHub release). */
 fun interface AppUpdateSource {

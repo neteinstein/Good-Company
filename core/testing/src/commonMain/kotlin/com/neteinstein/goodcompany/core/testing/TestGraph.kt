@@ -15,11 +15,13 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddLifeUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddPeopleToGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AdoptBackupKeyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CancelPlanUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ChangeBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckInUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CircleCoverUseCases
@@ -48,6 +50,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.DraftBirthdayMessageUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.DuplicateGiftListUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EncryptBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
@@ -61,6 +64,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepOldDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KidsAsPeople
 import com.neteinstein.goodcompany.core.domain.usecase.ListContactsUseCase
@@ -74,6 +78,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.NextCircleColorUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveBackupProtectionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
@@ -108,6 +113,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveTagsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveTimelineUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearInReviewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveYearReviewCardUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.OpenBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ParseKinshipQueryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PersonBackgroundUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
@@ -142,6 +148,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpKindUseCase
@@ -163,6 +170,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.StoryViews
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestGiftsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TrashOldDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.TurnOffCircleRemindersUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UndoLogUseCase
@@ -329,8 +337,18 @@ class TestGraph(
     val exportBackup = ExportBackupUseCase(backupRepo, clock)
     val restoreBackup = RestoreBackupUseCase(backupRepo, clock)
     val cloudStore = FakeCloudBackupStore()
-    val backupToDrive = BackupToDriveUseCase(exportBackup, cloudStore, settingsRepo, clock)
+    val backupKeyRepo = FakeBackupKeyRepository()
+    val backupCrypto = FakeBackupCrypto()
+    val observeBackupProtection = ObserveBackupProtectionUseCase(backupKeyRepo)
+    val setBackupPassword = SetBackupPasswordUseCase(backupCrypto, backupKeyRepo)
+    val changeBackupPassword = ChangeBackupPasswordUseCase(backupCrypto, backupKeyRepo)
+    val encryptBackup = EncryptBackupUseCase(exportBackup, backupCrypto, backupKeyRepo)
+    val openBackup = OpenBackupUseCase(backupCrypto)
+    val adoptBackupKey = AdoptBackupKeyUseCase(backupKeyRepo)
+    val backupToDrive = BackupToDriveUseCase(encryptBackup, cloudStore, backupKeyRepo, settingsRepo, clock)
     val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
+    val trashOldDriveBackup = TrashOldDriveBackupUseCase(cloudStore)
+    val keepOldDriveBackup = KeepOldDriveBackupUseCase(backupKeyRepo)
     val currentLocation = GetCurrentLocationUseCase(location)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock, circles)

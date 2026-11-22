@@ -1,40 +1,88 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.repository.BackupKeyRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.CloudSpace
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlin.coroutines.cancellation.CancellationException
 
-/** The one file the app keeps in the user's Google Drive. Plain JSON, same as "Export backup" (owner, 2026-11-07). */
+/**
+ * The old visible, plain backup file in My Drive (2026-11-07). D5 moved backups to the app's private folder; this one
+ * is only read (to restore an old backup) and, if the user agrees, moved to the bin.
+ */
 const val DRIVE_BACKUP_FILE_NAME = "Good Company backup.json"
 
-/** OAuth scope: only files this app created (or the user opened with it), never the rest of their Drive. */
+/** The encrypted backup in the app's private Drive folder (`drive.appdata`, D5). */
+const val DRIVE_ENCRYPTED_BACKUP_FILE_NAME = "good-company-backup.json"
+
+/** OAuth scope for the app's private folder in the user's Drive, where backups go (D5). */
+const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+
+/** OAuth scope: only files this app created, never the rest of their Drive. Needed for the old visible file. */
 const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
 
-/** Saves the same JSON as "Export backup" (never the AI key) to the user's Google Drive, replacing the last copy. */
+/** Every scope the Drive backup asks for, in one consent. */
+val DRIVE_SCOPES = listOf(DRIVE_APPDATA_SCOPE, DRIVE_FILE_SCOPE)
+
+/** A backup can't be made before a password is set (D4): nothing is ever uploaded in the clear. */
+class BackupPasswordMissing : Exception("No backup password")
+
+/** A Drive backup was saved; [oldVisibleFile] is the old plain file the app now offers to delete (D5), if any. */
+data class DriveBackupSaved(val info: CloudBackupInfo, val oldVisibleFile: CloudBackupInfo? = null)
+
+/** Saves the encrypted backup (never the AI key) to the app's private Drive folder, replacing the last copy. */
 class BackupToDriveUseCase(
-    private val export: ExportBackupUseCase,
+    private val encrypt: EncryptBackupUseCase,
     private val store: CloudBackupStore,
+    private val keys: BackupKeyRepository,
     private val settings: SettingsRepository,
     private val clock: AppClock,
 ) {
-    suspend operator fun invoke(accessToken: String): Result<CloudBackupInfo> = cloudCall {
-        val info = store.save(accessToken, DRIVE_BACKUP_FILE_NAME, export())
-        settings.update { it.copy(lastDriveBackupAt = clock.now()) }
-        info
+    suspend operator fun invoke(accessToken: String): Result<DriveBackupSaved> {
+        val content = encrypt() ?: return Result.failure(BackupPasswordMissing())
+        return cloudCall {
+            val info = store.save(accessToken, DRIVE_ENCRYPTED_BACKUP_FILE_NAME, content, CloudSpace.APP_DATA)
+            settings.update { it.copy(lastDriveBackupAt = clock.now()) }
+            // Looking for the old file must never fail a backup that was saved.
+            val old = if (keys.current().keepOldDriveFile) {
+                null
+            } else {
+                runCatching { store.latest(accessToken, DRIVE_BACKUP_FILE_NAME, CloudSpace.VISIBLE) }
+                    .onFailure { if (it is CancellationException) throw it }
+                    .getOrNull()
+            }
+            DriveBackupSaved(info, old)
+        }
     }
 }
 
-/** A Drive backup downloaded and ready for the "Replace everything?" confirmation. */
-data class DriveBackup(val content: String, val info: CloudBackupInfo)
+/** A Drive backup downloaded and ready to open; [plain] when it is the old visible, unencrypted file. */
+data class DriveBackup(val content: String, val info: CloudBackupInfo, val plain: Boolean = false)
 
-/** Fetches the newest Drive backup; `null` inside the result means there's none yet. */
+/**
+ * Fetches the newest Drive backup: the encrypted one in the app's folder, or else the old plain visible file (old
+ * backups stay restorable). `null` inside the result means there's none.
+ */
 class FetchDriveBackupUseCase(private val store: CloudBackupStore) {
     suspend operator fun invoke(accessToken: String): Result<DriveBackup?> = cloudCall {
-        store.latest(accessToken, DRIVE_BACKUP_FILE_NAME)?.let { DriveBackup(store.download(accessToken, it.id), it) }
+        store.latest(accessToken, DRIVE_ENCRYPTED_BACKUP_FILE_NAME, CloudSpace.APP_DATA)
+            ?.let { DriveBackup(store.download(accessToken, it.id), it) }
+            ?: store.latest(accessToken, DRIVE_BACKUP_FILE_NAME, CloudSpace.VISIBLE)
+                ?.let { DriveBackup(store.download(accessToken, it.id), it, plain = true) }
     }
+}
+
+/** D5: the user agreed to delete the old plain backup file; it goes to the Drive bin. */
+class TrashOldDriveBackupUseCase(private val store: CloudBackupStore) {
+    suspend operator fun invoke(accessToken: String, fileId: String): Result<Unit> = cloudCall { store.trash(accessToken, fileId) }
+}
+
+/** D5: the user chose to keep the old plain backup file; the app doesn't ask again. */
+class KeepOldDriveBackupUseCase(private val keys: BackupKeyRepository) {
+    suspend operator fun invoke() = keys.update { it.copy(keepOldDriveFile = true) }
 }
 
 private suspend fun <T> cloudCall(block: suspend () -> T): Result<T> = try {

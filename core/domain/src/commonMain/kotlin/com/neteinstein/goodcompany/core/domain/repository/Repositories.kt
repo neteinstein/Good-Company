@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.domain.repository
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.BackupProtection
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.ContactCard
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -239,6 +240,15 @@ interface BackupRepository {
     suspend fun snapshot(): Backup
 
     suspend fun restore(backup: Backup)
+}
+
+/** D4 (issue #165): this device's backup key and the old-Drive-file answer. Device-only, never in a backup. */
+interface BackupKeyRepository {
+    val protection: Flow<BackupProtection>
+
+    suspend fun current(): BackupProtection
+
+    suspend fun update(transform: (BackupProtection) -> BackupProtection)
 }
 
 interface SettingsRepository {

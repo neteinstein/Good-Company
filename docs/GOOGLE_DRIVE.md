@@ -1,12 +1,15 @@
 # Google Drive backup — setup
 
-"Back up" / "Restore" under **Settings → Your data → Google Drive** store one plain JSON file,
-`Good Company backup.json`, in the user's own Google Drive. It is the same content as **Export backup** (never the
-AI API key). Calls go straight from the device to Google; there is no Good Company server.
+"Back up" / "Restore" under **Settings → Your data → Google Drive** store one **encrypted** file in the app's private
+folder in the user's own Google Drive (`appDataFolder`, hidden from the Drive UI; decisions D4 and D5). It is the same
+content as **Export backup**, encrypted with the backup password (never the AI API key). Calls go straight from the
+device to Google; there is no Good Company server.
 
-The app asks only for the **`drive.file`** scope: it can see and change the files it created, nothing else in the
-user's Drive. Google treats `drive.file` as a non-sensitive scope, so the consent screen doesn't need Google's
-security review.
+The app asks for two scopes: **`drive.appdata`** (its own private folder) and **`drive.file`** (files it created).
+`drive.file` is only for the old plain, visible `Good Company backup.json` that earlier builds wrote: it can still be
+restored, and after the first encrypted backup the app offers to move it to the bin. Neither scope lets the app see
+anything else in the user's Drive, and Google treats both as non-sensitive, so the consent screen doesn't need
+Google's security review.
 
 Each platform needs an OAuth client in one Google Cloud project. Until a client exists, the feature can't work:
 Android shows "Google Drive isn't set up for this build" when tapped; iOS and web hide the row.
@@ -16,7 +19,7 @@ Android shows "Google Drive isn't set up for this build" when tapped; iOS and we
 1. In [Google Cloud Console](https://console.cloud.google.com/), create (or pick) a project.
 2. **APIs & Services → Library → Google Drive API → Enable.**
 3. **APIs & Services → OAuth consent screen**: app name "Good Company", support email, the privacy policy URL,
-   and add the scope `https://www.googleapis.com/auth/drive.file`. Publish the app (while it's in "Testing", only
+   and add the scopes `https://www.googleapis.com/auth/drive.appdata` and `https://www.googleapis.com/auth/drive.file`. Publish the app (while it's in "Testing", only
    listed test users can sign in).
 
 ## 2. Android

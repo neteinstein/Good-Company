@@ -7,7 +7,10 @@ import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.serialization.json.Json
 
-/** Serialises everything (minus the AI key) to a JSON document the user can save anywhere. */
+/**
+ * Serialises everything (minus the AI key) to the backup JSON document. Nothing writes it out as it is: files and
+ * Google Drive always get it through [EncryptBackupUseCase] (D4).
+ */
 class ExportBackupUseCase(private val backups: BackupRepository, private val clock: AppClock) {
     suspend operator fun invoke(): String {
         val snapshot = backups.snapshot()

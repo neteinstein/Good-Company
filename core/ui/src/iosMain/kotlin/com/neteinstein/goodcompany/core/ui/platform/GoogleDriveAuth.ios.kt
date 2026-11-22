@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.core.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
+import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_SCOPES
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -78,7 +78,7 @@ private class DriveAuthFlow {
                 "client_id" to clientId,
                 "redirect_uri" to redirect,
                 "response_type" to "code",
-                "scope" to DRIVE_FILE_SCOPE,
+                "scope" to DRIVE_SCOPES.joinToString(" "),
                 "code_challenge" to challenge(verifier),
                 "code_challenge_method" to "S256",
             ),

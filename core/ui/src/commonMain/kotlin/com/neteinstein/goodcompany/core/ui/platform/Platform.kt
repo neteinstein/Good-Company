@@ -246,8 +246,8 @@ sealed interface DriveAuthResult {
 }
 
 /**
- * Returns a launcher that asks Google for an access token with the `drive.file` scope (shows Google's consent the
- * first time). Android: Play services authorization; iOS: Google sign-in in the system browser sheet (PKCE);
+ * Returns a launcher that asks Google for an access token with the `drive.appdata` and `drive.file` scopes
+ * (`DRIVE_SCOPES`; Google shows its consent the first time). Android: Play services authorization; iOS: Google sign-in in the system browser sheet (PKCE);
  * web: Google Identity Services.
  */
 @Composable
