@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.model
 
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -140,6 +141,14 @@ data class AppSettings(
      * an [InteractionType.OTHER] interaction with the name as its [Interaction.label].
      */
     val customLogKinds: List<String> = emptyList(),
+    /**
+     * Decision 2026-11-21 ("Catch-up · what counts"): the built-in ways of keeping in touch that restart the rhythm of
+     * someone on the default ([com.neteinstein.goodcompany.core.domain.model.CatchUpCounts.DEFAULT]). In person always
+     * counts and journal entries never do, whatever this holds.
+     */
+    val catchUpKinds: Set<LogKind> = CatchUpPolicy.DEFAULT_KINDS,
+    /** The How options of your own ([customLogKinds]) that count the same way; none by default. */
+    val catchUpCustomKinds: List<String> = emptyList(),
     /**
      * Issue #68: the day "Not now" hid Today's "When did you last see…?" card; it shows again the next day.
      * Device-only like [lastOpenedAt]: never exported, kept on restore.

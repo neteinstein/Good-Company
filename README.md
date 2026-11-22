@@ -54,7 +54,7 @@
         <li><b>Things to talk about</b>: AI-matched news and conversation starters from their tastes and recent chats.</li>
         <li><b>Plans</b>: pick a day and it reminds you — then asks <i>“Did you meet?”</i> so only real meetups count. Add any plan to your calendar.</li>
         <li><b>Good company for</b> a weekday lunch, a hike, drinks… and <b>talking points from your own notes</b>, no AI key needed.</li>
-        <li><b>Pause</b> catch-ups for someone (history kept), or let calls and chats count for friends who live far away.</li>
+        <li><b>Pause</b> catch-ups for someone (history kept), and choose what counts as catching up: calls, video and long chats do by default, set per person or in Settings.</li>
         <li>Import a WhatsApp chat export to keep last-contact dates and context.</li>
       </ul>
     </td>

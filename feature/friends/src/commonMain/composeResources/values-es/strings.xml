@@ -158,8 +158,13 @@
     <string name="prefs_pause_hint">Sin avisos de «toca quedar» hasta que lo reactives. El historial y los cumpleaños se quedan.</string>
     <string name="prefs_tracking">Mantener el contacto</string>
     <string name="prefs_tracking_hint">Calidez, un ritmo para quedar y avisos para poneros al día. Apágalo para quien ves cada día: su cronología, recordatorios y cumpleaños se quedan.</string>
-    <string name="prefs_contact_counts">Las llamadas y los chats cuentan como ponerse al día</string>
-    <string name="prefs_contact_counts_hint">Para amigos lejos: una llamada o un chat reinicia el ritmo, no solo quedar.</string>
+    <string name="prefs_catch_up_counts">Qué cuenta como ponerse al día</string>
+    <string name="prefs_counts_default">Como en Ajustes</string>
+    <string name="prefs_counts_in_person">Solo en persona</string>
+    <string name="prefs_counts_any">Cualquier contacto</string>
+    <string name="prefs_counts_default_hint">Quedar y las formas marcadas en Ajustes → Cómo reinician la cuenta atrás.</string>
+    <string name="prefs_counts_in_person_hint">Solo quedar reinicia la cuenta atrás.</string>
+    <string name="prefs_counts_any_hint">Cualquier llamada, mensaje o chat reinicia la cuenta atrás, igual que quedar.</string>
     <string name="plans_add">Planear</string>
     <string name="occasions_title">Buena compañía para</string>
     <string name="occasions_hint">Se usa en «¿Quién se apunta a…?» en la pestaña Juntos.</string>

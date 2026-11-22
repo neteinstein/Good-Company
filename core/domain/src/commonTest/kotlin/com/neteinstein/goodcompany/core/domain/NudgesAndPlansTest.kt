@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
@@ -88,7 +89,7 @@ class NudgesAndPlansTest {
     fun pausedFriendsGetNoNudgesAndChatsCanCountAsCatchingUp() {
         val friends = listOf(
             friend("ana") { copy(meetEveryDays = 7, catchUpPaused = true) },
-            friend("bob") { copy(meetEveryDays = 7, contactCountsAsCatchUp = true) },
+            friend("bob") { copy(meetEveryDays = 7, catchUpCounts = CatchUpCounts.ANY_CONTACT) },
             friend("cat") { copy(meetEveryDays = 7, approxLastSeen = LocalDate(2026, 3, 3)) },
         )
         val chats = listOf(

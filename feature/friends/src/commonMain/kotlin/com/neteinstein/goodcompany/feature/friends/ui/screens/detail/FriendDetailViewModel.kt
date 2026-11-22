@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -1128,7 +1129,8 @@ class FriendDetailViewModel(
     /** Issue #115: keep-in-touch tracking on or off for this person. */
     fun onToggleTracking() = edit { it.copy(tracksKeepInTouch = !it.tracksKeepInTouch) }
 
-    fun onToggleContactCounts() = edit { it.copy(contactCountsAsCatchUp = !it.contactCountsAsCatchUp) }
+    /** Decision 2026-11-21 ("Catch-up · what counts"): the Settings default, in person only, or any contact. */
+    fun onSetCatchUpCounts(counts: CatchUpCounts) = edit { it.copy(catchUpCounts = counts) }
 
     fun onToggleOccasion(occasion: Occasion) = edit { f ->
         f.copy(occasions = if (occasion in f.occasions) f.occasions - occasion else (f.occasions + occasion).sortedBy { it.ordinal })

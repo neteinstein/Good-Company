@@ -77,6 +77,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpPolicyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCirclePageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
@@ -143,6 +144,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCa
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpKindUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
@@ -298,6 +300,8 @@ class TestGraph(
     val observeActivities = ObserveActivitiesUseCase(hangoutRepo, settingsRepo)
     val observeLogKinds = ObserveLogKindsUseCase(hangoutRepo, interactionRepo, settingsRepo)
     val setLogKinds = SetLogKindsUseCase(settingsRepo)
+    val observeCatchUp = ObserveCatchUpPolicyUseCase(settingsRepo)
+    val setCatchUpKind = SetCatchUpKindUseCase(settingsRepo)
     val customLogKinds = CustomLogKindsUseCase(settingsRepo)
     val setActivities = SetActivitiesUseCase(settingsRepo)
     val observeTimeline = ObserveTimelineUseCase(friendRepo, hangoutRepo, interactionRepo, clock)

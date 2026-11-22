@@ -115,6 +115,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
@@ -506,7 +507,7 @@ fun FriendDetailScreen(
             onMessageShown = viewModel::onMessageShown,
             onTogglePause = viewModel::onTogglePause,
             onToggleTracking = viewModel::onToggleTracking,
-            onToggleContactCounts = viewModel::onToggleContactCounts,
+            onSetCatchUpCounts = viewModel::onSetCatchUpCounts,
             onToggleOccasion = viewModel::onToggleOccasion,
             onOpenPlanEditor = viewModel::onOpenPlanEditor,
             onDismissPlanEditor = viewModel::onDismissPlanEditor,
@@ -649,7 +650,7 @@ data class FriendDetailActions(
     val onMessageShown: () -> Unit = {},
     val onTogglePause: () -> Unit = {},
     val onToggleTracking: () -> Unit = {},
-    val onToggleContactCounts: () -> Unit = {},
+    val onSetCatchUpCounts: (CatchUpCounts) -> Unit = {},
     val onToggleOccasion: (Occasion) -> Unit = {},
     val onOpenPlanEditor: (Plan?) -> Unit = {},
     val onDismissPlanEditor: () -> Unit = {},

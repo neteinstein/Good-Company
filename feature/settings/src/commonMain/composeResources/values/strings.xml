@@ -234,6 +234,8 @@
     <string name="how_add">Add a way</string>
     <string name="how_rename">Rename</string>
     <string name="how_name_taken">There’s already one with that name</string>
+    <string name="how_counts">Counts as catching up</string>
+    <string name="how_counts_hint">These restart the catch-up countdown for everyone set to “As in Settings” in Edit person. Meeting up always counts; journal entries never do.</string>
     <!-- Places without GPS (issue #121) -->
     <string name="places_typed">Without GPS</string>
     <string name="places_pin">Add coordinates (where you are now)</string>

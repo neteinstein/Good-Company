@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.model.Attachment as DomainAttachment
 import com.neteinstein.goodcompany.core.domain.model.ConversationMessage as DomainMessage
@@ -447,6 +448,8 @@ internal suspend fun GoodCompanyDatabase.readStoredPreferences(base: AppSettings
         customActivities = customActivitiesFromColumn(row.custom_activities),
         logKinds = logKindsFromColumn(row.log_kinds),
         customLogKinds = customActivitiesFromColumn(row.custom_log_kinds),
+        catchUpKinds = catchUpKindsFromColumn(row.catch_up_kinds),
+        catchUpCustomKinds = customActivitiesFromColumn(row.catch_up_custom_kinds),
     )
     return StoredPreferences(settings, row.ai_enabled?.toFlag())
 }
@@ -480,6 +483,18 @@ internal fun logKindsFromColumn(column: String?): List<LogKind> =
 internal fun List<LogKind>.toLogKindsColumn(): String? =
     distinct().takeIf { it.isNotEmpty() && it != LogKind.DEFAULT_ORDER }?.joinToString(",") { it.name }
 
+/** Ticked kinds that count as catching up: NULL = the default set, '' = none; in person always counts. */
+internal fun catchUpKindsFromColumn(column: String?): Set<LogKind> {
+    if (column == null) return CatchUpPolicy.DEFAULT_KINDS
+    return column.split(',').mapNotNullTo(mutableSetOf(LogKind.MEETUP)) { name -> enumOrNull<LogKind>(name.trim())?.takeIf { it.isRemote } }
+}
+
+internal fun Set<LogKind>.toCatchUpKindsColumn(): String? {
+    val remote = filter { it.isRemote }.toSet()
+    if (remote == CatchUpPolicy.DEFAULT_KINDS.filter { it.isRemote }.toSet()) return null
+    return LogKind.DEFAULT_ORDER.filter { it in remote }.joinToString(",") { it.name }
+}
+
 internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings) {
     userPreferencesQueries.put(
         User_preferences(
@@ -500,6 +515,8 @@ internal suspend fun GoodCompanyDatabase.writePreferences(settings: AppSettings)
             custom_activities = settings.customActivities.toCustomActivitiesColumn(),
             log_kinds = settings.logKinds.toLogKindsColumn(),
             custom_log_kinds = settings.customLogKinds.toCustomActivitiesColumn(),
+            catch_up_kinds = settings.catchUpKinds.toCatchUpKindsColumn(),
+            catch_up_custom_kinds = settings.catchUpCustomKinds.toCustomActivitiesColumn(),
         ),
     )
 }

@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
+import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FriendSummary
@@ -22,12 +23,14 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObservePlansUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.TimelineEntry
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -84,6 +87,8 @@ class LogSheetModel(
     val plan: PlanOccurrence? = null,
     /** Saves an edited timeline entry (issue #102). */
     private val editEntry: EditTimelineEntryUseCase? = null,
+    /** What counts as catching up (Settings → How), for the hint under "How?". */
+    catchUp: Flow<CatchUpPolicy> = flowOf(CatchUpPolicy()),
 ) {
     /** The timeline entry being edited, set by [startEditing]. */
     private var editing: TimelineEntry? = null
@@ -94,12 +99,12 @@ class LogSheetModel(
     val draft: StateFlow<LogDraft> = mutableDraft.asStateFlow()
 
     val sheet: StateFlow<LogSheetState> = combine(
-        combine(observeFriends(), observePlaceBook(), ::Pair),
+        combine(observeFriends(), observePlaceBook(), catchUp, ::Triple),
         observeActivities(),
         observeCircles(),
         mutableDraft,
     ) {
-            (friends, places),
+            (friends, places, policy),
             activities,
             circles,
             d,
@@ -133,6 +138,7 @@ class LogSheetModel(
             circle = circle?.group,
             circleMembers = circle?.members.orEmpty(),
             editing = d.editing,
+            catchUp = policy,
         )
     }.stateIn(scope, SharingStarted.WhileSubscribed(5_000), initialSheet())
 

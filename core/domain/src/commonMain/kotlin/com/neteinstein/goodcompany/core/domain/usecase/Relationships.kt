@@ -37,6 +37,27 @@ object Relationships {
         return result
     }
 
+    /**
+     * The last time each of [friends] caught up with you: their last meetup, or a later contact at a distance that
+     * [policy] counts for them (decision 2026-11-21 "Catch-up · what counts").
+     */
+    fun lastCaughtUp(
+        friends: List<Friend>,
+        hangouts: List<Hangout>,
+        interactions: List<Interaction>,
+        policy: CatchUpPolicy,
+    ): Map<FriendId, Instant> {
+        val result = HashMap(lastSeen(hangouts))
+        val byId = friends.associateBy { it.id }
+        for (i in interactions) {
+            val friend = byId[i.friendId] ?: continue
+            if (!policy.counts(friend, i)) continue
+            val prev = result[i.friendId]
+            if (prev == null || i.at > prev) result[i.friendId] = i.at
+        }
+        return result
+    }
+
     data class MeetupStatus(
         val friend: Friend,
         val lastSeenDate: LocalDate?,
@@ -57,9 +78,8 @@ object Relationships {
      * instead; see [LastSeenQuestions]). A real meetup always wins over the approximate date, which only moves the due
      * date: [MeetupStatus.lastSeenDate] and [MeetupStatus.daysSinceLastSeen] stay null until something is logged.
      * A snooze pushes the due date to the day after it ends. Paused friends and people whose keep-in-touch tracking is
-     * off ([Friend.tracksKeepInTouch]) are left out. For friends whose calls and
-     * chats count ([Friend.contactCountsAsCatchUp]), the last contact of any kind from [interactions] resets the
-     * rhythm, not only meetups.
+     * off ([Friend.tracksKeepInTouch]) are left out. Besides meetups, the contacts from [interactions] that
+     * [CadenceRules.catchUp] counts for each friend ([Friend.catchUpCounts]) restart the rhythm ([lastCaughtUp]).
      */
     fun meetupStatuses(
         friends: List<Friend>,
@@ -69,12 +89,11 @@ object Relationships {
         rules: CadenceRules = CadenceRules(),
         interactions: List<Interaction> = emptyList(),
     ): List<MeetupStatus> {
-        val seen = lastSeen(hangouts)
-        val contact = if (friends.any { it.contactCountsAsCatchUp }) lastContact(hangouts, interactions) else seen
+        val caughtUp = lastCaughtUp(friends, hangouts, interactions, rules.catchUp)
         return friends.mapNotNull { friend ->
             if (friend.catchUpPaused || !friend.tracksKeepInTouch) return@mapNotNull null
             val every = rules.cadenceFor(friend) ?: return@mapNotNull null
-            val last = (if (friend.contactCountsAsCatchUp) contact else seen)[friend.id]?.toLocalDate(zone)
+            val last = caughtUp[friend.id]?.toLocalDate(zone)
             val since = last ?: friend.approxLastSeen ?: return@mapNotNull null
             val due = since.plus(every, DateTimeUnit.DAY)
             val snooze = friend.snoozedUntil?.takeIf { it >= today && it > since }

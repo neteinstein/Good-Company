@@ -143,6 +143,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpPolicyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpStoryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCirclePageUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendDetailUseCase
@@ -218,6 +219,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpKindUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCatchUpPausedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCircleMemberUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetClosenessUseCase
@@ -414,6 +416,8 @@ val appModule = module {
     factoryOf(::ObserveActivitiesUseCase)
     factoryOf(::ObserveLogKindsUseCase)
     factoryOf(::SetLogKindsUseCase)
+    factoryOf(::ObserveCatchUpPolicyUseCase)
+    factoryOf(::SetCatchUpKindUseCase)
     factoryOf(::SetActivitiesUseCase)
     factoryOf(::ObserveTimelineUseCase)
     factoryOf(::DeleteTimelineEntryUseCase)
@@ -598,7 +602,7 @@ val appModule = module {
     viewModelOf(::HangoutsViewModel)
     viewModelOf(::WhosFreeViewModel)
     viewModel { (ids: List<FriendId>, circleId: String?, plan: PlanOccurrence?, prefill: LogPrefill) ->
-        WeMetViewModel(ids, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        WeMetViewModel(ids, circleId, plan, prefill, get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModelOf(::LoggedMeetupViewModel)
     viewModelOf(::AgendaViewModel)

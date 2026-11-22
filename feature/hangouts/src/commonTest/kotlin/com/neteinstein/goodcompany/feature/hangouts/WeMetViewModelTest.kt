@@ -57,6 +57,7 @@ class WeMetViewModelTest {
         g.observePlaceBook,
         g.observePlans,
         g.observeLogKinds,
+        g.observeCatchUp,
         g.logInteraction,
         g.confirmPlan,
         g.currentLocation,

@@ -330,6 +330,36 @@ class SetLogKindsUseCase(private val settings: SettingsRepository) {
     }
 }
 
+/**
+ * Ticks or unticks whether a way of keeping in touch restarts the rhythm of people on the default (Settings → How,
+ * decision 2026-11-21 "Catch-up · what counts"). In person and journal entries can't change.
+ */
+class SetCatchUpKindUseCase(private val settings: SettingsRepository) {
+    suspend operator fun invoke(option: LogKindOption, counts: Boolean) {
+        settings.update { s ->
+            val name = option.name
+            when {
+                name != null -> {
+                    val list = s.catchUpCustomKinds
+                    val others = list.filterNot { Tags.normalize(it) == Tags.normalize(name) }
+                    // Ticking one already ticked keeps the name as it is.
+                    s.copy(
+                        catchUpCustomKinds = if (!counts) {
+                            others
+                        } else if (others.size < list.size) {
+                            list
+                        } else {
+                            list + name
+                        },
+                    )
+                }
+                option.kind.isRemote -> s.copy(catchUpKinds = if (counts) s.catchUpKinds + option.kind else s.catchUpKinds - option.kind)
+                else -> s
+            }
+        }
+    }
+}
+
 /** Saves the activities the Log popup offers, in this order (F3). Ignored when it would leave none. */
 class SetActivitiesUseCase(private val settings: SettingsRepository) {
     suspend operator fun invoke(activities: List<HangoutActivity>) {

@@ -227,6 +227,8 @@
     <string name="how_add">Adicionar forma</string>
     <string name="how_rename">Mudar o nome</string>
     <string name="how_name_taken">Já há uma com esse nome</string>
+    <string name="how_counts">Conta como estar em contacto</string>
+    <string name="how_counts_hint">Estas reiniciam a contagem para quem está em “Como nas Definições” em Editar pessoa. Estarem juntos conta sempre; as entradas do diário nunca contam.</string>
     <string name="places_typed">Sem GPS</string>
     <string name="places_pin">Adicionar coordenadas (onde estás agora)</string>
     <string name="places_pinned">“%1$s” já tem coordenadas</string>

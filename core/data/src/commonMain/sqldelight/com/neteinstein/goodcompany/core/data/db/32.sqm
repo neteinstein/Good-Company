@@ -1,0 +1,9 @@
+-- Version 32 → 33 (decision 2026-11-21 "Catch-up · what counts"): more than meeting up restarts the catch-up rhythm by
+-- default, and it stays configurable. Each person gets a choice (catch_up_counts: a CatchUpCounts name; NULL = DEFAULT,
+-- the ways ticked in Settings → How); the old "calls and chats count" switch on becomes ANY_CONTACT and off the
+-- default. The old column stays, written for older builds. user_preferences gets the ticked kinds (LogKind names,
+-- comma-separated; NULL = the default set, '' = none) and your own How options that count (a JSON array; NULL = none).
+ALTER TABLE friend ADD COLUMN catch_up_counts TEXT;
+UPDATE friend SET catch_up_counts = 'ANY_CONTACT' WHERE contact_counts_as_catch_up = 1;
+ALTER TABLE user_preferences ADD COLUMN catch_up_kinds TEXT;
+ALTER TABLE user_preferences ADD COLUMN catch_up_custom_kinds TEXT;

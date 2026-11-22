@@ -66,8 +66,11 @@ data class Friend(
     val gifts: List<Gift> = emptyList(),
     /** Catch-up nudges paused with no end date ("on hold"). History and birthdays are kept. */
     val catchUpPaused: Boolean = false,
-    /** Calls and chats also count as catching up (for friends who live far away), not only meetups. */
-    val contactCountsAsCatchUp: Boolean = false,
+    /**
+     * What restarts their catch-up rhythm: the ways of keeping in touch ticked in Settings → How (the default), only being
+     * together, or any contact (decision 2026-11-21 "Catch-up · what counts"; was the "calls and chats count" switch).
+     */
+    val catchUpCounts: CatchUpCounts = CatchUpCounts.DEFAULT,
     /** What they're good company for ("weekday lunch", "a hike"…), used by "Who's free for…?". */
     val occasions: List<Occasion> = emptyList(),
     /** What's new in their life (new job, a move, a new hobby…), newest last. Leads their catch-up story. */
@@ -335,3 +338,18 @@ data class CustomField(
  */
 @Serializable
 data class PersonBackground(val friendId: FriendId, val image: ContactPhoto)
+
+/**
+ * What restarts a person's catch-up rhythm (decision 2026-11-21 "Catch-up · what counts"), chosen per person in Edit
+ * person. Meetups always count; journal entries never do.
+ */
+enum class CatchUpCounts {
+    /** The ways of keeping in touch ticked in Settings → How (`CatchUpPolicy`). */
+    DEFAULT,
+
+    /** Only being together. */
+    IN_PERSON_ONLY,
+
+    /** Any contact: every call, message, chat or game (the old "calls and chats count" switch). */
+    ANY_CONTACT,
+}

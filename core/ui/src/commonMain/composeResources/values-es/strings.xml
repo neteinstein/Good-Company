@@ -394,7 +394,7 @@
     <string name="log_location_denied">Sin permiso de ubicación. Escribe el lugar.</string>
     <string name="log_location_unavailable">No se pudo obtener tu ubicación. Comprueba que la ubicación está activada, o escribe el lugar.</string>
     <string name="log_less">Menos</string>
-    <string name="log_counts_hint">Las llamadas, mensajes, emails y videollamadas solo cuentan como ponerse al día con el interruptor “Las llamadas y los chats cuentan” de %1$s activado.</string>
+    <string name="log_counts_hint">Esto no reinicia la cuenta atrás de %1$s. Cambia lo que cuenta en Editar persona o en Ajustes → Cómo.</string>
     <string name="log_journal_footer">Una entrada de diario es una nota con fecha. Nunca cuenta como ponerse al día.</string>
     <string name="activity_lunch">Comida</string>
     <string name="activity_dinner">Cena</string>

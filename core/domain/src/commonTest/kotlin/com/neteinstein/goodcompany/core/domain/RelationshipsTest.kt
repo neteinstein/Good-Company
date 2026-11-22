@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain
 
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.Interaction
@@ -38,10 +39,11 @@ class RelationshipsTest {
     }
 
     @Test
-    fun newContactTypesResetTheRhythmOnlyWithTheSwitchOn() {
+    fun whatRestartsTheRhythm_followsTheirChoice() {
         val email = listOf(Interaction(ana, InteractionType.EMAIL, at(2026, 3, 8)), Interaction(ana, InteractionType.VIDEO_CALL, at(2026, 3, 5)))
         val today = LocalDate(2026, 3, 10)
-        val off = Relationships.meetupStatuses(
+        // Decision 2026-11-21: by default a video call counts and an email doesn't.
+        val byDefault = Relationships.meetupStatuses(
             listOf(
                 friend("ana") {
                     copy(meetEveryDays = 30)
@@ -52,9 +54,21 @@ class RelationshipsTest {
             TimeZone.UTC,
             interactions = email,
         )
+        assertEquals(LocalDate(2026, 3, 5), byDefault.single().lastSeenDate)
+        val off = Relationships.meetupStatuses(
+            listOf(
+                friend("ana") {
+                    copy(meetEveryDays = 30, catchUpCounts = CatchUpCounts.IN_PERSON_ONLY)
+                },
+            ),
+            hangouts,
+            today,
+            TimeZone.UTC,
+            interactions = email,
+        )
         assertEquals(LocalDate(2026, 2, 1), off.single().lastSeenDate)
         val on = Relationships.meetupStatuses(
-            listOf(friend("ana") { copy(meetEveryDays = 30, contactCountsAsCatchUp = true) }),
+            listOf(friend("ana") { copy(meetEveryDays = 30, catchUpCounts = CatchUpCounts.ANY_CONTACT) }),
             hangouts,
             today,
             TimeZone.UTC,

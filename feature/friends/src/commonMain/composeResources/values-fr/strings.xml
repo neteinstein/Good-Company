@@ -158,8 +158,13 @@
     <string name="prefs_pause_hint">Plus de rappels « à revoir » jusqu’à la reprise. L’historique et les anniversaires restent.</string>
     <string name="prefs_tracking">Garder le contact</string>
     <string name="prefs_tracking_hint">Chaleur, rythme de rencontre et rappels pour prendre des nouvelles. Désactive-le pour quelqu’un que tu vois tous les jours : sa chronologie, ses rappels et son anniversaire restent.</string>
-    <string name="prefs_contact_counts">Les appels et messages comptent</string>
-    <string name="prefs_contact_counts_hint">Pour les amis loin : un appel ou un message relance le rythme, pas seulement se voir.</string>
+    <string name="prefs_catch_up_counts">Ce qui compte pour se revoir</string>
+    <string name="prefs_counts_default">Comme dans Réglages</string>
+    <string name="prefs_counts_in_person">En personne seulement</string>
+    <string name="prefs_counts_any">Tout contact</string>
+    <string name="prefs_counts_default_hint">Se voir et les moyens cochés dans Réglages → Comment relancent le compte à rebours.</string>
+    <string name="prefs_counts_in_person_hint">Seul le fait de se voir relance le compte à rebours.</string>
+    <string name="prefs_counts_any_hint">Chaque appel, message ou discussion relance le compte à rebours, comme se voir.</string>
     <string name="plans_add">Prévoir</string>
     <string name="occasions_title">Bonne compagnie pour</string>
     <string name="occasions_hint">Utilisé par « Qui est partant pour… ? » dans l’onglet Ensemble.</string>

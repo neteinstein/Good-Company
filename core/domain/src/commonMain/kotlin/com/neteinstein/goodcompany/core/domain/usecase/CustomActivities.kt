@@ -19,7 +19,8 @@ class CustomActivitiesUseCase(settings: SettingsRepository) :
  * Your own "How?" options (issue #152, Settings → Your data → How): add, rename, reorder and remove, like
  * [CustomActivitiesUseCase]. They are [AppSettings.customLogKinds]; an entry logged with one is an "Other" contact with
  * the name as its label, so renaming or removing one keeps the name on past entries. A name is at most
- * [LogInteractionUseCase.LABEL_MAX] characters, the longest label an entry keeps.
+ * [LogInteractionUseCase.LABEL_MAX] characters, the longest label an entry keeps. Renaming one that counts as catching
+ * up ([AppSettings.catchUpCustomKinds]) keeps it counting.
  */
 class CustomLogKindsUseCase(settings: SettingsRepository) :
     CustomNamesUseCase(
@@ -27,14 +28,21 @@ class CustomLogKindsUseCase(settings: SettingsRepository) :
         AppSettings::customLogKinds,
         { s, list -> s.copy(customLogKinds = list) },
         maxLength = LogInteractionUseCase.LABEL_MAX,
+        renamed = { s, from, to ->
+            s.copy(catchUpCustomKinds = s.catchUpCustomKinds.map { if (Tags.normalize(it) == Tags.normalize(from)) to else it })
+        },
     )
 
-/** A list of names of your own kept in [AppSettings] ([read] / [write]); names longer than [maxLength] are cut. */
+/**
+ * A list of names of your own kept in [AppSettings] ([read] / [write]); names longer than [maxLength] are cut. [renamed]
+ * updates anything else that holds a name when it is renamed.
+ */
 abstract class CustomNamesUseCase(
     private val settings: SettingsRepository,
     private val read: (AppSettings) -> List<String>,
     private val write: (AppSettings, List<String>) -> AppSettings,
     private val maxLength: Int = Int.MAX_VALUE,
+    private val renamed: (AppSettings, from: String, to: String) -> AppSettings = { s, _, _ -> s },
 ) {
     /** Adds [name] at the end; null when added, else why not. */
     suspend fun add(name: String): ActivityNameProblem? = edit { list ->
@@ -44,12 +52,14 @@ abstract class CustomNamesUseCase(
     }
 
     /** Renames [from] to [to] (in place); null when done, else why not. Past entries keep [from]. */
-    suspend fun rename(from: String, to: String): ActivityNameProblem? = edit { list ->
+    suspend fun rename(from: String, to: String): ActivityNameProblem? {
         val typed = to.trim().take(maxLength).trim()
-        val at = list.indexOf(from)
-        if (at < 0 || typed == from) return@edit null to list
-        problem(list, typed, except = from)?.let { return@edit it to list }
-        null to list.toMutableList().apply { set(at, typed) }
+        return edit(after = { s -> renamed(s, from, typed) }) { list ->
+            val at = list.indexOf(from)
+            if (at < 0 || typed == from) return@edit null to list
+            problem(list, typed, except = from)?.let { return@edit it to list }
+            null to list.toMutableList().apply { set(at, typed) }
+        }
     }
 
     /** Removes [name] from the pickers; returns where it was (for Undo), or -1. */
@@ -95,13 +105,17 @@ abstract class CustomNamesUseCase(
         else -> null
     }
 
-    private suspend fun edit(change: (List<String>) -> Pair<ActivityNameProblem?, List<String>>): ActivityNameProblem? {
+    /** Applies [change]; when it changed the list, [after] runs on the same update. */
+    private suspend fun edit(
+        after: (AppSettings) -> AppSettings = { it },
+        change: (List<String>) -> Pair<ActivityNameProblem?, List<String>>,
+    ): ActivityNameProblem? {
         var result: ActivityNameProblem? = null
         settings.update { s ->
             val current = read(s)
             val (problem, list) = change(current)
             result = problem
-            if (list == current) s else write(s, list)
+            if (list == current) s else after(write(s, list))
         }
         return result
     }

@@ -198,7 +198,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     migration `17.sqm`, in backups): this week 3 days ago, this month 15, a few months 90, over a year 400, "I don't
     know" today (owner decisions 2026-11-14). It only moves the due date: `MeetupStatus.lastSeenDate`/`daysSinceLastSeen`
     stay null, the person's page and timeline never show it, it isn't a hangout (no warmth, no stats), and a real
-    meetup (or any contact when `contactCountsAsCatchUp`) always wins. "Not now" is `AppSettings.lastSeenCardHiddenOn`,
+    meetup (or a contact that `CatchUpPolicy` counts for them) always wins. "Not now" is `AppSettings.lastSeenCardHiddenOn`,
     device-only (`DeviceSettings`, stripped from exports, kept on restore). Acquaintances (#69) must not be asked.
 - **Stay in touch (#115; called "Keep-in-touch tracking" until #132).** `Friend.tracksKeepInTouch` (column `friend.tracks_keep_in_touch`, `24.sqm`). Off:
   `CadenceRules.cadenceFor`/`sourceFor` return null, `Relationships.meetupStatuses` skips them, `Warmth.scoreOrNull`

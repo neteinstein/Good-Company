@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -70,8 +71,13 @@ import com.neteinstein.goodcompany.feature.friends.resources.edit_person_hint
 import com.neteinstein.goodcompany.feature.friends.resources.name_title
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_birthday_hint
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_contact_counts
-import com.neteinstein.goodcompany.feature.friends.resources.prefs_contact_counts_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_catch_up_counts
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_any
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_any_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_default
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_default_hint
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_in_person
+import com.neteinstein.goodcompany.feature.friends.resources.prefs_counts_in_person_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_events
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_events_hint
 import com.neteinstein.goodcompany.feature.friends.resources.prefs_pause
@@ -238,7 +244,7 @@ internal fun EditPersonDialog(
 
 /**
  * The person's own switches: show in my list (for a kid), birthday notifications, AI events, keep-in-touch tracking, and
- * (while tracking is on) calls count. Pause sits with the rhythm (issue #130).
+ * (while tracking is on) what counts as catching up. Pause sits with the rhythm (issue #130).
  */
 @Composable
 private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions) {
@@ -268,7 +274,7 @@ private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: Frien
                 actions.onToggleSuggestEvents,
             )
         }
-        // Issue #115: the permanent switch. Pause (with the rhythm) stays the temporary one, and it and "calls count"
+        // Issue #115: the permanent switch. Pause (with the rhythm) stays the temporary one, and it and what counts
         // only matter while tracking is on, so they're hidden while it is off.
         ToggleRow(
             stringResource(Res.string.prefs_tracking),
@@ -276,14 +282,53 @@ private fun PersonSwitches(f: Friend, state: FriendDetailUiState, actions: Frien
             f.tracksKeepInTouch,
             actions.onToggleTracking,
         )
-        if (f.tracksKeepInTouch) {
-            ToggleRow(
-                stringResource(Res.string.prefs_contact_counts),
-                stringResource(Res.string.prefs_contact_counts_hint),
-                f.contactCountsAsCatchUp,
-                actions.onToggleContactCounts,
-            )
+        if (f.tracksKeepInTouch) CatchUpCountsChoice(f.catchUpCounts, actions.onSetCatchUpCounts)
+    }
+}
+
+/**
+ * What restarts this person's catch-up countdown (decision 2026-11-21 "Catch-up · what counts"): what Settings → How
+ * ticks (the default), in person only, or any contact. The hint under the chips says what the chosen one means.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CatchUpCountsChoice(selected: CatchUpCounts, onSelect: (CatchUpCounts) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(stringResource(Res.string.prefs_catch_up_counts), style = MaterialTheme.typography.titleSmall)
+        FlowRow(
+            Modifier.padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            CatchUpCounts.entries.forEach { c ->
+                FilterChip(
+                    selected = c == selected,
+                    onClick = { onSelect(c) },
+                    label = {
+                        Text(
+                            stringResource(
+                                when (c) {
+                                    CatchUpCounts.DEFAULT -> Res.string.prefs_counts_default
+                                    CatchUpCounts.IN_PERSON_ONLY -> Res.string.prefs_counts_in_person
+                                    CatchUpCounts.ANY_CONTACT -> Res.string.prefs_counts_any
+                                },
+                            ),
+                        )
+                    },
+                )
+            }
         }
+        Text(
+            stringResource(
+                when (selected) {
+                    CatchUpCounts.DEFAULT -> Res.string.prefs_counts_default_hint
+                    CatchUpCounts.IN_PERSON_ONLY -> Res.string.prefs_counts_in_person_hint
+                    CatchUpCounts.ANY_CONTACT -> Res.string.prefs_counts_any_hint
+                },
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

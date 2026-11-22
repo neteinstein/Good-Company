@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Backup
+import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -351,6 +352,32 @@ class BackupAndPlansTest {
         val json = ExportBackupUseCase(to.backup, to.clock)()
         assertTrue(Regex("\"id\":\\s*\"ana\"[^}]*\"circle\":\\s*\"CLOSE\"[^}]*\"isCloseFriend\":\\s*true").containsMatchIn(json), json)
         assertTrue(Regex("\"id\":\\s*\"bob\"[^}]*\"isCloseFriend\":\\s*false").containsMatchIn(json), json)
+    }
+
+    @Test
+    fun aBackupWithTheOldCallsCountSwitch_becomesAnyContact_andExportsStillCarryTheSwitch() = runTest {
+        // Decision 2026-11-21 ("Catch-up · what counts"): the switch on is Any contact, off the default.
+        val old = """
+            {"format": "good-company-backup", "version": 1, "friends": [
+                {"id": "ana", "name": "Ana", "contactCountsAsCatchUp": true},
+                {"id": "bob", "name": "Bob", "contactCountsAsCatchUp": false},
+                {"id": "cat", "name": "Cat", "catchUpCounts": "IN_PERSON_ONLY"}
+            ]}
+        """.trimIndent()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(old))
+        val counts = to.backup.snapshot().friends.associate { it.id.value to it.catchUpCounts }
+        assertEquals(
+            mapOf("ana" to CatchUpCounts.ANY_CONTACT, "bob" to CatchUpCounts.DEFAULT, "cat" to CatchUpCounts.IN_PERSON_ONLY),
+            counts,
+        )
+        val json = ExportBackupUseCase(to.backup, to.clock)()
+        assertTrue(Regex("\"id\":\\s*\"ana\"[^}]*\"contactCountsAsCatchUp\":\\s*true").containsMatchIn(json), json)
+        assertTrue(Regex("\"id\":\\s*\"cat\"[^}]*\"contactCountsAsCatchUp\":\\s*false").containsMatchIn(json), json)
+
+        val again = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(json))
+        assertEquals(counts, again.backup.snapshot().friends.associate { it.id.value to it.catchUpCounts })
     }
 
     @Test

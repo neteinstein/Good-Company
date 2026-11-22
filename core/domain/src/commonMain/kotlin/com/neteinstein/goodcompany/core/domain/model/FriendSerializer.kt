@@ -13,16 +13,26 @@ import kotlinx.serialization.json.jsonPrimitive
  * store still carry `isCloseFriend`, so:
  * - writing adds `isCloseFriend` (= the level isn't Acquaintances), so older builds read the same people as real friends;
  * - reading applies the same rule as migration `19.sqm` ([closenessFrom]).
+ *
+ * Decision 2026-11-21 ("Catch-up · what counts") turned the `contactCountsAsCatchUp` switch into [Friend.catchUpCounts]:
+ * writing keeps the switch (on for Any contact) for older builds, and reading a backup without the new field takes
+ * the switch on as Any contact and off as the default (the rule of migration `32.sqm`).
  */
 object FriendSerializer : JsonTransformingSerializer<Friend>(Friend.generatedSerializer()) {
     private const val CLOSENESS = "circle"
     private const val REAL_FRIEND = "isCloseFriend"
+    private const val COUNTS = "catchUpCounts"
+    private const val LEGACY_COUNTS = "contactCountsAsCatchUp"
 
     override fun transformSerialize(element: JsonElement): JsonElement {
         val obj = element as? JsonObject ?: return element
         val level = obj[CLOSENESS]?.jsonPrimitive?.contentOrNull?.let(::closenessNamed) ?: Closeness.ACQUAINTANCE
         // Both always written: an older build reads a missing level as "not set" and a missing flag as false.
-        return JsonObject(obj + (CLOSENESS to JsonPrimitive(level.name)) + (REAL_FRIEND to JsonPrimitive(level.isRealFriend)))
+        val anyContact = obj[COUNTS]?.jsonPrimitive?.contentOrNull == CatchUpCounts.ANY_CONTACT.name
+        return JsonObject(
+            obj + (CLOSENESS to JsonPrimitive(level.name)) + (REAL_FRIEND to JsonPrimitive(level.isRealFriend)) +
+                (LEGACY_COUNTS to JsonPrimitive(anyContact)),
+        )
     }
 
     override fun transformDeserialize(element: JsonElement): JsonElement {
@@ -30,7 +40,9 @@ object FriendSerializer : JsonTransformingSerializer<Friend>(Friend.generatedSer
         val stored = obj[CLOSENESS]?.let { (it as? JsonPrimitive)?.contentOrNull }?.let(::closenessNamed)
         val real = (obj[REAL_FRIEND] as? JsonPrimitive)?.booleanOrNull ?: false
         val level = closenessFrom(stored, real)
-        return JsonObject(obj - REAL_FRIEND + (CLOSENESS to JsonPrimitive(level.name)))
+        val counts = (obj[COUNTS] as? JsonPrimitive)?.contentOrNull?.let { name -> CatchUpCounts.entries.firstOrNull { it.name == name } }
+            ?: if ((obj[LEGACY_COUNTS] as? JsonPrimitive)?.booleanOrNull == true) CatchUpCounts.ANY_CONTACT else CatchUpCounts.DEFAULT
+        return JsonObject(obj - REAL_FRIEND - LEGACY_COUNTS + (CLOSENESS to JsonPrimitive(level.name)) + (COUNTS to JsonPrimitive(counts.name)))
     }
 
     private fun closenessNamed(name: String): Closeness? = Closeness.entries.firstOrNull { it.name == name }
