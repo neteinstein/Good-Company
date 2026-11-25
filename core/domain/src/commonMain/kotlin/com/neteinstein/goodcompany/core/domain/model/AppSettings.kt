@@ -177,11 +177,46 @@ data class AppSettings(
     val peopleLegendSeen: Boolean = false,
     /** Issue #138: how "Everything coming up" shows, the month calendar by default. Device-only: never exported. */
     val agendaView: AgendaView = AgendaView.CALENDAR,
+    /**
+     * Issue #174: the app's language, [AppLanguage.SYSTEM] (the device's) by default. Device-only: never exported, kept
+     * on restore, so a new phone starts on the system language.
+     */
+    val language: AppLanguage = AppLanguage.SYSTEM,
 ) {
     val hasAiKey: Boolean get() = !aiApiKey.isNullOrBlank()
 
     /** The key to call the AI with: null while AI is off or no key is saved. Every AI use case goes through this. */
     val usableAiKey: String? get() = aiApiKey?.takeIf { aiEnabled && it.isNotBlank() }
+}
+
+/**
+ * The languages the app ships (issue #174), or [SYSTEM] to follow the device. [tag] is the BCP-47 tag the app runs in
+ * and asks the AI to answer in (Portuguese is European); null for [SYSTEM].
+ */
+@Serializable
+enum class AppLanguage(val tag: String?) {
+    SYSTEM(null),
+    ENGLISH("en"),
+    PORTUGUESE("pt-PT"),
+    SPANISH("es"),
+    FRENCH("fr"),
+    ROMANIAN("ro"),
+    ;
+
+    /** The language subtag ("pt" for "pt-PT"); null for [SYSTEM]. */
+    val language: String? get() = tag?.substringBefore('-')
+
+    /** The region subtag ("PT" for "pt-PT"), or "" when there is none. */
+    val region: String get() = tag?.substringAfter('-', "").orEmpty()
+
+    companion object {
+        /** The shipped language a platform tag ("pt-BR", "en_US", "fr") stands for; [SYSTEM] for none or another one. */
+        fun fromTag(tag: String?): AppLanguage {
+            val language = tag?.trim()?.substringBefore('-')?.substringBefore('_')?.lowercase()
+            if (language.isNullOrEmpty()) return SYSTEM
+            return entries.firstOrNull { it.language == language } ?: SYSTEM
+        }
+    }
 }
 
 /** The two views of "Everything coming up" (issue #138). */

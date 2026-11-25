@@ -380,6 +380,8 @@ class TestGraph(
     val customActivities = com.neteinstein.goodcompany.core.domain.usecase.CustomActivitiesUseCase(settingsRepo)
     val dismissPeopleLegend = com.neteinstein.goodcompany.core.domain.usecase.DismissPeopleLegendUseCase(settingsRepo)
     val setAgendaView = com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase(settingsRepo)
+    val languagePlatform = FakeAppLanguagePlatform()
+    val keepLanguageInStep = com.neteinstein.goodcompany.core.domain.usecase.KeepLanguageInStepUseCase(settingsRepo, languagePlatform)
     val observeYearInReview = ObserveYearInReviewUseCase(friendRepo, hangoutRepo, reminderRepo, interactionRepo, clock)
     val observeYearReviewCard = ObserveYearReviewCardUseCase(hangoutRepo, clock)
     val observeIdeas = ObserveIdeasUseCase(ideaRepo)

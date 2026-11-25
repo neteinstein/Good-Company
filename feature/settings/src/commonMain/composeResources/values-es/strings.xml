@@ -8,7 +8,13 @@
     <string name="theme_dark">Oscuro</string>
     <string name="dynamic_color">Colores del fondo de pantalla</string>
     <string name="dynamic_color_hint">Color dinámico Material You</string>
-    <string name="language_note">El idioma sigue al de tu dispositivo: English, Português, Español, Français o Română.</string>
+    <string name="language_title">Idioma</string>
+    <string name="language_system">Predeterminado del sistema</string>
+    <string name="language_english">English</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Français</string>
+    <string name="language_romanian">Română</string>
     <string name="circles">Cercanía</string>
     <string name="circles_hint">Cada cuánto quieres ver a las personas de cada cercanía. El ritmo propio de un amigo en su página tiene prioridad.</string>
     <string name="ai">Ideas con IA</string>

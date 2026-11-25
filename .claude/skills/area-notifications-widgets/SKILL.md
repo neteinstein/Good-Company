@@ -13,6 +13,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   never throttled. Nor is the daily "log your day" reminder (issue #116, `NotificationType.DAILY_LOG`, on by default at
   21:00, `NotificationSettings.dailyLogMinute`): 3 days ahead in slot `daily-log`, REMINDERS channel, and it carries
   `PlannedNotification.link = AppLink.log()`, which Android puts on the tap intent and iOS hands to `QuickEntryInbox`.
+- **The app's language (issue #174).** Notifications are rendered with `getString`, which reads the locale
+  `AppLocale.apply` set, so they follow Settings → Language at the next re-plan (a language change re-plans, since it
+  changes `settings`). `KeepLanguageInStepUseCase` starts first in `AppStartup` so the first plan is already in it.
+  The Android widget, shortcuts and channel names follow on Android 13+ (per-app language); on 12L background
+  workers and Android resources stay in the device language. The iOS widget reads its own `Localizable.strings`, so
+  it follows the device's language until the app's `AppleLanguages` takes effect at the next launch.
 - Privacy: with private notifications or app lock on, widgets hide photos and shortcuts show nobody.
 - Android and iOS widgets show the same `ObserveHomeWidgetUseCase` data; change both (iOS keeps pace with Android).
 - Texts: notifications are rendered in `:core:ui` (`ResourceNotificationRenderer`); widget and shortcut labels are

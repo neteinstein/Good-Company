@@ -8,7 +8,13 @@
     <string name="theme_dark">Întunecat</string>
     <string name="dynamic_color">Culori din imaginea de fundal</string>
     <string name="dynamic_color_hint">Culoare dinamică Material You</string>
-    <string name="language_note">Limba urmează setarea dispozitivului: English, Português, Español, Français sau Română.</string>
+    <string name="language_title">Limbă</string>
+    <string name="language_system">Limba sistemului</string>
+    <string name="language_english">English</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Français</string>
+    <string name="language_romanian">Română</string>
     <string name="circles">Apropiere</string>
     <string name="circles_hint">Cât de des ai vrea să vezi oamenii de la fiecare nivel de apropiere. Ritmul propriu al unui prieten, de pe pagina lui, are prioritate.</string>
     <string name="ai">Idei cu AI</string>

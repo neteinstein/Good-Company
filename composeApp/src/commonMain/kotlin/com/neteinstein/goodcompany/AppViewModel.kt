@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepLanguageInStepUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * [storageIsTemporary]: what's changed now is lost on reload (the web app is already open in another tab).
@@ -37,6 +39,7 @@ class AppViewModel(
     observeMyPhoto: ObserveMyPhotoUseCase,
     observeActivities: ObserveActivitiesUseCase,
     startup: AppStartup,
+    private val keepLanguageInStep: KeepLanguageInStepUseCase,
 ) : ViewModel() {
     val state: StateFlow<AppUiState> =
         combine(
@@ -50,5 +53,10 @@ class AppViewModel(
 
     init {
         startup.start(viewModelScope)
+    }
+
+    /** Back in the foreground: a language picked in the system's per-app setting meanwhile becomes the app's (#174). */
+    fun onForeground() {
+        viewModelScope.launch { runCatching { keepLanguageInStep.reconcile() } }
     }
 }

@@ -131,9 +131,9 @@ import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** The UI language, e.g. "pt-PT" — used to ask the AI to answer in it. */
+/** The UI language, e.g. "pt-PT": the one chosen in Settings (issue #174), or the device's. Asks the AI to answer in it. */
 object ComposeLanguageProvider : LanguageProvider {
-    override fun languageTag(): String = Locale.current.toLanguageTag()
+    override fun languageTag(): String = AppLocale.language.tag ?: Locale.current.toLanguageTag()
 }
 
 /** Localised notification text + quick actions, from string resources. */

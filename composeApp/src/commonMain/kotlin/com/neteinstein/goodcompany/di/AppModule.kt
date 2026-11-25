@@ -42,6 +42,7 @@ import com.neteinstein.goodcompany.core.data.update.GitHubReleaseUpdateSource
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
+import com.neteinstein.goodcompany.core.domain.repository.AppLanguagePlatform
 import com.neteinstein.goodcompany.core.domain.repository.AppUpdateSource
 import com.neteinstein.goodcompany.core.domain.repository.BackupCrypto
 import com.neteinstein.goodcompany.core.domain.repository.BackupKeyRepository
@@ -136,6 +137,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ImportChatUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportPickedContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.IsStorageTemporaryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepLanguageInStepUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepOldDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepTagSpellingsUseCase
@@ -265,6 +267,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.UpdateNotificationSetting
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import com.neteinstein.goodcompany.core.ui.l10n.AppLocale
 import com.neteinstein.goodcompany.core.ui.l10n.CircleNamesFromResources
 import com.neteinstein.goodcompany.core.ui.l10n.ComposeLanguageProvider
 import com.neteinstein.goodcompany.core.ui.l10n.KinshipWordsFromResources
@@ -363,6 +366,7 @@ val appModule = module {
     // --- Localisation (strings live in compose resources; the domain only sees these ports) ---
     single<NotificationRenderer> { ResourceNotificationRenderer }
     single<LanguageProvider> { ComposeLanguageProvider }
+    single<AppLanguagePlatform> { AppLocale }
     single<SampleTextsProvider> { SampleTextsFromResources }
     single<SampleCoverSource> { SampleCoverFromResources }
     single<BuiltInCircleNames> { CircleNamesFromResources }
@@ -515,6 +519,7 @@ val appModule = module {
     factoryOf(::SetHomeCircleFilterUseCase)
     factoryOf(::DismissPeopleLegendUseCase)
     factoryOf(::SetAgendaViewUseCase)
+    factoryOf(::KeepLanguageInStepUseCase)
     factoryOf(::CustomActivitiesUseCase)
     factoryOf(::CustomLogKindsUseCase)
     factoryOf(::ObserveYearInReviewUseCase)

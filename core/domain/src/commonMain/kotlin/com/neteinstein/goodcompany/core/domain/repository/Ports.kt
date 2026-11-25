@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.repository
 
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.BackupKey
 import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
@@ -52,6 +53,24 @@ data class KinshipWords(
 /** Supplies [KinshipWords] for the current UI language. */
 fun interface KinshipVocabulary {
     suspend fun words(): KinshipWords
+}
+
+/**
+ * Where the app's language (issue #174) meets the platform: [apply] switches screens, notifications and widgets to it
+ * right away; [systemChoice] is the language the platform's own per-app setting holds (Android 13+'s app language,
+ * the iOS Settings app), or null where there is none (the web, Android 12L).
+ */
+interface AppLanguagePlatform {
+    fun systemChoice(): AppLanguage?
+
+    fun apply(language: AppLanguage)
+
+    /** No platform: tests and previews. */
+    object None : AppLanguagePlatform {
+        override fun systemChoice(): AppLanguage? = null
+
+        override fun apply(language: AppLanguage) = Unit
+    }
 }
 
 /** The user's UI language as a BCP-47 tag (e.g. "pt-PT"), used to ask the AI to answer in it. */

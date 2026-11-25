@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.settings.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
@@ -280,6 +281,9 @@ class SettingsViewModel(
     fun onAiEnabledChange(enabled: Boolean) = update { it.copy(aiEnabled = enabled) }
 
     fun onThemeChange(mode: ThemeMode) = update { it.copy(themeMode = mode) }
+
+    /** Issue #174: the app's language on this device; System default follows the device. */
+    fun onLanguageChange(language: AppLanguage) = update { it.copy(language = language) }
 
     fun onDynamicColorChange(enabled: Boolean) = update { it.copy(dynamicColor = enabled) }
 

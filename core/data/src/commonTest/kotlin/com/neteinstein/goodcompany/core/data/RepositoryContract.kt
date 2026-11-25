@@ -14,6 +14,7 @@ import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.source.LogEntry
 import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
@@ -285,6 +286,21 @@ abstract class RepositoryContract {
         to.settings.update { it.copy(agendaView = AgendaView.LIST) }
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
         assertEquals(AgendaView.LIST, to.settings.settings.first().agendaView)
+    }
+
+    @Test
+    fun theLanguage_isTheSystemsByDefault_survivesARestart_andStaysOnTheDevice() = runTest {
+        // Issue #174: device-only; a backup neither carries it nor overwrites it.
+        assertEquals(AppLanguage.SYSTEM, open().settings.settings.first().language)
+        open().settings.update { it.copy(language = AppLanguage.ROMANIAN) }
+        assertEquals(AppLanguage.ROMANIAN, open().settings.settings.first().language)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertFalse("\"language\"" in json, json)
+
+        val to = open()
+        to.settings.update { it.copy(language = AppLanguage.FRENCH) }
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(AppLanguage.FRENCH, to.settings.settings.first().language)
     }
 
     @Test

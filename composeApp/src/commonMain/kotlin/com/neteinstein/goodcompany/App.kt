@@ -65,6 +65,7 @@ import com.neteinstein.goodcompany.core.ui.components.AppLockScreen
 import com.neteinstein.goodcompany.core.ui.components.ContentWidth
 import com.neteinstein.goodcompany.core.ui.components.LocalActivityChoices
 import com.neteinstein.goodcompany.core.ui.components.LocalMyPhoto
+import com.neteinstein.goodcompany.core.ui.l10n.ProvideAppLanguage
 import com.neteinstein.goodcompany.core.ui.platform.rememberDeviceAuthenticator
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
 import com.neteinstein.goodcompany.core.ui.theme.GoodCompanyTheme
@@ -98,6 +99,12 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
     val applyLaunchOptions: ApplyLaunchOptions = koinInject()
     LaunchedEffect(launch) { applyLaunchOptions(launch) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onForeground() }
+    ProvideAppLanguage { AppContent(launch, state) }
+}
+
+@Composable
+private fun AppContent(launch: LaunchOptions, state: AppUiState) {
     GoodCompanyTheme(themeMode = state.settings.themeMode, dynamicColor = state.settings.dynamicColor) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             if (state.isReady) {
