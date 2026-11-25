@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.model
 
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.monthsUntil
 import kotlinx.datetime.plus
@@ -15,6 +16,9 @@ import kotlin.time.Instant
  * A plan can be with a whole circle ([circleId], F20) as well as with individual people ([friendIds]); at least one
  * of the two is set. With a [repeat] it is a series (issue #43): [date] is then the **open occurrence** (the oldest
  * one not answered yet), and answering or skipping it moves [date] on to the next one ([closeOccurrence]).
+ *
+ * A plan can have a time of day ([time], issue #167), the same for every occurrence. It only shows on screens and in the
+ * notification text and makes Add to calendar a timed event; without one everything treats the plan as a day.
  */
 @Serializable
 data class Plan(
@@ -36,6 +40,8 @@ data class Plan(
     val repeat: Repeat? = null,
     /** Later occurrences of the series taken out one by one ("Skip this one"), after [date]. */
     val skippedDates: List<LocalDate> = emptyList(),
+    /** The time of day (issue #167), for every occurrence; null = just the day. */
+    val time: LocalTime? = null,
 ) {
     val isRecurring: Boolean get() = repeat != null
 

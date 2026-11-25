@@ -232,7 +232,7 @@ object NotificationPlanner {
                 add(
                     "plan:$key:day",
                     day,
-                    NotificationContent.PlanToday(p.id, p.title, names, occurrence.date),
+                    NotificationContent.PlanToday(p.id, p.title, names, occurrence.date, p.time),
                     keepOnScreen,
                     slot = "plan:$key",
                     whileOpen = true,

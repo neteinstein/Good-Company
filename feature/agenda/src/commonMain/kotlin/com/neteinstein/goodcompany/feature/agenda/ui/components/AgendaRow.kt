@@ -62,6 +62,7 @@ import com.neteinstein.goodcompany.core.ui.components.StackedAvatars
 import com.neteinstein.goodcompany.core.ui.components.repeatLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.l10n.anniversaryTitle
+import com.neteinstein.goodcompany.core.ui.platform.clockLabel
 import com.neteinstein.goodcompany.core.ui.resources.anniversary_years
 import com.neteinstein.goodcompany.core.ui.resources.catchup_snooze_week
 import com.neteinstein.goodcompany.core.ui.resources.catchup_snooze_weekend
@@ -226,6 +227,8 @@ fun AgendaRow(
             stringResource(Res.string.label_plan),
             item.plan.title,
             listOfNotNull(
+                // Issue #167: the time first, when the plan has one.
+                item.plan.time?.clockLabel(),
                 item.circle?.let { c ->
                     stringResource(
                         CoreRes.string.plan_circle_people,
@@ -252,6 +255,7 @@ fun AgendaRow(
             item.plan.title,
             listOfNotNull(
                 item.occurrence.shortLabel(),
+                item.plan.time?.clockLabel(),
                 item.circle?.let { "${it.emoji} ${it.name}" },
                 item.friends.takeIf { item.circle == null }?.takeIf {
                     it.isNotEmpty()

@@ -47,6 +47,7 @@ import com.russhwolf.settings.MapSettings
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -443,5 +444,23 @@ class BackupAndPlansTest {
         assertEquals(null, restored.snoozedUntil)
         assertEquals(null, restored.completedAt)
         assertTrue(restored.done)
+    }
+
+    @Test
+    fun aPlansTime_roundTripsThroughABackupFile_andOlderBackupsHaveNoTime() = runTest {
+        // Issue #167.
+        val from = Stores()
+        val plan = Plan("p", listOf(FriendId("ana")), "Dinner", LocalDate(2026, 3, 12), createdAt = at(2026, 3, 1), time = LocalTime(19, 30))
+        from.plans.upsert(plan)
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(listOf(plan), to.backup.snapshot().plans)
+
+        val oldPlan = """{"id":"p","friendIds":["ana"],"title":"Lunch","date":"2026-03-12","createdAt":"2026-03-01T12:00:00Z"}"""
+        val old = """{"format":"good-company-backup","version":1,"plans":[$oldPlan]}"""
+        val again = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(old))
+        assertEquals(null, again.backup.snapshot().plans.single().time)
     }
 }

@@ -1,0 +1,3 @@
+-- Version 33 → 34 (issue #167, decision 2026-11-22 "Plans · a time"): a plan can have a time of day as well as a day,
+-- the same for every occurrence of a series. "HH:MM" (checked in the mapper); NULL = just the day, as before.
+ALTER TABLE plan ADD COLUMN time TEXT;

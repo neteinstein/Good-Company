@@ -6,11 +6,15 @@ import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Repeat
 import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.ui.components.asksForSeries
+import com.neteinstein.goodcompany.core.ui.components.calendarEntry
 import com.neteinstein.goodcompany.core.ui.components.otherAnswers
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
@@ -38,5 +42,15 @@ class PlanActionsTest {
         assertTrue(series.asksForSeries(PlanAnswer.DELETE))
         assertFalse(series.asksForSeries(PlanAnswer.DIDNT_HAPPEN))
         assertFalse(plan("ana").asksForSeries(PlanAnswer.DELETE))
+    }
+
+    @Test
+    fun addToCalendar_isTimedWithThePlansTime_andAllDayWithout() {
+        // Issue #167.
+        val allDay = plan("ana").calendarEntry(emptyList())
+        assertNull(allDay.time)
+        assertNull(allDay.start())
+        val timed = plan("ana").copy(time = LocalTime(19, 30)).calendarEntry(emptyList(), on = LocalDate(2026, 3, 16))
+        assertEquals(LocalDateTime(2026, 3, 16, 19, 30), timed.start())
     }
 }

@@ -49,6 +49,8 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.minutes
 
 actual val platformCapabilities = PlatformCapabilities(
     name = "Android",
@@ -371,13 +373,16 @@ actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {
     return remember(context) {
         { entry ->
             val zone = TimeZone.currentSystemDefault()
-            val start = entry.date.atStartOfDayIn(zone).toEpochMilliseconds()
-            val end = entry.date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone).toEpochMilliseconds()
+            // Issue #167: with a time, a timed event of TIMED_MINUTES; without one, all day as before.
+            val timed = entry.start()?.toInstant(zone)
+            val start = timed?.toEpochMilliseconds() ?: entry.date.atStartOfDayIn(zone).toEpochMilliseconds()
+            val end = timed?.plus(CalendarEntry.TIMED_MINUTES.minutes)?.toEpochMilliseconds()
+                ?: entry.date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(zone).toEpochMilliseconds()
             val intent = Intent(Intent.ACTION_INSERT)
                 .setData(CalendarContract.Events.CONTENT_URI)
                 .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start)
                 .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end)
-                .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, timed == null)
                 .putExtra(CalendarContract.Events.TITLE, entry.title)
                 .apply {
                     entry.location?.let { putExtra(CalendarContract.Events.EVENT_LOCATION, it) }

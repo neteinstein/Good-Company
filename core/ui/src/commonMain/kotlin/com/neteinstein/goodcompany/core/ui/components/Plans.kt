@@ -14,7 +14,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Repeat
@@ -52,6 +54,8 @@ import com.neteinstein.goodcompany.core.domain.model.RepeatUnit
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.platform.CalendarEntry
+import com.neteinstein.goodcompany.core.ui.platform.clockLabel
+import com.neteinstein.goodcompany.core.ui.platform.uses24HourClock
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.every_n_days
@@ -74,6 +78,8 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_days
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_months
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_unit_weeks
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_until
+import com.neteinstein.goodcompany.core.ui.resources.plan_time_add
+import com.neteinstein.goodcompany.core.ui.resources.plan_time_remove
 import com.neteinstein.goodcompany.core.ui.resources.plan_title_label
 import com.neteinstein.goodcompany.core.ui.resources.plan_title_placeholder
 import com.neteinstein.goodcompany.core.ui.resources.plan_when
@@ -85,6 +91,7 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_with_people
 import com.neteinstein.goodcompany.core.ui.resources.save
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -93,8 +100,8 @@ import org.jetbrains.compose.resources.stringResource
 val LocalActivityChoices = androidx.compose.runtime.compositionLocalOf<List<ActivityChoice>?> { null }
 
 /**
- * Create or change a planned meetup: what (title and activity), with whom (a circle, people or both), which day,
- * whether it repeats and (optionally) where. A plan doesn't count as "met" until the user says it happened.
+ * Create or change a planned meetup: what (title and activity), with whom (a circle, people or both), which day and
+ * (optionally, issue #167) at what time, whether it repeats and (optionally) where. A plan doesn't count as "met" until the user says it happened.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -120,7 +127,9 @@ fun PlanEditor(
     var date by remember { mutableStateOf(initial?.date ?: today.plus(DEFAULT_DAYS_AHEAD, DateTimeUnit.DAY)) }
     var place by remember { mutableStateOf(initial?.place.orEmpty()) }
     var repeat by remember { mutableStateOf(initial?.repeat?.let { RepeatDraft(it.every, it.unit, it.until) }) }
+    var time by remember { mutableStateOf(initial?.time) }
     var pickDate by remember { mutableStateOf(false) }
+    var pickTime by remember { mutableStateOf(false) }
     var pickUntil by remember { mutableStateOf(false) }
     val circle = circles.firstOrNull { it.id == circleId }.takeIf { withCircle }
     AlertDialog(
@@ -182,6 +191,7 @@ fun PlanEditor(
                     Spacer(Modifier.width(8.dp))
                     Text(date.longLabel())
                 }
+                PlanTimeChoice(time, onPick = { pickTime = true }, onClear = { time = null })
                 RepeatChoice(repeat, onChange = { repeat = it }, onPickUntil = { pickUntil = true })
                 OutlinedTextField(
                     place,
@@ -211,6 +221,7 @@ fun PlanEditor(
                             activity = activity?.builtIn,
                             activityName = activity?.customName,
                             repeat = repeat?.let { Repeat(it.every, it.unit, date, it.until) },
+                            time = time,
                         ),
                     )
                 },
@@ -220,6 +231,14 @@ fun PlanEditor(
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
     )
     if (pickDate) LocalDatePickerDialog(date, onDismiss = { pickDate = false }, onPicked = { date = it })
+    if (pickTime) {
+        LocalTimePickerDialog(
+            time ?: LocalTime(DEFAULT_PLAN_HOUR, 0),
+            onDismiss = { pickTime = false },
+            onPicked = { time = it },
+            is24Hour = uses24HourClock(),
+        )
+    }
     if (picking) {
         PeoplePickerSheet(friends, pickerCircles, chosen = selected, onDismiss = { picking = false }, onDone = {
             selected = it
@@ -230,6 +249,21 @@ fun PlanEditor(
         LocalDatePickerDialog(repeat?.until ?: date, onDismiss = { pickUntil = false }, onPicked = { d ->
             repeat = repeat?.copy(until = d.takeIf { it >= date })
         })
+    }
+}
+
+/** Issue #167: the optional time, under the day. "Add a time" until one is picked, then the time and ×. */
+@Composable
+private fun PlanTimeChoice(time: LocalTime?, onPick: () -> Unit, onClear: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedButton(onClick = onPick) {
+            Icon(Icons.Rounded.AccessTime, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(time?.clockLabel() ?: stringResource(Res.string.plan_time_add))
+        }
+        if (time != null) {
+            IconButton(onClick = onClear) { Icon(Icons.Rounded.Close, stringResource(Res.string.plan_time_remove)) }
+        }
     }
 }
 
@@ -383,6 +417,7 @@ fun CancelledPlanRow(
 @Composable
 private fun PlanDetails(plan: Plan, friends: List<Friend>, showNames: Boolean, circle: FriendGroup?) {
     val details = listOfNotNull(
+        plan.time?.clockLabel(),
         circle?.let { "${it.emoji} ${it.name}" },
         friends.takeIf { showNames && circle == null && it.isNotEmpty() }?.let { fs ->
             stringResource(Res.string.plan_with_names, fs.joinToString { it.displayName.substringBefore(' ') })
@@ -400,14 +435,21 @@ private fun PlanDetails(plan: Plan, friends: List<Friend>, showNames: Boolean, c
     }
 }
 
-/** What "Add to calendar" hands to the system: one occurrence ([on], the open one by default). */
+/**
+ * What "Add to calendar" hands to the system: one occurrence ([on], the open one by default). With the plan's time it is
+ * a timed event (issue #167), otherwise all day.
+ */
 fun Plan.calendarEntry(friends: List<Friend>, on: LocalDate = date, circle: FriendGroup? = null): CalendarEntry = CalendarEntry(
     title = title,
     date = on,
+    time = time,
     location = place,
     notes = (listOfNotNull(circle?.name) + friends.map { it.displayName }).joinToString().ifBlank { null },
 )
 
 private const val DEFAULT_DAYS_AHEAD = 3
+
+/** Where the time picker starts when the plan has no time yet: an evening meetup. */
+private const val DEFAULT_PLAN_HOUR = 19
 private const val SHOWN_ACTIVITIES = 6
 private const val QUICK_EVERY_DAYS = 15
