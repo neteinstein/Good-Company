@@ -35,6 +35,8 @@ data class PlatformCapabilities(
     val hasContactPicker: Boolean = false,
     /** Google Drive backup is set up for this build (an OAuth client exists for it; see docs/GOOGLE_DRIVE.md). */
     val hasGoogleDrive: Boolean = false,
+    /** Issue #166: a background job backs up to Drive by itself (Android only; iOS and the web keep "Back up now"). */
+    val hasAutoDriveBackup: Boolean = false,
     /** A home-screen widget exists for this platform. */
     val hasHomeWidget: Boolean = false,
     /** The app can download and install a newer build of itself (Android sideload build only; see [AppUpdater]). */
@@ -239,10 +241,14 @@ sealed interface DriveAuthResult {
     /** The user closed the Google sheet. */
     data object Cancelled : DriveAuthResult
 
-    /** No OAuth client for this build (Google Cloud project not set up): see docs/GOOGLE_DRIVE.md. */
-    data object NotConfigured : DriveAuthResult
+    /**
+     * No OAuth client for this build (Google Cloud project not set up): see docs/GOOGLE_DRIVE.md. [app] is what has to
+     * be registered, when the platform can tell (Android: the package name and the signing certificate's SHA-1).
+     */
+    data class NotConfigured(val app: String? = null) : DriveAuthResult
 
-    data class Failed(val detail: String?) : DriveAuthResult
+    /** Google's sign-in failed; [network] when it couldn't be reached. [detail] says why, for the message. */
+    data class Failed(val detail: String?, val network: Boolean = false) : DriveAuthResult
 }
 
 /**

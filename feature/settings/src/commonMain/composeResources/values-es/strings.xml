@@ -87,7 +87,7 @@
     <string name="drive_title">Google Drive</string>
     <string name="drive_hint">Guarda una copia cifrada en la carpeta privada de la app en tu Google Drive. La app solo puede ver allí sus propios archivos.</string>
     <string name="drive_last">Última copia guardada %1$s</string>
-    <string name="drive_backup_button">Hacer copia</string>
+    <string name="drive_backup_button">Hacer copia ahora</string>
     <string name="drive_restore_button">Restaurar</string>
     <string name="drive_confirm_body">¿Sustituir todo en este dispositivo por la copia de Google Drive de %1$s? Tu clave de API y el bloqueo de la app no cambian.</string>
     <string name="msg_drive_saved">Guardado en Google Drive</string>
@@ -281,4 +281,22 @@
         <item quantity="one">%1$d día</item>
         <item quantity="other">%1$d días</item>
     </plurals>
+    <string name="msg_drive_sign_in_failed">El inicio de sesión de Google no funcionó (%1$s). Inténtalo de nuevo.</string>
+    <string name="drive_setup_body">Esta versión necesita un cliente OAuth de Android en el proyecto de Google Cloud de la app, para este paquete y certificado de firma:</string>
+    <string name="restore_intro_title">Restaurar una copia</string>
+    <string name="restore_intro_body">¿Móvil nuevo? Recupera a tu gente, quedadas, recordatorios y planes desde una copia. Las copias cifradas piden la contraseña de las copias o la clave de recuperación.</string>
+    <string name="restore_intro_drive">Desde Google Drive</string>
+    <string name="restore_intro_file">Desde un archivo</string>
+    <string name="auto_backup_title">Copia automática</string>
+    <string name="auto_backup_daily">Diaria</string>
+    <string name="auto_backup_weekly">Semanal</string>
+    <string name="auto_backup_off">Desactivada</string>
+    <string name="auto_backup_off_hint">Desactivada. Solo “Hacer copia ahora” guarda una copia.</string>
+    <string name="auto_backup_no_password">No puede ejecutarse: primero elige una contraseña para las copias.</string>
+    <string name="auto_backup_not_started">Empieza después de tu primer “Hacer copia ahora”.</string>
+    <string name="auto_backup_failed">La última copia automática falló %1$s: %2$s</string>
+    <string name="auto_backup_last">Última copia automática %1$s</string>
+    <string name="auto_backup_waiting">La primera copia automática se hace en un día.</string>
+    <string name="auto_backup_problem_password">no hay contraseña para las copias.</string>
+    <string name="auto_backup_problem_sign_in">Google quiere que vuelvas a iniciar sesión. Toca “Hacer copia ahora”.</string>
 </resources>

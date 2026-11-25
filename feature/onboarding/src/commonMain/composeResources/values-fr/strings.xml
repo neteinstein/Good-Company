@@ -37,4 +37,7 @@
     <string name="primer_show">Afficher mes contacts</string>
     <string name="primer_pick_instead">Choisir plutôt les personnes une par une</string>
     <string name="primer_denied">L’accès aux contacts est désactivé, on ne peut donc pas afficher la liste. Tu peux toujours choisir les personnes une par une.</string>
+    <string name="restore_title">Restaurer une sauvegarde</string>
+    <string name="restore_body">Nouveau téléphone ? Partez de votre sauvegarde, depuis Google Drive ou un fichier.</string>
+    <string name="restore">Restaurer</string>
 </resources>

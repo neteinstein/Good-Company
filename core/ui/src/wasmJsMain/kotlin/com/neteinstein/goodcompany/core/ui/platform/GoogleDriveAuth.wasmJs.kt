@@ -21,7 +21,7 @@ actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): (
     LaunchedEffect(clientId) { if (clientId != null) loadGoogleIdentity() }
     return {
         if (clientId == null) {
-            callback.value(DriveAuthResult.NotConfigured)
+            callback.value(DriveAuthResult.NotConfigured())
         } else {
             requestGoogleToken(
                 clientId,

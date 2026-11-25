@@ -38,4 +38,7 @@
     <string name="primer_show">Arată-mi contactele</string>
     <string name="primer_pick_instead">Alege mai degrabă persoane una câte una</string>
     <string name="primer_denied">Accesul la contacte este oprit, așa că nu putem afișa lista. Poți alege în continuare persoane una câte una.</string>
+    <string name="restore_title">Restaurează o copie</string>
+    <string name="restore_body">Telefon nou? Pornește de la copia ta, din Google Drive sau dintr-un fișier.</string>
+    <string name="restore">Restaurează</string>
 </resources>

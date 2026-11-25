@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import org.koin.core.scope.Scope
@@ -29,3 +30,6 @@ actual fun installNotificationActionHandling() {
     val delegate = notificationDelegate ?: IosNotificationDelegate().also { notificationDelegate = it }
     platform.UserNotifications.UNUserNotificationCenter.currentNotificationCenter().delegate = delegate
 }
+
+/** No automatic backup on iOS (issue #166): "Back up now" only. */
+actual fun Scope.createDriveTokenSource(): DriveTokenSource = DriveTokenSource.None

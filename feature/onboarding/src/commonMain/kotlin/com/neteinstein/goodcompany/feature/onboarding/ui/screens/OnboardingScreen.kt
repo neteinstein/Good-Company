@@ -36,6 +36,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.Button
@@ -98,6 +99,9 @@ import com.neteinstein.goodcompany.feature.onboarding.resources.primer_show
 import com.neteinstein.goodcompany.feature.onboarding.resources.primer_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.private_title
+import com.neteinstein.goodcompany.feature.onboarding.resources.restore
+import com.neteinstein.goodcompany.feature.onboarding.resources.restore_body
+import com.neteinstein.goodcompany.feature.onboarding.resources.restore_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.setup_body
 import com.neteinstein.goodcompany.feature.onboarding.resources.setup_title
 import com.neteinstein.goodcompany.feature.onboarding.resources.skip
@@ -135,11 +139,14 @@ private val PAGES = listOf(
 /**
  * First run. [contactList] draws the "Choose friends" list (it lives in another feature module, so the app passes it
  * in); it is shown full screen once the contacts permission is granted and reports how many people it added.
+ * [restoreBackup] draws "Restore a backup" (issue #166, also from another module), full screen; restoring ends the
+ * intro by itself, and its back arrow returns here.
  */
 @Composable
 fun OnboardingScreen(
     onDone: () -> Unit,
     contactList: @Composable (onClose: (added: Int) -> Unit) -> Unit = { it(0) },
+    restoreBackup: (@Composable (onClose: () -> Unit) -> Unit)? = null,
     viewModel: OnboardingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -164,7 +171,18 @@ fun OnboardingScreen(
         onAllowNotifications = requestNotifications,
         onExploreSample = viewModel::onExploreWithSample,
         onFinish = viewModel::onFinish,
+        onRestoreBackup = restoreBackup?.let { { viewModel.onRestoreOpened(true) } },
     )
+    if (state.restoreOpen && restoreBackup != null) {
+        Dialog(
+            onDismissRequest = { viewModel.onRestoreOpened(false) },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                restoreBackup { viewModel.onRestoreOpened(false) }
+            }
+        }
+    }
     if (state.contactListOpen) {
         // A dialog, so the system back gesture closes the list instead of leaving onboarding.
         Dialog(
@@ -188,6 +206,8 @@ fun OnboardingContent(
     onFinish: () -> Unit,
     onPickContacts: () -> Unit = {},
     initialPage: Int = 0,
+    /** Issue #166: "Restore a backup"; null hides it. */
+    onRestoreBackup: (() -> Unit)? = null,
 ) {
     val pageCount = PAGES.size + 1
     val pager = rememberPagerState(initialPage = initialPage) { pageCount }
@@ -210,7 +230,7 @@ fun OnboardingContent(
                 ) {
                     IntroPage(PAGES[page])
                 } else {
-                    SetupPage(state, capabilities, onShowContacts, onAllowNotifications, onExploreSample, onPickContacts)
+                    SetupPage(state, capabilities, onShowContacts, onAllowNotifications, onExploreSample, onPickContacts, onRestoreBackup)
                 }
             }
             Dots(pager.currentPage, pageCount)
@@ -260,6 +280,7 @@ private fun SetupPage(
     onAllowNotifications: () -> Unit,
     onExploreSample: () -> Unit,
     onPickContacts: () -> Unit,
+    onRestoreBackup: (() -> Unit)?,
 ) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
@@ -302,6 +323,17 @@ private fun SetupPage(
                 done = state.notificationsGranted == true,
                 action = stringResource(Res.string.allow),
                 onClick = onAllowNotifications,
+            )
+        }
+        if (onRestoreBackup != null) {
+            // Issue #166: a new phone can start straight from a backup (Google Drive or a file).
+            SetupItem(
+                icon = Icons.Rounded.Restore,
+                title = stringResource(Res.string.restore_title),
+                body = stringResource(Res.string.restore_body),
+                done = false,
+                action = stringResource(Res.string.restore),
+                onClick = onRestoreBackup,
             )
         }
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.tertiaryContainer) {

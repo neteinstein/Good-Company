@@ -87,7 +87,7 @@
     <string name="drive_title">Google Drive</string>
     <string name="drive_hint">Garde une copie chiffrée dans le dossier privé de l’app sur ton Google Drive. L’app n’y voit que ses propres fichiers.</string>
     <string name="drive_last">Dernière copie enregistrée %1$s</string>
-    <string name="drive_backup_button">Sauvegarder</string>
+    <string name="drive_backup_button">Sauvegarder maintenant</string>
     <string name="drive_restore_button">Restaurer</string>
     <string name="drive_confirm_body">Remplacer tout sur cet appareil par la sauvegarde Google Drive du %1$s ? Ta clé d’API et le verrouillage de l’app restent inchangés.</string>
     <string name="msg_drive_saved">Enregistré dans Google Drive</string>
@@ -281,4 +281,22 @@
         <item quantity="one">%1$d jour</item>
         <item quantity="other">%1$d jours</item>
     </plurals>
+    <string name="msg_drive_sign_in_failed">La connexion Google n’a pas fonctionné (%1$s). Réessayez.</string>
+    <string name="drive_setup_body">Cette version a besoin d’un client OAuth Android dans le projet Google Cloud de l’app, pour ce paquet et ce certificat de signature :</string>
+    <string name="restore_intro_title">Restaurer une sauvegarde</string>
+    <string name="restore_intro_body">Nouveau téléphone ? Récupérez vos proches, rencontres, rappels et projets depuis une sauvegarde. Les sauvegardes chiffrées demandent le mot de passe des sauvegardes ou la clé de récupération.</string>
+    <string name="restore_intro_drive">Depuis Google Drive</string>
+    <string name="restore_intro_file">Depuis un fichier</string>
+    <string name="auto_backup_title">Sauvegarde automatique</string>
+    <string name="auto_backup_daily">Chaque jour</string>
+    <string name="auto_backup_weekly">Chaque semaine</string>
+    <string name="auto_backup_off">Désactivée</string>
+    <string name="auto_backup_off_hint">Désactivée. Seul « Sauvegarder maintenant » enregistre une copie.</string>
+    <string name="auto_backup_no_password">Impossible : choisissez d’abord un mot de passe de sauvegarde.</string>
+    <string name="auto_backup_not_started">Commence après votre premier « Sauvegarder maintenant ».</string>
+    <string name="auto_backup_failed">La dernière sauvegarde automatique a échoué %1$s : %2$s</string>
+    <string name="auto_backup_last">Dernière sauvegarde automatique %1$s</string>
+    <string name="auto_backup_waiting">La première sauvegarde automatique a lieu dans la journée.</string>
+    <string name="auto_backup_problem_password">aucun mot de passe de sauvegarde.</string>
+    <string name="auto_backup_problem_sign_in">Google vous demande de vous reconnecter. Touchez « Sauvegarder maintenant ».</string>
 </resources>

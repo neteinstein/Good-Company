@@ -68,7 +68,7 @@ private class DriveAuthFlow {
     private val anchor = WindowAnchor()
 
     fun start(done: (DriveAuthResult) -> Unit) {
-        val clientId = googleDriveClientId ?: return done(DriveAuthResult.NotConfigured)
+        val clientId = googleDriveClientId ?: return done(DriveAuthResult.NotConfigured())
         // Google's iOS redirect: the client ID reversed, as a custom scheme.
         val scheme = "com.googleusercontent.apps." + clientId.removeSuffix(".apps.googleusercontent.com")
         val redirect = "$scheme:/oauth2redirect"

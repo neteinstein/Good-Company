@@ -1,9 +1,11 @@
 package com.neteinstein.goodcompany.core.data.platform
 
+import com.neteinstein.goodcompany.core.data.cloud.PlayServicesDriveTokenSource
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import org.koin.android.ext.koin.androidContext
@@ -22,3 +24,5 @@ actual fun Scope.createNotificationScheduler(): NotificationScheduler = AndroidN
 actual fun Scope.createCalendarReader(): CalendarReader = AndroidCalendarReader(androidContext())
 
 actual fun installNotificationActionHandling() = Unit
+
+actual fun Scope.createDriveTokenSource(): DriveTokenSource = PlayServicesDriveTokenSource(androidContext())

@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.feature.settings
 
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -19,6 +20,7 @@ import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
 import com.neteinstein.goodcompany.core.ui.platform.UpdateInstallResult
 import com.neteinstein.goodcompany.feature.settings.ui.screens.AfterPassword
 import com.neteinstein.goodcompany.feature.settings.ui.screens.DriveAction
+import com.neteinstein.goodcompany.feature.settings.ui.screens.DriveSetup
 import com.neteinstein.goodcompany.feature.settings.ui.screens.PasswordDialog
 import com.neteinstein.goodcompany.feature.settings.ui.screens.PasswordError
 import com.neteinstein.goodcompany.feature.settings.ui.screens.SettingsMessage
@@ -52,6 +54,8 @@ class SettingsViewModelTest {
         g.fetchDriveBackup,
         g.trashOldDriveBackup,
         g.keepOldDriveBackup,
+        g.setAutoBackupFrequency,
+        g.forgetDriveToken,
         g.checkForUpdate,
         g.observeMyPhoto,
         g.setMyPhoto,
@@ -387,14 +391,51 @@ class SettingsViewModelTest {
         vm.onDriveAuthResult(DriveAuthResult.Cancelled)
         assertFalse(state.value.driveBusy)
         vm.onDriveRequested(DriveAction.BACKUP)
-        vm.onDriveAuthResult(DriveAuthResult.NotConfigured)
-        assertEquals(SettingsMessage.DriveNotConfigured, state.value.message)
+        vm.onDriveAuthResult(DriveAuthResult.NotConfigured("com.example · SHA-1 AA"))
+        assertEquals(DriveSetup("com.example · SHA-1 AA"), state.value.driveSetup)
+        assertFalse(state.value.driveBusy)
+        vm.onDriveSetupShown()
+        assertNull(state.value.driveSetup)
+
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Failed("INTERNAL_ERROR (8)"))
+        assertEquals(SettingsMessage.DriveSignInFailed("INTERNAL_ERROR (8)"), state.value.message)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Failed("offline", network = true))
+        assertEquals(SettingsMessage.DriveFailed(CloudBackupFailure.Reason.NETWORK), state.value.message)
 
         g.cloudStore.failure = CloudBackupFailure(CloudBackupFailure.Reason.STORAGE_FULL)
         vm.onDriveRequested(DriveAction.BACKUP)
         vm.onDriveAuthResult(DriveAuthResult.Token("tok"))
         assertEquals(SettingsMessage.DriveFailed(CloudBackupFailure.Reason.STORAGE_FULL), state.value.message)
         assertNull(state.value.settings.lastDriveBackupAt)
+    }
+
+    @Test
+    fun aRefusedTokenIsForgottenSoTheNextTryGetsAFreshOne() = runViewModelTest {
+        g.setBackupPassword("long enough")
+        val vm = vm()
+        val state = collecting(vm.state)
+        g.cloudStore.failure = CloudBackupFailure(CloudBackupFailure.Reason.UNAUTHORIZED)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Token("stale"))
+        assertEquals(SettingsMessage.DriveFailed(CloudBackupFailure.Reason.UNAUTHORIZED), state.value.message)
+        assertEquals(listOf("stale"), g.driveTokens.forgotten)
+        g.cloudStore.failure = CloudBackupFailure(CloudBackupFailure.Reason.STORAGE_FULL)
+        vm.onDriveRequested(DriveAction.BACKUP)
+        vm.onDriveAuthResult(DriveAuthResult.Token("fine"))
+        assertEquals(listOf("stale"), g.driveTokens.forgotten)
+    }
+
+    @Test
+    fun automaticBackupFrequency() = runViewModelTest {
+        val vm = vm()
+        val state = collecting(vm.state)
+        assertEquals(AutoBackupFrequency.DAILY, state.value.settings.autoDriveBackup)
+        vm.onAutoBackupFrequencyChange(AutoBackupFrequency.WEEKLY)
+        assertEquals(AutoBackupFrequency.WEEKLY, state.value.settings.autoDriveBackup)
+        vm.onAutoBackupFrequencyChange(AutoBackupFrequency.OFF)
+        assertEquals(AutoBackupFrequency.OFF, g.settingsRepo.settings.value.autoDriveBackup)
     }
 
     private val newBuild = AppUpdate(42, "1.0.0-test.42", "https://example.com/good-company.apk", sizeBytes = 1000)

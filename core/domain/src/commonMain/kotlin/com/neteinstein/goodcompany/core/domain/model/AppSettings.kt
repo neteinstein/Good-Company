@@ -106,6 +106,13 @@ data class AppSettings(
     val lastOpenedAt: Instant? = null,
     /** When the last copy was saved to the user's Google Drive (device-specific; kept on restore). */
     val lastDriveBackupAt: Instant? = null,
+    /**
+     * Issue #166: how often the automatic Drive backup runs (Android only; iOS and the web keep "Back up now").
+     * Device-only like [lastDriveBackupAt]: never exported, kept on restore.
+     */
+    val autoDriveBackup: AutoBackupFrequency = AutoBackupFrequency.DAILY,
+    /** Issue #166: the last automatic Drive backup attempt and whether it worked. Device-only. */
+    val lastAutoBackup: AutoBackupRun? = null,
     /** The circle ([FriendGroup] id) Home is filtered by; null = All. Remembered between launches. */
     val homeCircleFilter: String? = null,
     /**

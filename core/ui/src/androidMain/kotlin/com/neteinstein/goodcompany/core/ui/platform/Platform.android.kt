@@ -63,6 +63,8 @@ actual val platformCapabilities = PlatformCapabilities(
     // Needs an Android OAuth client (package + signing SHA-1) in the Google Cloud project; without it the
     // authorizer reports NotConfigured and the Settings row explains it.
     hasGoogleDrive = true,
+    // Issue #166: DriveAutoBackupWorker (WorkManager, daily).
+    hasAutoDriveBackup = true,
     hasHomeWidget = true,
     hasCalendar = true,
 )
@@ -453,7 +455,7 @@ actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): (
             return@rememberLauncherForActivityResult
         }
         val outcome = runCatching { Identity.getAuthorizationClient(context).getAuthorizationResultFromIntent(result.data) }
-        callback.value(outcome.fold({ it.toDriveResult() }, { it.toDriveFailure() }))
+        callback.value(outcome.fold({ it.toDriveResult() }, { it.toDriveFailure(context) }))
     }
     return {
         val request = AuthorizationRequest.builder().setRequestedScopes(DRIVE_SCOPES.map(::Scope)).build()
@@ -466,19 +468,34 @@ actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): (
                     callback.value(result.toDriveResult())
                 }
             }
-            .addOnFailureListener { callback.value(it.toDriveFailure()) }
+            .addOnFailureListener { callback.value(it.toDriveFailure(context)) }
     }
 }
 
 private fun AuthorizationResult.toDriveResult(): DriveAuthResult =
     accessToken?.let { DriveAuthResult.Token(it) } ?: DriveAuthResult.Failed("No access token")
 
-/** DEVELOPER_ERROR = no OAuth client registered for this package + signing certificate. */
-private fun Throwable.toDriveFailure(): DriveAuthResult = when {
-    this is ApiException && statusCode == CommonStatusCodes.DEVELOPER_ERROR -> DriveAuthResult.NotConfigured
+/**
+ * DEVELOPER_ERROR = no Android OAuth client registered for this package + signing certificate (issue #166: the test
+ * APKs signed with a CI runner's throwaway debug key can never match one). The message names both, so the right
+ * client can be added in Google Cloud.
+ */
+private fun Throwable.toDriveFailure(context: Context): DriveAuthResult = when {
+    this is ApiException && statusCode == CommonStatusCodes.DEVELOPER_ERROR -> DriveAuthResult.NotConfigured(context.oauthClientIdentity())
     this is ApiException && statusCode == CommonStatusCodes.CANCELED -> DriveAuthResult.Cancelled
-    else -> DriveAuthResult.Failed(message)
+    this is ApiException && (statusCode == CommonStatusCodes.NETWORK_ERROR || statusCode == CommonStatusCodes.TIMEOUT) ->
+        DriveAuthResult.Failed(message, network = true)
+    this is ApiException -> DriveAuthResult.Failed("${CommonStatusCodes.getStatusCodeString(statusCode)} ($statusCode)")
+    else -> DriveAuthResult.Failed(message ?: this::class.simpleName)
 }
+
+/** "package · SHA-1 AA:BB:…", what an Android OAuth client in Google Cloud has to match. */
+private fun Context.oauthClientIdentity(): String? = runCatching {
+    val info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+    val signer = info.signingInfo?.apkContentsSigners?.firstOrNull() ?: return@runCatching packageName
+    val sha1 = java.security.MessageDigest.getInstance("SHA-1").digest(signer.toByteArray())
+    "$packageName · SHA-1 ${sha1.joinToString(":") { "%02X".format(it) }}"
+}.getOrNull()
 
 /** Twice the stored photo size, so the shrinker still has detail to work with. */
 private const val PICKED_MAX_SIDE = 512

@@ -37,4 +37,7 @@
     <string name="primer_show">Mostrar os meus contactos</string>
     <string name="primer_pick_instead">Prefiro escolher pessoas uma a uma</string>
     <string name="primer_denied">O acesso aos contactos está desligado, por isso não podemos mostrar a lista. Podes escolher pessoas uma a uma.</string>
+    <string name="restore_title">Restaurar uma cópia</string>
+    <string name="restore_body">Telemóvel novo? Começa a partir da tua cópia, do Google Drive ou de um ficheiro.</string>
+    <string name="restore">Restaurar</string>
 </resources>

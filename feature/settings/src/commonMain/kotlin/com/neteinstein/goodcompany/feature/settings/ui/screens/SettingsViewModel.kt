@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.BackupKey
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
 import com.neteinstein.goodcompany.core.domain.usecase.EncryptBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ForgetDriveTokenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepOldDriveBackupUseCase
@@ -31,6 +33,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RemoveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
+import com.neteinstein.goodcompany.core.domain.usecase.SetAutoBackupFrequencyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordResult
 import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
@@ -75,9 +78,10 @@ sealed interface SettingsMessage {
 
     data object DriveNoBackup : SettingsMessage
 
-    data object DriveNotConfigured : SettingsMessage
-
     data class DriveFailed(val reason: CloudBackupFailure.Reason) : SettingsMessage
+
+    /** Issue #166: Google's sign-in itself failed; [detail] is Google's reason, shown so it can be looked into. */
+    data class DriveSignInFailed(val detail: String?) : SettingsMessage
 
     /** D4: the backup password was changed. */
     data object BackupPasswordChanged : SettingsMessage
@@ -117,6 +121,9 @@ sealed interface UpdateState {
 
 /** What to do once Google hands back an access token. */
 enum class DriveAction { BACKUP, RESTORE }
+
+/** Google Drive isn't set up for this build; [app] is what to register in Google Cloud, when known. */
+data class DriveSetup(val app: String?)
 
 /** A backup ready to be handed to the platform "save file" UI. */
 data class ExportFile(val name: String, val content: String)
@@ -159,6 +166,11 @@ data class SettingsUiState(
     val oldDriveFile: CloudBackupInfo? = null,
     /** Waiting for Google, or uploading/downloading. */
     val driveBusy: Boolean = false,
+    /**
+     * Issue #166: Google said this build has no OAuth client. Shown in a dialog (not a snackbar) with [DriveSetup.app],
+     * the package and signing certificate to register, so it can be copied.
+     */
+    val driveSetup: DriveSetup? = null,
     val driveAction: DriveAction? = null,
     val update: UpdateState = UpdateState.Idle,
     val now: Instant = Instant.DISTANT_PAST,
@@ -183,6 +195,8 @@ class SettingsViewModel(
     private val fetchDriveBackup: FetchDriveBackupUseCase,
     private val trashOldDriveBackup: TrashOldDriveBackupUseCase,
     private val keepOldDriveBackup: KeepOldDriveBackupUseCase,
+    private val setAutoBackupFrequency: SetAutoBackupFrequencyUseCase,
+    private val forgetDriveToken: ForgetDriveTokenUseCase,
     private val checkForUpdate: CheckForUpdateUseCase,
     observeMyPhoto: ObserveMyPhotoUseCase,
     private val setMyPhoto: SetMyPhotoUseCase,
@@ -470,6 +484,7 @@ class SettingsViewModel(
             is DriveAuthResult.Token -> when (action) {
                 DriveAction.BACKUP -> viewModelScope.launch {
                     val outcome = backupToDrive(result.accessToken)
+                    forgetIfRefused(outcome, result.accessToken)
                     val old = outcome.getOrNull()?.oldVisibleFile
                     oldFileToken = old?.let { result.accessToken }
                     local.update {
@@ -483,6 +498,7 @@ class SettingsViewModel(
                 }
                 DriveAction.RESTORE -> viewModelScope.launch {
                     val outcome = fetchDriveBackup(result.accessToken)
+                    forgetIfRefused(outcome, result.accessToken)
                     val backup = outcome.getOrNull()
                     local.update {
                         it.copy(
@@ -496,13 +512,33 @@ class SettingsViewModel(
                 null -> local.update { it.copy(driveBusy = false) }
             }
             DriveAuthResult.Cancelled -> local.update { it.copy(driveBusy = false, driveAction = null) }
-            DriveAuthResult.NotConfigured -> local.update {
-                it.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveNotConfigured)
+            is DriveAuthResult.NotConfigured -> local.update {
+                it.copy(driveBusy = false, driveAction = null, driveSetup = DriveSetup(result.app))
             }
             is DriveAuthResult.Failed -> local.update {
-                it.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveFailed(CloudBackupFailure.Reason.OTHER))
+                it.copy(
+                    driveBusy = false,
+                    driveAction = null,
+                    message = if (result.network) {
+                        SettingsMessage.DriveFailed(CloudBackupFailure.Reason.NETWORK)
+                    } else {
+                        SettingsMessage.DriveSignInFailed(result.detail)
+                    },
+                )
             }
         }
+    }
+
+    fun onDriveSetupShown() = local.update { it.copy(driveSetup = null) }
+
+    /** Drive refused the token (revoked or expired): drop it, so "Try again" gets a fresh one instead of the same. */
+    private suspend fun forgetIfRefused(outcome: Result<*>, token: String) {
+        if ((outcome.exceptionOrNull() as? CloudBackupFailure)?.reason == CloudBackupFailure.Reason.UNAUTHORIZED) forgetDriveToken(token)
+    }
+
+    /** Issue #166: Settings → Google Drive → "Automatic backup" (Android only). */
+    fun onAutoBackupFrequencyChange(frequency: AutoBackupFrequency) {
+        viewModelScope.launch { setAutoBackupFrequency(frequency) }
     }
 
     private fun driveFailure(e: Throwable): SettingsMessage =

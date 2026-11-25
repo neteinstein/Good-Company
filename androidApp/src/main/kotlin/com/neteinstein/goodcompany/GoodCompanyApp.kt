@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
+import com.neteinstein.goodcompany.core.data.platform.DriveAutoBackupWorker
 import com.neteinstein.goodcompany.core.data.platform.ReplanNotificationsWorker
 import com.neteinstein.goodcompany.core.data.platform.WeeklyIdeasWorker
 import com.neteinstein.goodcompany.di.initKoin
@@ -19,6 +20,8 @@ class GoodCompanyApp : Application(), KoinComponent {
         initKoin { androidContext(this@GoodCompanyApp) }
         WeeklyIdeasWorker.schedule(this)
         ReplanNotificationsWorker.schedule(this)
+        // Issue #166: the daily job decides itself whether a backup is due (Daily / Weekly / Off).
+        DriveAutoBackupWorker.schedule(this)
         NextUpWidget.keepUpdated(this, get())
         AppShortcuts.keepUpdated(this, get())
     }

@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.data.platform.createCommunicationLogSour
 import com.neteinstein.goodcompany.core.data.platform.createContactsSource
 import com.neteinstein.goodcompany.core.data.platform.createContactsWriter
 import com.neteinstein.goodcompany.core.data.platform.createDatabaseDriverFactory
+import com.neteinstein.goodcompany.core.data.platform.createDriveTokenSource
 import com.neteinstein.goodcompany.core.data.platform.createHttpClient
 import com.neteinstein.goodcompany.core.data.platform.createLocationProvider
 import com.neteinstein.goodcompany.core.data.platform.createNotificationScheduler
@@ -52,6 +53,7 @@ import com.neteinstein.goodcompany.core.domain.repository.CircleCoverRepository
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.CoverShrinker
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.GiftListRepository
@@ -122,6 +124,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EncryptBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ForgetDriveTokenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
@@ -216,6 +219,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RunAutoBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SampleTextsProvider
 import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
@@ -227,6 +231,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetAgendaViewUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetAutoBackupFrequencyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
@@ -298,6 +303,7 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.Calendar
 import com.neteinstein.goodcompany.feature.settings.ui.screens.how.HowOptionsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.restore.RestoreBackupViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.neteinstein.goodcompany.startup.AppStartup
 import com.russhwolf.settings.Settings
@@ -342,6 +348,8 @@ val appModule = module {
     single<IdeaGenerator> { AnthropicIdeaGenerator(get()) }
     single<AiAssistant> { AnthropicAssistant(get()) }
     single<CloudBackupStore> { GoogleDriveBackupStore(get()) }
+    // Issue #166: Drive tokens with no screen, for the automatic backup (Play services on Android; none elsewhere).
+    single<DriveTokenSource> { createDriveTokenSource() }
     // Encrypted backups (D4): the platform's own crypto; the key stays in key-value storage on this device.
     single<BackupCrypto> { CryptographyBackupCrypto() }
     single<BackupKeyRepository> { KeyValueBackupKeyRepository(get()) }
@@ -515,6 +523,9 @@ val appModule = module {
     factoryOf(::FetchDriveBackupUseCase)
     factoryOf(::TrashOldDriveBackupUseCase)
     factoryOf(::KeepOldDriveBackupUseCase)
+    factoryOf(::RunAutoBackupUseCase)
+    factoryOf(::SetAutoBackupFrequencyUseCase)
+    factoryOf(::ForgetDriveTokenUseCase)
     factoryOf(::ObserveBackupProtectionUseCase)
     factoryOf(::SetBackupPasswordUseCase)
     factoryOf(::ChangeBackupPasswordUseCase)
@@ -667,7 +678,14 @@ val appModule = module {
     viewModelOf(::NotificationSettingsViewModel)
     viewModelOf(::IdeasViewModel)
     viewModelOf(::PlansViewModel)
-    viewModelOf(::SettingsViewModel)
+    // 24 dependencies: past viewModelOf's 22-argument limit.
+    viewModel {
+        SettingsViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
+    }
+    viewModelOf(::RestoreBackupViewModel)
     viewModelOf(::PlacesViewModel)
     viewModelOf(::TagsViewModel)
     viewModelOf(::ActivitiesViewModel)
