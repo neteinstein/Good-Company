@@ -278,6 +278,12 @@
     <string name="about_email_from_contacts">Email · din Contacte</string>
     <string name="about_email_typed">Email</string>
     <string name="about_email_contact_note">Din Contacte — modifică-l acolo</string>
+    <string name="about_address_home">Adresa de acasă</string>
+    <string name="about_address_work">Adresa de la serviciu</string>
+    <string name="about_address_from_contacts">%1$s · din Contacte</string>
+    <string name="about_address_contact_note">Din Contacte. Ce scrii aici se păstrează în locul ei.</string>
+    <string name="about_address_copy">Copiază %1$s</string>
+    <string name="about_address_open_maps">Deschide %1$s în hărți</string>
     <string name="channel_whatsapp">WhatsApp</string>
     <string name="channel_call">Apel</string>
     <string name="channel_sms">SMS</string>

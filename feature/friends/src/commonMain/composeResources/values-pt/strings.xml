@@ -271,6 +271,12 @@
     <string name="about_email_from_contacts">Email · dos Contactos</string>
     <string name="about_email_typed">Email</string>
     <string name="about_email_contact_note">Dos Contactos — edita lá</string>
+    <string name="about_address_home">Morada de casa</string>
+    <string name="about_address_work">Morada do trabalho</string>
+    <string name="about_address_from_contacts">%1$s · dos Contactos</string>
+    <string name="about_address_contact_note">Dos Contactos. O que escreveres aqui fica em vez dela.</string>
+    <string name="about_address_copy">Copiar %1$s</string>
+    <string name="about_address_open_maps">Abrir %1$s nos mapas</string>
     <string name="channel_whatsapp">WhatsApp</string>
     <string name="channel_call">Chamada</string>
     <string name="channel_sms">SMS</string>

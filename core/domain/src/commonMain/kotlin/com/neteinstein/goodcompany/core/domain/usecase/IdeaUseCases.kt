@@ -112,7 +112,7 @@ internal object IdeaMapper {
         news = friend.lifeUpdates.sortedByDescending { it.addedAt }.take(RECENT_NEWS).map { it.text },
         job = friend.job.trim(),
         livesIn = friend.livesIn.trim(),
-        // Emails and custom fields are deliberately left out of the AI profile.
+        // Emails, postal addresses (issue #169) and custom fields are deliberately left out of the AI profile.
         family = friend.relatives.map { r ->
             buildString {
                 append(r.relation.name.lowercase()).append(": ").append(r.name)

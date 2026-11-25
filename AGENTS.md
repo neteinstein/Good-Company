@@ -257,7 +257,7 @@ before changing that area**, and put new area-specific notes in that skill, not 
 21. **Sideload self-update.** Only in the sideload build; tied to the latest-release title and asset in
     `test-apk.yml`. Details in `area-backup-sync`.
 22. **Contact write-back (Android sideload only).** The mirror never deletes, never edits the user's own contact rows
-    and never writes emails or photos. Details in `area-contacts`.
+    and never writes emails, postal addresses or photos. Details in `area-contacts`.
 23. **Known gaps / follow-ups:** the API key and the backup key (D4) are stored in plain app storage (Settings), not
     Keychain/Keystore (both are excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Note photos and videos (#119) are a thumbnail plus a gallery link, so after switching phones only the thumbnails remain. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
@@ -310,7 +310,7 @@ Checklists for changes that keep coming back:
 - `ios-project-edit`: edit the hand-authored `project.pbxproj`, Info.plist, entitlements (gotcha 4).
 
 Area notes (load before touching the area):
-- `area-contacts`: picker/list, sync, photos, sideload write-back (gotchas 22, 25).
+- `area-contacts`: picker/list, sync, photos, postal addresses, sideload write-back (gotchas 22, 25).
 - `area-people`: closeness vs. circles, person links, kids, kinship, network map (27, 30, 31, 34, 35).
 - `area-logging`: Log popup, timeline, places, calendar suggestions (26, 29, 32).
 - `area-sharing-gifts`: share into the app, attachments, gifts and gift lists (19, 36).

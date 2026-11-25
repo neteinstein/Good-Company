@@ -271,6 +271,12 @@
     <string name="about_email_from_contacts">E-mail · des Contacts</string>
     <string name="about_email_typed">E-mail</string>
     <string name="about_email_contact_note">Des Contacts — modifiez-le là-bas</string>
+    <string name="about_address_home">Adresse du domicile</string>
+    <string name="about_address_work">Adresse du travail</string>
+    <string name="about_address_from_contacts">%1$s · des Contacts</string>
+    <string name="about_address_contact_note">Des Contacts. Ce que vous tapez ici est gardé à la place.</string>
+    <string name="about_address_copy">Copier %1$s</string>
+    <string name="about_address_open_maps">Ouvrir %1$s dans les plans</string>
     <string name="channel_whatsapp">WhatsApp</string>
     <string name="channel_call">Appel</string>
     <string name="channel_sms">SMS</string>

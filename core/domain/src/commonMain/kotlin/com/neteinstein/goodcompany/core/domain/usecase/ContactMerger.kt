@@ -1,17 +1,20 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendEmail
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 
 /**
  * Merges an address-book snapshot into the app's friend list.
  *
  * - Contact-owned fields (name, phones, birthday) follow the address book. Emails the contact gave us
- *   ([FriendEmail.fromContact]) are replaced by the contact's; emails typed in the app are always kept.
+ *   ([FriendEmail.fromContact]) are replaced by the contact's; emails typed in the app are always kept. Postal
+ *   addresses (issue #169) follow the same rule per kind: a typed Home or Work address is kept, else the contact's.
  * - App-owned fields (close friend, likes, kids, rules…) are never touched, nor are a name or photo set in the app
  *   ([Friend.customName], [Friend.customPhoto]): only [Friend.name] and [Friend.photo] follow the contact.
  * - A contact birthday never erases one the user entered in-app.
@@ -33,6 +36,7 @@ object ContactMerger {
                 birthday = contact.birthday ?: current.birthday,
                 photo = contact.photo ?: current.photo,
                 emails = mergeEmails(current.emails, contact.emails),
+                addresses = mergeAddresses(current.addresses, contact.addresses),
                 isOrphaned = false,
             ) ?: Friend(
                 id = FriendId("contact-${contact.contactId}"),
@@ -42,6 +46,7 @@ object ContactMerger {
                 birthday = contact.birthday,
                 photo = contact.photo,
                 emails = mergeEmails(emptyList(), contact.emails),
+                addresses = mergeAddresses(emptyList(), contact.addresses),
             )
         }
         val vanished = existing.filter { it.contactId != null && it.contactId !in seen && it.hasAppData() }
@@ -62,6 +67,28 @@ object ContactMerger {
     }
 
     /**
+     * Postal addresses after a sync (issue #169): per kind, a typed one is kept; otherwise the contact's (as
+     * [PostalAddress.fromContact]), or none when the contact no longer has one. Home first, then Work.
+     */
+    fun mergeAddresses(current: List<PostalAddress>, fromContact: List<PostalAddress>): List<PostalAddress> =
+        AddressKind.entries.mapNotNull { kind ->
+            current.firstOrNull { it.kind == kind && !it.fromContact && it.text.isNotBlank() }
+                ?: firstOf(fromContact, kind)?.copy(fromContact = true)
+        }
+
+    /**
+     * Adds the [incoming] addresses of a kind [current] doesn't have yet, keeping every one it has (a re-pick, whose
+     * picker may not hand addresses over, or a `.vcf` import). [fromContact] marks the added ones.
+     */
+    fun fillAddresses(current: List<PostalAddress>, incoming: List<PostalAddress>, fromContact: Boolean): List<PostalAddress> =
+        AddressKind.entries.mapNotNull { kind ->
+            current.firstOrNull { it.kind == kind && it.text.isNotBlank() } ?: firstOf(incoming, kind)?.copy(fromContact = fromContact)
+        }
+
+    private fun firstOf(addresses: List<PostalAddress>, kind: AddressKind): PostalAddress? =
+        addresses.firstOrNull { it.kind == kind && it.text.isNotBlank() }?.let { it.copy(text = it.text.trim()) }
+
+    /**
      * True when the friend holds anything typed in the app (so an orphaned friend is kept). Contact emails don't count,
      * nor does the birthday reminder, which is on by default (F10), nor being an Acquaintance (everyone's level, #86).
      */
@@ -70,6 +97,8 @@ object ContactMerger {
         meetEveryDays != null || suggestEvents || gifts.isNotEmpty() || catchUpPaused || !tracksKeepInTouch ||
         catchUpCounts != CatchUpCounts.DEFAULT || occasions.isNotEmpty() || lifeUpdates.isNotEmpty() ||
         feeds.isNotEmpty() || job.isNotBlank() || livesIn.isNotBlank() || met != null || introducedBy != null ||
-        preferredChannel != null || emails.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||
+        preferredChannel != null || emails.any {
+            !it.fromContact
+        } || addresses.any { !it.fromContact } || relatives.isNotEmpty() || food.isNotEmpty() ||
         drinks.isNotEmpty() || interests.isNotEmpty() || customFields.isNotEmpty() || socials.isNotEmpty() || websites.isNotEmpty()
 }

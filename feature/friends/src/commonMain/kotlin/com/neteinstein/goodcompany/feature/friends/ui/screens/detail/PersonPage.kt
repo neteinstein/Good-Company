@@ -142,7 +142,8 @@ object ProfileSections {
         PersonCard.TO_TALK_ABOUT -> friend.lifeUpdates.isEmpty() && !facts.hasTopics && !facts.aiEnabled
         PersonCard.COMPLETE -> missing(friend, facts).isEmpty()
         PersonCard.ABOUT -> friend.job.isBlank() && friend.livesIn.isBlank() && friend.met?.isEmpty != false &&
-            friend.introducedBy == null && friend.preferredChannel == null && friend.emails.isEmpty()
+            friend.introducedBy == null && friend.preferredChannel == null && friend.emails.isEmpty() &&
+            friend.addresses.isEmpty()
         PersonCard.MORE_ABOUT -> friend.customFields.isEmpty()
         PersonCard.OCCASIONS -> friend.occasions.isEmpty()
         PersonCard.FAMILY -> friend.relatives.isEmpty() && facts.links.none { it.role.category != LinkCategory.OTHER }

@@ -99,4 +99,6 @@ data class ContactRecord(
     val emails: List<String> = emptyList(),
     /** A favourite in the address book (Android `STARRED`; iOS has no favourites API, so always false there). */
     val starred: Boolean = false,
+    /** Home and work postal addresses (issue #169), at most one of each; other labels are not read. */
+    val addresses: List<PostalAddress> = emptyList(),
 )

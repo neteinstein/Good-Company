@@ -6,9 +6,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -20,11 +22,17 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactEmailAddressesKey
+import platform.Contacts.CNContactPostalAddressesKey
 import platform.Contacts.CNContactStore
 import platform.Contacts.CNContactThumbnailImageDataKey
 import platform.Contacts.CNEntityType
+import platform.Contacts.CNLabelHome
+import platform.Contacts.CNLabelWork
 import platform.Contacts.CNLabeledValue
 import platform.Contacts.CNPhoneNumber
+import platform.Contacts.CNPostalAddress
+import platform.Contacts.CNPostalAddressFormatter
+import platform.Contacts.CNPostalAddressFormatterStyle
 import platform.ContactsUI.CNContactPickerDelegateProtocol
 import platform.ContactsUI.CNContactPickerViewController
 import platform.EventKit.EKEvent
@@ -230,8 +238,30 @@ private fun CNContact.toRecord(): ContactRecord? = runCatching {
     } else {
         null
     }
-    ContactRecord(identifier, name, phones, birthday, thumbnail(), emails())
+    ContactRecord(identifier, name, phones, birthday, thumbnail(), emails(), addresses = postalAddressesOrEmpty())
 }.getOrNull()
+
+/** The contact's home and work postal addresses (issue #169), formatted as iOS writes a mailing address. */
+private fun CNContact.postalAddressesOrEmpty(): List<PostalAddress> {
+    // Reading a key that wasn't fetched raises an Objective-C exception, which Kotlin can't catch.
+    if (!isKeyAvailable(CNContactPostalAddressesKey)) return emptyList()
+    val out = mutableListOf<PostalAddress>()
+    postalAddresses.forEach { item ->
+        val labeled = item as? CNLabeledValue ?: return@forEach
+        val kind = when (labeled.label) {
+            CNLabelHome -> AddressKind.HOME
+            CNLabelWork -> AddressKind.WORK
+            else -> null
+        } ?: return@forEach
+        val address = labeled.value as? CNPostalAddress ?: return@forEach
+        val text = CNPostalAddressFormatter.stringFromPostalAddress(
+            address,
+            CNPostalAddressFormatterStyle.CNPostalAddressFormatterStyleMailingAddress,
+        ).trim()
+        if (text.isNotEmpty() && out.none { it.kind == kind }) out += PostalAddress(kind, text, fromContact = true)
+    }
+    return out
+}
 
 /** The picked contact's email addresses, when the picker handed them over. */
 private fun CNContact.emails(): List<String> {
