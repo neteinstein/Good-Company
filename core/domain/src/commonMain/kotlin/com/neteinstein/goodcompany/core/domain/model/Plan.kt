@@ -19,6 +19,8 @@ import kotlin.time.Instant
  *
  * A plan can have a time of day ([time], issue #167), the same for every occurrence. It only shows on screens and in the
  * notification text and makes Add to calendar a timed event; without one everything treats the plan as a day.
+ *
+ * A plan made from a shared maps link (issue #170) keeps that [mapLink] and, when the link had them, the coordinates.
  */
 @Serializable
 data class Plan(
@@ -42,7 +44,18 @@ data class Plan(
     val skippedDates: List<LocalDate> = emptyList(),
     /** The time of day (issue #167), for every occurrence; null = just the day. */
     val time: LocalTime? = null,
+    /**
+     * The maps link the plan was made from (issue #170, a share), opened in the maps app from the plan's menu. The app
+     * never fetches it.
+     */
+    val mapLink: String? = null,
+    /** The place's coordinates when that link carried them (issue #170), so the meetup logged when it closes gets them. */
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 ) {
+    /** [latitude] and [longitude] together, or null. */
+    val location: GeoPoint? get() = if (latitude != null && longitude != null) GeoPoint(latitude, longitude) else null
+
     val isRecurring: Boolean get() = repeat != null
 
     val activityChoice: ActivityChoice? get() = ActivityChoice.of(activity, activityName)

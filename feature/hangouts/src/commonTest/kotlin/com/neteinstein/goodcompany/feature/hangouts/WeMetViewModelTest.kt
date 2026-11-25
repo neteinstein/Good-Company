@@ -198,6 +198,27 @@ class WeMetViewModelTest {
     }
 
     @Test
+    fun aPlanMadeFromAMapsLink_givesTheMeetupItsCoordinates() = runViewModelTest {
+        // Issue #170.
+        val plan = g.savePlan(
+            null,
+            "Lunch",
+            listOf(ana),
+            LocalDate(2026, 3, 7),
+            "Ramiro",
+            mapLink = "geo:38.72,-9.13",
+            location = GeoPoint(38.72, -9.13),
+        )
+        val vm = vm(ids = emptyList(), plan = PlanOccurrence(plan.id, plan.date))
+        collecting(vm.state)
+        vm.onSave()
+        val place = g.hangoutRepo.hangouts.value.single().place
+        assertEquals("Ramiro", place?.name)
+        assertEquals(38.72, place?.latitude)
+        assertEquals(-9.13, place?.longitude)
+    }
+
+    @Test
     fun undoOnTheSnackbarRemovesTheHangout_andReopensThePlan() = runViewModelTest {
         val plan = g.savePlan(null, "Lunch", listOf(ana), LocalDate(2026, 3, 6))
         val panel = vm(plan = PlanOccurrence(plan.id, plan.date))

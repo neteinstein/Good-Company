@@ -331,6 +331,8 @@
     <string name="plan_where">Where (optional)</string>
     <string name="plan_with_names">With %1$s</string>
     <string name="plan_add_calendar">Add to calendar</string>
+    <string name="plan_open_in_maps">Open in maps</string>
+    <string name="plan_map_link_remove">Remove the map link</string>
     <string name="plan_change">Change</string>
     <string name="plan_cancel">Cancel plan</string>
     <string name="plan_counts_hint">A plan counts once you say it happened.</string>

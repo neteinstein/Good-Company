@@ -546,4 +546,18 @@
     <string name="people_tab_friends">Prieteni</string>
     <string name="people_tab_family">Familie</string>
     <string name="row_more_circles">+%1$d</string>
+    <string name="share_location">Un loc</string>
+    <string name="share_location_with_point">Un loc, cu punctul pe hartă</string>
+    <string name="share_place_name">Nume</string>
+    <string name="share_place_address">Adresă</string>
+    <string name="share_plan_here">Planifică aici</string>
+    <string name="share_plan_here_hint">Un plan cu %1$s în acest loc; alegi ziua după</string>
+    <string name="share_plan_next">Înainte</string>
+    <string name="share_met_here">Ne-am văzut aici</string>
+    <string name="share_met_here_hint">Înregistrează o întâlnire în acest loc, cu linkul păstrat</string>
+    <string name="share_home_address">Adresa de acasă</string>
+    <string name="share_work_address">Adresa de la serviciu</string>
+    <string name="share_address_hint">Rămâne pe pagina lui %1$s, în locul celei de acum</string>
+    <string name="share_named_place">Salvează ca loc preferat</string>
+    <string name="share_named_place_hint">Înregistrările din apropiere primesc acest nume, ca “Acasă la Inês”</string>
 </resources>

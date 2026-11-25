@@ -565,6 +565,12 @@ abstract class RepositoryContract {
         assertEquals(LocalTime(13, 15), open().plans.plans.first().single().time)
         s.plans.upsert(lunch)
         assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #170: a maps link and its coordinates are kept, and taken off again.
+        val linked = lunch.copy(mapLink = "https://maps.app.goo.gl/x", latitude = 38.7, longitude = -9.1)
+        s.plans.upsert(linked)
+        assertEquals(listOf(linked), open().plans.plans.first())
+        s.plans.upsert(lunch)
+        assertEquals(listOf(lunch), open().plans.plans.first())
         // Issue #100: cancelled and "I didn't go" are stored and read back by name.
         listOf(PlanStatus.CANCELLED, PlanStatus.NOT_ATTENDED).forEach { status ->
             s.plans.upsert(lunch.copy(status = status))

@@ -21,7 +21,11 @@ CREATE TABLE plan (
     -- One of your own activities (issue #121), by name, when activity is NULL.
     activity_name TEXT,
     -- The time of day (issue #167), "HH:MM"; NULL = just the day.
-    time TEXT
+    time TEXT,
+    -- Issue #170: the maps link a plan was made from (never fetched) and its coordinates when the link had them.
+    map_link TEXT,
+    latitude REAL,
+    longitude REAL
 );
 
 CREATE INDEX plan_status_date ON plan(status, date);
@@ -59,11 +63,11 @@ SELECT coalesce(max(position), -1) + 1 FROM plan;
 upsert:
 INSERT INTO plan (
     id, position, title, date, place, idea_id, status, created_at,
-    circle_id, activity, repeat_every, repeat_unit, repeat_start, repeat_until, activity_name, time
+    circle_id, activity, repeat_every, repeat_unit, repeat_start, repeat_until, activity_name, time, map_link, latitude, longitude
 )
 VALUES (
     :id, :position, :title, :date, :place, (SELECT id FROM idea WHERE id IS :ideaId), :status, :createdAt,
-    :circleId, :activity, :repeatEvery, :repeatUnit, :repeatStart, :repeatUntil, :activityName, :time
+    :circleId, :activity, :repeatEvery, :repeatUnit, :repeatStart, :repeatUntil, :activityName, :time, :mapLink, :latitude, :longitude
 )
 ON CONFLICT (id) DO UPDATE SET
     title = excluded.title,
@@ -79,7 +83,10 @@ ON CONFLICT (id) DO UPDATE SET
     repeat_start = excluded.repeat_start,
     repeat_until = excluded.repeat_until,
     activity_name = excluded.activity_name,
-    time = excluded.time;
+    time = excluded.time,
+    map_link = excluded.map_link,
+    latitude = excluded.latitude,
+    longitude = excluded.longitude;
 
 deleteFriends:
 DELETE FROM plan_friend WHERE plan_id = ?;

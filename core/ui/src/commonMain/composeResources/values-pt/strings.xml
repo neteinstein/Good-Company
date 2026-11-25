@@ -703,4 +703,6 @@
     <string name="notif_bday_soon_kid">Filho/a de %1$s.</string>
     <string name="notif_bday_soon_family">Família de %1$s.</string>
     <string name="notif_bday_soon_body">O aniversário está a chegar.</string>
+    <string name="plan_open_in_maps">Abrir nos mapas</string>
+    <string name="plan_map_link_remove">Tirar a ligação do mapa</string>
 </resources>

@@ -1,10 +1,12 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
@@ -12,7 +14,9 @@ import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.model.SharedImage
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
+import com.neteinstein.goodcompany.core.domain.usecase.SharePlace
 import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
 import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
@@ -27,6 +31,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -47,6 +52,7 @@ class ShareToFriendViewModelTest {
         g.saveShared,
         g.suggestUpdateFromShared,
         g.addFriend,
+        g.savePlan,
         g.clock,
     )
 
@@ -145,6 +151,103 @@ class ShareToFriendViewModelTest {
         vm.onSave()
         assertTrue(state.value.closed)
         assertEquals("crew", g.interactionRepo.attachments.value.single().circleId)
+    }
+
+    @Test
+    fun aMapsLinkShowsItsPlace_offersTheLocationChoices_andSavesAHomeAddress() = runViewModelTest {
+        // Issue #170.
+        val g = graph()
+        g.shareInbox.offer(SharedContent(text = "Cervejaria Ramiro\nAv. Almirante Reis 1, Lisboa\nhttps://maps.app.goo.gl/abc"))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onSelect(state.value.friends.first { it.friend.id.value == "ana" }.friend)
+        val place = assertNotNull(state.value.place)
+        assertEquals("Cervejaria Ramiro", place.name)
+        assertEquals("Av. Almirante Reis 1, Lisboa", place.address)
+        assertEquals(ShareChoice.NOTE, state.value.choice)
+        assertTrue(state.value.offers(ShareChoice.PLAN_HERE) && state.value.offers(ShareChoice.MET_HERE))
+        assertTrue(state.value.canBeAddress)
+        assertFalse(state.value.canBeNamedPlace, "a short link has no coordinates, and is never followed")
+        assertFalse(state.value.offers(ShareChoice.GIFT_IDEA))
+        vm.onChoice(ShareChoice.NAMED_PLACE)
+        assertEquals(ShareChoice.NOTE, state.value.choice)
+
+        vm.onChoice(ShareChoice.HOME_ADDRESS)
+        vm.onPlaceAddress("")
+        vm.onPlaceName("")
+        assertFalse(state.value.canSave, "nothing to keep as the address")
+        vm.onPlaceAddress(" Av. Almirante Reis 1, 1150-007 Lisboa ")
+        vm.onSave()
+        assertEquals(FriendId("ana"), state.value.savedTo)
+        assertEquals("Av. Almirante Reis 1, 1150-007 Lisboa", g.friendRepo.get(FriendId("ana"))?.address(AddressKind.HOME)?.text)
+        assertTrue(g.interactionRepo.attachments.value.isEmpty())
+    }
+
+    @Test
+    fun aBareShortLink_isStillALocation_withEmptyFields() = runViewModelTest {
+        val g = graph()
+        g.shareInbox.offer(SharedContent(text = "https://maps.app.goo.gl/abc", url = "https://maps.app.goo.gl/abc"))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onSelect(state.value.friends.first().friend)
+        assertEquals(SharePlace(link = "https://maps.app.goo.gl/abc"), state.value.place)
+        assertTrue(state.value.offers(ShareChoice.MET_HERE))
+        assertFalse(state.value.canBeNamedPlace)
+    }
+
+    @Test
+    fun planHere_opensThePlanEditor_thenSavesThePlanWithTheLinkAndPoint_forACircleToo() = runViewModelTest {
+        val g = graph()
+        g.groupRepo.upsert(FriendGroup("crew", "Crew", memberIds = listOf(FriendId("ana"), FriendId("bea"))))
+        val link = "https://www.google.com/maps/place/Ramiro/@38.72,-9.13,17z"
+        g.shareInbox.offer(SharedContent(url = link))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onSelectCircle(state.value.circles.single())
+        assertFalse(state.value.canBeAddress, "home and work are for a person")
+        assertTrue(state.value.canBeNamedPlace)
+        vm.onChoice(ShareChoice.PLAN_HERE)
+        vm.onSave()
+        assertTrue(state.value.planEditorOpen)
+        assertTrue(g.planRepo.plans.value.isEmpty(), "nothing saved until the editor saves")
+        vm.onDismissPlanEditor()
+        assertFalse(state.value.planEditorOpen)
+
+        val place = assertNotNull(state.value.place)
+        vm.onSave()
+        vm.onSavePlan(
+            PlanInput(
+                "Lunch",
+                emptyList(),
+                LocalDate(2026, 3, 13),
+                place = place.label,
+                circleId = "crew",
+                mapLink = place.link,
+                location = place.point,
+            ),
+        )
+        val plan = g.planRepo.plans.value.single()
+        assertEquals("Ramiro", plan.place)
+        assertEquals(link, plan.mapLink)
+        assertEquals(GeoPoint(38.72, -9.13), plan.location)
+        assertTrue(state.value.closed)
+        assertNull(g.shareInbox.pending.value)
+    }
+
+    @Test
+    fun weMetHere_logsAMeetupThere_onTheChosenDay() = runViewModelTest {
+        val g = graph()
+        g.shareInbox.offer(SharedContent(text = "geo:38.72,-9.13?q=38.72,-9.13(Casa%20da%20Ana)"))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        vm.onSelect(state.value.friends.first { it.friend.id.value == "ana" }.friend)
+        vm.onChoice(ShareChoice.MET_HERE)
+        vm.onDate(LocalDate(2026, 3, 8))
+        vm.onSave()
+        val hangout = g.hangoutRepo.hangouts.value.single()
+        assertEquals("Casa da Ana", hangout.place?.name)
+        assertEquals(38.72, hangout.place?.latitude)
+        assertEquals(hangout.id, g.interactionRepo.attachments.value.single().logId)
     }
 
     @Test

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,8 +73,10 @@ import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RankedFriend
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
+import com.neteinstein.goodcompany.core.domain.usecase.SharePlace
 import com.neteinstein.goodcompany.core.domain.usecase.ShareReason
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.CircleChip
@@ -83,6 +86,7 @@ import com.neteinstein.goodcompany.core.ui.components.LocalDatePickerDialog
 import com.neteinstein.goodcompany.core.ui.components.LogDateChoice
 import com.neteinstein.goodcompany.core.ui.components.PeopleFilterRow
 import com.neteinstein.goodcompany.core.ui.components.PeoplePickerMode
+import com.neteinstein.goodcompany.core.ui.components.PlanEditor
 import com.neteinstein.goodcompany.core.ui.components.QuotedText
 import com.neteinstein.goodcompany.core.ui.components.SaveBar
 import com.neteinstein.goodcompany.core.ui.components.attachmentKindLabel
@@ -93,6 +97,7 @@ import com.neteinstein.goodcompany.core.ui.components.showMessage
 import com.neteinstein.goodcompany.core.ui.l10n.aiErrorText
 import com.neteinstein.goodcompany.feature.friends.resources.Res
 import com.neteinstein.goodcompany.feature.friends.resources.share_add_typed
+import com.neteinstein.goodcompany.feature.friends.resources.share_address_hint
 import com.neteinstein.goodcompany.feature.friends.resources.share_ai_hint
 import com.neteinstein.goodcompany.feature.friends.resources.share_caption
 import com.neteinstein.goodcompany.feature.friends.resources.share_circles
@@ -101,13 +106,25 @@ import com.neteinstein.goodcompany.feature.friends.resources.share_counts_hint
 import com.neteinstein.goodcompany.feature.friends.resources.share_failed
 import com.neteinstein.goodcompany.feature.friends.resources.share_gift
 import com.neteinstein.goodcompany.feature.friends.resources.share_gift_hint
+import com.neteinstein.goodcompany.feature.friends.resources.share_home_address
 import com.neteinstein.goodcompany.feature.friends.resources.share_how_count
 import com.neteinstein.goodcompany.feature.friends.resources.share_image
+import com.neteinstein.goodcompany.feature.friends.resources.share_location
+import com.neteinstein.goodcompany.feature.friends.resources.share_location_with_point
 import com.neteinstein.goodcompany.feature.friends.resources.share_mentioned
+import com.neteinstein.goodcompany.feature.friends.resources.share_met_here
+import com.neteinstein.goodcompany.feature.friends.resources.share_met_here_hint
+import com.neteinstein.goodcompany.feature.friends.resources.share_named_place
+import com.neteinstein.goodcompany.feature.friends.resources.share_named_place_hint
 import com.neteinstein.goodcompany.feature.friends.resources.share_no_friends
 import com.neteinstein.goodcompany.feature.friends.resources.share_note
 import com.neteinstein.goodcompany.feature.friends.resources.share_note_hint
 import com.neteinstein.goodcompany.feature.friends.resources.share_nothing_found
+import com.neteinstein.goodcompany.feature.friends.resources.share_place_address
+import com.neteinstein.goodcompany.feature.friends.resources.share_place_name
+import com.neteinstein.goodcompany.feature.friends.resources.share_plan_here
+import com.neteinstein.goodcompany.feature.friends.resources.share_plan_here_hint
+import com.neteinstein.goodcompany.feature.friends.resources.share_plan_next
 import com.neteinstein.goodcompany.feature.friends.resources.share_price
 import com.neteinstein.goodcompany.feature.friends.resources.share_reason_number
 import com.neteinstein.goodcompany.feature.friends.resources.share_reason_recent
@@ -118,6 +135,7 @@ import com.neteinstein.goodcompany.feature.friends.resources.share_search
 import com.neteinstein.goodcompany.feature.friends.resources.share_suggest
 import com.neteinstein.goodcompany.feature.friends.resources.share_title
 import com.neteinstein.goodcompany.feature.friends.resources.share_who
+import com.neteinstein.goodcompany.feature.friends.resources.share_work_address
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.jetbrains.compose.resources.getString
@@ -146,6 +164,10 @@ fun ShareToFriendScreen(onClose: () -> Unit, onSaved: (FriendId) -> Unit, viewMo
             onDate = viewModel::onDate,
             onCaptionChange = viewModel::onCaptionChange,
             onPriceChange = viewModel::onPriceChange,
+            onPlaceName = viewModel::onPlaceName,
+            onPlaceAddress = viewModel::onPlaceAddress,
+            onSavePlan = viewModel::onSavePlan,
+            onDismissPlanEditor = viewModel::onDismissPlanEditor,
             onSuggest = viewModel::onSuggest,
             onSave = viewModel::onSave,
             onCancel = viewModel::onCancel,
@@ -166,6 +188,10 @@ data class ShareActions(
     val onDate: (kotlinx.datetime.LocalDate) -> Unit = {},
     val onCaptionChange: (String) -> Unit = {},
     val onPriceChange: (String) -> Unit = {},
+    val onPlaceName: (String) -> Unit = {},
+    val onPlaceAddress: (String) -> Unit = {},
+    val onSavePlan: (PlanInput) -> Unit = {},
+    val onDismissPlanEditor: () -> Unit = {},
     val onSuggest: () -> Unit = {},
     val onSave: () -> Unit = {},
     val onCancel: () -> Unit = {},
@@ -378,20 +404,24 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
         ) {
             Spacer(Modifier.height(4.dp))
             state.content?.let { BigPreview(it) }
+            state.place?.let { LocationFields(it, actions) }
             Text(stringResource(Res.string.share_how_count), style = MaterialTheme.typography.titleSmall)
-            ChoiceCard(
-                selected = state.choice == ShareChoice.INTERACTION,
-                title = stringResource(Res.string.share_counts),
-                hint = stringResource(Res.string.share_counts_hint),
-                onClick = { actions.onChoice(ShareChoice.INTERACTION) },
-            )
+            if (state.isLocation) LocationChoices(target, state, actions)
+            if (state.offers(ShareChoice.INTERACTION)) {
+                ChoiceCard(
+                    selected = state.choice == ShareChoice.INTERACTION,
+                    title = stringResource(Res.string.share_counts),
+                    hint = stringResource(Res.string.share_counts_hint),
+                    onClick = { actions.onChoice(ShareChoice.INTERACTION) },
+                )
+            }
             ChoiceCard(
                 selected = state.choice == ShareChoice.NOTE,
                 title = stringResource(Res.string.share_note),
                 hint = stringResource(Res.string.share_note_hint, target.label),
                 onClick = { actions.onChoice(ShareChoice.NOTE) },
             )
-            if (state.canBeGift) {
+            if (state.offers(ShareChoice.GIFT_IDEA)) {
                 ChoiceCard(
                     selected = state.choice == ShareChoice.GIFT_IDEA,
                     title = stringResource(Res.string.share_gift),
@@ -412,13 +442,18 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
                 }
                 LogDateChoice(state.date, state.today, actions.onDate, onPick = { pickingDate = true })
             }
-            OutlinedTextField(
-                value = state.caption,
-                onValueChange = actions.onCaptionChange,
-                label = { Text(stringResource(Res.string.share_caption)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (state.choice == ShareChoice.MET_HERE) {
+                LogDateChoice(state.date, state.today, actions.onDate, onPick = { pickingDate = true })
+            }
+            if (state.choice.takesCaption) {
+                OutlinedTextField(
+                    value = state.caption,
+                    onValueChange = actions.onCaptionChange,
+                    label = { Text(stringResource(Res.string.share_caption)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             if (state.choice == ShareChoice.GIFT_IDEA) {
                 OutlinedTextField(
                     value = state.price,
@@ -428,7 +463,7 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            if (target is PickedTarget.Person) {
+            if (target is PickedTarget.Person && state.choice.takesCaption) {
                 if (state.hasAiKey) {
                     FilledTonalButton(onClick = actions.onSuggest, enabled = !state.isSuggesting) {
                         if (state.isSuggesting) {
@@ -449,10 +484,104 @@ private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareAct
             }
             Spacer(Modifier.height(8.dp))
         }
-        SaveBar(actions.onSave, enabled = !state.isSaving, label = stringResource(Res.string.share_save))
+        SaveBar(
+            actions.onSave,
+            enabled = state.canSave,
+            label = stringResource(if (state.choice == ShareChoice.PLAN_HERE) Res.string.share_plan_next else Res.string.share_save),
+        )
     }
     if (pickingDate) {
         LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)
+    }
+    val place = state.place
+    if (state.planEditorOpen && place != null) {
+        // Issue #170, "Plan here": the plan editor with the place filled in; the day and time are still to pick.
+        PlanEditor(
+            friends = state.everyone,
+            today = state.today,
+            onDismiss = actions.onDismissPlanEditor,
+            onSave = actions.onSavePlan,
+            preselected = setOfNotNull((target as? PickedTarget.Person)?.friend?.id),
+            circles = state.planCircles,
+            preselectedCircle = (target as? PickedTarget.Circle)?.circle?.id,
+            initialPlace = place.label.orEmpty(),
+            initialMapLink = place.link,
+            initialLocation = place.point,
+        )
+    }
+}
+
+/** Issue #170: the caption is the note kept with an attachment or a log; addresses, places and plans have none. */
+private val ShareChoice.takesCaption: Boolean
+    get() = this == ShareChoice.INTERACTION || this == ShareChoice.NOTE || this == ShareChoice.GIFT_IDEA || this == ShareChoice.MET_HERE
+
+/**
+ * Issue #170: the place as the share carried it, in editable fields. A bare short link starts with both empty: the
+ * app never follows it or looks the place up, so the user types what it is.
+ */
+@Composable
+private fun LocationFields(place: SharePlace, actions: ShareActions) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(if (place.point != null) Res.string.share_location_with_point else Res.string.share_location),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+        OutlinedTextField(
+            value = place.name,
+            onValueChange = actions.onPlaceName,
+            label = { Text(stringResource(Res.string.share_place_name)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = place.address,
+            onValueChange = actions.onPlaceAddress,
+            label = { Text(stringResource(Res.string.share_place_address)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Issue #170: what a location can become. Home and work are for a person; a named place needs coordinates. */
+@Composable
+private fun LocationChoices(target: PickedTarget, state: ShareUiState, actions: ShareActions) {
+    ChoiceCard(
+        selected = state.choice == ShareChoice.PLAN_HERE,
+        title = stringResource(Res.string.share_plan_here),
+        hint = stringResource(Res.string.share_plan_here_hint, target.label),
+        onClick = { actions.onChoice(ShareChoice.PLAN_HERE) },
+    )
+    ChoiceCard(
+        selected = state.choice == ShareChoice.MET_HERE,
+        title = stringResource(Res.string.share_met_here),
+        hint = stringResource(Res.string.share_met_here_hint),
+        onClick = { actions.onChoice(ShareChoice.MET_HERE) },
+    )
+    if (state.canBeAddress) {
+        ChoiceCard(
+            selected = state.choice == ShareChoice.HOME_ADDRESS,
+            title = stringResource(Res.string.share_home_address),
+            hint = stringResource(Res.string.share_address_hint, target.label),
+            onClick = { actions.onChoice(ShareChoice.HOME_ADDRESS) },
+        )
+        ChoiceCard(
+            selected = state.choice == ShareChoice.WORK_ADDRESS,
+            title = stringResource(Res.string.share_work_address),
+            hint = stringResource(Res.string.share_address_hint, target.label),
+            onClick = { actions.onChoice(ShareChoice.WORK_ADDRESS) },
+        )
+    }
+    if (state.canBeNamedPlace) {
+        ChoiceCard(
+            selected = state.choice == ShareChoice.NAMED_PLACE,
+            title = stringResource(Res.string.share_named_place),
+            hint = stringResource(Res.string.share_named_place_hint),
+            onClick = { actions.onChoice(ShareChoice.NAMED_PLACE) },
+        )
     }
 }
 

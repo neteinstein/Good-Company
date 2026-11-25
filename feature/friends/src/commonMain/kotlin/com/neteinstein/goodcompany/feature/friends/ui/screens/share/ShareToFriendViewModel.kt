@@ -13,13 +13,16 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShareTargetsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFilter
 import com.neteinstein.goodcompany.core.domain.usecase.PeopleFiltering
+import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
 import com.neteinstein.goodcompany.core.domain.usecase.RankedFriend
+import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveShareRequest
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ShareChoice
 import com.neteinstein.goodcompany.core.domain.usecase.ShareGuesser
 import com.neteinstein.goodcompany.core.domain.usecase.ShareInbox
 import com.neteinstein.goodcompany.core.domain.usecase.ShareMatcher
+import com.neteinstein.goodcompany.core.domain.usecase.SharePlace
 import com.neteinstein.goodcompany.core.domain.usecase.ShareTarget
 import com.neteinstein.goodcompany.core.domain.usecase.SuggestUpdateFromSharedUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -72,6 +75,13 @@ data class ShareUiState(
     val today: LocalDate = LocalDate(2000, 1, 1),
     val caption: String = "",
     val price: String = "",
+    /** Issue #170: the shared maps link's place, editable; null when the share isn't a location. */
+    val place: SharePlace? = null,
+    /** Issue #170: "Plan here" was chosen, so the plan editor is open with the place filled in. */
+    val planEditorOpen: Boolean = false,
+    /** Everyone, A–Z, and the circles a plan can be with, for that editor. */
+    val everyone: List<Friend> = emptyList(),
+    val planCircles: List<FriendGroup> = emptyList(),
     /** The AI switch (F1): off, nothing about AI shows, not even the hint to add a key. */
     val aiEnabled: Boolean = false,
     /** AI is on and a key is saved (F1): every AI button checks this. */
@@ -93,6 +103,33 @@ data class ShareUiState(
 
     /** Gift ideas are for one person (F17). */
     val canBeGift: Boolean get() = target is PickedTarget.Person
+
+    /** Issue #170: the share is a maps link, so the location choices show. */
+    val isLocation: Boolean get() = place != null
+
+    /** Home and work addresses are for one person (#169), not a circle. */
+    val canBeAddress: Boolean get() = isLocation && target is PickedTarget.Person
+
+    /** A named place needs the link's coordinates (F11: nothing is ever looked up). */
+    val canBeNamedPlace: Boolean get() = place?.point != null
+
+    /** Whether [choice] can be picked for this share and target. */
+    fun offers(choice: ShareChoice): Boolean = when (choice) {
+        ShareChoice.NOTE -> true
+        // A location is logged as "We met here" (with the place) rather than as a contact, and isn't a gift.
+        ShareChoice.INTERACTION -> !isLocation
+        ShareChoice.GIFT_IDEA -> canBeGift && !isLocation
+        ShareChoice.PLAN_HERE, ShareChoice.MET_HERE -> isLocation
+        ShareChoice.HOME_ADDRESS, ShareChoice.WORK_ADDRESS -> canBeAddress
+        ShareChoice.NAMED_PLACE -> canBeNamedPlace
+    }
+
+    /** Save is off while the choice is missing what it needs (an address to keep, a name for the place). */
+    val canSave: Boolean get() = !isSaving && when (choice) {
+        ShareChoice.HOME_ADDRESS, ShareChoice.WORK_ADDRESS -> place?.addressText != null
+        ShareChoice.NAMED_PLACE -> place?.label != null && place.point != null
+        else -> true
+    }
 }
 
 /**
@@ -106,6 +143,7 @@ class ShareToFriendViewModel(
     private val save: SaveSharedUseCase,
     private val suggest: SuggestUpdateFromSharedUseCase,
     private val addFriend: AddFriendUseCase,
+    private val savePlan: SavePlanUseCase,
     private val clock: AppClock,
 ) : ViewModel() {
     private val local = MutableStateFlow(ShareUiState(date = clock.today(), today = clock.today()))
@@ -140,12 +178,15 @@ class ShareToFriendViewModel(
             others = listed.copy(people = listed.people.filter { f -> ranked.none { it.friend.id == f.id && it.reason != null } }),
             circles = targets.circles.filter { q.isEmpty() || it.name.lowercase().contains(q) },
             hasFriends = targets.friends.isNotEmpty(),
+            everyone = targets.friends.sortedBy { it.displayName.lowercase() },
+            planCircles = targets.circles,
             target = target,
             aiEnabled = settings.aiEnabled,
             hasAiKey = settings.usableAiKey != null,
             closed = ui.closed || (content == null && ui.savedTo == null),
             isLoading = false,
         ).let { if (content != null && target != null && preparedFor !== content) prepare(it, content) else it }
+            .let { s -> if (s.offers(s.choice)) s else s.copy(choice = ShareChoice.NOTE) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), local.value)
 
     /** Prefills the confirm step from the guess (photo → Met on its date, chat text → Message, link → just an idea). */
@@ -159,6 +200,8 @@ class ShareToFriendViewModel(
             date = guess.date?.takeIf { it <= today } ?: today,
             today = today,
             caption = ui.caption.ifBlank { content.draft() },
+            // Issue #170: what the share carried; a bare short link starts with both fields empty.
+            place = guess.location?.let(SharePlace::of),
         )
         local.value = prepared.copy(content = null, friends = emptyList(), circles = emptyList())
         return prepared
@@ -187,9 +230,15 @@ class ShareToFriendViewModel(
         local.update { it.copy(target = null) }
     }
 
-    fun onChoice(choice: ShareChoice) = local.update {
-        if (choice == ShareChoice.GIFT_IDEA && !it.canBeGift) it else it.copy(choice = choice)
+    fun onChoice(choice: ShareChoice) {
+        if (state.value.offers(choice)) local.update { it.copy(choice = choice) }
     }
+
+    /** Issue #170: the place's name, as the user corrects it. */
+    fun onPlaceName(text: String) = local.update { it.copy(place = it.place?.copy(name = text)) }
+
+    /** Issue #170: the place's address, as the user corrects or types it (nothing is looked up). */
+    fun onPlaceAddress(text: String) = local.update { it.copy(place = it.place?.copy(address = text)) }
 
     fun onKind(kind: LogKind) = local.update { it.copy(kind = kind) }
 
@@ -224,6 +273,11 @@ class ShareToFriendViewModel(
     fun onSave() {
         val ui = state.value
         val content = inbox.pending.value ?: return
+        if (!ui.canSave) return
+        if (ui.choice == ShareChoice.PLAN_HERE) {
+            local.update { it.copy(planEditorOpen = true) }
+            return
+        }
         val target = when (val t = ui.target) {
             is PickedTarget.Person -> ShareTarget.Person(t.friend.id)
             is PickedTarget.Circle -> ShareTarget.Circle(t.circle.id)
@@ -240,6 +294,7 @@ class ShareToFriendViewModel(
                 date = ui.date,
                 caption = ui.caption,
                 price = ui.price.takeIf { ui.choice == ShareChoice.GIFT_IDEA },
+                place = ui.place,
             )
             runCatching { save(request) }.fold(
                 {
@@ -247,6 +302,31 @@ class ShareToFriendViewModel(
                         when (target) {
                             is ShareTarget.Person -> it.copy(isSaving = false, savedTo = target.id)
                             is ShareTarget.Circle -> it.copy(isSaving = false, closed = true)
+                        }
+                    }
+                    inbox.clear()
+                },
+                { local.update { it.copy(isSaving = false, message = ShareMessage.SaveFailed) } },
+            )
+        }
+    }
+
+    fun onDismissPlanEditor() = local.update { it.copy(planEditorOpen = false) }
+
+    /** Issue #170, "Plan here": saves the plan from the editor, with the link and its coordinates; then like a save. */
+    fun onSavePlan(input: PlanInput) {
+        val ui = state.value
+        if (ui.isSaving || inbox.pending.value == null) return
+        local.update { it.copy(isSaving = true) }
+        viewModelScope.launch {
+            runCatching { savePlan.save(null, input) }.fold(
+                {
+                    local.update {
+                        val person = (ui.target as? PickedTarget.Person)?.friend?.id
+                        if (person != null) {
+                            it.copy(isSaving = false, planEditorOpen = false, savedTo = person)
+                        } else {
+                            it.copy(isSaving = false, planEditorOpen = false, closed = true)
                         }
                     }
                     inbox.clear()

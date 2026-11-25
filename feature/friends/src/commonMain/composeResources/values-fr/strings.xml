@@ -534,4 +534,18 @@
     <string name="people_tab_friends">Amis</string>
     <string name="people_tab_family">Famille</string>
     <string name="row_more_circles">+%1$d</string>
+    <string name="share_location">Un lieu</string>
+    <string name="share_location_with_point">Un lieu, avec son point sur la carte</string>
+    <string name="share_place_name">Nom</string>
+    <string name="share_place_address">Adresse</string>
+    <string name="share_plan_here">Prévoir ici</string>
+    <string name="share_plan_here_hint">Un projet avec %1$s à cet endroit ; tu choisis le jour ensuite</string>
+    <string name="share_plan_next">Suivant</string>
+    <string name="share_met_here">On s’est vus ici</string>
+    <string name="share_met_here_hint">Enregistre une rencontre à cet endroit, avec le lien gardé</string>
+    <string name="share_home_address">Adresse du domicile</string>
+    <string name="share_work_address">Adresse du travail</string>
+    <string name="share_address_hint">Gardée sur la page de %1$s, à la place de l’actuelle</string>
+    <string name="share_named_place">Enregistrer comme lieu préféré</string>
+    <string name="share_named_place_hint">Les rencontres tout près prennent ce nom, comme “Chez Inês”</string>
 </resources>

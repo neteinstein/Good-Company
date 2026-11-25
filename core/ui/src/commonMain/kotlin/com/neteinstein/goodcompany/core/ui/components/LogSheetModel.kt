@@ -153,6 +153,8 @@ class LogSheetModel(
                         date = plan.date ?: p.date,
                         note = p.title,
                         placeName = p.place.orEmpty(),
+                        // Issue #170: a plan made from a maps link carries its coordinates into the meetup.
+                        location = p.location ?: it.location,
                         activity = p.activityChoice ?: it.activity,
                         circleId = p.circleId,
                     )

@@ -122,6 +122,12 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   is timed for `CalendarEntry.TIMED_MINUTES` (60) when set (`CalendarEntry.start()`; web `CalendarFile.event`, floating
   local time), all day otherwise. Show a plan time with `LocalTime.clockLabel()` (`:core:ui` platform: the device's
   12/24-hour convention; Android reads the setting after `initTimeFormat` in `GoodCompanyApp`), never `hhmm()`.
+- **Plans from a maps link (issue #170).** `Plan.mapLink`, `latitude`, `longitude` (`plan.map_link` / `latitude` /
+  `longitude`, migration `35.sqm`; both coordinates or neither) come from a share's "Plan here" and are kept by every
+  `PlanEditor` save (`PlanInput.mapLink` / `location`; `SavePlanUseCase` drops both when the plan has no place).
+  "Open in maps" is in `PlanUpcomingMenu` (⋮) and under Where in the editor (× takes the link off). When the plan
+  closes, `LogSheetModel` prefills `location` and `ConfirmPlanUseCase` passes it to the check-in, so the meetup gets
+  the point and resolves to a named place nearby. The link is only ever handed to the maps app.
 - **Places without GPS (issue #121).** Settings → Your data → Places also lists `TypedPlaces.of`: place names typed on
   meetups (no `placeId`, or one whose `NamedPlace` is gone) and plans, spellings kept apart. Rename/merge is
   `RenameTypedPlaceUseCase` (text only, GPS places untouched); "Add coordinates" is `PinTypedPlaceUseCase` with the
