@@ -1,9 +1,9 @@
 # Releases for every merge to main — see CI_CD.md ("Releases").
 #
 # Runs after the CI workflow succeeds on a push to main (a merged PR), so only green code is published.
-# Builds the Play (`release`) and `sideload` APKs, signs them, and publishes them as the rolling
-# GitHub release tagged v0.1.<n> (the first is v0.1.0; marked "latest") plus a workflow artifact.
-# With the release keystore and PLAY_STORE_SERVICE_ACCOUNT_JSON secrets it also uploads the Play bundle
+# Builds the Play (`release`) and `sideload` APKs and the Play bundle (AAB), signs them, and publishes them as the
+# rolling GitHub release tagged v0.1.<n> (the first is v0.1.0; marked "latest") plus a workflow artifact.
+# With the release keystore and PLAY_STORE_SERVICE_ACCOUNT_JSON secrets it also uploads that bundle
 # (versionCode = this run's number) to Google Play's internal track. publish-play-store.yml promotes it further.
 name: Test APK
 
@@ -98,9 +98,10 @@ jobs:
             echo "key=CI debug key (uninstall the previous test build first)" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Assemble release (Play) + sideload
+      # One Gradle run, so the APK and the bundle share the same R8 output (and mapping.txt).
+      - name: Assemble release (Play) + sideload, bundle release (Play)
         run: >-
-          ./gradlew :androidApp:assembleRelease :androidApp:assembleSideload
+          ./gradlew :androidApp:assembleRelease :androidApp:assembleSideload :androidApp:bundleRelease
           -Pgoodcompany.versionCode=${{ env.BUILD }}
           -Pgoodcompany.versionName=${{ env.VERSION }}
           ${{ steps.signing.outputs.flag }}
@@ -111,6 +112,9 @@ jobs:
           for apk in androidApp/build/outputs/apk/release/*.apk androidApp/build/outputs/apk/sideload/*.apk; do
             "$BT/apksigner" verify "$apk" || { echo "::error::$apk is not signed"; exit 1; }
           done
+          # App bundles are jar-signed. Not -strict: upload and debug keys are self-signed, which -strict rejects.
+          jarsigner -verify androidApp/build/outputs/bundle/release/*.aab | grep -q "jar verified" \
+            || { echo "::error::The Play bundle is not signed"; exit 1; }
           PERMS=$("$BT/aapt2" dump permissions androidApp/build/outputs/apk/release/*.apk)
           if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|READ_CONTACTS|WRITE_CONTACTS|REQUEST_INSTALL_PACKAGES|AD_ID"; then
             echo "::error::Release (Play) APK declares a restricted permission"; exit 1
@@ -133,6 +137,7 @@ jobs:
           mkdir dist
           cp androidApp/build/outputs/apk/release/*.apk dist/good-company-play.apk
           cp androidApp/build/outputs/apk/sideload/*.apk dist/good-company-sideload.apk
+          cp androidApp/build/outputs/bundle/release/androidApp-release.aab dist/good-company-play.aab
           cp androidApp/build/outputs/mapping/release/mapping.txt dist/mapping-play.txt
           ls -l dist
 
@@ -155,6 +160,7 @@ jobs:
           |---|---|
           | \`good-company-play.apk\` | The Play build: contact picker only, no call log. |
           | \`good-company-sideload.apk\` | Everything: full address-book sync and call matching. Installs next to the Play build (\`.sideload\` id). |
+          | \`good-company-play.aab\` | The Play build as an Android App Bundle, for uploading to Google Play by hand. |
 
           Signed with: $SIGNED_WITH.
           Both are R8-optimized release builds. \`mapping-play.txt\` de-obfuscates Play-build crashes.
@@ -166,7 +172,7 @@ jobs:
             --title "$VERSION (build #$BUILD)" \
             --notes-file notes.md
 
-      # Google Play: the same `release` build as good-company-play.apk, as a bundle, to the internal track.
+      # Google Play: the bundle attached above (the same `release` build as good-company-play.apk), to the internal track.
       # Skipped (with a notice) until both the release keystore and the Play service account are set up,
       # so the GitHub release above never depends on Play. See CI_CD.md, "Google Play".
       - name: Google Play upload configured?
@@ -183,13 +189,6 @@ jobs:
           else
             echo "upload=true" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Build the Play bundle
-        if: steps.play.outputs.upload == 'true'
-        run: >-
-          ./gradlew :androidApp:bundleRelease
-          -Pgoodcompany.versionCode=${{ env.BUILD }}
-          -Pgoodcompany.versionName=${{ env.VERSION }}
 
       - name: Set up the Play upload script
         if: steps.play.outputs.upload == 'true'
@@ -210,8 +209,8 @@ jobs:
           "$RUNNER_TEMP/play-venv/bin/python" .github/scripts/play_publish.py \
             --key "$RUNNER_TEMP/play-store-key.json" \
             --package org.goodcompany.app \
-            --aab androidApp/build/outputs/bundle/release/androidApp-release.aab \
-            --mapping androidApp/build/outputs/mapping/release/mapping.txt \
+            --aab dist/good-company-play.aab \
+            --mapping dist/mapping-play.txt \
             --release-notes store-listing/text \
             --track internal
 
@@ -229,6 +228,7 @@ jobs:
             echo ""
             echo "- Play build: $URL/good-company-play.apk"
             echo "- Sideload build: $URL/good-company-sideload.apk"
+            echo "- Play bundle: $URL/good-company-play.aab"
             echo "- Signed with: $SIGNED_WITH"
             echo "- Google Play internal track: ${{ steps.play.outputs.upload == 'true' && 'uploaded (see above)' || 'not uploaded' }}"
           } >> "$GITHUB_STEP_SUMMARY"
