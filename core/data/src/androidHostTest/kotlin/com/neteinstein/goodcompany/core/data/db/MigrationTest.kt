@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.data.db
 import app.cash.sqldelight.async.coroutines.await
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
@@ -29,6 +30,7 @@ import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.ReminderRepeat
 import com.neteinstein.goodcompany.core.domain.model.Repeat
@@ -1167,6 +1169,37 @@ class MigrationTest {
         // A time this build can't read is no time, not a broken row.
         driver.execute(null, "UPDATE plan SET time = 'soon' WHERE id = 'p1'", 0).await()
         assertNull(database.readPlans().single { it.id == "p1" }.time)
+        driver.close()
+    }
+
+    @Test
+    fun version35to36_peopleStartWithNoPostalAddress_andHomeAndWorkRoundTrip() = runTest {
+        // Issue #169.
+        val driver = driverAt(35)
+        driver.execute(
+            null,
+            """
+            INSERT INTO friend (id, position, name, contact_id, is_close_friend, notify_birthday, notes, suggest_events,
+                is_orphaned, catch_up_paused, contact_counts_as_catch_up)
+            VALUES ('ana', 0, 'Ana', 'c1', 1, 1, '', 0, 0, 0, 0)
+            """.trimIndent(),
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 35, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val ana = database.readFriends().single()
+        assertTrue(ana.addresses.isEmpty())
+
+        val addresses = listOf(PostalAddress(AddressKind.HOME, "Rua A 1\nLisboa", fromContact = true), PostalAddress(AddressKind.WORK, "Office"))
+        database.writeFriend(ana.copy(addresses = addresses), 0)
+        assertEquals(addresses, database.readFriends().single().addresses)
+        // A kind this build doesn't know is skipped, not a broken friend.
+        driver.execute(null, "INSERT INTO friend_address VALUES ('ana', 'HOLIDAY', 'Beach', 0)", 0).await()
+        assertEquals(addresses, database.readFriends().single().addresses)
+        // Deleting the person takes their addresses.
+        driver.execute(null, "DELETE FROM friend WHERE id = 'ana'", 0).await()
+        assertTrue(database.friendQueries.allAddresses().awaitAsList().isEmpty())
         driver.close()
     }
 

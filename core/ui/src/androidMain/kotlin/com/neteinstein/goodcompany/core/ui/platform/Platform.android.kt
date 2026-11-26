@@ -39,8 +39,10 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_SCOPES
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -315,6 +317,7 @@ private fun readPickedContact(context: Context, uri: Uri): ContactRecord? = runC
             birthday = null,
             photo = readPickedPhoto(context, uri),
             emails = details.emails,
+            addresses = details.addresses,
         )
     }
 }.getOrNull()
@@ -337,20 +340,25 @@ private fun readPickedPhoto(context: Context, contactUri: Uri): ContactPhoto? = 
     }
 }.getOrNull()
 
-/** Numbers and emails read from a picked contact's data rows. */
-private class PickedDetails(val numbers: List<String> = emptyList(), val emails: List<String> = emptyList())
+/** Numbers, emails and home/work postal addresses (issue #169) read from a picked contact's data rows. */
+private class PickedDetails(
+    val numbers: List<String> = emptyList(),
+    val emails: List<String> = emptyList(),
+    val addresses: List<PostalAddress> = emptyList(),
+)
 
 /**
  * Best effort: the grant covers the picked contact, and some contacts apps extend it to the contact's data rows. When
- * they don’t, the person is still added, just without numbers or emails. Phone numbers and email addresses both live
- * in DATA1; the MIME type tells them apart.
+ * they don’t, the person is still added, just without numbers or emails. Phone numbers, email addresses and the
+ * formatted postal address all live in DATA1; the MIME type tells them apart (and DATA2 is the postal address's type).
  */
 private fun readPickedDetails(context: Context, contactUri: Uri): PickedDetails = runCatching {
     val numbers = mutableListOf<String>()
     val emails = mutableListOf<String>()
+    val addresses = mutableListOf<PostalAddress>()
     context.contentResolver.query(
         Uri.withAppendedPath(contactUri, ContactsContract.Contacts.Data.CONTENT_DIRECTORY),
-        arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1),
+        arrayOf(ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1, ContactsContract.Data.DATA2),
         null,
         null,
         null,
@@ -361,10 +369,18 @@ private fun readPickedDetails(context: Context, contactUri: Uri): PickedDetails 
                 ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> if (value !in numbers) numbers += value
                 ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE ->
                     if (emails.none { it.equals(value, ignoreCase = true) }) emails += value
+                ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> {
+                    val kind = when (c.stringOrNull(2)?.toIntOrNull()) {
+                        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME -> AddressKind.HOME
+                        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK -> AddressKind.WORK
+                        else -> null
+                    }
+                    if (kind != null && addresses.none { it.kind == kind }) addresses += PostalAddress(kind, value, fromContact = true)
+                }
             }
         }
     }
-    PickedDetails(numbers.toList(), emails.toList())
+    PickedDetails(numbers.toList(), emails.toList(), addresses.toList())
 }.getOrDefault(PickedDetails())
 
 @Composable

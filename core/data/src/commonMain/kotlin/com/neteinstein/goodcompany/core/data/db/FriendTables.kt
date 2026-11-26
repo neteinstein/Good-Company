@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.db
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOne
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
@@ -18,6 +19,7 @@ import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
 import com.neteinstein.goodcompany.core.domain.model.Occasion
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.SocialLink
@@ -37,7 +39,7 @@ private const val WEBSITE_KIND = "WEBSITE"
 internal val FRIEND_TABLES = arrayOf(
     "friend", "friend_phone", "friend_taste", "friend_occasion", "important_event", "gift",
     "life_update", "feed", "feed_item", "friend_link", "friend_photo", "friend_custom_photo",
-    "friend_email", "relative", "relative_like", "custom_field",
+    "friend_email", "friend_address", "relative", "relative_like", "custom_field",
 )
 
 private const val LIKE = "LIKE"
@@ -73,6 +75,7 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
     val photos = q.allPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val customPhotos = q.allCustomPhotos().awaitAsList().associate { it.friend_id to ContactPhoto(it.image_base64) }
     val emails = q.allEmails().awaitAsList().groupBy { it.friend_id }
+    val addresses = q.allAddresses().awaitAsList().groupBy { it.friend_id }
     val relativeLikes = q.allRelativeLikes().awaitAsList().groupBy { it.friend_id to it.relative_id }
     val relatives = q.allRelatives().awaitAsList().groupBy { it.friend_id }
     val customFields = q.allCustomFields().awaitAsList().groupBy { it.friend_id }
@@ -174,6 +177,10 @@ internal suspend fun GoodCompanyDatabase.readFriends(): List<DomainFriend> {
             dismissedKinship = row.dismissed_kinship.split(',').mapNotNull { LinkType.parse(it.trim()) }.toSet(),
             approxLastSeen = row.approx_last_seen?.toLocalDate(),
             tracksKeepInTouch = row.tracks_keep_in_touch.toFlag(),
+            // Issue #169: Home first, then Work; a kind this build doesn't know is skipped.
+            addresses = addresses[id].orEmpty()
+                .mapNotNull { a -> enumOrNull<AddressKind>(a.kind)?.let { PostalAddress(it, a.text, a.from_contact.toFlag()) } }
+                .sortedBy { it.kind.ordinal },
         )
     }
 }
@@ -266,6 +273,9 @@ internal suspend fun GoodCompanyDatabase.writeFriend(friend: DomainFriend, posit
     friend.photo?.let { q.insertPhoto(Friend_photo(id, it.base64)) }
     friend.customPhoto?.let { q.insertCustomPhoto(Friend_custom_photo(id, it.base64)) }
     friend.emails.forEachIndexed { i, e -> q.insertEmail(Friend_email(id, i.toLong(), e.address, e.fromContact.toColumn())) }
+    friend.addresses.filter { it.text.isNotBlank() }.distinctBy { it.kind }.forEach { a ->
+        q.insertAddress(Friend_address(id, a.kind.name, a.text, a.fromContact.toColumn()))
+    }
     friend.relatives.distinctBy { it.id }.forEachIndexed { i, r ->
         q.insertRelative(
             Relative(

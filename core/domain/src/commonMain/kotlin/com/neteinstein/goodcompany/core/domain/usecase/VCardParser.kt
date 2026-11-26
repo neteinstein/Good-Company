@@ -1,11 +1,14 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import kotlin.io.encoding.Base64
 
 /**
  * Minimal, forgiving vCard 2.1 / 3.0 / 4.0 reader for contact exports (Google Contacts, iCloud, Android,
- * Outlook). Extracts only what the app uses: name, phone numbers, emails, birthday and an inline photo.
+ * Outlook). Extracts only what the app uses: name, phone numbers, emails, birthday, an inline photo and the home and
+ * work postal addresses (`ADR;TYPE=HOME` / `WORK`, issue #169; other addresses are skipped).
  *
  * Handles line folding, `item1.` group prefixes, `QUOTED-PRINTABLE` + `CHARSET=UTF-8` (Android 2.1 exports),
  * backslash escapes, and BDAY as `19900504`, `1990-05-04`, `--0504`, `--05-04` or with a time part.
@@ -19,16 +22,21 @@ object VCardParser {
         val birthday: Birthday?,
         val photo: ByteArray? = null,
         val emails: List<String> = emptyList(),
+        val addresses: List<PostalAddress> = emptyList(),
     ) {
         override fun equals(other: Any?): Boolean = other is Card && name == other.name && phoneNumbers == other.phoneNumbers &&
-            birthday == other.birthday && (photo?.contentEquals(other.photo) ?: (other.photo == null)) && emails == other.emails
+            birthday == other.birthday && (photo?.contentEquals(other.photo) ?: (other.photo == null)) && emails == other.emails &&
+            addresses == other.addresses
 
         override fun hashCode(): Int =
-            (((name.hashCode() * 31 + phoneNumbers.hashCode()) * 31 + birthday.hashCode()) * 31 + (photo?.contentHashCode() ?: 0)) * 31 +
-                emails.hashCode()
+            (
+                (((name.hashCode() * 31 + phoneNumbers.hashCode()) * 31 + birthday.hashCode()) * 31 + (photo?.contentHashCode() ?: 0)) * 31 +
+                    emails.hashCode()
+                ) * 31 + addresses.hashCode()
 
         override fun toString(): String =
-            "Card(name=$name, phoneNumbers=$phoneNumbers, birthday=$birthday, photo=${photo?.size} bytes, emails=$emails)"
+            "Card(name=$name, phoneNumbers=$phoneNumbers, birthday=$birthday, photo=${photo?.size} bytes, emails=$emails, " +
+                "addresses=$addresses)"
     }
 
     fun parse(raw: String): List<Card> {
@@ -41,6 +49,7 @@ object VCardParser {
         var emails = mutableListOf<String>()
         var bday: Birthday? = null
         var photo: ByteArray? = null
+        var addresses = mutableListOf<PostalAddress>()
         for (line in lines) {
             val colon = line.indexOf(':')
             if (colon <= 0) continue
@@ -58,17 +67,22 @@ object VCardParser {
                     emails = mutableListOf()
                     bday = null
                     photo = null
+                    addresses = mutableListOf()
                 }
                 "END" -> if (inCard && value.trim().equals("VCARD", ignoreCase = true)) {
                     inCard = false
                     val name = fn?.takeIf { it.isNotBlank() } ?: n?.let(::nameFromN)
-                    if (!name.isNullOrBlank()) cards += Card(name.trim(), phones.distinct(), bday, photo, emails.distinctBy(String::lowercase))
+                    if (!name.isNullOrBlank()) {
+                        val byKind = addresses.distinctBy { it.kind }
+                        cards += Card(name.trim(), phones.distinct(), bday, photo, emails.distinctBy(String::lowercase), byKind)
+                    }
                 }
                 "FN" -> if (inCard) fn = unescape(decoded)
                 "N" -> if (inCard) n = decoded
                 "TEL" -> if (inCard) unescape(decoded).removePrefix("tel:").trim().takeIf { it.any(Char::isDigit) }?.let(phones::add)
                 "EMAIL" -> if (inCard) unescape(decoded).trim().removePrefix("mailto:").trim().takeIf { '@' in it }?.let(emails::add)
                 "BDAY" -> if (inCard) bday = parseBirthday(decoded.trim())
+                "ADR" -> if (inCard) parseAddress(decoded, params.drop(1))?.let(addresses::add)
                 "PHOTO" -> if (inCard && photo == null) photo = parsePhoto(value, params.drop(1))
             }
         }
@@ -124,6 +138,67 @@ object VCardParser {
         val family = parts.getOrNull(0).orEmpty()
         return listOf(given, family).filter { it.isNotBlank() }.joinToString(" ").ifBlank { null }
     }
+
+    /**
+     * A home or work `ADR` as free text (issue #169), or null for another kind or an empty one. The vCard 4 `LABEL`
+     * parameter (the address as the exporter formats it) wins; otherwise the parts are put on lines: street (with the
+     * extended address and PO box), "postal code locality", region, country.
+     */
+    private fun parseAddress(value: String, params: List<String>): PostalAddress? {
+        val types = params.flatMap { p ->
+            val v = if ('=' in p) p.substringAfter('=').takeIf { p.substringBefore('=').equals("TYPE", ignoreCase = true) } else p
+            v?.trim('"')?.split(',').orEmpty()
+        }.map { it.trim().uppercase() }
+        val kind = when {
+            "HOME" in types -> AddressKind.HOME
+            "WORK" in types -> AddressKind.WORK
+            else -> return null
+        }
+        val label = params.firstOrNull { it.substringBefore('=').equals("LABEL", ignoreCase = true) }
+            ?.substringAfter('=')?.trim('"')?.let(::unescapeLines)?.let(::tidyLines)
+        if (!label.isNullOrBlank()) return PostalAddress(kind, label)
+        val parts = splitUnescaped(value).map { unescapeLines(it).trim() }
+        fun part(i: Int) = parts.getOrNull(i).orEmpty()
+        val lines = listOf(
+            listOf(part(2), part(1), part(0)).filter(String::isNotEmpty).joinToString("\n"),
+            listOf(part(5), part(3)).filter(String::isNotEmpty).joinToString(" "),
+            part(4),
+            part(6),
+        )
+        val text = tidyLines(lines.joinToString("\n"))
+        return text.takeIf { it.isNotBlank() }?.let { PostalAddress(kind, it) }
+    }
+
+    /** Splits on `;` that isn't escaped. */
+    private fun splitUnescaped(value: String): List<String> {
+        val out = mutableListOf<String>()
+        val sb = StringBuilder()
+        var i = 0
+        while (i < value.length) {
+            val c = value[i]
+            if (c == '\\' && i < value.lastIndex) {
+                sb.append(c).append(value[i + 1])
+                i += 2
+                continue
+            }
+            if (c == ';') {
+                out += sb.toString()
+                sb.clear()
+            } else {
+                sb.append(c)
+            }
+            i++
+        }
+        out += sb.toString()
+        return out
+    }
+
+    /** Like [unescape], but `\n` becomes a line break (addresses keep their lines). */
+    private fun unescapeLines(s: String) =
+        s.replace("\\n", "\n").replace("\\N", "\n").replace("\\,", ",").replace("\\;", ";").replace("\\\\", "\\")
+
+    /** Trims every line and drops the empty ones. */
+    private fun tidyLines(s: String) = s.lines().map(String::trim).filter(String::isNotEmpty).joinToString("\n")
 
     private val base64 = Base64.withPadding(Base64.PaddingOption.PRESENT_OPTIONAL)
 

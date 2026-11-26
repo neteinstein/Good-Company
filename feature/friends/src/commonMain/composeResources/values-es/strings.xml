@@ -271,6 +271,12 @@
     <string name="about_email_from_contacts">Correo · de Contactos</string>
     <string name="about_email_typed">Correo</string>
     <string name="about_email_contact_note">De Contactos — edítalo allí</string>
+    <string name="about_address_home">Dirección de casa</string>
+    <string name="about_address_work">Dirección del trabajo</string>
+    <string name="about_address_from_contacts">%1$s · de Contactos</string>
+    <string name="about_address_contact_note">De Contactos. Lo que escribas aquí se guarda en su lugar.</string>
+    <string name="about_address_copy">Copiar %1$s</string>
+    <string name="about_address_open_maps">Abrir %1$s en mapas</string>
     <string name="channel_whatsapp">WhatsApp</string>
     <string name="channel_call">Llamada</string>
     <string name="channel_sms">SMS</string>

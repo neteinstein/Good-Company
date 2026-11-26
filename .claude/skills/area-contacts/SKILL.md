@@ -1,6 +1,6 @@
 ---
 name: area-contacts
-description: Rules for Good Company's address-book code - choosing contacts (system picker vs. the checkbox list), contact sync, contact photos, .vcf import and the Android sideload write-back that mirrors friends onto contacts (never deletes, never edits the user's rows, never writes emails or photos). Use before touching ContactsSource/ContactsWriter, AndroidContactsWriter, ContactCard, ContactRowPlanner, ContactMerger, ChooseContactsRoute, photos, or contact permissions.
+description: Rules for Good Company's address-book code - choosing contacts (system picker vs. the checkbox list), contact sync, contact photos, .vcf import and the Android sideload write-back that mirrors friends onto contacts (never deletes, never edits the user's rows, never writes emails, postal addresses or photos). Use before touching ContactsSource/ContactsWriter, AndroidContactsWriter, ContactCard, ContactRowPlanner, ContactMerger, ChooseContactsRoute, photos, or contact permissions.
 ---
 
 # Area: contacts
@@ -81,3 +81,19 @@ injecting the use case into another ViewModel.
   are app-owned, in table `friend_link` (`kind` = network name or `WEBSITE`, migration `25.sqm`). Never written back
   to contacts, never fetched. Logos: `SocialIcons` in `:core:ui` (Simple Icons, CC0, `docs/licenses/simple-icons.md`);
   never redraw them.
+
+## Postal addresses (issue #169)
+
+- `Friend.addresses`: at most one `AddressKind.HOME` and one `WORK` (`PostalAddress(kind, text, fromContact)`), free
+  text in table `friend_address` (migration `35.sqm`, `PRIMARY KEY (friend_id, kind)`, kind without `CHECK`: an
+  unknown one is skipped when read). Carried in backups through `Friend`.
+- Read from Contacts like emails: `ContactRecord.addresses` ← Android `StructuredPostal` `TYPE_HOME`/`TYPE_WORK`
+  (`FORMATTED_ADDRESS`; sideload sync and the legacy picker's best-effort data rows, `DATA1` + `DATA2`), iOS
+  `CNContactPostalAddressesKey` with `CNLabelHome`/`CNLabelWork` through `CNPostalAddressFormatter` (source and picker;
+  check `isKeyAvailable`). The Android 17 picker is still asked for the name only. `.vcf`: `ADR;TYPE=HOME|WORK`
+  (`LABEL` wins, else street / "postcode locality" / region / country lines). Other labels are never read.
+- Merge per kind (`ContactMerger.mergeAddresses`): typed wins, else the contact's, else none. Re-picks and `.vcf` only
+  fill a missing kind (`fillAddresses`); `.vcf` ones count as typed. Typed ones are app data (`hasAppData`).
+- Never written back (`ContactCard` has no address), never in `FriendProfile` (AI). No validation, autocomplete or
+  geocoding. "Open in maps" is `mapsLink` (`:core:ui` platform: `geo:` / Apple Maps / a Google Maps search URL in a
+  new tab) handed to `LocalUriHandler`; the app calls no map service (gotcha 29).

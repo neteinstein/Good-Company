@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.friends
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
@@ -27,6 +28,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoPlatform
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
@@ -798,6 +800,21 @@ class FriendDetailViewModelTest {
         assertEquals(listOf(FriendEmail("c@x.example", true), FriendEmail("new@x.example")), f.emails)
         vm.onSaveAbout(AboutEdit(introducedBy = Introducer(null, " ")))
         assertNull(state.value.detail!!.friend.introducedBy)
+    }
+
+    @Test
+    fun aboutSavesHomeAndWorkAddresses_andLeavesThemAloneWhenNotEdited() = runViewModelTest {
+        // Issue #169.
+        val contactHome = PostalAddress(AddressKind.HOME, "Rua A 1", fromContact = true)
+        g.friendRepo.upsert(g.friendRepo.get(FriendId("ana"))!!.copy(addresses = listOf(contactHome)))
+        val vm = vm()
+        val state = collecting(vm.state)
+        vm.onSaveAbout(AboutEdit(addresses = mapOf(AddressKind.HOME to "Rua A 1", AddressKind.WORK to " Torre 2\nPiso 3 ")))
+        assertEquals(listOf(contactHome, PostalAddress(AddressKind.WORK, "Torre 2\nPiso 3")), state.value.detail!!.friend.addresses)
+        vm.onSaveAbout(AboutEdit(job = "Designer"))
+        assertEquals(2, state.value.detail!!.friend.addresses.size)
+        vm.onSaveAbout(AboutEdit(addresses = mapOf(AddressKind.HOME to "My own", AddressKind.WORK to "")))
+        assertEquals(listOf(PostalAddress(AddressKind.HOME, "My own")), state.value.detail!!.friend.addresses)
     }
 
     @Test

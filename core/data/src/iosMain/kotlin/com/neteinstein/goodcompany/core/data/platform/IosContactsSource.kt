@@ -1,9 +1,11 @@
 package com.neteinstein.goodcompany.core.data.platform
 
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -18,11 +20,17 @@ import platform.Contacts.CNContactFamilyNameKey
 import platform.Contacts.CNContactFetchRequest
 import platform.Contacts.CNContactGivenNameKey
 import platform.Contacts.CNContactPhoneNumbersKey
+import platform.Contacts.CNContactPostalAddressesKey
 import platform.Contacts.CNContactStore
 import platform.Contacts.CNContactThumbnailImageDataKey
 import platform.Contacts.CNEntityType
+import platform.Contacts.CNLabelHome
+import platform.Contacts.CNLabelWork
 import platform.Contacts.CNLabeledValue
 import platform.Contacts.CNPhoneNumber
+import platform.Contacts.CNPostalAddress
+import platform.Contacts.CNPostalAddressFormatter
+import platform.Contacts.CNPostalAddressFormatterStyle
 import platform.Contacts.predicateForContactsWithIdentifiers
 import platform.Foundation.NSDateComponentUndefined
 import platform.posix.memcpy
@@ -43,6 +51,7 @@ internal class IosContactsSource : ContactsSource {
             CNContactBirthdayKey,
             CNContactThumbnailImageDataKey.takeIf { withPhotos },
             CNContactEmailAddressesKey,
+            CNContactPostalAddressesKey,
         )
         val request = CNContactFetchRequest(keysToFetch = keys)
         val out = mutableListOf<ContactRecord>()
@@ -87,7 +96,29 @@ internal class IosContactsSource : ContactsSource {
         } else {
             null
         }
-        return ContactRecord(identifier, name, phones, birthday, thumbnail(), emails())
+        return ContactRecord(identifier, name, phones, birthday, thumbnail(), emails(), addresses = postalAddressesOrEmpty())
+    }
+
+    /** The contact's home and work postal addresses (issue #169), formatted as iOS writes a mailing address. */
+    private fun CNContact.postalAddressesOrEmpty(): List<PostalAddress> {
+        // Reading a key that wasn't fetched raises an Objective-C exception, which Kotlin can't catch.
+        if (!isKeyAvailable(CNContactPostalAddressesKey)) return emptyList()
+        val out = mutableListOf<PostalAddress>()
+        postalAddresses.forEach { item ->
+            val labeled = item as? CNLabeledValue ?: return@forEach
+            val kind = when (labeled.label) {
+                CNLabelHome -> AddressKind.HOME
+                CNLabelWork -> AddressKind.WORK
+                else -> null
+            } ?: return@forEach
+            val address = labeled.value as? CNPostalAddress ?: return@forEach
+            val text = CNPostalAddressFormatter.stringFromPostalAddress(
+                address,
+                CNPostalAddressFormatterStyle.CNPostalAddressFormatterStyleMailingAddress,
+            ).trim()
+            if (text.isNotEmpty() && out.none { it.kind == kind }) out += PostalAddress(kind, text, fromContact = true)
+        }
+        return out
     }
 
     /** The contact's email addresses, when that key was fetched. */

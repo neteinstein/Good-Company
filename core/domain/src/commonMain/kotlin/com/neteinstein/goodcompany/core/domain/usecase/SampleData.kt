@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
@@ -34,6 +35,7 @@ import com.neteinstein.goodcompany.core.domain.model.Occasion
 import com.neteinstein.goodcompany.core.domain.model.PersonLink
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.model.Reminder
@@ -208,6 +210,8 @@ object SampleData {
                 introducedBy = Introducer(id("rui"), "Rui Costa"),
                 preferredChannel = ContactChannel.WHATSAPP,
                 emails = listOf(FriendEmail("ana.silva@example.com")),
+                // Issue #169: an address is a proper noun, like livesIn (not translated).
+                addresses = listOf(PostalAddress(AddressKind.HOME, "Rua Saraiva de Carvalho 12, 2.º Esq.\n1350-301 Lisboa")),
                 relatives = listOf(
                     Relative(PREFIX + "ana-tiago", Relation.PARTNER, "Tiago Marques", likes = listOf(t.padel), addedAt = now - 2.days),
                     Relative(PREFIX + "ana-bolacha", Relation.PET, "Bolacha", note = t.beagle),

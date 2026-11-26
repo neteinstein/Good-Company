@@ -12,6 +12,7 @@ import com.neteinstein.goodcompany.core.data.repository.SettingsRepositoryImpl
 import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.source.LogEntry
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
@@ -55,6 +56,7 @@ import com.neteinstein.goodcompany.core.domain.model.PhotoRef
 import com.neteinstein.goodcompany.core.domain.model.Place
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanStatus
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Pronouns
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
@@ -172,6 +174,10 @@ abstract class RepositoryContract {
         introducedBy = Introducer(FriendId("rui"), "Rui"),
         preferredChannel = ContactChannel.WHATSAPP,
         emails = listOf(FriendEmail("ana@work.example", fromContact = true), FriendEmail("ana@home.example")),
+        addresses = listOf(
+            PostalAddress(AddressKind.HOME, "Rua das Flores 1\n1000-001 Lisboa", fromContact = true),
+            PostalAddress(AddressKind.WORK, "Av. da Liberdade 10"),
+        ),
         relatives = listOf(
             Relative(
                 "r1",

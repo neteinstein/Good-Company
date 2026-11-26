@@ -177,6 +177,16 @@ CREATE TABLE friend_email (
     PRIMARY KEY (friend_id, position)
 );
 
+-- Postal addresses (issue #169): one HOME and one WORK at most, free text. from_contact ones follow the address book,
+-- typed ones are kept (ContactMerger). Never written back to a contact. kind has no CHECK (issue #72).
+CREATE TABLE friend_address (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    text TEXT NOT NULL,
+    from_contact INTEGER NOT NULL CHECK (from_contact IN (0, 1)),
+    PRIMARY KEY (friend_id, kind)
+);
+
 -- Family named inside a friend (partner, parents, siblings, pets…). Kids are people linked as CHILD (issue #40).
 CREATE TABLE relative (
     friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
@@ -253,6 +263,9 @@ SELECT * FROM friend_custom_photo;
 
 allEmails:
 SELECT * FROM friend_email ORDER BY friend_id, position;
+
+allAddresses:
+SELECT * FROM friend_address ORDER BY friend_id, kind;
 
 allRelatives:
 SELECT * FROM relative ORDER BY friend_id, position;
@@ -333,6 +346,7 @@ deleteChildren {
     DELETE FROM friend_photo WHERE friend_id = :friendId;
     DELETE FROM friend_custom_photo WHERE friend_id = :friendId;
     DELETE FROM friend_email WHERE friend_id = :friendId;
+    DELETE FROM friend_address WHERE friend_id = :friendId;
     DELETE FROM relative_like WHERE friend_id = :friendId;
     DELETE FROM relative WHERE friend_id = :friendId;
     DELETE FROM custom_field WHERE friend_id = :friendId;
@@ -373,6 +387,9 @@ INSERT OR REPLACE INTO friend_custom_photo VALUES ?;
 
 insertEmail:
 INSERT OR REPLACE INTO friend_email VALUES ?;
+
+insertAddress:
+INSERT OR REPLACE INTO friend_address VALUES ?;
 
 insertRelative:
 INSERT OR REPLACE INTO relative VALUES ?;

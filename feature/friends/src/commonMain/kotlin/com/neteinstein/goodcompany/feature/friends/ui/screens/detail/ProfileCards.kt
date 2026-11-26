@@ -21,10 +21,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.List
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Business
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Handshake
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Sms
@@ -56,8 +60,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.ContactChannel
 import com.neteinstein.goodcompany.core.domain.model.CustomField
 import com.neteinstein.goodcompany.core.domain.model.Friend
@@ -66,6 +74,7 @@ import com.neteinstein.goodcompany.core.domain.model.Introducer
 import com.neteinstein.goodcompany.core.domain.model.LinkType
 import com.neteinstein.goodcompany.core.domain.model.LinkedPerson
 import com.neteinstein.goodcompany.core.domain.model.MetInfo
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.Relation
 import com.neteinstein.goodcompany.core.domain.model.Relative
 import com.neteinstein.goodcompany.core.domain.usecase.KidDraft
@@ -84,6 +93,7 @@ import com.neteinstein.goodcompany.core.ui.format.longLabel
 import com.neteinstein.goodcompany.core.ui.format.monthYearLabel
 import com.neteinstein.goodcompany.core.ui.format.relativeDay
 import com.neteinstein.goodcompany.core.ui.l10n.relationLabel
+import com.neteinstein.goodcompany.core.ui.platform.mapsLink
 import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.edit
@@ -91,6 +101,12 @@ import com.neteinstein.goodcompany.core.ui.resources.relation_kid
 import com.neteinstein.goodcompany.core.ui.resources.remove_item
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.feature.friends.resources.Res
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_contact_note
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_copy
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_from_contacts
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_home
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_open_maps
+import com.neteinstein.goodcompany.feature.friends.resources.about_address_work
 import com.neteinstein.goodcompany.feature.friends.resources.about_email_add
 import com.neteinstein.goodcompany.feature.friends.resources.about_email_contact_note
 import com.neteinstein.goodcompany.feature.friends.resources.about_email_from_contacts
@@ -182,7 +198,7 @@ internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOp
         val met = f.met?.takeUnless { it.isEmpty }
         val introducer = f.introducedBy
         val empty = f.job.isBlank() && f.livesIn.isBlank() && met == null && introducer == null && f.preferredChannel == null &&
-            f.emails.isEmpty()
+            f.emails.isEmpty() && f.addresses.isEmpty()
         if (empty) Hint(stringResource(Res.string.about_hint))
         if (f.job.isNotBlank()) AboutLine(Icons.Rounded.Work, f.job, stringResource(Res.string.about_job))
         if (f.livesIn.isNotBlank()) AboutLine(Icons.Rounded.Place, f.livesIn, stringResource(Res.string.about_lives_in))
@@ -233,7 +249,45 @@ internal fun AboutCard(f: Friend, others: List<Friend>, onEdit: () -> Unit, onOp
                 stringResource(if (email.fromContact) Res.string.about_email_from_contacts else Res.string.about_email_typed),
             )
         }
+        f.addresses.forEach { AddressLine(it) }
     }
+}
+
+/** Issue #169: a postal address as typed, with Copy and Open in maps (the system maps app; the app calls no map service). */
+@Composable
+private fun AddressLine(address: PostalAddress) {
+    @Suppress("DEPRECATION")
+    val clipboard = LocalClipboardManager.current
+    val uri = LocalUriHandler.current
+    val kind = stringResource(addressKindLabel(address.kind))
+    ListItem(
+        leadingContent = { Icon(addressKindIcon(address.kind), null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        headlineContent = { Text(address.text, style = MaterialTheme.typography.titleSmall) },
+        supportingContent = {
+            Text(if (address.fromContact) stringResource(Res.string.about_address_from_contacts, kind) else kind)
+        },
+        trailingContent = {
+            Row {
+                IconButton(onClick = { clipboard.setText(AnnotatedString(address.text)) }) {
+                    Icon(Icons.Rounded.ContentCopy, stringResource(Res.string.about_address_copy, kind))
+                }
+                IconButton(onClick = { runCatching { uri.openUri(mapsLink(address.text)) } }) {
+                    Icon(Icons.Rounded.Map, stringResource(Res.string.about_address_open_maps, kind))
+                }
+            }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+private fun addressKindLabel(kind: AddressKind) = when (kind) {
+    AddressKind.HOME -> Res.string.about_address_home
+    AddressKind.WORK -> Res.string.about_address_work
+}
+
+private fun addressKindIcon(kind: AddressKind): ImageVector = when (kind) {
+    AddressKind.HOME -> Icons.Rounded.Home
+    AddressKind.WORK -> Icons.Rounded.Business
 }
 
 @Composable
@@ -260,6 +314,7 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
     var preferred by remember { mutableStateOf(f.preferredChannel) }
     var emails by remember { mutableStateOf(f.emails.filterNot { it.fromContact }.map { it.address }) }
     var newEmail by remember { mutableStateOf("") }
+    var addresses by remember { mutableStateOf(AddressKind.entries.associateWith { f.address(it)?.text.orEmpty() }) }
     var pickDate by remember { mutableStateOf(false) }
 
     fun commitEmail() {
@@ -370,6 +425,17 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                AddressKind.entries.forEach { kind ->
+                    val fromContact = f.address(kind)?.fromContact == true
+                    OutlinedTextField(
+                        addresses.getValue(kind),
+                        { addresses = addresses + (kind to it) },
+                        label = { Text(stringResource(addressKindLabel(kind))) },
+                        supportingText = if (fromContact) ({ Text(stringResource(Res.string.about_address_contact_note)) }) else null,
+                        minLines = 2,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         },
         confirmButton = {
@@ -384,6 +450,7 @@ internal fun AboutDialog(f: Friend, others: List<Friend>, onDismiss: () -> Unit,
                         introducedBy = introducerName.trim().takeIf { it.isNotEmpty() }?.let { Introducer(introducerId, it) },
                         preferredChannel = preferred,
                         emails = emails,
+                        addresses = addresses,
                     ),
                 )
             }) { Text(stringResource(CoreRes.string.save)) }

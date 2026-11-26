@@ -174,6 +174,7 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                         birthday = r.birthday,
                         photo = r.photo,
                         emails = ContactMerger.mergeEmails(emptyList(), r.emails),
+                        addresses = ContactMerger.mergeAddresses(emptyList(), r.addresses),
                     ),
                 )
                 added++
@@ -188,6 +189,8 @@ class ImportPickedContactsUseCase(private val friends: FriendRepository) {
                     // The pickers can't always read emails, so a re-pick only adds them.
                     emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
                         .distinctBy(String::lowercase).map { FriendEmail(it, fromContact = true) },
+                    // Addresses too (issue #169): a re-pick only fills a missing Home or Work.
+                    addresses = ContactMerger.fillAddresses(match.addresses, r.addresses, fromContact = true),
                     // Picking someone again keeps their level (issue #86).
                     isOrphaned = false,
                 )
@@ -235,6 +238,8 @@ class ImportContactsFileUseCase(
                         birthday = r.birthday,
                         photo = photo,
                         emails = emails,
+                        // Kept like typed ones too (issue #169).
+                        addresses = ContactMerger.fillAddresses(emptyList(), r.addresses, fromContact = false),
                     ),
                 )
                 added++
@@ -245,6 +250,7 @@ class ImportContactsFileUseCase(
                     photo = match.photo ?: photo,
                     emails = match.emails + r.emails.filter { e -> match.emails.none { it.address.equals(e, ignoreCase = true) } }
                         .distinctBy(String::lowercase).map { FriendEmail(it) },
+                    addresses = ContactMerger.fillAddresses(match.addresses, r.addresses, fromContact = false),
                 )
                 if (merged != match) {
                     friends.upsert(merged)

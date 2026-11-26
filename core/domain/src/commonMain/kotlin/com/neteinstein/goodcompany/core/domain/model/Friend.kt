@@ -141,6 +141,12 @@ data class Friend(
     val socials: List<SocialLink> = emptyList(),
     /** Their websites (issue #118): opened in the browser, never fetched by the app. */
     val websites: List<String> = emptyList(),
+    /**
+     * Postal addresses (issue #169): at most one [AddressKind.HOME] and one [AddressKind.WORK], free text shown as typed.
+     * [PostalAddress.fromContact] ones follow the address book, typed ones are kept. Never written back to a contact
+     * and never sent to the AI.
+     */
+    val addresses: List<PostalAddress> = emptyList(),
 ) {
     /** In the built-in Family circle (F6): their [relationToMe] is a family one. */
     val isFamily: Boolean get() = relationToMe?.isFamily == true
@@ -165,6 +171,9 @@ data class Friend(
             .take(2)
             .joinToString("") { it.first().uppercase() }
             .ifEmpty { "?" }
+
+    /** Their [kind] postal address, if any. */
+    fun address(kind: AddressKind): PostalAddress? = addresses.firstOrNull { it.kind == kind }
 
     /** The custom rhythm is Off (issue #139): no rhythm, whatever their closeness gives. */
     val rhythmOff: Boolean get() = meetEveryDays == RHYTHM_OFF
@@ -299,6 +308,20 @@ enum class ContactChannel { WHATSAPP, CALL, SMS, EMAIL }
 @Serializable
 data class FriendEmail(
     val address: String,
+    val fromContact: Boolean = false,
+)
+
+/** Which postal address (issue #169): only Home and Work. */
+enum class AddressKind { HOME, WORK }
+
+/**
+ * A postal address (issue #169), free text as typed or as the contact formats it: no validation or geocoding.
+ * [fromContact] ones are refreshed by a contacts sync; typed ones are never touched by it.
+ */
+@Serializable
+data class PostalAddress(
+    val kind: AddressKind,
+    val text: String,
     val fromContact: Boolean = false,
 )
 

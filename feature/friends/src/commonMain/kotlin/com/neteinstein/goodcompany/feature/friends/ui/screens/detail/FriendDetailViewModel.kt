@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.feature.friends.ui.screens.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
@@ -70,6 +71,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.PersonLinkUseCases
 import com.neteinstein.goodcompany.core.domain.usecase.PersonTimeline
 import com.neteinstein.goodcompany.core.domain.usecase.PickedNoteMedia
 import com.neteinstein.goodcompany.core.domain.usecase.PlanInput
+import com.neteinstein.goodcompany.core.domain.usecase.PostalAddresses
 import com.neteinstein.goodcompany.core.domain.usecase.PrepareNoteMediaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ReminderTarget
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveFriendPhotoUseCase
@@ -201,7 +203,10 @@ data class LinkEdit(
     val id: String? = null,
 )
 
-/** Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are). */
+/**
+ * Everything the "About" dialog edits, saved in one go. [emails] are the typed ones (contact ones are kept as they are).
+ * [addresses] is the Home and Work text as the dialog holds it (issue #169); null leaves the addresses as they are.
+ */
 data class AboutEdit(
     val job: String = "",
     val livesIn: String = "",
@@ -209,6 +214,7 @@ data class AboutEdit(
     val introducedBy: Introducer? = null,
     val preferredChannel: ContactChannel? = null,
     val emails: List<String> = emptyList(),
+    val addresses: Map<AddressKind, String>? = null,
 )
 
 /** A relative from the "Add to <name>'s family" sheet ([id] null = new). */
@@ -584,6 +590,7 @@ class FriendDetailViewModel(
             introducedBy = about.introducedBy?.let { it.copy(name = it.name.trim()) }?.takeIf { it.name.isNotEmpty() },
             preferredChannel = about.preferredChannel,
             emails = fromContact + typed.filter { it.lowercase() !in keys }.map { FriendEmail(it) },
+            addresses = about.addresses?.let { PostalAddresses.edit(f.addresses, it) } ?: f.addresses,
         )
     }
 

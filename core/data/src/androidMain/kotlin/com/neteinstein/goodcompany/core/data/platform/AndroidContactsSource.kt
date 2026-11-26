@@ -8,9 +8,11 @@ import android.provider.ContactsContract
 import androidx.core.content.ContextCompat
 import com.neteinstein.goodcompany.core.data.source.ContactBirthdayParser
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -76,6 +78,27 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
             }
         }
 
+        // Home and work postal addresses (issue #169), as the provider formats them; other types are left out.
+        val addresses = HashMap<String, MutableList<PostalAddress>>()
+        resolver.query(
+            ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID,
+                ContactsContract.CommonDataKinds.StructuredPostal.TYPE,
+                ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
+            ),
+            null,
+            null,
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) {
+                val kind = postalKind(c.getInt(1)) ?: continue
+                val text = c.getString(2)?.trim()?.takeIf { it.isNotEmpty() } ?: continue
+                val list = addresses.getOrPut(c.getString(0)) { mutableListOf() }
+                if (list.none { it.kind == kind }) list += PostalAddress(kind, text, fromContact = true)
+            }
+        }
+
         val birthdays = HashMap<String, Birthday>()
         resolver.query(
             ContactsContract.Data.CONTENT_URI,
@@ -98,7 +121,16 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
         names.filterKeys {
             it !in mirrorOnly
         }.map { (id, name) ->
-            ContactRecord(id, name, phones[id].orEmpty(), birthdays[id], photos[id], emails[id].orEmpty(), starred = id in starred)
+            ContactRecord(
+                id,
+                name,
+                phones[id].orEmpty(),
+                birthdays[id],
+                photos[id],
+                emails[id].orEmpty(),
+                starred = id in starred,
+                addresses = addresses[id].orEmpty(),
+            )
         }
     }
 
@@ -123,6 +155,12 @@ internal class AndroidContactsSource(private val context: Context) : ContactsSou
             }
         }
         readThumbnails(resolver, photoIds)
+    }
+
+    private fun postalKind(type: Int): AddressKind? = when (type) {
+        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME -> AddressKind.HOME
+        ContactsContract.CommonDataKinds.StructuredPostal.TYPE_WORK -> AddressKind.WORK
+        else -> null
     }
 
     private fun canRead(): Boolean =

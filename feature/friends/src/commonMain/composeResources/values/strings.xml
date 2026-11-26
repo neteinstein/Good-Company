@@ -297,6 +297,12 @@
     <string name="about_email_from_contacts">Email · from Contacts</string>
     <string name="about_email_typed">Email</string>
     <string name="about_email_contact_note">From Contacts — edit it there</string>
+    <string name="about_address_home">Home address</string>
+    <string name="about_address_work">Work address</string>
+    <string name="about_address_from_contacts">%1$s · from Contacts</string>
+    <string name="about_address_contact_note">From Contacts. What you type here is kept instead.</string>
+    <string name="about_address_copy">Copy %1$s</string>
+    <string name="about_address_open_maps">Open %1$s in maps</string>
     <string name="channel_whatsapp">WhatsApp</string>
     <string name="channel_call">Call</string>
     <string name="channel_sms">Text message</string>
