@@ -8,6 +8,8 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
@@ -1122,9 +1124,31 @@ class MigrationTest {
     }
 
     @Test
-    fun version33to34_plansKeepTheirDay_withNoTime_andATimeCanBeSaved() = runTest {
-        // Issue #167.
+    fun version33to34_calendarAnswersKeepTheirKind_startWithNoPeople_andWhoRoundTrips() = runTest {
+        // Decision 2026-11-26 ("Calendar · who's Ana?").
         val driver = driverAt(33)
+        driver.execute(
+            null,
+            "INSERT INTO calendar_decision (key, kind, decided_at) VALUES ('series:padel', 'NEVER', 1700000000000)",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 33, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val old = database.readCalendarDecisions().single()
+        assertEquals(CalendarDecisionKind.NEVER, old.kind)
+        assertTrue(old.friendIds.isEmpty())
+
+        val who = CalendarDecision("who:series:padel", CalendarDecisionKind.WHO, old.decidedAt, listOf(FriendId("ana"), FriendId("aj")))
+        database.writeCalendarDecision(who)
+        assertEquals(who, database.readCalendarDecisions().single { it.kind == CalendarDecisionKind.WHO })
+        driver.close()
+    }
+
+    @Test
+    fun version34to35_plansKeepTheirDay_withNoTime_andATimeCanBeSaved() = runTest {
+        // Issue #167.
+        val driver = driverAt(34)
         driver.execute(
             null,
             "INSERT INTO plan (id, position, title, date, status, created_at, repeat_every, repeat_unit, repeat_start) " +
@@ -1133,7 +1157,7 @@ class MigrationTest {
             0,
         ).await()
 
-        GoodCompanyDatabase.Schema.migrate(driver, 33, GoodCompanyDatabase.Schema.version).await()
+        GoodCompanyDatabase.Schema.migrate(driver, 34, GoodCompanyDatabase.Schema.version).await()
         val database = GoodCompanyDatabase(driver)
         val plans = database.readPlans().associateBy { it.id }
         assertEquals(LocalDate(2026, 12, 1), plans.getValue("p1").date)
@@ -1150,9 +1174,9 @@ class MigrationTest {
     }
 
     @Test
-    fun version34to35_peopleStartWithNoPostalAddress_andHomeAndWorkRoundTrip() = runTest {
+    fun version35to36_peopleStartWithNoPostalAddress_andHomeAndWorkRoundTrip() = runTest {
         // Issue #169.
-        val driver = driverAt(34)
+        val driver = driverAt(35)
         driver.execute(
             null,
             """
@@ -1163,7 +1187,7 @@ class MigrationTest {
             0,
         ).await()
 
-        GoodCompanyDatabase.Schema.migrate(driver, 34, GoodCompanyDatabase.Schema.version).await()
+        GoodCompanyDatabase.Schema.migrate(driver, 35, GoodCompanyDatabase.Schema.version).await()
         val database = GoodCompanyDatabase(driver)
         val ana = database.readFriends().single()
         assertTrue(ana.addresses.isEmpty())
@@ -1181,9 +1205,9 @@ class MigrationTest {
     }
 
     @Test
-    fun version35to36_plansHaveNoMapLink_andALinkWithItsPointCanBeSaved() = runTest {
+    fun version36to37_plansHaveNoMapLink_andALinkWithItsPointCanBeSaved() = runTest {
         // Issue #170.
-        val driver = driverAt(35)
+        val driver = driverAt(36)
         driver.execute(
             null,
             "INSERT INTO plan (id, position, title, date, place, status, created_at, time) " +
@@ -1191,7 +1215,7 @@ class MigrationTest {
             0,
         ).await()
 
-        GoodCompanyDatabase.Schema.migrate(driver, 35, GoodCompanyDatabase.Schema.version).await()
+        GoodCompanyDatabase.Schema.migrate(driver, 36, GoodCompanyDatabase.Schema.version).await()
         val database = GoodCompanyDatabase(driver)
         val p1 = database.readPlans().single()
         assertEquals("Ramiro", p1.place)

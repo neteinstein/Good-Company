@@ -319,6 +319,23 @@ class SqlRepositoryContractTest : RepositoryContract() {
         assertTrue(decisions.decisions.first().isEmpty())
     }
 
+    @Test
+    fun calendarWhoAnswers_keepTheirPeople_andTravelInBackups() = runTest {
+        // Decision 2026-11-26 ("Who's Ana?").
+        val s = open()
+        val decisions = SqlCalendarDecisionRepository(db)
+        val who = CalendarDecision("who:series:padel", CalendarDecisionKind.WHO, at(2026, 3, 1), listOf(FriendId("aj")))
+        val none = CalendarDecision("who:event:9@1700", CalendarDecisionKind.WHO, at(2026, 3, 2))
+        decisions.upsert(who)
+        decisions.upsert(none)
+        assertEquals(listOf(who, none), decisions.decisions.first())
+
+        val snapshot = s.backup.snapshot()
+        s.backup.restore(Backup())
+        s.backup.restore(snapshot)
+        assertEquals(listOf(who, none), decisions.decisions.first())
+    }
+
     // --- Rules only the relational schema enforces ---
 
     @Test

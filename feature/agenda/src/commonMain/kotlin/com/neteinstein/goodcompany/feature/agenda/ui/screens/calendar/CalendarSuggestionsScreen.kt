@@ -40,7 +40,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarMatchKind
+import com.neteinstein.goodcompany.core.domain.usecase.CalendarQuestion
 import com.neteinstein.goodcompany.core.domain.usecase.CalendarSuggestion
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
 import com.neteinstein.goodcompany.core.ui.components.EmptyState
@@ -62,6 +64,8 @@ import com.neteinstein.goodcompany.feature.agenda.resources.cal_msg_no
 import com.neteinstein.goodcompany.feature.agenda.resources.cal_never
 import com.neteinstein.goodcompany.feature.agenda.resources.cal_no
 import com.neteinstein.goodcompany.feature.agenda.resources.cal_screen_title
+import com.neteinstein.goodcompany.feature.agenda.ui.components.CalendarQuestionCard
+import com.neteinstein.goodcompany.feature.agenda.ui.components.calendarAnswerText
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
@@ -75,7 +79,9 @@ suspend fun CalendarSuggestionsMessage.text(): String = when (this) {
     is CalendarSuggestionsMessage.Decided -> when (decision.kind) {
         CalendarDecisionKind.NO -> getString(Res.string.cal_msg_no, title)
         CalendarDecisionKind.NEVER -> getString(Res.string.cal_msg_never, title)
+        CalendarDecisionKind.WHO -> calendarAnswerText(title, emptyList())
     }
+    is CalendarSuggestionsMessage.Answered -> calendarAnswerText(title, names)
 }
 
 data class CalendarSuggestionsActions(
@@ -84,6 +90,9 @@ data class CalendarSuggestionsActions(
     val onLog: (CalendarSuggestion) -> Unit = {},
     val onNo: (CalendarSuggestion) -> Unit = {},
     val onNever: (CalendarSuggestion) -> Unit = {},
+    /** "Who's Ana?": the ones it is (empty = none of them). */
+    val onAnswerQuestion: (CalendarQuestion, Set<FriendId>) -> Unit = { _, _ -> },
+    val onQuestionNotNow: (CalendarQuestion) -> Unit = {},
     val onUndo: () -> Unit = {},
     val onMessageShown: () -> Unit = {},
 )
@@ -102,6 +111,8 @@ fun CalendarSuggestionsScreen(
             onLog = onLog,
             onNo = viewModel::onNo,
             onNever = viewModel::onNever,
+            onAnswerQuestion = viewModel::onAnswerQuestion,
+            onQuestionNotNow = viewModel::onQuestionNotNow,
             onUndo = viewModel::onUndo,
             onMessageShown = viewModel::onMessageShown,
         ),
@@ -139,6 +150,18 @@ fun CalendarSuggestionsContent(state: CalendarSuggestionsUiState, actions: Calen
                         icon = Icons.Rounded.EventAvailable,
                         title = stringResource(Res.string.cal_empty_title),
                         message = stringResource(Res.string.cal_empty_body),
+                    )
+                }
+            }
+            state.question?.let { q ->
+                item(key = "who-${q.key}") {
+                    CalendarQuestionCard(
+                        q,
+                        state.today,
+                        state.zone,
+                        onAnswer = { actions.onAnswerQuestion(q, it) },
+                        onNotNow = { actions.onQuestionNotNow(q) },
+                        modifier = Modifier.animateItem(),
                     )
                 }
             }

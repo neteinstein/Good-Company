@@ -1,0 +1,6 @@
+-- Version 36 → 37 (issue #170, decision 2026-11-25 "Share · location links"): a plan made from a shared maps link
+-- keeps the link (opened in the maps app, never fetched) and, when the link carried them, the coordinates, so the
+-- meetup logged when the plan closes gets them. NULL = none, as before; nothing to backfill.
+ALTER TABLE plan ADD COLUMN map_link TEXT;
+ALTER TABLE plan ADD COLUMN latitude REAL;
+ALTER TABLE plan ADD COLUMN longitude REAL;
