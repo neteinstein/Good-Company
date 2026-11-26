@@ -3,6 +3,8 @@
 # Runs after the CI workflow succeeds on a push to main (a merged PR), so only green code is published.
 # Builds the Play (`release`) and `sideload` APKs, signs them, and publishes them as the rolling
 # GitHub release tagged v0.1.<n> (the first is v0.1.0; marked "latest") plus a workflow artifact.
+# With the release keystore and PLAY_STORE_SERVICE_ACCOUNT_JSON secrets it also uploads the Play bundle
+# (versionCode = this run's number) to Google Play's internal track. publish-play-store.yml promotes it further.
 name: Test APK
 
 on:
@@ -87,10 +89,12 @@ jobs:
               echo "keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
             } > keystore.properties
             echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
             echo "key=release keystore" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::No ANDROID_KEYSTORE_* secrets: test APKs are signed with the CI debug key (uninstall before updating)."
             echo "flag=-Pgoodcompany.signWithDebugKey=true" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
             echo "key=CI debug key (uninstall the previous test build first)" >> "$GITHUB_OUTPUT"
           fi
 
@@ -162,6 +166,59 @@ jobs:
             --title "$VERSION (build #$BUILD)" \
             --notes-file notes.md
 
+      # Google Play: the same `release` build as good-company-play.apk, as a bundle, to the internal track.
+      # Skipped (with a notice) until both the release keystore and the Play service account are set up,
+      # so the GitHub release above never depends on Play. See CI_CD.md, "Google Play".
+      - name: Google Play upload configured?
+        id: play
+        env:
+          PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_STORE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::notice::No PLAY_STORE_SERVICE_ACCOUNT_JSON secret: the bundle is not uploaded to Google Play."
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.signing.outputs.release }}" != "true" ]; then
+            echo "::warning::No release keystore: Play only accepts bundles signed with the upload key, so nothing is uploaded."
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the Play bundle
+        if: steps.play.outputs.upload == 'true'
+        run: >-
+          ./gradlew :androidApp:bundleRelease
+          -Pgoodcompany.versionCode=${{ env.BUILD }}
+          -Pgoodcompany.versionName=${{ env.VERSION }}
+
+      - name: Set up the Play upload script
+        if: steps.play.outputs.upload == 'true'
+        run: |
+          # A virtualenv: the runner's system Python refuses pip installs (PEP 668).
+          python3 -m venv "$RUNNER_TEMP/play-venv"
+          "$RUNNER_TEMP/play-venv/bin/pip" install --quiet google-auth==2.61.0 requests==2.32.5
+          (cd .github/scripts && "$RUNNER_TEMP/play-venv/bin/python" -m unittest test_play_publish)
+
+      # Not r0adkll/upload-google-play: Play requires or refuses changesNotSentForReview depending on the
+      # app's publishing state, so the script picks it per upload (see its docstring).
+      - name: Upload the Play bundle to the internal track
+        if: steps.play.outputs.upload == 'true'
+        env:
+          PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$PLAY_STORE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play-store-key.json"
+          "$RUNNER_TEMP/play-venv/bin/python" .github/scripts/play_publish.py \
+            --key "$RUNNER_TEMP/play-store-key.json" \
+            --package org.goodcompany.app \
+            --aab androidApp/build/outputs/bundle/release/androidApp-release.aab \
+            --mapping androidApp/build/outputs/mapping/release/mapping.txt \
+            --release-notes store-listing/text \
+            --track internal
+
+      - name: Remove secrets
+        if: always()
+        run: rm -f "$RUNNER_TEMP/play-store-key.json" "$RUNNER_TEMP/release.jks" keystore.properties
+
       - name: Summary
         env:
           SIGNED_WITH: ${{ steps.signing.outputs.key }}
@@ -173,4 +230,5 @@ jobs:
             echo "- Play build: $URL/good-company-play.apk"
             echo "- Sideload build: $URL/good-company-sideload.apk"
             echo "- Signed with: $SIGNED_WITH"
+            echo "- Google Play internal track: ${{ steps.play.outputs.upload == 'true' && 'uploaded (see above)' || 'not uploaded' }}"
           } >> "$GITHUB_STEP_SUMMARY"

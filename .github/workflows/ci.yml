@@ -123,6 +123,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Translations complete
         run: python3 scripts/check-strings.py
+      # The Google Play uploader (test-apk.yml, publish-play-store.yml) and the store "What's new" lengths.
+      # Standard library only: the tests use a fake Play client.
+      - name: Play upload script tests
+        working-directory: .github/scripts
+        run: python3 -m unittest test_play_publish
       - name: ktlint (Spotless)
         run: ./gradlew spotlessCheck
       - name: Android Lint

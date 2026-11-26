@@ -148,8 +148,10 @@ contacts, install-packages or `AD_ID` permissions).
 - **Google Drive backup** asks for the `drive.appdata` and `drive.file` scopes. Both are non-sensitive, but the
   OAuth consent screen still has to be published (and may need brand verification) before people outside the
   test users can sign in.
-- **Upload an AAB**, signed with the upload key: `./gradlew :androidApp:bundleRelease` with a
-  `keystore.properties` (see [CI_CD.md](../CI_CD.md)). Uploads are manual; there is no Play publishing workflow.
+- **Uploads.** The first AAB goes up by hand, signed with the upload key. After that, every merge to `main` uploads
+  the bundle to the internal track, with `text/<locale>/release_notes.txt` as "What's new", and **Actions →
+  Publish to Play Store** promotes it to closed/open testing or production. Setup (service account, secrets):
+  [CI_CD.md, "Google Play"](../CI_CD.md#google-play).
 - **Data safety** and **App access** must be filled in before review: see [`data-safety.md`](data-safety.md) and
   [`testing-instructions.md`](testing-instructions.md).
 - **Location permission.** The Play build asks for location only while the app is in use (naming a place when

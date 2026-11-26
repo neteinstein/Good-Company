@@ -1,0 +1,89 @@
+# Promotes a build that is already on Google Play to another track — see CI_CD.md ("Google Play").
+#
+# Manual only. Every merge to main already uploads the Play bundle to the internal track (test-apk.yml,
+# versionCode = that run's number). This copies the newest release of `from` to `track` without rebuilding:
+# Play refuses a versionCode it has seen, and the sideload self-update relies on versionCode = Test APK run number,
+# so a rebuild here could not reuse either. To ship newer code, merge it (or re-run Test APK), then promote.
+#
+# The release notes ("What's new") are taken from store-listing/text/<locale>/release_notes.txt on the branch
+# this runs from, so edit those first.
+name: Publish to Play Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Track to release to'
+        required: true
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - production
+      from:
+        description: 'Track whose newest release is promoted'
+        required: true
+        default: 'internal'
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+      status:
+        description: 'completed = roll out now; draft = prepare it in Play Console and roll out from there'
+        required: true
+        default: 'completed'
+        type: choice
+        options:
+          - completed
+          - draft
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Promote ${{ inputs.from }} → ${{ inputs.track }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Only forward
+        if: inputs.from == inputs.track
+        run: |
+          echo "::error::'from' and 'track' are both '${{ inputs.track }}'." >&2
+          exit 1
+
+      - uses: actions/checkout@v7
+
+      - name: Set up the Play upload script
+        run: |
+          # A virtualenv: the runner's system Python refuses pip installs (PEP 668).
+          python3 -m venv "$RUNNER_TEMP/play-venv"
+          "$RUNNER_TEMP/play-venv/bin/pip" install --quiet google-auth==2.61.0 requests==2.32.5
+          (cd .github/scripts && "$RUNNER_TEMP/play-venv/bin/python" -m unittest test_play_publish)
+
+      - name: Promote
+        env:
+          PLAY_STORE_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$PLAY_STORE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::The PLAY_STORE_SERVICE_ACCOUNT_JSON secret is not set (CI_CD.md, 'Google Play')." >&2
+            exit 1
+          fi
+          echo "$PLAY_STORE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/play-store-key.json"
+          "$RUNNER_TEMP/play-venv/bin/python" .github/scripts/play_publish.py \
+            --key "$RUNNER_TEMP/play-store-key.json" \
+            --package org.goodcompany.app \
+            --promote-from "${{ inputs.from }}" \
+            --track "${{ inputs.track }}" \
+            --status "${{ inputs.status }}" \
+            --release-notes store-listing/text
+
+      - name: Remove secrets
+        if: always()
+        run: rm -f "$RUNNER_TEMP/play-store-key.json"
