@@ -85,7 +85,7 @@ injecting the use case into another ViewModel.
 ## Postal addresses (issue #169)
 
 - `Friend.addresses`: at most one `AddressKind.HOME` and one `WORK` (`PostalAddress(kind, text, fromContact)`), free
-  text in table `friend_address` (migration `34.sqm`, `PRIMARY KEY (friend_id, kind)`, kind without `CHECK`: an
+  text in table `friend_address` (migration `35.sqm`, `PRIMARY KEY (friend_id, kind)`, kind without `CHECK`: an
   unknown one is skipped when read). Carried in backups through `Friend`.
 - Read from Contacts like emails: `ContactRecord.addresses` ← Android `StructuredPostal` `TYPE_HOME`/`TYPE_WORK`
   (`FORMATTED_ADDRESS`; sideload sync and the legacy picker's best-effort data rows, `DATA1` + `DATA2`), iOS

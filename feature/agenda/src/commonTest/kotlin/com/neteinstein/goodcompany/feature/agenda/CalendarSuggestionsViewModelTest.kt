@@ -4,6 +4,7 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.DeviceCalendar
+import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import com.neteinstein.goodcompany.core.domain.usecase.LogRequest
 import com.neteinstein.goodcompany.core.testing.FixedClock
@@ -17,6 +18,7 @@ import com.neteinstein.goodcompany.feature.agenda.ui.screens.calendar.CalendarSu
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
@@ -35,7 +37,14 @@ class CalendarSuggestionsViewModelTest {
         calendarReader.events = listOf(lunch, cinema)
     }
 
-    private fun vm() = CalendarSuggestionsViewModel(g.observeCalendarSuggestions, g.decideCalendarSuggestion, g.undoCalendarDecision, g.clock)
+    private fun vm() = CalendarSuggestionsViewModel(
+        g.observeCalendarSuggestions,
+        g.observeCalendarQuestions,
+        g.decideCalendarSuggestion,
+        g.answerCalendarQuestion,
+        g.undoCalendarDecision,
+        g.clock,
+    )
 
     @Test
     fun splitsRecentFromLookingBack() = runViewModelTest {
@@ -79,5 +88,27 @@ class CalendarSuggestionsViewModelTest {
         vm.onMessageShown()
         assertNull(state.value.message)
         assertEquals(listOf("series:s1"), g.calendarDecisionRepo.decisions.value.map { it.key })
+    }
+
+    @Test
+    fun whoIsAnaIsAskedAboveTheList_answeredWithUndo_orPutOff() = runViewModelTest {
+        // Decision 2026-11-26: a second Ana makes "Ana · cinema" ambiguous.
+        g.friendRepo.upsert(friend("aj", "Ana Jorge"))
+        val vm = vm()
+        val state = collecting(vm.state)
+        val q = assertNotNull(state.value.question)
+        assertEquals(listOf("ana", "aj"), q.candidates.map { it.id.value })
+        assertTrue(state.value.lookingBack.isEmpty())
+
+        vm.onAnswerQuestion(q, setOf(FriendId("aj")))
+        val message = assertIs<CalendarSuggestionsMessage.Answered>(state.value.message)
+        assertEquals(listOf("Ana Jorge"), message.names)
+        assertNull(state.value.question)
+        assertEquals(listOf("aj"), state.value.lookingBack.single().friends.map { it.id.value })
+
+        vm.onUndo()
+        assertNotNull(state.value.question)
+        vm.onQuestionNotNow(q)
+        assertNull(state.value.question)
     }
 }

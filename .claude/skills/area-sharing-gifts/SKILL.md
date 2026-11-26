@@ -35,7 +35,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - `MET_HERE` logs a meetup through `LogInteractionUseCase` with the place and keeps the share as the attachment on it
   (its `url` is the link). A point inside a named place takes that place's name, as the Log popup does.
 - `PLAN_HERE` opens `PlanEditor` on the share screen with `initialPlace` / `initialMapLink` / `initialLocation`; the
-  plan is saved through `SavePlanUseCase` with `Plan.mapLink` + `latitude`/`longitude` (columns, migration `35.sqm`).
+  plan is saved through `SavePlanUseCase` with `Plan.mapLink` + `latitude`/`longitude` (columns, migration `36.sqm`).
   No platform change was needed: Android reads `geo:` and maps links from `EXTRA_TEXT`, iOS already takes a web URL
   plus text, the web gets `share_url`/`share_text`.
 

@@ -293,7 +293,18 @@ class KeepNotificationsScheduledUseCase(
         ) { fs, rs, hs, s, (inputs, cal) ->
             val (gs, ps, ints, ls) = inputs
             // Never sent anywhere: the calendar only shapes local notifications on this device (D3).
-            val calendar = if (s.calendarSuggestions) CalendarSuggester.candidates(cal.events, fs, hs, cal.decisions, clock.timeZone) else emptyList()
+            val calendar = if (s.calendarSuggestions) {
+                CalendarSuggester.candidates(
+                    cal.events,
+                    fs,
+                    hs,
+                    cal.decisions,
+                    clock.timeZone,
+                    ps,
+                )
+            } else {
+                emptyList()
+            }
             val planned = NotificationPlanner.plan(
                 fs,
                 rs,

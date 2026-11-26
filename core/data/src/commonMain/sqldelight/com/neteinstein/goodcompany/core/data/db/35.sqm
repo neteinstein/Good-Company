@@ -1,6 +1,11 @@
--- Version 35 → 36 (issue #170, decision 2026-11-25 "Share · location links"): a plan made from a shared maps link
--- keeps the link (opened in the maps app, never fetched) and, when the link carried them, the coordinates, so the
--- meetup logged when the plan closes gets them. NULL = none, as before; nothing to backfill.
-ALTER TABLE plan ADD COLUMN map_link TEXT;
-ALTER TABLE plan ADD COLUMN latitude REAL;
-ALTER TABLE plan ADD COLUMN longitude REAL;
+-- Version 35 → 36 (issue #169, decision 2026-11-25 "Postal addresses · home and work"): a person's home and work
+-- postal addresses, free text. from_contact ones follow the address book, typed ones are kept; never written back.
+-- New table, nothing to backfill.
+
+CREATE TABLE friend_address (
+    friend_id TEXT NOT NULL REFERENCES friend(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    text TEXT NOT NULL,
+    from_contact INTEGER NOT NULL CHECK (from_contact IN (0, 1)),
+    PRIMARY KEY (friend_id, kind)
+);
