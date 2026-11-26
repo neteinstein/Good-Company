@@ -48,7 +48,7 @@ jobs:
           for apk in androidApp/build/outputs/apk/*/*.apk; do
             for f in core.ui.resources/values/strings.commonMain.cvr core.ui.resources/font/plus_jakarta_sans_regular.ttf \
                      feature.friends.resources/values/strings.commonMain.cvr composeApp.resources/values/strings.commonMain.cvr; do
-              unzip -l "$apk" | grep -q "assets/composeResources/com.neteinstein.goodcompany.$f" \
+              unzip -l "$apk" | grep -q "assets/composeResources/org.goodcompany.app.$f" \
                 || { echo "::error::$apk is missing Compose resources ($f)"; exit 1; }
             done
           done

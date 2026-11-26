@@ -25,7 +25,7 @@ Never resolve by dropping the other side's code: it is merged work.
 
 ## 2. Two migrations with the same number
 
-Both branches added `DB/<n>.sqm` and `sqldelight/databases/<n+1>.db` (`DB` = `core/data/src/commonMain/sqldelight/com/neteinstein/goodcompany/core/data/db/`).
+Both branches added `DB/<n>.sqm` and `sqldelight/databases/<n+1>.db` (`DB` = `core/data/src/commonMain/sqldelight/org/goodcompany/app/core/data/db/`).
 The base's version wins its number; yours moves up:
 
 1. Save yours first (`git show HEAD:<DB>/<n>.sqm > /tmp/ours.sqm`), then take the base's files:

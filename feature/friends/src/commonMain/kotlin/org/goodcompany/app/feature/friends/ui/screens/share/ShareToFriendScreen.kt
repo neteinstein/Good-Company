@@ -1,0 +1,630 @@
+package org.goodcompany.app.feature.friends.ui.screens.share
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.goodcompany.app.core.domain.model.AttachmentKind
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendGroup
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.SharedContent
+import org.goodcompany.app.core.domain.usecase.LogKind
+import org.goodcompany.app.core.domain.usecase.PeopleFilter
+import org.goodcompany.app.core.domain.usecase.PlanInput
+import org.goodcompany.app.core.domain.usecase.RankedFriend
+import org.goodcompany.app.core.domain.usecase.ShareChoice
+import org.goodcompany.app.core.domain.usecase.SharePlace
+import org.goodcompany.app.core.domain.usecase.ShareReason
+import org.goodcompany.app.core.ui.components.AppSnackbarHost
+import org.goodcompany.app.core.ui.components.CircleChip
+import org.goodcompany.app.core.ui.components.FriendAvatar
+import org.goodcompany.app.core.ui.components.LinkCard
+import org.goodcompany.app.core.ui.components.LocalDatePickerDialog
+import org.goodcompany.app.core.ui.components.LogDateChoice
+import org.goodcompany.app.core.ui.components.PeopleFilterRow
+import org.goodcompany.app.core.ui.components.PeoplePickerMode
+import org.goodcompany.app.core.ui.components.PlanEditor
+import org.goodcompany.app.core.ui.components.QuotedText
+import org.goodcompany.app.core.ui.components.SaveBar
+import org.goodcompany.app.core.ui.components.attachmentKindLabel
+import org.goodcompany.app.core.ui.components.logKindIcon
+import org.goodcompany.app.core.ui.components.logKindLabel
+import org.goodcompany.app.core.ui.components.peopleByCloseness
+import org.goodcompany.app.core.ui.components.showMessage
+import org.goodcompany.app.core.ui.l10n.aiErrorText
+import org.goodcompany.app.feature.friends.resources.Res
+import org.goodcompany.app.feature.friends.resources.share_add_typed
+import org.goodcompany.app.feature.friends.resources.share_address_hint
+import org.goodcompany.app.feature.friends.resources.share_ai_hint
+import org.goodcompany.app.feature.friends.resources.share_caption
+import org.goodcompany.app.feature.friends.resources.share_circles
+import org.goodcompany.app.feature.friends.resources.share_counts
+import org.goodcompany.app.feature.friends.resources.share_counts_hint
+import org.goodcompany.app.feature.friends.resources.share_failed
+import org.goodcompany.app.feature.friends.resources.share_gift
+import org.goodcompany.app.feature.friends.resources.share_gift_hint
+import org.goodcompany.app.feature.friends.resources.share_home_address
+import org.goodcompany.app.feature.friends.resources.share_how_count
+import org.goodcompany.app.feature.friends.resources.share_image
+import org.goodcompany.app.feature.friends.resources.share_location
+import org.goodcompany.app.feature.friends.resources.share_location_with_point
+import org.goodcompany.app.feature.friends.resources.share_mentioned
+import org.goodcompany.app.feature.friends.resources.share_met_here
+import org.goodcompany.app.feature.friends.resources.share_met_here_hint
+import org.goodcompany.app.feature.friends.resources.share_named_place
+import org.goodcompany.app.feature.friends.resources.share_named_place_hint
+import org.goodcompany.app.feature.friends.resources.share_no_friends
+import org.goodcompany.app.feature.friends.resources.share_note
+import org.goodcompany.app.feature.friends.resources.share_note_hint
+import org.goodcompany.app.feature.friends.resources.share_nothing_found
+import org.goodcompany.app.feature.friends.resources.share_place_address
+import org.goodcompany.app.feature.friends.resources.share_place_name
+import org.goodcompany.app.feature.friends.resources.share_plan_here
+import org.goodcompany.app.feature.friends.resources.share_plan_here_hint
+import org.goodcompany.app.feature.friends.resources.share_plan_next
+import org.goodcompany.app.feature.friends.resources.share_price
+import org.goodcompany.app.feature.friends.resources.share_reason_number
+import org.goodcompany.app.feature.friends.resources.share_reason_recent
+import org.goodcompany.app.feature.friends.resources.share_reason_seen_today
+import org.goodcompany.app.feature.friends.resources.share_save
+import org.goodcompany.app.feature.friends.resources.share_save_for
+import org.goodcompany.app.feature.friends.resources.share_search
+import org.goodcompany.app.feature.friends.resources.share_suggest
+import org.goodcompany.app.feature.friends.resources.share_title
+import org.goodcompany.app.feature.friends.resources.share_who
+import org.goodcompany.app.feature.friends.resources.share_work_address
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToImageBitmap
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.goodcompany.app.core.ui.resources.Res as CoreRes
+import org.goodcompany.app.core.ui.resources.back as backLabel
+import org.goodcompany.app.core.ui.resources.close as closeLabel
+
+@Composable
+fun ShareToFriendScreen(onClose: () -> Unit, onSaved: (FriendId) -> Unit, viewModel: ShareToFriendViewModel = koinViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(state.savedTo) { state.savedTo?.let(onSaved) }
+    LaunchedEffect(state.closed, state.isLoading) { if (state.closed && !state.isLoading) onClose() }
+    ShareToFriendContent(
+        state = state,
+        actions = ShareActions(
+            onQueryChange = viewModel::onQueryChange,
+            onFilter = viewModel::onFilter,
+            onSelect = viewModel::onSelect,
+            onSelectCircle = viewModel::onSelectCircle,
+            onAddTyped = viewModel::onAddTyped,
+            onChangeFriend = viewModel::onChangeFriend,
+            onChoice = viewModel::onChoice,
+            onKind = viewModel::onKind,
+            onDate = viewModel::onDate,
+            onCaptionChange = viewModel::onCaptionChange,
+            onPriceChange = viewModel::onPriceChange,
+            onPlaceName = viewModel::onPlaceName,
+            onPlaceAddress = viewModel::onPlaceAddress,
+            onSavePlan = viewModel::onSavePlan,
+            onDismissPlanEditor = viewModel::onDismissPlanEditor,
+            onSuggest = viewModel::onSuggest,
+            onSave = viewModel::onSave,
+            onCancel = viewModel::onCancel,
+            onMessageShown = viewModel::onMessageShown,
+        ),
+    )
+}
+
+data class ShareActions(
+    val onQueryChange: (String) -> Unit = {},
+    val onFilter: (PeopleFilter) -> Unit = {},
+    val onSelect: (Friend) -> Unit = {},
+    val onSelectCircle: (FriendGroup) -> Unit = {},
+    val onAddTyped: () -> Unit = {},
+    val onChangeFriend: () -> Unit = {},
+    val onChoice: (ShareChoice) -> Unit = {},
+    val onKind: (LogKind) -> Unit = {},
+    val onDate: (kotlinx.datetime.LocalDate) -> Unit = {},
+    val onCaptionChange: (String) -> Unit = {},
+    val onPriceChange: (String) -> Unit = {},
+    val onPlaceName: (String) -> Unit = {},
+    val onPlaceAddress: (String) -> Unit = {},
+    val onSavePlan: (PlanInput) -> Unit = {},
+    val onDismissPlanEditor: () -> Unit = {},
+    val onSuggest: () -> Unit = {},
+    val onSave: () -> Unit = {},
+    val onCancel: () -> Unit = {},
+    val onMessageShown: () -> Unit = {},
+)
+
+suspend fun ShareMessage.text(): String = when (this) {
+    is ShareMessage.NothingFound -> getString(Res.string.share_nothing_found, firstName)
+    is ShareMessage.AiError -> aiErrorText(error)
+    ShareMessage.SaveFailed -> getString(Res.string.share_failed)
+}
+
+/** Who the confirm step is for, as a name: the person's first name or the circle's name. */
+private val PickedTarget.label: String
+    get() = when (this) {
+        is PickedTarget.Person -> friend.displayName.substringBefore(' ')
+        is PickedTarget.Circle -> circle.name
+    }
+
+@Composable
+fun ShareToFriendContent(state: ShareUiState, actions: ShareActions) {
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(state.message) {
+        state.message?.let {
+            snackbar.showMessage(it.text())
+            actions.onMessageShown()
+        }
+    }
+    val target = state.target
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
+        // Issue #146: the navigation bar and the keyboard are consumed here, so the SaveBar below doesn't pad for them twice.
+        Column(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding()).consumeWindowInsets(padding).imePadding()) {
+            Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (target == null) {
+                    IconButton(onClick = actions.onCancel) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.closeLabel)) }
+                    Text(stringResource(Res.string.share_title), style = MaterialTheme.typography.titleLarge)
+                } else {
+                    IconButton(onClick = actions.onChangeFriend) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(CoreRes.string.backLabel))
+                    }
+                    Text(
+                        stringResource(Res.string.share_save_for, target.label),
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            when (target) {
+                null -> {
+                    state.content?.let { SharedSummary(it) }
+                    FriendPicker(state, actions, Modifier.weight(1f))
+                }
+                else -> Confirm(target, state, actions, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Step 1's compact preview: a thumbnail, the text's first lines or the link. */
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+private fun SharedSummary(content: SharedContent) {
+    val bitmap = remember(content.image) { content.image?.let { runCatching { it.bytes.decodeToImageBitmap() }.getOrNull() } }
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (bitmap != null) {
+                Image(
+                    bitmap,
+                    stringResource(Res.string.share_image),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(64.dp).clip(MaterialTheme.shapes.medium),
+                )
+                Spacer(Modifier.width(12.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                val headline = content.title?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: content.text?.trim()?.takeIf { it.isNotEmpty() && it != content.url }
+                Text(
+                    headline ?: attachmentKindLabel(content.kind),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                content.url?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendPicker(state: ShareUiState, actions: ShareActions, modifier: Modifier) {
+    Column(modifier) {
+        Text(
+            stringResource(Res.string.share_who),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
+        )
+        TextField(
+            value = state.query,
+            onValueChange = actions.onQueryChange,
+            placeholder = { Text(stringResource(Res.string.share_search)) },
+            leadingIcon = { Icon(Icons.Rounded.Search, null) },
+            singleLine = true,
+            shape = MaterialTheme.shapes.extraLarge,
+            colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        if (!state.hasFriends && state.query.isBlank()) {
+            Text(
+                stringResource(Res.string.share_no_friends),
+                modifier = Modifier.padding(24.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (state.hasFriends) {
+            // The people picker's filter row and grouped list (issue #89), under the suggestions.
+            PeopleFilterRow(
+                circles = state.filterCircles,
+                filter = state.filter,
+                everyoneCount = state.others.everyoneCount,
+                levelCounts = state.others.levelCounts,
+                onFilter = actions.onFilter,
+            )
+        }
+        LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            items(state.suggested, key = { "suggested-" + it.friend.id.value }) { ranked -> PersonRow(ranked) { actions.onSelect(ranked.friend) } }
+            peopleByCloseness(state.others, state.filterCircles, PeoplePickerMode.SINGLE, emptySet(), onClick = actions.onSelect)
+            if (state.circles.isNotEmpty()) {
+                item(key = "circles") {
+                    Text(
+                        stringResource(Res.string.share_circles),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 20.dp, top = 12.dp, bottom = 4.dp),
+                    )
+                }
+                items(state.circles, key = { "circle-" + it.id }) { circle ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { actions.onSelectCircle(circle) }.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircleChip(circle, selected = false, onClick = {
+                            actions.onSelectCircle(circle)
+                        }, trailing = circle.memberIds.size.toString())
+                    }
+                }
+            }
+            if (state.canAddTyped) {
+                item(key = "add") {
+                    ListItem(
+                        modifier = Modifier.clickable(onClick = actions.onAddTyped),
+                        leadingContent = { Icon(Icons.Rounded.PersonAdd, null) },
+                        headlineContent = { Text(stringResource(Res.string.share_add_typed, state.query.trim())) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PersonRow(ranked: RankedFriend, onClick: () -> Unit) {
+    val friend = ranked.friend
+    val reason = when (ranked.reason) {
+        ShareReason.MENTIONED -> stringResource(Res.string.share_mentioned)
+        ShareReason.NUMBER -> stringResource(Res.string.share_reason_number)
+        ShareReason.SEEN_TODAY -> stringResource(Res.string.share_reason_seen_today)
+        ShareReason.RECENT -> stringResource(Res.string.share_reason_recent)
+        null -> null
+    }
+    val strong = ranked.reason == ShareReason.MENTIONED || ranked.reason == ShareReason.NUMBER
+    ListItem(
+        modifier = Modifier.clickable(onClick = onClick),
+        leadingContent = { FriendAvatar(friend, size = 44.dp, highlighted = strong) },
+        headlineContent = { Text(friend.displayName) },
+        supportingContent = reason?.let {
+            {
+                Text(
+                    it,
+                    color = if (strong) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Confirm(target: PickedTarget, state: ShareUiState, actions: ShareActions, modifier: Modifier) {
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
+    Column(modifier) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Spacer(Modifier.height(4.dp))
+            state.content?.let { BigPreview(it) }
+            state.place?.let { LocationFields(it, actions) }
+            Text(stringResource(Res.string.share_how_count), style = MaterialTheme.typography.titleSmall)
+            if (state.isLocation) LocationChoices(target, state, actions)
+            if (state.offers(ShareChoice.INTERACTION)) {
+                ChoiceCard(
+                    selected = state.choice == ShareChoice.INTERACTION,
+                    title = stringResource(Res.string.share_counts),
+                    hint = stringResource(Res.string.share_counts_hint),
+                    onClick = { actions.onChoice(ShareChoice.INTERACTION) },
+                )
+            }
+            ChoiceCard(
+                selected = state.choice == ShareChoice.NOTE,
+                title = stringResource(Res.string.share_note),
+                hint = stringResource(Res.string.share_note_hint, target.label),
+                onClick = { actions.onChoice(ShareChoice.NOTE) },
+            )
+            if (state.offers(ShareChoice.GIFT_IDEA)) {
+                ChoiceCard(
+                    selected = state.choice == ShareChoice.GIFT_IDEA,
+                    title = stringResource(Res.string.share_gift),
+                    hint = stringResource(Res.string.share_gift_hint, target.label),
+                    onClick = { actions.onChoice(ShareChoice.GIFT_IDEA) },
+                )
+            }
+            if (state.choice == ShareChoice.INTERACTION) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SHARE_KINDS.forEach { kind ->
+                        FilterChip(
+                            selected = state.kind == kind,
+                            onClick = { actions.onKind(kind) },
+                            label = { Text(logKindLabel(kind)) },
+                            leadingIcon = { Icon(logKindIcon(kind), null, Modifier.size(18.dp)) },
+                        )
+                    }
+                }
+                LogDateChoice(state.date, state.today, actions.onDate, onPick = { pickingDate = true })
+            }
+            if (state.choice == ShareChoice.MET_HERE) {
+                LogDateChoice(state.date, state.today, actions.onDate, onPick = { pickingDate = true })
+            }
+            if (state.choice.takesCaption) {
+                OutlinedTextField(
+                    value = state.caption,
+                    onValueChange = actions.onCaptionChange,
+                    label = { Text(stringResource(Res.string.share_caption)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (state.choice == ShareChoice.GIFT_IDEA) {
+                OutlinedTextField(
+                    value = state.price,
+                    onValueChange = actions.onPriceChange,
+                    label = { Text(stringResource(Res.string.share_price)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (target is PickedTarget.Person && state.choice.takesCaption) {
+                if (state.hasAiKey) {
+                    FilledTonalButton(onClick = actions.onSuggest, enabled = !state.isSuggesting) {
+                        if (state.isSuggesting) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(Res.string.share_suggest))
+                    }
+                } else if (state.aiEnabled && state.content?.image != null) {
+                    Text(
+                        stringResource(Res.string.share_ai_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        SaveBar(
+            actions.onSave,
+            enabled = state.canSave,
+            label = stringResource(if (state.choice == ShareChoice.PLAN_HERE) Res.string.share_plan_next else Res.string.share_save),
+        )
+    }
+    if (pickingDate) {
+        LocalDatePickerDialog(state.date, onDismiss = { pickingDate = false }, onPicked = actions.onDate, latest = state.today)
+    }
+    val place = state.place
+    if (state.planEditorOpen && place != null) {
+        // Issue #170, "Plan here": the plan editor with the place filled in; the day and time are still to pick.
+        PlanEditor(
+            friends = state.everyone,
+            today = state.today,
+            onDismiss = actions.onDismissPlanEditor,
+            onSave = actions.onSavePlan,
+            preselected = setOfNotNull((target as? PickedTarget.Person)?.friend?.id),
+            circles = state.planCircles,
+            preselectedCircle = (target as? PickedTarget.Circle)?.circle?.id,
+            initialPlace = place.label.orEmpty(),
+            initialMapLink = place.link,
+            initialLocation = place.point,
+        )
+    }
+}
+
+/** Issue #170: the caption is the note kept with an attachment or a log; addresses, places and plans have none. */
+private val ShareChoice.takesCaption: Boolean
+    get() = this == ShareChoice.INTERACTION || this == ShareChoice.NOTE || this == ShareChoice.GIFT_IDEA || this == ShareChoice.MET_HERE
+
+/**
+ * Issue #170: the place as the share carried it, in editable fields. A bare short link starts with both empty: the
+ * app never follows it or looks the place up, so the user types what it is.
+ */
+@Composable
+private fun LocationFields(place: SharePlace, actions: ShareActions) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Place, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                stringResource(if (place.point != null) Res.string.share_location_with_point else Res.string.share_location),
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+        OutlinedTextField(
+            value = place.name,
+            onValueChange = actions.onPlaceName,
+            label = { Text(stringResource(Res.string.share_place_name)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = place.address,
+            onValueChange = actions.onPlaceAddress,
+            label = { Text(stringResource(Res.string.share_place_address)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Issue #170: what a location can become. Home and work are for a person; a named place needs coordinates. */
+@Composable
+private fun LocationChoices(target: PickedTarget, state: ShareUiState, actions: ShareActions) {
+    ChoiceCard(
+        selected = state.choice == ShareChoice.PLAN_HERE,
+        title = stringResource(Res.string.share_plan_here),
+        hint = stringResource(Res.string.share_plan_here_hint, target.label),
+        onClick = { actions.onChoice(ShareChoice.PLAN_HERE) },
+    )
+    ChoiceCard(
+        selected = state.choice == ShareChoice.MET_HERE,
+        title = stringResource(Res.string.share_met_here),
+        hint = stringResource(Res.string.share_met_here_hint),
+        onClick = { actions.onChoice(ShareChoice.MET_HERE) },
+    )
+    if (state.canBeAddress) {
+        ChoiceCard(
+            selected = state.choice == ShareChoice.HOME_ADDRESS,
+            title = stringResource(Res.string.share_home_address),
+            hint = stringResource(Res.string.share_address_hint, target.label),
+            onClick = { actions.onChoice(ShareChoice.HOME_ADDRESS) },
+        )
+        ChoiceCard(
+            selected = state.choice == ShareChoice.WORK_ADDRESS,
+            title = stringResource(Res.string.share_work_address),
+            hint = stringResource(Res.string.share_address_hint, target.label),
+            onClick = { actions.onChoice(ShareChoice.WORK_ADDRESS) },
+        )
+    }
+    if (state.canBeNamedPlace) {
+        ChoiceCard(
+            selected = state.choice == ShareChoice.NAMED_PLACE,
+            title = stringResource(Res.string.share_named_place),
+            hint = stringResource(Res.string.share_named_place_hint),
+            onClick = { actions.onChoice(ShareChoice.NAMED_PLACE) },
+        )
+    }
+}
+
+/** Step 2's preview: the photo large, the link as a card, or the text quoted. */
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+private fun BigPreview(content: SharedContent) {
+    when (content.kind) {
+        AttachmentKind.PHOTO -> {
+            val bitmap = remember(content.image) { content.image?.let { runCatching { it.bytes.decodeToImageBitmap() }.getOrNull() } }
+            if (bitmap != null) {
+                Image(
+                    bitmap,
+                    stringResource(Res.string.share_image),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().height(200.dp).clip(MaterialTheme.shapes.large),
+                )
+            }
+        }
+        AttachmentKind.LINK -> LinkCard(content.title, content.url.orEmpty(), null)
+        AttachmentKind.TEXT -> QuotedText(content.text.orEmpty(), null, Modifier.fillMaxWidth(), maxLines = 8)
+    }
+}
+
+/** A radio card: "Counts as an interaction" / "Just an idea or note" / "Gift idea". */
+@Composable
+private fun ChoiceCard(selected: Boolean, title: String, hint: String, onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).selectable(selected, onClick = onClick, role = Role.RadioButton),
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(
+            if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+            RadioButton(selected = selected, onClick = null)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}

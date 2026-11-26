@@ -3,7 +3,7 @@
     <application>
         <!-- Quick actions on catch-up notifications ("We met", "Called", "Next week"). Not exported: only our own PendingIntents reach it. -->
         <receiver
-            android:name="com.neteinstein.goodcompany.core.data.platform.NotificationActionReceiver"
+            android:name="org.goodcompany.app.core.data.platform.NotificationActionReceiver"
             android:exported="false" />
     </application>
 </manifest>

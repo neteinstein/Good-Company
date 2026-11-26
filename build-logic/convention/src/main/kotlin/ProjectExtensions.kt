@@ -17,7 +17,7 @@ internal fun VersionCatalog.pluginId(alias: String): String = findPlugin(alias).
 
 /**
  * Derives a stable Android namespace from the Gradle project path,
- * e.g. `:feature:friends` → `com.neteinstein.goodcompany.feature.friends`.
+ * e.g. `:feature:friends` → `org.goodcompany.app.feature.friends`.
  */
 internal val Project.goodCompanyNamespace: String
-    get() = "com.neteinstein.goodcompany." + path.removePrefix(":").replace(':', '.').replace('-', '_')
+    get() = "org.goodcompany.app." + path.removePrefix(":").replace(':', '.').replace('-', '_')

@@ -1,0 +1,157 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
+package org.goodcompany.app
+
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.goodcompany.app.composeApp.resources.Res
+import org.goodcompany.app.composeApp.resources.shortcut_log_meetup
+import org.goodcompany.app.core.domain.model.SharedContent
+import org.goodcompany.app.core.domain.model.SharedImage
+import org.goodcompany.app.core.domain.usecase.AppLink
+import org.goodcompany.app.core.domain.usecase.CheckInUseCase
+import org.goodcompany.app.core.domain.usecase.ObserveHomeWidgetUseCase
+import org.goodcompany.app.core.domain.usecase.ObserveShortcutsUseCase
+import org.goodcompany.app.core.domain.usecase.OpenInbox
+import org.goodcompany.app.core.domain.usecase.QuickEntryInbox
+import org.goodcompany.app.core.domain.usecase.ShareInbox
+import org.goodcompany.app.core.domain.usecase.WidgetSnapshot
+import org.goodcompany.app.core.domain.usecase.toQuickEntry
+import org.jetbrains.compose.resources.getString
+import org.koin.mp.KoinPlatform
+import platform.Foundation.NSBundle
+import platform.Foundation.NSData
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSString
+import platform.Foundation.NSUTF8StringEncoding
+import platform.Foundation.NSUserDefaults
+import platform.Foundation.dataWithContentsOfFile
+import platform.Foundation.stringWithContentsOfFile
+import platform.posix.memcpy
+
+/*
+ * Glue between the Swift side of the iOS app (main app, Share Extension, WidgetKit widget) and the shared code.
+ * The extensions can't run Kotlin, so they talk to the app through the app group (AppGroupId in Info.plist):
+ *  - Share Extension → `ShareInbox/<id>.json` (+ `<id>.jpg`) files, picked up by [receivePendingShares].
+ *  - Widget ← the `widget.snapshot` JSON in the group's UserDefaults, written by [startWidgetSync].
+ * App-icon quick actions don't need the group: Swift reads [shortcutItems] and routes a picked one to [handleAppUrl].
+ */
+
+private const val INBOX_DIR = "ShareInbox"
+private const val WIDGET_KEY = "widget.snapshot"
+private const val DEBOUNCE_MS = 500L
+
+private val json = Json { ignoreUnknownKeys = true }
+
+private fun appGroupId(): String? = (NSBundle.mainBundle.objectForInfoDictionaryKey("AppGroupId") as? String)?.takeIf { it.isNotBlank() }
+
+private fun groupContainerPath(): String? = appGroupId()?.let {
+    NSFileManager.defaultManager.containerURLForSecurityApplicationGroupIdentifier(it)?.path
+}
+
+/** What the Share Extension writes (see ShareViewController.swift). */
+@Serializable
+private data class InboxEntry(
+    val text: String? = null,
+    val url: String? = null,
+    val title: String? = null,
+    val image: String? = null,
+    val mediaType: String? = null,
+)
+
+/** Called by Swift each time the app becomes active: hands the newest share to the "Save to a friend" screen. */
+fun receivePendingShares() {
+    val container = groupContainerPath() ?: return
+    val fm = NSFileManager.defaultManager
+    val dir = "$container/$INBOX_DIR"
+    val files = fm.contentsOfDirectoryAtPath(dir, null)?.filterIsInstance<String>().orEmpty()
+    val entries = files.filter { it.endsWith(".json") }.sorted()
+    if (entries.isEmpty()) return
+    // Newest wins (names start with a timestamp); everything is removed so nothing is offered twice.
+    val newest = entries.last()
+    val entry = NSString.stringWithContentsOfFile("$dir/$newest", NSUTF8StringEncoding, null)
+        ?.let { runCatching { json.decodeFromString(InboxEntry.serializer(), it) }.getOrNull() }
+    val image = entry?.image?.let { name ->
+        NSData.dataWithContentsOfFile("$dir/$name")?.toByteArray()?.let { SharedImage(it, entry.mediaType ?: "image/jpeg") }
+    }
+    files.forEach { fm.removeItemAtPath("$dir/$it", null) }
+    entry ?: return
+    KoinPlatform.getKoin().get<ShareInbox>().offer(SharedContent(text = entry.text, url = entry.url, image = image, title = entry.title))
+}
+
+/**
+ * Keeps the widget's snapshot in the app group up to date for as long as the app runs; [reload] asks WidgetKit to
+ * redraw (WidgetCenter is Swift-only, so Swift passes it in).
+ */
+@OptIn(FlowPreview::class)
+fun startWidgetSync(reload: () -> Unit) {
+    val defaults = appGroupId()?.let { NSUserDefaults(suiteName = it) } ?: return
+    val observe = KoinPlatform.getKoin().get<ObserveHomeWidgetUseCase>()
+    MainScope().launch {
+        observe().map(WidgetSnapshot::from).distinctUntilChanged().debounce(DEBOUNCE_MS).collect { snapshot ->
+            defaults.setObject(json.encodeToString(WidgetSnapshot.serializer(), snapshot), WIDGET_KEY)
+            reload()
+        }
+    }
+}
+
+/**
+ * The app's own links (see [AppLink]): `goodcompany://met/<friendId>` (the widget's "We met": logs straight away) and
+ * `goodcompany://log[/<friendId>]` (app-icon quick actions: opens the Log sheet, behind the app lock). Returns true
+ * when handled.
+ */
+fun handleAppUrl(url: String): Boolean = when (val link = AppLink.parse(url)) {
+    is AppLink.Met -> {
+        MainScope().launch { runCatching { KoinPlatform.getKoin().get<CheckInUseCase>()(listOf(link.friendId)) } }
+        true
+    }
+    is AppLink.Log -> {
+        KoinPlatform.getKoin().get<QuickEntryInbox>().offer(link.toQuickEntry())
+        true
+    }
+    is AppLink.Person, is AppLink.Circle, is AppLink.Reminder -> KoinPlatform.getKoin().get<OpenInbox>().offer(link)
+    null -> false
+}
+
+/** One home-screen quick action, already localised; Swift picks the SF Symbol from [isPerson] and opens [url]. */
+class IosShortcutItem(val type: String, val title: String, val url: String, val isPerson: Boolean)
+
+private var shortcutCache: List<IosShortcutItem> = emptyList()
+
+/**
+ * Keeps [shortcutItems] in step with [ObserveShortcutsUseCase] for as long as the app runs (titles need compose
+ * resources, which are suspend, so they're built here rather than on demand).
+ */
+fun startShortcutSync() {
+    val observe = KoinPlatform.getKoin().get<ObserveShortcutsUseCase>()
+    MainScope().launch {
+        observe().collect { snapshot ->
+            val logMeetup = IosShortcutItem("log", getString(Res.string.shortcut_log_meetup), AppLink.log(), isPerson = false)
+            shortcutCache = listOf(logMeetup) + snapshot.people.map {
+                IosShortcutItem("person.${it.id.value}", it.name, AppLink.log(it.id), isPerson = true)
+            }
+        }
+    }
+}
+
+/**
+ * The app-icon quick actions Swift sets on `UIApplication.shortcutItems` when the app goes to the background:
+ * "Log a meetup" and the three most recent people (none while app lock or private notifications are on).
+ */
+fun shortcutItems(): List<IosShortcutItem> = shortcutCache
+
+private fun NSData.toByteArray(): ByteArray {
+    val size = length.toInt()
+    val out = ByteArray(size)
+    if (size > 0) out.usePinned { memcpy(it.addressOf(0), bytes, length) }
+    return out
+}

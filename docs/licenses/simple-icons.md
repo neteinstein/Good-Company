@@ -3,7 +3,7 @@
 The social network logos on a person's page (issue #118: Instagram, Facebook, TikTok, X, LinkedIn, YouTube, Threads,
 Bluesky, Mastodon) are the SVG path data from [Simple Icons](https://simpleicons.org) **13.21.0**
 (npm `simple-icons`), copied unchanged into
-`core/ui/src/commonMain/kotlin/com/neteinstein/goodcompany/core/ui/components/SocialIcons.kt`.
+`core/ui/src/commonMain/kotlin/org/goodcompany/app/core/ui/components/SocialIcons.kt`.
 
 - **Licence:** the Simple Icons data is released under
   [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) (public domain dedication).

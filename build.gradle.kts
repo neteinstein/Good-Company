@@ -54,7 +54,7 @@ kover {
             excludes {
                 // Generated code and Compose UI aren't meaningfully covered by JVM unit tests.
                 // Compose resources: each module's generated `<namespace>.resources.Res` accessors.
-                classes("*.BuildConfig", "*ComposableSingletons*", "*.generated.resources.*", "com.neteinstein.goodcompany.*.resources.*")
+                classes("*.BuildConfig", "*ComposableSingletons*", "*.generated.resources.*", "org.goodcompany.app.*.resources.*")
                 annotatedBy("androidx.compose.runtime.Composable")
             }
         }

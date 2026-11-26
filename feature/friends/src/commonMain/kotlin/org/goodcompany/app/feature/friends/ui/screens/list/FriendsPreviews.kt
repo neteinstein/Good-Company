@@ -1,0 +1,70 @@
+package org.goodcompany.app.feature.friends.ui.screens.list
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.datetime.LocalDate
+import org.goodcompany.app.core.domain.model.Birthday
+import org.goodcompany.app.core.domain.model.Closeness
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.ThemeMode
+import org.goodcompany.app.core.domain.usecase.FriendSummary
+import org.goodcompany.app.core.ui.theme.GoodCompanyTheme
+import kotlin.time.Instant
+
+private val now = Instant.parse("2026-03-10T12:00:00Z")
+private val sample = listOf(
+    FriendSummary(
+        Friend(
+            FriendId("ana"),
+            "Ana Silva",
+            closeness = Closeness.INNER,
+            likes = listOf("jazz", "sushi"),
+            birthday = Birthday(3, 14, 1990),
+        ),
+        lastSeen = Instant.parse("2026-02-20T20:00:00Z"),
+        lastContact = Instant.parse("2026-03-08T09:00:00Z"),
+        nextBirthday = LocalDate(2026, 3, 14),
+        meetupOverdue = true,
+    ),
+    FriendSummary(
+        Friend(FriendId("rui"), "Rui Costa", closeness = Closeness.INNER, likes = listOf("F1")),
+        null,
+        null,
+        null,
+        false,
+    ),
+    FriendSummary(Friend(FriendId("zoe"), "Zoe", contactId = "1"), null, null, null, false),
+)
+
+@Composable
+private fun FriendsPreview(dark: Boolean) = GoodCompanyTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, dynamicColor = false) {
+    FriendsContent(
+        state = FriendsUiState(
+            friends = sample,
+            sections = listOf(PeopleSection.Level(Closeness.INNER) to sample.take(2), PeopleSection.Level(Closeness.ACQUAINTANCE) to sample.drop(2)),
+            listedCount = 3,
+            yourPeople = YourPeopleSummary(people = 3, meetupsLast90Days = 4),
+            totalCount = 3,
+            isLoading = false,
+            now = now,
+            today = LocalDate(2026, 3, 10),
+        ),
+        canSyncContacts = true,
+        actions = FriendsActions(),
+    )
+}
+
+@Preview
+@Composable
+private fun FriendsLightPreview() = FriendsPreview(dark = false)
+
+@Preview
+@Composable
+private fun FriendsDarkPreview() = FriendsPreview(dark = true)
+
+@Preview
+@Composable
+private fun FriendsEmptyPreview() = GoodCompanyTheme(dynamicColor = false) {
+    FriendsContent(FriendsUiState(isLoading = false), true, FriendsActions())
+}

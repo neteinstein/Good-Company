@@ -29,11 +29,11 @@ val signingProps = Properties().apply {
 }
 
 android {
-    namespace = "com.neteinstein.goodcompany"
+    namespace = "org.goodcompany.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.neteinstein.goodcompany"
+        applicationId = "org.goodcompany.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = ciVersionCode ?: 1

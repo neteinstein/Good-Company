@@ -1,0 +1,583 @@
+package org.goodcompany.app.feature.agenda.ui.screens.today
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AlarmAdd
+import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import org.goodcompany.app.core.domain.model.AgendaItem
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.Plan
+import org.goodcompany.app.core.domain.model.PlanAnswer
+import org.goodcompany.app.core.domain.usecase.CalendarQuestion
+import org.goodcompany.app.core.domain.usecase.LastSeenAnswer
+import org.goodcompany.app.core.domain.usecase.SnoozeOption
+import org.goodcompany.app.core.ui.components.AppSnackbarHost
+import org.goodcompany.app.core.ui.components.CatchUpCard
+import org.goodcompany.app.core.ui.components.DriftingCard
+import org.goodcompany.app.core.ui.components.EmptyState
+import org.goodcompany.app.core.ui.components.HeaderSettingsButton
+import org.goodcompany.app.core.ui.components.InfoPill
+import org.goodcompany.app.core.ui.components.LogIcon
+import org.goodcompany.app.core.ui.components.PlanEditor
+import org.goodcompany.app.core.ui.components.ReminderCallbacks
+import org.goodcompany.app.core.ui.components.ReminderEditor
+import org.goodcompany.app.core.ui.components.ScreenHeader
+import org.goodcompany.app.core.ui.components.SectionHeader
+import org.goodcompany.app.core.ui.components.SendMessageSheet
+import org.goodcompany.app.core.ui.components.StoryBubbleChip
+import org.goodcompany.app.core.ui.components.YearReviewCard
+import org.goodcompany.app.core.ui.components.calendarEntry
+import org.goodcompany.app.core.ui.components.doneText
+import org.goodcompany.app.core.ui.components.showMessage
+import org.goodcompany.app.core.ui.components.showUndo
+import org.goodcompany.app.core.ui.components.text
+import org.goodcompany.app.core.ui.format.relativeDay
+import org.goodcompany.app.core.ui.format.shortLabel
+import org.goodcompany.app.core.ui.format.shortLabelText
+import org.goodcompany.app.core.ui.format.weekdayLong
+import org.goodcompany.app.core.ui.l10n.aiErrorText
+import org.goodcompany.app.core.ui.platform.currentPlatformCapabilities
+import org.goodcompany.app.core.ui.platform.rememberCalendarAdder
+import org.goodcompany.app.core.ui.platform.rememberNotificationsAllowed
+import org.goodcompany.app.core.ui.platform.rememberNotificationsEnabler
+import org.goodcompany.app.core.ui.resources.plan_closed
+import org.goodcompany.app.core.ui.resources.plan_saved
+import org.goodcompany.app.core.ui.resources.plan_skipped
+import org.goodcompany.app.core.ui.resources.undo
+import org.goodcompany.app.core.ui.resources.wish_default
+import org.goodcompany.app.core.ui.theme.OnColorGradients
+import org.goodcompany.app.feature.agenda.resources.Res
+import org.goodcompany.app.feature.agenda.resources.eyebrow
+import org.goodcompany.app.feature.agenda.resources.fab_reminder
+import org.goodcompany.app.feature.agenda.resources.last_seen_got_dont_know
+import org.goodcompany.app.feature.agenda.resources.last_seen_got_few_months
+import org.goodcompany.app.feature.agenda.resources.last_seen_got_over_year
+import org.goodcompany.app.feature.agenda.resources.last_seen_got_this_month
+import org.goodcompany.app.feature.agenda.resources.last_seen_got_this_week
+import org.goodcompany.app.feature.agenda.resources.msg_reminder_saved
+import org.goodcompany.app.feature.agenda.resources.today_all
+import org.goodcompany.app.feature.agenda.resources.today_before_you_meet
+import org.goodcompany.app.feature.agenda.resources.today_call_logged
+import org.goodcompany.app.feature.agenda.resources.today_catch_up
+import org.goodcompany.app.feature.agenda.resources.today_checkin_body
+import org.goodcompany.app.feature.agenda.resources.today_checkin_title
+import org.goodcompany.app.feature.agenda.resources.today_circle_reminders_off
+import org.goodcompany.app.feature.agenda.resources.today_drifting
+import org.goodcompany.app.feature.agenda.resources.today_drifting_hint
+import org.goodcompany.app.feature.agenda.resources.today_empty_action
+import org.goodcompany.app.feature.agenda.resources.today_empty_body
+import org.goodcompany.app.feature.agenda.resources.today_empty_title
+import org.goodcompany.app.feature.agenda.resources.today_everything
+import org.goodcompany.app.feature.agenda.resources.today_logged_with
+import org.goodcompany.app.feature.agenda.resources.today_nothing_week
+import org.goodcompany.app.feature.agenda.resources.today_snoozed
+import org.goodcompany.app.feature.agenda.resources.today_this_week
+import org.goodcompany.app.feature.agenda.resources.today_title
+import org.goodcompany.app.feature.agenda.resources.wish_gift_hint
+import org.goodcompany.app.feature.agenda.resources.wish_title
+import org.goodcompany.app.feature.agenda.ui.components.AgendaRow
+import org.goodcompany.app.feature.agenda.ui.components.CalendarQuestionCard
+import org.goodcompany.app.feature.agenda.ui.components.LastMetCard
+import org.goodcompany.app.feature.agenda.ui.components.LastSeenCard
+import org.goodcompany.app.feature.agenda.ui.components.NotificationPrimerCard
+import org.goodcompany.app.feature.agenda.ui.components.calendarAnswerText
+import org.goodcompany.app.feature.agenda.ui.screens.openReminderTarget
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.goodcompany.app.core.ui.resources.Res as CoreRes
+
+/** Localised snackbar text for a [TodayMessage]. */
+suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = LocalDate(2000, 1, 1)): String = when (this) {
+    TodayMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
+    is TodayMessage.Reminder -> notice.text(zone, today)
+    is TodayMessage.CallLogged -> getString(Res.string.today_call_logged, name)
+    is TodayMessage.Snoozed -> getString(Res.string.today_snoozed, name, until.shortLabelText())
+    is TodayMessage.CheckedIn -> getString(Res.string.today_logged_with, names.joinToString())
+    is TodayMessage.PlanAnswered -> answer.doneText()
+    TodayMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
+    TodayMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
+    is TodayMessage.AiError -> aiErrorText(error)
+    is TodayMessage.LastSeenAnswered -> getString(answer.gotIt(), name)
+    is TodayMessage.LastMetAnswered -> getString(answer.gotIt(), name)
+    is TodayMessage.CircleRemindersOff -> getString(Res.string.today_circle_reminders_off, previous.name)
+    is TodayMessage.CalendarAnswered -> calendarAnswerText(title, names)
+}
+
+private fun LastSeenAnswer.gotIt() = when (this) {
+    LastSeenAnswer.THIS_WEEK -> Res.string.last_seen_got_this_week
+    LastSeenAnswer.THIS_MONTH -> Res.string.last_seen_got_this_month
+    LastSeenAnswer.FEW_MONTHS -> Res.string.last_seen_got_few_months
+    LastSeenAnswer.OVER_A_YEAR -> Res.string.last_seen_got_over_year
+    LastSeenAnswer.DONT_KNOW -> Res.string.last_seen_got_dont_know
+}
+
+/**
+ * The Today tab (issue #65). Its Log button (issue #116, was "I'm with…") opens the Log popup through [onLog].
+ */
+@Composable
+fun TodayScreen(
+    onOpenFriend: (FriendId) -> Unit,
+    onOpenStory: (FriendId) -> Unit,
+    /** "We met" on a catch-up card: the small "We met" panel (issue #47). */
+    onWeMet: (FriendId) -> Unit,
+    /** "We met" on an overdue circle: the panel on that circle, nobody ticked (F20). */
+    onCircleMet: (String) -> Unit,
+    /** "Did you meet?" → yes: the "We met" panel on that occurrence (issues #43, #47). */
+    onLogPlan: (planId: String, day: LocalDate) -> Unit,
+    /** "Everything coming up" and "All N": the full agenda. */
+    onOpenAgenda: () -> Unit,
+    onOpenSettings: () -> Unit,
+    /** No people yet: the People tab, where they're added. */
+    onOpenPeople: () -> Unit,
+    /** Issue #116: the Log button: the Log popup with the people picker first. */
+    onLog: () -> Unit,
+    /** The December "Your year in friendship" card (issue #67). */
+    onOpenYearReview: (Int) -> Unit = {},
+    /** A reminder's circle chip opens the circle's page (issue #99). */
+    onOpenCircle: ((String) -> Unit)? = null,
+    viewModel: TodayViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val addToCalendar = rememberCalendarAdder()
+    // Issue #98: a gentle card instead of a cold system prompt, only while the system doesn't allow notifications.
+    var notificationsAsked by remember { mutableIntStateOf(0) }
+    val enableNotifications = rememberNotificationsEnabler { notificationsAsked++ }
+    val notificationsAllowed = rememberNotificationsAllowed(refreshKey = notificationsAsked)
+    val canNotify = currentPlatformCapabilities().hasBackgroundNotifications
+    TodayContent(
+        state = state,
+        notificationsBlocked = canNotify && notificationsAllowed == false,
+        actions = TodayActions(
+            onCheckIn = onLog,
+            onOpenFriend = onOpenFriend,
+            onOpenStory = onOpenStory,
+            onWeMet = onWeMet,
+            onCalled = viewModel::onCalled,
+            onSnooze = viewModel::onSnooze,
+            onOpenWish = viewModel::onOpenWish,
+            onGroupMet = onCircleMet,
+            // "It happened" opens the "We met" panel; the other answers close it here (issue #100).
+            onAnswerPlan = { item, answer, whole ->
+                if (answer == PlanAnswer.HAPPENED) onLogPlan(item.plan.id, item.occurrence) else viewModel.onAnswerPlan(item, answer, whole)
+            },
+            onUndoPlan = viewModel::onUndoPlan,
+            onAddPlanToCalendar = { addToCalendar(it.plan.calendarEntry(it.friends, it.occurrence, it.circle)) },
+            onSkipPlan = viewModel::onSkipPlan,
+            onEditPlan = viewModel::onEditPlan,
+            onAnswerUpcomingPlan = viewModel::onAnswerUpcomingPlan,
+            onOpenAgenda = onOpenAgenda,
+            onOpenSettings = onOpenSettings,
+            onOpenPeople = onOpenPeople,
+            onOpenYearReview = onOpenYearReview,
+            onNewReminder = viewModel::onNewReminder,
+            onMessageShown = viewModel::onMessageShown,
+            onLastSeenAnswer = viewModel::onLastSeenAnswer,
+            onLastSeenNotNow = viewModel::onLastSeenNotNow,
+            onUndoLastSeen = viewModel::onUndoLastSeen,
+            onLastMetAnswer = viewModel::onLastMetAnswer,
+            onUndoLastMet = viewModel::onUndoLastMet,
+            onSnoozeCircle = viewModel::onSnoozeCircle,
+            onCircleRemindersOff = viewModel::onCircleRemindersOff,
+            onUndoCircleRemindersOff = viewModel::onUndoCircleRemindersOff,
+            onAnswerCalendarQuestion = viewModel::onAnswerCalendarQuestion,
+            onCalendarQuestionNotNow = viewModel::onCalendarQuestionNotNow,
+            onUndoCalendarAnswer = viewModel::onUndoCalendarAnswer,
+            onAllowNotifications = enableNotifications,
+            onNotificationsNotNow = viewModel::onNotificationsNotNow,
+            reminders = ReminderCallbacks(
+                onDone = viewModel::onReminderDone,
+                onSnooze = viewModel::onSnoozeReminder,
+                onEdit = viewModel::onEditReminder,
+                onDelete = viewModel::onDeleteReminder,
+                onOpenFriend = onOpenFriend,
+                onOpenCircle = onOpenCircle,
+                onOpen = { r -> openReminderTarget(viewModel.onOpenReminder(r), onOpenFriend, onOpenCircle) },
+            ),
+            onUndoReminder = viewModel::onUndoReminder,
+        ),
+    )
+    state.editingPlan?.let { plan ->
+        PlanEditor(
+            friends = state.friends,
+            today = state.today,
+            onDismiss = viewModel::onDismissPlanEditor,
+            onSave = viewModel::onSavePlan,
+            initial = plan,
+            circles = state.circles,
+        )
+    }
+    if (state.showReminderEditor) {
+        ReminderEditor(
+            state.friends,
+            state.today,
+            viewModel::onDismissReminderEditor,
+            viewModel::onSaveReminder,
+            circles = state.circles,
+            initial = state.editingReminder,
+            zone = state.zone,
+        )
+    }
+    state.wishFor?.let { friend ->
+        val firstName = friend.displayName.substringBefore(' ')
+        val ideas = friend.gifts.filter { it.isIdea }
+        SendMessageSheet(
+            title = stringResource(Res.string.wish_title, firstName),
+            suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
+            phone = friend.phoneNumbers.firstOrNull(),
+            preferred = friend.preferredChannel,
+            email = friend.emails.firstOrNull()?.address,
+            onDismiss = viewModel::onDismissWish,
+            isGenerating = state.isDraftingWish,
+            onPersonalise = if (state.hasAiKey) viewModel::onPersonaliseWish else null,
+            header = if (ideas.isEmpty()) {
+                null
+            } else {
+                { InfoPill(stringResource(Res.string.wish_gift_hint, ideas.joinToString(limit = 3) { it.title }), icon = Icons.Rounded.CardGiftcard) }
+            },
+        )
+    }
+}
+
+data class TodayActions(
+    val onCheckIn: () -> Unit = {},
+    val onOpenFriend: (FriendId) -> Unit = {},
+    val onOpenStory: (FriendId) -> Unit = {},
+    val onWeMet: (FriendId) -> Unit = {},
+    val onCalled: (FriendId) -> Unit = {},
+    val onSnooze: (FriendId, SnoozeOption) -> Unit = { _, _ -> },
+    val onOpenWish: (FriendId) -> Unit = {},
+    val onGroupMet: (String) -> Unit = {},
+    val onAnswerPlan: (AgendaItem.PlanToConfirm, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
+    val onUndoPlan: (TodayMessage.PlanAnswered) -> Unit = {},
+    val onAddPlanToCalendar: (AgendaItem.PlanUpcoming) -> Unit = {},
+    val onSkipPlan: (AgendaItem.PlanUpcoming) -> Unit = {},
+    val onEditPlan: (Plan) -> Unit = {},
+    val onAnswerUpcomingPlan: (AgendaItem.PlanUpcoming, PlanAnswer, Boolean) -> Unit = { _, _, _ -> },
+    val onOpenAgenda: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
+    val onOpenPeople: () -> Unit = {},
+    val onOpenYearReview: (Int) -> Unit = {},
+    val onNewReminder: () -> Unit = {},
+    val onMessageShown: () -> Unit = {},
+    val onLastSeenAnswer: (FriendId, LastSeenAnswer) -> Unit = { _, _ -> },
+    val onLastSeenNotNow: () -> Unit = {},
+    val onUndoLastSeen: (TodayMessage.LastSeenAnswered) -> Unit = {},
+    /** "When did the circle last meet?" (issue #150). */
+    val onLastMetAnswer: (String, LastSeenAnswer) -> Unit = { _, _ -> },
+    val onUndoLastMet: (TodayMessage.LastMetAnswered) -> Unit = {},
+    /** Snooze and "Turn off reminders for this circle" in the ⋮ of a circle's row (issue #150). */
+    val onSnoozeCircle: (String, SnoozeOption) -> Unit = { _, _ -> },
+    val onCircleRemindersOff: (String) -> Unit = {},
+    val onUndoCircleRemindersOff: (TodayMessage.CircleRemindersOff) -> Unit = {},
+    /** "Who's Ana?" (2026-11-26): the ones it is (empty = none of them), "Not now" and Undo. */
+    val onAnswerCalendarQuestion: (CalendarQuestion, Set<FriendId>) -> Unit = { _, _ -> },
+    val onCalendarQuestionNotNow: (CalendarQuestion) -> Unit = {},
+    val onUndoCalendarAnswer: (TodayMessage.CalendarAnswered) -> Unit = {},
+    val onAllowNotifications: () -> Unit = {},
+    val onNotificationsNotNow: () -> Unit = {},
+    /** Done · Snooze · Edit · Delete on the week's reminders (issue #99). */
+    val reminders: ReminderCallbacks? = null,
+    val onUndoReminder: () -> Unit = {},
+)
+
+@Composable
+fun TodayContent(
+    state: TodayUiState,
+    actions: TodayActions,
+    modifier: Modifier = Modifier,
+    /** The system doesn't let the app post notifications (issue #98). */
+    notificationsBlocked: Boolean = false,
+) {
+    val snackbar = remember { SnackbarHostState() }
+    val undo = stringResource(CoreRes.string.undo)
+    LaunchedEffect(state.message) {
+        val message = state.message ?: return@LaunchedEffect
+        if (message is TodayMessage.LastSeenAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) {
+                actions.onUndoLastSeen(message)
+                return@LaunchedEffect
+            }
+        } else if (message is TodayMessage.LastMetAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) {
+                actions.onUndoLastMet(message)
+                return@LaunchedEffect
+            }
+        } else if (message is TodayMessage.CalendarAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) actions.onUndoCalendarAnswer(message)
+        } else if (message is TodayMessage.CircleRemindersOff) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) actions.onUndoCircleRemindersOff(message)
+        } else if (message is TodayMessage.PlanAnswered && message.previous != null) {
+            if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoPlan(message)
+        } else if (message is TodayMessage.Reminder && state.reminderUndo != null) {
+            if (snackbar.showUndo(message.text(state.zone, state.today), undo) == SnackbarResult.ActionPerformed) actions.onUndoReminder()
+        } else {
+            snackbar.showMessage(message.text(state.zone, state.today))
+        }
+        actions.onMessageShown()
+    }
+    Scaffold(
+        modifier = modifier,
+        floatingActionButton = {
+            if (!state.isEmpty) {
+                ExtendedFloatingActionButton(
+                    onClick = actions.onNewReminder,
+                    icon = { Icon(Icons.Rounded.AlarmAdd, null) },
+                    text = { Text(stringResource(Res.string.fab_reminder)) },
+                )
+            }
+        },
+        snackbarHost = { AppSnackbarHost(snackbar) },
+    ) { padding ->
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 96.dp),
+        ) {
+            item(key = "header") {
+                ScreenHeader(
+                    eyebrow = stringResource(Res.string.eyebrow, weekdayLong(state.today.dayOfWeek), state.today.shortLabel()),
+                    title = stringResource(Res.string.today_title),
+                    trailing = { HeaderSettingsButton(actions.onOpenSettings) },
+                )
+            }
+            if (state.isEmpty) {
+                item(key = "empty") {
+                    EmptyState(
+                        icon = Icons.Rounded.People,
+                        title = stringResource(Res.string.today_empty_title),
+                        message = stringResource(Res.string.today_empty_body),
+                        actionLabel = stringResource(Res.string.today_empty_action),
+                        onAction = actions.onOpenPeople,
+                    )
+                }
+                return@LazyColumn
+            }
+            if (notificationsBlocked && state.askForNotifications) {
+                item(key = "notifications") {
+                    NotificationPrimerCard(actions.onAllowNotifications, actions.onNotificationsNotNow, Modifier.animateItem())
+                }
+            }
+            state.lastSeenAsk?.let { friend ->
+                item(key = "last-seen") {
+                    LastSeenCard(
+                        friend,
+                        state.lastSeenPosition,
+                        state.lastSeenTotal,
+                        onAnswer = { actions.onLastSeenAnswer(friend.id, it) },
+                        onNotNow = actions.onLastSeenNotNow,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            state.lastMetAsk?.let { circle ->
+                item(key = "last-met") {
+                    LastMetCard(
+                        circle,
+                        state.lastMetMembers,
+                        state.lastSeenPosition,
+                        state.lastSeenTotal,
+                        onAnswer = { actions.onLastMetAnswer(circle.id, it) },
+                        onNotNow = actions.onLastSeenNotNow,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            if (state.showCheckIn) item(key = "check-in") { CheckInCard(actions.onCheckIn) }
+            state.reviewYear?.let { year ->
+                item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
+            }
+
+            // "Who's Ana?" (2026-11-26): settles who a calendar event is with before it shows in "Before you meet".
+            state.calendarQuestion?.let { q ->
+                item(key = "who-${q.key}") {
+                    CalendarQuestionCard(
+                        q,
+                        state.today,
+                        state.zone,
+                        onAnswer = { actions.onAnswerCalendarQuestion(q, it) },
+                        onNotNow = { actions.onCalendarQuestionNotNow(q) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+
+            // Issue #149 (D 2026-11-21): "Before you meet" sits above "This week", below the top cards.
+            if (state.stories.isNotEmpty()) {
+                item(key = "stories-h") { SectionHeader(stringResource(Res.string.today_before_you_meet)) }
+                item(key = "stories") {
+                    LazyRow(contentPadding = PaddingValues(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        items(state.stories, key = { "s-${it.friend.id.value}" }) { b ->
+                            StoryBubbleChip(b, state.today, { actions.onOpenStory(b.friend.id) }, Modifier.animateItem())
+                        }
+                    }
+                }
+            }
+
+            item(key = "week-h") { SectionHeader(stringResource(Res.string.today_this_week)) }
+            if (!state.isLoading && state.week.isEmpty()) {
+                item(key = "week-empty") {
+                    Text(
+                        stringResource(Res.string.today_nothing_week),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+            }
+            state.weekByDay.forEach { (day, items) ->
+                item(key = "day-$day") {
+                    Text(
+                        relativeDay(day, state.today).uppercase(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 2.dp),
+                    )
+                }
+                items(items, key = { it.key }) {
+                    AgendaRow(
+                        it,
+                        state.today,
+                        actions.onOpenFriend,
+                        onOpenWish = actions.onOpenWish,
+                        onGroupMet = actions.onGroupMet,
+                        onSnoozeCircle = actions.onSnoozeCircle,
+                        onCircleRemindersOff = actions.onCircleRemindersOff,
+                        onAnswerPlan = actions.onAnswerPlan,
+                        onAddPlanToCalendar = actions.onAddPlanToCalendar,
+                        onSkipPlan = actions.onSkipPlan,
+                        onEditPlan = actions.onEditPlan,
+                        onAnswerUpcomingPlan = actions.onAnswerUpcomingPlan,
+                        reminders = actions.reminders,
+                        now = state.now,
+                        zone = state.zone,
+                        modifier = Modifier.padding(horizontal = 16.dp).animateItem(),
+                    )
+                }
+            }
+            item(key = "everything") {
+                TextButton(onClick = actions.onOpenAgenda, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text(stringResource(Res.string.today_everything))
+                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(18.dp))
+                }
+            }
+
+            if (state.catchUp.isNotEmpty()) {
+                item(key = "catchup-h") {
+                    SectionHeader(
+                        stringResource(Res.string.today_catch_up),
+                        action = if (state.catchUpTotal > state.catchUp.size) {
+                            { TextButton(onClick = actions.onOpenAgenda) { Text(stringResource(Res.string.today_all, state.catchUpTotal)) } }
+                        } else {
+                            null
+                        },
+                    )
+                }
+                items(state.catchUp, key = { "c-${it.friend.id.value}" }) { s ->
+                    val id = s.friend.id
+                    CatchUpCard(
+                        s,
+                        onOpen = { actions.onOpenFriend(id) },
+                        onMet = { actions.onWeMet(id) },
+                        onCalled = { actions.onCalled(id) },
+                        onSnooze = { actions.onSnooze(id, it) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            if (state.drifting.isNotEmpty()) {
+                item(key = "drift-h") { SectionHeader(stringResource(Res.string.today_drifting)) }
+                item(key = "drift-hint") {
+                    Text(
+                        stringResource(Res.string.today_drifting_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp),
+                    )
+                }
+                items(state.drifting, key = { "d-${it.friend.id.value}" }) { s ->
+                    DriftingCard(
+                        s,
+                        onOpen = { actions.onOpenFriend(s.friend.id) },
+                        onSnooze = { actions.onSnooze(s.friend.id, SnoozeOption.ONE_WEEK) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Issue #116: "Log · Who did you catch up with?": opens the Log popup with the people picker first. */
+@Composable
+private fun CheckInCard(onClick: () -> Unit) {
+    val haptics = LocalHapticFeedback.current
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(Brush.linearGradient(OnColorGradients.Hero))
+            .clickable(role = Role.Button) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            }
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(Res.string.today_checkin_title), style = MaterialTheme.typography.titleLarge, color = Color.White)
+            Text(stringResource(Res.string.today_checkin_body), style = MaterialTheme.typography.bodyMedium, color = Color.White.copy(alpha = 0.9f))
+        }
+        Box(Modifier.size(44.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(LogIcon, null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}

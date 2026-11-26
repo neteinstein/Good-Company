@@ -1,0 +1,176 @@
+package org.goodcompany.app.feature.hangouts.ui.components
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.MyLocation
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendGroup
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.ui.components.CircleChip
+import org.goodcompany.app.core.ui.components.FriendAvatar
+import org.goodcompany.app.core.ui.components.MeetupPlace
+import org.goodcompany.app.core.ui.components.MeetupPlaceState
+import org.goodcompany.app.core.ui.components.SaveBar
+import org.goodcompany.app.core.ui.resources.circle_tick_who_came
+import org.goodcompany.app.feature.hangouts.resources.Res
+import org.goodcompany.app.feature.hangouts.resources.sheet_find
+import org.goodcompany.app.feature.hangouts.resources.sheet_log
+import org.goodcompany.app.feature.hangouts.resources.sheet_note
+import org.goodcompany.app.feature.hangouts.resources.sheet_pick
+import org.goodcompany.app.feature.hangouts.resources.sheet_title
+import org.goodcompany.app.feature.hangouts.resources.sheet_where
+import org.goodcompany.app.feature.hangouts.ui.screens.CheckInDraft
+import org.jetbrains.compose.resources.stringResource
+import org.goodcompany.app.core.ui.resources.Res as CoreRes
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CheckInSheet(
+    draft: CheckInDraft,
+    place: MeetupPlaceState,
+    friends: List<Friend>,
+    groups: List<FriendGroup>,
+    onPickGroup: (String) -> Unit,
+    onToggleFriend: (FriendId) -> Unit,
+    onQueryChange: (String) -> Unit,
+    onPlaceChange: (String) -> Unit,
+    onNoteChange: (String) -> Unit,
+    onUseLocation: () -> Unit,
+    onClearLocation: () -> Unit,
+    onChangePlace: () -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        // Issue #146: the fields scroll; Save stays pinned under them, above the navigation bar and the keyboard.
+        Column(
+            Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
+                .padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(stringResource(Res.string.sheet_title), style = MaterialTheme.typography.headlineSmall)
+            if (groups.isNotEmpty()) {
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    groups.forEach { g -> CircleChip(g, selected = draft.circleId == g.id, onClick = { onPickGroup(g.id) }) }
+                }
+            }
+            val circle = groups.firstOrNull { it.id == draft.circleId }
+            if (circle != null) {
+                Text(
+                    stringResource(CoreRes.string.circle_tick_who_came, circle.name),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            OutlinedTextField(
+                value = draft.query,
+                onValueChange = onQueryChange,
+                leadingIcon = { Icon(Icons.Rounded.Search, null) },
+                placeholder = { Text(stringResource(Res.string.sheet_find)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+            )
+            val q = draft.query.trim().lowercase()
+            // With a circle picked, its members come first (in the circle's order), then whoever else is ticked.
+            val members = circle?.memberIds.orEmpty()
+            val shown = friends
+                .filter { it.id in draft.selected || it.id in members || (circle == null && (q.isEmpty() || it.displayName.lowercase().contains(q))) }
+                .filter { q.isEmpty() || it.displayName.lowercase().contains(q) || it.id in draft.selected }
+                .sortedWith(
+                    compareBy<Friend> { members.indexOf(it.id).let { i -> if (i < 0) Int.MAX_VALUE else i } }
+                        .thenByDescending { it.id in draft.selected }
+                        .thenByDescending { it.isCloseFriend },
+                )
+                .take(MAX_CHIPS)
+            FlowRow(
+                Modifier.heightIn(max = 260.dp).verticalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                shown.forEach { f ->
+                    val selected = f.id in draft.selected
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onToggleFriend(f.id) },
+                        label = { Text(f.displayName) },
+                        leadingIcon = {
+                            AnimatedContent(selected) { on ->
+                                if (on) {
+                                    Icon(Icons.Rounded.Check, null, Modifier.size(FilterChipDefaults.IconSize))
+                                } else {
+                                    FriendAvatar(f, size = 20.dp)
+                                }
+                            }
+                        },
+                    )
+                }
+            }
+            MeetupPlace(
+                place,
+                freeTextLabel = stringResource(Res.string.sheet_where),
+                onName = onPlaceChange,
+                onUseLocation = onUseLocation,
+                onClearLocation = onClearLocation,
+                onChange = onChangePlace,
+                onAddPerson = onToggleFriend,
+            )
+            OutlinedTextField(
+                value = draft.note,
+                onValueChange = onNoteChange,
+                label = { Text(stringResource(Res.string.sheet_note)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+            )
+        }
+        SaveBar(
+            onSave,
+            enabled = draft.canSave,
+            label = if (draft.selected.isEmpty()) {
+                stringResource(Res.string.sheet_pick)
+            } else {
+                stringResource(Res.string.sheet_log, draft.selected.size)
+            },
+            color = BottomSheetDefaults.ContainerColor,
+        )
+    }
+}
+
+private const val MAX_CHIPS = 60

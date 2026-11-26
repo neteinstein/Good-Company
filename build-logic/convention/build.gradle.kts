@@ -2,7 +2,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "com.neteinstein.goodcompany.buildlogic"
+group = "org.goodcompany.app.buildlogic"
 
 dependencies {
     compileOnly(libs.android.gradlePlugin)

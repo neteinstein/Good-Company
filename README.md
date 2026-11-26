@@ -158,14 +158,23 @@ friends by hand (browsers have no address book).
 - No account, no server. Everything lives on your device.
 - On Android (Play) you **pick** people with the system contact picker, so the app never sees your whole address book. Call matching and in-app updates (Settings → *App updates*) exist only in the separate *sideload* build, which adds people with the same picker (Play restricts those permissions). In that sideload build, birthdays, kids, events and notes you add are also written onto each person's contact (a device-only entry, never synced), so you can read them in the Contacts app. **SMS are never read.**
 - WhatsApp and Messenger can't be read by any app; you can import a WhatsApp chat **export** per friend.
-- The only network traffic is what you start: AI requests with **your** key to `api.anthropic.com`, and Google Drive backups.
+- The only network traffic is what you start: AI requests with **your** key to `api.anthropic.com`, Google Drive backups, and the blog or newsletter feeds you follow for a friend.
 - Optional **app lock** (fingerprint, face or device PIN) and **private lock-screen notifications**.
-- **Export / restore** everything as one file, or **back up to your own Google Drive** (the app can only see its own backup file there). Your API key is never in it. Setup: [docs/GOOGLE_DRIVE.md](docs/GOOGLE_DRIVE.md).
+- **Export / restore** everything as one file, or **back up to your own Google Drive** (the app's private folder there). Every backup is **encrypted on your device** with a password only you know. Your API key is never in it. Setup: [docs/GOOGLE_DRIVE.md](docs/GOOGLE_DRIVE.md).
 - Prefer fewer numbers? Turn off **Show warmth** in Settings.
 
 ## 🚀 Getting started
 
 **Just want to try it on Android?** Every merge to `main` publishes a release (`v0.1.0`, `v0.1.1`, …) with installable APKs on the [Releases](https://github.com/neteinstein/Good-Company/releases/latest) page ([details](CI_CD.md#releases)).
+
+| Build | Package / bundle ID |
+|---|---|
+| Android, Google Play (`release`) | `org.goodcompany.app` |
+| Android, sideload (`sideload`) | `org.goodcompany.app.sideload` |
+| iOS (app, Share Extension, widget) | `org.goodcompany.app`, `….ShareExtension`, `….NextUpWidget` (app group `group.org.goodcompany.app`) |
+
+The Google Play listing (text in all five languages, icon, feature graphic, screenshots, Data safety and reviewer
+notes) lives in **[store-listing/](store-listing/README.md)**.
 
 Requirements: JDK 21, Android SDK (API 37), and Xcode on macOS for iOS.
 

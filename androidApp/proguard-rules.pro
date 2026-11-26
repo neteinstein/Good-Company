@@ -7,14 +7,14 @@
 
 # Persisted JSON + type-safe navigation routes are @Serializable. kotlinx.serialization's bundled rules keep
 # generated serializers; keep our model package names stable too so stored data survives refactors of R8 output.
--keepclassmembers @kotlinx.serialization.Serializable class com.neteinstein.goodcompany.** {
+-keepclassmembers @kotlinx.serialization.Serializable class org.goodcompany.app.** {
     *** Companion;
     kotlinx.serialization.KSerializer serializer(...);
 }
 
 # Navigation routes keep their names, so "Destination with route … cannot be found" names the route in a release crash
 # (issue #114: it said "ln5", which was TagsRoute, never registered). AppRoutesTest checks every route is registered.
--keepnames class * implements com.neteinstein.goodcompany.ui.navigation.AppRoute
+-keepnames class * implements org.goodcompany.app.ui.navigation.AppRoute
 
 # WorkManager instantiates workers reflectively by class name (also covered by WorkManager's own rules).
 -keep class * extends androidx.work.ListenableWorker {

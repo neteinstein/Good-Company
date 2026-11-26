@@ -67,7 +67,7 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
     device lock (biometrics/PIN), Google Drive sign-in, dynamic colour, `platformCapabilities` /
     `currentPlatformCapabilities()` (use the latter in composables: on Android it reflects the installed build type)
   - entry points (`MainViewController`, wasm `main`)
-- Packages: `com.neteinstein.goodcompany.<module path>` (e.g. `...feature.friends.ui.screens.detail`). Inside a module:
+- Packages: `org.goodcompany.app.<module path>` (e.g. `...feature.friends.ui.screens.detail`). Inside a module:
   `domain/` (models, use cases, repository interfaces), `data/` (repositories, data sources),
   `ui/{screens,components,theme,navigation}/`.
 
@@ -88,7 +88,7 @@ build-logic/          Convention plugins: goodcompany.kmp.library / .kmp.compose
 - Supported: English (`values/`), European Portuguese (`values-pt/`), Spanish (`values-es/`), French (`values-fr/`),
   Romanian (`values-ro/`). **No user-facing string literals in Kotlin.**
 - Each Compose module has its own `src/commonMain/composeResources/values*/strings.xml` and a generated
-  `<module namespace>.resources.Res` (e.g. `com.neteinstein.goodcompany.feature.friends.resources.Res`). Shared words,
+  `<module namespace>.resources.Res` (e.g. `org.goodcompany.app.feature.friends.resources.Res`). Shared words,
   dates, notification text, sample data and AI errors live in `:core:ui` (import its `Res` as `CoreRes` in features).
 - Every English string has all four translations in the same PR. While building, write English only. Once the
   wording has settled, add the translations in one pass at the end (`add-strings`). `python3 scripts/check-strings.py`

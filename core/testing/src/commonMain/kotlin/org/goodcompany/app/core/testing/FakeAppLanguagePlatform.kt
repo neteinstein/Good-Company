@@ -1,0 +1,16 @@
+package org.goodcompany.app.core.testing
+
+import org.goodcompany.app.core.domain.model.AppLanguage
+import org.goodcompany.app.core.domain.repository.AppLanguagePlatform
+
+/** The platform's per-app language setting (issue #174): [system] is what it holds; [applied] every language applied. */
+class FakeAppLanguagePlatform(var system: AppLanguage? = null) : AppLanguagePlatform {
+    val applied = mutableListOf<AppLanguage>()
+
+    override fun systemChoice(): AppLanguage? = system
+
+    override fun apply(language: AppLanguage) {
+        applied += language
+        if (system != null) system = language
+    }
+}
