@@ -1,0 +1,3 @@
+• First release of Good Company on Google Play.
+• Keep track of your friends, their kids, birthdays and what they love, log meetups in seconds, and get a gentle nudge before it’s been too long.
+• Optional AI ideas with your own Anthropic API key, and encrypted backups to your own Google Drive.

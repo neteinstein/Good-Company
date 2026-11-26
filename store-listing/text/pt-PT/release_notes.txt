@@ -1,0 +1,3 @@
+• Primeira versão do Good Company no Google Play.
+• Acompanha os teus amigos, os filhos, os aniversários e o que adoram, regista encontros em segundos e recebe um lembrete suave antes que passe demasiado tempo.
+• Ideias com IA opcionais com a tua própria chave da API da Anthropic, e cópias de segurança cifradas no teu Google Drive.

@@ -1,0 +1,48 @@
+Good Company este un mic CRM pentru prietenie. Ține minte ce le place prietenilor tăi, zilele de naștere ale copiilor lor și ultima dată când v-ați văzut, și primește un memento blând înainte să treacă prea mult timp. Totul rămâne pe telefonul tău: fără cont și fără servere de-ale noastre.
+
+OAMENII TĂI, DINTR-O PRIVIRE
+• Azi îți arată cu cine să mai vorbești, pe cine vezi în curând și ce urmează săptămâna asta
+• Ordonează oamenii după apropiere: Intimi, Apropiați, Prieteni sau Cunoștințe, fiecare cu ritmul lui, sau alege unul pentru fiecare persoană
+• Un scor de căldură arată de cine te îndepărtezi (sau ascunde-l, dacă preferi)
+• Adaugă prieteni din contacte cu selectorul Android, importă un fișier .vcf sau adaugă-i de mână
+• Un widget „Cine urmează” pentru ecranul de pornire
+
+TOTUL DESPRE UN PRIETEN
+• Ce iubește și ce nu-i place: mâncare, băuturi, muzică, hobby-uri
+• Copiii, partenerul și familia, cu zilele de naștere și ce îi place fiecăruia
+• Momente importante, ca „operație la genunchi vineri”, și noutățile din viața lui
+• Înainte să vă vedeți, parcurge o poveste rapidă cu noutățile lui și ce să-l întrebi
+• Idei de cadouri, liste de cadouri pe ocazii cu buget și ce i-ai dăruit deja
+• Urări de ziua lui, gata de trimis pe WhatsApp, prin SMS sau prin partajare
+
+NOTEAZĂ O ÎNTÂLNIRE ÎN CÂTEVA SECUNDE
+• Cine, cum, când și ce: în persoană, un apel, un apel video, un prânz sau un concert
+• Dacă vrei, unde: scris de tine sau un loc căruia îi dai nume din locația ta
+• O cronologie pentru fiecare persoană și „când ne-am văzut toți ultima dată?” pentru fiecare cerc
+
+CERCURI ȘI PLANURI
+• Cercuri ca „Seara de jocuri” sau „Gașca de surf”, cu ritmul lor
+• Planuri cu dată și oră, pe care le poți adăuga în calendar, apoi spui cum a fost
+• „Cine e liber pentru…?” găsește companie bună pentru o drumeție, un pahar sau un prânz în timpul săptămânii
+• Mementouri, cu o notă săptămânală liniștită în loc de un șuvoi de notificări
+
+ANUL TĂU ÎN PRIETENIE
+• O privire înapoi la anul tău: întâlniri, pe cine ai văzut cel mai des, locurile preferate și rețeaua ta de oameni
+
+PARTAJEAZĂ ÎN APLICAȚIE
+• Partajează o postare, un link sau o captură de ecran cu Good Company și salveaz-o la noutățile unui prieten
+• Urmărește blogul sau newsletterul unui prieten și vezi postările noi pe pagina lui
+
+IDEI CU IA (OPȚIONAL)
+• Dezactivată implicit. Activeaz-o cu propria ta cheie API Anthropic, păstrată doar pe telefonul tău
+• Planuri săptămânale: evenimente reale lângă tine, potrivite cu gusturile prietenilor tăi
+• Subiecte de conversație și știri pentru fiecare prieten, plus sugestii de cadouri și mesaje
+• Datele prietenilor tăi ajung la IA doar când folosești o funcție cu IA
+
+PRIVAT DIN CONSTRUCȚIE
+• Datele tale stau pe telefonul tău. Fără cont, fără autentificare, fără reclame
+• Copiile de rezervă opționale în Google Drive-ul tău sunt criptate cu o parolă pe care doar tu o știi
+• Blocarea opțională a aplicației cu amprentă, față sau PIN, și notificări private pe ecranul de blocare
+• Sugestiile din calendar sunt opționale și nu părăsesc niciodată telefonul
+
+În română, engleză, portugheză, spaniolă și franceză, în modul luminos și întunecat. Explorează mai întâi cu prieteni de exemplu și șterge-i cu o atingere.

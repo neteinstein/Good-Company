@@ -1,0 +1,48 @@
+O Good Company é um pequeno CRM para a amizade. Lembra-te do que os teus amigos adoram, dos anos dos filhos deles e da última vez que estiveram juntos, e recebe um lembrete suave antes que passe demasiado tempo. Tudo fica no teu telemóvel: sem conta e sem servidores nossos.
+
+AS TUAS PESSOAS, NUM RELANCE
+• Hoje mostra com quem pôr a conversa em dia, quem vais ver em breve e o que aí vem esta semana
+• Organiza as pessoas por proximidade: Íntimos, Próximos, Amigos ou Conhecidos, cada uma com o seu ritmo, ou define um por pessoa
+• Uma pontuação de calor mostra de quem te estás a afastar (ou esconde-a, se preferires)
+• Adiciona amigos a partir dos contactos com o seletor do Android, importa um ficheiro .vcf ou adiciona-os à mão
+• Um widget “Quem se segue” para o ecrã principal
+
+TUDO SOBRE UM AMIGO
+• O que adoram e o que não gostam: comida, bebidas, música, passatempos
+• Os filhos, o par e a família, com os aniversários e o que cada um gosta
+• Momentos importantes, como “operação ao joelho na sexta”, e as novidades da vida deles
+• Antes de se encontrarem, vê uma história rápida das novidades e do que perguntar
+• Ideias de presentes, listas de presentes por ocasião com orçamento, e o que já ofereceste
+• Mensagens de parabéns prontas a enviar por WhatsApp, SMS ou partilha
+
+REGISTA UM ENCONTRO EM SEGUNDOS
+• Quem, como, quando e o quê: ao vivo, uma chamada, uma videochamada, um almoço ou um concerto
+• Opcionalmente, onde: escrito, ou um local que dás nome a partir da tua localização
+• Uma cronologia por pessoa e “quando nos juntámos todos pela última vez?” para cada círculo
+
+CÍRCULOS E PLANOS
+• Círculos como “Noite de jogos” ou “Malta do surf”, com o seu próprio ritmo
+• Planos com data e hora, que podes juntar ao calendário, e depois dizer como correu
+• “Quem está livre para…?” encontra boa companhia para uma caminhada, uns copos ou um almoço
+• Lembretes, com uma nota semanal tranquila em vez de uma enxurrada de notificações
+
+O TEU ANO EM AMIZADE
+• Um olhar sobre o teu ano: encontros, quem viste mais, os sítios favoritos e a tua rede de pessoas
+
+PARTILHA PARA A APP
+• Partilha uma publicação, um link ou uma captura de ecrã com o Good Company e guarda-a nas novidades de um amigo
+• Segue o blogue ou a newsletter de um amigo e vê as novas publicações na página dele
+
+IDEIAS COM IA (OPCIONAL)
+• Desligada por omissão. Liga-a com a tua própria chave da API da Anthropic, guardada só no teu telemóvel
+• Planos semanais: eventos reais perto de ti que combinam com os gostos dos teus amigos
+• Temas de conversa e notícias para cada amigo, e sugestões de presentes e mensagens
+• Os dados dos teus amigos só são enviados para a IA quando usas uma funcionalidade de IA
+
+PRIVADO DE RAIZ
+• Os teus dados vivem no teu telemóvel. Sem conta, sem login, sem anúncios
+• As cópias de segurança opcionais no teu Google Drive são cifradas com uma palavra-passe que só tu sabes
+• Bloqueio da app opcional com impressão digital, rosto ou PIN, e notificações privadas no ecrã de bloqueio
+• As sugestões do calendário são opcionais e nunca saem do teu telemóvel
+
+Em português, inglês, espanhol, francês e romeno, em modo claro e escuro. Explora primeiro com amigos de exemplo e remove-os com um toque.
