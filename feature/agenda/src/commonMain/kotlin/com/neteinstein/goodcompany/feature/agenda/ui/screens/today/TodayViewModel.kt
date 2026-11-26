@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -12,8 +13,10 @@ import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
 import com.neteinstein.goodcompany.core.domain.model.Reminder
 import com.neteinstein.goodcompany.core.domain.model.ReminderSnooze
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerCalendarQuestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.CalendarQuestion
 import com.neteinstein.goodcompany.core.domain.usecase.ClosePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CompleteReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ConfirmPlanUseCase
@@ -27,6 +30,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenCard
 import com.neteinstein.goodcompany.core.domain.usecase.LogCallUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarQuestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveFriendsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveGroupsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveLastSeenCardUseCase
@@ -46,6 +50,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.StoryBubble
 import com.neteinstein.goodcompany.core.domain.usecase.TurnOffCircleRemindersUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.UndoCalendarDecisionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.components.ReminderDraft
@@ -95,6 +100,9 @@ sealed interface TodayMessage {
 
     /** "Turn off reminders for this circle" from its row (issue #150); Undo puts [previous] back as it was. */
     data class CircleRemindersOff(val previous: FriendGroup) : TodayMessage
+
+    /** "Who's Ana?" answered (2026-11-26) with [names] (empty = none of them); Undo asks again. */
+    data class CalendarAnswered(val decision: CalendarDecision, val title: String, val names: List<String>) : TodayMessage
 }
 
 /**
@@ -111,6 +119,10 @@ data class TodayUiState(
     val catchUpTotal: Int = 0,
     /** "Before you meet": people you're seeing today or tomorrow, each with a catch-up story. */
     val stories: List<StoryBubble> = emptyList(),
+    /** "Who's Ana?" (2026-11-26): a calendar event naming a first name several people share; null hides the card. */
+    val calendarQuestion: CalendarQuestion? = null,
+    /** Questions put off with "Not now" since Today opened. */
+    val calendarNotNow: Set<String> = emptySet(),
     /** Real friends whose warmth is fading and who aren't overdue already (at most three). */
     val drifting: List<FriendSummary> = emptyList(),
     /** Everyone, for the reminder editor and the birthday-wish sheet. */
@@ -201,17 +213,21 @@ class TodayViewModel(
     private val answerLastMet: AnswerLastMetUseCase,
     private val turnOffCircleReminders: TurnOffCircleRemindersUseCase,
     private val restoreGroup: RestoreGroupUseCase,
+    observeCalendarQuestions: ObserveCalendarQuestionsUseCase,
+    private val answerCalendarQuestion: AnswerCalendarQuestionUseCase,
+    private val undoCalendarDecision: UndoCalendarDecisionUseCase,
 ) : ViewModel() {
     private val local = MutableStateFlow(TodayUiState())
 
     val state: StateFlow<TodayUiState> = combine(
         observeAgenda(),
         observeMeetups(),
-        observeStories(),
+        combine(observeStories(), observeCalendarQuestions(), ::Pair),
         combine(observeFriends(), observeSettings(), observeReviewYear(), observeLastSeen(), observeGroups(), ::Extras),
         local,
-    ) { agenda, meetups, stories, extras, ui ->
+    ) { agenda, meetups, (stories, questions), extras, ui ->
         build(ui, agenda, meetups, stories, extras.friends, extras.settings).copy(
+            calendarQuestion = questions.firstOrNull { it.key !in ui.calendarNotNow },
             reviewYear = extras.reviewYear,
             circles = extras.circles.map {
                 it.group
@@ -342,6 +358,23 @@ class TodayViewModel(
     fun onUndoCircleRemindersOff(message: TodayMessage.CircleRemindersOff) {
         viewModelScope.launch { restoreGroup(message.previous) }
     }
+
+    /** "Who's Ana?" answered: [friendIds] are the ones it is (empty = none of them), with Undo. */
+    fun onAnswerCalendarQuestion(question: CalendarQuestion, friendIds: Set<FriendId>) {
+        viewModelScope.launch {
+            val decision = answerCalendarQuestion(question, friendIds)
+            val names = question.candidates.filter { it.id in decision.friendIds }.map { it.displayName }
+            local.update { it.copy(message = TodayMessage.CalendarAnswered(decision, question.event.title, names)) }
+        }
+    }
+
+    /** Undo on that answer: the question comes back. */
+    fun onUndoCalendarAnswer(message: TodayMessage.CalendarAnswered) {
+        viewModelScope.launch { undoCalendarDecision(message.decision) }
+    }
+
+    /** "Not now" on "Who's Ana?": the next question (if any) shows instead, until Today opens again. */
+    fun onCalendarQuestionNotNow(question: CalendarQuestion) = local.update { it.copy(calendarNotNow = it.calendarNotNow + question.key) }
 
     /** "Not now": the card goes away until tomorrow. */
     fun onLastSeenNotNow() {

@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.feature.agenda
 import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CalendarEvent
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
@@ -34,6 +35,8 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 class TodayViewModelTest {
@@ -67,6 +70,9 @@ class TodayViewModelTest {
         g.answerLastMet,
         g.turnOffCircleReminders,
         g.restoreGroup,
+        g.observeCalendarQuestions,
+        g.answerCalendarQuestion,
+        g.undoCalendarDecision,
     )
 
     private fun birthday(id: String, month: Int, day: Int): Friend = friend(id) { copy(birthday = Birthday(month, day)) }
@@ -413,5 +419,30 @@ class TodayViewModelTest {
         vm.onAnswerUpcomingPlan(upcoming().first(), PlanAnswer.DELETE, wholeSeries = true)
         assertNotNull(assertIs<TodayMessage.PlanAnswered>(state.value.message).previous)
         assertTrue(g.planRepo.plans.value.isEmpty())
+    }
+
+    @Test
+    fun whoIsAnaShowsOnToday_thenTheAnswerFillsBeforeYouMeet_withUndo() = runViewModelTest {
+        // Decision 2026-11-26: two Anas, an event tomorrow that only says "Ana".
+        val g = TestGraph(
+            listOf(friend("ana", "Ana"), friend("aj", "Ana Jorge")),
+            AppSettings(calendarSuggestions = true, calendarIds = listOf("personal")),
+        )
+        val start = g.clock.now() + 1.days
+        g.calendarReader.events = listOf(CalendarEvent("lunch", "personal", "Almoço com a Ana", start, start + 1.hours))
+        val vm = vm(g)
+        val state = collecting(vm.state)
+        val q = assertNotNull(state.value.calendarQuestion)
+        assertTrue(state.value.stories.isEmpty())
+
+        vm.onAnswerCalendarQuestion(q, setOf(FriendId("ana")))
+        val message = assertIs<TodayMessage.CalendarAnswered>(state.value.message)
+        assertNull(state.value.calendarQuestion)
+        assertEquals(listOf("ana"), state.value.stories.map { it.friend.id.value })
+
+        vm.onUndoCalendarAnswer(message)
+        assertNotNull(state.value.calendarQuestion)
+        vm.onCalendarQuestionNotNow(q)
+        assertNull(state.value.calendarQuestion)
     }
 }

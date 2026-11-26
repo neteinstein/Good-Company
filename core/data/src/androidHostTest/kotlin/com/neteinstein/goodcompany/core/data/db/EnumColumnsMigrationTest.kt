@@ -176,7 +176,7 @@ class EnumColumnsMigrationTest {
             """.trimIndent(),
             "INSERT INTO idea VALUES ('i2', 1, 'GAME', 'Board games', '', NULL, NULL, 2, 0, NULL)",
             "INSERT INTO person_link VALUES ('l2', 'ana', 'rui', 'BOSS', NULL, NULL, '', 0, NULL)",
-            "INSERT INTO calendar_decision VALUES ('k2', 'MAYBE', 2)",
+            "INSERT INTO calendar_decision (key, kind, decided_at) VALUES ('k2', 'MAYBE', 2)",
         ).forEach { driver.exec(it) }
 
         val ana = database.readFriends().first { it.id.value == "ana" }

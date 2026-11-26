@@ -53,6 +53,7 @@ import com.neteinstein.goodcompany.core.domain.model.AgendaItem
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
+import com.neteinstein.goodcompany.core.domain.usecase.CalendarQuestion
 import com.neteinstein.goodcompany.core.domain.usecase.LastSeenAnswer
 import com.neteinstein.goodcompany.core.domain.usecase.SnoozeOption
 import com.neteinstein.goodcompany.core.ui.components.AppSnackbarHost
@@ -120,9 +121,11 @@ import com.neteinstein.goodcompany.feature.agenda.resources.today_title
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_gift_hint
 import com.neteinstein.goodcompany.feature.agenda.resources.wish_title
 import com.neteinstein.goodcompany.feature.agenda.ui.components.AgendaRow
+import com.neteinstein.goodcompany.feature.agenda.ui.components.CalendarQuestionCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastMetCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.LastSeenCard
 import com.neteinstein.goodcompany.feature.agenda.ui.components.NotificationPrimerCard
+import com.neteinstein.goodcompany.feature.agenda.ui.components.calendarAnswerText
 import com.neteinstein.goodcompany.feature.agenda.ui.screens.openReminderTarget
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -145,6 +148,7 @@ suspend fun TodayMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = 
     is TodayMessage.LastSeenAnswered -> getString(answer.gotIt(), name)
     is TodayMessage.LastMetAnswered -> getString(answer.gotIt(), name)
     is TodayMessage.CircleRemindersOff -> getString(Res.string.today_circle_reminders_off, previous.name)
+    is TodayMessage.CalendarAnswered -> calendarAnswerText(title, names)
 }
 
 private fun LastSeenAnswer.gotIt() = when (this) {
@@ -223,6 +227,9 @@ fun TodayScreen(
             onSnoozeCircle = viewModel::onSnoozeCircle,
             onCircleRemindersOff = viewModel::onCircleRemindersOff,
             onUndoCircleRemindersOff = viewModel::onUndoCircleRemindersOff,
+            onAnswerCalendarQuestion = viewModel::onAnswerCalendarQuestion,
+            onCalendarQuestionNotNow = viewModel::onCalendarQuestionNotNow,
+            onUndoCalendarAnswer = viewModel::onUndoCalendarAnswer,
             onAllowNotifications = enableNotifications,
             onNotificationsNotNow = viewModel::onNotificationsNotNow,
             reminders = ReminderCallbacks(
@@ -310,6 +317,10 @@ data class TodayActions(
     val onSnoozeCircle: (String, SnoozeOption) -> Unit = { _, _ -> },
     val onCircleRemindersOff: (String) -> Unit = {},
     val onUndoCircleRemindersOff: (TodayMessage.CircleRemindersOff) -> Unit = {},
+    /** "Who's Ana?" (2026-11-26): the ones it is (empty = none of them), "Not now" and Undo. */
+    val onAnswerCalendarQuestion: (CalendarQuestion, Set<FriendId>) -> Unit = { _, _ -> },
+    val onCalendarQuestionNotNow: (CalendarQuestion) -> Unit = {},
+    val onUndoCalendarAnswer: (TodayMessage.CalendarAnswered) -> Unit = {},
     val onAllowNotifications: () -> Unit = {},
     val onNotificationsNotNow: () -> Unit = {},
     /** Done · Snooze · Edit · Delete on the week's reminders (issue #99). */
@@ -339,6 +350,8 @@ fun TodayContent(
                 actions.onUndoLastMet(message)
                 return@LaunchedEffect
             }
+        } else if (message is TodayMessage.CalendarAnswered) {
+            if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) actions.onUndoCalendarAnswer(message)
         } else if (message is TodayMessage.CircleRemindersOff) {
             if (snackbar.showUndo(message.text(), undo) == SnackbarResult.ActionPerformed) actions.onUndoCircleRemindersOff(message)
         } else if (message is TodayMessage.PlanAnswered && message.previous != null) {
@@ -419,6 +432,20 @@ fun TodayContent(
             if (state.showCheckIn) item(key = "check-in") { CheckInCard(actions.onCheckIn) }
             state.reviewYear?.let { year ->
                 item(key = "review") { YearReviewCard(year, onClick = { actions.onOpenYearReview(year) }) }
+            }
+
+            // "Who's Ana?" (2026-11-26): settles who a calendar event is with before it shows in "Before you meet".
+            state.calendarQuestion?.let { q ->
+                item(key = "who-${q.key}") {
+                    CalendarQuestionCard(
+                        q,
+                        state.today,
+                        state.zone,
+                        onAnswer = { actions.onAnswerCalendarQuestion(q, it) },
+                        onNotNow = { actions.onCalendarQuestionNotNow(q) },
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
 
             // Issue #149 (D 2026-11-21): "Before you meet" sits above "This week", below the top cards.

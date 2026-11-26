@@ -69,7 +69,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -103,8 +102,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
@@ -1734,8 +1736,8 @@ private fun Conversations(messageCount: Int, onAdd: () -> Unit) {
  * Together's timeline (issue #117), top to bottom: the birthday banner when it's close, "+ Make plans", the upcoming
  * plans, reminders, birthday and moments (soonest last, right above "Today"), the "Today" marker, then the last
  * [PersonTimeline.SHOWN] past entries; more fade out into "Show all" (the full timeline). One connector line runs
- * through all of it (issue #130; the catch-up status moved to Edit person). "+" in the header logs; the filter icon
- * opens the full timeline (filters, chat import).
+ * through all of it (issue #130; the catch-up status moved to Edit person). The filter icon in the header opens the
+ * full timeline (filters, chat import); logging is the Log quick action.
  */
 @Composable
 private fun TimelineCard(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit) {
@@ -1751,11 +1753,9 @@ private fun TimelineCard(f: Friend, state: FriendDetailUiState, actions: FriendD
             stringResource(Res.string.timeline_title),
             icon = Icons.Rounded.Diversity3,
             action = {
-                Row {
-                    IconButton(onClick = actions.onLog) { Icon(Icons.Rounded.Add, stringResource(Res.string.timeline_log)) }
-                    // Issue #130: a filter icon; it opens the full timeline with its filters.
-                    IconButton(onClick = actions.onOpenTimeline) { Icon(Icons.Rounded.FilterList, stringResource(Res.string.timeline_filter)) }
-                }
+                // Issue #130: a filter icon; it opens the full timeline with its filters. No "+" beside it: it read as a
+                // second "Make plans" (logging is the Log quick action above).
+                IconButton(onClick = actions.onOpenTimeline) { Icon(Icons.Rounded.FilterList, stringResource(Res.string.timeline_filter)) }
             },
         ) {
             MakePlans(onClick = { actions.onOpenPlanEditor(null) })
@@ -1783,16 +1783,35 @@ private fun TimelineCard(f: Friend, state: FriendDetailUiState, actions: FriendD
     }
 }
 
-/** "+ Make plans": the plan editor (issue #117). */
+/**
+ * "+ Make plans": the plan editor (issue #117). Drawn as an empty slot on the rail (a dashed circle and the text in the
+ * accent colour) so it reads as something to fill, not as a past entry.
+ */
 @Composable
 private fun MakePlans(onClick: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 6.dp),
+        // 16 dp + half the 40 dp slot = the timeline rail's x (36 dp), so it sits on the line like the entries.
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FilledTonalIconButton(onClick = onClick) { Icon(Icons.Rounded.Add, null) }
+        Box(
+            Modifier.size(40.dp).drawBehind {
+                val stroke = 2.dp.toPx()
+                drawCircle(
+                    accent,
+                    radius = (size.minDimension - stroke) / 2,
+                    style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
+                )
+            },
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Rounded.Add, null, tint = accent) }
+        // The label starts where the entries' titles do.
         Spacer(Modifier.width(12.dp))
-        Text(stringResource(Res.string.together_make_plans), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(Res.string.together_make_plans), style = MaterialTheme.typography.titleSmall, color = accent)
     }
 }
 

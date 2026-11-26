@@ -527,12 +527,24 @@ internal suspend fun GoodCompanyDatabase.readCalendarDecisions(): List<CalendarD
     // A decision of an unknown kind is skipped (and kept in the table).
     calendarDecisionQueries.allDecisions().awaitAsList().mapNotNull { row ->
         // An unknown kind (from a newer app) is skipped rather than failing the whole list.
-        CalendarDecisionKind.entries.firstOrNull { it.name == row.kind }?.let { CalendarDecision(row.key, it, row.decided_at.toInstant()) }
+        CalendarDecisionKind.entries.firstOrNull { it.name == row.kind }?.let {
+            CalendarDecision(row.key, it, row.decided_at.toInstant(), friendIdsFromColumn(row.friend_ids))
+        }
     }
 
 internal suspend fun GoodCompanyDatabase.writeCalendarDecision(decision: CalendarDecision) {
-    calendarDecisionQueries.upsertDecision(decision.key, decision.kind.name, decision.decidedAt.toColumn())
+    calendarDecisionQueries.upsertDecision(
+        decision.key,
+        decision.kind.name,
+        decision.decidedAt.toColumn(),
+        decision.friendIds.toFriendIdsColumn(),
+    )
 }
+
+/** A JSON array of friend ids ("Who's Ana?", 2026-11-26); NULL or unreadable = none. */
+private fun friendIdsFromColumn(column: String?): List<FriendId> = customActivitiesFromColumn(column).map(::FriendId)
+
+private fun List<FriendId>.toFriendIdsColumn(): String? = map { it.value }.toCustomActivitiesColumn()
 
 // --- Your photo (issue #71) ---
 
