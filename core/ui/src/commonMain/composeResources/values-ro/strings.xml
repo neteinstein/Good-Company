@@ -726,4 +726,6 @@
     <string name="notif_bday_soon_kid">Copilul lui/ei %1$s.</string>
     <string name="notif_bday_soon_family">Familia lui/ei %1$s.</string>
     <string name="notif_bday_soon_body">Se apropie ziua de naștere.</string>
+    <string name="plan_open_in_maps">Deschide în hărți</string>
+    <string name="plan_map_link_remove">Scoate linkul hărții</string>
 </resources>

@@ -307,8 +307,8 @@ class TestGraph(
 
     /** Turns any picture into its first 16 bytes, so a test can tell a thumbnail from the shared image. */
     val thumbnailShrinker = PhotoShrinker { it.copyOf(minOf(it.size, 16)) }
-    val saveShared = SaveSharedUseCase(friendRepo, circles, interactionRepo, logInteraction, thumbnailShrinker, clock, ids)
-    val undoSaveShare = UndoSaveShareUseCase(friendRepo, interactionRepo, undoLog)
+    val saveShared = SaveSharedUseCase(friendRepo, circles, interactionRepo, logInteraction, thumbnailShrinker, clock, ids, hangoutRepo)
+    val undoSaveShare = UndoSaveShareUseCase(friendRepo, interactionRepo, undoLog, hangoutRepo)
     val observeShareTargets = ObserveShareTargetsUseCase(friendRepo, hangoutRepo, interactionRepo, circles)
     val observeAttachments = ObserveAttachmentsUseCase(interactionRepo, circles)
     val deleteAttachment = DeleteAttachmentUseCase(interactionRepo)

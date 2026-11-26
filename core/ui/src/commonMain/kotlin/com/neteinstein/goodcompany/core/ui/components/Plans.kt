@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
@@ -39,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -46,6 +48,7 @@ import com.neteinstein.goodcompany.core.domain.model.ActivityChoice
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
@@ -66,7 +69,9 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_edit
 import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_months
 import com.neteinstein.goodcompany.core.ui.resources.plan_every_n_weeks
 import com.neteinstein.goodcompany.core.ui.resources.plan_how_did_it_go
+import com.neteinstein.goodcompany.core.ui.resources.plan_map_link_remove
 import com.neteinstein.goodcompany.core.ui.resources.plan_new
+import com.neteinstein.goodcompany.core.ui.resources.plan_open_in_maps
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_add_end
 import com.neteinstein.goodcompany.core.ui.resources.plan_repeat_custom
@@ -117,6 +122,10 @@ fun PlanEditor(
     preselectedCircle: String? = null,
     activities: List<ActivityChoice> = LocalActivityChoices.current ?: HangoutActivity.entries.map { ActivityChoice.BuiltIn(it) },
     pickerCircles: List<FriendGroup> = circles,
+    /** Issue #170, "Plan here" from a share: the place, its maps link and (when the link had them) its coordinates. */
+    initialPlace: String = "",
+    initialMapLink: String? = null,
+    initialLocation: GeoPoint? = null,
 ) {
     var title by remember { mutableStateOf(initial?.title ?: initialTitle) }
     var selected by remember { mutableStateOf(initial?.friendIds ?: preselected.toList()) }
@@ -125,7 +134,9 @@ fun PlanEditor(
     var withCircle by remember { mutableStateOf(circleId != null) }
     var activity by remember { mutableStateOf(initial?.activityChoice) }
     var date by remember { mutableStateOf(initial?.date ?: today.plus(DEFAULT_DAYS_AHEAD, DateTimeUnit.DAY)) }
-    var place by remember { mutableStateOf(initial?.place.orEmpty()) }
+    var place by remember { mutableStateOf(initial?.place ?: initialPlace) }
+    var mapLink by remember { mutableStateOf(if (initial != null) initial.mapLink else initialMapLink) }
+    val location = if (initial != null) initial.location else initialLocation
     var repeat by remember { mutableStateOf(initial?.repeat?.let { RepeatDraft(it.every, it.unit, it.until) }) }
     var time by remember { mutableStateOf(initial?.time) }
     var pickDate by remember { mutableStateOf(false) }
@@ -200,6 +211,7 @@ fun PlanEditor(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                mapLink?.takeIf { place.isNotBlank() }?.let { link -> PlanMapLink(link, onRemove = { mapLink = null }) }
                 Text(
                     stringResource(Res.string.plan_counts_hint),
                     style = MaterialTheme.typography.bodySmall,
@@ -222,6 +234,8 @@ fun PlanEditor(
                             activityName = activity?.customName,
                             repeat = repeat?.let { Repeat(it.every, it.unit, date, it.until) },
                             time = time,
+                            mapLink = mapLink,
+                            location = location.takeIf { mapLink != null },
                         ),
                     )
                 },
@@ -249,6 +263,20 @@ fun PlanEditor(
         LocalDatePickerDialog(repeat?.until ?: date, onDismiss = { pickUntil = false }, onPicked = { d ->
             repeat = repeat?.copy(until = d.takeIf { it >= date })
         })
+    }
+}
+
+/** Issue #170: the maps link under "Where": open it in the maps app, or take it off the plan. */
+@Composable
+private fun PlanMapLink(link: String, onRemove: () -> Unit) {
+    val uri = LocalUriHandler.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = { runCatching { uri.openUri(link) } }) {
+            Icon(Icons.Rounded.Map, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.plan_open_in_maps))
+        }
+        IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(Res.string.plan_map_link_remove)) }
     }
 }
 

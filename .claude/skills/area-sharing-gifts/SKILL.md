@@ -18,6 +18,27 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - Share changes usually touch three platforms: Android `MainActivity`/`ShareIntents`, iOS `ShareExtension` (see
   `ios-project-edit`), web `LaunchOptions.shared`. Keep them in step.
 
+## Location links (issue #170)
+
+- `LocationLinks.parse` (domain `util/`, pure) reads a `SharedLocation(link, name, address, point)` from the share:
+  Google Maps (long URLs: `/maps/place/<name>`, `!3d…!4d…`, `/@lat,lng`, `?q=` / `?query=` / `?ll=`; short links
+  `maps.app.goo.gl`, `goo.gl/maps`), Apple Maps (`?q=&address=&ll=`, `/place?name=&coordinate=`, `maps.apple/p/…`),
+  OpenStreetMap (`mlat`/`mlon`, `#map=z/lat/lng`) and `geo:` (with `q=lat,lng(Label)`). Name and address come from the
+  share text (title or first line = name, the other lines = address; one line splits at its first comma), else from
+  the link. Samples per app are the table in `LocationLinksTest`; add a row for every new format.
+- **Never** follow a short link and **never** reverse-geocode (no `Geocoder` / `CLGeocoder` either): a bare short link
+  is still a location, with empty fields the user types into (decision 2026-11-25).
+- `ShareGuesser.guess` sets `ShareGuess.location` (photos never) and starts on NOTE. The confirm step shows Name and
+  Address fields (`SharePlace`) and the choices `PLAN_HERE`, `MET_HERE`, `HOME_ADDRESS` / `WORK_ADDRESS` (person only,
+  `PostalAddresses.edit`, no attachment), `NAMED_PLACE` (only with a point; a `NamedPlace` with the default radius) and
+  NOTE; "Counts as an interaction" and "Gift idea" are hidden for a location (`ShareUiState.offers`).
+- `MET_HERE` logs a meetup through `LogInteractionUseCase` with the place and keeps the share as the attachment on it
+  (its `url` is the link). A point inside a named place takes that place's name, as the Log popup does.
+- `PLAN_HERE` opens `PlanEditor` on the share screen with `initialPlace` / `initialMapLink` / `initialLocation`; the
+  plan is saved through `SavePlanUseCase` with `Plan.mapLink` + `latitude`/`longitude` (columns, migration `36.sqm`).
+  No platform change was needed: Android reads `geo:` and maps links from `EXTRA_TEXT`, iOS already takes a web URL
+  plus text, the web gets `share_url`/`share_text`.
+
 ## Note media (issue #119)
 
 - A note's photos and videos are `JournalEntry.media` (`NoteMedia`: kind, thumbnail, optional `PhotoRef`), in their own

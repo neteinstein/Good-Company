@@ -463,4 +463,26 @@ class BackupAndPlansTest {
         assertIs<RestoreResult.Restored>(RestoreBackupUseCase(again.backup)(old))
         assertEquals(null, again.backup.snapshot().plans.single().time)
     }
+
+    @Test
+    fun aPlansMapLinkAndPoint_roundTripThroughABackupFile() = runTest {
+        // Issue #170. Older backups have neither (see the time test above: no field, no value).
+        val from = Stores()
+        val plan = Plan(
+            "p",
+            listOf(FriendId("ana")),
+            "Dinner",
+            LocalDate(2026, 3, 12),
+            place = "Ramiro",
+            createdAt = at(2026, 3, 1),
+            mapLink = "https://maps.apple.com/?ll=38.72,-9.13",
+            latitude = 38.72,
+            longitude = -9.13,
+        )
+        from.plans.upsert(plan)
+        val json = ExportBackupUseCase(from.backup, from.clock)()
+        val to = Stores()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(listOf(plan), to.backup.snapshot().plans)
+    }
 }

@@ -1,13 +1,17 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
+import com.neteinstein.goodcompany.core.domain.model.AddressKind
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendGroup
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.InteractionSource
 import com.neteinstein.goodcompany.core.domain.model.LifeUpdate
+import com.neteinstein.goodcompany.core.domain.model.NamedPlace
+import com.neteinstein.goodcompany.core.domain.model.PostalAddress
 import com.neteinstein.goodcompany.core.domain.model.SharedContent
 import com.neteinstein.goodcompany.core.domain.repository.AiAssistant
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -21,7 +25,9 @@ import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.repository.photoOf
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
+import com.neteinstein.goodcompany.core.domain.util.LocationLinks
 import com.neteinstein.goodcompany.core.domain.util.PhoneMatcher
+import com.neteinstein.goodcompany.core.domain.util.SharedLocation
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -165,10 +171,52 @@ enum class ShareChoice {
 
     /** F17: a gift idea for the person (link, title, optional price). Not offered for a circle. */
     GIFT_IDEA,
+
+    /** Issue #170, a location: opens the plan editor with the place filled in; the day and time are still to pick. */
+    PLAN_HERE,
+
+    /** Issue #170, a location: a meetup there (through [LogInteractionUseCase]), kept with the link as an attachment. */
+    MET_HERE,
+
+    /** Issue #170, a location: the person's home address (#169). Not offered for a circle. */
+    HOME_ADDRESS,
+
+    /** Issue #170, a location: the person's work address (#169). Not offered for a circle. */
+    WORK_ADDRESS,
+
+    /** Issue #170, a location with coordinates: a [NamedPlace] (F11), e.g. "Inês’s house". */
+    NAMED_PLACE,
+    ;
+
+    /** The choices only a location offers. */
+    val isLocation: Boolean get() = this in LOCATION
+
+    /** Only for one person, never a circle. */
+    val isPersonOnly: Boolean get() = this == GIFT_IDEA || this == HOME_ADDRESS || this == WORK_ADDRESS
+
+    companion object {
+        val LOCATION = setOf(PLAN_HERE, MET_HERE, HOME_ADDRESS, WORK_ADDRESS, NAMED_PLACE)
+    }
 }
 
-/** The guess the confirm step opens with; the user can always change it. */
-data class ShareGuess(val choice: ShareChoice, val kind: LogKind, val date: LocalDate?)
+/**
+ * The place on the confirm step (issue #170), as the user edited it: [name] and [address] start from what the share
+ * carried; [point] and [link] are the link's and can't be typed.
+ */
+data class SharePlace(val name: String = "", val address: String = "", val point: GeoPoint? = null, val link: String? = null) {
+    /** What a plan or a meetup calls the place: the name, else the address. */
+    val label: String? get() = name.trim().ifEmpty { address.trim() }.ifEmpty { null }
+
+    /** What a home or work address holds: the address, else the name. */
+    val addressText: String? get() = address.trim().ifEmpty { name.trim() }.ifEmpty { null }
+
+    companion object {
+        fun of(location: SharedLocation) = SharePlace(location.name.orEmpty(), location.address.orEmpty(), location.point, location.link)
+    }
+}
+
+/** The guess the confirm step opens with; the user can always change it. [location] is set for a maps link (issue #170). */
+data class ShareGuess(val choice: ShareChoice, val kind: LogKind, val date: LocalDate?, val location: SharedLocation? = null)
 
 /** Who a share is saved for (F12: a person or a circle). */
 sealed interface ShareTarget {
@@ -190,7 +238,15 @@ object ShareGuesser {
     private const val SHORT_TEXT = 500
     private const val SHORT_LINES = 4
 
-    fun guess(content: SharedContent): ShareGuess = when (content.kind) {
+    fun guess(content: SharedContent): ShareGuess {
+        // Issue #170: a maps link (even a bare short link with no place text) is a location. Nothing is saved or
+        // logged until the user picks what it becomes, so it starts on "just keep it", as any link does.
+        val location = if (content.image == null) LocationLinks.parse(content) else null
+        if (location != null) return ShareGuess(ShareChoice.NOTE, LogKind.MEETUP, null, location)
+        return guessOther(content)
+    }
+
+    private fun guessOther(content: SharedContent): ShareGuess = when (content.kind) {
         AttachmentKind.PHOTO -> ShareGuess(ShareChoice.INTERACTION, LogKind.MEETUP, content.takenOn)
         AttachmentKind.LINK -> ShareGuess(ShareChoice.NOTE, LogKind.MESSAGE, null)
         AttachmentKind.TEXT ->
@@ -217,6 +273,8 @@ data class SaveShareRequest(
     val date: LocalDate? = null,
     val caption: String = "",
     val price: String? = null,
+    /** Issue #170: the place, as edited, for the location choices. */
+    val place: SharePlace? = null,
 )
 
 /** What a save wrote, so it can be shown or undone. */
@@ -224,6 +282,10 @@ data class SaveShareResult(
     val attachment: Attachment? = null,
     val log: LogResult? = null,
     val gift: Pair<FriendId, Gift>? = null,
+    /** Issue #170: the named place made from a location. */
+    val namedPlace: NamedPlace? = null,
+    /** Issue #170: the person's addresses as they were before a home or work address was set, for Undo. */
+    val addressesBefore: Pair<FriendId, List<PostalAddress>>? = null,
 )
 
 /**
@@ -240,6 +302,7 @@ class SaveSharedUseCase(
     private val shrinker: PhotoShrinker,
     private val clock: AppClock,
     private val ids: IdGenerator,
+    private val hangouts: HangoutRepository,
 ) {
     suspend operator fun invoke(request: SaveShareRequest): SaveShareResult {
         val content = request.content
@@ -250,6 +313,25 @@ class SaveSharedUseCase(
         }
         require(people.isNotEmpty()) { "Nobody to save it for" }
         val caption = request.caption.trim()
+        require(request.choice != ShareChoice.PLAN_HERE) { "A plan is saved from the plan editor" }
+
+        if (request.choice == ShareChoice.HOME_ADDRESS || request.choice == ShareChoice.WORK_ADDRESS) {
+            val target = request.target as? ShareTarget.Person ?: error("Addresses are for one person")
+            val friend = friends.get(target.id) ?: error("No such friend")
+            val text = request.place?.addressText ?: error("No address")
+            val kind = if (request.choice == ShareChoice.HOME_ADDRESS) AddressKind.HOME else AddressKind.WORK
+            friends.upsert(friend.copy(addresses = PostalAddresses.edit(friend.addresses, mapOf(kind to text))))
+            return SaveShareResult(addressesBefore = friend.id to friend.addresses)
+        }
+
+        if (request.choice == ShareChoice.NAMED_PLACE) {
+            val place = request.place ?: error("No place")
+            val point = place.point ?: error("A named place needs coordinates")
+            val name = place.label ?: error("A named place needs a name")
+            val named = NamedPlace(ids.next(), name, point.latitude, point.longitude)
+            hangouts.upsertPlace(named)
+            return SaveShareResult(namedPlace = named)
+        }
 
         if (request.choice == ShareChoice.GIFT_IDEA) {
             val target = request.target as? ShareTarget.Person ?: error("Gift ideas are for one person")
@@ -265,9 +347,25 @@ class SaveSharedUseCase(
             return SaveShareResult(gift = friend.id to gift)
         }
 
-        val counts = request.choice == ShareChoice.INTERACTION
+        val metHere = request.choice == ShareChoice.MET_HERE
+        val counts = request.choice == ShareChoice.INTERACTION || metHere
+        val kindLogged = if (metHere) LogKind.MEETUP else request.kind
+        // Issue #170: like the Log popup, a spot inside a named place takes that place's name, so CheckInUseCase links
+        // the meetup to it; any other name at a spot is a new named place, as a check-in makes one.
+        val point = request.place?.point.takeIf { metHere }
+        val placeName = point?.let { NamedPlaces.nearest(hangouts.places.first(), it)?.place?.name } ?: request.place?.label
         val logResult = if (counts) {
-            log(LogRequest(people, request.kind, request.date, caption, source = InteractionSource.SHARE))
+            log(
+                LogRequest(
+                    people,
+                    kindLogged,
+                    request.date,
+                    caption,
+                    placeName = placeName.takeIf { metHere },
+                    location = point,
+                    source = InteractionSource.SHARE,
+                ),
+            )
         } else {
             null
         }
@@ -295,7 +393,7 @@ class SaveSharedUseCase(
             caption = caption,
             at = at,
             countsAsInteraction = counts,
-            interactionType = if (counts) request.kind.interactionType else null,
+            interactionType = if (counts) kindLogged.interactionType else null,
             logId = logId,
             createdAt = clock.now(),
         )
@@ -318,6 +416,7 @@ class UndoSaveShareUseCase(
     private val friends: FriendRepository,
     private val interactions: InteractionRepository,
     private val undoLog: UndoLogUseCase,
+    private val hangouts: HangoutRepository,
 ) {
     suspend operator fun invoke(result: SaveShareResult) {
         result.attachment?.let { interactions.deleteAttachment(it.id) }
@@ -325,6 +424,8 @@ class UndoSaveShareUseCase(
         result.gift?.let { (id, gift) ->
             friends.get(id)?.let { f -> friends.upsert(f.copy(gifts = f.gifts.filterNot { it.id == gift.id })) }
         }
+        result.addressesBefore?.let { (id, before) -> friends.get(id)?.let { f -> friends.upsert(f.copy(addresses = before)) } }
+        result.namedPlace?.let { hangouts.deletePlace(it.id) }
     }
 }
 

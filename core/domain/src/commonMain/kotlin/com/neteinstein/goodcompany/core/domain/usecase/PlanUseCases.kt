@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
@@ -55,6 +56,9 @@ data class PlanInput(
     val activityName: String? = null,
     /** The time of day (issue #167); null = just the day. */
     val time: LocalTime? = null,
+    /** Issue #170: the maps link the place came from (a share), and its coordinates when the link had them. */
+    val mapLink: String? = null,
+    val location: GeoPoint? = null,
 )
 
 /**
@@ -79,6 +83,8 @@ class SavePlanUseCase(
         repeat: Repeat? = null,
         activityName: String? = null,
         time: LocalTime? = null,
+        mapLink: String? = null,
+        location: GeoPoint? = null,
     ): Plan {
         require(title.isNotBlank()) { "Title required" }
         require(friendIds.isNotEmpty() || circleId != null) { "Pick at least one friend or a circle" }
@@ -99,6 +105,10 @@ class SavePlanUseCase(
             skippedDates = if (repeat == null) emptyList() else existing?.skippedDates.orEmpty().filter { it > date },
             // Minutes only: a picked time never carries seconds into storage or the calendar.
             time = time?.let { LocalTime(it.hour, it.minute) },
+            // Issue #170: the link and its point describe the place, so a plan without a place keeps neither.
+            mapLink = mapLink?.trim()?.ifBlank { null }.takeIf { place?.isNotBlank() == true },
+            latitude = location?.latitude.takeIf { place?.isNotBlank() == true },
+            longitude = location?.longitude.takeIf { place?.isNotBlank() == true },
         )
         plans.upsert(plan)
         if (ideaId != null && existing == null) ideas.markProposed(ideaId, clock.now())
@@ -117,6 +127,8 @@ class SavePlanUseCase(
         repeat = input.repeat,
         activityName = input.activityName,
         time = input.time,
+        mapLink = input.mapLink,
+        location = input.location,
     )
 }
 
@@ -141,7 +153,15 @@ class ConfirmPlanUseCase(
             val present = plan.friendIds.filter { friends.get(it) != null }
             if (present.isNotEmpty()) {
                 val at = if (on >= clock.today()) clock.now() else on.atTime(LocalTime(NOON, 0)).toInstant(clock.timeZone)
-                checkIn(present, placeName = plan.place, note = plan.title, at = at, activity = plan.activity, activityName = plan.activityName)
+                checkIn(
+                    present,
+                    placeName = plan.place,
+                    location = plan.location,
+                    note = plan.title,
+                    at = at,
+                    activity = plan.activity,
+                    activityName = plan.activityName,
+                )
             }
         }
         plans.upsert(plan.closeOccurrence(on, status))

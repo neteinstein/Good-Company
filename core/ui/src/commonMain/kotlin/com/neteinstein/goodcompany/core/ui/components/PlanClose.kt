@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Map
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.TaskAlt
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import com.neteinstein.goodcompany.core.domain.model.Plan
 import com.neteinstein.goodcompany.core.domain.model.PlanAnswer
@@ -56,6 +58,7 @@ import com.neteinstein.goodcompany.core.ui.resources.plan_deleted
 import com.neteinstein.goodcompany.core.ui.resources.plan_logged
 import com.neteinstein.goodcompany.core.ui.resources.plan_more_answers
 import com.neteinstein.goodcompany.core.ui.resources.plan_not_attended
+import com.neteinstein.goodcompany.core.ui.resources.plan_open_in_maps
 import com.neteinstein.goodcompany.core.ui.resources.plan_options
 import com.neteinstein.goodcompany.core.ui.resources.plan_series_question
 import com.neteinstein.goodcompany.core.ui.resources.plan_series_this_one
@@ -136,6 +139,7 @@ fun PlanUpcomingMenu(
 ) {
     var menu by remember { mutableStateOf(false) }
     var series by remember { mutableStateOf<PlanAnswer?>(null) }
+    val uri = LocalUriHandler.current
     Box(modifier) {
         // Issue #130: the timeline's ⋮ size, so plans, reminders, birthdays and entries line up.
         IconButton(onClick = { menu = true }, modifier = Modifier.size(40.dp)) {
@@ -149,6 +153,10 @@ fun PlanUpcomingMenu(
             fun answer(a: PlanAnswer): () -> Unit = close { if (plan.asksForSeries(a)) series = a else onAnswer(a, false) }
             PlanMenuItem(Res.string.edit, Icons.Rounded.EditCalendar, onClick = close(onEdit))
             PlanMenuItem(Res.string.plan_add_calendar, Icons.Rounded.CalendarMonth, onClick = close(onAddToCalendar))
+            // Issue #170: the maps link the plan was made from, handed to the maps app (never fetched by the app).
+            plan.mapLink?.let { link ->
+                PlanMenuItem(Res.string.plan_open_in_maps, Icons.Rounded.Map, onClick = close { runCatching { uri.openUri(link) } })
+            }
             if (plan.isRecurring) PlanMenuItem(Res.string.plan_skip_one, Icons.Rounded.EventBusy, onClick = close(onSkip))
             PlanMenuItem(Res.string.plan_cancel, Icons.Rounded.Close, onClick = answer(PlanAnswer.CANCEL))
             PlanMenuItem(Res.string.plan_answer_delete, Icons.Rounded.DeleteOutline, destructive = true, onClick = answer(PlanAnswer.DELETE))

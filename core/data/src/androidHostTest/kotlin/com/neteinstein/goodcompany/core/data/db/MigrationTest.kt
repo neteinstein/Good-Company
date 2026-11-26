@@ -15,6 +15,7 @@ import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.FriendId
+import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.Gift
 import com.neteinstein.goodcompany.core.domain.model.GiftList
 import com.neteinstein.goodcompany.core.domain.model.GiftListEntry
@@ -1200,6 +1201,35 @@ class MigrationTest {
         // Deleting the person takes their addresses.
         driver.execute(null, "DELETE FROM friend WHERE id = 'ana'", 0).await()
         assertTrue(database.friendQueries.allAddresses().awaitAsList().isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun version36to37_plansHaveNoMapLink_andALinkWithItsPointCanBeSaved() = runTest {
+        // Issue #170.
+        val driver = driverAt(36)
+        driver.execute(
+            null,
+            "INSERT INTO plan (id, position, title, date, place, status, created_at, time) " +
+                "VALUES ('p1', 0, 'Lunch', '2026-12-01', 'Ramiro', 'PLANNED', 1000, '13:00')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 36, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val p1 = database.readPlans().single()
+        assertEquals("Ramiro", p1.place)
+        assertEquals(LocalTime(13, 0), p1.time)
+        assertNull(p1.mapLink)
+        assertNull(p1.location)
+
+        database.writePlan(p1.copy(mapLink = "geo:38.7,-9.1", latitude = 38.7, longitude = -9.1))
+        val saved = database.readPlans().single()
+        assertEquals("geo:38.7,-9.1", saved.mapLink)
+        assertEquals(GeoPoint(38.7, -9.1), saved.location)
+        // Half a point is no point.
+        driver.execute(null, "UPDATE plan SET longitude = NULL", 0).await()
+        assertNull(database.readPlans().single().location)
         driver.close()
     }
 

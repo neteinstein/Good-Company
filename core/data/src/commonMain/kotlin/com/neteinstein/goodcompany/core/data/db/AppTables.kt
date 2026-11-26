@@ -229,6 +229,10 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             repeat = repeat,
             skippedDates = if (repeat == null) emptyList() else skips[row.id].orEmpty(),
             time = row.time?.toLocalTimeOrNull(),
+            mapLink = row.map_link,
+            // Both or neither: half a point is no point.
+            latitude = row.latitude?.takeIf { row.longitude != null },
+            longitude = row.longitude?.takeIf { row.latitude != null },
         )
     }
 }
@@ -253,6 +257,9 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
         repeatUntil = plan.repeat?.until?.toColumn(),
         activityName = plan.activityName.takeIf { plan.activity == null },
         time = plan.time?.toColumn(),
+        mapLink = plan.mapLink,
+        latitude = plan.location?.latitude,
+        longitude = plan.location?.longitude,
     )
     q.deleteFriends(plan.id)
     plan.friendIds.forEachIndexed { i, f -> q.insertFriend(plan.id, f.value, i.toLong()) }
