@@ -1,0 +1,926 @@
+package org.goodcompany.app.core.data
+
+import com.russhwolf.settings.MapSettings
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
+import org.goodcompany.app.core.data.repository.BackupRepositoryImpl
+import org.goodcompany.app.core.data.repository.FriendRepositoryImpl
+import org.goodcompany.app.core.data.repository.GroupRepositoryImpl
+import org.goodcompany.app.core.data.repository.HangoutRepositoryImpl
+import org.goodcompany.app.core.data.repository.IdeaRepositoryImpl
+import org.goodcompany.app.core.data.repository.InteractionRepositoryImpl
+import org.goodcompany.app.core.data.repository.PlanRepositoryImpl
+import org.goodcompany.app.core.data.repository.ReminderRepositoryImpl
+import org.goodcompany.app.core.data.repository.SettingsRepositoryImpl
+import org.goodcompany.app.core.data.source.CommunicationLogSource
+import org.goodcompany.app.core.data.source.ContactsSource
+import org.goodcompany.app.core.data.source.LogEntry
+import org.goodcompany.app.core.domain.model.AddressKind
+import org.goodcompany.app.core.domain.model.AgendaView
+import org.goodcompany.app.core.domain.model.AppLanguage
+import org.goodcompany.app.core.domain.model.AppSettings
+import org.goodcompany.app.core.domain.model.Attachment
+import org.goodcompany.app.core.domain.model.AttachmentKind
+import org.goodcompany.app.core.domain.model.Backup
+import org.goodcompany.app.core.domain.model.Birthday
+import org.goodcompany.app.core.domain.model.CatchUpCounts
+import org.goodcompany.app.core.domain.model.Closeness
+import org.goodcompany.app.core.domain.model.ContactCard
+import org.goodcompany.app.core.domain.model.ContactChannel
+import org.goodcompany.app.core.domain.model.ContactPhoto
+import org.goodcompany.app.core.domain.model.ContactRecord
+import org.goodcompany.app.core.domain.model.ConversationMessage
+import org.goodcompany.app.core.domain.model.CustomField
+import org.goodcompany.app.core.domain.model.FeedItem
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendEmail
+import org.goodcompany.app.core.domain.model.FriendFeed
+import org.goodcompany.app.core.domain.model.FriendGroup
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.Gift
+import org.goodcompany.app.core.domain.model.GiftOccasion
+import org.goodcompany.app.core.domain.model.Hangout
+import org.goodcompany.app.core.domain.model.HangoutActivity
+import org.goodcompany.app.core.domain.model.Idea
+import org.goodcompany.app.core.domain.model.IdeaKind
+import org.goodcompany.app.core.domain.model.ImportantEvent
+import org.goodcompany.app.core.domain.model.Interaction
+import org.goodcompany.app.core.domain.model.InteractionSource
+import org.goodcompany.app.core.domain.model.InteractionType
+import org.goodcompany.app.core.domain.model.Introducer
+import org.goodcompany.app.core.domain.model.JournalEntry
+import org.goodcompany.app.core.domain.model.LifeUpdate
+import org.goodcompany.app.core.domain.model.LinkType
+import org.goodcompany.app.core.domain.model.MetInfo
+import org.goodcompany.app.core.domain.model.NamedPlace
+import org.goodcompany.app.core.domain.model.NotificationSettings
+import org.goodcompany.app.core.domain.model.Occasion
+import org.goodcompany.app.core.domain.model.PhotoPlatform
+import org.goodcompany.app.core.domain.model.PhotoRef
+import org.goodcompany.app.core.domain.model.Place
+import org.goodcompany.app.core.domain.model.Plan
+import org.goodcompany.app.core.domain.model.PlanStatus
+import org.goodcompany.app.core.domain.model.PostalAddress
+import org.goodcompany.app.core.domain.model.Pronouns
+import org.goodcompany.app.core.domain.model.Relation
+import org.goodcompany.app.core.domain.model.Relative
+import org.goodcompany.app.core.domain.model.Reminder
+import org.goodcompany.app.core.domain.model.Repeat
+import org.goodcompany.app.core.domain.model.RepeatUnit
+import org.goodcompany.app.core.domain.model.ThemeMode
+import org.goodcompany.app.core.domain.repository.BackupRepository
+import org.goodcompany.app.core.domain.repository.ContactsWriter
+import org.goodcompany.app.core.domain.repository.FriendRepository
+import org.goodcompany.app.core.domain.repository.GroupRepository
+import org.goodcompany.app.core.domain.repository.HangoutRepository
+import org.goodcompany.app.core.domain.repository.IdeaRepository
+import org.goodcompany.app.core.domain.repository.InteractionRepository
+import org.goodcompany.app.core.domain.repository.PlanRepository
+import org.goodcompany.app.core.domain.repository.ReminderRepository
+import org.goodcompany.app.core.domain.repository.SettingsRepository
+import org.goodcompany.app.core.domain.usecase.ExportBackupUseCase
+import org.goodcompany.app.core.domain.usecase.LogKind
+import org.goodcompany.app.core.domain.usecase.RestoreBackupUseCase
+import org.goodcompany.app.core.domain.usecase.RestoreResult
+import org.goodcompany.app.core.domain.usecase.SampleData
+import org.goodcompany.app.core.testing.FakeContactsWriter
+import org.goodcompany.app.core.testing.FixedClock
+import org.goodcompany.app.core.testing.Fixtures.at
+import org.goodcompany.app.core.testing.Fixtures.friend
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Instant
+
+/**
+ * Behaviour every storage implementation must share (issue #14: JSON documents today, SQLite next). Each subclass
+ * opens repositories over storage that lives as long as the test instance, so [open] twice = an app restart.
+ */
+abstract class RepositoryContract {
+    class Stores(
+        val friends: FriendRepository,
+        val hangouts: HangoutRepository,
+        val reminders: ReminderRepository,
+        val interactions: InteractionRepository,
+        val ideas: IdeaRepository,
+        val groups: GroupRepository,
+        val plans: PlanRepository,
+        val settings: SettingsRepository,
+        val backup: BackupRepository,
+    )
+
+    protected val clock = FixedClock()
+
+    protected abstract fun open(
+        contacts: ContactsSource = ContactsSource { emptyList() },
+        writer: ContactsWriter = ContactsWriter.None,
+        logs: CommunicationLogSource = CommunicationLogSource.None,
+    ): Stores
+
+    private class StubContacts(var records: List<ContactRecord>, override val importsNewContacts: Boolean = true) : ContactsSource {
+        override suspend fun readContacts(withPhotos: Boolean) = records
+    }
+
+    private val ana = FriendId("ana")
+    private val rui = FriendId("rui")
+
+    /** A friend with every field set to something other than its default. */
+    protected fun richFriend(id: String = "ana") = Friend(
+        id = FriendId(id),
+        name = "Ana Sousa",
+        contactId = "c-$id",
+        phoneNumbers = listOf("+351 912 345 678", "21 000 0000"),
+        birthday = Birthday(3, 9, 1990),
+        notifyBirthday = false,
+        likes = listOf("jazz", "sushi"),
+        dislikes = listOf("cilantro"),
+        notes = "Met at uni\nLoves hiking",
+        importantEvents = listOf(ImportantEvent("e1", "Wedding", LocalDate(2026, 6, 20), remindDaysBefore = 7, addedAt = at(2026, 1, 3))),
+        meetEveryDays = 14,
+        suggestEvents = true,
+        isOrphaned = true,
+        closeness = Closeness.INNER,
+        snoozedUntil = LocalDate(2026, 4, 1),
+        gifts = listOf(
+            Gift("g1", "Book", "Murakami", givenOn = LocalDate(2025, 12, 25), occasion = GiftOccasion.CHRISTMAS),
+            Gift("g2", "Lego set", url = "https://shop.example/lego", price = "€35"),
+        ),
+        catchUpPaused = true,
+        catchUpCounts = CatchUpCounts.ANY_CONTACT,
+        occasions = listOf(Occasion.DINNER, Occasion.COFFEE),
+        lifeUpdates = listOf(LifeUpdate("u1", "New job", at(2026, 2, 1))),
+        likesAddedAt = mapOf("sushi" to at(2026, 2, 2)),
+        feeds = listOf(
+            FriendFeed(
+                url = "https://ana.example/feed.xml",
+                title = "Ana's blog",
+                siteUrl = "https://ana.example",
+                checkedAt = at(2026, 3, 1),
+                items = listOf(FeedItem("i1", "Hello", "https://ana.example/hello", at(2026, 2, 28)), FeedItem("i2", "Draft")),
+            ),
+        ),
+        photo = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 1, 2, 3)),
+        job = "Designer",
+        livesIn = "Porto",
+        met = MetInfo("Erasmus in Ghent", LocalDate(2011, 9, 1), dayKnown = false),
+        introducedBy = Introducer(FriendId("rui"), "Rui"),
+        preferredChannel = ContactChannel.WHATSAPP,
+        emails = listOf(FriendEmail("ana@work.example", fromContact = true), FriendEmail("ana@home.example")),
+        addresses = listOf(
+            PostalAddress(AddressKind.HOME, "Rua das Flores 1\n1000-001 Lisboa", fromContact = true),
+            PostalAddress(AddressKind.WORK, "Av. da Liberdade 10"),
+        ),
+        relatives = listOf(
+            Relative(
+                "r1",
+                Relation.PARTNER,
+                "Tiago",
+                Birthday(7, 2, 1988),
+                listOf("padel", "F1"),
+                "",
+                notifyBirthday = true,
+                addedAt = at(2026, 2, 3),
+            ),
+            Relative("r2", Relation.PET, "Bolacha", note = "beagle"),
+        ),
+        food = listOf("sushi", "pastéis de nata"),
+        drinks = listOf("Alvarinho"),
+        interests = listOf("ceramics", "trail running"),
+        foodAddedAt = mapOf("pastéis de nata" to at(2026, 2, 4)),
+        drinksAddedAt = mapOf("Alvarinho" to at(2026, 2, 5)),
+        interestsAddedAt = mapOf("trail running" to at(2026, 2, 6)),
+        customFields = listOf(CustomField("f1", "Shoe size", "38"), CustomField("f2", "Club", "Benfica")),
+        relationToMe = LinkType.COUSIN,
+        pronouns = Pronouns.THEY,
+        customName = "Aninhas",
+        customPhoto = ContactPhoto.of(byteArrayOf(-1, -40, -1, -32, 9, 9)),
+        showInMyList = false,
+        dismissedKinship = setOf(LinkType.NIECE_NEPHEW, LinkType.STEP_SIBLING),
+        approxLastSeen = LocalDate(2026, 2, 23),
+    )
+
+    // --- Friends ---
+
+    @Test
+    fun updateAll_changesEveryoneAtOnce_andReturnsOnlyThoseItChanged() = runTest {
+        val writer = FakeContactsWriter()
+        val repo = open(writer = writer).friends
+        repo.upsert(friend("a") { copy(likes = listOf("sushi", "jazz"), contactId = "c-a") })
+        repo.upsert(friend("b") { copy(dislikes = listOf("Sushi")) })
+        repo.upsert(friend("c") { copy(likes = listOf("hiking")) })
+        val writesBefore = writer.writes
+
+        val before = repo.updateAll { f ->
+            f.copy(likes = f.likes.map { if (it == "sushi") "Sushi" else it })
+        }
+
+        assertEquals(listOf("a"), before.map { it.id.value })
+        assertEquals(listOf("sushi", "jazz"), before.single().likes)
+        val back = open().friends.friends.first()
+        assertEquals(listOf("a", "b", "c"), back.map { it.id.value })
+        assertEquals(listOf("Sushi", "jazz"), back[0].likes)
+        assertEquals(listOf("Sushi"), back[1].dislikes)
+        // The friend with a contact is mirrored once; nobody else is written.
+        assertEquals(writesBefore + 1, writer.writes)
+    }
+
+    @Test
+    fun keptTagSpellings_surviveARestart() = runTest {
+        open().settings.update { it.copy(keptTagSpellings = setOf("Sushi\nsushi")) }
+        assertEquals(setOf("Sushi\nsushi"), open().settings.settings.first().keptTagSpellings)
+    }
+
+    @Test
+    fun acquaintanceRhythm_survivesARestart_andCanBeTurnedOff() = runTest {
+        assertNull(open().settings.settings.first().acquaintanceDays)
+        open().settings.update { it.copy(acquaintanceDays = 180) }
+        assertEquals(180, open().settings.settings.first().acquaintanceDays)
+        open().settings.update { it.copy(acquaintanceDays = null) }
+        assertNull(open().settings.settings.first().acquaintanceDays)
+    }
+
+    @Test
+    fun notificationSettings_surviveARestart_andThePrimerStaysOnThisDevice() = runTest {
+        // Issue #98: everything on until changed.
+        assertEquals(NotificationSettings(), open().settings.settings.first().notifications)
+        val changed = NotificationSettings(catchUps = false, calendar = false, persistent = false)
+        open().settings.update { it.copy(notifications = changed, notificationPrimerDismissed = true) }
+        val reopened = open().settings.settings.first()
+        assertEquals(changed, reopened.notifications)
+        assertTrue(reopened.notificationPrimerDismissed)
+        // The switches travel in a backup; "Not now" on Today's card doesn't.
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertTrue("\"catchUps\": false" in json, json)
+        assertFalse("notificationPrimerDismissed" in json)
+    }
+
+    @Test
+    fun birthdayHeadsUp_isAWeekByDefault_survivesARestart_andTravelsInABackup() = runTest {
+        // Issue #133.
+        assertEquals(7, open().settings.settings.first().notifications.birthdayHeadsUpDays)
+        open().settings.update { it.copy(notifications = it.notifications.copy(birthdayHeadsUpDays = 3)) }
+        assertEquals(3, open().settings.settings.first().notifications.birthdayHeadsUpDays)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertTrue("\"birthdayHeadsUpDays\": 3" in json, json)
+    }
+
+    @Test
+    fun theAgendaView_isCalendarByDefault_survivesARestart_andStaysOnTheDevice() = runTest {
+        // Issue #138: a device setting; a backup neither carries it nor overwrites it.
+        assertEquals(AgendaView.CALENDAR, open().settings.settings.first().agendaView)
+        open().settings.update { it.copy(agendaView = AgendaView.LIST) }
+        assertEquals(AgendaView.LIST, open().settings.settings.first().agendaView)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertFalse("agendaView" in json, json)
+
+        val to = open()
+        to.settings.update { it.copy(agendaView = AgendaView.LIST) }
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(AgendaView.LIST, to.settings.settings.first().agendaView)
+    }
+
+    @Test
+    fun theLanguage_isTheSystemsByDefault_survivesARestart_andStaysOnTheDevice() = runTest {
+        // Issue #174: device-only; a backup neither carries it nor overwrites it.
+        assertEquals(AppLanguage.SYSTEM, open().settings.settings.first().language)
+        open().settings.update { it.copy(language = AppLanguage.ROMANIAN) }
+        assertEquals(AppLanguage.ROMANIAN, open().settings.settings.first().language)
+        val json = ExportBackupUseCase(open().backup, clock)()
+        assertFalse("\"language\"" in json, json)
+
+        val to = open()
+        to.settings.update { it.copy(language = AppLanguage.FRENCH) }
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        assertEquals(AppLanguage.FRENCH, to.settings.settings.first().language)
+    }
+
+    @Test
+    fun aCustomRhythmOfOff_staysOffAfterARestart_andThroughABackup() = runTest {
+        // Issue #139: 0 is Off (no rhythm), null follows closeness; neither turns into the other.
+        val from = open()
+        from.friends.upsert(friend("off") { copy(meetEveryDays = Friend.RHYTHM_OFF) })
+        from.friends.upsert(friend("level") { copy(meetEveryDays = null) })
+        from.friends.upsert(friend("weekly") { copy(meetEveryDays = 7) })
+        val back = open().friends.friends.first().associate { it.id.value to it.meetEveryDays }
+        assertEquals(mapOf("off" to 0, "level" to null, "weekly" to 7), back)
+
+        val json = ExportBackupUseCase(open().backup, clock)()
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val restored = to.backup.snapshot().friends.associate { it.id.value to it.meetEveryDays }
+        assertEquals(mapOf("off" to 0, "level" to null, "weekly" to 7), restored)
+    }
+
+    @Test
+    fun aFriendWithEveryFieldSet_comesBackExactlyAfterARestart() = runTest {
+        val friend = richFriend()
+        open().friends.upsert(friend)
+        val again = open().friends
+        assertEquals(friend, again.get(friend.id))
+        assertEquals(listOf(friend), again.friends.first())
+    }
+
+    @Test
+    fun aHowWeMetDate_keepsWhetherTheDayIsKnown() = runTest {
+        val repo = open().friends
+        repo.upsert(friend("a") { copy(met = MetInfo("", LocalDate(2011, 9, 4))) })
+        repo.upsert(friend("b") { copy(met = MetInfo("Uni", null)) })
+        val back = open().friends.friends.first().associateBy { it.id.value }
+        assertEquals(MetInfo("", LocalDate(2011, 9, 4), dayKnown = true), back.getValue("a").met)
+        assertEquals(MetInfo("Uni", null), back.getValue("b").met)
+    }
+
+    @Test
+    fun friends_keepTheirOrder_andAnEditKeepsItsPlace() = runTest {
+        val repo = open().friends
+        repo.upsert(friend("ana", "Ana"))
+        repo.upsert(friend("rui", "Rui"))
+        repo.upsert(friend("eva", "Eva"))
+        repo.upsert(friend("ana", "Ana 2") { copy(likes = listOf("jazz")) })
+        assertEquals(listOf("Ana 2", "Rui", "Eva"), open().friends.friends.first().map { it.name })
+
+        repo.delete(rui)
+        assertEquals(listOf("ana", "eva"), repo.friends.first().map { it.id.value })
+        assertNull(repo.get(rui))
+    }
+
+    @Test
+    fun readingTheContactList_changesNoFriend_andPhotosComeOnlyForTheAsked() = runTest {
+        val photo = ContactPhoto.of(byteArrayOf(4, 5, 6))!!
+        val contacts = StubContacts(
+            listOf(ContactRecord("1", "Ana", emptyList(), null, photo), ContactRecord("2", "Rui", emptyList(), null, photo)),
+            importsNewContacts = false,
+        )
+        val repo = open(contacts).friends
+        assertEquals(listOf("Ana", "Rui"), repo.readContacts().map { it.name })
+        assertTrue(repo.friends.first().isEmpty())
+        assertEquals(mapOf("2" to photo), repo.contactPhotos(setOf("2", "nobody")))
+        assertTrue(repo.contactPhotos(emptySet()).isEmpty())
+    }
+
+    @Test
+    fun anEmptyContactRead_neverWipesFriends() = runTest {
+        val contacts = StubContacts(listOf(ContactRecord("1", "Ana", emptyList(), null)))
+        val repo = open(contacts).friends
+        assertEquals(1, repo.syncContacts())
+        contacts.records = emptyList()
+        assertEquals(0, repo.syncContacts())
+        assertEquals(1, repo.friends.first().size)
+    }
+
+    @Test
+    fun aPickerOnlySource_refreshesKnownFriendsButNeverImportsTheAddressBook() = runTest {
+        val contacts = StubContacts(
+            listOf(ContactRecord("1", "Ana", listOf("912345678"), Birthday(1, 2)), ContactRecord("2", "Bruno", emptyList(), null)),
+            importsNewContacts = false,
+        )
+        val repo = open(contacts).friends
+        repo.syncContacts()
+        assertTrue(repo.friends.first().isEmpty())
+
+        repo.upsert(friend("contact-1") { copy(contactId = "1", name = "Old", likes = listOf("jazz")) })
+        repo.syncContacts()
+        val synced = open(contacts).friends.friends.first().single()
+        assertEquals("Ana", synced.name)
+        assertEquals(listOf("912345678"), synced.phoneNumbers)
+        assertEquals(listOf("jazz"), synced.likes)
+    }
+
+    @Test
+    fun contactPhotos_followTheContact_butAContactWithoutOneNeverClearsIt() = runTest {
+        val first = ContactPhoto.of(byteArrayOf(1, 2, 3))
+        val second = ContactPhoto.of(byteArrayOf(4, 5, 6))
+        val contacts = StubContacts(listOf(ContactRecord("1", "Ana", emptyList(), null, first)), importsNewContacts = false)
+        val repo = open(contacts).friends
+        repo.upsert(friend("contact-1") { copy(contactId = "1") })
+
+        repo.syncContacts()
+        assertEquals(first, open(contacts).friends.friends.first().single().photo)
+
+        contacts.records = listOf(ContactRecord("1", "Ana", emptyList(), null, second))
+        repo.syncContacts()
+        assertEquals(second, open(contacts).friends.friends.first().single().photo)
+
+        contacts.records = listOf(ContactRecord("1", "Ana", emptyList(), null, photo = null))
+        repo.syncContacts()
+        assertEquals(second, open(contacts).friends.friends.first().single().photo)
+
+        repo.upsert(repo.friends.first().single().copy(photo = null))
+        assertNull(open(contacts).friends.friends.first().single().photo)
+    }
+
+    // --- Contact write-back ---
+
+    @Test
+    fun writeBack_onlyWhenWhatTheContactHoldsChanges() = runTest {
+        val writer = FakeContactsWriter()
+        val repo = open(writer = writer).friends
+        val first = friend("ana") { copy(contactId = "c-ana", likes = listOf("jazz")) }
+        repo.upsert(first)
+        repo.upsert(first.copy(closeness = Closeness.CLOSE, meetEveryDays = 14))
+        assertEquals(1, writer.writes)
+
+        repo.upsert(first.copy(likes = listOf("jazz", "sushi")))
+        assertEquals(2, writer.writes)
+        assertEquals(listOf("jazz", "sushi"), writer.written.getValue(ana).likes)
+
+        repo.upsert(friend("manual") { copy(notes = "x") })
+        assertEquals(2, writer.writes)
+    }
+
+    @Test
+    fun writeBack_syncBackfillsDetails_butNotOrphanedOrBirthdayOnlyFriends() = runTest {
+        val writer = FakeContactsWriter()
+        val contacts = StubContacts(
+            listOf(ContactRecord("c-kid", "Kid", emptyList(), null), ContactRecord("c-bday", "Bday", emptyList(), Birthday(1, 2))),
+        )
+        val stores = open(contacts, writer)
+        // Saved while the contact wasn't writable (a restore never writes to contacts).
+        stores.backup.restore(
+            Backup(
+                friends = listOf(
+                    friend("kid") { copy(contactId = "c-kid", likes = listOf("Maria")) },
+                    friend("bday") { copy(contactId = "c-bday", birthday = Birthday(1, 2)) },
+                    friend("gone") { copy(contactId = "c-gone", notes = "x") },
+                ),
+            ),
+        )
+        assertEquals(0, writer.writes)
+
+        stores.friends.syncContacts()
+        assertEquals(setOf(FriendId("kid")), writer.written.keys)
+        assertEquals(1, writer.writes)
+    }
+
+    @Test
+    fun writeBack_aFailingContactStoreNeverBlocksSaving_butCancellationPropagates() = runTest {
+        val failing = object : ContactsWriter {
+            override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) = error("provider crashed")
+        }
+        val repo = open(writer = failing).friends
+        val f = friend("ana") { copy(contactId = "c-ana", notes = "keep me") }
+        repo.upsert(f)
+        assertEquals("keep me", repo.get(ana)?.notes)
+
+        val cancelling = object : ContactsWriter {
+            override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) = throw CancellationException("stop")
+        }
+        assertFailsWith<CancellationException> { open(writer = cancelling).friends.upsert(f.copy(notes = "changed")) }
+    }
+
+    // --- Hangouts, reminders, groups, ideas, plans ---
+
+    @Test
+    fun hangoutsAndReminders_persistInOrderAndCanBeDeleted() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        val h1 = Hangout("h1", listOf(rui, ana), at(2026, 3, 1), Place("Café", 38.7, -9.1), "Pastéis")
+        val h2 = Hangout("h2", listOf(ana), at(2026, 2, 1))
+        val h3 = Hangout("h3", listOf(ana), at(2026, 3, 2), Place(latitude = 1.0, longitude = 2.0))
+        s.hangouts.add(h1)
+        s.hangouts.add(h2)
+        s.hangouts.add(h3)
+        s.hangouts.delete("h2")
+        assertEquals(listOf(h1, h3), open().hangouts.hangouts.first())
+
+        val r1 = Reminder("r1", "Tickets", listOf(ana, rui), at(2026, 3, 5), done = false, createdAt = at(2026, 3, 1))
+        val r2 = Reminder("r2", "Call", createdAt = at(2026, 3, 2))
+        s.reminders.upsert(r1)
+        s.reminders.upsert(r2)
+        s.reminders.upsert(r1.copy(done = true))
+        assertEquals(listOf(r1.copy(done = true), r2), open().reminders.reminders.first())
+        s.reminders.delete("r1")
+        assertEquals(listOf(r2), s.reminders.reminders.first())
+    }
+
+    @Test
+    fun namedPlaces_persist_renameAndMergeRelinkMeetups_deleteLeavesThem() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val mum = NamedPlace("mum", "Mum’s", 38.7139, -9.1394)
+        val graca = NamedPlace("graca", "Graça’s place", 38.7143, -9.1394, radiusM = 150)
+        s.hangouts.upsertPlace(mum)
+        s.hangouts.upsertPlace(graca)
+        s.hangouts.upsertPlace(mum.copy(latitude = 38.714)) // an update keeps its place in the list
+        assertEquals(listOf(mum.copy(latitude = 38.714), graca), open().hangouts.places.first())
+
+        s.hangouts.add(Hangout("h1", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7139, -9.1394, "mum")))
+        s.hangouts.add(Hangout("h2", listOf(ana), at(2026, 3, 2), Place("Graça’s place", 38.7143, -9.1394, "graca")))
+        s.hangouts.add(Hangout("h3", listOf(ana), at(2026, 3, 3), Place("Mum’s")))
+        s.hangouts.add(Hangout("h4", listOf(ana), at(2026, 3, 4), Place(placeId = "graca")))
+        assertEquals("graca", open().hangouts.hangouts.first().last().place?.placeId)
+
+        s.hangouts.renamePlace("mum", "Mum & Dad’s")
+        s.hangouts.renamePlace("nowhere", "x") // unknown: nothing changes
+        assertEquals(listOf("Mum & Dad’s", "Graça’s place", "Mum’s", null), open().hangouts.hangouts.first().map { it.place?.name })
+        assertEquals("Mum & Dad’s", open().hangouts.places.first().first().name)
+
+        s.hangouts.mergePlaces("graca", "mum")
+        val merged = open().hangouts.hangouts.first()
+        assertEquals(listOf("mum", "mum", null, "mum"), merged.map { it.place?.placeId })
+        assertEquals(listOf("Mum & Dad’s", "Mum & Dad’s", "Mum’s", "Mum & Dad’s"), merged.map { it.place?.name })
+        assertEquals(listOf(38.7143, -9.1394), merged[1].place.let { listOf(it?.latitude, it?.longitude) }) // coordinates kept
+        assertEquals(listOf("mum"), open().hangouts.places.first().map { it.id })
+
+        s.hangouts.deletePlace("mum")
+        assertTrue(open().hangouts.places.first().isEmpty())
+        assertEquals(listOf("mum", "mum", null, "mum"), open().hangouts.hangouts.first().map { it.place?.placeId })
+    }
+
+    @Test
+    fun groups_persistAndUpdateInPlace() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        val crew = FriendGroup("g", "Crew", "🎲", listOf(ana, rui), 30, LocalDate(2026, 4, 1), approxLastMet = LocalDate(2026, 3, 1))
+        s.groups.upsert(crew)
+        s.groups.upsert(FriendGroup("h", "Family"))
+        s.groups.upsert(crew.copy(name = "Crew 2", memberIds = listOf(rui)))
+        assertEquals(listOf(crew.copy(name = "Crew 2", memberIds = listOf(rui)), FriendGroup("h", "Family")), open().groups.groups.first())
+        s.groups.delete("g")
+        assertEquals(listOf("h"), s.groups.groups.first().map { it.id })
+    }
+
+    @Test
+    fun ideas_dismissMarkProposedAndKeepTheLatest200() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val jazz = Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "At the park", "https://x.example", "Saturday", at(2026, 1, 1))
+        s.ideas.addAll(listOf(jazz))
+        s.ideas.dismiss("i")
+        s.ideas.markProposed("i", at(2026, 1, 2))
+        assertEquals(listOf(jazz.copy(dismissed = true, proposedAt = at(2026, 1, 2))), open().ideas.ideas.first())
+
+        s.ideas.addAll((1..205).map { Idea("n$it", emptyList(), IdeaKind.EVENT, "Idea $it", "", createdAt = at(2026, 2, 1)) })
+        val kept = s.ideas.ideas.first()
+        assertEquals(200, kept.size)
+        assertEquals("n6", kept.first().id)
+        assertEquals("n205", kept.last().id)
+    }
+
+    @Test
+    fun plans_persistAndOldAnsweredOnesAreTrimmed() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 1, 1))))
+        val lunch = Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), "Tasca", "i", createdAt = at(2026, 3, 1))
+        s.plans.upsert(lunch)
+        assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #167: a time is kept, and taken off again.
+        s.plans.upsert(lunch.copy(time = LocalTime(13, 15)))
+        assertEquals(LocalTime(13, 15), open().plans.plans.first().single().time)
+        s.plans.upsert(lunch)
+        assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #170: a maps link and its coordinates are kept, and taken off again.
+        val linked = lunch.copy(mapLink = "https://maps.app.goo.gl/x", latitude = 38.7, longitude = -9.1)
+        s.plans.upsert(linked)
+        assertEquals(listOf(linked), open().plans.plans.first())
+        s.plans.upsert(lunch)
+        assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #100: cancelled and "I didn't go" are stored and read back by name.
+        listOf(PlanStatus.CANCELLED, PlanStatus.NOT_ATTENDED).forEach { status ->
+            s.plans.upsert(lunch.copy(status = status))
+            assertEquals(status, open().plans.plans.first().single().status)
+        }
+        s.plans.upsert(lunch)
+
+        repeat(205) { i ->
+            s.plans.upsert(
+                Plan(
+                    "old$i",
+                    emptyList(),
+                    "x",
+                    LocalDate(2025, 1, 1).plus(i, DateTimeUnit.DAY),
+                    status = PlanStatus.SKIPPED,
+                    createdAt = at(2025, 1, 1),
+                ),
+            )
+        }
+        val all = s.plans.plans.first()
+        assertEquals(201, all.size)
+        assertEquals("p", all.first().id)
+        assertTrue(all.none { it.id == "old0" })
+        s.plans.delete("p")
+        assertTrue(s.plans.plans.first().none { it.id == "p" })
+    }
+
+    // --- Interactions and chat lines ---
+
+    @Test
+    fun interactions_matchTheCallLogByPhone_andSkipDuplicates() = runTest {
+        val logs = object : CommunicationLogSource {
+            override suspend fun read(since: Instant) = listOf(
+                LogEntry("+351 912 345 678", InteractionType.CALL, at(2026, 3, 9), durationSeconds = 840),
+                LogEntry("000", InteractionType.CALL, at(2026, 3, 9)),
+            )
+        }
+        val s = open(logs = logs)
+        val friendAna = friend("ana") { copy(phoneNumbers = listOf("912345678")) }
+        s.friends.upsert(friendAna)
+        assertEquals(1, s.interactions.syncCommunicationLogs(listOf(friendAna)))
+        s.interactions.syncCommunicationLogs(listOf(friendAna))
+        // A row from a backup older than the timeline (no id) gets its stable automatic id and source.
+        s.interactions.addAll(listOf(Interaction(ana, InteractionType.WHATSAPP, at(2026, 3, 1))))
+        assertEquals(
+            listOf(
+                Interaction(ana, InteractionType.WHATSAPP, at(2026, 3, 1)).withId(),
+                Interaction(
+                    ana,
+                    InteractionType.CALL,
+                    at(2026, 3, 9),
+                    id = Interaction.automaticId(ana, InteractionType.CALL, at(2026, 3, 9)),
+                    source = InteractionSource.CALL_LOG,
+                    durationSeconds = 840,
+                ),
+            ),
+            open().interactions.interactions.first(),
+        )
+        assertEquals(InteractionSource.CHAT_IMPORT, open().interactions.interactions.first().first().source)
+    }
+
+    @Test
+    fun interactions_dedupeAutomaticRowsOnly_andDelete() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        val t = at(2026, 3, 9)
+        val imported = Interaction(ana, InteractionType.WHATSAPP, t, id = "a", source = InteractionSource.CHAT_IMPORT, messageCount = 12)
+        // The same chat day under another id is still the same chat day.
+        val again = imported.copy(id = "b", messageCount = 3)
+        val manual1 = Interaction(ana, InteractionType.MESSAGE, t, id = "m1", note = "hi", batchId = "x")
+        val manual2 = Interaction(rui, InteractionType.MESSAGE, t, id = "m2", note = "hi", batchId = "x")
+        val manual3 = Interaction(ana, InteractionType.MESSAGE, t, id = "m3")
+        s.interactions.addAll(listOf(imported, again, manual1, manual2, manual3))
+        s.interactions.addAll(listOf(manual1))
+        val stored = open().interactions.interactions.first()
+        assertEquals(setOf("a", "m1", "m2", "m3"), stored.map { it.id }.toSet())
+        assertEquals(imported, stored.single { it.id == "a" })
+        assertEquals(manual2, stored.single { it.id == "m2" })
+
+        s.interactions.delete("m1")
+        assertEquals(setOf("a", "m2", "m3"), open().interactions.interactions.first().map { it.id }.toSet())
+    }
+
+    @Test
+    fun journal_upsertAndDelete() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        val entry = JournalEntry("j1", ana, at(2026, 3, 2), "Talked about Porto")
+        s.interactions.upsertJournal(entry)
+        s.interactions.upsertJournal(entry.copy(text = "Talked about Porto and Leo"))
+        s.interactions.upsertJournal(JournalEntry("j2", ana, at(2026, 3, 5), "Race abroad"))
+        assertEquals(listOf("Talked about Porto and Leo", "Race abroad"), open().interactions.journal.first().map { it.text })
+        s.interactions.deleteJournal("j1")
+        assertEquals(listOf("j2"), open().interactions.journal.first().map { it.id })
+        assertTrue(open().interactions.interactions.first().isEmpty(), "a journal entry is never an interaction")
+    }
+
+    @Test
+    fun attachments_upsertDeleteAndKeepEveryField() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.groups.upsert(FriendGroup("crew", "Crew", memberIds = listOf(ana)))
+        val photo = Attachment(
+            id = "a1",
+            friendId = ana,
+            kind = AttachmentKind.PHOTO,
+            photoRef = PhotoRef(PhotoPlatform.ANDROID, "content://media/picker/0/1"),
+            thumbnail = ContactPhoto("AQID"),
+            caption = "Lunch at Ramiro",
+            at = at(2026, 3, 2),
+            countsAsInteraction = true,
+            interactionType = InteractionType.MEETUP,
+            logId = "h1",
+            createdAt = at(2026, 3, 3),
+        )
+        val link = Attachment(
+            id = "a2",
+            circleId = "crew",
+            kind = AttachmentKind.LINK,
+            url = "https://wikiloc.com/trails/1",
+            title = "Gerês trail",
+            at = at(2026, 3, 4),
+        )
+        val text = Attachment("a3", friendId = ana, kind = AttachmentKind.TEXT, text = "See you\nsoon", at = at(2026, 3, 5))
+        s.interactions.upsertAttachment(photo)
+        s.interactions.upsertAttachment(link)
+        s.interactions.upsertAttachment(text.copy(caption = "old"))
+        s.interactions.upsertAttachment(text)
+        assertEquals(listOf(photo, link, text), open().interactions.attachments.first())
+        s.interactions.deleteAttachment("a2")
+        assertEquals(listOf("a1", "a3"), open().interactions.attachments.first().map { it.id })
+        assertTrue(open().interactions.interactions.first().isEmpty(), "saving an attachment logs nothing by itself")
+    }
+
+    @Test
+    fun messages_keepTheLatest60PerFriend() = runTest {
+        val s = open()
+        s.friends.upsert(friend("ana"))
+        s.friends.upsert(friend("rui"))
+        s.interactions.addMessages((1..80).map { ConversationMessage(ana, Instant.fromEpochSeconds(it.toLong()), it % 2 == 0, "m$it") })
+        s.interactions.addMessages(listOf(ConversationMessage(rui, Instant.fromEpochSeconds(5), true, "hi")))
+        s.interactions.addMessages(listOf(ConversationMessage(rui, Instant.fromEpochSeconds(5), true, "hi")))
+
+        val kept = open().interactions.messages.first().groupBy { it.friendId }
+        assertEquals(60, kept.getValue(ana).size)
+        assertEquals("m21", kept.getValue(ana).first().text)
+        assertEquals("m80", kept.getValue(ana).last().text)
+        assertTrue(kept.getValue(ana).last().fromMe)
+        assertEquals(listOf("hi"), kept.getValue(rui).map { it.text })
+    }
+
+    // --- Settings ---
+
+    @Test
+    fun everySetting_survivesARestart() = runTest {
+        val all = AppSettings(
+            aiApiKey = "sk-test",
+            weeklyIdeasEnabled = false,
+            lastIdeasRunAt = at(2026, 3, 1),
+            homeArea = "Lisbon",
+            themeMode = ThemeMode.DARK,
+            dynamicColor = false,
+            reminderHour = 20,
+            onboardingDone = true,
+            innerCircleDays = 5,
+            closeCircleDays = 20,
+            goodFriendsDays = 60,
+            weeklyDigest = false,
+            digestDay = 1,
+            privateNotifications = true,
+            appLock = true,
+            showWarmth = false,
+            lastOpenedAt = at(2026, 3, 2),
+            lastDriveBackupAt = at(2026, 3, 3),
+        )
+        val s = open()
+        assertEquals(AppSettings(), s.settings.settings.first())
+        s.settings.update { all }
+        assertEquals(all, open().settings.settings.first())
+        s.settings.update { it.copy(homeArea = "Porto", themeMode = ThemeMode.LIGHT) }
+        assertEquals(all.copy(homeArea = "Porto", themeMode = ThemeMode.LIGHT), open().settings.settings.first())
+    }
+
+    // --- Backup ---
+
+    @Test
+    fun exportThenRestoreOnAnotherDevice_replacesEverythingButTheApiKey() = runTest {
+        val from = open()
+        from.friends.upsert(richFriend())
+        from.hangouts.add(Hangout("h", listOf(ana), at(2026, 3, 1), Place("Mum’s", 38.7, -9.1, "pl")))
+        from.hangouts.upsertPlace(NamedPlace("pl", "Mum’s", 38.7, -9.1))
+        from.reminders.upsert(Reminder("r", "Tickets", listOf(ana), createdAt = at(2026, 3, 1)))
+        from.interactions.addAll(listOf(Interaction(ana, InteractionType.CALL, at(2026, 3, 2))))
+        from.interactions.addMessages(listOf(ConversationMessage(ana, at(2026, 3, 2), fromMe = true, text = "hi")))
+        from.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 3, 1))))
+        from.groups.upsert(FriendGroup("g", "Crew", memberIds = listOf(ana)))
+        from.interactions.upsertAttachment(
+            Attachment("a", friendId = ana, kind = AttachmentKind.PHOTO, thumbnail = ContactPhoto("AQID"), at = at(2026, 3, 2)),
+        )
+        from.interactions.upsertAttachment(Attachment("b", circleId = "g", kind = AttachmentKind.TEXT, text = "hi", at = at(2026, 3, 3)))
+        from.plans.upsert(Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), ideaId = "i", createdAt = at(2026, 3, 1)))
+        // A circle plan that repeats, with one date skipped (issue #43).
+        from.plans.upsert(
+            Plan(
+                "q",
+                emptyList(),
+                "Climbing",
+                LocalDate(2026, 3, 14),
+                createdAt = at(2026, 3, 1),
+                circleId = "g",
+                activity = HangoutActivity.SPORTS,
+                repeat = Repeat(15, RepeatUnit.DAY, LocalDate(2026, 3, 14), until = LocalDate(2026, 12, 31)),
+                skippedDates = listOf(LocalDate(2026, 3, 29)),
+            ),
+        )
+        // "Not now" on Today's last-seen card (issue #68) belongs to this device.
+        from.settings.update { it.copy(aiApiKey = "sk-secret", homeArea = "Lisbon", lastSeenCardHiddenOn = LocalDate(2026, 3, 10)) }
+        val exported = from.backup.snapshot()
+
+        val json = ExportBackupUseCase(from.backup, clock)()
+        assertFalse("sk-secret" in json)
+        assertFalse("lastSeenCardHiddenOn" in json)
+        assertTrue("\"approxLastSeen\"" in json, json)
+
+        val to = open()
+        to.friends.upsert(friend("zed"))
+        to.hangouts.add(Hangout("old", listOf(FriendId("zed")), at(2025, 1, 1)))
+        to.hangouts.upsertPlace(NamedPlace("old-place", "Old", 1.0, 2.0))
+        to.settings.update { it.copy(aiApiKey = "sk-mine", lastSeenCardHiddenOn = LocalDate(2026, 3, 9)) }
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+
+        val restored = to.backup.snapshot()
+        val kept = exported.settings.copy(aiApiKey = "sk-mine", onboardingDone = true, lastSeenCardHiddenOn = LocalDate(2026, 3, 9))
+        assertEquals(exported.copy(settings = kept), restored)
+        // Flows see the restored data straight away.
+        assertEquals(listOf(richFriend()), to.friends.friends.first())
+        assertEquals(listOf("h"), to.hangouts.hangouts.first().map { it.id })
+        assertEquals(listOf("pl"), to.hangouts.places.first().map { it.id })
+        assertEquals(LocalDate(2026, 3, 29), to.plans.plans.first().single { it.id == "q" }.skippedDates.single())
+    }
+
+    @Test
+    fun anOlderBackup_bringsItsNotesBackAsDatedNotes_andTheFreeTextStays() = runTest {
+        // Issue #103: before dated notes a backup had one free-text note per person and no "notesInJournal".
+        val old = """
+            {"format": "good-company-backup", "version": 1, "friends": [
+                {"id": "ana", "name": "Ana", "notes": "Loves hiking"},
+                {"id": "bob", "name": "Bob", "notes": " "}
+            ]}
+        """.trimIndent()
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup, clock)(old))
+        val restored = to.backup.snapshot()
+        val note = restored.journal.single()
+        assertEquals(JournalEntry("note-ana", FriendId("ana"), clock.now(), "Loves hiking"), note)
+        assertEquals("Loves hiking", restored.friends.single { it.id == FriendId("ana") }.notes)
+        assertEquals(listOf(note), to.interactions.journal.first())
+    }
+
+    @Test
+    fun yourOwnActivities_roundTripThroughABackup() = runTest {
+        // Issue #121: the list in settings, and the name on a meetup and a plan.
+        val from = open()
+        from.friends.upsert(friend("ana"))
+        from.hangouts.add(Hangout("h", listOf(FriendId("ana")), at(2026, 3, 1), activityName = "Surf"))
+        from.plans.upsert(Plan("p", listOf(FriendId("ana")), "Waves", LocalDate(2026, 3, 14), createdAt = at(2026, 3, 1), activityName = "Surf"))
+        from.settings.update { it.copy(customActivities = listOf("Surf", "Board games")) }
+        val json = ExportBackupUseCase(from.backup, clock)()
+
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf("Surf", "Board games"), snap.settings.customActivities)
+        assertEquals("Surf", snap.hangouts.single().activityName)
+        assertEquals("Surf", snap.plans.single().activityName)
+    }
+
+    @Test
+    fun howOptions_roundTripThroughABackup() = runTest {
+        // Issue #152: the built-in ones on, in order, your own, and an entry logged with one of your own.
+        val from = open()
+        from.friends.upsert(friend("ana"))
+        from.interactions.addAll(listOf(Interaction(FriendId("ana"), InteractionType.OTHER, at(2026, 3, 1), id = "v", label = "Voice note")))
+        from.settings.update { it.copy(logKinds = listOf(LogKind.CALL, LogKind.MEETUP), customLogKinds = listOf("Voice note", "Letter")) }
+        val json = ExportBackupUseCase(from.backup, clock)()
+
+        val to = open()
+        assertIs<RestoreResult.Restored>(RestoreBackupUseCase(to.backup)(json))
+        val snap = to.backup.snapshot()
+        assertEquals(listOf(LogKind.CALL, LogKind.MEETUP), snap.settings.logKinds)
+        assertEquals(listOf("Voice note", "Letter"), snap.settings.customLogKinds)
+        val entry = snap.interactions.single()
+        assertEquals(InteractionType.OTHER, entry.type)
+        assertEquals("Voice note", entry.label)
+    }
+
+    @Test
+    fun theSampleCircle_roundTripsThroughABackup() = runTest {
+        val sample = SampleData.build(clock)
+        val s = open()
+        val backup = Backup(
+            friends = sample.friends,
+            hangouts = sample.hangouts,
+            reminders = sample.reminders,
+            ideas = sample.ideas,
+            groups = sample.groups,
+            plans = sample.plans,
+        )
+        s.backup.restore(backup)
+        val snap = open().backup.snapshot()
+        assertEquals(sample.friends, snap.friends)
+        assertEquals(sample.hangouts, snap.hangouts)
+        assertEquals(sample.reminders, snap.reminders)
+        assertEquals(sample.ideas, snap.ideas)
+        assertEquals(sample.groups, snap.groups)
+        assertEquals(sample.plans.sortedBy { it.id }, snap.plans.sortedBy { it.id })
+    }
+}
+
+/** The JSON-document repositories (today's storage). */
+class JsonRepositoryContractTest : RepositoryContract() {
+    private val settings = MapSettings()
+
+    override fun open(contacts: ContactsSource, writer: ContactsWriter, logs: CommunicationLogSource): Stores {
+        val friends = FriendRepositoryImpl(settings, contacts, writer)
+        val hangouts = HangoutRepositoryImpl(settings)
+        val reminders = ReminderRepositoryImpl(settings)
+        val interactions = InteractionRepositoryImpl(settings, logs, clock)
+        val ideas = IdeaRepositoryImpl(settings)
+        val groups = GroupRepositoryImpl(settings)
+        val plans = PlanRepositoryImpl(settings)
+        val appSettings = SettingsRepositoryImpl(settings)
+        val backup = BackupRepositoryImpl(friends, hangouts, reminders, interactions, ideas, groups, plans, appSettings)
+        return Stores(friends, hangouts, reminders, interactions, ideas, groups, plans, appSettings, backup)
+    }
+}

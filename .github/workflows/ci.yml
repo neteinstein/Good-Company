@@ -48,7 +48,7 @@ jobs:
           for apk in androidApp/build/outputs/apk/*/*.apk; do
             for f in core.ui.resources/values/strings.commonMain.cvr core.ui.resources/font/plus_jakarta_sans_regular.ttf \
                      feature.friends.resources/values/strings.commonMain.cvr composeApp.resources/values/strings.commonMain.cvr; do
-              unzip -l "$apk" | grep -q "assets/composeResources/com.neteinstein.goodcompany.$f" \
+              unzip -l "$apk" | grep -q "assets/composeResources/org.goodcompany.app.$f" \
                 || { echo "::error::$apk is missing Compose resources ($f)"; exit 1; }
             done
           done
@@ -123,6 +123,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Translations complete
         run: python3 scripts/check-strings.py
+      # The Google Play uploader (test-apk.yml, publish-play-store.yml) and the store "What's new" lengths.
+      # Standard library only: the tests use a fake Play client.
+      - name: Play upload script tests
+        working-directory: .github/scripts
+        run: python3 -m unittest test_play_publish
       - name: ktlint (Spotless)
         run: ./gradlew spotlessCheck
       - name: Android Lint

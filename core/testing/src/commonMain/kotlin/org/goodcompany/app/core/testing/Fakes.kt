@@ -1,0 +1,706 @@
+package org.goodcompany.app.core.testing
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import org.goodcompany.app.core.domain.model.AppSettings
+import org.goodcompany.app.core.domain.model.AppUpdate
+import org.goodcompany.app.core.domain.model.Attachment
+import org.goodcompany.app.core.domain.model.Backup
+import org.goodcompany.app.core.domain.model.BackupKey
+import org.goodcompany.app.core.domain.model.BackupKeySlot
+import org.goodcompany.app.core.domain.model.BackupProtection
+import org.goodcompany.app.core.domain.model.CalendarDecision
+import org.goodcompany.app.core.domain.model.CalendarEvent
+import org.goodcompany.app.core.domain.model.CircleCover
+import org.goodcompany.app.core.domain.model.ContactCard
+import org.goodcompany.app.core.domain.model.ContactPhoto
+import org.goodcompany.app.core.domain.model.ContactRecord
+import org.goodcompany.app.core.domain.model.ConversationMessage
+import org.goodcompany.app.core.domain.model.DeviceCalendar
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendGroup
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.GeoPoint
+import org.goodcompany.app.core.domain.model.GiftList
+import org.goodcompany.app.core.domain.model.Hangout
+import org.goodcompany.app.core.domain.model.Idea
+import org.goodcompany.app.core.domain.model.Interaction
+import org.goodcompany.app.core.domain.model.JournalEntry
+import org.goodcompany.app.core.domain.model.NamedPlace
+import org.goodcompany.app.core.domain.model.NewBackupKey
+import org.goodcompany.app.core.domain.model.NotificationAction
+import org.goodcompany.app.core.domain.model.NotificationContent
+import org.goodcompany.app.core.domain.model.PersonBackground
+import org.goodcompany.app.core.domain.model.PersonLink
+import org.goodcompany.app.core.domain.model.Plan
+import org.goodcompany.app.core.domain.model.PlannedNotification
+import org.goodcompany.app.core.domain.model.Reminder
+import org.goodcompany.app.core.domain.model.RenderedAction
+import org.goodcompany.app.core.domain.model.RenderedNotification
+import org.goodcompany.app.core.domain.model.SharedImage
+import org.goodcompany.app.core.domain.repository.AiAssistant
+import org.goodcompany.app.core.domain.repository.AppUpdateSource
+import org.goodcompany.app.core.domain.repository.BackupCrypto
+import org.goodcompany.app.core.domain.repository.BackupKeyRepository
+import org.goodcompany.app.core.domain.repository.BackupRepository
+import org.goodcompany.app.core.domain.repository.CalendarDecisionRepository
+import org.goodcompany.app.core.domain.repository.CalendarReader
+import org.goodcompany.app.core.domain.repository.CircleCoverRepository
+import org.goodcompany.app.core.domain.repository.CloudBackupFailure
+import org.goodcompany.app.core.domain.repository.CloudBackupInfo
+import org.goodcompany.app.core.domain.repository.CloudBackupStore
+import org.goodcompany.app.core.domain.repository.CloudSpace
+import org.goodcompany.app.core.domain.repository.ContactsWriter
+import org.goodcompany.app.core.domain.repository.DecryptedBackup
+import org.goodcompany.app.core.domain.repository.DriveTokenSource
+import org.goodcompany.app.core.domain.repository.FeedFetcher
+import org.goodcompany.app.core.domain.repository.FriendProfile
+import org.goodcompany.app.core.domain.repository.FriendRepository
+import org.goodcompany.app.core.domain.repository.GeneratedIdea
+import org.goodcompany.app.core.domain.repository.GiftListRepository
+import org.goodcompany.app.core.domain.repository.GroupRepository
+import org.goodcompany.app.core.domain.repository.HangoutRepository
+import org.goodcompany.app.core.domain.repository.IdeaGenerator
+import org.goodcompany.app.core.domain.repository.IdeaRepository
+import org.goodcompany.app.core.domain.repository.IdeaRequest
+import org.goodcompany.app.core.domain.repository.InteractionRepository
+import org.goodcompany.app.core.domain.repository.LocationProvider
+import org.goodcompany.app.core.domain.repository.MyPhotoRepository
+import org.goodcompany.app.core.domain.repository.NotificationRenderer
+import org.goodcompany.app.core.domain.repository.NotificationScheduler
+import org.goodcompany.app.core.domain.repository.PersonBackgroundRepository
+import org.goodcompany.app.core.domain.repository.PersonLinkRepository
+import org.goodcompany.app.core.domain.repository.PlanRepository
+import org.goodcompany.app.core.domain.repository.ReminderRepository
+import org.goodcompany.app.core.domain.repository.SettingsRepository
+import org.goodcompany.app.core.domain.repository.SilentDriveToken
+import org.goodcompany.app.core.domain.usecase.ContactMerger
+import org.goodcompany.app.core.domain.util.AppClock
+import org.goodcompany.app.core.domain.util.IdGenerator
+import kotlin.time.Duration
+import kotlin.time.Instant
+
+/** A clock pinned to [instant] in UTC unless told otherwise. Advance it with [advanceBy]. */
+class FixedClock(
+    var instant: Instant = LocalDateTime(2026, 3, 10, 12, 0).toInstant(TimeZone.UTC),
+    override val timeZone: TimeZone = TimeZone.UTC,
+) : AppClock {
+    override fun now(): Instant = instant
+
+    fun advanceBy(d: Duration) {
+        instant += d
+    }
+}
+
+class SequentialIds(private val prefix: String = "id") : IdGenerator {
+    private var n = 0
+
+    override fun next(): String = "$prefix-${++n}"
+}
+
+class FakeFriendRepository(
+    initial: List<Friend> = emptyList(),
+    var contacts: List<ContactRecord> = emptyList(),
+    /** Like `ContactsSource.importsNewContacts`: false where a sync only refreshes friends already linked to a contact. */
+    var importsNewContacts: Boolean = true,
+) : FriendRepository {
+    private val state = MutableStateFlow(initial)
+    override val friends: StateFlow<List<Friend>> = state
+
+    override suspend fun get(id: FriendId) = state.value.firstOrNull { it.id == id }
+
+    override suspend fun upsert(friend: Friend) = state.update { list ->
+        if (list.any { it.id == friend.id }) list.map { if (it.id == friend.id) friend else it } else list + friend
+    }
+
+    override suspend fun delete(id: FriendId) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun updateAll(transform: (Friend) -> Friend): List<Friend> {
+        val before = state.value
+        val after = before.map(transform)
+        state.value = after
+        return before.filterIndexed { i, f -> after[i] != f }
+    }
+
+    override suspend fun syncContacts(): Int {
+        state.update { ContactMerger.merge(it, contacts, addNew = importsNewContacts) }
+        return contacts.size
+    }
+
+    /** Every [readContacts] call, with its `withPhotos` flag. */
+    val contactReads = mutableListOf<Boolean>()
+
+    /** The contact ids asked for in [contactPhotos]. */
+    val photoRequests = mutableListOf<Set<String>>()
+
+    override suspend fun readContacts(withPhotos: Boolean): List<ContactRecord> {
+        contactReads += withPhotos
+        return if (withPhotos) contacts else contacts.map { it.copy(photo = null) }
+    }
+
+    override suspend fun contactPhotos(contactIds: Set<String>): Map<String, ContactPhoto> {
+        photoRequests += contactIds
+        return contacts.filter { it.contactId in contactIds }.mapNotNull { r -> r.photo?.let { r.contactId to it } }.toMap()
+    }
+}
+
+/** Records what would have been mirrored onto contacts. [written] is the latest card per friend. */
+class FakeContactsWriter : ContactsWriter {
+    val written = mutableMapOf<FriendId, ContactCard>()
+    val contactIds = mutableMapOf<FriendId, String>()
+    var writes = 0
+        private set
+
+    override suspend fun write(contactId: String, friendId: FriendId, card: ContactCard) {
+        writes++
+        written[friendId] = card
+        contactIds[friendId] = contactId
+    }
+}
+
+class FakeHangoutRepository(initial: List<Hangout> = emptyList(), places: List<NamedPlace> = emptyList()) : HangoutRepository {
+    private val state = MutableStateFlow(initial)
+    override val hangouts: StateFlow<List<Hangout>> = state
+    private val placeState = MutableStateFlow(places)
+    override val places: StateFlow<List<NamedPlace>> = placeState
+
+    /** Like the SQL repository: a hangout with the same id is replaced (editing a meetup, issue #102). */
+    override suspend fun add(hangout: Hangout) = state.update { list ->
+        if (list.any { it.id == hangout.id }) list.map { if (it.id == hangout.id) hangout else it } else list + hangout
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertPlace(place: NamedPlace) = placeState.update { list ->
+        if (list.any { it.id == place.id }) list.map { if (it.id == place.id) place else it } else list + place
+    }
+
+    override suspend fun deletePlace(id: String) = placeState.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun renamePlace(id: String, name: String) {
+        val place = placeState.value.firstOrNull { it.id == id } ?: return
+        upsertPlace(place.copy(name = name))
+        relink(id, id, name)
+    }
+
+    override suspend fun mergePlaces(fromId: String, intoId: String) {
+        val into = placeState.value.firstOrNull { it.id == intoId } ?: return
+        relink(fromId, intoId, into.name)
+        deletePlace(fromId)
+    }
+
+    private fun relink(fromId: String, toId: String, name: String) = state.update { list ->
+        list.map { h -> h.place?.takeIf { it.placeId == fromId }?.let { h.copy(place = it.copy(name = name, placeId = toId)) } ?: h }
+    }
+}
+
+class FakeReminderRepository(initial: List<Reminder> = emptyList()) : ReminderRepository {
+    private val state = MutableStateFlow(initial)
+    override val reminders: StateFlow<List<Reminder>> = state
+
+    override suspend fun upsert(reminder: Reminder) = state.update { list ->
+        if (list.any { it.id == reminder.id }) list.map { if (it.id == reminder.id) reminder else it } else list + reminder
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
+class FakeInteractionRepository(
+    initial: List<Interaction> = emptyList(),
+    var logEntries: List<Interaction> = emptyList(),
+) : InteractionRepository {
+    private val state = MutableStateFlow(initial.map { it.withId() })
+    private val messageState = MutableStateFlow(emptyList<ConversationMessage>())
+    override val interactions: StateFlow<List<Interaction>> = state
+    override val messages: StateFlow<List<ConversationMessage>> = messageState
+    private val journalState = MutableStateFlow(emptyList<JournalEntry>())
+    override val journal: StateFlow<List<JournalEntry>> = journalState
+
+    override suspend fun addAll(interactions: List<Interaction>) = state.update { current ->
+        (current + interactions.map { it.withId() }).distinctBy { it.id }
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun upsertJournal(entry: JournalEntry) = journalState.update { list -> list.filterNot { it.id == entry.id } + entry }
+
+    override suspend fun deleteJournal(id: String) = journalState.update { list -> list.filterNot { it.id == id } }
+
+    private val attachmentState = MutableStateFlow(emptyList<Attachment>())
+    override val attachments: StateFlow<List<Attachment>> = attachmentState
+
+    override suspend fun upsertAttachment(attachment: Attachment) =
+        attachmentState.update { list -> list.filterNot { it.id == attachment.id } + attachment }
+
+    override suspend fun deleteAttachment(id: String) = attachmentState.update { list -> list.filterNot { it.id == id } }
+
+    override suspend fun addMessages(messages: List<ConversationMessage>) = messageState.update { (it + messages).distinct() }
+
+    override suspend fun syncCommunicationLogs(friends: List<Friend>): Int {
+        addAll(logEntries)
+        return logEntries.size
+    }
+}
+
+class FakeIdeaRepository : IdeaRepository {
+    private val state = MutableStateFlow(emptyList<Idea>())
+    override val ideas: StateFlow<List<Idea>> = state
+
+    override suspend fun addAll(ideas: List<Idea>) = state.update { it + ideas }
+
+    override suspend fun dismiss(id: String) = state.update { list -> list.map { if (it.id == id) it.copy(dismissed = true) else it } }
+
+    override suspend fun markProposed(id: String, at: Instant) = state.update { list ->
+        list.map {
+            if (it.id ==
+                id
+            ) {
+                it.copy(proposedAt = at)
+            } else {
+                it
+            }
+        }
+    }
+}
+
+class FakeGroupRepository(initial: List<FriendGroup> = emptyList()) : GroupRepository {
+    private val state = MutableStateFlow(initial)
+    override val groups: StateFlow<List<FriendGroup>> = state
+
+    override suspend fun upsert(group: FriendGroup) = state.update { list ->
+        if (list.any { it.id == group.id }) list.map { if (it.id == group.id) group else it } else list + group
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
+/** Links between people; like the real one, a link to someone who isn't in [friends] (when given) is skipped. */
+class FakePersonLinkRepository(
+    initial: List<PersonLink> = emptyList(),
+    private val friends: FakeFriendRepository? = null,
+) : PersonLinkRepository {
+    private val state = MutableStateFlow(initial)
+
+    // Like the database's cascade: a link goes when either person goes.
+    override val links: Flow<List<PersonLink>> = friends?.let { repo ->
+        combine(state, repo.friends) { ls, fs ->
+            val ids = fs.mapTo(HashSet()) { it.id }
+            ls.filter { it.from in ids && it.to in ids }
+        }
+    } ?: state
+
+    override suspend fun upsert(link: PersonLink) {
+        if (link.from == link.to) return
+        friends?.friends?.value?.let { fs -> if (fs.none { it.id == link.from } || fs.none { it.id == link.to }) return }
+        state.update { list -> if (list.any { it.id == link.id }) list.map { if (it.id == link.id) link else it } else list + link }
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
+class FakePlanRepository(initial: List<Plan> = emptyList()) : PlanRepository {
+    private val state = MutableStateFlow(initial)
+    override val plans: StateFlow<List<Plan>> = state
+
+    override suspend fun upsert(plan: Plan) = state.update { list ->
+        if (list.any { it.id == plan.id }) list.map { if (it.id == plan.id) plan else it } else list + plan
+    }
+
+    override suspend fun delete(id: String) = state.update { list -> list.filterNot { it.id == id } }
+}
+
+/** Backup over the other fakes, like the real one over the real stores. */
+class FakeBackupRepository(
+    private val friends: FakeFriendRepository,
+    private val hangouts: FakeHangoutRepository,
+    private val reminders: FakeReminderRepository,
+    private val interactions: FakeInteractionRepository,
+    private val ideas: FakeIdeaRepository,
+    private val groups: FakeGroupRepository,
+    private val plans: FakePlanRepository,
+    private val settings: FakeSettingsRepository,
+    private val links: FakePersonLinkRepository = FakePersonLinkRepository(),
+    private val calendarDecisions: FakeCalendarDecisionRepository = FakeCalendarDecisionRepository(),
+    private val giftLists: FakeGiftListRepository = FakeGiftListRepository(),
+    private val myPhoto: FakeMyPhotoRepository = FakeMyPhotoRepository(),
+    private val covers: FakeCircleCoverRepository = FakeCircleCoverRepository(),
+    private val backgrounds: FakePersonBackgroundRepository = FakePersonBackgroundRepository(),
+) : BackupRepository {
+    var restored: Backup? = null
+
+    override suspend fun snapshot() = Backup(
+        friends = friends.friends.value,
+        links = links.links.first(),
+        hangouts = hangouts.hangouts.value,
+        reminders = reminders.reminders.value,
+        interactions = interactions.interactions.value,
+        messages = interactions.messages.value,
+        journal = interactions.journal.value,
+        attachments = interactions.attachments.value,
+        ideas = ideas.ideas.value,
+        groups = groups.groups.value,
+        plans = plans.plans.value,
+        places = hangouts.places.value,
+        settings = settings.settings.value,
+        calendarDecisions = calendarDecisions.decisions.value,
+        giftLists = giftLists.state.value,
+        myPhoto = myPhoto.photo.value,
+        circleCovers = covers.covers.value.map { (id, cover) -> CircleCover(id, cover) },
+        personBackgrounds = backgrounds.backgrounds.first().map { (id, image) -> PersonBackground(id, image) },
+    )
+
+    override suspend fun restore(backup: Backup) {
+        restored = backup
+        friends.friends.value.forEach { friends.delete(it.id) }
+        backup.friends.forEach { friends.upsert(it) }
+        links.links.first().forEach { links.delete(it.id) }
+        backup.links.forEach { links.upsert(it) }
+        hangouts.hangouts.value.forEach { hangouts.delete(it.id) }
+        backup.hangouts.forEach { hangouts.add(it) }
+        hangouts.places.value.forEach { hangouts.deletePlace(it.id) }
+        backup.places.forEach { hangouts.upsertPlace(it) }
+        plans.plans.value.forEach { plans.delete(it.id) }
+        backup.plans.forEach { plans.upsert(it) }
+        calendarDecisions.decisions.value = backup.calendarDecisions
+        giftLists.state.value = backup.giftLists
+        myPhoto.photo.value = backup.myPhoto
+        covers.covers.value = backup.circleCovers.associate { it.circleId to it.cover }
+        backgrounds.stored.value = backup.personBackgrounds.associate { it.friendId to it.image }
+        settings.update { backup.settings }
+    }
+}
+
+/** Circles' cover photos (issue #88), in memory, by circle id. */
+class FakeCircleCoverRepository(initial: Map<String, ContactPhoto> = emptyMap()) : CircleCoverRepository {
+    override val covers = MutableStateFlow(initial)
+
+    override suspend fun set(circleId: String, cover: ContactPhoto?) = covers.update {
+        if (cover ==
+            null
+        ) {
+            it - circleId
+        } else {
+            it + (circleId to cover)
+        }
+    }
+}
+
+/**
+ * Backgrounds of people's pages (issue #144), in memory. Like the database, it skips people [friends] doesn't have
+ * (when given) and drops a person's background when they are deleted.
+ */
+class FakePersonBackgroundRepository(
+    initial: Map<FriendId, ContactPhoto> = emptyMap(),
+    private val friends: FakeFriendRepository? = null,
+) : PersonBackgroundRepository {
+    /** What is stored, people since deleted included (the flow below hides those, like the foreign key). */
+    val stored = MutableStateFlow(initial)
+
+    override val backgrounds: Flow<Map<FriendId, ContactPhoto>> = friends
+        ?.let { repo -> combine(stored, repo.friends) { all, people -> all.filterKeys { id -> people.any { it.id == id } } } }
+        ?: stored
+
+    override suspend fun set(friendId: FriendId, background: ContactPhoto?) {
+        if (background != null && friends != null && friends.friends.value.none { it.id == friendId }) return
+        stored.update { if (background == null) it - friendId else it + (friendId to background) }
+    }
+}
+
+/** Your own photo (issue #71), in memory. */
+class FakeMyPhotoRepository(initial: ContactPhoto? = null) : MyPhotoRepository {
+    override val photo = MutableStateFlow(initial)
+
+    override suspend fun set(photo: ContactPhoto?) {
+        this.photo.value = photo
+    }
+}
+
+class FakeGiftListRepository(initial: List<GiftList> = emptyList()) : GiftListRepository {
+    val state = MutableStateFlow(initial)
+    override val lists: Flow<List<GiftList>> = state
+
+    override suspend fun get(id: String): GiftList? = state.value.firstOrNull { it.id == id }
+
+    override suspend fun upsert(list: GiftList) = state.update { lists ->
+        if (lists.any { it.id == list.id }) lists.map { if (it.id == list.id) list else it } else lists + list
+    }
+
+    override suspend fun delete(id: String) = state.update { lists -> lists.filterNot { it.id == id } }
+}
+
+class FakeCalendarDecisionRepository(initial: List<CalendarDecision> = emptyList()) : CalendarDecisionRepository {
+    override val decisions = MutableStateFlow(initial)
+
+    override suspend fun upsert(decision: CalendarDecision) = decisions.update { list -> list.filterNot { it.key == decision.key } + decision }
+
+    override suspend fun delete(key: String) = decisions.update { list -> list.filterNot { it.key == key } }
+}
+
+/** A device calendar for tests: set [calendars], [events] and [access]; [reads] counts event reads. */
+class FakeCalendarReader(
+    var calendars: List<DeviceCalendar> = emptyList(),
+    var events: List<CalendarEvent> = emptyList(),
+    var access: Boolean = true,
+    override val isSupported: Boolean = true,
+) : CalendarReader {
+    var reads = 0
+        private set
+
+    override suspend fun hasAccess() = access
+
+    override suspend fun calendars(): List<DeviceCalendar> = if (access) calendars else emptyList()
+
+    override suspend fun events(calendarIds: Set<String>, from: Instant, to: Instant): List<CalendarEvent> {
+        reads++
+        if (!access) return emptyList()
+        return events.filter { it.calendarId in calendarIds && it.end > from && it.start < to }
+    }
+}
+
+class FakeSettingsRepository(initial: AppSettings = AppSettings()) : SettingsRepository {
+    private val state = MutableStateFlow(initial)
+    override val settings: StateFlow<AppSettings> = state
+
+    override suspend fun update(transform: (AppSettings) -> AppSettings) = state.update(transform)
+}
+
+class FakeIdeaGenerator(var result: Result<List<GeneratedIdea>> = Result.success(emptyList())) : IdeaGenerator {
+    val requests = mutableListOf<IdeaRequest>()
+
+    override suspend fun generate(request: IdeaRequest): Result<List<GeneratedIdea>> {
+        requests += request
+        return result
+    }
+}
+
+class FakeLocationProvider(var point: GeoPoint? = null) : LocationProvider {
+    override suspend fun currentLocation(): GeoPoint? = point
+}
+
+class FakeNotificationScheduler : NotificationScheduler {
+    val scheduled = mutableListOf<List<RenderedNotification>>()
+
+    val shownNow = mutableListOf<RenderedNotification>()
+
+    override suspend fun replaceAll(notifications: List<RenderedNotification>) {
+        scheduled += notifications
+    }
+
+    override suspend fun showNow(notification: RenderedNotification) {
+        shownNow += notification
+    }
+}
+
+/** Renders the content's class name as the title and its toString() as the body; meetups get the four actions. */
+object FakeNotificationRenderer : NotificationRenderer {
+    override suspend fun render(notification: PlannedNotification): RenderedNotification {
+        val c = notification.content
+        val actions = when (c) {
+            is NotificationContent.MeetupDue -> NotificationAction.Kind.entries.map {
+                RenderedAction(NotificationAction(it, c.friendId.value), it.name)
+            }
+            is NotificationContent.GroupMeetupDue -> listOf(
+                RenderedAction(NotificationAction(NotificationAction.Kind.MET, c.groupId, isGroup = true), "MET"),
+            )
+            else -> emptyList()
+        }
+        return RenderedNotification(notification.id, notification.at, c::class.simpleName.orEmpty(), c.toString(), actions)
+    }
+
+    override suspend fun privateText(): String = "PRIVATE"
+}
+
+class FakeAiAssistant(
+    var message: Result<String> = Result.success("Happy birthday!"),
+    var gifts: Result<List<String>> = Result.success(listOf("Vinyl", "Concert tickets")),
+    var lifeUpdate: Result<String?> = Result.success("Started a new job"),
+) : AiAssistant {
+    val calls = mutableListOf<String>()
+
+    override suspend fun birthdayMessage(apiKey: String, friend: FriendProfile, languageTag: String): Result<String> {
+        calls += "message:${friend.id}:$languageTag"
+        return message
+    }
+
+    override suspend fun giftIdeas(
+        apiKey: String,
+        friend: FriendProfile,
+        kidName: String?,
+        kidLikes: List<String>,
+        languageTag: String,
+    ): Result<List<String>> {
+        calls += "gifts:${friend.id}:${kidName ?: "-"}:$languageTag"
+        return gifts
+    }
+
+    override suspend fun lifeUpdateFromShared(
+        apiKey: String,
+        friend: FriendProfile,
+        text: String?,
+        image: SharedImage?,
+        languageTag: String,
+    ): Result<String?> {
+        calls += "update:${friend.id}:${text ?: "-"}:${image?.mediaType ?: "-"}:$languageTag"
+        return lifeUpdate
+    }
+}
+
+/** Terse builders for tests. */
+object Fixtures {
+    fun friend(id: String, name: String = id.replaceFirstChar { it.uppercase() }, block: Friend.() -> Friend = { this }) =
+        Friend(id = FriendId(id), name = name).block()
+
+    fun at(y: Int, m: Int, d: Int, h: Int = 12, min: Int = 0): Instant = LocalDateTime(y, m, d, h, min).toInstant(TimeZone.UTC)
+}
+
+/** Serves canned bodies by URL; anything else fails like a 404. Records every request. */
+class FakeFeedFetcher(val pages: MutableMap<String, String> = mutableMapOf()) : FeedFetcher {
+    val requests = mutableListOf<String>()
+
+    override suspend fun fetch(url: String): String {
+        requests += url
+        return pages[url] ?: error("HTTP 404")
+    }
+}
+
+/** Hands out [next] tokens in turn (or [result] when set); remembers the ones the code dropped. */
+class FakeDriveTokenSource : DriveTokenSource {
+    val next = ArrayDeque(listOf("silent-1", "silent-2", "silent-3"))
+    var result: SilentDriveToken? = null
+    val forgotten = mutableListOf<String>()
+
+    override suspend fun tokenWithoutUi(): SilentDriveToken = result ?: SilentDriveToken.Token(next.removeFirst())
+
+    override suspend fun forget(accessToken: String) {
+        forgotten += accessToken
+    }
+}
+
+/** In-memory Google Drive: one list of files across both spaces; [failure] makes every call throw. */
+class FakeCloudBackupStore : CloudBackupStore {
+    data class File(
+        val id: String,
+        val name: String,
+        val content: String,
+        val modifiedAt: Instant?,
+        val space: CloudSpace = CloudSpace.APP_DATA,
+        val trashed: Boolean = false,
+    )
+
+    val files = mutableListOf<File>()
+    val tokens = mutableListOf<String>()
+    var failure: CloudBackupFailure? = null
+    var now: Instant? = null
+
+    private fun find(fileName: String, space: CloudSpace) = files.lastOrNull { it.name == fileName && it.space == space && !it.trashed }
+
+    override suspend fun save(accessToken: String, fileName: String, content: String, space: CloudSpace): CloudBackupInfo {
+        tokens += accessToken
+        failure?.let { throw it }
+        val existing = find(fileName, space)
+        val file = File(existing?.id ?: "drive-${files.size + 1}", fileName, content, now, space)
+        if (existing != null) files[files.indexOf(existing)] = file else files += file
+        return CloudBackupInfo(file.id, file.modifiedAt)
+    }
+
+    override suspend fun latest(accessToken: String, fileName: String, space: CloudSpace): CloudBackupInfo? {
+        tokens += accessToken
+        failure?.let { throw it }
+        return find(fileName, space)?.let { CloudBackupInfo(it.id, it.modifiedAt) }
+    }
+
+    override suspend fun download(accessToken: String, id: String): String {
+        tokens += accessToken
+        failure?.let { throw it }
+        return files.first { it.id == id }.content
+    }
+
+    override suspend fun trash(accessToken: String, id: String) {
+        tokens += accessToken
+        failure?.let { throw it }
+        val file = files.first { it.id == id }
+        files[files.indexOf(file)] = file.copy(trashed = true)
+    }
+}
+
+/** The backup key kept in memory, like the key-value store keeps it on a device. */
+class FakeBackupKeyRepository(initial: BackupProtection = BackupProtection()) : BackupKeyRepository {
+    val state = MutableStateFlow(initial)
+    override val protection: Flow<BackupProtection> = state
+
+    override suspend fun current(): BackupProtection = state.value
+
+    override suspend fun update(transform: (BackupProtection) -> BackupProtection) = state.update(transform)
+}
+
+/**
+ * Reversible stand-in for the real cipher (which `:core:data` tests): the secrets sit in the "file" next to the
+ * reversed document, so tests can check which secret opens what without real crypto. Never secure; tests only.
+ */
+class FakeBackupCrypto : BackupCrypto {
+    private var made = 0
+
+    override suspend fun newKey(password: String): NewBackupKey {
+        made++
+        val recovery = "RECOVERY-$made"
+        val key = BackupKey(
+            dataKey = "data-key-$made",
+            slots = listOf(slot(BackupKeySlot.Kind.PASSWORD, password), slot(BackupKeySlot.Kind.RECOVERY, recovery)),
+        )
+        return NewBackupKey(key, recovery)
+    }
+
+    override suspend fun changePassword(key: BackupKey, newPassword: String): BackupKey =
+        key.copy(slots = listOf(slot(BackupKeySlot.Kind.PASSWORD, newPassword)) + key.slots.filter { it.kind != BackupKeySlot.Kind.PASSWORD })
+
+    override suspend fun unlocks(key: BackupKey, secret: String): Boolean = key.slots.any { it.wrapped == secret }
+
+    override suspend fun encrypt(key: BackupKey, json: String): String =
+        (listOf(PREFIX, key.dataKey) + key.slots.map { "${it.kind}=${it.wrapped}" } + json.reversed()).joinToString(SEPARATOR)
+
+    override fun isEncrypted(raw: String): Boolean = raw.startsWith(PREFIX + SEPARATOR)
+
+    override suspend fun decrypt(raw: String, secret: String): DecryptedBackup? {
+        if (!isEncrypted(raw)) return null
+        val parts = raw.split(SEPARATOR, limit = 5)
+        val slots = parts.subList(2, 4).map { part ->
+            val (kind, value) = part.split("=", limit = 2)
+            slot(BackupKeySlot.Kind.valueOf(kind), value)
+        }
+        val key = BackupKey(parts[1], slots)
+        return if (unlocks(key, secret)) DecryptedBackup(parts[4].reversed(), key) else null
+    }
+
+    private fun slot(kind: BackupKeySlot.Kind, secret: String) = BackupKeySlot(kind, 1, "salt", wrapped = secret, mac = "mac")
+
+    private companion object {
+        const val PREFIX = "FAKE-ENCRYPTED"
+        const val SEPARATOR = "\u0000"
+    }
+}
+
+/** The update source: [newest] is what it reports; [failure] makes it throw. */
+class FakeAppUpdateSource(var newest: AppUpdate? = null) : AppUpdateSource {
+    var failure: Exception? = null
+    var calls = 0
+
+    override suspend fun latest(): AppUpdate? {
+        calls++
+        failure?.let { throw it }
+        return newest
+    }
+}
+
+/**
+ * The planned notifications without the daily "log your day" reminder (issue #116), which is on by default and so is
+ * in every plan: for tests about the other kinds.
+ */
+fun List<org.goodcompany.app.core.domain.model.PlannedNotification>.withoutDailyLog() =
+    filterNot { it.content == org.goodcompany.app.core.domain.model.NotificationContent.DailyLog }

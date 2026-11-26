@@ -28,9 +28,13 @@ Android shows "Google Drive isn't set up for this build" when tapped; iOS and we
 
 | Build | Package name | SHA-1 |
 |---|---|---|
-| Play (`release`) | `com.neteinstein.goodcompany` | Play App Signing key (Play Console → Setup → App signing) |
-| `sideload` | `com.neteinstein.goodcompany.sideload` | your release keystore (`keytool -list -v -keystore …`) |
-| `debug` | `com.neteinstein.goodcompany` | `~/.android/debug.keystore` (`keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android`) |
+| Play (`release`) | `org.goodcompany.app` | Play App Signing key (Play Console → Setup → App signing) |
+| `sideload` | `org.goodcompany.app.sideload` | your release keystore (`keytool -list -v -keystore …`) |
+| `debug` | `org.goodcompany.app` | `~/.android/debug.keystore` (`keytool -list -v -alias androiddebugkey -keystore ~/.android/debug.keystore -storepass android`) |
+
+The package was `com.neteinstein.goodcompany` until 2026-11-26. OAuth clients (and the Firebase apps in
+`google-services.json`) registered for the old name don't match the new one: create them again for
+`org.goodcompany.app` and `org.goodcompany.app.sideload`.
 
 Nothing goes into the code: Play services' `AuthorizationClient` matches the app by package name and signing
 certificate. A missing client surfaces as `DEVELOPER_ERROR`, which the app shows as "not set up", in a dialog that
@@ -40,11 +44,11 @@ names the package and the SHA-1 of the certificate the running build is signed w
 signs with the CI runner's debug key, which is a new key on every run ("Signed with: CI debug key" in the release
 notes). No OAuth client can match a key that changes with every build, so Drive always fails with "not set up" on
 those APKs. Add the keystore secrets (CI_CD.md), then register that keystore's SHA-1 for
-`com.neteinstein.goodcompany.sideload` (and for `com.neteinstein.goodcompany` if you test the Play APK).
+`org.goodcompany.app.sideload` (and for `org.goodcompany.app` if you test the Play APK).
 
 ## 3. iOS
 
-1. **Create credentials → OAuth client ID → iOS**, bundle ID `com.neteinstein.goodcompany`.
+1. **Create credentials → OAuth client ID → iOS**, bundle ID `org.goodcompany.app`.
 2. Put its client ID (`1234567890-abc….apps.googleusercontent.com`) in `GOOGLE_DRIVE_IOS_CLIENT_ID`, either in
    `iosApp/Configuration/Config.xcconfig` or in the gitignored `iosApp/Configuration/Signing.xcconfig`.
    It flows into Info.plist as `GoogleDriveClientId`.

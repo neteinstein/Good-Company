@@ -9,7 +9,7 @@ Read the rules at the bottom first (moved here from AGENTS.md). A complete worke
 `git show --stat $(git log --format=%h -1 --grep="gift lists per occasion" --no-merges)`.
 
 Paths below are relative to `core/data/src/commonMain/` unless they say otherwise.
-`DB` = `sqldelight/com/neteinstein/goodcompany/core/data/db/`.
+`DB` = `sqldelight/org/goodcompany/app/core/data/db/`.
 
 ## 1. Which kind of change?
 

@@ -67,7 +67,7 @@ kotlin {
 sqldelight {
     databases {
         create("GoodCompanyDatabase") {
-            packageName.set("com.neteinstein.goodcompany.core.data.db")
+            packageName.set("org.goodcompany.app.core.data.db")
             dialect(libs.sqldelight.dialect.sqlite330)
             // The web worker driver is asynchronous, so every query is generated as a suspend call on all platforms.
             generateAsync.set(true)

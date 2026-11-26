@@ -1,0 +1,165 @@
+package org.goodcompany.app.feature.friends.ui.components
+
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cake
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.usecase.CircleDots
+import org.goodcompany.app.core.domain.usecase.FriendSummary
+import org.goodcompany.app.core.ui.components.CircleDot
+import org.goodcompany.app.core.ui.components.FriendAvatar
+import org.goodcompany.app.core.ui.components.InfoPill
+import org.goodcompany.app.core.ui.components.warmthColor
+import org.goodcompany.app.core.ui.format.relativeDay
+import org.goodcompany.app.core.ui.format.relativePast
+import org.goodcompany.app.core.ui.l10n.closenessLabel
+import org.goodcompany.app.core.ui.l10n.kidOfLabel
+import org.goodcompany.app.core.ui.l10n.linkWord
+import org.goodcompany.app.core.ui.l10n.warmthLabel
+import org.goodcompany.app.feature.friends.resources.Res
+import org.goodcompany.app.feature.friends.resources.row_added_in_app
+import org.goodcompany.app.feature.friends.resources.row_catch_up
+import org.goodcompany.app.feature.friends.resources.row_from_contacts
+import org.goodcompany.app.feature.friends.resources.row_last_in_touch
+import org.goodcompany.app.feature.friends.resources.row_likes
+import org.goodcompany.app.feature.friends.resources.row_more_circles
+import org.goodcompany.app.feature.friends.resources.row_warmth
+import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
+
+@Composable
+fun FriendRow(
+    summary: FriendSummary,
+    now: Instant,
+    today: LocalDate,
+    zone: TimeZone,
+    onClick: () -> Unit,
+    showWarmth: Boolean = true,
+    /** Names the person's level in a pill: sorted A–Z, where no heading says it (issue #86). */
+    showCloseness: Boolean = false,
+    /** One dot per circle after the name (issue #120). */
+    circles: CircleDots = CircleDots.None,
+    modifier: Modifier = Modifier,
+) {
+    val f = summary.friend
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .animateContentSize(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Issue #120: warmth is the ring around the photo, for people you keep track of (#115); no ring otherwise.
+        val level = summary.warmth?.level?.takeIf { showWarmth }
+        val warmth = level?.let { stringResource(Res.string.row_warmth, warmthLabel(it)) }
+        FriendAvatar(
+            f,
+            sharedKey = "avatar-${f.id.value}",
+            ringColor = level?.let { warmthColor(it) },
+            modifier = if (warmth != null) Modifier.semantics { contentDescription = warmth } else Modifier,
+        )
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    f.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (circles.shown.isNotEmpty()) {
+                    val names = circles.shown.joinToString(", ") { it.name }
+                    Row(
+                        Modifier.padding(start = 8.dp).semantics { contentDescription = names },
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        circles.shown.forEach { CircleDot(it.color, size = 8.dp) }
+                        if (circles.more > 0) {
+                            Text(
+                                stringResource(Res.string.row_more_circles, circles.more),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+            val subtitle = when (val line = RowSubtitle.of(summary)) {
+                // F9: a kid's line says who they are ("Niece · Ana’s daughter") rather than when you were last in touch.
+                is RowSubtitle.KidOf -> listOfNotNull(f.relationToMe?.let { linkWord(it, f.pronouns) }, kidOfLabel(f, line.parent))
+                    .joinToString(" · ")
+                is RowSubtitle.LastInTouch -> stringResource(Res.string.row_last_in_touch, relativePast(line.at, now, zone))
+                is RowSubtitle.Likes -> stringResource(Res.string.row_likes, line.likes.joinToString(limit = 3))
+                RowSubtitle.AddedInApp -> stringResource(Res.string.row_added_in_app)
+                RowSubtitle.FromContacts -> stringResource(Res.string.row_from_contacts)
+            }
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            val birthdaySoon = summary.nextBirthday?.takeIf { today.daysUntil(it) in 0..14 }
+            val closeness = f.closeness.takeIf { showCloseness }
+            if (birthdaySoon != null || summary.meetupOverdue || closeness != null) {
+                Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    closeness?.let { InfoPill(closenessLabel(it, short = true)) }
+                    birthdaySoon?.let { InfoPill(relativeDay(it, today), icon = Icons.Rounded.Cake, emphasized = true) }
+                    if (summary.meetupOverdue) InfoPill(stringResource(Res.string.row_catch_up), icon = Icons.Rounded.Schedule)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The People row's second line, first that applies: who a kid is, when you were last in touch (only for people you
+ * keep track of, issue #130), what they like, or where they came from.
+ */
+internal sealed interface RowSubtitle {
+    data class KidOf(val parent: Friend) : RowSubtitle
+
+    data class LastInTouch(val at: Instant) : RowSubtitle
+
+    data class Likes(val likes: List<String>) : RowSubtitle
+
+    data object AddedInApp : RowSubtitle
+
+    data object FromContacts : RowSubtitle
+
+    companion object {
+        fun of(summary: FriendSummary): RowSubtitle {
+            val f = summary.friend
+            return summary.parents.firstOrNull()?.let(::KidOf)
+                ?: summary.lastContact?.takeIf { f.tracksKeepInTouch }?.let(::LastInTouch)
+                ?: f.likes.takeIf { it.isNotEmpty() }?.let(::Likes)
+                ?: if (f.contactId == null) AddedInApp else FromContacts
+        }
+    }
+}

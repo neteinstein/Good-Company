@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Good Company store assets</title>
+<!--
+  Play Store graphics for Good Company. render.js opens this page once per asset and calls
+  window.renderAsset(kind, index). The app screens are the real Compose renders in docs/screenshots/
+  (capture-screenshots skill); nothing here redraws the UI. Colours are the brand coral from
+  docs/brand/app-icon.svg; the font is the app's own Plus Jakarta Sans from core/ui.
+-->
+<style>
+  @font-face { font-family: 'Jakarta'; font-weight: 500; src: url('../../../core/ui/src/commonMain/composeResources/font/plus_jakarta_sans_medium.ttf'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 700; src: url('../../../core/ui/src/commonMain/composeResources/font/plus_jakarta_sans_bold.ttf'); }
+  @font-face { font-family: 'Jakarta'; font-weight: 800; src: url('../../../core/ui/src/commonMain/composeResources/font/plus_jakarta_sans_extrabold.ttf'); }
+
+  :root {
+    --coral-light: #FF8A80;
+    --coral: #E5574F;
+    --coral-dark: #B4372F;
+    --blush: #FFD5CF;
+    --ink: #2B1614;
+  }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Jakarta', sans-serif; color: #fff; overflow: hidden; background: var(--coral); }
+
+  .canvas {
+    position: absolute; inset: 0; overflow: hidden;
+    background:
+      radial-gradient(circle at 22% 12%, rgba(255,255,255,.32), rgba(255,255,255,0) 55%),
+      linear-gradient(160deg, var(--coral-light) 0%, var(--coral) 52%, var(--coral-dark) 100%);
+  }
+  /* Soft hearts in the background, the brand mark's shape. */
+  .heart { position: absolute; opacity: .12; }
+
+  .phone {
+    position: absolute;
+    background: #1d1112;
+    border-radius: 9%/4.2%;
+    padding: 2.1%;
+    box-shadow: 0 40px 80px rgba(60, 10, 8, .35), 0 8px 24px rgba(60, 10, 8, .25);
+  }
+  .phone img { display: block; width: 100%; height: 100%; border-radius: 7.4%/3.4%; object-fit: cover; object-position: top; }
+
+  .headline { font-weight: 800; letter-spacing: -.02em; line-height: 1.08; margin: 0; text-wrap: balance; }
+  .sub { font-weight: 500; line-height: 1.35; margin: 0; opacity: .92; text-wrap: balance; }
+
+  /* Phone screenshot: 1080x1920 */
+  .p-text { position: absolute; left: 80px; right: 80px; top: 96px; text-align: center; }
+  .p-text .headline { font-size: 84px; }
+  .p-text .sub { font-size: 38px; margin-top: 24px; }
+
+  /* Tablet screenshot: 1920x1080 (the 10-inch one is the same page at 4/3 scale) */
+  .t-text { position: absolute; left: 150px; width: 900px; top: 50%; transform: translateY(-50%); }
+  .t-text .headline { font-size: 88px; }
+  .t-text .sub { font-size: 40px; margin-top: 32px; max-width: 800px; }
+  .t-brand { display: flex; align-items: center; gap: 20px; margin-bottom: 56px; font-weight: 700; font-size: 34px; }
+  .t-brand svg { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 6px 16px rgba(60,10,8,.25); }
+
+  /* Feature graphic: 1024x500 */
+  .f-text { position: absolute; left: 64px; top: 0; bottom: 0; width: 480px; display: flex; flex-direction: column; justify-content: center; }
+  .f-text svg { width: 96px; height: 96px; border-radius: 24px; box-shadow: 0 8px 20px rgba(60,10,8,.3); }
+  .f-text .headline { font-size: 60px; margin-top: 28px; }
+  .f-text .sub { font-size: 25px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const SHOTS_DIR = '../../../docs/screenshots/';
+
+  // In upload order. Headlines describe what is on the real screen; keep them true to the app.
+  const SHOTS = [
+    { key: '01-today',   img: 'agenda.png',   headline: 'Never lose touch with your people', sub: 'Today shows who to catch up with, and what’s coming up this week' },
+    { key: '02-friend',  img: 'friend.png',   headline: 'Everything about a friend',         sub: 'Their kids, birthdays, what they love and the last time you met' },
+    { key: '03-log',     img: 'checkin.png',  headline: 'Log a meetup in seconds',            sub: 'Who, how, when and what: in person, a call or a video chat' },
+    { key: '04-people',  img: 'home.png',     headline: 'Your people, by closeness',          sub: 'Closest, close, friends and acquaintances, each with its own rhythm' },
+    { key: '05-story',   img: 'story.png',    headline: 'Catch up before you meet',           sub: 'A quick story of what’s new in their life, and what to ask about' },
+    { key: '06-circles', img: 'together.png', headline: 'Keep your circles together',         sub: 'Board game night, the surf crew, the choir: see when you all last met' },
+    { key: '07-plans',   img: 'ideas.png',    headline: 'Plans and gift lists',               sub: 'Ask how it went, and never give the same present twice' },
+    { key: '08-review',  img: 'review.png',   headline: 'Your year in friendship',            sub: 'Who you saw most, your favourite spots, and more' },
+  ];
+  window.SHOT_KEYS = SHOTS.map(s => s.key);
+
+  const ICON_SVG = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FF8A80"/><stop offset="0.55" stop-color="#E5574F"/><stop offset="1" stop-color="#B4372F"/>
+        </linearGradient>
+        <radialGradient id="glow" cx="0.3" cy="0.25" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.35"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+      </defs>
+      <rect width="1024" height="1024" fill="url(#bg)"/>
+      <rect width="1024" height="1024" fill="url(#glow)"/>
+      <g transform="translate(-81 -100) scale(11)">
+        <path fill="#FFD5CF" d="M62,36c-5.2,0 -9.1,3.3 -10.2,7.6C50.7,39.3 46.8,36 41.6,36 35.2,36 30.5,41 30.5,47.4c0,9.8 10.4,16.9 21.3,26.4 10.9,-9.5 21.3,-16.6 21.3,-26.4C73.1,41 68.4,36 62,36z"/>
+        <path fill="#FFFFFF" d="M68.6,44.5c-4.2,0 -7.4,2.7 -8.3,6.2 -0.9,-3.5 -4.1,-6.2 -8.3,-6.2 -5.2,0 -9,4.1 -9,9.3 0,8 8.5,13.8 17.3,21.5 8.8,-7.7 17.3,-13.5 17.3,-21.5 0,-5.2 -3.8,-9.3 -9,-9.3z"/>
+      </g>
+    </svg>`; // Copy of docs/brand/app-icon.svg: keep in step with it.
+
+  const HEART_PATH = 'M68.6,44.5c-4.2,0 -7.4,2.7 -8.3,6.2 -0.9,-3.5 -4.1,-6.2 -8.3,-6.2 -5.2,0 -9,4.1 -9,9.3 0,8 8.5,13.8 17.3,21.5 8.8,-7.7 17.3,-13.5 17.3,-21.5 0,-5.2 -3.8,-9.3 -9,-9.3z';
+  function heart(x, y, size, rotate) {
+    return `<svg class="heart" style="left:${x}px;top:${y}px;width:${size}px;height:${size}px;transform:rotate(${rotate}deg)" viewBox="42 43 36 33"><path fill="#fff" d="${HEART_PATH}"/></svg>`;
+  }
+  // A phone frame of the given screen height; the renders are 786x1704 (393x852 at 2x).
+  function phone(img, left, top, height) {
+    const width = height * 786 / 1704 / (1 - 0.042 * 2) * (1 - 0.042 * 2);
+    return `<div class="phone" style="left:${left}px;top:${top}px;width:${width}px;height:${height}px"><img src="${SHOTS_DIR + img}"></div>`;
+  }
+
+  window.renderAsset = (kind, i) => {
+    const root = document.getElementById('root');
+    if (kind === 'icon') {
+      root.innerHTML = `<div style="width:512px;height:512px">${ICON_SVG.replace('<svg ', '<svg width="512" height="512" ')}</div>`;
+      return;
+    }
+    if (kind === 'feature') {
+      root.innerHTML = `<div class="canvas">
+        ${heart(470, 330, 140, -14)}${heart(930, 20, 90, 12)}
+        <div class="f-text">
+          ${ICON_SVG}
+          <h1 class="headline">Good Company</h1>
+          <p class="sub">A little CRM for friendship</p>
+        </div>
+        ${phone('agenda.png', 560, 46, 560)}
+        ${phone('friend.png', 750, 96, 560)}
+      </div>`;
+      return;
+    }
+    const s = SHOTS[i];
+    if (kind === 'phone') {
+      root.innerHTML = `<div class="canvas">
+        ${heart(-60, 1180, 300, -18)}${heart(860, 520, 240, 14)}
+        <div class="p-text"><h1 class="headline">${s.headline}</h1><p class="sub">${s.sub}</p></div>
+        ${phone(s.img, 0, 470, 1520)}
+      </div>`;
+      const p = root.querySelector('.phone');
+      p.style.left = (1080 - p.getBoundingClientRect().width) / 2 + 'px';
+      return;
+    }
+    if (kind === 'tablet') {
+      root.innerHTML = `<div class="canvas">
+        ${heart(1000, 760, 260, -16)}${heart(1720, 60, 180, 12)}
+        <div class="t-text">
+          <div class="t-brand">${ICON_SVG}<span>Good Company</span></div>
+          <h1 class="headline">${s.headline}</h1><p class="sub">${s.sub}</p>
+        </div>
+        ${phone(s.img, 1240, 60, 960)}
+      </div>`;
+    }
+  };
+</script>
+</body>
+</html>

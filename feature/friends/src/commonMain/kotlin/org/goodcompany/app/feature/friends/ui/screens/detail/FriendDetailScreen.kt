@@ -1,0 +1,2218 @@
+package org.goodcompany.app.feature.friends.ui.screens.detail
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Notes
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.AlternateEmail
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Cake
+import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Celebration
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Checklist
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Diversity3
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.EventBusy
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FilterList
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Interests
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NewReleases
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.RssFeed
+import androidx.compose.material.icons.rounded.Snooze
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.ThumbDown
+import androidx.compose.material.icons.rounded.ThumbUp
+import androidx.compose.material.icons.rounded.Weekend
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
+import org.goodcompany.app.core.domain.model.Attachment
+import org.goodcompany.app.core.domain.model.AttachmentKind
+import org.goodcompany.app.core.domain.model.Birthday
+import org.goodcompany.app.core.domain.model.CatchUpCounts
+import org.goodcompany.app.core.domain.model.Closeness
+import org.goodcompany.app.core.domain.model.ContactChannel
+import org.goodcompany.app.core.domain.model.CustomField
+import org.goodcompany.app.core.domain.model.Friend
+import org.goodcompany.app.core.domain.model.FriendGroup
+import org.goodcompany.app.core.domain.model.FriendId
+import org.goodcompany.app.core.domain.model.Gift
+import org.goodcompany.app.core.domain.model.GiftOccasion
+import org.goodcompany.app.core.domain.model.Idea
+import org.goodcompany.app.core.domain.model.ImportantEvent
+import org.goodcompany.app.core.domain.model.InteractionType
+import org.goodcompany.app.core.domain.model.JournalEntry
+import org.goodcompany.app.core.domain.model.LifeUpdate
+import org.goodcompany.app.core.domain.model.LinkCategory
+import org.goodcompany.app.core.domain.model.LinkType
+import org.goodcompany.app.core.domain.model.LinkedPerson
+import org.goodcompany.app.core.domain.model.MediaKind
+import org.goodcompany.app.core.domain.model.NoteMedia
+import org.goodcompany.app.core.domain.model.Occasion
+import org.goodcompany.app.core.domain.model.PhotoRef
+import org.goodcompany.app.core.domain.model.Plan
+import org.goodcompany.app.core.domain.model.PlanAnswer
+import org.goodcompany.app.core.domain.model.PlanStatus
+import org.goodcompany.app.core.domain.model.Pronouns
+import org.goodcompany.app.core.domain.model.SocialLink
+import org.goodcompany.app.core.domain.model.SocialNetwork
+import org.goodcompany.app.core.domain.model.TasteKind
+import org.goodcompany.app.core.domain.usecase.CadenceRules
+import org.goodcompany.app.core.domain.usecase.FamilyAround
+import org.goodcompany.app.core.domain.usecase.KidDraft
+import org.goodcompany.app.core.domain.usecase.PersonTimeline
+import org.goodcompany.app.core.domain.usecase.PickedNoteMedia
+import org.goodcompany.app.core.domain.usecase.PlanInput
+import org.goodcompany.app.core.domain.usecase.ReminderTarget
+import org.goodcompany.app.core.domain.usecase.SnoozeOption
+import org.goodcompany.app.core.domain.usecase.Tag
+import org.goodcompany.app.core.domain.usecase.TimelineEntry
+import org.goodcompany.app.core.domain.usecase.TogetherItem
+import org.goodcompany.app.core.ui.components.AppSnackbarHost
+import org.goodcompany.app.core.ui.components.CropShape
+import org.goodcompany.app.core.ui.components.DateBadge
+import org.goodcompany.app.core.ui.components.EditDeleteMenu
+import org.goodcompany.app.core.ui.components.EditableTimelineEntry
+import org.goodcompany.app.core.ui.components.InfoPill
+import org.goodcompany.app.core.ui.components.NoteMediaRow
+import org.goodcompany.app.core.ui.components.PhotoCropDialog
+import org.goodcompany.app.core.ui.components.PlanEditor
+import org.goodcompany.app.core.ui.components.PlanRow
+import org.goodcompany.app.core.ui.components.ProgressRing
+import org.goodcompany.app.core.ui.components.ReminderCallbacks
+import org.goodcompany.app.core.ui.components.ReminderDraft
+import org.goodcompany.app.core.ui.components.ReminderEditor
+import org.goodcompany.app.core.ui.components.ReminderTimelineRow
+import org.goodcompany.app.core.ui.components.SectionCard
+import org.goodcompany.app.core.ui.components.SendMessageSheet
+import org.goodcompany.app.core.ui.components.TagEditor
+import org.goodcompany.app.core.ui.components.calendarEntry
+import org.goodcompany.app.core.ui.components.interactionIcon
+import org.goodcompany.app.core.ui.components.showMessage
+import org.goodcompany.app.core.ui.components.socialIcon
+import org.goodcompany.app.core.ui.components.text
+import org.goodcompany.app.core.ui.components.timelineRail
+import org.goodcompany.app.core.ui.format.isFarDate
+import org.goodcompany.app.core.ui.format.relativeDay
+import org.goodcompany.app.core.ui.format.relativeDayPhrase
+import org.goodcompany.app.core.ui.format.relativePast
+import org.goodcompany.app.core.ui.format.shortLabel
+import org.goodcompany.app.core.ui.format.shortLabelText
+import org.goodcompany.app.core.ui.l10n.aiErrorText
+import org.goodcompany.app.core.ui.l10n.closenessLabel
+import org.goodcompany.app.core.ui.l10n.everyNDays
+import org.goodcompany.app.core.ui.l10n.occasionLabel
+import org.goodcompany.app.core.ui.l10n.topicText
+import org.goodcompany.app.core.ui.platform.OpenedPhoto
+import org.goodcompany.app.core.ui.platform.rememberCalendarAdder
+import org.goodcompany.app.core.ui.platform.rememberGalleryMediaPicker
+import org.goodcompany.app.core.ui.platform.rememberGalleryPhotoOpener
+import org.goodcompany.app.core.ui.platform.rememberGalleryPhotoPicker
+import org.goodcompany.app.core.ui.platform.rememberImagePicker
+import org.goodcompany.app.core.ui.platform.rememberTextFilePicker
+import org.goodcompany.app.core.ui.resources.add
+import org.goodcompany.app.core.ui.resources.cancel
+import org.goodcompany.app.core.ui.resources.close
+import org.goodcompany.app.core.ui.resources.delete
+import org.goodcompany.app.core.ui.resources.edit
+import org.goodcompany.app.core.ui.resources.plan_cancelled
+import org.goodcompany.app.core.ui.resources.plan_closed
+import org.goodcompany.app.core.ui.resources.plan_deleted
+import org.goodcompany.app.core.ui.resources.plan_logged
+import org.goodcompany.app.core.ui.resources.plan_not_attended
+import org.goodcompany.app.core.ui.resources.plan_saved
+import org.goodcompany.app.core.ui.resources.plan_skipped
+import org.goodcompany.app.core.ui.resources.remove
+import org.goodcompany.app.core.ui.resources.remove_item
+import org.goodcompany.app.core.ui.resources.save
+import org.goodcompany.app.core.ui.resources.undo
+import org.goodcompany.app.core.ui.resources.wish_default
+import org.goodcompany.app.feature.friends.resources.Res
+import org.goodcompany.app.feature.friends.resources.birthday_banner_soon
+import org.goodcompany.app.feature.friends.resources.birthday_banner_today
+import org.goodcompany.app.feature.friends.resources.birthday_banner_tomorrow
+import org.goodcompany.app.feature.friends.resources.birthday_send_wishes
+import org.goodcompany.app.feature.friends.resources.birthday_title
+import org.goodcompany.app.feature.friends.resources.chat_count
+import org.goodcompany.app.feature.friends.resources.chat_how
+import org.goodcompany.app.feature.friends.resources.chat_title
+import org.goodcompany.app.feature.friends.resources.closeness_no_rhythm
+import org.goodcompany.app.feature.friends.resources.closeness_sheet_title
+import org.goodcompany.app.feature.friends.resources.complete_about
+import org.goodcompany.app.feature.friends.resources.complete_family
+import org.goodcompany.app.feature.friends.resources.complete_feeds
+import org.goodcompany.app.feature.friends.resources.complete_gifts
+import org.goodcompany.app.feature.friends.resources.complete_moments
+import org.goodcompany.app.feature.friends.resources.complete_more
+import org.goodcompany.app.feature.friends.resources.complete_occasions
+import org.goodcompany.app.feature.friends.resources.complete_saved
+import org.goodcompany.app.feature.friends.resources.complete_socials
+import org.goodcompany.app.feature.friends.resources.complete_title
+import org.goodcompany.app.feature.friends.resources.complete_websites
+import org.goodcompany.app.feature.friends.resources.delete_body
+import org.goodcompany.app.feature.friends.resources.delete_body_contact
+import org.goodcompany.app.feature.friends.resources.delete_title
+import org.goodcompany.app.feature.friends.resources.detail_missing
+import org.goodcompany.app.feature.friends.resources.edit_done
+import org.goodcompany.app.feature.friends.resources.feeds_hint
+import org.goodcompany.app.feature.friends.resources.feeds_no_posts
+import org.goodcompany.app.feature.friends.resources.feeds_title
+import org.goodcompany.app.feature.friends.resources.feeds_to_news
+import org.goodcompany.app.feature.friends.resources.gift_lists_link
+import org.goodcompany.app.feature.friends.resources.gifts_given
+import org.goodcompany.app.feature.friends.resources.gifts_given_on
+import org.goodcompany.app.feature.friends.resources.gifts_hint
+import org.goodcompany.app.feature.friends.resources.gifts_ideas
+import org.goodcompany.app.feature.friends.resources.gifts_mark_given
+import org.goodcompany.app.feature.friends.resources.gifts_none_found
+import org.goodcompany.app.feature.friends.resources.gifts_suggest
+import org.goodcompany.app.feature.friends.resources.gifts_suggestions
+import org.goodcompany.app.feature.friends.resources.gifts_title
+import org.goodcompany.app.feature.friends.resources.ideas_dismiss
+import org.goodcompany.app.feature.friends.resources.ideas_find
+import org.goodcompany.app.feature.friends.resources.ideas_hint_ai
+import org.goodcompany.app.feature.friends.resources.ideas_hint_ai_chats
+import org.goodcompany.app.feature.friends.resources.ideas_hint_no_ai
+import org.goodcompany.app.feature.friends.resources.ideas_open
+import org.goodcompany.app.feature.friends.resources.ideas_setup
+import org.goodcompany.app.feature.friends.resources.moments_hint
+import org.goodcompany.app.feature.friends.resources.moments_reminder
+import org.goodcompany.app.feature.friends.resources.moments_title
+import org.goodcompany.app.feature.friends.resources.msg_added_as_person
+import org.goodcompany.app.feature.friends.resources.msg_added_to_news
+import org.goodcompany.app.feature.friends.resources.msg_background_removed
+import org.goodcompany.app.feature.friends.resources.msg_chat_imported
+import org.goodcompany.app.feature.friends.resources.msg_chat_invalid
+import org.goodcompany.app.feature.friends.resources.msg_chat_matched
+import org.goodcompany.app.feature.friends.resources.msg_entry_removed
+import org.goodcompany.app.feature.friends.resources.msg_feed_added
+import org.goodcompany.app.feature.friends.resources.msg_feed_error
+import org.goodcompany.app.feature.friends.resources.msg_feed_not_found
+import org.goodcompany.app.feature.friends.resources.msg_field_removed
+import org.goodcompany.app.feature.friends.resources.msg_ideas_found
+import org.goodcompany.app.feature.friends.resources.msg_ideas_none
+import org.goodcompany.app.feature.friends.resources.msg_link_removed
+import org.goodcompany.app.feature.friends.resources.msg_photo_unreadable
+import org.goodcompany.app.feature.friends.resources.msg_reminder_saved
+import org.goodcompany.app.feature.friends.resources.msg_saved
+import org.goodcompany.app.feature.friends.resources.news_add
+import org.goodcompany.app.feature.friends.resources.news_added
+import org.goodcompany.app.feature.friends.resources.news_hint
+import org.goodcompany.app.feature.friends.resources.news_title
+import org.goodcompany.app.feature.friends.resources.note_saved
+import org.goodcompany.app.feature.friends.resources.notes_add
+import org.goodcompany.app.feature.friends.resources.notes_placeholder
+import org.goodcompany.app.feature.friends.resources.notes_title
+import org.goodcompany.app.feature.friends.resources.occasions_hint
+import org.goodcompany.app.feature.friends.resources.occasions_title
+import org.goodcompany.app.feature.friends.resources.plans_add
+import org.goodcompany.app.feature.friends.resources.saved_removed
+import org.goodcompany.app.feature.friends.resources.snooze_week
+import org.goodcompany.app.feature.friends.resources.snooze_weekend
+import org.goodcompany.app.feature.friends.resources.socials_hint
+import org.goodcompany.app.feature.friends.resources.socials_title
+import org.goodcompany.app.feature.friends.resources.story_birthday_turns
+import org.goodcompany.app.feature.friends.resources.talk_title
+import org.goodcompany.app.feature.friends.resources.tastes_add_title
+import org.goodcompany.app.feature.friends.resources.tastes_dislikes_placeholder
+import org.goodcompany.app.feature.friends.resources.tastes_doesnt_like
+import org.goodcompany.app.feature.friends.resources.tastes_drink
+import org.goodcompany.app.feature.friends.resources.tastes_drink_placeholder
+import org.goodcompany.app.feature.friends.resources.tastes_edit_title
+import org.goodcompany.app.feature.friends.resources.tastes_food
+import org.goodcompany.app.feature.friends.resources.tastes_food_placeholder
+import org.goodcompany.app.feature.friends.resources.tastes_interests
+import org.goodcompany.app.feature.friends.resources.tastes_interests_placeholder
+import org.goodcompany.app.feature.friends.resources.tastes_title
+import org.goodcompany.app.feature.friends.resources.timeline_empty
+import org.goodcompany.app.feature.friends.resources.timeline_filter
+import org.goodcompany.app.feature.friends.resources.timeline_log
+import org.goodcompany.app.feature.friends.resources.timeline_title
+import org.goodcompany.app.feature.friends.resources.together_make_plans
+import org.goodcompany.app.feature.friends.resources.together_plan_cancelled
+import org.goodcompany.app.feature.friends.resources.together_plan_not_attended
+import org.goodcompany.app.feature.friends.resources.together_plan_skipped
+import org.goodcompany.app.feature.friends.resources.together_reminder_done
+import org.goodcompany.app.feature.friends.resources.together_show_all
+import org.goodcompany.app.feature.friends.resources.together_today
+import org.goodcompany.app.feature.friends.resources.together_turned
+import org.goodcompany.app.feature.friends.resources.topics_ai
+import org.goodcompany.app.feature.friends.resources.topics_from_notes
+import org.goodcompany.app.feature.friends.resources.touch_from_circle
+import org.goodcompany.app.feature.friends.resources.touch_snoozed
+import org.goodcompany.app.feature.friends.resources.touch_unsnooze
+import org.goodcompany.app.feature.friends.resources.websites_hint
+import org.goodcompany.app.feature.friends.resources.websites_title
+import org.goodcompany.app.feature.friends.resources.wish_gift_hint
+import org.goodcompany.app.feature.friends.resources.wish_title
+import org.goodcompany.app.feature.friends.ui.components.AddFeedDialog
+import org.goodcompany.app.feature.friends.ui.components.AddSocialDialog
+import org.goodcompany.app.feature.friends.ui.components.AddWebsiteDialog
+import org.goodcompany.app.feature.friends.ui.components.GiftDialog
+import org.goodcompany.app.feature.friends.ui.components.GiftGivenDialog
+import org.goodcompany.app.feature.friends.ui.components.ImportantEventDialog
+import org.goodcompany.app.feature.friends.ui.components.KinshipCard
+import org.goodcompany.app.feature.friends.ui.components.LifeUpdateDialog
+import org.jetbrains.compose.resources.getPluralString
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import org.goodcompany.app.core.ui.resources.Res as CoreRes
+
+@Composable
+fun FriendDetailScreen(
+    friendId: FriendId,
+    onBack: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenStory: () -> Unit = {},
+    onOpenFriend: (FriendId) -> Unit = {},
+    onOpenTimeline: () -> Unit = {},
+    onLog: () -> Unit = {},
+    /** The Log popup in edit mode on this timeline entry ([TimelineEntry.key], issue #102). */
+    onEditEntry: (String) -> Unit = {},
+    /** A plan's "Did you meet?" yes opens the small "We met" panel on that occurrence (issues #43, #47). */
+    onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    /** "Together" opens the small "We met" panel (issue #47). */
+    onWeMet: () -> Unit = {},
+    /** A circle chip: that circle's page (issue #88). */
+    onOpenCircle: (String) -> Unit = {},
+    /** "New circle with <name>": the circle editor with this person already in (issue #70). */
+    onNewCircle: () -> Unit = {},
+    onOpenGiftLists: () -> Unit = {},
+    viewModel: FriendDetailViewModel = koinViewModel(key = friendId.value) { parametersOf(friendId) },
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    // F14: a picked picture goes through the crop editor first; one the picker couldn't read goes straight on (it says so).
+    var cropping by remember { mutableStateOf<ByteArray?>(null) }
+    val pickPhoto = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) cropping = image else viewModel.onPhotoPicked(image)
+    }
+    // Issue #144: the page's background is cropped wide, like a circle's cover.
+    var croppingBackground by remember { mutableStateOf<ByteArray?>(null) }
+    val pickBackground = rememberImagePicker { image ->
+        if (image != null && image.isNotEmpty()) croppingBackground = image else viewModel.onBackgroundPicked(image)
+    }
+    val pickSavedPhoto = rememberGalleryPhotoPicker { picked ->
+        picked?.let { viewModel.onAddSavedPhoto(it.image, it.ref, it.takenOn) }
+    }
+    val photoOpener = rememberGalleryPhotoOpener()
+    val pickChat = rememberTextFilePicker(onPicked = viewModel::onChatPicked)
+    val pickNoteMedia = rememberGalleryMediaPicker { picked ->
+        viewModel.onNoteMediaPicked(picked.map { PickedNoteMedia(it.preview, if (it.isVideo) MediaKind.VIDEO else MediaKind.PHOTO, it.ref) })
+    }
+    val addToCalendar = rememberCalendarAdder()
+    LaunchedEffect(state.deleted) { if (state.deleted) onBack() }
+    FriendDetailContent(
+        state = state,
+        actions = FriendDetailActions(
+            onBack = onBack,
+            onOpenSettings = onOpenSettings,
+            onOpenStory = onOpenStory,
+            onOpenFriend = onOpenFriend,
+            onSaveAbout = viewModel::onSaveAbout,
+            onSetPreferredChannel = viewModel::onSetPreferredChannel,
+            onSaveRelative = viewModel::onSaveRelative,
+            onRemoveRelative = viewModel::onRemoveRelative,
+            onAddTastes = viewModel::onAddTastes,
+            onRemoveTaste = viewModel::onRemoveTaste,
+            onSaveCustomField = viewModel::onSaveCustomField,
+            onRemoveCustomField = viewModel::onRemoveCustomField,
+            onUndoRemoveCustomField = viewModel::onUndoRemoveCustomField,
+            onAddLifeUpdate = viewModel::onAddLifeUpdate,
+            onRemoveLifeUpdate = viewModel::onRemoveLifeUpdate,
+            onEditLifeUpdate = viewModel::onEditLifeUpdate,
+            onEditEvent = viewModel::onEditEvent,
+            onRenameTaste = viewModel::onRenameTaste,
+            onDeleteTaste = viewModel::onDeleteTaste,
+            onEditGift = viewModel::onEditGift,
+            onEditEntry = onEditEntry,
+            onDeleteEntry = viewModel::onDeleteEntry,
+            onAddFeed = viewModel::onAddFeed,
+            onRemoveFeed = viewModel::onRemoveFeed,
+            onAddSocial = viewModel::onAddSocial,
+            onRemoveSocial = viewModel::onRemoveSocial,
+            onAddWebsite = viewModel::onAddWebsite,
+            onRemoveWebsite = viewModel::onRemoveWebsite,
+            onFeedPostToNews = viewModel::onFeedPostToNews,
+            onClosenessChange = viewModel::onClosenessChange,
+            onToggleBirthdayNotifications = viewModel::onToggleBirthdayNotifications,
+            onToggleSuggestEvents = viewModel::onToggleSuggestEvents,
+            onMeetEveryChange = viewModel::onMeetEveryChange,
+            onSnooze = viewModel::onSnooze,
+            onClearSnooze = viewModel::onClearSnooze,
+            onSaveBirthday = viewModel::onSaveBirthday,
+            onRename = viewModel::onRename,
+            onAddLikes = viewModel::onAddLikes,
+            onRemoveLike = viewModel::onRemoveLike,
+            onAddDislikes = viewModel::onAddDislikes,
+            onRemoveDislike = viewModel::onRemoveDislike,
+            onOpenNote = viewModel::onOpenNote,
+            onCloseNote = viewModel::onCloseNote,
+            onAddNoteMedia = pickNoteMedia,
+            onRemoveNoteMedia = viewModel::onRemoveNoteMedia,
+            onSaveNote = viewModel::onSaveNote,
+            onAddKid = viewModel::onAddKid,
+            onSetShowInMyList = viewModel::onSetShowInMyList,
+            onConfirmKinship = viewModel::onConfirmKinship,
+            onDismissKinship = viewModel::onDismissKinship,
+            onAddEvent = viewModel::onAddEvent,
+            onRemoveEvent = viewModel::onRemoveEvent,
+            onSaveGift = viewModel::onSaveGift,
+            onRemoveGift = viewModel::onRemoveGift,
+            onMarkGiftGiven = viewModel::onMarkGiftGiven,
+            onSuggestGifts = viewModel::onSuggestGifts,
+            onKeepGiftSuggestion = viewModel::onKeepGiftSuggestion,
+            onDismissGiftSuggestions = viewModel::onDismissGiftSuggestions,
+            onOpenWish = viewModel::onOpenWish,
+            onDismissWish = viewModel::onDismissWish,
+            onPersonaliseWish = viewModel::onPersonaliseWish,
+            onOpenTimeline = onOpenTimeline,
+            onImportChat = pickChat,
+            onLog = onLog,
+            onOpenCircle = onOpenCircle,
+            onSetInCircle = viewModel::onSetInCircle,
+            onNewCircle = onNewCircle,
+            onOpenGiftLists = onOpenGiftLists,
+            onAddPhoto = pickPhoto,
+            onAdjustCrop = { state.detail?.friend?.avatar?.bytes()?.takeIf { it.isNotEmpty() }?.let { cropping = it } },
+            onRemovePhoto = viewModel::onRemovePhoto,
+            onPickBackground = pickBackground,
+            onRemoveBackground = viewModel::onRemoveBackground,
+            onAddSavedPhoto = pickSavedPhoto,
+            onOpenOriginal = photoOpener::open,
+            onRemoveAttachment = viewModel::onRemoveAttachment,
+            onUndoRemoveAttachment = viewModel::onUndoRemoveAttachment,
+            onSaveLink = viewModel::onSaveLink,
+            onRemoveLink = viewModel::onRemoveLink,
+            onUndoRemoveLink = viewModel::onUndoRemoveLink,
+            onUndoSave = viewModel::onUndoSave,
+            onSaveRelationToMe = viewModel::onSaveRelationToMe,
+            onAddRelativeAsPerson = viewModel::onAddRelativeAsPerson,
+            onGenerateIdeas = viewModel::onGenerateIdeas,
+            onDismissIdea = viewModel::onDismissIdea,
+            onDelete = viewModel::onDelete,
+            onWeMet = onWeMet,
+            onOpenReminderEditor = viewModel::onOpenReminderEditor,
+            onDismissReminderEditor = viewModel::onDismissReminderEditor,
+            onSaveReminder = viewModel::onSaveReminder,
+            reminders = ReminderCallbacks(
+                onDone = viewModel::onReminderDone,
+                onSnooze = viewModel::onSnoozeReminder,
+                onEdit = viewModel::onEditReminder,
+                onDelete = viewModel::onDeleteReminder,
+                onOpenFriend = onOpenFriend,
+                onOpenCircle = onOpenCircle,
+                onOpen = { r ->
+                    when (val target = viewModel.onOpenReminder(r)) {
+                        is ReminderTarget.Circle -> onOpenCircle(target.circleId)
+                        is ReminderTarget.Person -> onOpenFriend(target.friendId)
+                        is ReminderTarget.Edit -> Unit
+                    }
+                },
+            ),
+            onUndoReminder = viewModel::onUndoReminder,
+            onMessageShown = viewModel::onMessageShown,
+            onTogglePause = viewModel::onTogglePause,
+            onToggleTracking = viewModel::onToggleTracking,
+            onSetCatchUpCounts = viewModel::onSetCatchUpCounts,
+            onToggleOccasion = viewModel::onToggleOccasion,
+            onOpenPlanEditor = viewModel::onOpenPlanEditor,
+            onDismissPlanEditor = viewModel::onDismissPlanEditor,
+            onSavePlan = viewModel::onSavePlan,
+            onAnswerPlan = viewModel::onAnswerPlan,
+            onSkipPlan = viewModel::onSkipPlan,
+            onLogPlan = onLogPlan,
+            onUndoPlan = viewModel::onUndoPlan,
+            onAddPlanToCalendar = { plan, friends, circle -> addToCalendar(plan.calendarEntry(friends, circle = circle)) },
+        ),
+    )
+    cropping?.let { image ->
+        PhotoCropDialog(image, onDismiss = { cropping = null }, onCropped = { cropped ->
+            cropping = null
+            viewModel.onPhotoPicked(cropped)
+        })
+    }
+    croppingBackground?.let { image ->
+        PhotoCropDialog(image, onDismiss = { croppingBackground = null }, shape = CropShape.WIDE, onCropped = { cropped ->
+            croppingBackground = null
+            viewModel.onBackgroundPicked(cropped)
+        })
+    }
+}
+
+/** All UI events of the detail screen, so the content composable stays previewable. */
+data class FriendDetailActions(
+    val onBack: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
+    val onOpenStory: () -> Unit = {},
+    val onOpenFriend: (FriendId) -> Unit = {},
+    val onSaveAbout: (AboutEdit) -> Unit = {},
+    /** "Message them first on" in edit mode, saved on choice (issue #90). */
+    val onSetPreferredChannel: (ContactChannel?) -> Unit = {},
+    val onSaveRelative: (RelativeEdit) -> Unit = {},
+    val onRemoveRelative: (String) -> Unit = {},
+    val onAddTastes: (TasteKind, List<String>) -> Unit = { _, _ -> },
+    val onRemoveTaste: (TasteKind, String) -> Unit = { _, _ -> },
+    val onSaveCustomField: (id: String?, label: String, value: String) -> Unit = { _, _, _ -> },
+    val onRemoveCustomField: (String) -> Unit = {},
+    val onUndoRemoveCustomField: () -> Unit = {},
+    /** "Add a photo" on the Saved card (the gallery picker that keeps a reference). */
+    val onAddSavedPhoto: () -> Unit = {},
+    val onOpenOriginal: suspend (PhotoRef) -> OpenedPhoto = { OpenedPhoto.Unavailable },
+    val onRemoveAttachment: (Attachment) -> Unit = {},
+    val onUndoRemoveAttachment: () -> Unit = {},
+    val onSaveLink: (LinkEdit) -> Unit = {},
+    val onRemoveLink: (String) -> Unit = {},
+    val onUndoRemoveLink: () -> Unit = {},
+    /** Undo for a choice or sheet that saved on its own (#64). */
+    val onUndoSave: () -> Unit = {},
+    val onSaveRelationToMe: (LinkType?, Pronouns?) -> Unit = { _, _ -> },
+    val onAddRelativeAsPerson: (String) -> Unit = {},
+    val onAddLifeUpdate: (String) -> Unit = {},
+    val onRemoveLifeUpdate: (String) -> Unit = {},
+    // Issue #102: edit and delete every entry.
+    val onEditLifeUpdate: (id: String, text: String) -> Unit = { _, _ -> },
+    val onEditEvent: (id: String, title: String, date: LocalDate, remindDaysBefore: Int) -> Unit = { _, _, _, _ -> },
+    val onRenameTaste: (TasteSlot, old: String, new: String) -> Unit = { _, _, _ -> },
+    val onDeleteTaste: (TasteSlot, String) -> Unit = { _, _ -> },
+    val onEditGift: (id: String, title: String, note: String) -> Unit = { _, _, _ -> },
+    /** Meetups, contacts and journal entries open the Log popup in edit mode ([TimelineEntry.key]). */
+    val onEditEntry: (String) -> Unit = {},
+    val onDeleteEntry: (TimelineEntry) -> Unit = {},
+    val onAddFeed: (String) -> Unit = {},
+    val onRemoveFeed: (String) -> Unit = {},
+    val onAddSocial: (SocialNetwork, String) -> Unit = { _, _ -> },
+    val onRemoveSocial: (SocialLink) -> Unit = {},
+    val onAddWebsite: (String) -> Unit = {},
+    val onRemoveWebsite: (String) -> Unit = {},
+    val onFeedPostToNews: (String) -> Unit = {},
+    val onClosenessChange: (Closeness) -> Unit = {},
+    val onToggleBirthdayNotifications: () -> Unit = {},
+    val onToggleSuggestEvents: () -> Unit = {},
+    val onMeetEveryChange: (Int?) -> Unit = {},
+    val onSnooze: (SnoozeOption) -> Unit = {},
+    val onClearSnooze: () -> Unit = {},
+    /** The birthday sheet: the birthday (year optional, F4) and the reminder switch (F10). */
+    val onSaveBirthday: (Birthday?, notify: Boolean) -> Unit = { _, _ -> },
+    /** F19: the name given in the app; null goes back to the contact's name. */
+    val onRename: (String?) -> Unit = {},
+    val onAddLikes: (List<String>) -> Unit = {},
+    val onRemoveLike: (String) -> Unit = {},
+    val onAddDislikes: (List<String>) -> Unit = {},
+    val onRemoveDislike: (String) -> Unit = {},
+    /** "+ Note" (null) or a note tapped: the note popup (issue #119). */
+    val onOpenNote: (JournalEntry?) -> Unit = {},
+    val onCloseNote: () -> Unit = {},
+    /** The system picker on photos and videos, for the note popup. */
+    val onAddNoteMedia: () -> Unit = {},
+    val onRemoveNoteMedia: (String) -> Unit = {},
+    val onSaveNote: (String, LocalDate) -> Unit = { _, _ -> },
+    val onAddKid: (KidDraft) -> Unit = {},
+    val onSetShowInMyList: (Boolean) -> Unit = {},
+    val onConfirmKinship: (LinkType) -> Unit = {},
+    val onDismissKinship: () -> Unit = {},
+    val onAddEvent: (String, LocalDate, Int) -> Unit = { _, _, _ -> },
+    val onRemoveEvent: (String) -> Unit = {},
+    val onSaveGift: (title: String, note: String) -> Unit = { _, _ -> },
+    val onRemoveGift: (String) -> Unit = {},
+    val onMarkGiftGiven: (String, GiftOccasion?) -> Unit = { _, _ -> },
+    val onSuggestGifts: () -> Unit = {},
+    val onKeepGiftSuggestion: (String) -> Unit = {},
+    val onDismissGiftSuggestions: () -> Unit = {},
+    val onOpenWish: () -> Unit = {},
+    val onDismissWish: () -> Unit = {},
+    val onPersonaliseWish: () -> Unit = {},
+    val onOpenTimeline: () -> Unit = {},
+    /** The Conversations box's Add (issue #117): pick a chat export. */
+    val onImportChat: () -> Unit = {},
+    val onLog: () -> Unit = {},
+    /** A circle chip: People filtered by that circle. */
+    val onOpenCircle: (String) -> Unit = {},
+    /** A tick in the "Circles" sheet (issues #70, #90): the only way in or out of a circle here; saves at once, with Undo. */
+    val onSetInCircle: (groupId: String, member: Boolean) -> Unit = { _, _ -> },
+    /** "New circle with <name>" in the sheet. */
+    val onNewCircle: () -> Unit = {},
+    /** "Gift lists" on the gift card (F8). */
+    val onOpenGiftLists: () -> Unit = {},
+    /** Picks a picture for the avatar (then the crop editor), offered for everyone (F14). */
+    val onAddPhoto: () -> Unit = {},
+    /** Crops the photo shown again. */
+    val onAdjustCrop: () -> Unit = {},
+    /** Removes the photo set in the app. */
+    val onRemovePhoto: () -> Unit = {},
+    /** The background of their page (issue #144): pick, then crop wide. */
+    val onPickBackground: () -> Unit = {},
+    val onRemoveBackground: () -> Unit = {},
+    val onGenerateIdeas: () -> Unit = {},
+    val onDismissIdea: (String) -> Unit = {},
+    val onDelete: () -> Unit = {},
+    /** "Together": opens the "We met" panel. */
+    val onWeMet: () -> Unit = {},
+    val onOpenReminderEditor: () -> Unit = {},
+    val onDismissReminderEditor: () -> Unit = {},
+    val onSaveReminder: (ReminderDraft) -> Unit = {},
+    /** Done · Snooze · Edit · Delete on their reminders (issue #99). */
+    val reminders: ReminderCallbacks = ReminderCallbacks(onDone = {}, onSnooze = { _, _ -> }, onEdit = {}, onDelete = {}),
+    val onUndoReminder: () -> Unit = {},
+    val onMessageShown: () -> Unit = {},
+    val onTogglePause: () -> Unit = {},
+    val onToggleTracking: () -> Unit = {},
+    val onSetCatchUpCounts: (CatchUpCounts) -> Unit = {},
+    val onToggleOccasion: (Occasion) -> Unit = {},
+    val onOpenPlanEditor: (Plan?) -> Unit = {},
+    val onDismissPlanEditor: () -> Unit = {},
+    val onSavePlan: (PlanInput) -> Unit = {},
+    /** "How did it go?" and the plan menu (issue #100), except "It happened" (that's [onLogPlan]). */
+    val onAnswerPlan: (Plan, PlanAnswer, wholeSeries: Boolean) -> Unit = { _, _, _ -> },
+    val onSkipPlan: (Plan) -> Unit = {},
+    /** "It happened": open the "We met" panel on that occurrence (a circle plan ticks who came, F20). */
+    val onLogPlan: (planId: String, day: LocalDate) -> Unit = { _, _ -> },
+    val onUndoPlan: () -> Unit = {},
+    val onAddPlanToCalendar: (Plan, List<Friend>, FriendGroup?) -> Unit = { _, _, _ -> },
+)
+
+internal val RHYTHMS = listOf(7, 14, 30, 90)
+
+/** Localised snackbar text for a [FriendDetailMessage]. */
+suspend fun FriendDetailMessage.text(zone: TimeZone = TimeZone.UTC, today: LocalDate = LocalDate(2000, 1, 1)): String = when (this) {
+    is FriendDetailMessage.ReminderChanged -> notice.text(zone, today)
+    is FriendDetailMessage.Snoozed -> getString(Res.string.touch_snoozed, until.shortLabelText())
+    is FriendDetailMessage.IdeasFound -> if (count ==
+        0
+    ) {
+        getString(Res.string.msg_ideas_none)
+    } else {
+        getPluralString(Res.plurals.msg_ideas_found, count, count)
+    }
+    FriendDetailMessage.NoNewGifts -> getString(Res.string.gifts_none_found)
+    is FriendDetailMessage.AiError -> aiErrorText(error)
+    FriendDetailMessage.ReminderSaved -> getString(Res.string.msg_reminder_saved)
+    FriendDetailMessage.PlanSaved -> getString(CoreRes.string.plan_saved)
+    FriendDetailMessage.PlanCancelled -> getString(CoreRes.string.plan_cancelled)
+    FriendDetailMessage.PlanDeleted -> getString(CoreRes.string.plan_deleted)
+    FriendDetailMessage.PlanNotAttended -> getString(CoreRes.string.plan_not_attended)
+    FriendDetailMessage.PlanLogged -> getString(CoreRes.string.plan_logged)
+    FriendDetailMessage.PlanClosed -> getString(CoreRes.string.plan_closed)
+    FriendDetailMessage.PlanSkipped -> getString(CoreRes.string.plan_skipped)
+    is FriendDetailMessage.FeedAdded -> getString(Res.string.msg_feed_added, title)
+    FriendDetailMessage.FeedNotFound -> getString(Res.string.msg_feed_not_found)
+    FriendDetailMessage.FeedError -> getString(Res.string.msg_feed_error)
+    FriendDetailMessage.AddedToNews -> getString(Res.string.msg_added_to_news)
+    is FriendDetailMessage.ChatImported -> getPluralString(Res.plurals.msg_chat_imported, messages, messages).let { base ->
+        sender?.let { getString(Res.string.msg_chat_matched, base, it) } ?: base
+    }
+    FriendDetailMessage.ChatInvalid -> getString(Res.string.msg_chat_invalid)
+    FriendDetailMessage.NoteSaved -> getString(Res.string.note_saved)
+    FriendDetailMessage.PhotoUnreadable -> getString(Res.string.msg_photo_unreadable)
+    FriendDetailMessage.BackgroundRemoved -> getString(Res.string.msg_background_removed)
+    is FriendDetailMessage.CustomFieldRemoved -> getString(Res.string.msg_field_removed, label)
+    FriendDetailMessage.AttachmentRemoved -> getString(Res.string.saved_removed)
+    FriendDetailMessage.LinkRemoved -> getString(Res.string.msg_link_removed)
+    is FriendDetailMessage.AddedAsPerson -> getString(Res.string.msg_added_as_person, name)
+    is FriendDetailMessage.KidAdded -> getString(Res.string.msg_added_as_person, name)
+    FriendDetailMessage.Saved -> getString(Res.string.msg_saved)
+    FriendDetailMessage.Removed -> getString(Res.string.msg_entry_removed)
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun FriendDetailContent(state: FriendDetailUiState, actions: FriendDetailActions) {
+    val snackbar = remember { SnackbarHostState() }
+    var familyEditing by remember { mutableStateOf<FamilyEditing?>(null) }
+    var addingLink by rememberSaveable { mutableStateOf(false) }
+    var linkEditing by remember { mutableStateOf<LinkedPerson?>(null) }
+    var editingRelationToMe by rememberSaveable { mutableStateOf(false) }
+    var editingAbout by rememberSaveable { mutableStateOf(false) }
+    var fieldEditing by remember { mutableStateOf<CustomField?>(null) }
+    var addingField by rememberSaveable { mutableStateOf(false) }
+    var addingEvent by rememberSaveable { mutableStateOf(false) }
+    var addingGift by rememberSaveable { mutableStateOf(false) }
+    var addingNews by rememberSaveable { mutableStateOf(false) }
+    var addingFeed by rememberSaveable { mutableStateOf(false) }
+    var addingSocial by rememberSaveable { mutableStateOf(false) }
+    var addingWebsite by rememberSaveable { mutableStateOf(false) }
+    var addingTaste by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.feedAdded) { addingFeed = false }
+    var givingGift by remember { mutableStateOf<Gift?>(null) }
+    // Issue #102: the entry being edited in its own dialog (news, a moment, a gift, a taste).
+    var pageEdit by remember { mutableStateOf<PageEdit?>(null) }
+    var pickBirthday by rememberSaveable { mutableStateOf(false) }
+    var pickLevel by rememberSaveable { mutableStateOf(false) }
+    var editingName by rememberSaveable { mutableStateOf(false) }
+    var photoOptions by rememberSaveable { mutableStateOf(false) }
+    var choosingCircles by rememberSaveable { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var seeAllSaved by rememberSaveable { mutableStateOf(false) }
+    var messaging by rememberSaveable { mutableStateOf(false) }
+    var viewing by remember { mutableStateOf<AttachmentView?>(null) }
+    val scope = rememberCoroutineScope()
+    var viewingMedia by remember { mutableStateOf<Pair<NoteMedia, ByteArray?>?>(null) }
+    // Issue #119: a note's photo or video opens from the gallery (the system viewer on Android); gone → its thumbnail.
+    val openNoteMedia: (NoteMedia) -> Unit = { m ->
+        val ref = m.ref
+        if (ref == null) {
+            viewingMedia = m to null
+        } else {
+            scope.launch {
+                when (val opened = actions.onOpenOriginal(ref)) {
+                    OpenedPhoto.Shown -> Unit
+                    is OpenedPhoto.Loaded -> viewingMedia = m to opened.image
+                    OpenedPhoto.Unavailable -> viewingMedia = m to null
+                }
+            }
+        }
+    }
+    // Issue #103: no edit mode; the pencil opens the Edit person popup, Occasions has its own popup. The chosen tab is
+    // screen state (it survives rotation, not a restart); the page always opens on Together.
+    var editingPerson by rememberSaveable { mutableStateOf(false) }
+    var editingOccasions by rememberSaveable { mutableStateOf(false) }
+    var tabIndex by rememberSaveable { mutableIntStateOf(PersonTab.TOGETHER.ordinal) }
+    val listState = rememberLazyListState()
+    val uriHandler = LocalUriHandler.current
+    val openLink: (String) -> Unit = { url -> runCatching { uriHandler.openUri(url) } }
+    val openAttachment: (Attachment) -> Unit = { a ->
+        when (a.kind) {
+            AttachmentKind.LINK -> a.url?.let(openLink)
+            AttachmentKind.TEXT -> viewing = AttachmentView.Text(a)
+            AttachmentKind.PHOTO -> {
+                val ref = a.photoRef
+                if (ref == null) {
+                    viewing = AttachmentView.Photo(a, null)
+                } else {
+                    scope.launch {
+                        when (val opened = actions.onOpenOriginal(ref)) {
+                            OpenedPhoto.Shown -> Unit
+                            is OpenedPhoto.Loaded -> viewing = AttachmentView.Photo(a, opened.image)
+                            OpenedPhoto.Unavailable -> viewing = AttachmentView.Photo(a, null)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    val undoLabel = stringResource(CoreRes.string.undo)
+    LaunchedEffect(state.message) {
+        val message = state.message ?: return@LaunchedEffect
+        val undoable = state.undoPlan != null || state.undoCustomField != null || state.undoAttachment != null || state.undoLink != null ||
+            state.undoSave != null || state.reminderUndo != null
+        val result = snackbar.showMessage(message.text(state.zone, state.today), if (undoable) undoLabel else null)
+        if (result == SnackbarResult.ActionPerformed) {
+            when {
+                state.reminderUndo != null -> actions.onUndoReminder()
+                state.undoSave != null -> actions.onUndoSave()
+                state.undoAttachment != null -> actions.onUndoRemoveAttachment()
+                state.undoLink != null -> actions.onUndoRemoveLink()
+                state.undoCustomField != null -> actions.onUndoRemoveCustomField()
+                state.undoPlan != null -> actions.onUndoPlan()
+            }
+        }
+        actions.onMessageShown()
+    }
+
+    Scaffold(snackbarHost = { AppSnackbarHost(snackbar) }) { padding ->
+        val detail = state.detail
+        if (detail == null) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                if (state.isLoading) CircularProgressIndicator() else Text(stringResource(Res.string.detail_missing))
+            }
+            return@Scaffold
+        }
+        val f = detail.friend
+        val firstName = f.displayName.substringBefore(' ')
+        val tab = PersonTab.entries[tabIndex]
+        val facts = PageFacts(state.links, state.attachments.size, hasTopics = detail.topics.isNotEmpty(), aiEnabled = state.aiEnabled)
+        val family = remember(f, state.links) { FamilyAround.of(f, state.links) }
+        val collapsed by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+        val pinnedOffset = with(LocalDensity.current) { 128.dp.roundToPx() }
+
+        // The items before the tab's cards: the top, the kinship proposal, the pinned tabs and the gap under them.
+        val leadingItems = 1 + (if (detail.kinship != null) 1 else 0) + 2
+
+        /** Switches to [target]'s tab and scrolls to it (the tabs when it isn't shown). */
+        fun scrollTo(target: PersonCard) {
+            tabIndex = target.tab.ordinal
+            val index = ProfileSections.shown(target.tab, f, facts).indexOf(target)
+            val lead = leadingItems
+            scope.launch {
+                withFrameNanos { } // let the new tab lay out its items first
+                if (index >= 0) listState.animateScrollToItem(lead + index, -pinnedOffset) else listState.animateScrollToItem(lead - 2)
+            }
+        }
+
+        /** A chip of "Complete <name>'s profile": that section's add sheet. */
+        fun complete(card: PersonCard) {
+            when (card) {
+                PersonCard.ABOUT -> editingAbout = true
+                PersonCard.MORE_ABOUT -> addingField = true
+                PersonCard.FAMILY -> familyEditing = FamilyEditing.New
+                PersonCard.MOMENTS -> addingEvent = true
+                PersonCard.GIFTS -> addingGift = true
+                PersonCard.SAVED -> actions.onAddSavedPhoto()
+                PersonCard.FEEDS -> addingFeed = true
+                PersonCard.SOCIALS -> addingSocial = true
+                PersonCard.WEBSITES -> addingWebsite = true
+                PersonCard.OCCASIONS -> editingOccasions = true
+                else -> Unit
+            }
+        }
+
+        val topActions = PersonTopActions(
+            onBack = actions.onBack,
+            onEditPerson = { editingPerson = true },
+            onRemove = { confirmDelete = true },
+            // The badge always opens the options: photo and, since issue #144, the page's background.
+            onPhoto = { photoOptions = true },
+            onOpenStory = actions.onOpenStory,
+            onEditBirthday = { pickBirthday = true },
+            onPickCloseness = { pickLevel = true },
+            onOpenCircle = actions.onOpenCircle,
+            onEditCircles = { choosingCircles = true },
+            onOpenFamily = { member -> member.person?.let { actions.onOpenFriend(it.id) } ?: scrollTo(PersonCard.FAMILY) },
+            onMoreFamily = { scrollTo(PersonCard.FAMILY) },
+            onMessage = { messaging = true },
+            onWeMet = actions.onWeMet,
+            onRemind = actions.onOpenReminderEditor,
+            onAddNews = { addingNews = true },
+            onLog = actions.onLog,
+        )
+
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 32.dp),
+        ) {
+            item(key = "hero") { PersonTop(f, state, family, topActions) }
+
+            detail.kinship?.let { proposal ->
+                item(key = "kinship") {
+                    KinshipCard(
+                        proposal,
+                        onConfirm = actions.onConfirmKinship,
+                        onDismiss = actions.onDismissKinship,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+            }
+
+            stickyHeader(key = "tabs") {
+                PinnedTabs(f, tab, onTab = { tabIndex = it.ordinal }, collapsed = collapsed, actions = topActions)
+            }
+            // Issue #130: the gap under the tabs equals the cards' 16 dp side padding (they bring 6 dp of their own).
+            item(key = "tabs-gap") { Spacer(Modifier.height(10.dp)) }
+
+            // In-place editing on About stays (issue #103): the About cards always show their editors.
+            ProfileSections.shown(tab, f, facts).forEach { card ->
+                item(key = card.name) {
+                    when (card) {
+                        PersonCard.TO_TALK_ABOUT -> ToTalkAbout(f, state, actions, onAddNews = { addingNews = true }, onEdit = { pageEdit = it })
+                        PersonCard.TASTES -> Tastes(f, actions, onAdd = { addingTaste = true }, onEdit = { pageEdit = it })
+                        PersonCard.NOTES -> Notes(detail.timeline, state, actions, onOpenMedia = openNoteMedia)
+                        PersonCard.COMPLETE -> CompleteProfile(firstName, ProfileSections.missing(f, facts), onPick = ::complete)
+                        PersonCard.ABOUT -> AboutCard(
+                            f,
+                            detail.others,
+                            onEdit = { editingAbout = true },
+                            onOpenFriend = actions.onOpenFriend,
+                        )
+                        PersonCard.MORE_ABOUT -> MoreAboutCard(
+                            f,
+                            onAdd = { addingField = true },
+                            onEdit = { fieldEditing = it },
+                            onRemove = actions.onRemoveCustomField,
+                        )
+                        PersonCard.OCCASIONS -> Occasions(f, onEdit = { editingOccasions = true })
+                        PersonCard.FAMILY -> FamilyCard(
+                            f,
+                            state.today,
+                            onAdd = { familyEditing = FamilyEditing.New },
+                            onEditRelative = { familyEditing = FamilyEditing.EditRelative(it) },
+                            onRemoveRelative = actions.onRemoveRelative,
+                            links = state.links,
+                            onOpenPerson = actions.onOpenFriend,
+                            onEditLink = { linkEditing = it },
+                            onAddLink = { addingLink = true },
+                            onAddAsPerson = actions.onAddRelativeAsPerson,
+                        )
+                        PersonCard.OTHER_LINKS -> OtherLinksCard(
+                            state.links.filter { it.role.category == LinkCategory.OTHER },
+                            actions.onOpenFriend,
+                            onEdit = { linkEditing = it },
+                        )
+                        PersonCard.MOMENTS -> Moments(f, state, actions, onAdd = { addingEvent = true }, onEdit = { pageEdit = it })
+                        PersonCard.GIFTS -> Gifts(f, state, actions, onAdd = { addingGift = true }, onGive = { givingGift = it })
+                        PersonCard.SAVED -> SavedCard(
+                            firstName,
+                            state.attachments,
+                            state.today,
+                            state.zone,
+                            onAddPhoto = actions.onAddSavedPhoto,
+                            onOpen = openAttachment,
+                            onSeeAll = { seeAllSaved = true },
+                        )
+                        PersonCard.SOCIALS -> SocialsCard(f, onAdd = { addingSocial = true }, onRemove = actions.onRemoveSocial)
+                        PersonCard.WEBSITES -> WebsitesCard(f, onAdd = { addingWebsite = true }, onRemove = actions.onRemoveWebsite)
+                        PersonCard.FEEDS -> Feeds(f, state, actions, onAdd = { addingFeed = true })
+                        PersonCard.CONVERSATIONS -> Conversations(detail.messageCount, onAdd = actions.onImportChat)
+                        PersonCard.TIMELINE -> TimelineCard(f, state, actions, onEdit = { pageEdit = it })
+                    }
+                }
+            }
+        }
+
+        if (messaging) MessageSheet(f, onDismiss = { messaging = false })
+        state.noteEditing?.let { editing ->
+            NoteDialog(
+                editing,
+                state.today,
+                state.zone,
+                state.mediaExplained,
+                onAddMedia = actions.onAddNoteMedia,
+                onRemoveMedia = actions.onRemoveNoteMedia,
+                onSave = actions.onSaveNote,
+                onDismiss = actions.onCloseNote,
+            )
+        }
+        viewingMedia?.let { (m, original) -> NoteMediaViewer(m, original, onDismiss = { viewingMedia = null }) }
+        if (editingPerson) {
+            EditPersonDialog(
+                f,
+                state,
+                actions,
+                onEditName = { editingName = true },
+                onEditRelationToMe = { editingRelationToMe = true },
+                onRemove = {
+                    editingPerson = false
+                    confirmDelete = true
+                },
+                onDismiss = { editingPerson = false },
+            )
+        }
+        if (editingOccasions) OccasionsDialog(f, actions.onToggleOccasion, onDismiss = { editingOccasions = false })
+        if (pickLevel) {
+            ClosenessSheet(f, state.cadenceRules, onPick = {
+                pickLevel = false
+                actions.onClosenessChange(it)
+            }, onDismiss = { pickLevel = false })
+        }
+        if (addingTaste) {
+            AddTasteDialog(firstName, state.tags, actions, onDismiss = { addingTaste = false })
+        }
+        if (addingLink || linkEditing != null) {
+            val linked = state.links.mapTo(HashSet()) { it.person.id }
+            LinkSheet(
+                friend = f,
+                others = detail.others.filter { it.id !in linked },
+                circles = detail.circles,
+                editing = linkEditing,
+                onDismiss = {
+                    addingLink = false
+                    linkEditing = null
+                },
+                onSave = {
+                    actions.onSaveLink(it)
+                    addingLink = false
+                    linkEditing = null
+                },
+                onRemove = {
+                    actions.onRemoveLink(it)
+                    linkEditing = null
+                },
+            )
+        }
+        if (editingRelationToMe) {
+            RelationToMeSheet(f, onDismiss = { editingRelationToMe = false }) { relation, pronouns ->
+                actions.onSaveRelationToMe(relation, pronouns)
+                editingRelationToMe = false
+            }
+        }
+        familyEditing?.let { sheet ->
+            FamilySheet(
+                firstName = firstName,
+                editing = sheet,
+                latestYear = state.today.year,
+                onDismiss = { familyEditing = null },
+                onAddKid = {
+                    actions.onAddKid(it)
+                    familyEditing = null
+                },
+                parentIsFamily = f.isFamily,
+                onSaveRelative = {
+                    actions.onSaveRelative(it)
+                    familyEditing = null
+                },
+                tags = state.tags,
+            )
+        }
+        if (editingAbout) {
+            AboutDialog(f, detail.others, onDismiss = { editingAbout = false }) {
+                actions.onSaveAbout(it)
+                editingAbout = false
+            }
+        }
+        if (addingField || fieldEditing != null) {
+            val field = fieldEditing
+            CustomFieldDialog(
+                field = field,
+                suggestions = detail.customFieldLabels,
+                onDismiss = {
+                    addingField = false
+                    fieldEditing = null
+                },
+                onSave = { label, value ->
+                    actions.onSaveCustomField(field?.id, label, value)
+                    addingField = false
+                    fieldEditing = null
+                },
+            )
+        }
+        if (addingEvent) {
+            ImportantEventDialog(state.today, { addingEvent = false }) { t, d, b ->
+                actions.onAddEvent(t, d, b)
+                addingEvent = false
+            }
+        }
+        if (addingSocial) AddSocialDialog(onDismiss = { addingSocial = false }, onAdd = { network, input -> actions.onAddSocial(network, input) })
+        if (addingWebsite) AddWebsiteDialog(onDismiss = { addingWebsite = false }, onAdd = actions.onAddWebsite)
+        if (addingFeed) {
+            AddFeedDialog(busy = state.isAddingFeed, onDismiss = { addingFeed = false }, onAdd = actions.onAddFeed)
+        }
+        if (addingNews) {
+            LifeUpdateDialog(firstName, onDismiss = { addingNews = false }) { text ->
+                actions.onAddLifeUpdate(text)
+                addingNews = false
+            }
+        }
+        if (addingGift) {
+            GiftDialog(onDismiss = { addingGift = false }) { title, note ->
+                actions.onSaveGift(title, note)
+                addingGift = false
+            }
+        }
+        pageEdit?.let { edit -> PageEditDialog(edit, firstName, state.today, actions, onDone = { pageEdit = null }) }
+        givingGift?.let { gift ->
+            GiftGivenDialog(gift, onDismiss = { givingGift = null }) { occasion ->
+                actions.onMarkGiftGiven(gift.id, occasion)
+                givingGift = null
+            }
+        }
+        if (seeAllSaved) {
+            SavedListSheet(
+                firstName,
+                state.attachments,
+                state.today,
+                state.zone,
+                onOpen = openAttachment,
+                onRemove = actions.onRemoveAttachment,
+                onDismiss = { seeAllSaved = false },
+            )
+        }
+        viewing?.let { view ->
+            AttachmentViewer(
+                view,
+                onOpenLink = openLink,
+                onRemove = {
+                    actions.onRemoveAttachment(view.attachment)
+                    viewing = null
+                },
+                onDismiss = { viewing = null },
+            )
+        }
+        if (pickBirthday) {
+            BirthdaySheet(f, latestYear = state.today.year, onSave = actions.onSaveBirthday, onDismiss = { pickBirthday = false })
+        }
+        if (editingName) NameDialog(f, onSave = actions.onRename, onDismiss = { editingName = false })
+        if (choosingCircles) {
+            CircleSheet(
+                f,
+                circles = detail.allCircles,
+                onToggle = actions.onSetInCircle,
+                onNewCircle = {
+                    choosingCircles = false
+                    actions.onNewCircle()
+                },
+                onDismiss = { choosingCircles = false },
+            )
+        }
+        if (photoOptions) {
+            PhotoOptionsSheet(
+                f,
+                hasBackground = state.background != null,
+                onReplace = {
+                    photoOptions = false
+                    actions.onAddPhoto()
+                },
+                onAdjust = {
+                    photoOptions = false
+                    actions.onAdjustCrop()
+                },
+                onRemove = {
+                    photoOptions = false
+                    actions.onRemovePhoto()
+                },
+                onPickBackground = {
+                    photoOptions = false
+                    actions.onPickBackground()
+                },
+                onRemoveBackground = {
+                    photoOptions = false
+                    actions.onRemoveBackground()
+                },
+                onDismiss = { photoOptions = false },
+            )
+        }
+        // The people picker lists everyone (issue #89); this person starts chosen.
+        val everyone = listOf(f) + detail.others
+        if (state.showReminderEditor) {
+            ReminderEditor(
+                friends = everyone,
+                today = state.today,
+                onDismiss = actions.onDismissReminderEditor,
+                onSave = actions.onSaveReminder,
+                preselected = setOf(f.id),
+                circles = detail.circles,
+                initial = state.editingReminder,
+                zone = state.zone,
+            )
+        }
+        state.planEditing?.let { editing ->
+            PlanEditor(
+                friends = everyone,
+                today = state.today,
+                onDismiss = actions.onDismissPlanEditor,
+                onSave = actions.onSavePlan,
+                preselected = setOf(f.id),
+                initial = editing.plan,
+                circles = detail.groups,
+                pickerCircles = detail.circles,
+            )
+        }
+        if (state.showWish) {
+            val ideas = f.gifts.filter { it.isIdea }
+            SendMessageSheet(
+                title = stringResource(Res.string.wish_title, firstName),
+                suggestion = state.wishDraft ?: stringResource(CoreRes.string.wish_default, firstName),
+                phone = f.phoneNumbers.firstOrNull(),
+                onDismiss = actions.onDismissWish,
+                preferred = f.preferredChannel,
+                email = f.emails.firstOrNull()?.address,
+                isGenerating = state.isDraftingWish,
+                onPersonalise = if (state.hasAiKey) actions.onPersonaliseWish else null,
+                header = if (ideas.isEmpty()) {
+                    null
+                } else {
+                    {
+                        InfoPill(
+                            stringResource(Res.string.wish_gift_hint, ideas.joinToString(limit = 3) { it.title }),
+                            icon = Icons.Rounded.CardGiftcard,
+                        )
+                    }
+                },
+            )
+        }
+        if (confirmDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmDelete = false },
+                icon = { Icon(Icons.Rounded.Delete, null) },
+                title = { Text(stringResource(Res.string.delete_title, f.displayName)) },
+                text = { Text(stringResource(if (f.contactId != null) Res.string.delete_body_contact else Res.string.delete_body)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmDelete = false
+                        actions.onDelete()
+                    }) { Text(stringResource(CoreRes.string.remove)) }
+                },
+                dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(CoreRes.string.cancel)) } },
+            )
+        }
+    }
+}
+
+/** Blogs / Substack / Letterboxd you follow for them, with their latest posts. */
+@Composable
+private fun Feeds(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onAdd: () -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.feeds_title),
+        icon = Icons.Rounded.RssFeed,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.feeds.isEmpty()) Hint(stringResource(Res.string.feeds_hint))
+        f.feeds.forEach { feed ->
+            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    feed.title.ifBlank { feed.url },
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).clickable { (feed.siteUrl ?: feed.url).let(uri::openUri) },
+                )
+                IconButton(onClick = { actions.onRemoveFeed(feed.url) }) {
+                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, feed.title.ifBlank { feed.url }))
+                }
+            }
+            if (feed.items.isEmpty()) Hint(stringResource(Res.string.feeds_no_posts))
+            feed.items.take(3).forEach { item ->
+                ListItem(
+                    modifier = Modifier.clickable(enabled = item.link != null) { item.link?.let(uri::openUri) },
+                    headlineContent = { Text(item.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+                    supportingContent = item.publishedAt?.let { at -> { Text(relativePast(at, state.now, state.zone)) } },
+                    trailingContent = {
+                        IconButton(onClick = { actions.onFeedPostToNews(item.title) }) {
+                            Icon(Icons.Rounded.AddCircleOutline, stringResource(Res.string.feeds_to_news))
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
+        }
+    }
+}
+
+/** About: their profiles (issue #118), each with its logo; tap opens it, × removes it (with Undo). */
+@Composable
+private fun SocialsCard(f: Friend, onAdd: () -> Unit, onRemove: (SocialLink) -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.socials_title),
+        icon = Icons.Rounded.AlternateEmail,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.socials.isEmpty()) Hint(stringResource(Res.string.socials_hint))
+        f.socials.forEach { link ->
+            LinkLine(socialIcon(link.network), link.network.displayName, link.handle, onOpen = { runCatching { uri.openUri(link.url) } }) {
+                onRemove(link)
+            }
+        }
+    }
+}
+
+/** About: their websites (issue #118), before Blogs & feeds. They open in the browser; the app never loads them. */
+@Composable
+private fun WebsitesCard(f: Friend, onAdd: () -> Unit, onRemove: (String) -> Unit) {
+    val uri = LocalUriHandler.current
+    SectionCard(
+        stringResource(Res.string.websites_title),
+        icon = Icons.Rounded.Language,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        if (f.websites.isEmpty()) Hint(stringResource(Res.string.websites_hint))
+        f.websites.forEach { url ->
+            val shown = url.removePrefix("https://").removePrefix("http://").removePrefix("www.").trimEnd('/')
+            LinkLine(Icons.Rounded.Language, shown, null, onOpen = { runCatching { uri.openUri(url) } }) { onRemove(url) }
+        }
+    }
+}
+
+@Composable
+private fun LinkLine(icon: ImageVector, title: String, detail: String?, onOpen: () -> Unit, onRemove: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            detail?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, title)) }
+    }
+}
+
+@Composable
+private fun BirthdayBanner(firstName: String, date: LocalDate, today: LocalDate, onWish: () -> Unit) {
+    val days = today.daysUntil(date)
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+    ) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Cake, null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                when (days) {
+                    0 -> stringResource(Res.string.birthday_banner_today, firstName)
+                    1 -> stringResource(Res.string.birthday_banner_tomorrow, firstName)
+                    else -> stringResource(Res.string.birthday_banner_soon, firstName, relativeDayPhrase(date, today))
+                },
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.weight(1f),
+            )
+            Button(onClick = onWish) { Text(stringResource(Res.string.birthday_send_wishes)) }
+        }
+    }
+}
+
+/** News (with "Add news"), topics from notes and, while AI is on, the AI ideas (gotcha 33). */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ToTalkAbout(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onAddNews: () -> Unit,
+    onEdit: (PageEdit) -> Unit,
+) {
+    val detail = state.detail ?: return
+    val firstName = f.displayName.substringBefore(' ')
+    SectionCard(
+        stringResource(Res.string.talk_title),
+        icon = Icons.Rounded.Lightbulb,
+        action = { TextButton(onClick = onAddNews) { Text(stringResource(Res.string.news_add)) } },
+    ) {
+        if (f.lifeUpdates.isNotEmpty()) Label(stringResource(Res.string.news_title), Icons.Rounded.NewReleases)
+        f.lifeUpdates.sortedByDescending { it.addedAt }.forEach { update ->
+            var menu by remember { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text(update.text, style = MaterialTheme.typography.titleSmall) },
+                supportingContent = { Text(stringResource(Res.string.news_added, relativePast(update.addedAt, state.now, state.zone))) },
+                trailingContent = {
+                    EditDeleteMenu(
+                        menu,
+                        onOpen = { menu = true },
+                        onClose = { menu = false },
+                        onEdit = { onEdit(PageEdit.News(update)) },
+                        onDelete = { actions.onRemoveLifeUpdate(update.id) },
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.combinedClickable(onClick = { onEdit(PageEdit.News(update)) }, onLongClick = { menu = true }),
+            )
+        }
+        if (f.lifeUpdates.isEmpty() && detail.topics.isEmpty() && !state.aiEnabled) Hint(stringResource(Res.string.news_hint))
+        if (detail.topics.isNotEmpty()) {
+            Label(stringResource(Res.string.topics_from_notes), Icons.Rounded.Lightbulb)
+            detail.topics.forEach { TopicRow(topicText(it)) }
+        }
+        if (state.aiEnabled) {
+            Row(Modifier.fillMaxWidth().padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { Label(stringResource(Res.string.topics_ai), Icons.Rounded.AutoAwesome) }
+                AnimatedContent(state.isGenerating) { busy ->
+                    if (busy) {
+                        CircularProgressIndicator(Modifier.padding(12.dp).size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        TextButton(onClick = if (state.hasAiKey) actions.onGenerateIdeas else actions.onOpenSettings) {
+                            Text(stringResource(if (state.hasAiKey) Res.string.ideas_find else Res.string.ideas_setup))
+                        }
+                    }
+                }
+            }
+            if (detail.ideas.isEmpty()) {
+                Hint(
+                    when {
+                        !state.hasAiKey -> stringResource(Res.string.ideas_hint_no_ai)
+                        detail.messageCount > 0 -> stringResource(Res.string.ideas_hint_ai_chats, firstName)
+                        else -> stringResource(Res.string.ideas_hint_ai, firstName)
+                    },
+                )
+            }
+            detail.ideas.take(5).forEach { IdeaRow(it, actions.onDismissIdea) }
+        }
+    }
+}
+
+/**
+ * Tastes, editable on the page (issues #90, #103): one row of chips with × (dislikes in the error-container colour) and
+ * "+ Add", which asks food / drink / interest / doesn't like; a tap on a chip renames or deletes it.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Tastes(f: Friend, actions: FriendDetailActions, onAdd: () -> Unit, onEdit: (PageEdit) -> Unit) {
+    SectionCard(stringResource(Res.string.tastes_title), icon = Icons.Rounded.ThumbUp) {
+        FlowRow(
+            Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            // A tap opens the chip to rename or delete it; × deletes it with Undo (issue #102).
+            @Composable
+            fun TasteChip(value: String, icon: ImageVector, slot: TasteSlot) {
+                val dislike = slot == TasteSlot.DISLIKE
+                InputChip(
+                    selected = false,
+                    onClick = { onEdit(PageEdit.Taste(slot, value)) },
+                    label = { Text(value) },
+                    leadingIcon = { Icon(icon, null, Modifier.size(16.dp)) },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Rounded.Close,
+                            stringResource(CoreRes.string.remove_item, value),
+                            Modifier.size(16.dp).clickable { actions.onDeleteTaste(slot, value) },
+                        )
+                    },
+                    colors = if (dislike) {
+                        InputChipDefaults.inputChipColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
+                            leadingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+                            trailingIconColor = MaterialTheme.colorScheme.onErrorContainer,
+                        )
+                    } else {
+                        InputChipDefaults.inputChipColors()
+                    },
+                )
+            }
+            f.food.forEach { TasteChip(it, Icons.Rounded.Restaurant, TasteSlot.FOOD) }
+            f.drinks.forEach { TasteChip(it, Icons.Rounded.LocalCafe, TasteSlot.DRINK) }
+            f.interests.forEach { TasteChip(it, Icons.Rounded.Interests, TasteSlot.INTEREST) }
+            f.likes.forEach { TasteChip(it, Icons.Rounded.ThumbUp, TasteSlot.LIKE) }
+            f.dislikes.forEach { TasteChip(it, Icons.Rounded.ThumbDown, TasteSlot.DISLIKE) }
+            AssistChip(
+                onClick = onAdd,
+                label = { Text(stringResource(CoreRes.string.add)) },
+                leadingIcon = { Icon(Icons.Rounded.Add, null, Modifier.size(AssistChipDefaults.IconSize)) },
+            )
+        }
+    }
+}
+
+/** "+ Add" on Tastes: which kind, then the usual tag field with the tag catalogue. Each added tag saves at once. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddTasteDialog(firstName: String, tags: List<Tag>, actions: FriendDetailActions, onDismiss: () -> Unit) {
+    // null = "Doesn't like"; the rest are the taste groups.
+    var kind by rememberSaveable { mutableStateOf<TasteKind?>(TasteKind.FOOD) }
+    var added by remember { mutableStateOf(emptyList<String>()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ThumbUp, null) },
+        title = { Text(stringResource(Res.string.tastes_add_title, firstName)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(TasteKind.FOOD, TasteKind.DRINK, TasteKind.INTEREST, null).forEach { k ->
+                        FilterChip(
+                            selected = kind == k,
+                            onClick = { kind = k },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (k) {
+                                            TasteKind.FOOD -> Res.string.tastes_food
+                                            TasteKind.DRINK -> Res.string.tastes_drink
+                                            TasteKind.INTEREST -> Res.string.tastes_interests
+                                            null -> Res.string.tastes_doesnt_like
+                                        },
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
+                val current = kind
+                TagEditor(
+                    added,
+                    stringResource(
+                        when (current) {
+                            TasteKind.FOOD -> Res.string.tastes_food_placeholder
+                            TasteKind.DRINK -> Res.string.tastes_drink_placeholder
+                            TasteKind.INTEREST -> Res.string.tastes_interests_placeholder
+                            null -> Res.string.tastes_dislikes_placeholder
+                        },
+                    ),
+                    onAdd = { values ->
+                        added = (added + values).distinct()
+                        if (current == null) actions.onAddDislikes(values) else actions.onAddTastes(current, values)
+                    },
+                    onRemove = { value ->
+                        added = added - value
+                        if (current == null) actions.onRemoveDislike(value) else actions.onRemoveTaste(current, value)
+                    },
+                    chipColor = if (current == null) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
+                    catalog = tags,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.edit_done)) } },
+    )
+}
+
+/**
+ * Dated notes (issue #103): every note is a journal entry with the day it was written, newest first, and "+ Note" adds
+ * one. A tap edits it in the Log popup; ⋮ or a long press offers Edit and Delete (with Undo), as on the timeline.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Notes(timeline: List<TimelineEntry>, state: FriendDetailUiState, actions: FriendDetailActions, onOpenMedia: (NoteMedia) -> Unit) {
+    val notes = timeline.filterIsInstance<TimelineEntry.Journal>()
+    SectionCard(
+        stringResource(Res.string.notes_title),
+        icon = Icons.AutoMirrored.Rounded.Notes,
+        action = {
+            TextButton(onClick = { actions.onOpenNote(null) }) {
+                Icon(Icons.Rounded.Add, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(Res.string.notes_add))
+            }
+        },
+    ) {
+        if (notes.isEmpty()) Hint(stringResource(Res.string.notes_placeholder))
+        notes.forEach { note ->
+            var menu by remember { mutableStateOf(false) }
+            val day = note.at.toLocalDateTime(state.zone).date
+            ListItem(
+                headlineContent = {
+                    Column {
+                        if (note.entry.text.isNotBlank()) Text(note.entry.text, style = MaterialTheme.typography.bodyMedium)
+                        // Issue #119: thumbnails; a tap opens the original from the gallery.
+                        if (note.entry.media.isNotEmpty()) NoteMediaRow(note.entry.media, Modifier.padding(top = 6.dp), onOpen = onOpenMedia)
+                    }
+                },
+                overlineContent = { Text(if (isFarDate(day, state.today)) day.shortLabel() else relativeDay(day, state.today)) },
+                trailingContent = {
+                    EditDeleteMenu(
+                        menu,
+                        onOpen = { menu = true },
+                        onClose = { menu = false },
+                        onEdit = { actions.onOpenNote(note.entry) },
+                        onDelete = { actions.onDeleteEntry(note) },
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.combinedClickable(onClick = { actions.onOpenNote(note.entry) }, onLongClick = { menu = true }),
+            )
+        }
+    }
+}
+
+/** "Complete <name>'s profile": a chip per empty About card; each opens that card's add sheet (issue #90). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CompleteProfile(firstName: String, missing: List<PersonCard>, onPick: (PersonCard) -> Unit) {
+    SectionCard(stringResource(Res.string.complete_title, firstName), icon = Icons.Rounded.Checklist) {
+        FlowRow(
+            Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            missing.forEach { card ->
+                val label = when (card) {
+                    PersonCard.ABOUT -> Res.string.complete_about
+                    PersonCard.MORE_ABOUT -> Res.string.complete_more
+                    PersonCard.OCCASIONS -> Res.string.complete_occasions
+                    PersonCard.FAMILY -> Res.string.complete_family
+                    PersonCard.MOMENTS -> Res.string.complete_moments
+                    PersonCard.GIFTS -> Res.string.complete_gifts
+                    PersonCard.SAVED -> Res.string.complete_saved
+                    PersonCard.FEEDS -> Res.string.complete_feeds
+                    PersonCard.SOCIALS -> Res.string.complete_socials
+                    PersonCard.WEBSITES -> Res.string.complete_websites
+                    else -> null
+                } ?: return@forEach
+                AssistChip(
+                    onClick = { onPick(card) },
+                    label = { Text(stringResource(label)) },
+                    leadingIcon = { Icon(Icons.Rounded.Add, null, Modifier.size(AssistChipDefaults.IconSize)) },
+                )
+            }
+        }
+    }
+}
+
+/** "Good company for": plain chips; "Edit" opens the ticks in their own popup (issue #103). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Occasions(f: Friend, onEdit: () -> Unit) {
+    SectionCard(
+        stringResource(Res.string.occasions_title),
+        icon = Icons.Rounded.Celebration,
+        action = { TextButton(onClick = onEdit) { Text(stringResource(CoreRes.string.edit)) } },
+    ) {
+        FlowRow(
+            Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            f.occasions.forEach { InfoPill(occasionLabel(it)) }
+        }
+    }
+}
+
+/** "Good company for…" ticks in a popup (issue #103): each tick saves at once; Done closes. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OccasionsDialog(f: Friend, onToggle: (Occasion) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.Celebration, null) },
+        title = { Text(stringResource(Res.string.occasions_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(Res.string.occasions_hint), style = MaterialTheme.typography.bodyMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Occasion.entries.forEach { o -> FilterChip(o in f.occasions, { onToggle(o) }, label = { Text(occasionLabel(o)) }) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.edit_done)) } },
+    )
+}
+
+/** Every moment, not only the upcoming ones; a tap edits, ⋮ or a long press offers Edit and Delete. */
+@Composable
+private fun Moments(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onAdd: () -> Unit,
+    onEdit: (PageEdit) -> Unit,
+) {
+    SectionCard(stringResource(Res.string.moments_title), icon = Icons.Rounded.Favorite, action = {
+        TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) }
+    }) {
+        if (f.importantEvents.isEmpty()) Hint(stringResource(Res.string.moments_hint))
+        f.importantEvents.forEach { event ->
+            MomentRow(
+                event,
+                state.today,
+                onEdit = { onEdit(PageEdit.Moment(event)) },
+                onDelete = { actions.onRemoveEvent(event.id) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun MomentRow(
+    event: ImportantEvent,
+    today: LocalDate,
+    onRemove: (() -> Unit)? = null,
+    /** View mode (issue #102): a tap edits, a long press or ⋮ offers Edit and Delete. */
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    var menu by remember { mutableStateOf(false) }
+    val clickable = if (onEdit != null) modifier.combinedClickable(onClick = onEdit, onLongClick = { menu = true }) else modifier
+    Row(clickable.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        DateBadge(event.date, today)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(event.title, style = MaterialTheme.typography.titleSmall)
+            val day = relativeDay(event.date, today)
+            Text(
+                if (event.remindDaysBefore > 0) {
+                    pluralStringResource(Res.plurals.moments_reminder, event.remindDaysBefore, day, event.remindDaysBefore)
+                } else {
+                    day
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (onRemove != null) {
+            IconButton(onClick = onRemove) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, event.title)) }
+        } else if (onEdit != null) {
+            EditDeleteMenu(menu, onOpen = { menu = true }, onClose = { menu = false }, onEdit = onEdit, onDelete = onDelete)
+        }
+    }
+}
+
+/** Together: the imported WhatsApp chat count, or how to import one; Add imports a chat export (issue #117). */
+@Composable
+private fun Conversations(messageCount: Int, onAdd: () -> Unit) {
+    SectionCard(
+        stringResource(Res.string.chat_title),
+        icon = Icons.Rounded.Forum,
+        // Issue #117: Add reads a chat export, as the full timeline's ⋮ does.
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        Text(
+            if (messageCount > 0) pluralStringResource(Res.plurals.chat_count, messageCount, messageCount) else stringResource(Res.string.chat_how),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+    }
+}
+
+/**
+ * Together's timeline (issue #117), top to bottom: the birthday banner when it's close, "+ Make plans", the upcoming
+ * plans, reminders, birthday and moments (soonest last, right above "Today"), the "Today" marker, then the last
+ * [PersonTimeline.SHOWN] past entries; more fade out into "Show all" (the full timeline). One connector line runs
+ * through all of it (issue #130; the catch-up status moved to Edit person). The filter icon in the header opens the
+ * full timeline (filters, chat import); logging is the Log quick action.
+ */
+@Composable
+private fun TimelineCard(f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, onEdit: (PageEdit) -> Unit) {
+    val detail = state.detail ?: return
+    val together = state.together
+    val firstName = f.displayName.substringBefore(' ')
+    Column {
+        val nextBirthday = f.birthday?.nextOccurrence(state.today)
+        if (nextBirthday != null && state.today.daysUntil(nextBirthday) in 0..7) {
+            BirthdayBanner(firstName, nextBirthday, state.today, actions.onOpenWish)
+        }
+        SectionCard(
+            stringResource(Res.string.timeline_title),
+            icon = Icons.Rounded.Diversity3,
+            action = {
+                // Issue #130: a filter icon; it opens the full timeline with its filters. No "+" beside it: it read as a
+                // second "Make plans" (logging is the Log quick action above).
+                IconButton(onClick = actions.onOpenTimeline) { Icon(Icons.Rounded.FilterList, stringResource(Res.string.timeline_filter)) }
+            },
+        ) {
+            MakePlans(onClick = { actions.onOpenPlanEditor(null) })
+            // Issue #130: one connector line through what's coming too; it starts at the first entry's badge.
+            val rail = MaterialTheme.colorScheme.outlineVariant
+            together.upcoming.forEachIndexed { i, item -> UpcomingItem(item, f, state, actions, Modifier.timelineRail(rail, fromCentre = i == 0)) }
+            TodayMarker()
+            if (together.past.isEmpty()) Hint(stringResource(Res.string.timeline_empty))
+            together.past.forEachIndexed { i, item ->
+                val fades = together.hasMore && i == together.past.lastIndex
+                Box {
+                    PastItem(item, state, actions, onEdit, last = i == together.past.lastIndex, rail = rail)
+                    if (fades) {
+                        val bg = MaterialTheme.colorScheme.surfaceContainerLow
+                        Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(bg.copy(alpha = 0f), bg))))
+                    }
+                }
+            }
+            if (together.hasMore) {
+                TextButton(onClick = actions.onOpenTimeline, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text(stringResource(Res.string.together_show_all))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * "+ Make plans": the plan editor (issue #117). Drawn as an empty slot on the rail (a dashed circle and the text in the
+ * accent colour) so it reads as something to fill, not as a past entry.
+ */
+@Composable
+private fun MakePlans(onClick: () -> Unit) {
+    val accent = MaterialTheme.colorScheme.primary
+    Row(
+        // 16 dp + half the 40 dp slot = the timeline rail's x (36 dp), so it sits on the line like the entries.
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(40.dp).drawBehind {
+                val stroke = 2.dp.toPx()
+                drawCircle(
+                    accent,
+                    radius = (size.minDimension - stroke) / 2,
+                    style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
+                )
+            },
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Rounded.Add, null, tint = accent) }
+        // The label starts where the entries' titles do.
+        Spacer(Modifier.width(12.dp))
+        Text(stringResource(Res.string.together_make_plans), style = MaterialTheme.typography.titleSmall, color = accent)
+    }
+}
+
+/** The "Today" line between what's coming and what happened. */
+@Composable
+private fun TodayMarker() {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(Res.string.together_today),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.width(10.dp))
+        HorizontalDivider(Modifier.weight(1f), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+    }
+}
+
+@Composable
+private fun UpcomingItem(item: TogetherItem, f: Friend, state: FriendDetailUiState, actions: FriendDetailActions, rail: Modifier) {
+    val detail = state.detail ?: return
+    when (item) {
+        is TogetherItem.OpenPlan -> {
+            val plan = item.plan
+            val people = (listOf(f) + detail.others + detail.hangouts.flatMap { it.friends }).associateBy { it.id }
+            val with = plan.friendIds.mapNotNull(people::get)
+            val circle = detail.groups.firstOrNull { it.id == plan.circleId }
+            PlanRow(
+                plan = plan,
+                friends = with.filterNot { it.id == f.id },
+                today = state.today,
+                onAnswer = { answer, whole ->
+                    // "It happened" opens the Log popup (issue #47): a person plan as well as a circle plan.
+                    if (answer == PlanAnswer.HAPPENED) actions.onLogPlan(plan.id, plan.date) else actions.onAnswerPlan(plan, answer, whole)
+                },
+                onAddToCalendar = { actions.onAddPlanToCalendar(plan, with, circle) },
+                onChange = { actions.onOpenPlanEditor(plan) },
+                // An open plan that's past asks "How did it go?" under its badge, so the line skips it.
+                modifier = if (plan.date < state.today) Modifier else rail,
+                circle = circle,
+                onSkip = { actions.onSkipPlan(plan) },
+            )
+        }
+        // Issue #99: their reminders (and their circles'); issue #130: laid out like a plan, Done · Snooze · Edit · Delete in ⋮.
+        is TogetherItem.OpenReminder -> {
+            val everyone = (listOf(f) + detail.others).associateBy { it.id }
+            val r = item.reminder
+            ReminderTimelineRow(
+                r,
+                r.friendIds.filterNot { it == f.id }.mapNotNull(everyone::get),
+                state.today,
+                state.zone,
+                state.now,
+                actions.reminders,
+                rail,
+                circle = r.circleId?.let { id -> detail.circles.firstOrNull { it.id == id } },
+            )
+        }
+        is TogetherItem.Moment -> MomentRow(item.event, state.today, modifier = rail)
+        is TogetherItem.Birthday -> DatedRow(
+            rail,
+            item.date,
+            state.today,
+            Icons.Rounded.Cake,
+            stringResource(Res.string.birthday_title),
+            item.age?.let { stringResource(Res.string.story_birthday_turns, it) } ?: relativeDay(item.date, state.today),
+        )
+        else -> Unit
+    }
+}
+
+@Composable
+private fun PastItem(
+    item: TogetherItem,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onEdit: (PageEdit) -> Unit,
+    last: Boolean,
+    rail: Color,
+) {
+    val date = item.at.toLocalDateTime(state.zone).date
+    val line = Modifier.timelineRail(rail, toCentre = last)
+    when (item) {
+        // Issue #102: a tap edits (news and gifts in their dialogs, the rest in the Log popup); ⋮ or a long press offers Delete too.
+        is TogetherItem.Entry -> {
+            val entry = item.entry
+            EditableTimelineEntry(
+                entry,
+                state.zone,
+                onEdit = {
+                    when (entry) {
+                        is TimelineEntry.WhatsNew -> onEdit(PageEdit.News(entry.update))
+                        is TimelineEntry.GiftGiven -> onEdit(PageEdit.GiftEdit(entry.gift))
+                        is TimelineEntry.Share -> Unit
+                        // Issue #119: a note edits in its own popup, media included.
+                        is TimelineEntry.Journal -> actions.onOpenNote(entry.entry)
+                        else -> actions.onEditEntry(entry.key)
+                    }
+                },
+                onDelete = if (entry.deletable) ({ actions.onDeleteEntry(entry) }) else null,
+                last = last,
+            )
+        }
+        is TogetherItem.ClosedPlan -> DatedRow(
+            line,
+            date,
+            state.today,
+            Icons.Rounded.EventBusy,
+            item.plan.title,
+            stringResource(
+                when (item.plan.status) {
+                    PlanStatus.CANCELLED -> Res.string.together_plan_cancelled
+                    PlanStatus.NOT_ATTENDED -> Res.string.together_plan_not_attended
+                    else -> Res.string.together_plan_skipped
+                },
+            ),
+        )
+        is TogetherItem.DoneReminder -> DatedRow(
+            line,
+            date,
+            state.today,
+            Icons.Rounded.TaskAlt,
+            item.reminder.title,
+            stringResource(Res.string.together_reminder_done),
+        )
+        is TogetherItem.Birthday -> DatedRow(
+            line,
+            date,
+            state.today,
+            Icons.Rounded.Cake,
+            stringResource(Res.string.birthday_title),
+            item.age?.let { stringResource(Res.string.together_turned, it) } ?: relativeDay(date, state.today),
+        )
+        is TogetherItem.Moment -> MomentRow(item.event, state.today, modifier = line)
+        else -> Unit
+    }
+}
+
+/** A dated line of the Together timeline that isn't a logged entry: a closed plan, a done reminder, a birthday. */
+@Composable
+private fun DatedRow(modifier: Modifier, date: LocalDate, today: LocalDate, icon: ImageVector, title: String, detail: String) {
+    Row(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        DateBadge(date, today)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        // Issue #130: in a 40 dp box, like the ⋮ of the other entries, so the icons line up.
+        Box(Modifier.size(40.dp), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Gifts(
+    f: Friend,
+    state: FriendDetailUiState,
+    actions: FriendDetailActions,
+    onAdd: () -> Unit,
+    onGive: (Gift) -> Unit,
+) {
+    SectionCard(
+        stringResource(Res.string.gifts_title),
+        icon = Icons.Rounded.CardGiftcard,
+        action = { TextButton(onClick = onAdd) { Text(stringResource(CoreRes.string.add)) } },
+    ) {
+        val ideas = f.gifts.filter { it.isIdea }
+        val given = f.gifts.filterNot { it.isIdea }.sortedByDescending { it.givenOn }
+        if (f.gifts.isEmpty()) Hint(stringResource(Res.string.gifts_hint))
+        if (ideas.isNotEmpty()) Label(stringResource(Res.string.gifts_ideas), Icons.Rounded.AutoAwesome)
+        ideas.forEach { gift ->
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(gift.title, style = MaterialTheme.typography.titleSmall)
+                    if (gift.note.isNotBlank()) {
+                        Text(gift.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                IconButton(onClick = { onGive(gift) }) {
+                    Icon(Icons.Rounded.CheckCircle, stringResource(Res.string.gifts_mark_given), tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = { actions.onRemoveGift(gift.id) }) {
+                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title))
+                }
+            }
+        }
+        if (given.isNotEmpty()) Label(stringResource(Res.string.gifts_given), Icons.Rounded.CardGiftcard)
+        given.forEach { gift ->
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(gift.title, style = MaterialTheme.typography.titleSmall)
+                    val date = gift.givenOn?.let { if (isFarDate(it, state.today)) it.shortLabel() else relativeDay(it, state.today) }.orEmpty()
+                    val line = gift.occasion?.let { stringResource(Res.string.gifts_given_on, occasionLabel(it), date) } ?: date
+                    Text(line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                IconButton(onClick = { actions.onRemoveGift(gift.id) }) {
+                    Icon(Icons.Rounded.Close, stringResource(CoreRes.string.remove_item, gift.title))
+                }
+            }
+        }
+        if (state.hasAiKey) {
+            FlowRow(
+                Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                val busy = state.suggestingGiftsFor
+                AssistChip(
+                    onClick = actions.onSuggestGifts,
+                    enabled = busy == null,
+                    label = { Text(stringResource(Res.string.gifts_suggest)) },
+                    leadingIcon = {
+                        if (busy ==
+                            ""
+                        ) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Rounded.AutoAwesome, null, Modifier.size(18.dp))
+                        }
+                    },
+                )
+            }
+        }
+        AnimatedVisibility(state.giftSuggestions != null) {
+            val suggestions = state.giftSuggestions
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(Res.string.gifts_suggestions),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = actions.onDismissGiftSuggestions) { Icon(Icons.Rounded.Close, stringResource(CoreRes.string.close)) }
+                }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    suggestions?.ideas.orEmpty().forEach { idea ->
+                        SuggestionChip(onClick = { actions.onKeepGiftSuggestion(idea) }, label = { Text(idea) })
+                    }
+                }
+            }
+        }
+        // F8: gift lists per occasion live on the Plans tab (issue #104); this opens the list this person is on there.
+        TextButton(onClick = actions.onOpenGiftLists, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(Icons.Rounded.Checklist, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(Res.string.gift_lists_link))
+        }
+    }
+}
+
+/** "How close are you to Ana?": the four levels with their rhythm; picking one saves it (#64) and closes. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClosenessSheet(f: Friend, rules: CadenceRules, onPick: (Closeness) -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 24.dp).selectableGroup()) {
+            Text(
+                stringResource(Res.string.closeness_sheet_title, f.displayName.substringBefore(' ')),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            Closeness.entries.forEach { level ->
+                val selected = f.closeness == level
+                ListItem(
+                    leadingContent = { RadioButton(selected = selected, onClick = null) },
+                    headlineContent = { Text(closenessLabel(level)) },
+                    supportingContent = {
+                        Text(rules.daysFor(level)?.let { everyNDays(it) } ?: stringResource(Res.string.closeness_no_rhythm))
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier
+                        .selectable(selected = selected, role = Role.RadioButton, onClick = { onPick(level) })
+                        .padding(horizontal = 8.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun Label(text: String, icon: ImageVector) {
+    Row(Modifier.padding(start = 16.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(6.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+internal fun ToggleRow(title: String, subtitle: String, checked: Boolean, onToggle: () -> Unit) {
+    ListItem(
+        modifier = Modifier.clickable(onClick = onToggle),
+        headlineContent = { Text(title, style = MaterialTheme.typography.titleSmall) },
+        supportingContent = { Text(subtitle) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = { onToggle() }) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+}
+
+@Composable
+private fun TopicRow(text: String) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.Top) {
+        Box(Modifier.padding(top = 7.dp).size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+        Spacer(Modifier.width(12.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+internal fun Hint(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun IdeaRow(idea: Idea, onDismiss: (String) -> Unit) {
+    val uri = LocalUriHandler.current
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.Top) {
+        Box(Modifier.padding(top = 6.dp).size(8.dp).background(MaterialTheme.colorScheme.tertiary, CircleShape))
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(idea.title, style = MaterialTheme.typography.titleSmall)
+            if (idea.description.isNotBlank()) {
+                Text(idea.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            idea.url?.let { url ->
+                TextButton(onClick = { uri.openUri(url) }, contentPadding = PaddingValues(0.dp)) {
+                    Text(stringResource(Res.string.ideas_open))
+                    Spacer(Modifier.width(4.dp))
+                    Icon(Icons.AutoMirrored.Rounded.OpenInNew, null, Modifier.size(14.dp))
+                }
+            }
+        }
+        IconButton(onClick = { onDismiss(idea.id) }) { Icon(Icons.Rounded.Close, stringResource(Res.string.ideas_dismiss)) }
+    }
+}
+
+/** An entry on the page being edited in its own dialog (issue #102). */
+internal sealed interface PageEdit {
+    data class News(val update: LifeUpdate) : PageEdit
+
+    data class Moment(val event: ImportantEvent) : PageEdit
+
+    data class GiftEdit(val gift: Gift) : PageEdit
+
+    data class Taste(val slot: TasteSlot, val value: String) : PageEdit
+}
+
+@Composable
+private fun PageEditDialog(edit: PageEdit, firstName: String, today: LocalDate, actions: FriendDetailActions, onDone: () -> Unit) {
+    when (edit) {
+        is PageEdit.News -> LifeUpdateDialog(firstName, onDismiss = onDone, initial = edit.update.text) { text ->
+            actions.onEditLifeUpdate(edit.update.id, text)
+            onDone()
+        }
+        is PageEdit.Moment -> ImportantEventDialog(today, onDone, initial = edit.event) { t, d, b ->
+            actions.onEditEvent(edit.event.id, t, d, b)
+            onDone()
+        }
+        is PageEdit.GiftEdit -> GiftDialog(onDismiss = onDone, initial = edit.gift) { title, note ->
+            actions.onEditGift(edit.gift.id, title, note)
+            onDone()
+        }
+        is PageEdit.Taste -> TasteEditDialog(
+            edit.value,
+            onDismiss = onDone,
+            onSave = {
+                actions.onRenameTaste(edit.slot, edit.value, it)
+                onDone()
+            },
+            onDelete = {
+                actions.onDeleteTaste(edit.slot, edit.value)
+                onDone()
+            },
+        )
+    }
+}
+
+/** A taste chip opened (issue #102): rename it, or delete it (with Undo). */
+@Composable
+private fun TasteEditDialog(value: String, onDismiss: () -> Unit, onSave: (String) -> Unit, onDelete: () -> Unit) {
+    var text by rememberSaveable(value) { mutableStateOf(value) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.ThumbUp, null) },
+        title = { Text(stringResource(Res.string.tastes_edit_title)) },
+        text = { OutlinedTextField(text, { text = it }, singleLine = true, modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { TextButton(onClick = { onSave(text) }, enabled = text.isNotBlank()) { Text(stringResource(CoreRes.string.save)) } },
+        dismissButton = { TextButton(onClick = onDelete) { Text(stringResource(CoreRes.string.delete)) } },
+    )
+}

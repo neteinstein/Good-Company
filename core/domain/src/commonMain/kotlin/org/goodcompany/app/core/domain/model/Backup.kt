@@ -1,0 +1,55 @@
+package org.goodcompany.app.core.domain.model
+
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlin.time.Instant
+
+/**
+ * Everything the app knows, as one portable document (export on one device, restore on another — any platform).
+ * [settings] never carries the AI key: it's stripped on export and kept from the device on restore.
+ */
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+data class Backup(
+    // Always written, so a restore can tell a backup from any other JSON file. Missing on read = not a backup.
+    @EncodeDefault val format: String = "",
+    @EncodeDefault val version: Int = VERSION,
+    val exportedAt: Instant? = null,
+    val friends: List<Friend> = emptyList(),
+    /** Links between people (issue #39); missing in older backups. */
+    val links: List<PersonLink> = emptyList(),
+    val hangouts: List<Hangout> = emptyList(),
+    val reminders: List<Reminder> = emptyList(),
+    val interactions: List<Interaction> = emptyList(),
+    val messages: List<ConversationMessage> = emptyList(),
+    val journal: List<JournalEntry> = emptyList(),
+    /** Shared attachments (D6): thumbnails and gallery references, never full photos. */
+    val attachments: List<Attachment> = emptyList(),
+    val ideas: List<Idea> = emptyList(),
+    val groups: List<FriendGroup> = emptyList(),
+    /** Circles' cover photos (issue #88), Family's too; missing in older backups (they restore with none). */
+    val circleCovers: List<CircleCover> = emptyList(),
+    /** Background images of people's pages (issue #144); missing in older backups (they restore with none). */
+    val personBackgrounds: List<PersonBackground> = emptyList(),
+    val plans: List<Plan> = emptyList(),
+    /** Named places (F11): names given to GPS spots. */
+    val places: List<NamedPlace> = emptyList(),
+    /** Answers to calendar suggestions ("No", "Never for this series"): ids only, never event details (D3). */
+    val calendarDecisions: List<CalendarDecision> = emptyList(),
+    /** Gift lists per occasion (F8); missing in older backups. */
+    val giftLists: List<GiftList> = emptyList(),
+    /** Your own photo (issue #71); missing in older backups. */
+    val myPhoto: ContactPhoto? = null,
+    /**
+     * Issue #103: the friends' old free-text notes are already in [journal] (every export since then). False in older
+     * backups, whose notes `NotesToJournal.convert` turns into dated entries on restore.
+     */
+    val notesInJournal: Boolean = false,
+    val settings: AppSettings = AppSettings(),
+) {
+    companion object {
+        const val FORMAT = "good-company-backup"
+        const val VERSION = 1
+    }
+}

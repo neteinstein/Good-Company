@@ -1,0 +1,63 @@
+package org.goodcompany.app.startup
+
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.goodcompany.app.core.domain.usecase.KeepLanguageInStepUseCase
+import org.goodcompany.app.core.domain.usecase.KeepNotificationsScheduledUseCase
+import org.goodcompany.app.core.domain.usecase.RecordAppOpenedUseCase
+import org.goodcompany.app.core.domain.usecase.RefreshFeedsUseCase
+import org.goodcompany.app.core.domain.usecase.RunWeeklyIdeasUseCase
+import org.goodcompany.app.core.domain.usecase.SyncContactsUseCase
+
+/**
+ * Work that runs while the app is open:
+ * - apply the app's language (issue #174) and keep it in step with the platform's per-app language,
+ * - keep OS notifications in sync with the data,
+ * - quietly refresh contacts (no-op without permission),
+ * - remember that the app was opened (ignored nudges get quieter),
+ * - catch up on the weekly AI ideas if they're due (the only trigger on iOS/web; Android also has WorkManager).
+ */
+class AppStartup(
+    private val keepNotificationsScheduled: KeepNotificationsScheduledUseCase,
+    private val syncContacts: SyncContactsUseCase,
+    private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
+    private val recordAppOpened: RecordAppOpenedUseCase,
+    private val refreshFeeds: RefreshFeedsUseCase,
+    private val keepLanguageInStep: KeepLanguageInStepUseCase,
+) {
+    private var job: Job? = null
+
+    /**
+     * Starts the work in [scope] (the root ViewModel's scope). Safe to call repeatedly: it's a no-op while a previous
+     * run is still alive, and restarts when the app UI is re-created after the old scope was cancelled.
+     */
+    fun start(scope: CoroutineScope) {
+        if (job?.isActive == true) return
+        job = scope.launch {
+            // First, so notifications are rendered in the chosen language (their re-plan waits half a second).
+            launch { runCatching { keepLanguageInStep() }.onFailure { if (it is CancellationException) throw it } }
+            // Lets catch-up nudges back off when the app isn't being opened (see NudgePolicy).
+            runCatching { recordAppOpened() }
+            // Issue #98: a failure is logged and never stops the rest of the startup work. A failed re-plan inside
+            // the use case is skipped and the next change tries again.
+            launch {
+                keepNotificationsScheduled.onFailure = ::logNotificationFailure
+                runCatching { keepNotificationsScheduled() }
+                    .onFailure { if (it is CancellationException) throw it else logNotificationFailure(it) }
+            }
+            launch {
+                runCatching { syncContacts() }
+                runCatching { runWeeklyIdeas() }
+            }
+            // Friends' blogs: at most once every ~day per feed.
+            launch { runCatching { refreshFeeds() } }
+        }
+    }
+}
+
+/** Notifications not being scheduled is otherwise silent; leave a trace in the device log. */
+private fun logNotificationFailure(error: Throwable) {
+    println("GoodCompany: scheduling notifications failed: $error")
+}

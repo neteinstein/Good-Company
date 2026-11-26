@@ -15,7 +15,7 @@ class KmpComposeConventionPlugin : Plugin<Project> {
         pluginManager.apply(libs.pluginId("compose-compiler"))
 
         // Each module gets its own generated `Res` class in `<namespace>.resources`, e.g.
-        // `com.neteinstein.goodcompany.feature.friends.resources.Res`. Strings live in src/commonMain/composeResources/values*/.
+        // `org.goodcompany.app.feature.friends.resources.Res`. Strings live in src/commonMain/composeResources/values*/.
         extensions.configure<ComposeExtension> {
             (this as ExtensionAware).extensions.configure<ResourcesExtension> {
                 packageOfResClass = "$goodCompanyNamespace.resources"

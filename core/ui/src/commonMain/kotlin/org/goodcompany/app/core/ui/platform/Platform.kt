@@ -1,0 +1,309 @@
+package org.goodcompany.app.core.ui.platform
+
+import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import org.goodcompany.app.core.domain.model.AppUpdate
+import org.goodcompany.app.core.domain.model.ContactRecord
+import org.goodcompany.app.core.domain.model.PhotoRef
+import org.goodcompany.app.core.domain.usecase.CalendarFile
+
+/*
+ * UI-side platform hooks. Only things Compose Multiplatform genuinely can't share live here:
+ * runtime permission prompts, the system file and contact pickers, the share sheet, saving a file,
+ * "add to calendar", the device lock (biometrics / PIN) and wallpaper-based dynamic colour.
+ */
+
+enum class AppPermission { CONTACTS, LOCATION, NOTIFICATIONS, CALL_LOG, CALENDAR }
+
+/** What this platform can do, so the UI can adapt copy and hide impossible actions. */
+data class PlatformCapabilities(
+    val name: String,
+    val hasAddressBook: Boolean,
+    val hasCallLog: Boolean,
+    val hasBackgroundNotifications: Boolean,
+    val hasDynamicColor: Boolean,
+    /** Separator before `body=` in `sms:` links (`?` on Android/web, `&` on iOS). */
+    val smsBodySeparator: String = "?",
+    /** The system contact picker (no address-book permission needed). */
+    val hasContactPicker: Boolean = false,
+    /** Google Drive backup is set up for this build (an OAuth client exists for it; see docs/GOOGLE_DRIVE.md). */
+    val hasGoogleDrive: Boolean = false,
+    /** Issue #166: a background job backs up to Drive by itself (Android only; iOS and the web keep "Back up now"). */
+    val hasAutoDriveBackup: Boolean = false,
+    /** A home-screen widget exists for this platform. */
+    val hasHomeWidget: Boolean = false,
+    /** The app can download and install a newer build of itself (Android sideload build only; see [AppUpdater]). */
+    val hasSelfUpdate: Boolean = false,
+    /** Birthday, kids, events and notes are also written onto the friend's contact (Android sideload build only). */
+    val hasContactWriteBack: Boolean = false,
+    /**
+     * The phone's contacts can be listed with checkboxes to choose friends (decision D2): iOS, and Android only where
+     * the manifest declares READ_CONTACTS (the sideload build). The Play build stays picker-only until Google Play's
+     * READ_CONTACTS policy has been checked; turning it on there is a manifest + CI change.
+     */
+    val hasContactList: Boolean = false,
+    /** The device calendar can be read for calendar suggestions (D3): Android and iOS, not the web. */
+    val hasCalendar: Boolean = false,
+)
+
+expect val platformCapabilities: PlatformCapabilities
+
+/**
+ * [platformCapabilities] adjusted for the build that's actually installed. On Android, the Play build has no
+ * READ_CONTACTS or READ_CALL_LOG (only the sideload build does), so address-book sync and call matching are off
+ * there and people are added with the contact picker. Prefer this in composables.
+ */
+@Composable
+expect fun currentPlatformCapabilities(): PlatformCapabilities
+
+/**
+ * Returns a launcher that asks the OS for [permission] and reports whether it was granted.
+ * Already-granted permissions report `true` without showing UI.
+ */
+@Composable
+expect fun rememberPermissionRequester(permission: AppPermission, onResult: (granted: Boolean) -> Unit): () -> Unit
+
+/**
+ * Returns a check of whether the app may post notifications right now (the user can change it in system settings at
+ * any time). Always false on the web, which has no background notifications.
+ */
+@Composable
+expect fun rememberNotificationsAllowedCheck(): suspend () -> Boolean
+
+/**
+ * Issue #98: opens this app's notification settings in the system (to turn notifications back on after they were
+ * refused, or to tune the Android channels). Does nothing on the web.
+ */
+@Composable
+expect fun rememberNotificationSettingsOpener(): () -> Unit
+
+/**
+ * Issue #98: asks for notifications, and when the system won't ask again (refused before, or turned off in system
+ * settings) opens the app's notification settings instead. [onResult] gets whether they're allowed after asking.
+ */
+@Composable
+fun rememberNotificationsEnabler(onResult: (granted: Boolean) -> Unit = {}): () -> Unit {
+    val openSettings = rememberNotificationSettingsOpener()
+    return rememberPermissionRequester(AppPermission.NOTIFICATIONS) { granted ->
+        onResult(granted)
+        if (!granted) openSettings()
+    }
+}
+
+/**
+ * Whether the app may post notifications: null until the first check, then re-checked each time the screen resumes
+ * and whenever [refreshKey] changes (bump it after asking for the permission).
+ */
+@Composable
+fun rememberNotificationsAllowed(refreshKey: Any? = null): Boolean? {
+    val check = rememberNotificationsAllowedCheck()
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    var resumes by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) {
+        resumes++
+        onPauseOrDispose { }
+    }
+    LaunchedEffect(resumes, refreshKey) { allowed = check() }
+    return allowed
+}
+
+/** What kind of file the picker should offer. */
+enum class FileKind { TEXT, VCARD, JSON }
+
+/** Returns a launcher for the system document picker that reads a text file (null if cancelled/unreadable). */
+@Composable
+expect fun rememberTextFilePicker(kind: FileKind = FileKind.TEXT, onPicked: (text: String?) -> Unit): () -> Unit
+
+/**
+ * Returns a launcher for the system photo picker (no gallery permission needed). Hands back the picked picture as an
+ * upright JPEG of at most 512 px, null if cancelled, or empty bytes if the picture couldn't be read.
+ */
+@Composable
+expect fun rememberImagePicker(onPicked: (image: ByteArray?) -> Unit): () -> Unit
+
+/**
+ * A photo picked with "Add a photo" on a friend's "Saved" card: an upright JPEG of at most 512 px ([image] empty when
+ * it couldn't be read), plus a gallery reference and the photo's date when the platform gives them (D6).
+ */
+class PickedPhoto(val image: ByteArray, val ref: PhotoRef?, val takenOn: LocalDate?)
+
+/**
+ * Returns a launcher for the system photo picker in a mode that can keep a reference to the gallery item without
+ * full library access: Android's Photo Picker with a persistable read permission, iOS `PHPickerViewController` on the
+ * shared library (its asset identifier). The web has no gallery: the picture comes back without a reference.
+ * Reports null when cancelled.
+ */
+@Composable
+expect fun rememberGalleryPhotoPicker(onPicked: (PickedPhoto?) -> Unit): () -> Unit
+
+/**
+ * A photo or video picked for a note (issue #119): [preview] is an upright JPEG of at most 512 px (empty when it
+ * couldn't be read; for a video, a frame), plus the gallery reference when the platform gives one.
+ */
+class PickedMedia(val preview: ByteArray, val isVideo: Boolean, val ref: PhotoRef?)
+
+/** How many photos and videos one pick may add to a note. */
+const val MAX_NOTE_MEDIA = 10
+
+/**
+ * Returns a launcher for the system picker on photos **and videos**, several at once (issue #119), keeping a gallery
+ * reference like [rememberGalleryPhotoPicker]: Android's Photo Picker, iOS `PHPicker`. The web picks one picture and
+ * keeps no reference. Reports an empty list when cancelled.
+ */
+@Composable
+expect fun rememberGalleryMediaPicker(onPicked: (List<PickedMedia>) -> Unit): () -> Unit
+
+/** What opening a saved photo's original did. */
+sealed interface OpenedPhoto {
+    /** Handed to the system viewer (Android). */
+    data object Shown : OpenedPhoto
+
+    /** Loaded to show in the app (iOS, or Android without a viewer). */
+    class Loaded(val image: ByteArray) : OpenedPhoto
+
+    /** Deleted, no longer allowed, or from another device: the app shows the thumbnail instead. */
+    data object Unavailable : OpenedPhoto
+}
+
+/** Opens the original of a saved photo through its [PhotoRef]. A reference from another platform is never opened. */
+fun interface GalleryPhotoOpener {
+    suspend fun open(ref: PhotoRef): OpenedPhoto
+}
+
+@Composable
+expect fun rememberGalleryPhotoOpener(): GalleryPhotoOpener
+
+/** Result of [TextSharer.share]. */
+enum class ShareOutcome { SHARE_SHEET, COPIED }
+
+/** Opens the system share sheet with plain text (web without Web Share: copies to the clipboard instead). */
+fun interface TextSharer {
+    fun share(text: String): ShareOutcome
+}
+
+@Composable
+expect fun rememberTextSharer(): TextSharer
+
+/** Wallpaper-derived colours where supported (Android 12+), otherwise null. */
+@Composable
+expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?
+
+/**
+ * Returns a launcher for the system contact picker. The OS shows the address book and hands back only the people the
+ * user picks, so no contacts permission is involved. iOS and Android 17+ (the system Contact Picker) allow several
+ * people at once; older Android versions pick one at a time. It picks people, never a specific phone number.
+ * Reports an empty list when cancelled.
+ */
+@Composable
+expect fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () -> Unit
+
+/**
+ * An event to hand to the system calendar: all day, or at [time] for [CalendarEntry.TIMED_MINUTES] (issue #167). The
+ * user reviews and saves it there.
+ */
+data class CalendarEntry(
+    val title: String,
+    val date: LocalDate,
+    val location: String? = null,
+    val notes: String? = null,
+    val time: LocalTime? = null,
+) {
+    /** The start in the device's zone, or null for an all-day event. */
+    fun start(): LocalDateTime? = time?.let { LocalDateTime(date, it) }
+
+    companion object {
+        /** How long a timed event lasts (a plan has no end time; the user can change it in their calendar). */
+        const val TIMED_MINUTES = CalendarFile.DEFAULT_MINUTES
+    }
+}
+
+/**
+ * Returns a launcher that opens the system "new event" screen prefilled with an entry (Android calendar intent,
+ * iOS event editor — neither needs calendar permission). The web downloads an .ics file instead.
+ */
+@Composable
+expect fun rememberCalendarAdder(): (CalendarEntry) -> Unit
+
+/** Saves a text file where the user chooses (Android "Save to", iOS share sheet / Files, web download). */
+fun interface FileSaver {
+    fun save(fileName: String, content: String)
+}
+
+/** [onDone] reports whether the file was handed over (false when the user cancelled, where the platform can tell). */
+@Composable
+expect fun rememberFileSaver(mimeType: String, onDone: (saved: Boolean) -> Unit = {}): FileSaver
+
+/** The device's own lock: fingerprint, face or PIN. */
+interface DeviceAuthenticator {
+    /** False when the device has no lock set up (or on the web): the app-lock option is then hidden. */
+    val isAvailable: Boolean
+
+    fun authenticate(reason: String, onResult: (success: Boolean) -> Unit)
+}
+
+@Composable
+expect fun rememberDeviceAuthenticator(): DeviceAuthenticator
+
+/** Outcome of asking the user to let the app use its own file in their Google Drive. */
+sealed interface DriveAuthResult {
+    data class Token(val accessToken: String) : DriveAuthResult
+
+    /** The user closed the Google sheet. */
+    data object Cancelled : DriveAuthResult
+
+    /**
+     * No OAuth client for this build (Google Cloud project not set up): see docs/GOOGLE_DRIVE.md. [app] is what has to
+     * be registered, when the platform can tell (Android: the package name and the signing certificate's SHA-1).
+     */
+    data class NotConfigured(val app: String? = null) : DriveAuthResult
+
+    /** Google's sign-in failed; [network] when it couldn't be reached. [detail] says why, for the message. */
+    data class Failed(val detail: String?, val network: Boolean = false) : DriveAuthResult
+}
+
+/**
+ * Returns a launcher that asks Google for an access token with the `drive.appdata` and `drive.file` scopes
+ * (`DRIVE_SCOPES`; Google shows its consent the first time). Android: Play services authorization; iOS: Google sign-in in the system browser sheet (PKCE);
+ * web: Google Identity Services.
+ */
+@Composable
+expect fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): () -> Unit
+
+/** What happened to an update handed to [AppUpdater.downloadAndInstall]. */
+enum class UpdateInstallResult {
+    /** The APK was downloaded and the system installer is showing its prompt (the user may still cancel there). */
+    HANDED_OVER,
+
+    /** Android needs the user to allow installs from this app first; its settings page was opened. */
+    NEEDS_INSTALL_PERMISSION,
+    FAILED,
+}
+
+/** Downloads a newer build and hands it to the system installer. Only meaningful when `hasSelfUpdate` is true. */
+interface AppUpdater {
+    /** `versionCode` of the installed build, to compare with the published one. */
+    val installedVersionCode: Long
+
+    /** [onProgress] reports 0..1 while downloading (not called when the size is unknown). */
+    suspend fun downloadAndInstall(update: AppUpdate, onProgress: (Float) -> Unit): UpdateInstallResult
+}
+
+@Composable
+expect fun rememberAppUpdater(): AppUpdater
+
+/** For platforms that update through a store (iOS, web): never offered, never installs. */
+object NoAppUpdater : AppUpdater {
+    override val installedVersionCode: Long = 0
+
+    override suspend fun downloadAndInstall(update: AppUpdate, onProgress: (Float) -> Unit): UpdateInstallResult = UpdateInstallResult.FAILED
+}

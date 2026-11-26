@@ -9,7 +9,7 @@
     {
       "client_info": {
         "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-        "android_client_info": { "package_name": "com.neteinstein.goodcompany" }
+        "android_client_info": { "package_name": "org.goodcompany.app" }
       },
       "oauth_client": [],
       "api_key": [{ "current_key": "AIzaSyPlaceholderPlaceholderPlaceholder00" }],
@@ -18,7 +18,7 @@
     {
       "client_info": {
         "mobilesdk_app_id": "1:000000000000:android:1111111111111111111111",
-        "android_client_info": { "package_name": "com.neteinstein.goodcompany.sideload" }
+        "android_client_info": { "package_name": "org.goodcompany.app.sideload" }
       },
       "oauth_client": [],
       "api_key": [{ "current_key": "AIzaSyPlaceholderPlaceholderPlaceholder00" }],

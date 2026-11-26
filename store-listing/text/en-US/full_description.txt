@@ -1,0 +1,48 @@
+Good Company is a little CRM for friendship. Remember what your friends love, their kids’ birthdays and the last time you saw each other, and get a gentle nudge before it’s been too long. Everything stays on your phone: no account, and no server of ours.
+
+YOUR PEOPLE, AT A GLANCE
+• Today shows who to catch up with, who you’re seeing soon and what’s coming up this week
+• Sort people by closeness: Closest, Close, Friends or Acquaintances, each with its own catch-up rhythm, or set one per person
+• A warmth score shows who you’re drifting apart from (or hide it, if you prefer)
+• Add friends from your contacts with Android’s contact picker, import a .vcf file, or add them by hand
+• A “Who’s next” widget for your home screen
+
+EVERYTHING ABOUT A FRIEND
+• What they love and what they don’t: food, drinks, music, hobbies
+• Their kids, partner and family, with birthdays and what each one likes
+• Important moments, like “knee surgery on Friday”, and what’s new in their life
+• Before you meet, tap through a quick story of their news and what to ask about
+• Gift ideas, gift lists per occasion with budgets, and what you already gave
+• Birthday wishes ready to send by WhatsApp, text or share
+
+LOG A MEETUP IN SECONDS
+• Who, how, when and what: in person, a call, a video chat, lunch or a concert
+• Optionally, where: typed, or a place you name from your location
+• One timeline per person, and “when did we last all meet?” for every circle
+
+CIRCLES AND PLANS
+• Circles like “Board game night” or “Surf crew”, with their own rhythm
+• Plans with a date and time, add them to your calendar, and say how it went
+• “Who’s free for…?” finds good company for a hike, drinks or a weekday lunch
+• Reminders, with a calm weekly note instead of a stream of notifications
+
+YOUR YEAR IN FRIENDSHIP
+• A look back at your year: meetups, who you saw most, favourite spots and your network of people
+
+SHARE INTO THE APP
+• Share a post, link or screenshot to Good Company and save it to a friend’s news
+• Follow a friend’s blog or newsletter feed and see new posts on their page
+
+AI IDEAS (OPTIONAL)
+• Off by default. Turn it on with your own Anthropic API key, stored only on your phone
+• Weekly plans: real events near you that match your friends’ tastes
+• Talking points and news for each friend, and gift and message suggestions
+• Your friends’ details are sent to the AI only when you use an AI feature
+
+PRIVATE BY DESIGN
+• Your data lives on your phone. No account, no login, no ads
+• Optional backups to your own Google Drive are encrypted with a password only you know
+• Optional app lock with your fingerprint, face or PIN, and private lock-screen notifications
+• Calendar suggestions are opt-in and never leave your phone
+
+In English, Portuguese, Spanish, French and Romanian, in light and dark mode. Explore with sample friends first, and remove them in one tap.

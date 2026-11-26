@@ -21,7 +21,7 @@ Follow these steps exactly. Read AGENTS.md first if you haven't in this session.
    - `composeApp/build.gradle.kts`, in commonMain: `implementation(projects.feature.<name>)`
    - root `build.gradle.kts`, in `dependencies`: `kover(projects.feature.<name>)`
 
-3. **Package layout** under `feature/<name>/src/commonMain/kotlin/com/neteinstein/goodcompany/feature/<name>/ui/`:
+3. **Package layout** under `feature/<name>/src/commonMain/kotlin/org/goodcompany/app/feature/<name>/ui/`:
    - `screens/<Name>ViewModel.kt`: `data class <Name>UiState(...)` (immutable, with defaults) and
      `class <Name>ViewModel(useCases..., clock: AppClock) : ViewModel()` exposing
      `val state: StateFlow<<Name>UiState>` built with `combine(...).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), <Name>UiState())`.
