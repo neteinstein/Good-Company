@@ -42,9 +42,9 @@ change the `v0.1.` prefix in the "Next version" step of `test-apk.yml`.
 
 **Signing:**
 
-- Every release (both APKs and the bundle) is signed with the upload keystore from the `ANDROID_KEYSTORE_*` secrets,
+- Every release (both APKs and the bundle) is signed with the upload keystore from the `KEYSTORE_*` / `KEY_*` secrets,
   so every test build installs over the previous one and Play accepts the bundle.
-- There is no debug-key fallback: if `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD` or `ANDROID_KEY_ALIAS` is
+- There is no debug-key fallback: if `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD` or `KEY_ALIAS` is
   missing, the run fails before building and nothing is released.
 
 The workflow verifies both APK signatures with `apksigner` and the bundle's with `jarsigner`, fails if any of them
@@ -96,7 +96,7 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
    `./gradlew :androidApp:bundleRelease` with a `keystore.properties`, or download `good-company-play.aab` from the
    latest release (always signed with the upload key from the keystore secrets). Enrol in
    Play App Signing when asked.
-3. **Use the upload key for CI:** the `ANDROID_KEYSTORE_*` secrets must hold that same upload keystore, or Play
+3. **Use the upload key for CI:** the `KEYSTORE_*` / `KEY_*` secrets must hold that same upload keystore, or Play
    rejects every upload ("wrong key").
 4. **Service account:** in Google Cloud (the project linked under Play Console → Setup → API access), create a service
    account and a JSON key. In Play Console → **Users and permissions → Invite new users**, add the service account's
@@ -131,7 +131,7 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
 | Secret | Used by | Notes |
 |---|---|---|
 | `GOOGLE_SERVICES_JSON` | Build (Android) on `push`/`workflow_dispatch`, and Test APK | Full contents of the real `google-services.json`. **Pull requests always use the committed placeholder** `androidApp/google-services.json.ci`, so secrets never reach PR builds (including from forks). If the secret is missing, the placeholder is used everywhere. |
-| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Test APK | **Required**: the run fails without the first three. `base64 -w0 your.jks` for the first; the key password falls back to the store password if empty. The workflow writes them into a temporary `keystore.properties`, the same file local signed builds use. Use your **upload key**, never the Play App Signing key: Play uploads (below) are only accepted with the upload key. |
+| `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` | Test APK | **Required**: the run fails without the first three. `base64 -w0 your.jks` for the first; the key password falls back to the store password if empty. The workflow writes them into a temporary `keystore.properties`, the same file local signed builds use. Use your **upload key**, never the Play App Signing key: Play uploads (below) are only accepted with the upload key. |
 | `PLAY_STORE_SERVICE_ACCOUNT_JSON` | Test APK, Publish to Play Store | Optional. The service account's JSON key ([Google Play](#google-play), setup step 4). Without it, nothing is uploaded to Play. |
 | *(planned)* App Store Connect API key, distribution certificate + provisioning profile | iOS archive/upload | Not wired yet. |
 

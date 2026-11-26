@@ -3,7 +3,7 @@
 # Runs after the CI workflow succeeds on a push to main (a merged PR), so only green code is published.
 # Builds the Play (`release`) and `sideload` APKs and the Play bundle (AAB), signs them, and publishes them as the
 # rolling GitHub release tagged v0.1.<n> (the first is v0.1.0; marked "latest") plus a workflow artifact.
-# Everything is signed with the upload keystore from the ANDROID_KEYSTORE_* secrets; without them the run fails.
+# Everything is signed with the upload keystore from the KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD secrets; without them the run fails.
 # With the PLAY_STORE_SERVICE_ACCOUNT_JSON secret it also uploads that bundle
 # (versionCode = this run's number) to Google Play's internal track. publish-play-store.yml promotes it further.
 name: Test APK
@@ -75,25 +75,25 @@ jobs:
       # fallback: Play rejects debug-signed bundles, and the in-app update needs one stable signature.
       - name: Signing
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           MISSING=""
-          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS; do
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS; do
             [ -n "${!name}" ] || MISSING="$MISSING $name"
           done
           if [ -n "$MISSING" ]; then
             echo "::error::Missing signing secrets:$MISSING. Releases are only signed with the upload keystore (CI_CD.md, 'Secrets')."
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
           {
             echo "storeFile=$RUNNER_TEMP/release.jks"
-            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
-            echo "keyAlias=$ANDROID_KEY_ALIAS"
-            echo "keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
           } > keystore.properties
 
       # One Gradle run, so the APK and the bundle share the same R8 output (and mapping.txt).

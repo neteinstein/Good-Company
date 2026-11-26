@@ -42,7 +42,7 @@ names the package and the SHA-1 of the certificate the running build is signed w
 
 **Test APKs from the GitHub release (issue #166).** Older releases were signed with the CI runner's debug key, a new
 key on every run, so no OAuth client could match and Drive always failed with "not set up". The Test APK workflow
-now requires the `ANDROID_KEYSTORE_*` secrets (CI_CD.md) and signs every build with that keystore; register its SHA-1 for
+now requires the `KEYSTORE_*` / `KEY_*` secrets (CI_CD.md) and signs every build with that keystore; register its SHA-1 for
 `org.goodcompany.app.sideload` (and for `org.goodcompany.app` if you test the Play APK).
 
 ## 3. iOS
