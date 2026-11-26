@@ -1,3 +1,4 @@
--- Version 33 → 34 (issue #167, decision 2026-11-22 "Plans · a time"): a plan can have a time of day as well as a day,
--- the same for every occurrence of a series. "HH:MM" (checked in the mapper); NULL = just the day, as before.
-ALTER TABLE plan ADD COLUMN time TEXT;
+-- Version 33 → 34 (decision 2026-11-26 "Calendar · who's Ana?"): an event title that names a first name several people
+-- share is no longer matched to all of them; the user says who it is, once per series. The answer is a calendar
+-- decision of kind WHO holding the chosen friend ids (a JSON array; NULL = none, as for every other kind).
+ALTER TABLE calendar_decision ADD COLUMN friend_ids TEXT;

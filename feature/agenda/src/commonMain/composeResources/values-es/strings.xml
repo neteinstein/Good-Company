@@ -58,6 +58,12 @@
     <string name="cal_empty_body">Los eventos con tus amigos en los calendarios que elegiste aparecen aquí cuando terminan.</string>
     <string name="cal_msg_no">No volveré a sugerir «%1$s»</string>
     <string name="cal_msg_never">No habrá más sugerencias para «%1$s»</string>
+    <string name="cal_who_title">¿Quién es %1$s?</string>
+    <string name="cal_who_event">«%1$s» · %2$s</string>
+    <string name="cal_who_series">Se recordará para todos los «%1$s»</string>
+    <string name="cal_who_none">Ninguna de estas personas</string>
+    <string name="cal_msg_who">Guardado: «%1$s» es con %2$s</string>
+    <string name="cal_msg_who_none">Guardado: «%1$s» no es con ninguna de estas personas</string>
     <string name="today_before_you_meet">Antes de veros</string>
     <string name="today_catch_up">Hora de ponerse al día</string>
     <string name="today_drifting">Os estáis distanciando</string>
