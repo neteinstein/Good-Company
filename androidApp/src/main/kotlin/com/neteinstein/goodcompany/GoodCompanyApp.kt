@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp
 import com.neteinstein.goodcompany.core.data.platform.DriveAutoBackupWorker
 import com.neteinstein.goodcompany.core.data.platform.ReplanNotificationsWorker
 import com.neteinstein.goodcompany.core.data.platform.WeeklyIdeasWorker
+import com.neteinstein.goodcompany.core.ui.platform.initTimeFormat
 import com.neteinstein.goodcompany.di.initKoin
 import com.neteinstein.goodcompany.shortcuts.AppShortcuts
 import com.neteinstein.goodcompany.widget.NextUpWidget
@@ -18,6 +19,8 @@ class GoodCompanyApp : Application(), KoinComponent {
         // No-op (returns null) when the build has no google-services.json.
         FirebaseApp.initializeApp(this)
         initKoin { androidContext(this@GoodCompanyApp) }
+        // Issue #167: plan times follow the phone's 12/24-hour setting.
+        initTimeFormat(this)
         WeeklyIdeasWorker.schedule(this)
         ReplanNotificationsWorker.schedule(this)
         // Issue #166: the daily job decides itself whether a backup is due (Daily / Weekly / Off).

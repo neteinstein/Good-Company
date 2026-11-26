@@ -293,6 +293,7 @@
     <string name="notif_digest_title">🌿 Oameni pe care să-i revezi săptămâna asta</string>
     <string name="notif_digest_body">%1$s — când îți convine.</string>
     <string name="notif_plan_today_title">📅 Azi: %1$s</string>
+    <string name="notif_plan_today_at_title">📅 Azi la %1$s: %2$s</string>
     <string name="notif_plan_today_body">Cu %1$s. Distracție plăcută!</string>
     <string name="notif_plan_ask_title">V-ați văzut cu %1$s?</string>
     <string name="notif_plan_ask_body">„%1$s” — spune-ne dacă a avut loc, ca să se numere.</string>
@@ -331,6 +332,8 @@
     <string name="plan_title_placeholder">Prânz, o drumeție, festivalul de jazz…</string>
     <string name="plan_with">Cu</string>
     <string name="plan_when">Când</string>
+    <string name="plan_time_add">Adaugă o oră (opțional)</string>
+    <string name="plan_time_remove">Elimină ora</string>
     <string name="plan_where">Unde (opțional)</string>
     <string name="plan_with_names">Cu %1$s</string>
     <string name="plan_add_calendar">Adaugă în calendar</string>

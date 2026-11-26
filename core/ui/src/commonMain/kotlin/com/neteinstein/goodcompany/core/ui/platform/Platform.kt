@@ -12,7 +12,10 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
 import com.neteinstein.goodcompany.core.domain.model.PhotoRef
+import com.neteinstein.goodcompany.core.domain.usecase.CalendarFile
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 
 /*
  * UI-side platform hooks. Only things Compose Multiplatform genuinely can't share live here:
@@ -204,8 +207,25 @@ expect fun platformDynamicColorScheme(dark: Boolean): ColorScheme?
 @Composable
 expect fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () -> Unit
 
-/** An all-day event to hand to the system calendar. The user reviews and saves it there. */
-data class CalendarEntry(val title: String, val date: LocalDate, val location: String? = null, val notes: String? = null)
+/**
+ * An event to hand to the system calendar: all day, or at [time] for [CalendarEntry.TIMED_MINUTES] (issue #167). The
+ * user reviews and saves it there.
+ */
+data class CalendarEntry(
+    val title: String,
+    val date: LocalDate,
+    val location: String? = null,
+    val notes: String? = null,
+    val time: LocalTime? = null,
+) {
+    /** The start in the device's zone, or null for an all-day event. */
+    fun start(): LocalDateTime? = time?.let { LocalDateTime(date, it) }
+
+    companion object {
+        /** How long a timed event lasts (a plan has no end time; the user can change it in their calendar). */
+        const val TIMED_MINUTES = CalendarFile.DEFAULT_MINUTES
+    }
+}
 
 /**
  * Returns a launcher that opens the system "new event" screen prefilled with an entry (Android calendar intent,

@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toInstant
 import platform.Contacts.CNContact
 import platform.Contacts.CNContactEmailAddressesKey
 import platform.Contacts.CNContactStore
@@ -261,11 +262,15 @@ actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {
             // iOS 17+: the system event editor runs out of process and needs no calendar permission.
             val store = EKEventStore()
             val event = EKEvent.eventWithEventStore(store)
-            val start = entry.date.atStartOfDayIn(TimeZone.currentSystemDefault()).epochSeconds.toDouble()
+            val zone = TimeZone.currentSystemDefault()
+            // Issue #167: with a time, a timed event of TIMED_MINUTES; without one, all day as before.
+            val timed = entry.start()?.toInstant(zone)
+            val start = (timed ?: entry.date.atStartOfDayIn(zone)).epochSeconds.toDouble()
+            val end = if (timed == null) start else start + CalendarEntry.TIMED_MINUTES * SECONDS_PER_MINUTE
             event.title = entry.title
-            event.allDay = true
+            event.allDay = timed == null
             event.startDate = NSDate.dateWithTimeIntervalSince1970(start)
-            event.endDate = NSDate.dateWithTimeIntervalSince1970(start)
+            event.endDate = NSDate.dateWithTimeIntervalSince1970(end)
             event.location = entry.location
             event.notes = entry.notes
             val editor = EKEventEditViewController()
@@ -276,6 +281,8 @@ actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit {
         }
     }
 }
+
+private const val SECONDS_PER_MINUTE = 60.0
 
 private class EventEditDelegate : NSObject(), EKEventEditViewDelegateProtocol {
     override fun eventEditViewController(controller: EKEventEditViewController, didCompleteWithAction: EKEventEditViewAction) {

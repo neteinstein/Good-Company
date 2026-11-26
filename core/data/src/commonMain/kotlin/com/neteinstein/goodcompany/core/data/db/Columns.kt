@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data.db
 
 import com.neteinstein.goodcompany.core.domain.model.Birthday
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.enums.enumEntries
 import kotlin.time.Instant
 
@@ -22,6 +23,12 @@ internal fun LocalDate.toColumn(): String = toString()
 internal fun String.toLocalDate(): LocalDate = LocalDate.parse(this)
 
 internal fun Int.toColumn(): Long = toLong()
+
+/** A time of day as "HH:MM" (issue #167: minutes only). */
+internal fun LocalTime.toColumn(): String = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+
+/** "HH:MM" (or ISO with seconds) back to a time; anything unreadable reads as no time rather than failing the row. */
+internal fun String.toLocalTimeOrNull(): LocalTime? = runCatching { LocalTime.parse(this) }.getOrNull()
 
 /**
  * The [E] constant stored as [name], or null when the name is missing or unknown. Enum columns have no CHECK (issue #72),

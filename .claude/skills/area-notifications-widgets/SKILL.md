@@ -22,6 +22,8 @@ When you learn something new about this area, add it here, not to AGENTS.md.
 - A plan occurrence's day and "did it happen?" notifications share the slot `plan:<occurrence>` and are both
   "while open" (issue #100), so a persistent one goes as soon as the plan is cancelled, deleted or answered. The ask
   offers "I didn't go" (`PLAN_NOT_ATTENDED`) for group and circle plans (`PlanFollowUp.isGroup`).
+- A plan's time (issue #167) is only in the day notification's text (`PlanToday.time` → `notif_plan_today_at_title`,
+  `clockLabel()`); the notification itself still comes at the reminder hour on the day (owner decision).
 - Deep links are parsed in one place (`AppLink`); add new ones there with tests.
 - "We met" is labelled **"Caught up"** everywhere outside the app too (issue #101): the notification quick action
   (`notif_action_met`), the widget button (Android `widget_met`, iOS `widget.met`) and the generic app-icon shortcut

@@ -228,6 +228,7 @@ internal suspend fun GoodCompanyDatabase.readPlans(): List<DomainPlan> {
             activityName = row.activity_name,
             repeat = repeat,
             skippedDates = if (repeat == null) emptyList() else skips[row.id].orEmpty(),
+            time = row.time?.toLocalTimeOrNull(),
         )
     }
 }
@@ -251,6 +252,7 @@ internal suspend fun GoodCompanyDatabase.writePlan(plan: DomainPlan) {
         repeatStart = plan.repeat?.start?.toColumn(),
         repeatUntil = plan.repeat?.until?.toColumn(),
         activityName = plan.activityName.takeIf { plan.activity == null },
+        time = plan.time?.toColumn(),
     )
     q.deleteFriends(plan.id)
     plan.friendIds.forEachIndexed { i, f -> q.insertFriend(plan.id, f.value, i.toLong()) }

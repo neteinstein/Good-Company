@@ -137,10 +137,12 @@ actual fun rememberContactPicker(onPicked: (List<ContactRecord>) -> Unit): () ->
 @Composable
 actual fun rememberCalendarAdder(): (CalendarEntry) -> Unit = remember {
     { entry ->
-        val ics = CalendarFile.allDayEvent(
+        val ics = CalendarFile.event(
             uid = "${entry.date}-${entry.title.hashCode()}",
             title = entry.title,
             date = entry.date,
+            time = entry.time,
+            minutes = CalendarEntry.TIMED_MINUTES,
             location = entry.location,
             notes = entry.notes,
             stamp = Clock.System.now(),

@@ -53,6 +53,8 @@ data class PlanInput(
     val repeat: Repeat? = null,
     /** One of your own activities, by name (issue #121), when [activity] is null. */
     val activityName: String? = null,
+    /** The time of day (issue #167); null = just the day. */
+    val time: LocalTime? = null,
 )
 
 /**
@@ -76,6 +78,7 @@ class SavePlanUseCase(
         activity: HangoutActivity? = null,
         repeat: Repeat? = null,
         activityName: String? = null,
+        time: LocalTime? = null,
     ): Plan {
         require(title.isNotBlank()) { "Title required" }
         require(friendIds.isNotEmpty() || circleId != null) { "Pick at least one friend or a circle" }
@@ -94,6 +97,8 @@ class SavePlanUseCase(
             activityName = activityName?.trim()?.ifBlank { null }.takeIf { activity == null },
             repeat = repeat?.copy(start = date, until = repeat.until?.takeIf { it >= date }),
             skippedDates = if (repeat == null) emptyList() else existing?.skippedDates.orEmpty().filter { it > date },
+            // Minutes only: a picked time never carries seconds into storage or the calendar.
+            time = time?.let { LocalTime(it.hour, it.minute) },
         )
         plans.upsert(plan)
         if (ideaId != null && existing == null) ideas.markProposed(ideaId, clock.now())
@@ -111,6 +116,7 @@ class SavePlanUseCase(
         activity = input.activity,
         repeat = input.repeat,
         activityName = input.activityName,
+        time = input.time,
     )
 }
 

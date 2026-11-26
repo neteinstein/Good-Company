@@ -18,6 +18,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.MissingApiKeyException
 import com.neteinstein.goodcompany.core.domain.usecase.TopicHint
 import com.neteinstein.goodcompany.core.domain.usecase.Warmth
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
+import com.neteinstein.goodcompany.core.ui.platform.clockLabel
 import com.neteinstein.goodcompany.core.ui.resources.Res
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_invalid_key
 import com.neteinstein.goodcompany.core.ui.resources.ai_error_no_key
@@ -85,6 +86,7 @@ import com.neteinstein.goodcompany.core.ui.resources.notif_meet_body_never
 import com.neteinstein.goodcompany.core.ui.resources.notif_meet_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_ask_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_ask_title
+import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_at_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_body
 import com.neteinstein.goodcompany.core.ui.resources.notif_plan_today_title
 import com.neteinstein.goodcompany.core.ui.resources.notif_private
@@ -258,7 +260,9 @@ object ResourceNotificationRenderer : NotificationRenderer {
                 emptyList(),
             )
             is NotificationContent.PlanToday -> Triple(
-                getString(Res.string.notif_plan_today_title, c.title),
+                // Issue #167: the plan's time goes in the text; the notification itself still comes in the morning.
+                c.time?.let { getString(Res.string.notif_plan_today_at_title, it.clockLabel(), c.title) }
+                    ?: getString(Res.string.notif_plan_today_title, c.title),
                 if (c.withNames.isEmpty()) "" else getString(Res.string.notif_plan_today_body, namesText(c.withNames, c.withNames.size)),
                 emptyList(),
             )

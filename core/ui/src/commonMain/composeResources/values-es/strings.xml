@@ -283,6 +283,7 @@
     <string name="notif_digest_title">🌿 Gente con quien ponerte al día esta semana</string>
     <string name="notif_digest_body">%1$s — cuando te venga bien.</string>
     <string name="notif_plan_today_title">📅 Hoy: %1$s</string>
+    <string name="notif_plan_today_at_title">📅 Hoy a las %1$s: %2$s</string>
     <string name="notif_plan_today_body">Con %1$s. ¡Que lo disfrutes!</string>
     <string name="notif_plan_ask_title">¿Quedaste con %1$s?</string>
     <string name="notif_plan_ask_body">«%1$s»: cuéntanos si pasó para que cuente.</string>
@@ -320,6 +321,8 @@
     <string name="plan_title_placeholder">Comida, una ruta, el festival de jazz…</string>
     <string name="plan_with">Con</string>
     <string name="plan_when">Cuándo</string>
+    <string name="plan_time_add">Añadir hora (opcional)</string>
+    <string name="plan_time_remove">Quitar la hora</string>
     <string name="plan_where">Dónde (opcional)</string>
     <string name="plan_with_names">Con %1$s</string>
     <string name="plan_add_calendar">Añadir al calendario</string>

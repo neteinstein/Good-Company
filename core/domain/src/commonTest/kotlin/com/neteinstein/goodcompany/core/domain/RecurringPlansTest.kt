@@ -23,6 +23,7 @@ import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -138,6 +139,24 @@ class RecurringPlansTest {
         assertTrue(g.observePlans.forFriend(FriendId("zoe")).first().isEmpty())
         assertEquals(listOf(saved), g.observeFriendDetail(ana).first()!!.plans)
         assertFailsWith<IllegalArgumentException> { g.savePlan.save(null, PlanInput("x", emptyList(), LocalDate(2026, 3, 20))) }
+    }
+
+    @Test
+    fun aPlansTime_isSavedToTheMinute_keptForEveryOccurrence_andCanBeTakenOff() = runTest {
+        // Issue #167.
+        val g = TestGraph(listOf(friend("ana")))
+        val start = LocalDate(2026, 3, 14)
+        val saved = g.savePlan.save(
+            null,
+            PlanInput("Run", listOf(ana), start, repeat = Repeat(1, RepeatUnit.WEEK, start), time = LocalTime(7, 15, 59)),
+        )
+        assertEquals(LocalTime(7, 15), saved.time)
+        val moved = saved.closeOccurrence(start, happened = true)
+        assertEquals(LocalDate(2026, 3, 21), moved.date)
+        assertEquals(LocalTime(7, 15), moved.time, "the next occurrence keeps the time")
+        val cleared = g.savePlan.save(saved.id, PlanInput("Run", listOf(ana), start, repeat = saved.repeat))
+        assertEquals(null, cleared.time)
+        assertEquals(null, g.planRepo.plans.first().single().time)
     }
 
     @Test

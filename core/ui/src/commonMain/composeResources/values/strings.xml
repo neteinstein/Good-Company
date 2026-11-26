@@ -288,6 +288,7 @@
     <string name="notif_digest_title">🌿 People to catch up with this week</string>
     <string name="notif_digest_body">%1$s — whenever suits you.</string>
     <string name="notif_plan_today_title">📅 Today: %1$s</string>
+    <string name="notif_plan_today_at_title">📅 Today at %1$s: %2$s</string>
     <string name="notif_plan_today_body">With %1$s. Have fun!</string>
     <string name="notif_plan_ask_title">Did you meet %1$s?</string>
     <string name="notif_plan_ask_body">“%1$s” — tell us how it went so it counts.</string>
@@ -325,6 +326,8 @@
     <string name="plan_title_placeholder">Lunch, a hike, the jazz festival…</string>
     <string name="plan_with">With</string>
     <string name="plan_when">When</string>
+    <string name="plan_time_add">Add a time (optional)</string>
+    <string name="plan_time_remove">Remove the time</string>
     <string name="plan_where">Where (optional)</string>
     <string name="plan_with_names">With %1$s</string>
     <string name="plan_add_calendar">Add to calendar</string>

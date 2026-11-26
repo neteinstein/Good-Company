@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.model
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.time.Instant
 
 /** What a notification is about. Text is rendered (and localised) later by a [NotificationRenderer]. */
@@ -43,12 +44,16 @@ sealed interface NotificationContent {
     /** The weekly catch-up note: a few names worth reaching out to (instead of one notification per friend). */
     data class CatchUpDigest(val names: List<String>, val total: Int) : NotificationContent
 
-    /** A planned meetup is today. [occurrence] is set for a recurring plan (the day of this occurrence). */
+    /**
+     * A planned meetup is today. [occurrence] is set for a recurring plan (the day of this occurrence). [time] is the
+     * plan's time (issue #167): only in the text, the notification still comes in the morning.
+     */
     data class PlanToday(
         val planId: String,
         val title: String,
         val withNames: List<String>,
         val occurrence: LocalDate? = null,
+        val time: LocalTime? = null,
     ) : NotificationContent
 
     /**

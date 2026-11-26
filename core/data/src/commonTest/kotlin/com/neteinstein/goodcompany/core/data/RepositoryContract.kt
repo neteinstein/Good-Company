@@ -87,6 +87,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -551,6 +552,11 @@ abstract class RepositoryContract {
         s.friends.upsert(friend("ana"))
         s.ideas.addAll(listOf(Idea("i", listOf(ana), IdeaKind.EVENT, "Jazz", "", createdAt = at(2026, 1, 1))))
         val lunch = Plan("p", listOf(ana), "Lunch", LocalDate(2026, 3, 12), "Tasca", "i", createdAt = at(2026, 3, 1))
+        s.plans.upsert(lunch)
+        assertEquals(listOf(lunch), open().plans.plans.first())
+        // Issue #167: a time is kept, and taken off again.
+        s.plans.upsert(lunch.copy(time = LocalTime(13, 15)))
+        assertEquals(LocalTime(13, 15), open().plans.plans.first().single().time)
         s.plans.upsert(lunch)
         assertEquals(listOf(lunch), open().plans.plans.first())
         // Issue #100: cancelled and "I didn't go" are stored and read back by name.

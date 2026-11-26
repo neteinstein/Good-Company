@@ -91,11 +91,11 @@ private fun timeOfDayLabel(t: LogTimeOfDay): String = stringResource(
     },
 )
 
-/** "Pick a time": the Material time picker in a dialog, starting on [initial]. */
+/** "Pick a time": the Material time picker in a dialog, starting on [initial], on a 12- or 24-hour dial ([is24Hour]). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocalTimePickerDialog(initial: LocalTime, onDismiss: () -> Unit, onPicked: (LocalTime) -> Unit) {
-    val state = rememberTimePickerState(initialHour = initial.hour, initialMinute = initial.minute, is24Hour = true)
+fun LocalTimePickerDialog(initial: LocalTime, onDismiss: () -> Unit, onPicked: (LocalTime) -> Unit, is24Hour: Boolean = true) {
+    val state = rememberTimePickerState(initialHour = initial.hour, initialMinute = initial.minute, is24Hour = is24Hour)
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Rounded.AccessTime, null) },

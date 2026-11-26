@@ -37,6 +37,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.CatchUpPolicy
 import com.neteinstein.goodcompany.core.domain.usecase.LogKind
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import java.io.File
 import java.util.Properties
 import kotlin.io.path.createTempFile
@@ -1138,6 +1139,34 @@ class MigrationTest {
         val who = CalendarDecision("who:series:padel", CalendarDecisionKind.WHO, old.decidedAt, listOf(FriendId("ana"), FriendId("aj")))
         database.writeCalendarDecision(who)
         assertEquals(who, database.readCalendarDecisions().single { it.kind == CalendarDecisionKind.WHO })
+        driver.close()
+    }
+
+    @Test
+    fun version34to35_plansKeepTheirDay_withNoTime_andATimeCanBeSaved() = runTest {
+        // Issue #167.
+        val driver = driverAt(34)
+        driver.execute(
+            null,
+            "INSERT INTO plan (id, position, title, date, status, created_at, repeat_every, repeat_unit, repeat_start) " +
+                "VALUES ('p1', 0, 'Lunch', '2026-12-01', 'PLANNED', 1000, NULL, NULL, NULL), " +
+                "('p2', 1, 'Run', '2026-12-02', 'PLANNED', 2000, 1, 'WEEK', '2026-12-02')",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 34, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val plans = database.readPlans().associateBy { it.id }
+        assertEquals(LocalDate(2026, 12, 1), plans.getValue("p1").date)
+        assertNull(plans.getValue("p1").time)
+        assertNull(plans.getValue("p2").time)
+        assertEquals(RepeatUnit.WEEK, plans.getValue("p2").repeat?.unit)
+
+        database.writePlan(plans.getValue("p2").copy(time = LocalTime(19, 30)))
+        assertEquals(LocalTime(19, 30), database.readPlans().single { it.id == "p2" }.time)
+        // A time this build can't read is no time, not a broken row.
+        driver.execute(null, "UPDATE plan SET time = 'soon' WHERE id = 'p1'", 0).await()
+        assertNull(database.readPlans().single { it.id == "p1" }.time)
         driver.close()
     }
 

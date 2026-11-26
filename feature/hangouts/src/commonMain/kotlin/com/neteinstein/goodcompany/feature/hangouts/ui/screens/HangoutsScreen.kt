@@ -82,6 +82,7 @@ import com.neteinstein.goodcompany.core.ui.format.shortLabelText
 import com.neteinstein.goodcompany.core.ui.format.timeLabel
 import com.neteinstein.goodcompany.core.ui.l10n.everyNDays
 import com.neteinstein.goodcompany.core.ui.platform.AppPermission
+import com.neteinstein.goodcompany.core.ui.platform.clockLabel
 import com.neteinstein.goodcompany.core.ui.platform.rememberPermissionRequester
 import com.neteinstein.goodcompany.core.ui.resources.circle_built_in
 import com.neteinstein.goodcompany.core.ui.resources.circle_next_plan
@@ -307,7 +308,11 @@ private fun CircleCard(status: Relationships.GroupStatus, state: HangoutsUiState
                     Icon(if (plan.isRecurring) Icons.Rounded.Repeat else Icons.Rounded.EventAvailable, null, Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        stringResource(CoreRes.string.circle_next_plan, plan.title, plan.date.shortLabel()),
+                        stringResource(
+                            CoreRes.string.circle_next_plan,
+                            plan.title,
+                            listOfNotNull(plan.date.shortLabel(), plan.time?.clockLabel()).joinToString(" · "),
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

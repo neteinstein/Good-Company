@@ -105,6 +105,7 @@ import com.neteinstein.goodcompany.core.ui.components.text
 import com.neteinstein.goodcompany.core.ui.format.monthLong
 import com.neteinstein.goodcompany.core.ui.format.shortLabel
 import com.neteinstein.goodcompany.core.ui.format.shortLabelText
+import com.neteinstein.goodcompany.core.ui.platform.clockLabel
 import com.neteinstein.goodcompany.core.ui.platform.rememberImagePicker
 import com.neteinstein.goodcompany.core.ui.resources.back
 import com.neteinstein.goodcompany.core.ui.resources.delete
@@ -536,7 +537,10 @@ private fun UpcomingRow(item: CircleUpcoming, state: CirclePageUiState, actions:
             Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.width(8.dp))
             Text(
-                item.date?.shortLabel() ?: stringResource(CoreRes.string.reminder_no_date),
+                item.date?.let { d ->
+                    // Issue #167: a plan's time after its day.
+                    listOfNotNull(d.shortLabel(), (item as? CircleUpcoming.PlanItem)?.plan?.time?.clockLabel()).joinToString(" · ")
+                } ?: stringResource(CoreRes.string.reminder_no_date),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

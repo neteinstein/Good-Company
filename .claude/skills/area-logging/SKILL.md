@@ -115,6 +115,13 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   "We met" panel, the rest go through `ClosePlanUseCase` (Confirm / `CancelPlanUseCase` / `DeletePlanUseCase`), which
   returns the plan as it was for Undo (`RestorePlanUseCase`). On a series every answer is for that occurrence; Cancel
   and Delete ask "this one or the whole series" (`PlanSeriesDialog`), and "this one" just takes the date out.
+- **A plan's time (issue #167).** `Plan.time: LocalTime?` (column `plan.time`, "HH:MM", migration `34.sqm`; minutes
+  only, an unreadable value reads as no time), the same for every occurrence; set in `PlanEditor` (`PlanTimeChoice`,
+  "Add a time" under the day, `LocalTimePickerDialog(is24Hour = uses24HourClock())`). It is display-only: logging an
+  "It happened" still uses now / noon, and the day notification stays at the reminder hour (owner). Add to calendar
+  is timed for `CalendarEntry.TIMED_MINUTES` (60) when set (`CalendarEntry.start()`; web `CalendarFile.event`, floating
+  local time), all day otherwise. Show a plan time with `LocalTime.clockLabel()` (`:core:ui` platform: the device's
+  12/24-hour convention; Android reads the setting after `initTimeFormat` in `GoodCompanyApp`), never `hhmm()`.
 - **Places without GPS (issue #121).** Settings → Your data → Places also lists `TypedPlaces.of`: place names typed on
   meetups (no `placeId`, or one whose `NamedPlace` is gone) and plans, spellings kept apart. Rename/merge is
   `RenameTypedPlaceUseCase` (text only, GPS places untouched); "Add coordinates" is `PinTypedPlaceUseCase` with the

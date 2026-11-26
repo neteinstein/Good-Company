@@ -19,6 +19,7 @@ import com.neteinstein.goodcompany.core.testing.Fixtures.at
 import com.neteinstein.goodcompany.core.testing.Fixtures.friend
 import com.neteinstein.goodcompany.core.testing.withoutDailyLog
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -116,6 +117,17 @@ class NudgesAndPlansTest {
     }
 
     @Test
+    fun aPlansTime_goesInTheDayNotification_whichStillComesInTheMorning() {
+        // Issue #167: the owner kept the morning notification; the time is only in its text.
+        val dinner = Plan("p1", listOf(FriendId("ana")), "Dinner", LocalDate(2026, 3, 12), createdAt = now, time = LocalTime(20, 30))
+        val planned = plan(NudgePolicy(weeklyDigest = false), friends = overdue.take(2), plans = listOf(dinner))
+            .filter { it.id.startsWith("plan:") }
+        val day = planned.single { it.id == "plan:p1:day" }
+        assertEquals(at(2026, 3, 12, 9), day.at)
+        assertEquals(NotificationContent.PlanToday("p1", "Dinner", listOf("Ana"), time = LocalTime(20, 30)), day.content)
+    }
+
+    @Test
     fun agendaShowsUpcomingPlansAndAsksAboutPastOnes() {
         val friends = listOf(friend("ana"))
         val plans = listOf(
@@ -158,5 +170,24 @@ class CalendarFileTest {
         assertTrue("LOCATION:Hot Clube" in lines)
         assertEquals("jazz-wine-fun.ics", com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.fileName("Jazz, wine; fun!"))
         assertEquals("plan.ics", com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.fileName("!!"))
+    }
+
+    @Test
+    fun aTimedEvent_startsAtThePlansTime_inLocalTime_andLastsAnHour() {
+        // Issue #167: floating local time, so the calendar shows the same time the app does.
+        val ics = com.neteinstein.goodcompany.core.domain.usecase.CalendarFile.event(
+            uid = "p1",
+            title = "Dinner",
+            date = LocalDate(2026, 12, 31),
+            time = LocalTime(23, 30, 45),
+            location = null,
+            notes = null,
+            stamp = at(2026, 3, 10, 8, 5),
+        )
+        val lines = ics.split("\r\n")
+        assertTrue("DTSTART:20261231T233000" in lines, "seconds are dropped")
+        assertTrue("DTEND:20270101T003000" in lines, "an hour later, past midnight")
+        assertTrue(lines.none { it.startsWith("DTSTART;VALUE=DATE") })
+        assertTrue(lines.none { it.startsWith("LOCATION") || it.startsWith("DESCRIPTION") })
     }
 }

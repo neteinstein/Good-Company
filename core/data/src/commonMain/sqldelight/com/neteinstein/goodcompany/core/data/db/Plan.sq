@@ -19,7 +19,9 @@ CREATE TABLE plan (
     repeat_start TEXT,
     repeat_until TEXT,
     -- One of your own activities (issue #121), by name, when activity is NULL.
-    activity_name TEXT
+    activity_name TEXT,
+    -- The time of day (issue #167), "HH:MM"; NULL = just the day.
+    time TEXT
 );
 
 CREATE INDEX plan_status_date ON plan(status, date);
@@ -57,11 +59,11 @@ SELECT coalesce(max(position), -1) + 1 FROM plan;
 upsert:
 INSERT INTO plan (
     id, position, title, date, place, idea_id, status, created_at,
-    circle_id, activity, repeat_every, repeat_unit, repeat_start, repeat_until, activity_name
+    circle_id, activity, repeat_every, repeat_unit, repeat_start, repeat_until, activity_name, time
 )
 VALUES (
     :id, :position, :title, :date, :place, (SELECT id FROM idea WHERE id IS :ideaId), :status, :createdAt,
-    :circleId, :activity, :repeatEvery, :repeatUnit, :repeatStart, :repeatUntil, :activityName
+    :circleId, :activity, :repeatEvery, :repeatUnit, :repeatStart, :repeatUntil, :activityName, :time
 )
 ON CONFLICT (id) DO UPDATE SET
     title = excluded.title,
@@ -76,7 +78,8 @@ ON CONFLICT (id) DO UPDATE SET
     repeat_unit = excluded.repeat_unit,
     repeat_start = excluded.repeat_start,
     repeat_until = excluded.repeat_until,
-    activity_name = excluded.activity_name;
+    activity_name = excluded.activity_name,
+    time = excluded.time;
 
 deleteFriends:
 DELETE FROM plan_friend WHERE plan_id = ?;
