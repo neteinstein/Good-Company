@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.startup
 
+import com.neteinstein.goodcompany.core.domain.usecase.KeepLanguageInStepUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
@@ -12,6 +13,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Work that runs while the app is open:
+ * - apply the app's language (issue #174) and keep it in step with the platform's per-app language,
  * - keep OS notifications in sync with the data,
  * - quietly refresh contacts (no-op without permission),
  * - remember that the app was opened (ignored nudges get quieter),
@@ -23,6 +25,7 @@ class AppStartup(
     private val runWeeklyIdeas: RunWeeklyIdeasUseCase,
     private val recordAppOpened: RecordAppOpenedUseCase,
     private val refreshFeeds: RefreshFeedsUseCase,
+    private val keepLanguageInStep: KeepLanguageInStepUseCase,
 ) {
     private var job: Job? = null
 
@@ -33,6 +36,8 @@ class AppStartup(
     fun start(scope: CoroutineScope) {
         if (job?.isActive == true) return
         job = scope.launch {
+            // First, so notifications are rendered in the chosen language (their re-plan waits half a second).
+            launch { runCatching { keepLanguageInStep() }.onFailure { if (it is CancellationException) throw it } }
             // Lets catch-up nudges back off when the app isn't being opened (see NudgePolicy).
             runCatching { recordAppOpened() }
             // Issue #98: a failure is logged and never stops the rest of the startup work. A failed re-plan inside

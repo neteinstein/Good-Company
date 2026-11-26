@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp
 import com.neteinstein.goodcompany.core.data.platform.DriveAutoBackupWorker
 import com.neteinstein.goodcompany.core.data.platform.ReplanNotificationsWorker
 import com.neteinstein.goodcompany.core.data.platform.WeeklyIdeasWorker
+import com.neteinstein.goodcompany.core.ui.platform.initAppLanguage
 import com.neteinstein.goodcompany.core.ui.platform.initTimeFormat
 import com.neteinstein.goodcompany.di.initKoin
 import com.neteinstein.goodcompany.shortcuts.AppShortcuts
@@ -21,6 +22,8 @@ class GoodCompanyApp : Application(), KoinComponent {
         initKoin { androidContext(this@GoodCompanyApp) }
         // Issue #167: plan times follow the phone's 12/24-hour setting.
         initTimeFormat(this)
+        // Issue #174: the in-app language and Android 13+'s per-app language stay in step.
+        initAppLanguage(this)
         WeeklyIdeasWorker.schedule(this)
         ReplanNotificationsWorker.schedule(this)
         // Issue #166: the daily job decides itself whether a backup is due (Daily / Weekly / Off).

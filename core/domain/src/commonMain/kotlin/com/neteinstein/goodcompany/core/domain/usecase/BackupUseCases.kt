@@ -1,6 +1,7 @@
 package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.Backup
@@ -61,6 +62,7 @@ class RestoreBackupUseCase(private val backups: BackupRepository, private val cl
                     mediaExplained = current.mediaExplained,
                     peopleLegendSeen = current.peopleLegendSeen,
                     agendaView = current.agendaView,
+                    language = current.language,
                     lastDriveBackupAt = current.lastDriveBackupAt,
                     autoDriveBackup = current.autoDriveBackup,
                     lastAutoBackup = current.lastAutoBackup,
@@ -82,6 +84,7 @@ internal fun AppSettings.withoutDeviceOnly() = copy(
     mediaExplained = false,
     peopleLegendSeen = false,
     agendaView = AgendaView.CALENDAR,
+    language = AppLanguage.SYSTEM,
     calendarSuggestions = false,
     calendarIds = emptyList(),
     calendarOnSince = null,

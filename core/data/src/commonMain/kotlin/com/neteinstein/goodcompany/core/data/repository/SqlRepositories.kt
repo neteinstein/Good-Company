@@ -63,6 +63,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
@@ -430,6 +431,8 @@ internal data class DeviceSettings(
     val peopleLegendSeen: Boolean = false,
     /** Issue #138: Calendar or List on "Everything coming up". */
     val agendaView: AgendaView = AgendaView.CALENDAR,
+    /** Issue #174: the app's language belongs to this device (never in a backup). */
+    val language: AppLanguage = AppLanguage.SYSTEM,
 ) {
     fun applyTo(settings: AppSettings) = settings.copy(
         notifications = notifications,
@@ -437,6 +440,7 @@ internal data class DeviceSettings(
         mediaExplained = mediaExplained,
         peopleLegendSeen = peopleLegendSeen,
         agendaView = agendaView,
+        language = language,
         keptTagSpellings = keptTagSpellings,
         acquaintanceDays = acquaintanceDays,
         lastSeenCardHiddenOn = lastSeenCardHiddenOn,
@@ -480,6 +484,7 @@ internal data class DeviceSettings(
             mediaExplained = settings.mediaExplained,
             peopleLegendSeen = settings.peopleLegendSeen,
             agendaView = settings.agendaView,
+            language = settings.language,
         )
     }
 }

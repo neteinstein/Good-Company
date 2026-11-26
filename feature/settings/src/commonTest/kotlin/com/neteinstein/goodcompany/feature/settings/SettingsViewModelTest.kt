@@ -1,5 +1,6 @@
 package com.neteinstein.goodcompany.feature.settings
 
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.Closeness
@@ -126,6 +127,7 @@ class SettingsViewModelTest {
         val vm = vm()
         val state = collecting(vm.state)
         vm.onThemeChange(ThemeMode.DARK)
+        vm.onLanguageChange(AppLanguage.FRENCH)
         vm.onDynamicColorChange(false)
         vm.onWeeklyIdeasChange(false)
         vm.onHomeAreaChange("Porto")
@@ -137,6 +139,7 @@ class SettingsViewModelTest {
         vm.onNotificationPermissionResult(false)
         val s = state.value.settings
         assertEquals(ThemeMode.DARK, s.themeMode)
+        assertEquals(AppLanguage.FRENCH, s.language)
         assertEquals(false, s.dynamicColor)
         assertEquals(false, s.weeklyIdeasEnabled)
         assertEquals("Porto", s.homeArea)

@@ -1,12 +1,15 @@
 package com.neteinstein.goodcompany
 
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
+import com.neteinstein.goodcompany.core.domain.usecase.KeepLanguageInStepUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RecordAppOpenedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RefreshFeedsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SyncContactsUseCase
+import com.neteinstein.goodcompany.core.testing.FakeAppLanguagePlatform
 import com.neteinstein.goodcompany.core.testing.FakeCalendarDecisionRepository
 import com.neteinstein.goodcompany.core.testing.FakeCalendarReader
 import com.neteinstein.goodcompany.core.testing.FakeFeedFetcher
@@ -42,6 +45,7 @@ class AppStartupTest {
     private val clock = FixedClock()
     private val interactions = FakeInteractionRepository()
     private val settings = FakeSettingsRepository()
+    private val language = FakeAppLanguagePlatform()
 
     private fun startup() = AppStartup(
         KeepNotificationsScheduledUseCase(
@@ -73,6 +77,7 @@ class AppStartupTest {
         ),
         RecordAppOpenedUseCase(settings, clock),
         RefreshFeedsUseCase(friends, FakeFeedFetcher(), clock),
+        KeepLanguageInStepUseCase(settings, language),
     )
 
     @Test
@@ -87,6 +92,7 @@ class AppStartupTest {
         assertTrue(scheduler.scheduled.isNotEmpty())
         assertTrue(friends.friends.value.any { it.name == "Nina" })
         assertEquals(clock.now(), settings.settings.value.lastOpenedAt)
+        assertEquals(listOf(AppLanguage.SYSTEM), language.applied)
         val runs = scheduler.scheduled.size
 
         // Activity destroyed → root ViewModel scope cancelled → a new UI must start the work again.

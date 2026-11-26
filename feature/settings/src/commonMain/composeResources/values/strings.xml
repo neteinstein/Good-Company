@@ -8,7 +8,13 @@
     <string name="theme_dark">Dark</string>
     <string name="dynamic_color">Colours from wallpaper</string>
     <string name="dynamic_color_hint">Material You dynamic colour</string>
-    <string name="language_note">Language follows your device: English, Português, Español, Français or Română.</string>
+    <string name="language_title">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_portuguese">Português</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_french">Français</string>
+    <string name="language_romanian">Română</string>
 
     <string name="circles">Closeness</string>
     <string name="circles_hint">How often you’d like to see people at each closeness. A friend’s own rhythm on their page wins over these.</string>

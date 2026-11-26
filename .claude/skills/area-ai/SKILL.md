@@ -12,7 +12,8 @@ changing the request itself (model id, headers, parameters).
 
 - Every new AI entry point checks the switch: the key comes from `AppSettings.usableAiKey` (null while AI is off), and
   the UI shows no AI button, section, hint or set-up prompt while it is off.
-- Requests carry `LanguageProvider.languageTag()` so the answer is in the UI language.
+- Requests carry `LanguageProvider.languageTag()` so the answer is in the UI language: the one chosen in Settings →
+  Language (`AppLocale.language.tag`, e.g. `pt-PT`, issue #174), or the device's for System default.
 - Never send calendar events, the API key or private data the feature doesn't need.
 - The Plans tab (`PlansViewModel`, `:feature:ideas`, issue #67) shows "Ideas for this week" only while
   `usableAiKey != null`; the full list is `WeeklyIdeasRoute`, which pops back if AI is turned off.

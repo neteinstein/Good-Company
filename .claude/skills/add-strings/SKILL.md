@@ -48,6 +48,20 @@ ViewModels hold no text: one-off messages are a sealed `FooMessage`; the screen 
 data (`NotificationContent`, `AiFailure.Reason`, `SampleTexts`) that `:core:ui` renders. AI requests carry
 `LanguageProvider.languageTag()`.
 
+## 3b. The app's language (issue #174)
+
+Settings → Language picks System default or one of the five (`AppSettings.language`, `AppLanguage`, a device-only
+setting). `AppLocale.apply` (`:core:ui` `l10n/AppLocale.kt`, run by `KeepLanguageInStepUseCase` from `AppStartup`)
+changes the locale the platform hands Compose resources: Android 13+'s per-app language (`LocaleManager`, tags from
+`generateLocaleConfig`: `en-US`, `pt`, `es`, `fr`, `ro`), `Locale.setDefault` on Android 12L, iOS's own
+`AppleLanguages` (read by `NSLocale.preferredLanguages`), and the page's `navigator.languages` on the web.
+`ProvideAppLanguage` (around `App`) makes every `stringResource` re-read it without losing screen state. So:
+- Never cache a looked-up string across a language change; always read through `stringResource` / `getString`.
+- Compose resources' own locale hooks are Kotlin-`internal`, so don't try to pass a language to them.
+- The language names in the picker (`language_english` …) are the same in every `strings.xml`: never translate them.
+- Things that read the platform locale themselves (date/time formats, Material date pickers) follow Android 13+ at
+  once and iOS from the next launch; the iOS widget and Share Extension follow the device until then too.
+
 ## 4. Check
 
 ```bash

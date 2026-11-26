@@ -111,7 +111,7 @@
 
 ### 🌍 In your language
 
-English, **Português**, **Español**, **Français** and **Română** — the app follows your device language (Android 13+ also lets you pick it per app). AI messages and suggestions come back in the same language.
+English, **Português**, **Español**, **Français** and **Română** — the app follows your device language, or the one you pick in Settings → Language. AI messages and suggestions come back in the same language.
 
 <p align="center"><img src="docs/screenshots/home-pt.png" width="32%" alt="Home in Portuguese"></p>
 

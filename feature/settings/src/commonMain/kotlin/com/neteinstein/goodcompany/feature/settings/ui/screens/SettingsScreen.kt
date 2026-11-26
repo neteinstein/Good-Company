@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -62,6 +64,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -86,11 +89,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.neteinstein.goodcompany.core.domain.model.AppLanguage
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.AutoBackupProblem
@@ -201,7 +206,13 @@ import com.neteinstein.goodcompany.feature.settings.resources.how_options
 import com.neteinstein.goodcompany.feature.settings.resources.import
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
-import com.neteinstein.goodcompany.feature.settings.resources.language_note
+import com.neteinstein.goodcompany.feature.settings.resources.language_english
+import com.neteinstein.goodcompany.feature.settings.resources.language_french
+import com.neteinstein.goodcompany.feature.settings.resources.language_portuguese
+import com.neteinstein.goodcompany.feature.settings.resources.language_romanian
+import com.neteinstein.goodcompany.feature.settings.resources.language_spanish
+import com.neteinstein.goodcompany.feature.settings.resources.language_system
+import com.neteinstein.goodcompany.feature.settings.resources.language_title
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_password_changed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
@@ -381,6 +392,7 @@ fun SettingsScreen(
             onOpenHowOptions = onOpenHowOptions,
             onBack = onBack,
             onThemeChange = viewModel::onThemeChange,
+            onLanguageChange = viewModel::onLanguageChange,
             onDynamicColorChange = viewModel::onDynamicColorChange,
             onWeeklyIdeasChange = viewModel::onWeeklyIdeasChange,
             onHomeAreaChange = viewModel::onHomeAreaChange,
@@ -462,6 +474,8 @@ data class SettingsActions(
     val onOpenActivities: () -> Unit = {},
     val onOpenHowOptions: () -> Unit = {},
     val onThemeChange: (ThemeMode) -> Unit = {},
+    /** Issue #174: Settings → Language. */
+    val onLanguageChange: (AppLanguage) -> Unit = {},
     val onDynamicColorChange: (Boolean) -> Unit = {},
     val onWeeklyIdeasChange: (Boolean) -> Unit = {},
     val onHomeAreaChange: (String) -> Unit = {},
@@ -568,15 +582,7 @@ fun SettingsContent(
                                 actions.onDynamicColorChange,
                             )
                         }
-                        Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Language, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                stringResource(Res.string.language_note),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        LanguageRow(s.language, actions.onLanguageChange)
                     }
                     SettingsCard.AI -> SectionCard(stringResource(Res.string.ai), icon = Icons.Rounded.AutoAwesome) {
                         SwitchRow(
@@ -1001,6 +1007,67 @@ internal fun DriveSetupDialog(setup: DriveSetup, onDismiss: () -> Unit) {
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.ok)) } },
     )
 }
+
+/**
+ * Issue #174: the app's language, next to Theme. System default (the device's language) first, then each shipped
+ * language named in itself. The choice stays on this device.
+ */
+@Composable
+private fun LanguageRow(language: AppLanguage, onChange: (AppLanguage) -> Unit) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    ListItem(
+        modifier = Modifier.clickable { choosing = true },
+        leadingContent = { Icon(Icons.Rounded.Language, null) },
+        headlineContent = { Text(stringResource(Res.string.language_title), style = MaterialTheme.typography.titleSmall) },
+        supportingContent = { Text(languageName(language), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+    if (choosing) {
+        AlertDialog(
+            onDismissRequest = { choosing = false },
+            icon = { Icon(Icons.Rounded.Language, null) },
+            title = { Text(stringResource(Res.string.language_title)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    AppLanguage.entries.forEach { choice ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = choice == language,
+                                    role = Role.RadioButton,
+                                    onClick = {
+                                        choosing = false
+                                        if (choice != language) onChange(choice)
+                                    },
+                                )
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(selected = choice == language, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(languageName(choice), style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { choosing = false }) { Text(stringResource(CoreRes.string.cancel)) } },
+        )
+    }
+}
+
+/** System default in the app's language; the others in their own (never translated). */
+@Composable
+private fun languageName(language: AppLanguage): String = stringResource(
+    when (language) {
+        AppLanguage.SYSTEM -> Res.string.language_system
+        AppLanguage.ENGLISH -> Res.string.language_english
+        AppLanguage.PORTUGUESE -> Res.string.language_portuguese
+        AppLanguage.SPANISH -> Res.string.language_spanish
+        AppLanguage.FRENCH -> Res.string.language_french
+        AppLanguage.ROMANIAN -> Res.string.language_romanian
+    },
+)
 
 /** Sideload build only: what the update check found, with the button that fits. */
 @Composable
