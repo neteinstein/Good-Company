@@ -87,6 +87,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.AddRelativeAsPersonUseCas
 import com.neteinstein.goodcompany.core.domain.usecase.AddReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdoptBackupKeyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AdvanceGiftStatusUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.AnswerCalendarQuestionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastMetUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.AnswerLastSeenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
@@ -155,6 +156,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.ObserveAgendaUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveAttachmentsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveBackupProtectionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarEventsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarQuestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCalendarSuggestionsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveCatchUpPolicyUseCase
@@ -560,6 +562,8 @@ val appModule = module {
     factoryOf(::ObserveCalendarSuggestionsUseCase)
     factoryOf(::DecideCalendarSuggestionUseCase)
     factoryOf(::UndoCalendarDecisionUseCase)
+    factoryOf(::ObserveCalendarQuestionsUseCase)
+    factoryOf(::AnswerCalendarQuestionUseCase)
     factoryOf(::ObserveCalendarSettingsUseCase)
     factoryOf(::SetCalendarSuggestionsUseCase)
     factoryOf(::SetCalendarChosenUseCase)
@@ -648,6 +652,9 @@ val appModule = module {
     // More parameters than viewModelOf takes (22).
     viewModel {
         TodayViewModel(
+            get(),
+            get(),
+            get(),
             get(),
             get(),
             get(),

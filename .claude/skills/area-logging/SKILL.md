@@ -115,7 +115,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   "We met" panel, the rest go through `ClosePlanUseCase` (Confirm / `CancelPlanUseCase` / `DeletePlanUseCase`), which
   returns the plan as it was for Undo (`RestorePlanUseCase`). On a series every answer is for that occurrence; Cancel
   and Delete ask "this one or the whole series" (`PlanSeriesDialog`), and "this one" just takes the date out.
-- **A plan's time (issue #167).** `Plan.time: LocalTime?` (column `plan.time`, "HH:MM", migration `33.sqm`; minutes
+- **A plan's time (issue #167).** `Plan.time: LocalTime?` (column `plan.time`, "HH:MM", migration `34.sqm`; minutes
   only, an unreadable value reads as no time), the same for every occurrence; set in `PlanEditor` (`PlanTimeChoice`,
   "Add a time" under the day, `LocalTimePickerDialog(is24Hour = uses24HourClock())`). It is display-only: logging an
   "It happened" still uses now / noon, and the day notification stays at the reminder hour (owner). Add to calendar
@@ -123,7 +123,7 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   local time), all day otherwise. Show a plan time with `LocalTime.clockLabel()` (`:core:ui` platform: the device's
   12/24-hour convention; Android reads the setting after `initTimeFormat` in `GoodCompanyApp`), never `hhmm()`.
 - **Plans from a maps link (issue #170).** `Plan.mapLink`, `latitude`, `longitude` (`plan.map_link` / `latitude` /
-  `longitude`, migration `35.sqm`; both coordinates or neither) come from a share's "Plan here" and are kept by every
+  `longitude`, migration `36.sqm`; both coordinates or neither) come from a share's "Plan here" and are kept by every
   `PlanEditor` save (`PlanInput.mapLink` / `location`; `SavePlanUseCase` drops both when the plan has no place).
   "Open in maps" is in `PlanUpcomingMenu` (⋮) and under Where in the editor (× takes the link off). When the plan
   closes, `LogSheetModel` prefills `location` and `ConfirmPlanUseCase` passes it to the check-in, so the meetup gets
@@ -165,7 +165,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
     (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
     friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
-    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `WeMetRoute` with `date` and
+    upcoming matched events also feed `ObserveStoryBubblesUseCase`. **Who's Ana? (decision 2026-11-26).** `CalendarMatcher`
+    no longer uses `ShareMatcher.isNamedIn`: email or full name is sure; a first name (3+ letters, whole word, one-word
+    names too) is sure only when no one else's first name matched and no sure match explains it; otherwise those people
+    are `CalendarMatch.ambiguous`. `CalendarSuggester` settles them by a plan that day (not cancelled), then a meetup
+    logged that day, then a `CalendarDecisionKind.WHO` answer (`CalendarDecision.whoKey`: per series, else occurrence;
+    `friendIds`, column `calendar_decision.friend_ids`, migration `33.sqm`). Unsettled, nobody is guessed and
+    `CalendarSuggester.questions` (`ObserveCalendarQuestionsUseCase`) asks; `CalendarQuestionCard` (`:feature:agenda`)
+    shows on Today and above "From your calendar"; `AnswerCalendarQuestionUseCase` answers, Undo deletes the decision.
+    Every `candidates`/`meetingSoon` caller passes the plans. "Log it" opens `WeMetRoute` with `date` and
     `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
     (`:feature:agenda`, also a card on Coming up).
 - **Dated notes (issue #103).** A person's Notes card (About tab) lists their `JournalEntry`s newest first with their
