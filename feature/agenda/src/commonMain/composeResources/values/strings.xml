@@ -73,6 +73,12 @@
     <string name="cal_empty_body">Events with your friends in the calendars you chose show up here once they’re over.</string>
     <string name="cal_msg_no">Won’t suggest “%1$s” again</string>
     <string name="cal_msg_never">No more suggestions for “%1$s”</string>
+    <string name="cal_who_title">Who’s %1$s?</string>
+    <string name="cal_who_event">“%1$s” · %2$s</string>
+    <string name="cal_who_series">Remembered for every “%1$s”</string>
+    <string name="cal_who_none">None of them</string>
+    <string name="cal_msg_who">Saved: “%1$s” is with %2$s</string>
+    <string name="cal_msg_who_none">Saved: “%1$s” isn’t with any of them</string>
     <string name="today_before_you_meet">Before you meet</string>
     <string name="today_catch_up">Time to catch up</string>
     <string name="today_drifting">Drifting apart</string>

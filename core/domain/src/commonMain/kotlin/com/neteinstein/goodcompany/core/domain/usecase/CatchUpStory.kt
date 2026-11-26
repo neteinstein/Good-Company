@@ -316,7 +316,7 @@ class ObserveStoryBubblesUseCase(
         val seen = Relationships.lastSeen(hs)
         val soon = (
             CatchUpStoryBuilder.meetingSoon(ps, clock.today()) +
-                CalendarSuggester.meetingSoon(events, all, decisions, now, clock.timeZone)
+                CalendarSuggester.meetingSoon(events, all, decisions, now, clock.timeZone, ps)
             )
             .sortedBy { it.second }
             .distinctBy { it.first }

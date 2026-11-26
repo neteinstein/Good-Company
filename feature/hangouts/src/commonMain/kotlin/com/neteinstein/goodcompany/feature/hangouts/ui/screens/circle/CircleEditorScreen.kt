@@ -262,13 +262,15 @@ fun CircleEditorContent(state: CircleEditorUiState, actions: CircleEditorActions
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Text(stringResource(Res.string.page_cover), style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // The card as it will look on the Circles tab: the cover under a veil in the colour.
-                        CircleBackdrop(
-                            FriendGroup(id = "", name = state.name, emoji = state.emoji, color = state.color, cover = state.cover),
-                            Modifier.width(112.dp).height(63.dp),
-                            shape = MaterialTheme.shapes.medium,
-                        ) {}
+                    // The card as it will look on the Circles tab: the cover under a veil in the colour. The buttons go
+                    // below it, so "Remove cover" never gets squeezed into a one-letter-wide column.
+                    CircleBackdrop(
+                        FriendGroup(id = "", name = state.name, emoji = state.emoji, color = state.color, cover = state.cover),
+                        Modifier.width(160.dp).height(90.dp),
+                        shape = MaterialTheme.shapes.medium,
+                    ) {}
+                    Spacer(Modifier.height(8.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         OutlinedButton(onClick = actions.onPickCover) {
                             Text(stringResource(if (state.cover == null) Res.string.cover_add else Res.string.cover_change))
                         }
