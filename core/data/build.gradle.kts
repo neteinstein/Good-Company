@@ -26,6 +26,7 @@ kotlin {
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
             implementation(libs.sqldelight.async)
+            implementation(libs.cryptography.core)
         }
         androidMain.dependencies {
             implementation(libs.koin.android)
@@ -34,15 +35,18 @@ kotlin {
             implementation(libs.androidx.work.runtime)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.sqldelight.android.driver)
+            implementation(libs.cryptography.provider.jdk)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.native.driver)
+            implementation(libs.cryptography.provider.apple)
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
             implementation(libs.sqldelight.web.worker.driver)
             implementation(libs.kotlinx.browser)
+            implementation(libs.cryptography.provider.webcrypto)
             // The SQLite WebAssembly build and our OPFS worker (a local npm package, bundled by webpack).
             implementation(npm("@sqlite.org/sqlite-wasm", libs.versions.sqlite.wasm.get()))
             implementation(npm("good-company-sqlite-worker", file("src/wasmJsMain/sqlite-worker")))

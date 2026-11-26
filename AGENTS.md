@@ -246,7 +246,8 @@ before changing that area**, and put new area-specific notes in that skill, not 
     when you do refresh them, and never hand-edit or fake them.
 16. **Notification budget.** Catch-up nudges go only through `NudgePolicy` in `NotificationPlanner`; birthdays, events,
     reminders and plans are never throttled. Details in `area-notifications-widgets`.
-17. **Google Drive backup.** Scope `drive.file` only, one file, never the API key. Details in `area-backup-sync`.
+17. **Backups are encrypted (D4) and Drive backups are private (D5).** Nothing leaves the device in the clear; scopes
+    `drive.appdata` + `drive.file` only, never the API key or the backup key. Details in `area-backup-sync`.
 18. **Widgets.** Android `RemoteViews` and iOS WidgetKit show the same `ObserveHomeWidgetUseCase`; keep them in step.
     Details in `area-notifications-widgets`.
 19. **Share into the app.** One `ShareInbox` fed by three platforms; the app never fetches a shared link and keeps only
@@ -257,8 +258,8 @@ before changing that area**, and put new area-specific notes in that skill, not 
     `test-apk.yml`. Details in `area-backup-sync`.
 22. **Contact write-back (Android sideload only).** The mirror never deletes, never edits the user's own contact rows
     and never writes emails or photos. Details in `area-contacts`.
-23. **Known gaps / follow-ups:** the API key is stored in plain app storage (Settings), not Keychain/Keystore
-    (it is excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
+23. **Known gaps / follow-ups:** the API key and the backup key (D4) are stored in plain app storage (Settings), not
+    Keychain/Keystore (both are excluded from Android cloud backup). iOS has no background trigger for the weekly job yet (`BGTaskScheduler`).
     Firebase isn't wired on iOS. Note photos and videos (#119) are a thumbnail plus a gallery link, so after switching phones only the thumbnails remain. Release signing isn't configured in CI (see CI_CD.md). The web share target needs the
     site installed as an app and can't receive images (no service worker yet).
 24. **SQLite.** Always go through `AppDatabase.access`/`transaction`/`observe`, never `get()` (the web driver can't run

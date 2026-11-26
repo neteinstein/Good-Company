@@ -3,6 +3,7 @@ package com.neteinstein.goodcompany.core.data.cloud
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
+import com.neteinstein.goodcompany.core.domain.repository.CloudSpace
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.bearerAuth
@@ -20,6 +21,8 @@ import io.ktor.http.withCharset
 import io.ktor.utils.io.charsets.Charsets
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -30,21 +33,22 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Instant
 
 /**
- * Google Drive v3 over plain HTTPS (Ktor), authorised with the user's OAuth access token for the `drive.file`
- * scope. Keeps one visible JSON file in My Drive; Drive only lets this app see files it created itself.
+ * Google Drive v3 over plain HTTPS (Ktor), authorised with the user's OAuth access token for the `drive.appdata` and
+ * `drive.file` scopes. The encrypted backup is one file in the app's private folder (`appDataFolder`, D5); the old
+ * plain backup was a visible file in My Drive. Drive only lets this app see its folder and the files it created.
  */
 class GoogleDriveBackupStore(
     private val http: HttpClient,
     private val baseUrl: String = "https://www.googleapis.com",
 ) : CloudBackupStore {
-    override suspend fun latest(accessToken: String, fileName: String): CloudBackupInfo? {
+    override suspend fun latest(accessToken: String, fileName: String, space: CloudSpace): CloudBackupInfo? {
         val response = call {
             http.get("$baseUrl/drive/v3/files") {
                 bearerAuth(accessToken)
                 parameter("q", "name = '${fileName.replace("'", "\\'")}' and trashed = false")
                 parameter("orderBy", "modifiedTime desc")
                 parameter("pageSize", 1)
-                parameter("spaces", "drive")
+                parameter("spaces", space.driveName)
                 parameter("fields", "files(id,modifiedTime)")
             }
         }
@@ -52,8 +56,8 @@ class GoogleDriveBackupStore(
         return files.firstOrNull()?.jsonObject?.let(::info)
     }
 
-    override suspend fun save(accessToken: String, fileName: String, content: String): CloudBackupInfo {
-        val existing = latest(accessToken, fileName)
+    override suspend fun save(accessToken: String, fileName: String, content: String, space: CloudSpace): CloudBackupInfo {
+        val existing = latest(accessToken, fileName, space)
         val response = if (existing != null) {
             call {
                 http.patch("$baseUrl/upload/drive/v3/files/${existing.id}") {
@@ -69,7 +73,7 @@ class GoogleDriveBackupStore(
                     bearerAuth(accessToken)
                     parameter("uploadType", "multipart")
                     parameter("fields", FIELDS)
-                    multipartRelated(fileName, content)
+                    multipartRelated(fileName, content, space)
                 }
             }
         }
@@ -87,11 +91,23 @@ class GoogleDriveBackupStore(
         return response.bodyAsText()
     }
 
+    override suspend fun trash(accessToken: String, id: String) {
+        val response = call {
+            http.patch("$baseUrl/drive/v3/files/$id") {
+                bearerAuth(accessToken)
+                parameter("fields", FIELDS)
+                setBody(TextContent(buildJsonObject { put("trashed", true) }.toString(), JSON))
+            }
+        }
+        check(response)
+    }
+
     /** Metadata + content in one `multipart/related` request, as Drive's "multipart upload" expects. */
-    private fun HttpRequestBuilder.multipartRelated(fileName: String, content: String) {
+    private fun HttpRequestBuilder.multipartRelated(fileName: String, content: String, space: CloudSpace) {
         val metadata = buildJsonObject {
             put("name", fileName)
             put("mimeType", "application/json")
+            if (space == CloudSpace.APP_DATA) put("parents", buildJsonArray { add(APP_DATA_FOLDER) })
         }
         val body = buildString {
             append("--$BOUNDARY\r\n")
@@ -131,9 +147,17 @@ class GoogleDriveBackupStore(
     )
 
     companion object {
+        /** Drive's alias for the app's private folder. */
+        private const val APP_DATA_FOLDER = "appDataFolder"
         private const val FIELDS = "id,modifiedTime"
         private const val BOUNDARY = "good-company-backup-boundary"
         private val JSON = ContentType.Application.Json.withCharset(Charsets.UTF_8)
+
+        private val CloudSpace.driveName: String
+            get() = when (this) {
+                CloudSpace.APP_DATA -> APP_DATA_FOLDER
+                CloudSpace.VISIBLE -> "drive"
+            }
 
         internal fun failureFor(status: HttpStatusCode, body: String): CloudBackupFailure.Reason = when {
             status == HttpStatusCode.Unauthorized -> CloudBackupFailure.Reason.UNAUTHORIZED

@@ -3,7 +3,7 @@ package com.neteinstein.goodcompany.core.ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
-import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
+import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_SCOPES
 
 /**
  * The web OAuth client ID, from `<meta name="google-drive-client-id" content="...">` in index.html. Its
@@ -25,7 +25,7 @@ actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): (
         } else {
             requestGoogleToken(
                 clientId,
-                DRIVE_FILE_SCOPE,
+                DRIVE_SCOPES.joinToString(" "),
                 onToken = { callback.value(DriveAuthResult.Token(it)) },
                 onError = { error ->
                     callback.value(

@@ -4,25 +4,37 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.BackupKey
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ThemeMode
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
+import com.neteinstein.goodcompany.core.domain.repository.CloudBackupInfo
+import com.neteinstein.goodcompany.core.domain.usecase.AdoptBackupKeyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.BackupToDriveUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ChangeBackupPasswordResult
+import com.neteinstein.goodcompany.core.domain.usecase.ChangeBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.CheckForUpdateUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ContactsFileImportResult
-import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.EncryptBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.HasSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ImportContactsFileUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.KeepOldDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.LoadSampleDataUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ObserveBackupProtectionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveSettingsUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.OpenBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.OpenedBackup
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveMyPhotoUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RemoveSampleDataUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreResult
+import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordResult
+import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetMyPhotoUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.TrashOldDriveBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.UpdateSettingsUseCase
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.ui.platform.DriveAuthResult
@@ -67,6 +79,12 @@ sealed interface SettingsMessage {
 
     data class DriveFailed(val reason: CloudBackupFailure.Reason) : SettingsMessage
 
+    /** D4: the backup password was changed. */
+    data object BackupPasswordChanged : SettingsMessage
+
+    /** D5: the old plain backup file went to the Drive bin. */
+    data object OldDriveFileTrashed : SettingsMessage
+
     /** Android sent the user to the "install unknown apps" switch for this app. */
     data object UpdateNeedsPermission : SettingsMessage
 
@@ -103,6 +121,15 @@ enum class DriveAction { BACKUP, RESTORE }
 /** A backup ready to be handed to the platform "save file" UI. */
 data class ExportFile(val name: String, val content: String)
 
+/** D4: the backup-password dialog on screen. */
+enum class PasswordDialog { SET, CHANGE }
+
+/** Why the backup-password dialog didn't accept what was typed. */
+enum class PasswordError { TOO_SHORT, MISMATCH, WRONG_SECRET }
+
+/** What to do once a password is set: the backup the user asked for before there was one. */
+enum class AfterPassword { EXPORT, DRIVE_BACKUP }
+
 data class SettingsUiState(
     val settings: AppSettings = AppSettings(),
     /** Your own photo (issue #71), the first card; null while none is set. */
@@ -112,10 +139,24 @@ data class SettingsUiState(
     val hasSampleData: Boolean = false,
     val message: SettingsMessage? = null,
     val export: ExportFile? = null,
-    /** A picked backup waiting for the "Replace everything?" confirmation. */
+    /** A picked (and opened) backup document waiting for the "Replace everything?" confirmation. */
     val pendingRestore: String? = null,
     /** When [pendingRestore] came from Google Drive: the backup's date, shown in the confirmation. */
     val pendingRestoreFrom: Instant? = null,
+    /** D4: an encrypted backup waiting for its password or recovery key; [pendingRestoreFrom] applies to it too. */
+    val lockedRestore: String? = null,
+    /** The password or recovery key given didn't open [lockedRestore]. */
+    val unlockFailed: Boolean = false,
+    /** D4: a backup password is set on this device. */
+    val hasBackupPassword: Boolean = false,
+    val passwordDialog: PasswordDialog? = null,
+    val passwordError: PasswordError? = null,
+    /** Deriving a key (PBKDF2) takes a moment: the dialogs show progress. */
+    val cryptoBusy: Boolean = false,
+    /** D4: the recovery key, shown once right after the password is set. */
+    val recoveryKey: String? = null,
+    /** D5: the old plain backup file the app offers to delete after an encrypted Drive backup. */
+    val oldDriveFile: CloudBackupInfo? = null,
     /** Waiting for Google, or uploading/downloading. */
     val driveBusy: Boolean = false,
     val driveAction: DriveAction? = null,
@@ -131,10 +172,17 @@ class SettingsViewModel(
     private val loadSampleData: LoadSampleDataUseCase,
     private val removeSampleData: RemoveSampleDataUseCase,
     private val importContactsFile: ImportContactsFileUseCase,
-    private val exportBackup: ExportBackupUseCase,
+    private val encryptBackup: EncryptBackupUseCase,
+    private val openBackup: OpenBackupUseCase,
     private val restoreBackup: RestoreBackupUseCase,
+    private val adoptBackupKey: AdoptBackupKeyUseCase,
+    observeBackupProtection: ObserveBackupProtectionUseCase,
+    private val setBackupPassword: SetBackupPasswordUseCase,
+    private val changeBackupPassword: ChangeBackupPasswordUseCase,
     private val backupToDrive: BackupToDriveUseCase,
     private val fetchDriveBackup: FetchDriveBackupUseCase,
+    private val trashOldDriveBackup: TrashOldDriveBackupUseCase,
+    private val keepOldDriveBackup: KeepOldDriveBackupUseCase,
     private val checkForUpdate: CheckForUpdateUseCase,
     observeMyPhoto: ObserveMyPhotoUseCase,
     private val setMyPhoto: SetMyPhotoUseCase,
@@ -146,10 +194,26 @@ class SettingsViewModel(
     /** The photo just removed, for the snackbar's Undo. */
     private var removedPhoto: ContactPhoto? = null
 
-    val state: StateFlow<SettingsUiState> = combine(observeSettings(), hasSampleData(), observeMyPhoto(), local) { settings, sample, photo, ui ->
+    /** The backup the user asked for before a password was set (D4). */
+    private var afterPassword: AfterPassword? = null
+
+    /** The key of the encrypted backup waiting in [SettingsUiState.pendingRestore], kept by a device without one. */
+    private var pendingRestoreKey: BackupKey? = null
+
+    /** The Drive token of the backup that found the old file, to move it to the bin if the user agrees (D5). */
+    private var oldFileToken: String? = null
+
+    val state: StateFlow<SettingsUiState> = combine(
+        observeSettings(),
+        hasSampleData(),
+        observeMyPhoto(),
+        observeBackupProtection(),
+        local,
+    ) { settings, sample, photo, protection, ui ->
         ui.copy(
             settings = settings,
             myPhoto = photo,
+            hasBackupPassword = protection.hasPassword,
             maskedKey = settings.aiApiKey?.takeIf { it.isNotBlank() }?.let(::mask),
             hasSampleData = sample,
             now = clock.now(),
@@ -262,12 +326,80 @@ class SettingsViewModel(
         update { it.copy(appLock = enabled) }
     }
 
+    // --- Backup password (D4) ------------------------------------------------------------------------------------
+
+    fun onSetBackupPassword() = local.update { it.copy(passwordDialog = PasswordDialog.SET, passwordError = null) }
+
+    fun onChangeBackupPassword() = local.update { it.copy(passwordDialog = PasswordDialog.CHANGE, passwordError = null) }
+
+    fun onDismissPasswordDialog() {
+        if (local.value.cryptoBusy) return
+        afterPassword = null
+        local.update { it.copy(passwordDialog = null, passwordError = null) }
+    }
+
+    /** "Save" in the set-password dialog. */
+    fun onSavePassword(password: String, confirm: String) {
+        if (local.value.cryptoBusy) return
+        if (password != confirm) return local.update { it.copy(passwordError = PasswordError.MISMATCH) }
+        local.update { it.copy(cryptoBusy = true, passwordError = null) }
+        viewModelScope.launch {
+            val result = setBackupPassword(password)
+            local.update {
+                when (result) {
+                    is SetBackupPasswordResult.Done -> it.copy(cryptoBusy = false, passwordDialog = null, recoveryKey = result.recoveryKey)
+                    SetBackupPasswordResult.TooShort -> it.copy(cryptoBusy = false, passwordError = PasswordError.TOO_SHORT)
+                    // Set meanwhile (another screen): nothing to do but close.
+                    SetBackupPasswordResult.AlreadySet -> it.copy(cryptoBusy = false, passwordDialog = null)
+                }
+            }
+        }
+    }
+
+    /** "Save" in the change-password dialog: [current] is the password or the recovery key. */
+    fun onSaveChangedPassword(current: String, password: String, confirm: String) {
+        if (local.value.cryptoBusy) return
+        if (password != confirm) return local.update { it.copy(passwordError = PasswordError.MISMATCH) }
+        local.update { it.copy(cryptoBusy = true, passwordError = null) }
+        viewModelScope.launch {
+            val result = changeBackupPassword(current, password)
+            local.update {
+                when (result) {
+                    ChangeBackupPasswordResult.CHANGED ->
+                        it.copy(cryptoBusy = false, passwordDialog = null, message = SettingsMessage.BackupPasswordChanged)
+                    ChangeBackupPasswordResult.TOO_SHORT -> it.copy(cryptoBusy = false, passwordError = PasswordError.TOO_SHORT)
+                    ChangeBackupPasswordResult.WRONG_SECRET -> it.copy(cryptoBusy = false, passwordError = PasswordError.WRONG_SECRET)
+                    ChangeBackupPasswordResult.NO_PASSWORD -> it.copy(cryptoBusy = false, passwordDialog = PasswordDialog.SET)
+                }
+            }
+        }
+    }
+
+    /**
+     * "I've saved it" under the recovery key. Carries on with the backup the user asked for before the password was
+     * set: an export right away; a Drive backup is returned for the screen to start, since Google's sign-in has to
+     * open on the tap itself.
+     */
+    fun onRecoveryKeySaved(): AfterPassword? {
+        val next = afterPassword
+        afterPassword = null
+        local.update { it.copy(recoveryKey = null) }
+        if (next == AfterPassword.EXPORT) onExportBackup()
+        return next.takeIf { it == AfterPassword.DRIVE_BACKUP }
+    }
+
     // --- Backup --------------------------------------------------------------------------------------------------
 
+    /** Encrypted with this device's key (D4); without a password, asks for one first. */
     fun onExportBackup() {
         viewModelScope.launch {
-            val content = exportBackup()
-            local.update { it.copy(export = ExportFile(exportBackup.fileName(), content)) }
+            val content = encryptBackup()
+            if (content == null) {
+                afterPassword = AfterPassword.EXPORT
+                local.update { it.copy(passwordDialog = PasswordDialog.SET, passwordError = null) }
+            } else {
+                local.update { it.copy(export = ExportFile(encryptBackup.fileName(), content)) }
+            }
         }
     }
 
@@ -276,12 +408,58 @@ class SettingsViewModel(
 
     fun onBackupPicked(text: String?) {
         if (text.isNullOrBlank()) return
-        local.update { it.copy(pendingRestore = text) }
+        viewModelScope.launch { offerRestore(text, from = null) }
     }
 
-    fun onCancelRestore() = local.update { it.copy(pendingRestore = null, pendingRestoreFrom = null) }
+    /** A backup file from a picker or from Drive: plain ones go to the confirmation, encrypted ones ask for the password. */
+    private suspend fun offerRestore(raw: String, from: Instant?) {
+        when (val opened = openBackup(raw)) {
+            is OpenedBackup.Plain -> local.update { it.copy(pendingRestore = opened.json, pendingRestoreFrom = from) }
+            else -> local.update { it.copy(lockedRestore = raw, pendingRestoreFrom = from, unlockFailed = false) }
+        }
+    }
+
+    /** The password or recovery key typed for [SettingsUiState.lockedRestore]. */
+    fun onUnlockBackup(secret: String) {
+        val raw = local.value.lockedRestore ?: return
+        if (local.value.cryptoBusy) return
+        local.update { it.copy(cryptoBusy = true, unlockFailed = false) }
+        viewModelScope.launch {
+            val opened = openBackup(raw, secret)
+            local.update {
+                when (opened) {
+                    is OpenedBackup.Opened -> {
+                        pendingRestoreKey = opened.key
+                        it.copy(cryptoBusy = false, lockedRestore = null, pendingRestore = opened.json)
+                    }
+                    is OpenedBackup.Plain -> it.copy(cryptoBusy = false, lockedRestore = null, pendingRestore = opened.json)
+                    OpenedBackup.NeedsSecret, OpenedBackup.WrongSecret -> it.copy(cryptoBusy = false, unlockFailed = true)
+                }
+            }
+        }
+    }
+
+    fun onCancelRestore() {
+        if (local.value.cryptoBusy) return
+        pendingRestoreKey = null
+        local.update { it.copy(pendingRestore = null, pendingRestoreFrom = null, lockedRestore = null, unlockFailed = false) }
+    }
 
     // --- Google Drive --------------------------------------------------------------------------------------------
+
+    /**
+     * "Back up" to Drive was tapped. True when the screen should ask Google for a token now; false when a password has
+     * to be set first (D4: nothing is uploaded in the clear), in which case the set-password dialog opens.
+     */
+    fun onDriveBackupTapped(): Boolean {
+        if (!state.value.hasBackupPassword) {
+            afterPassword = AfterPassword.DRIVE_BACKUP
+            local.update { it.copy(passwordDialog = PasswordDialog.SET, passwordError = null) }
+            return false
+        }
+        onDriveRequested(DriveAction.BACKUP)
+        return true
+    }
 
     /** Called right before the screen asks Google for a token. */
     fun onDriveRequested(action: DriveAction) = local.update { it.copy(driveAction = action, driveBusy = true) }
@@ -292,29 +470,28 @@ class SettingsViewModel(
             is DriveAuthResult.Token -> when (action) {
                 DriveAction.BACKUP -> viewModelScope.launch {
                     val outcome = backupToDrive(result.accessToken)
+                    val old = outcome.getOrNull()?.oldVisibleFile
+                    oldFileToken = old?.let { result.accessToken }
                     local.update {
-                        it.copy(driveBusy = false, driveAction = null, message = outcome.fold({ SettingsMessage.DriveBackedUp }, ::driveFailure))
+                        it.copy(
+                            driveBusy = false,
+                            driveAction = null,
+                            oldDriveFile = old,
+                            message = outcome.fold({ SettingsMessage.DriveBackedUp }, ::driveFailure),
+                        )
                     }
                 }
                 DriveAction.RESTORE -> viewModelScope.launch {
                     val outcome = fetchDriveBackup(result.accessToken)
-                    local.update { s ->
-                        outcome.fold(
-                            { backup ->
-                                if (backup == null) {
-                                    s.copy(driveBusy = false, driveAction = null, message = SettingsMessage.DriveNoBackup)
-                                } else {
-                                    s.copy(
-                                        driveBusy = false,
-                                        driveAction = null,
-                                        pendingRestore = backup.content,
-                                        pendingRestoreFrom = backup.info.modifiedAt,
-                                    )
-                                }
-                            },
-                            { s.copy(driveBusy = false, driveAction = null, message = driveFailure(it)) },
+                    val backup = outcome.getOrNull()
+                    local.update {
+                        it.copy(
+                            driveBusy = false,
+                            driveAction = null,
+                            message = outcome.fold({ found -> if (found == null) SettingsMessage.DriveNoBackup else null }, ::driveFailure),
                         )
                     }
+                    if (backup != null) offerRestore(backup.content, backup.info.modifiedAt)
                 }
                 null -> local.update { it.copy(driveBusy = false) }
             }
@@ -331,10 +508,33 @@ class SettingsViewModel(
     private fun driveFailure(e: Throwable): SettingsMessage =
         SettingsMessage.DriveFailed((e as? CloudBackupFailure)?.reason ?: CloudBackupFailure.Reason.OTHER)
 
+    /** D5: "Delete" on the old plain backup file: it goes to the Drive bin. */
+    fun onTrashOldDriveFile() {
+        val file = local.value.oldDriveFile ?: return
+        val token = oldFileToken ?: return local.update { it.copy(oldDriveFile = null) }
+        oldFileToken = null
+        local.update { it.copy(oldDriveFile = null, driveBusy = true) }
+        viewModelScope.launch {
+            val outcome = trashOldDriveBackup(token, file.id)
+            local.update { it.copy(driveBusy = false, message = outcome.fold({ SettingsMessage.OldDriveFileTrashed }, ::driveFailure)) }
+        }
+    }
+
+    /** D5: "Keep it": the old file stays and the app doesn't ask again. */
+    fun onKeepOldDriveFile() {
+        oldFileToken = null
+        local.update { it.copy(oldDriveFile = null) }
+        viewModelScope.launch { keepOldDriveBackup() }
+    }
+
     fun onConfirmRestore() {
         val raw = local.value.pendingRestore ?: return
+        val key = pendingRestoreKey
+        pendingRestoreKey = null
         viewModelScope.launch {
             val result = restoreBackup(raw)
+            // A device without a password keeps the restored backup's key, so its next backups open the same way.
+            if (result is RestoreResult.Restored && key != null) adoptBackupKey(key)
             local.update {
                 it.copy(
                     pendingRestore = null,

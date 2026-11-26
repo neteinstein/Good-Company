@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.data
 
 import com.neteinstein.goodcompany.core.data.cloud.GoogleDriveBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.CloudBackupFailure
+import com.neteinstein.goodcompany.core.domain.repository.CloudSpace
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -15,6 +16,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Instant
@@ -53,6 +55,40 @@ class GoogleDriveBackupStoreTest {
         assertTrue(body.contains("\"name\":\"Good Company backup.json\""))
         assertTrue(body.contains("""{"friends":[]}"""))
         assertTrue(upload.body.contentType.toString().startsWith("multipart/related"))
+        // D5: by default the file goes to the app's private folder.
+        assertEquals("appDataFolder", list.url.parameters["spaces"])
+        assertTrue(body.contains("\"parents\":[\"appDataFolder\"]"))
+    }
+
+    @Test
+    fun theOldVisibleFileIsLookedForInMyDrive() = runTest {
+        val s = store { HttpStatusCode.OK to """{"files":[{"id":"old","modifiedTime":"2026-11-01T10:00:00Z"}]}""" }
+        assertEquals("old", s.latest("tok", "Good Company backup.json", CloudSpace.VISIBLE)?.id)
+        assertEquals("drive", requests.single().url.parameters["spaces"])
+    }
+
+    @Test
+    fun aVisibleUploadHasNoParents() = runTest {
+        val s = store { req ->
+            when (req.method) {
+                HttpMethod.Get -> HttpStatusCode.OK to """{"files":[]}"""
+                else -> HttpStatusCode.OK to """{"id":"f2"}"""
+            }
+        }
+        s.save("tok", "b.json", "{}", CloudSpace.VISIBLE)
+        assertFalse((requests.last().body as TextContent).text.contains("parents"))
+    }
+
+    @Test
+    fun trashMovesTheFileToTheBin() = runTest {
+        val s = store { HttpStatusCode.OK to """{"id":"old"}""" }
+        s.trash("tok", "old")
+        val call = requests.single()
+        assertEquals(HttpMethod.Patch, call.method)
+        assertTrue(call.url.encodedPath.endsWith("/drive/v3/files/old"))
+        assertEquals("""{"trashed":true}""", (call.body as TextContent).text)
+        val gone = store { HttpStatusCode.NotFound to "{}" }
+        assertEquals(CloudBackupFailure.Reason.OTHER, assertFailsWith<CloudBackupFailure> { gone.trash("t", "x") }.reason)
     }
 
     @Test

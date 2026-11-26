@@ -41,7 +41,7 @@ import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Scope
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.ContactRecord
-import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_FILE_SCOPE
+import com.neteinstein.goodcompany.core.domain.usecase.DRIVE_SCOPES
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -456,7 +456,7 @@ actual fun rememberGoogleDriveAuthorizer(onResult: (DriveAuthResult) -> Unit): (
         callback.value(outcome.fold({ it.toDriveResult() }, { it.toDriveFailure() }))
     }
     return {
-        val request = AuthorizationRequest.builder().setRequestedScopes(listOf(Scope(DRIVE_FILE_SCOPE))).build()
+        val request = AuthorizationRequest.builder().setRequestedScopes(DRIVE_SCOPES.map(::Scope)).build()
         Identity.getAuthorizationClient(context).authorize(request)
             .addOnSuccessListener { result ->
                 val pending = result.pendingIntent

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Place
@@ -149,6 +150,11 @@ import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_tit
 import com.neteinstein.goodcompany.feature.settings.resources.backup_export
 import com.neteinstein.goodcompany.feature.settings.resources.backup_export_button
 import com.neteinstein.goodcompany.feature.settings.resources.backup_export_hint
+import com.neteinstein.goodcompany.feature.settings.resources.backup_password_change_button
+import com.neteinstein.goodcompany.feature.settings.resources.backup_password_label
+import com.neteinstein.goodcompany.feature.settings.resources.backup_password_off_hint
+import com.neteinstein.goodcompany.feature.settings.resources.backup_password_on_hint
+import com.neteinstein.goodcompany.feature.settings.resources.backup_password_set_button
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_button
 import com.neteinstein.goodcompany.feature.settings.resources.backup_restore_hint
@@ -179,6 +185,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.import_vcf
 import com.neteinstein.goodcompany.feature.settings.resources.import_vcf_hint
 import com.neteinstein.goodcompany.feature.settings.resources.language_note
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_invalid
+import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_password_changed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_restored
 import com.neteinstein.goodcompany.feature.settings.resources.msg_backup_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_failed
@@ -187,6 +194,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_full
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_none
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_not_configured
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_offline
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_old_file_trashed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_saved
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_unauthorized
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
@@ -278,6 +286,8 @@ suspend fun SettingsMessage.text(): String = when (this) {
     SettingsMessage.DriveBackedUp -> getString(Res.string.msg_drive_saved)
     SettingsMessage.DriveNoBackup -> getString(Res.string.msg_drive_none)
     SettingsMessage.DriveNotConfigured -> getString(Res.string.msg_drive_not_configured)
+    SettingsMessage.BackupPasswordChanged -> getString(Res.string.msg_backup_password_changed)
+    SettingsMessage.OldDriveFileTrashed -> getString(Res.string.msg_drive_old_file_trashed)
     is SettingsMessage.DriveFailed -> getString(
         when (reason) {
             CloudBackupFailure.Reason.UNAUTHORIZED -> Res.string.msg_drive_unauthorized
@@ -376,10 +386,19 @@ fun SettingsScreen(
             onRestoreBackup = pickBackup,
             onConfirmRestore = viewModel::onConfirmRestore,
             onCancelRestore = viewModel::onCancelRestore,
-            onDriveBackup = {
-                viewModel.onDriveRequested(DriveAction.BACKUP)
-                authorizeDrive()
+            onSetBackupPassword = viewModel::onSetBackupPassword,
+            onChangeBackupPassword = viewModel::onChangeBackupPassword,
+            onDismissPasswordDialog = viewModel::onDismissPasswordDialog,
+            onSavePassword = viewModel::onSavePassword,
+            onSaveChangedPassword = viewModel::onSaveChangedPassword,
+            onRecoveryKeySaved = {
+                // A Drive backup asked for before the password was set starts here, on the tap (Google's sign-in).
+                if (viewModel.onRecoveryKeySaved() == AfterPassword.DRIVE_BACKUP && viewModel.onDriveBackupTapped()) authorizeDrive()
             },
+            onUnlockBackup = viewModel::onUnlockBackup,
+            onTrashOldDriveFile = viewModel::onTrashOldDriveFile,
+            onKeepOldDriveFile = viewModel::onKeepOldDriveFile,
+            onDriveBackup = { if (viewModel.onDriveBackupTapped()) authorizeDrive() },
             onDriveRestore = {
                 viewModel.onDriveRequested(DriveAction.RESTORE)
                 authorizeDrive()
@@ -441,6 +460,17 @@ data class SettingsActions(
     val onRestoreBackup: () -> Unit = {},
     val onConfirmRestore: () -> Unit = {},
     val onCancelRestore: () -> Unit = {},
+    /** D4: the backup password and the recovery key. */
+    val onSetBackupPassword: () -> Unit = {},
+    val onChangeBackupPassword: () -> Unit = {},
+    val onDismissPasswordDialog: () -> Unit = {},
+    val onSavePassword: (password: String, confirm: String) -> Unit = { _, _ -> },
+    val onSaveChangedPassword: (current: String, password: String, confirm: String) -> Unit = { _, _, _ -> },
+    val onRecoveryKeySaved: () -> Unit = {},
+    val onUnlockBackup: (String) -> Unit = {},
+    /** D5: the old plain Drive file. */
+    val onTrashOldDriveFile: () -> Unit = {},
+    val onKeepOldDriveFile: () -> Unit = {},
     val onDriveBackup: () -> Unit = {},
     val onDriveRestore: () -> Unit = {},
     val onCheckForUpdate: () -> Unit = {},
@@ -717,6 +747,29 @@ fun SettingsContent(
                             modifier = Modifier.clickable(onClick = actions.onOpenTags),
                         )
                         ListItem(
+                            leadingContent = { Icon(Icons.Rounded.Lock, null) },
+                            headlineContent = { Text(stringResource(Res.string.backup_password_label), style = MaterialTheme.typography.titleSmall) },
+                            supportingContent = {
+                                Text(
+                                    stringResource(
+                                        if (state.hasBackupPassword) Res.string.backup_password_on_hint else Res.string.backup_password_off_hint,
+                                    ),
+                                )
+                            },
+                            trailingContent = {
+                                if (state.hasBackupPassword) {
+                                    OutlinedButton(onClick = actions.onChangeBackupPassword) {
+                                        Text(stringResource(Res.string.backup_password_change_button))
+                                    }
+                                } else {
+                                    FilledTonalButton(onClick = actions.onSetBackupPassword) {
+                                        Text(stringResource(Res.string.backup_password_set_button))
+                                    }
+                                }
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        )
+                        ListItem(
                             leadingContent = { Icon(Icons.Rounded.Download, null) },
                             headlineContent = { Text(stringResource(Res.string.backup_export), style = MaterialTheme.typography.titleSmall) },
                             supportingContent = { Text(stringResource(Res.string.backup_export_hint)) },
@@ -796,6 +849,26 @@ fun SettingsContent(
                     SwitchRow(stringResource(Res.string.app_lock), stringResource(Res.string.app_lock_hint), s.appLock, actions.onAppLockChange)
                 }
             }
+            when (state.passwordDialog) {
+                PasswordDialog.SET -> SetBackupPasswordDialog(
+                    state.cryptoBusy,
+                    state.passwordError,
+                    actions.onSavePassword,
+                    actions.onDismissPasswordDialog,
+                )
+                PasswordDialog.CHANGE -> ChangeBackupPasswordDialog(
+                    state.cryptoBusy,
+                    state.passwordError,
+                    actions.onSaveChangedPassword,
+                    actions.onDismissPasswordDialog,
+                )
+                null -> Unit
+            }
+            state.recoveryKey?.let { RecoveryKeyDialog(it, actions.onRecoveryKeySaved) }
+            if (state.lockedRestore != null) {
+                UnlockBackupDialog(state.cryptoBusy, state.unlockFailed, actions.onUnlockBackup, actions.onCancelRestore)
+            }
+            if (state.oldDriveFile != null) OldDriveFileDialog(actions.onTrashOldDriveFile, actions.onKeepOldDriveFile)
             if (state.pendingRestore != null) {
                 AlertDialog(
                     onDismissRequest = actions.onCancelRestore,
