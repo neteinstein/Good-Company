@@ -152,7 +152,15 @@ When you learn something new about this area, add it here, not to AGENTS.md.
     `ShareMatcher.isNamedIn`, keeps ended events from the last 60 days, and drops "No" / "Never" answers
     (`calendar_decision` table, migration `12.sqm`, in backups; keys hold ids only) and days already logged with those
     friends. Its summary notification is planned in `NotificationPlanner` (one a day at most, silent like catch-ups);
-    upcoming matched events also feed `ObserveStoryBubblesUseCase`. "Log it" opens `WeMetRoute` with `date` and
+    upcoming matched events also feed `ObserveStoryBubblesUseCase`. **Who's Ana? (decision 2026-11-26).** `CalendarMatcher`
+    no longer uses `ShareMatcher.isNamedIn`: email or full name is sure; a first name (3+ letters, whole word, one-word
+    names too) is sure only when no one else's first name matched and no sure match explains it; otherwise those people
+    are `CalendarMatch.ambiguous`. `CalendarSuggester` settles them by a plan that day (not cancelled), then a meetup
+    logged that day, then a `CalendarDecisionKind.WHO` answer (`CalendarDecision.whoKey`: per series, else occurrence;
+    `friendIds`, column `calendar_decision.friend_ids`, migration `33.sqm`). Unsettled, nobody is guessed and
+    `CalendarSuggester.questions` (`ObserveCalendarQuestionsUseCase`) asks; `CalendarQuestionCard` (`:feature:agenda`)
+    shows on Today and above "From your calendar"; `AnswerCalendarQuestionUseCase` answers, Undo deletes the decision.
+    Every `candidates`/`meetingSoon` caller passes the plans. "Log it" opens `WeMetRoute` with `date` and
     `activity` (`LogPrefill`). UI: `CalendarSettingsRoute` (`:feature:settings`) and `CalendarSuggestionsRoute`
     (`:feature:agenda`, also a card on Coming up).
 - **Dated notes (issue #103).** A person's Notes card (About tab) lists their `JournalEntry`s newest first with their
