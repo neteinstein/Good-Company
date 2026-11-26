@@ -6,6 +6,7 @@ import com.neteinstein.goodcompany.core.domain.model.GeoPoint
 import com.neteinstein.goodcompany.core.domain.model.RenderedNotification
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -58,3 +59,6 @@ private fun requestPosition(onSuccess: (Double, Double) -> Unit, onError: () -> 
 )
 
 actual fun installNotificationActionHandling() = Unit
+
+/** No automatic backup on the web (issue #166): "Back up now" only. */
+actual fun Scope.createDriveTokenSource(): DriveTokenSource = DriveTokenSource.None

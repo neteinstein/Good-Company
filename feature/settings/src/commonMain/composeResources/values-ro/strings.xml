@@ -88,7 +88,7 @@
     <string name="drive_title">Google Drive</string>
     <string name="drive_hint">Păstrează o copie criptată în dosarul privat al aplicației din Google Drive-ul tău. Aplicația vede acolo doar propriile fișiere.</string>
     <string name="drive_last">Ultima copie salvată %1$s</string>
-    <string name="drive_backup_button">Fă o copie</string>
+    <string name="drive_backup_button">Fă o copie acum</string>
     <string name="drive_restore_button">Restaurează</string>
     <string name="drive_confirm_body">Înlocuiești tot de pe acest dispozitiv cu copia din Google Drive de %1$s? Cheia API și blocarea aplicației rămân neschimbate.</string>
     <string name="msg_drive_saved">Salvat în Google Drive</string>
@@ -290,4 +290,22 @@
         <item quantity="few">%1$d zile</item>
         <item quantity="other">%1$d de zile</item>
     </plurals>
+    <string name="msg_drive_sign_in_failed">Conectarea Google nu a funcționat (%1$s). Încearcă din nou.</string>
+    <string name="drive_setup_body">Această versiune are nevoie de un client OAuth Android în proiectul Google Cloud al aplicației, pentru acest pachet și certificat de semnare:</string>
+    <string name="restore_intro_title">Restaurează o copie</string>
+    <string name="restore_intro_body">Telefon nou? Adu înapoi oamenii, întâlnirile, mementourile și planurile tale dintr-o copie. Copiile criptate cer parola copiilor sau cheia de recuperare.</string>
+    <string name="restore_intro_drive">Din Google Drive</string>
+    <string name="restore_intro_file">Dintr-un fișier</string>
+    <string name="auto_backup_title">Copie automată</string>
+    <string name="auto_backup_daily">Zilnic</string>
+    <string name="auto_backup_weekly">Săptămânal</string>
+    <string name="auto_backup_off">Oprită</string>
+    <string name="auto_backup_off_hint">Oprită. Doar „Fă o copie acum” salvează o copie.</string>
+    <string name="auto_backup_no_password">Nu poate rula: setează mai întâi o parolă pentru copii.</string>
+    <string name="auto_backup_not_started">Începe după primul tău „Fă o copie acum”.</string>
+    <string name="auto_backup_failed">Ultima copie automată a eșuat %1$s: %2$s</string>
+    <string name="auto_backup_last">Ultima copie automată %1$s</string>
+    <string name="auto_backup_waiting">Prima copie automată se face în decurs de o zi.</string>
+    <string name="auto_backup_problem_password">nu există parolă pentru copii.</string>
+    <string name="auto_backup_problem_sign_in">Google vrea să te conectezi din nou. Atinge „Fă o copie acum”.</string>
 </resources>

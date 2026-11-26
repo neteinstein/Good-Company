@@ -61,3 +61,25 @@ of `persistence-change`.
   that device's next backups open with the same password and recovery key. A device with its own key keeps it.
 - Tests: the real cipher in `core/data` `CryptographyBackupCryptoTest` (few rounds); everything else uses
   `FakeBackupCrypto` from `:core:testing`.
+
+## Automatic backup, "Back up now", restore from the intro (issue #166)
+
+- **Why Drive "didn't work" on the phone:** the test APKs from the GitHub release are signed with the CI runner's
+  throwaway debug key when the keystore secrets are missing, so no Android OAuth client can ever match
+  (`DEVELOPER_ERROR`). The "not set up" dialog (`DriveSetupDialog`) now names the package and SHA-1 to register
+  (`oauthClientIdentity()` in `Platform.android.kt`). Other sign-in failures show Google's status
+  (`SettingsMessage.DriveSignInFailed`); network ones say offline.
+- **Refused tokens:** Play services caches tokens; a 401 means it handed out a revoked one. Every 401 calls
+  `ForgetDriveTokenUseCase` → `DriveTokenSource.forget` (`AuthorizationClient.clearToken`), so the next try is fresh.
+- **Automatic backup (Android only, `PlatformCapabilities.hasAutoDriveBackup`):** `DriveAutoBackupWorker` (daily,
+  network, KEEP) → `RunAutoBackupUseCase`: skipped while Off or before the first Drive backup on the device
+  (`lastDriveBackupAt == null`); due when the last Drive backup is older than the frequency minus 4 h; no password →
+  recorded as `NO_PASSWORD`, never silent. Retries only for network failures.
+- `AppSettings.autoDriveBackup` (Daily default) and `lastAutoBackup` (`AutoBackupRun`) are **device-only**
+  (`DeviceSettings`, no migration), stripped from exports and kept on restore, like `lastDriveBackupAt`.
+- Tokens without UI: `DriveTokenSource` (`createDriveTokenSource()`; `DriveTokenSource.None` on iOS and the web).
+- **Restore from the intro:** `RestoreBackupScreen` / `RestoreBackupViewModel` in `:feature:settings`
+  (`ui/screens/restore/`), passed into `OnboardingScreen(restoreBackup = …)` by `App.kt` like the contact list.
+  `RestoreBackupUseCase` sets `onboardingDone`, so the app leaves the intro by itself.
+- `SettingsViewModel` has more than 22 dependencies: it is registered with `viewModel { SettingsViewModel(get(), …) }`.
+

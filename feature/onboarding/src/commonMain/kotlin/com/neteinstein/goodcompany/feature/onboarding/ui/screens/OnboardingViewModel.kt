@@ -23,6 +23,8 @@ data class OnboardingUiState(
     val contactsPicked: Int = 0,
     val notificationsGranted: Boolean? = null,
     val isWorking: Boolean = false,
+    /** Issue #166: "Restore a backup" is open over the guide. */
+    val restoreOpen: Boolean = false,
     val finished: Boolean = false,
 ) {
     /** Someone came in from the contact list or the contact picker, so the app won't start empty. */
@@ -61,6 +63,9 @@ class OnboardingViewModel(
             _state.update { it.copy(contactsPicked = it.contactsPicked + result.added) }
         }
     }
+
+    /** Issue #166: "Restore a backup" opened ([open]) or closed with its back arrow. */
+    fun onRestoreOpened(open: Boolean) = _state.update { it.copy(restoreOpen = open) }
 
     fun onNotificationsPermissionResult(granted: Boolean) = _state.update { it.copy(notificationsGranted = granted) }
 

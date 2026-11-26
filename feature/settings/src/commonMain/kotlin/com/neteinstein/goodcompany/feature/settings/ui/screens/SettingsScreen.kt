@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SettingsBrightness
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
@@ -90,6 +92,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.neteinstein.goodcompany.core.domain.model.AppUpdate
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupProblem
 import com.neteinstein.goodcompany.core.domain.model.Closeness
 import com.neteinstein.goodcompany.core.domain.model.ContactPhoto
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
@@ -127,6 +131,7 @@ import com.neteinstein.goodcompany.core.ui.resources.add
 import com.neteinstein.goodcompany.core.ui.resources.cadence_off
 import com.neteinstein.goodcompany.core.ui.resources.cancel
 import com.neteinstein.goodcompany.core.ui.resources.lock_reason
+import com.neteinstein.goodcompany.core.ui.resources.ok
 import com.neteinstein.goodcompany.core.ui.resources.remove
 import com.neteinstein.goodcompany.core.ui.resources.save
 import com.neteinstein.goodcompany.core.ui.resources.undo
@@ -145,6 +150,18 @@ import com.neteinstein.goodcompany.feature.settings.resources.api_key_show
 import com.neteinstein.goodcompany.feature.settings.resources.app_lock
 import com.neteinstein.goodcompany.feature.settings.resources.app_lock_hint
 import com.neteinstein.goodcompany.feature.settings.resources.appearance
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_daily
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_failed
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_last
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_no_password
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_not_started
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_off
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_off_hint
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_problem_password
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_problem_sign_in
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_title
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_waiting
+import com.neteinstein.goodcompany.feature.settings.resources.auto_backup_weekly
 import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_body
 import com.neteinstein.goodcompany.feature.settings.resources.backup_confirm_title
 import com.neteinstein.goodcompany.feature.settings.resources.backup_export
@@ -172,6 +189,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.drive_confirm_body
 import com.neteinstein.goodcompany.feature.settings.resources.drive_hint
 import com.neteinstein.goodcompany.feature.settings.resources.drive_last
 import com.neteinstein.goodcompany.feature.settings.resources.drive_restore_button
+import com.neteinstein.goodcompany.feature.settings.resources.drive_setup_body
 import com.neteinstein.goodcompany.feature.settings.resources.drive_title
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color
 import com.neteinstein.goodcompany.feature.settings.resources.dynamic_color_hint
@@ -196,6 +214,7 @@ import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_not_conf
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_offline
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_old_file_trashed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_saved
+import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_sign_in_failed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_drive_unauthorized
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_removed
 import com.neteinstein.goodcompany.feature.settings.resources.msg_key_saved
@@ -285,7 +304,8 @@ suspend fun SettingsMessage.text(): String = when (this) {
     SettingsMessage.BackupInvalid -> getString(Res.string.msg_backup_invalid)
     SettingsMessage.DriveBackedUp -> getString(Res.string.msg_drive_saved)
     SettingsMessage.DriveNoBackup -> getString(Res.string.msg_drive_none)
-    SettingsMessage.DriveNotConfigured -> getString(Res.string.msg_drive_not_configured)
+    is SettingsMessage.DriveSignInFailed -> detail?.let { getString(Res.string.msg_drive_sign_in_failed, it) }
+        ?: getString(Res.string.msg_drive_failed)
     SettingsMessage.BackupPasswordChanged -> getString(Res.string.msg_backup_password_changed)
     SettingsMessage.OldDriveFileTrashed -> getString(Res.string.msg_drive_old_file_trashed)
     is SettingsMessage.DriveFailed -> getString(
@@ -403,6 +423,8 @@ fun SettingsScreen(
                 viewModel.onDriveRequested(DriveAction.RESTORE)
                 authorizeDrive()
             },
+            onDriveSetupShown = viewModel::onDriveSetupShown,
+            onAutoBackupFrequencyChange = viewModel::onAutoBackupFrequencyChange,
             onCheckForUpdate = { viewModel.onCheckForUpdate(updater.installedVersionCode) },
             onOpenCalendar = onOpenCalendar,
             onInstallUpdate = { update ->
@@ -473,6 +495,10 @@ data class SettingsActions(
     val onKeepOldDriveFile: () -> Unit = {},
     val onDriveBackup: () -> Unit = {},
     val onDriveRestore: () -> Unit = {},
+    /** Issue #166: the "not set up" dialog was closed. */
+    val onDriveSetupShown: () -> Unit = {},
+    /** Issue #166: Daily / Weekly / Off for the automatic Drive backup (Android only). */
+    val onAutoBackupFrequencyChange: (AutoBackupFrequency) -> Unit = {},
     val onCheckForUpdate: () -> Unit = {},
     val onInstallUpdate: (AppUpdate) -> Unit = {},
     /** Settings → Places (F11). */
@@ -812,6 +838,9 @@ fun SettingsContent(
                                 }
                                 if (state.driveBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                             }
+                            if (capabilities.hasAutoDriveBackup) {
+                                AutoBackupRow(state, actions.onAutoBackupFrequencyChange)
+                            }
                         }
                         ListItem(
                             modifier = Modifier.clickable(onClick = actions.onReplayIntro),
@@ -869,6 +898,7 @@ fun SettingsContent(
                 UnlockBackupDialog(state.cryptoBusy, state.unlockFailed, actions.onUnlockBackup, actions.onCancelRestore)
             }
             if (state.oldDriveFile != null) OldDriveFileDialog(actions.onTrashOldDriveFile, actions.onKeepOldDriveFile)
+            state.driveSetup?.let { DriveSetupDialog(it, actions.onDriveSetupShown) }
             if (state.pendingRestore != null) {
                 AlertDialog(
                     onDismissRequest = actions.onCancelRestore,
@@ -894,6 +924,82 @@ fun SettingsContent(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+/**
+ * Issue #166: "Automatic backup" under Google Drive (Android only): Daily / Weekly / Off, and what the last run did.
+ * Without a backup password it says plainly that it can't run (D4).
+ */
+@Composable
+private fun AutoBackupRow(state: SettingsUiState, onChange: (AutoBackupFrequency) -> Unit) {
+    val s = state.settings
+    val last = s.lastAutoBackup
+    val lastSaved = s.lastDriveBackupAt
+    // A failure that a later backup (automatic or "Back up now") already fixed isn't news.
+    val failed = last != null && !last.ok && lastSaved != null && last.at > lastSaved
+    val status = when {
+        s.autoDriveBackup == AutoBackupFrequency.OFF -> stringResource(Res.string.auto_backup_off_hint)
+        !state.hasBackupPassword -> stringResource(Res.string.auto_backup_no_password)
+        lastSaved == null -> stringResource(Res.string.auto_backup_not_started)
+        failed && last != null ->
+            stringResource(Res.string.auto_backup_failed, relativePast(last.at, state.now, state.zone), autoBackupProblemText(last.problem))
+        last != null && last.ok -> stringResource(Res.string.auto_backup_last, relativePast(last.at, state.now, state.zone))
+        else -> stringResource(Res.string.auto_backup_waiting)
+    }
+    val warning = s.autoDriveBackup != AutoBackupFrequency.OFF && (!state.hasBackupPassword || failed)
+    ListItem(
+        leadingContent = { Icon(Icons.Rounded.Schedule, null) },
+        headlineContent = { Text(stringResource(Res.string.auto_backup_title), style = MaterialTheme.typography.titleSmall) },
+        supportingContent = {
+            Text(status, color = if (warning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    )
+    val choices = listOf(
+        AutoBackupFrequency.DAILY to stringResource(Res.string.auto_backup_daily),
+        AutoBackupFrequency.WEEKLY to stringResource(Res.string.auto_backup_weekly),
+        AutoBackupFrequency.OFF to stringResource(Res.string.auto_backup_off),
+    )
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(start = 72.dp, end = 16.dp, bottom = 8.dp)) {
+        choices.forEachIndexed { i, (frequency, label) ->
+            SegmentedButton(
+                selected = s.autoDriveBackup == frequency,
+                onClick = { onChange(frequency) },
+                shape = SegmentedButtonDefaults.itemShape(i, choices.size),
+                label = { Text(label) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun autoBackupProblemText(problem: AutoBackupProblem?): String = stringResource(
+    when (problem) {
+        AutoBackupProblem.NO_PASSWORD -> Res.string.auto_backup_problem_password
+        AutoBackupProblem.SIGN_IN_NEEDED, AutoBackupProblem.UNAUTHORIZED -> Res.string.auto_backup_problem_sign_in
+        AutoBackupProblem.NOT_CONFIGURED -> Res.string.msg_drive_not_configured
+        AutoBackupProblem.FORBIDDEN -> Res.string.msg_drive_forbidden
+        AutoBackupProblem.STORAGE_FULL -> Res.string.msg_drive_full
+        AutoBackupProblem.NETWORK -> Res.string.msg_drive_offline
+        AutoBackupProblem.OTHER, null -> Res.string.msg_drive_failed
+    },
+)
+
+/** Issue #166: Google said this build has no OAuth client; shows what to register, selectable so it can be copied. */
+@Composable
+internal fun DriveSetupDialog(setup: DriveSetup, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Rounded.CloudUpload, null) },
+        title = { Text(stringResource(Res.string.msg_drive_not_configured)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(Res.string.drive_setup_body))
+                setup.app?.let { SelectionContainer { Text(it, style = MaterialTheme.typography.bodySmall) } }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(CoreRes.string.ok)) } },
+    )
 }
 
 /** Sideload build only: what the update check found, with the button that fits. */

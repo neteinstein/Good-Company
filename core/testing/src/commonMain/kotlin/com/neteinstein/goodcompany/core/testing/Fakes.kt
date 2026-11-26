@@ -50,6 +50,7 @@ import com.neteinstein.goodcompany.core.domain.repository.CloudBackupStore
 import com.neteinstein.goodcompany.core.domain.repository.CloudSpace
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
 import com.neteinstein.goodcompany.core.domain.repository.DecryptedBackup
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.FeedFetcher
 import com.neteinstein.goodcompany.core.domain.repository.FriendProfile
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
@@ -70,6 +71,7 @@ import com.neteinstein.goodcompany.core.domain.repository.PersonLinkRepository
 import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.ReminderRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
+import com.neteinstein.goodcompany.core.domain.repository.SilentDriveToken
 import com.neteinstein.goodcompany.core.domain.usecase.ContactMerger
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.IdGenerator
@@ -565,6 +567,19 @@ class FakeFeedFetcher(val pages: MutableMap<String, String> = mutableMapOf()) : 
     override suspend fun fetch(url: String): String {
         requests += url
         return pages[url] ?: error("HTTP 404")
+    }
+}
+
+/** Hands out [next] tokens in turn (or [result] when set); remembers the ones the code dropped. */
+class FakeDriveTokenSource : DriveTokenSource {
+    val next = ArrayDeque(listOf("silent-1", "silent-2", "silent-3"))
+    var result: SilentDriveToken? = null
+    val forgotten = mutableListOf<String>()
+
+    override suspend fun tokenWithoutUi(): SilentDriveToken = result ?: SilentDriveToken.Token(next.removeFirst())
+
+    override suspend fun forget(accessToken: String) {
+        forgotten += accessToken
     }
 }
 

@@ -37,4 +37,7 @@
     <string name="primer_show">Show my contacts</string>
     <string name="primer_pick_instead">Pick people one by one instead</string>
     <string name="primer_denied">Contacts access is off, so we can’t show the list. You can still pick people one at a time.</string>
+    <string name="restore_title">Restore a backup</string>
+    <string name="restore_body">New phone? Start from your backup, from Google Drive or a file.</string>
+    <string name="restore">Restore</string>
 </resources>

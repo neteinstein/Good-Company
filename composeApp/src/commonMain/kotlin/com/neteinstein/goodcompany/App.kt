@@ -72,6 +72,7 @@ import com.neteinstein.goodcompany.core.ui.theme.OnColorGradients
 import com.neteinstein.goodcompany.feature.friends.ui.screens.choose.ChooseContactsScreen
 import com.neteinstein.goodcompany.feature.hangouts.ui.screens.met.LoggedMeetupSnackbar
 import com.neteinstein.goodcompany.feature.onboarding.ui.screens.OnboardingScreen
+import com.neteinstein.goodcompany.feature.settings.ui.screens.restore.RestoreBackupScreen
 import com.neteinstein.goodcompany.ui.navigation.AgendaRoute
 import com.neteinstein.goodcompany.ui.navigation.AppNavHost
 import com.neteinstein.goodcompany.ui.navigation.CatchUpStoryRoute
@@ -113,6 +114,7 @@ fun App(launch: LaunchOptions = LaunchOptions(), viewModel: AppViewModel = koinV
                         OnboardingScreen(
                             onDone = {},
                             contactList = { onClose -> ChooseContactsScreen(onBack = { onClose(0) }, onDone = { added, _ -> onClose(added) }) },
+                            restoreBackup = { onClose -> RestoreBackupScreen(onBack = onClose) },
                         )
                     }
                 }

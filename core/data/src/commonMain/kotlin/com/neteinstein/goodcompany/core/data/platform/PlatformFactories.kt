@@ -5,6 +5,7 @@ import com.neteinstein.goodcompany.core.data.source.CommunicationLogSource
 import com.neteinstein.goodcompany.core.data.source.ContactsSource
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import io.ktor.client.HttpClient
@@ -43,6 +44,12 @@ expect fun Scope.createDatabaseDriverFactory(): DatabaseDriverFactory
  * no-op, a manifest receiver handles them; web: no notifications). Call right after Koin starts.
  */
 expect fun installNotificationActionHandling()
+
+/**
+ * Drive tokens with no screen, for the automatic backup (issue #166): Android asks Play services for the access the
+ * user already granted; iOS and the web have no automatic backup, so theirs always needs the user.
+ */
+expect fun Scope.createDriveTokenSource(): DriveTokenSource
 
 /** Ktor picks the platform engine (OkHttp / Darwin / JS fetch) from the classpath. */
 fun createHttpClient(): HttpClient = HttpClient {

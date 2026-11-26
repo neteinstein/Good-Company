@@ -36,6 +36,8 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.sqldelight.android.driver)
             implementation(libs.cryptography.provider.jdk)
+            // Drive tokens for the automatic backup (issue #166), with the access the user granted in the app.
+            implementation(libs.play.services.auth)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

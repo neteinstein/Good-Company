@@ -69,6 +69,10 @@ When you learn something new about this area, add it here, not to AGENTS.md.
   settings when the system won't ask again (refused before, or Android 12L). Today shows `NotificationPrimerCard`
   while notifications are blocked, until "Not now".
 
+- **Background jobs (Android).** `GoodCompanyApp` schedules `WeeklyIdeasWorker`, `ReplanNotificationsWorker` and
+  `DriveAutoBackupWorker` (issue #166, daily, network; see `area-backup-sync`). Each decides itself whether there is
+  work; keep them idempotent and unique (`ExistingPeriodicWorkPolicy.KEEP`).
+
 ## Reference (moved from AGENTS.md)
 
 16. **Notification budget.** Catch-up nudges go through `NudgePolicy` in `NotificationPlanner` (weekly digest or one a day,

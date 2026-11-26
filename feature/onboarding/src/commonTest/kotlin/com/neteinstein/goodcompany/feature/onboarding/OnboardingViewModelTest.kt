@@ -69,6 +69,17 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun restoreABackupOpensAndClosesOverTheGuide() = runViewModelTest {
+        val vm = vm()
+        assertFalse(vm.state.value.restoreOpen)
+        vm.onRestoreOpened(true)
+        assertTrue(vm.state.value.restoreOpen)
+        vm.onRestoreOpened(false)
+        assertFalse(vm.state.value.restoreOpen)
+        assertFalse(vm.state.value.finished)
+    }
+
+    @Test
     fun exploreWithSampleLoadsDataAndFinishes() = runViewModelTest {
         val vm = vm()
         vm.onExploreWithSample()

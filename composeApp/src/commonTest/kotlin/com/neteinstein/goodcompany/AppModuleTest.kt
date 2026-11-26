@@ -9,15 +9,18 @@ import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
 import com.neteinstein.goodcompany.core.domain.model.PlanOccurrence
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.ContactsWriter
+import com.neteinstein.goodcompany.core.domain.repository.DriveTokenSource
 import com.neteinstein.goodcompany.core.domain.repository.LocationProvider
 import com.neteinstein.goodcompany.core.domain.repository.NotificationScheduler
 import com.neteinstein.goodcompany.core.domain.usecase.HandleNotificationActionUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.KeepNotificationsScheduledUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ObserveShortcutsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.QuickEntryInbox
+import com.neteinstein.goodcompany.core.domain.usecase.RunAutoBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.testing.FakeCalendarReader
 import com.neteinstein.goodcompany.core.testing.FakeContactsWriter
+import com.neteinstein.goodcompany.core.testing.FakeDriveTokenSource
 import com.neteinstein.goodcompany.core.testing.FakeLocationProvider
 import com.neteinstein.goodcompany.core.testing.FakeNotificationScheduler
 import com.neteinstein.goodcompany.di.appModule
@@ -50,6 +53,7 @@ import com.neteinstein.goodcompany.feature.settings.ui.screens.calendar.Calendar
 import com.neteinstein.goodcompany.feature.settings.ui.screens.how.HowOptionsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.notifications.NotificationSettingsViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.places.PlacesViewModel
+import com.neteinstein.goodcompany.feature.settings.ui.screens.restore.RestoreBackupViewModel
 import com.neteinstein.goodcompany.feature.settings.ui.screens.tags.TagsViewModel
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
@@ -77,6 +81,7 @@ class AppModuleTest {
         single<LocationProvider> { FakeLocationProvider() }
         single<NotificationScheduler> { FakeNotificationScheduler() }
         single<CalendarReader> { FakeCalendarReader() }
+        single<DriveTokenSource> { FakeDriveTokenSource() }
         single<DatabaseDriverFactory> { DatabaseDriverFactory { error("The database isn't opened in this test") } }
     }
 
@@ -121,6 +126,8 @@ class AppModuleTest {
         assertNotNull(koin.get<IdeasViewModel>())
         assertNotNull(koin.get<PlansViewModel>())
         assertNotNull(koin.get<SettingsViewModel>())
+        assertNotNull(koin.get<RestoreBackupViewModel>())
+        assertNotNull(koin.get<RunAutoBackupUseCase>())
         assertNotNull(koin.get<PlacesViewModel>())
         assertNotNull(koin.get<CalendarSettingsViewModel>())
         assertNotNull(koin.get<NotificationSettingsViewModel>())

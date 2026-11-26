@@ -184,6 +184,37 @@ interface CloudBackupStore {
     suspend fun trash(accessToken: String, id: String)
 }
 
+/** What asking Google for a Drive token without any screen gave (issue #166). */
+sealed interface SilentDriveToken {
+    data class Token(val accessToken: String) : SilentDriveToken
+
+    /** Google needs the user (sign-in or consent): only the app can ask, on "Back up now". */
+    data object SignInNeeded : SilentDriveToken
+
+    /** No OAuth client for this build's package and signing certificate. */
+    data object NotConfigured : SilentDriveToken
+
+    data class Failed(val network: Boolean, val detail: String? = null) : SilentDriveToken
+}
+
+/**
+ * Drive tokens for work that runs with no screen: the automatic backup (issue #166, Android only). Uses the access the
+ * user already granted in the app; never shows anything.
+ */
+interface DriveTokenSource {
+    suspend fun tokenWithoutUi(): SilentDriveToken
+
+    /** Drops a token Drive refused (revoked or expired), so the next request gets a fresh one. */
+    suspend fun forget(accessToken: String)
+
+    /** Platforms with no automatic backup (iOS, web): there's never a token without the user. */
+    object None : DriveTokenSource {
+        override suspend fun tokenWithoutUi(): SilentDriveToken = SilentDriveToken.SignInNeeded
+
+        override suspend fun forget(accessToken: String) = Unit
+    }
+}
+
 /**
  * D4 (issue #165): encrypts backups. The key is derived on the device from the password (PBKDF2); see
  * `CryptographyBackupCrypto` in `:core:data` for the format and parameters.

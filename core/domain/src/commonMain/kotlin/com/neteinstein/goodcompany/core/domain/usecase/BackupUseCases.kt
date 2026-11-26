@@ -2,6 +2,7 @@ package com.neteinstein.goodcompany.core.domain.usecase
 
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.repository.BackupRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
@@ -61,6 +62,8 @@ class RestoreBackupUseCase(private val backups: BackupRepository, private val cl
                     peopleLegendSeen = current.peopleLegendSeen,
                     agendaView = current.agendaView,
                     lastDriveBackupAt = current.lastDriveBackupAt,
+                    autoDriveBackup = current.autoDriveBackup,
+                    lastAutoBackup = current.lastAutoBackup,
                     calendarSuggestions = current.calendarSuggestions,
                     calendarIds = current.calendarIds,
                     calendarOnSince = current.calendarOnSince,
@@ -82,6 +85,9 @@ internal fun AppSettings.withoutDeviceOnly() = copy(
     calendarSuggestions = false,
     calendarIds = emptyList(),
     calendarOnSince = null,
+    lastDriveBackupAt = null,
+    autoDriveBackup = AutoBackupFrequency.DAILY,
+    lastAutoBackup = null,
 )
 
 internal val BackupJson = Json {

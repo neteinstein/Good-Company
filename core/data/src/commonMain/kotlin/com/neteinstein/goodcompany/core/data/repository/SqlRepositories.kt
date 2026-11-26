@@ -65,6 +65,8 @@ import com.neteinstein.goodcompany.core.data.storage.PersistentState
 import com.neteinstein.goodcompany.core.domain.model.AgendaView
 import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupFrequency
+import com.neteinstein.goodcompany.core.domain.model.AutoBackupRun
 import com.neteinstein.goodcompany.core.domain.model.Backup
 import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
 import com.neteinstein.goodcompany.core.domain.model.CircleCover
@@ -406,6 +408,9 @@ internal data class DeviceSettings(
     val appLock: Boolean = false,
     val lastOpenedAt: Instant? = null,
     val lastDriveBackupAt: Instant? = null,
+    /** Issue #166: the automatic Drive backup's frequency and its last run belong to this device. */
+    val autoDriveBackup: AutoBackupFrequency = AutoBackupFrequency.DAILY,
+    val lastAutoBackup: AutoBackupRun? = null,
     /** Calendar suggestions (D3) belong to this device: its calendars, never in the database or a backup. */
     val calendarSuggestions: Boolean = false,
     val calendarIds: List<String> = emptyList(),
@@ -443,6 +448,8 @@ internal data class DeviceSettings(
         appLock = appLock,
         lastOpenedAt = lastOpenedAt,
         lastDriveBackupAt = lastDriveBackupAt,
+        autoDriveBackup = autoDriveBackup,
+        lastAutoBackup = lastAutoBackup,
         calendarSuggestions = calendarSuggestions,
         calendarIds = calendarIds,
         calendarOnSince = calendarOnSince,
@@ -460,6 +467,8 @@ internal data class DeviceSettings(
             appLock = settings.appLock,
             lastOpenedAt = settings.lastOpenedAt,
             lastDriveBackupAt = settings.lastDriveBackupAt,
+            autoDriveBackup = settings.autoDriveBackup,
+            lastAutoBackup = settings.lastAutoBackup,
             calendarSuggestions = settings.calendarSuggestions,
             calendarIds = settings.calendarIds,
             calendarOnSince = settings.calendarOnSince,

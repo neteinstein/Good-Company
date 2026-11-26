@@ -54,6 +54,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.EditTimelineEntryUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.EncryptBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.ExportBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.FetchDriveBackupUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.ForgetDriveTokenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GenerateTalkingPointsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GetCurrentLocationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.GiftListUseCases
@@ -142,6 +143,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.RestorePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreReminderUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTagUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RestoreTimelineEntryUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.RunAutoBackupUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.RunWeeklyIdeasUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveChosenContactsUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveGroupUseCase
@@ -150,6 +152,7 @@ import com.neteinstein.goodcompany.core.domain.usecase.SavePlanUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SaveSharedUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SendTestNotificationUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetActivitiesUseCase
+import com.neteinstein.goodcompany.core.domain.usecase.SetAutoBackupFrequencyUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetBackupPasswordUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarChosenUseCase
 import com.neteinstein.goodcompany.core.domain.usecase.SetCalendarSuggestionsUseCase
@@ -354,6 +357,10 @@ class TestGraph(
     val fetchDriveBackup = FetchDriveBackupUseCase(cloudStore)
     val trashOldDriveBackup = TrashOldDriveBackupUseCase(cloudStore)
     val keepOldDriveBackup = KeepOldDriveBackupUseCase(backupKeyRepo)
+    val driveTokens = FakeDriveTokenSource()
+    val runAutoBackup = RunAutoBackupUseCase(backupToDrive, driveTokens, backupKeyRepo, settingsRepo, clock)
+    val setAutoBackupFrequency = SetAutoBackupFrequencyUseCase(settingsRepo)
+    val forgetDriveToken = ForgetDriveTokenUseCase(driveTokens)
     val currentLocation = GetCurrentLocationUseCase(location)
     val observeMeetups = ObserveMeetupStatusUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock)
     val observeLastSeenCard = ObserveLastSeenCardUseCase(friendRepo, hangoutRepo, interactionRepo, settingsRepo, clock, circles)
