@@ -24,16 +24,17 @@ Three workflows:
 
 Every merge to `main` publishes a GitHub release (marked **latest**, not a pre-release), once CI is green on that commit.
 Versions start at `0.1.0` and the patch goes up by one per release (`v0.1.0`, `v0.1.1`, …); the workflow reads the newest
-`v0.1.*` release and adds one. Two R8-optimized, signed APKs are attached:
+`v0.1.*` release and adds one. Two R8-optimized, signed APKs and the Play bundle are attached:
 
 | File | Build type | Use it to test |
 |---|---|---|
 | `good-company-play.apk` | `release` | exactly what goes to Play: contact picker only, no call log |
 | `good-company-sideload.apk` | `sideload` (`.sideload` app id, installs next to the Play build) | everything, incl. full address-book sync, call matching and writing kids/events/notes back to contacts |
+| `good-company-play.aab` | `release`, as an Android App Bundle | not installable directly: the file to upload to Play Console by hand (e.g. the first upload, setup step 2) |
 
 **Where to get them:** the [latest release](../../releases/latest); stable links are
 `…/releases/latest/download/good-company-play.apk` and `…/good-company-sideload.apk`. Each run also keeps
-a `test-apks-<run>` artifact (APKs + R8 `mapping-play.txt`) for 30 days.
+a `test-apks-<run>` artifact (APKs, AAB + R8 `mapping-play.txt`) for 30 days.
 
 **Versions:** `versionCode` = the Test APK run number, `versionName` = `0.1.<n>` (Gradle properties
 `goodcompany.versionCode` / `goodcompany.versionName`; local builds keep `1` / `0.1.0`). To move to `0.2.x` or `1.0.0`,
@@ -47,7 +48,7 @@ change the `v0.1.` prefix in the "Next version" step of `test-apk.yml`.
   The APKs still install, but each runner has its own debug key, so testers must **uninstall the previous test build**
   first, which loses its data. The run shows a warning.
 
-Either way, the workflow verifies both signatures with `apksigner` and re-checks the Play APK's permissions before
+Either way, the workflow verifies both APK signatures with `apksigner` and the bundle's with `jarsigner`, and re-checks the Play APK's permissions before
 publishing.
 
 **In-app updates:** the sideload build's Settings → **App updates** reads the latest release (title
@@ -68,13 +69,14 @@ because `versionCode` is the Test APK run number (the sideload self-update depen
 versionCode twice.
 
 ```
-merge to main → CI green → Test APK (run N) ─┬─ GitHub release v0.1.x (APKs)
-                                             └─ bundleRelease, versionCode N → Play internal track
+merge to main → CI green → Test APK (run N) ─┬─ GitHub release v0.1.x (APKs + AAB)
+                                             └─ the same AAB, versionCode N → Play internal track
 Actions → Publish to Play Store (by hand)  ───── newest internal release → alpha / beta / production
 ```
 
-- **Automatic, every merge:** after the GitHub release, Test APK builds `:androidApp:bundleRelease` (the same
-  `release` build as `good-company-play.apk`, whose permissions were just checked) and uploads it to the **internal**
+- **Automatic, every merge:** Test APK builds `:androidApp:bundleRelease` in the same Gradle run as the APKs (the same
+  `release` build as `good-company-play.apk`, whose permissions were just checked), attaches it to the GitHub release
+  as `good-company-play.aab`, and then uploads it to the **internal**
   track with its R8 mapping (for readable crash reports in Play Console) and the "What's new" text from
   `store-listing/text/<locale>/release_notes.txt`. It is skipped, with a notice, while `PLAY_STORE_SERVICE_ACCOUNT_JSON`
   is missing or the build is signed with the debug key. A Play failure fails the run, but the GitHub release is
@@ -92,7 +94,8 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
 1. **Create the app** in [Play Console](https://play.google.com/console) with package `org.goodcompany.app`, and
    fill in the listing, content rating, Data safety and App access from `store-listing/`.
 2. **Upload the first bundle by hand** (Google requires it), signed with your **upload key**:
-   `./gradlew :androidApp:bundleRelease` with a `keystore.properties`, or take the AAB from a Test APK run. Enrol in
+   `./gradlew :androidApp:bundleRelease` with a `keystore.properties`, or download `good-company-play.aab` from the
+   latest release (signed with the upload key once the keystore secrets are set). Enrol in
    Play App Signing when asked.
 3. **Use the upload key for CI:** the `ANDROID_KEYSTORE_*` secrets must hold that same upload keystore, or Play
    rejects every upload ("wrong key").
@@ -118,7 +121,7 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
 | Artifact | From | Retention |
 |---|---|---|
 | `android-apks` (CI) | debug, release-unsigned, sideload-unsigned APKs | 7 days |
-| `test-apks-<run>` (Test APK) | signed `good-company-play.apk`, `good-company-sideload.apk`, `mapping-play.txt` | 30 days (latest also on the latest release) |
+| `test-apks-<run>` (Test APK) | signed `good-company-play.apk`, `good-company-sideload.apk`, `good-company-play.aab`, `mapping-play.txt` | 30 days (latest also on the latest release) |
 | `r8-mapping` | `mapping.txt` for de-obfuscating release crashes | 30 days |
 | `test-and-coverage-reports` | JUnit XML/HTML + Kover XML/HTML | 14 days |
 | `lint-reports` | Android Lint HTML/XML/SARIF | 14 days |
@@ -139,7 +142,7 @@ Nothing else is secret. The Anthropic API key is supplied by each user in the ap
 
 | Platform | Debug | Release | Distribution |
 |---|---|---|---|
-| Android (Play `release`) | debug keystore (AGP default) | **unsigned** in PR CI. **Signed** test APK on every merge (keystore secrets, else debug key). Locally, signed if `keystore.properties` exists | test APK on the latest release. Play: the AAB goes to the internal track on every merge (with the Play secrets), other tracks by hand with **Publish to Play Store** |
+| Android (Play `release`) | debug keystore (AGP default) | **unsigned** in PR CI. **Signed** test APK on every merge (keystore secrets, else debug key). Locally, signed if `keystore.properties` exists | test APK and AAB on the latest release. Play: the AAB goes to the internal track on every merge (with the Play secrets), other tracks by hand with **Publish to Play Store** |
 | Android (`sideload`) | n/a | **unsigned** in PR CI. **Signed** test APK on every merge; same `keystore.properties` mechanism | test APK on the latest release. Never upload this build to Play (it declares `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` and `REQUEST_INSTALL_PACKAGES`) |
 | iOS | CI builds the simulator app **without signing** | not built in CI | manual: set `TEAM_ID` in `iosApp/Configuration/Signing.xcconfig` (gitignored), Archive in Xcode |
 | Web | n/a | unsigned static bundle (`web-dist` artifact) | not deployed automatically. Any static host works (needs `application/wasm` MIME type) |
