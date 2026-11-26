@@ -8,10 +8,13 @@ import com.neteinstein.goodcompany.core.domain.model.Friend
 import com.neteinstein.goodcompany.core.domain.model.FriendId
 import com.neteinstein.goodcompany.core.domain.model.Hangout
 import com.neteinstein.goodcompany.core.domain.model.HangoutActivity
+import com.neteinstein.goodcompany.core.domain.model.Plan
+import com.neteinstein.goodcompany.core.domain.model.PlanStatus
 import com.neteinstein.goodcompany.core.domain.repository.CalendarDecisionRepository
 import com.neteinstein.goodcompany.core.domain.repository.CalendarReader
 import com.neteinstein.goodcompany.core.domain.repository.FriendRepository
 import com.neteinstein.goodcompany.core.domain.repository.HangoutRepository
+import com.neteinstein.goodcompany.core.domain.repository.PlanRepository
 import com.neteinstein.goodcompany.core.domain.repository.SettingsRepository
 import com.neteinstein.goodcompany.core.domain.util.AppClock
 import com.neteinstein.goodcompany.core.domain.util.toLocalDate
@@ -32,26 +35,77 @@ import kotlin.time.Instant
 /** How an event was tied to a friend. */
 enum class CalendarMatchKind { EMAIL, NAME }
 
-/** The friends an event is with, and how each was found. */
-data class CalendarMatch(val friends: List<Friend>, val by: Set<CalendarMatchKind>)
+/**
+ * The friends an event is with, and how each was found. [ambiguous]: people named only by a first name that someone
+ * else matched too ("Almoço com a Ana" with two Anas), so nobody can tell which one it is; they need an answer
+ * ([CalendarDecisionKind.WHO]), a plan or a logged meetup that day. [names]: those first names, as the title writes them.
+ */
+data class CalendarMatch(
+    val friends: List<Friend>,
+    val by: Set<CalendarMatchKind>,
+    val ambiguous: List<Friend> = emptyList(),
+    val names: List<String> = emptyList(),
+)
 
 /**
- * Ties calendar events to friends (D3): an attendee whose email is one of the friend's [Friend.emails], or the friend
- * named in the title (the share screen's name matching, [ShareMatcher.isNamedIn]). Pure.
+ * Ties calendar events to friends (D3): an attendee whose email is one of the friend's [Friend.emails], their full name
+ * in the title, or their first name (3+ letters, a whole word) when nobody else's first name is the same
+ * (decision 2026-11-26). A first name that a full name or email already explains ("Lunch with Ana Silva") doesn't also
+ * match the other Anas; one that several people share and nothing explains makes them [CalendarMatch.ambiguous]. Pure.
  */
 object CalendarMatcher {
+    private const val MIN_FIRST_NAME = 3
+
     fun match(event: CalendarEvent, friends: List<Friend>): CalendarMatch? {
         val emails = event.attendees.map { it.email.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
+        val title = event.title.lowercase()
+        val sure = mutableListOf<Friend>()
         val by = mutableSetOf<CalendarMatchKind>()
-        val matched = friends.filter { f ->
+        val firstOnly = mutableListOf<Pair<Friend, Set<String>>>()
+        friends.forEach { f ->
             val byEmail = emails.isNotEmpty() && f.emails.any { it.address.trim().lowercase() in emails }
-            val byName = ShareMatcher.isNamedIn(f, event.title)
-            if (byEmail) by += CalendarMatchKind.EMAIL
-            if (byName) by += CalendarMatchKind.NAME
-            byEmail || byName
+            val byFullName = names(f).any { it.contains(' ') && (it in title || it.replace(" ", "") in title) }
+            val firsts = names(f).map { it.substringBefore(' ') }.filter { it.length >= MIN_FIRST_NAME && isWord(it, title) }.toSet()
+            when {
+                byEmail || byFullName -> {
+                    sure += f
+                    if (byEmail) by += CalendarMatchKind.EMAIL
+                    if (byFullName) by += CalendarMatchKind.NAME
+                }
+                firsts.isNotEmpty() -> firstOnly += f to firsts
+            }
         }
-        return if (matched.isEmpty()) null else CalendarMatch(matched, by)
+        // A first name in the title is explained by whoever matched surely and has it.
+        val explained = sure.flatMap { f -> names(f).map { it.substringBefore(' ') } }.toSet()
+        val open = firstOnly.mapNotNull { (f, firsts) -> (firsts - explained).takeIf { it.isNotEmpty() }?.let { f to it } }
+        val count = open.flatMap { it.second }.groupingBy { it }.eachCount()
+        val ambiguous = mutableListOf<Friend>()
+        val names = linkedSetOf<String>()
+        open.forEach { (f, firsts) ->
+            val shared = firsts.filter { (count[it] ?: 0) > 1 }
+            if (shared.isEmpty()) {
+                sure += f
+                by += CalendarMatchKind.NAME
+            } else {
+                ambiguous += f
+                names += shared
+            }
+        }
+        if (sure.isEmpty() && ambiguous.isEmpty()) return null
+        return CalendarMatch(sure, by, ambiguous, names.map { asWritten(it, event.title) })
     }
+
+    /** The names a friend goes by: the one given in the app and the contact's (F19). */
+    private fun names(f: Friend): List<String> = listOf(f.displayName, f.name).map { it.lowercase().trim() }.filter { it.isNotEmpty() }.distinct()
+
+    private fun isWord(word: String, text: String) = wordRegex(word).containsMatchIn(text)
+
+    private fun wordRegex(word: String, ignoreCase: Boolean = false) =
+        Regex("(^|[^\\p{L}])${Regex.escape(word)}($|[^\\p{L}])", if (ignoreCase) setOf(RegexOption.IGNORE_CASE) else emptySet())
+
+    /** [word] as the title writes it ("Ana", not "ana"). */
+    private fun asWritten(word: String, title: String): String =
+        wordRegex(word, ignoreCase = true).find(title)?.value?.trim { !it.isLetter() } ?: word.replaceFirstChar { it.uppercase() }
 }
 
 /** A first guess at the meetup's activity from the event title, in the app's five languages. Null = no idea. */
@@ -100,9 +154,30 @@ data class CalendarSuggestion(
 }
 
 /**
+ * "Who's Ana?" (decision 2026-11-26): an event whose title names a first name several people share, with nothing that
+ * says which of them it is. Answered once for the whole series ([isSeries]) or for this occurrence.
+ */
+data class CalendarQuestion(
+    val event: CalendarEvent,
+    /** The people it could be, in the friends' order. */
+    val candidates: List<Friend>,
+    /** The shared first names, as the title writes them. */
+    val names: List<String>,
+    val date: LocalDate,
+) {
+    val key: String get() = CalendarDecision.whoKey(event)
+
+    val isSeries: Boolean get() = event.seriesId != null
+}
+
+/**
  * Turns calendar events into suggestions (D3, F2). Pure. An event is suggested once it has ended, within the last
  * [LOOK_BACK_DAYS] (so turning the feature on also looks back two months), when it matches at least one friend, and
  * unless the user said "No" to it, "Never" to its series, or already logged a meetup with one of those friends that day.
+ *
+ * A first name several people share (decision 2026-11-26) is settled, in this order, by a plan that day with one of
+ * them, a meetup logged with one of them that day, or the user's answer to "Who's Ana?" ([CalendarDecisionKind.WHO], for
+ * the series). Until then nobody is guessed: the event counts only the people it names surely, and [questions] asks.
  */
 object CalendarSuggester {
     const val LOOK_BACK_DAYS = 60
@@ -121,7 +196,8 @@ object CalendarSuggester {
         now: Instant,
         zone: TimeZone,
         onSince: Instant?,
-    ): List<CalendarSuggestion> = candidates(events, friends, hangouts, decisions, zone)
+        plans: List<Plan> = emptyList(),
+    ): List<CalendarSuggestion> = candidates(events, friends, hangouts, decisions, zone, plans)
         .filter { it.event.end <= now && it.event.end > now - LOOK_BACK_DAYS.days }
         .map { it.copy(lookingBack = onSince != null && it.event.end < onSince) }
         .sortedByDescending { it.event.start }
@@ -136,23 +212,80 @@ object CalendarSuggester {
         hangouts: List<Hangout>,
         decisions: List<CalendarDecision>,
         zone: TimeZone,
+        plans: List<Plan> = emptyList(),
     ): List<CalendarSuggestion> {
+        val loggedOn = loggedOn(hangouts, zone)
+        return matched(events, friends, decisions, zone)
+            .mapNotNull { (e, match, date) ->
+                val who = resolve(match, e, date, decisions, plans, loggedOn) ?: match.friends
+                if (who.isEmpty() || who.any { (it.id to date) in loggedOn }) return@mapNotNull null
+                CalendarSuggestion(e, who, match.by, date, ActivityGuesser.guess(e.title), lookingBack = false)
+            }
+            .distinctBy { it.key }
+            .toList()
+    }
+
+    /**
+     * The "Who's Ana?" questions still open: events from the last [LOOK_BACK_DAYS] up to the end of tomorrow, one per
+     * series. Coming ones first (soonest first), then ended ones (newest first). Pure.
+     */
+    fun questions(
+        events: List<CalendarEvent>,
+        friends: List<Friend>,
+        hangouts: List<Hangout>,
+        decisions: List<CalendarDecision>,
+        plans: List<Plan>,
+        now: Instant,
+        zone: TimeZone,
+    ): List<CalendarQuestion> {
+        val loggedOn = loggedOn(hangouts, zone)
+        val tomorrow = now.toLocalDate(zone).plus(1, DateTimeUnit.DAY)
+        val open = matched(events, friends, decisions, zone)
+            .filter { (e, match, date) -> match.ambiguous.isNotEmpty() && e.end > now - LOOK_BACK_DAYS.days && date <= tomorrow }
+            .filter { (e, match, date) -> resolve(match, e, date, decisions, plans, loggedOn) == null }
+            .map { (e, match, date) -> CalendarQuestion(e, match.ambiguous, match.names, date) }
+            .toList()
+        val (coming, ended) = open.partition { it.event.end > now }
+        return (coming.sortedBy { it.event.start } + ended.sortedByDescending { it.event.start }).distinctBy { it.key }
+    }
+
+    private data class Matched(val event: CalendarEvent, val match: CalendarMatch, val date: LocalDate)
+
+    /** Events that may be meetups (not too long, not answered "No" or "Never") with whoever they name. */
+    private fun matched(events: List<CalendarEvent>, friends: List<Friend>, decisions: List<CalendarDecision>, zone: TimeZone): Sequence<Matched> {
         val no = decisions.filter { it.kind == CalendarDecisionKind.NO }.map { it.key }.toSet()
         val never = decisions.filter { it.kind == CalendarDecisionKind.NEVER }.map { it.key }.toSet()
-        val loggedOn = hangouts.flatMap { h -> h.friendIds.map { it to h.at.toLocalDate(zone) } }.toSet()
         return events
             .asSequence()
             .filter { it.end - it.start <= MAX_EVENT_DAYS.days }
             .filterNot { CalendarDecision.occurrenceKey(it) in no }
             .filterNot { e -> CalendarDecision.seriesKey(e)?.let { it in never } == true }
-            .mapNotNull { e ->
-                val match = CalendarMatcher.match(e, friends) ?: return@mapNotNull null
-                val date = e.start.toLocalDate(zone)
-                if (match.friends.any { (it.id to date) in loggedOn }) return@mapNotNull null
-                CalendarSuggestion(e, match.friends, match.by, date, ActivityGuesser.guess(e.title), lookingBack = false)
-            }
-            .distinctBy { it.key }
-            .toList()
+            .mapNotNull { e -> CalendarMatcher.match(e, friends)?.let { Matched(e, it, e.start.toLocalDate(zone)) } }
+    }
+
+    private fun loggedOn(hangouts: List<Hangout>, zone: TimeZone): Set<Pair<FriendId, LocalDate>> =
+        hangouts.flatMap { h -> h.friendIds.map { it to h.at.toLocalDate(zone) } }.toSet()
+
+    /**
+     * Everyone the event is with once its shared first names are settled, or null while they aren't. A plan that day
+     * with some of them wins, then a meetup logged that day, then the user's answer.
+     */
+    private fun resolve(
+        match: CalendarMatch,
+        event: CalendarEvent,
+        date: LocalDate,
+        decisions: List<CalendarDecision>,
+        plans: List<Plan>,
+        loggedOn: Set<Pair<FriendId, LocalDate>>,
+    ): List<Friend>? {
+        if (match.ambiguous.isEmpty()) return match.friends
+        val planned = plans
+            .filter { it.status != PlanStatus.CANCELLED && (it.date == date || it.occurrences(date, date).isNotEmpty()) }
+            .flatMap { it.friendIds }.toSet()
+        val picked = match.ambiguous.filter { it.id in planned }.ifEmpty { match.ambiguous.filter { (it.id to date) in loggedOn } }
+        if (picked.isNotEmpty()) return match.friends + picked
+        val answer = decisions.firstOrNull { it.kind == CalendarDecisionKind.WHO && it.key == CalendarDecision.whoKey(event) } ?: return null
+        return match.friends + match.ambiguous.filter { it.id in answer.friendIds }
     }
 
     /** Friends with a matched event starting today or tomorrow, soonest first (the home "Before you meet" row). */
@@ -162,10 +295,11 @@ object CalendarSuggester {
         decisions: List<CalendarDecision>,
         now: Instant,
         zone: TimeZone,
+        plans: List<Plan> = emptyList(),
     ): List<Pair<FriendId, LocalDate>> {
         val today = now.toLocalDate(zone)
         val tomorrow = today.plus(1, DateTimeUnit.DAY)
-        return candidates(events, friends, emptyList(), decisions, zone)
+        return candidates(events, friends, emptyList(), decisions, zone, plans)
             .filter { it.event.end > now && it.date in today..tomorrow }
             .sortedBy { it.event.start }
             .flatMap { s -> s.friends.map { it.id to s.date } }
@@ -205,25 +339,64 @@ class ObserveCalendarSuggestionsUseCase(
     private val hangouts: HangoutRepository,
     private val decisions: CalendarDecisionRepository,
     private val settings: SettingsRepository,
+    private val plans: PlanRepository,
     private val clock: AppClock,
 ) {
-    operator fun invoke(): Flow<List<CalendarSuggestion>> =
-        combine(events(), friends.friends, hangouts.hangouts, decisions.decisions, settings.settings) { es, fs, hs, ds, s ->
-            if (!s.calendarSuggestions) {
-                emptyList()
-            } else {
-                CalendarSuggester.suggestions(es, fs, hs, ds, clock.now(), clock.timeZone, s.calendarOnSince)
-            }
+    operator fun invoke(): Flow<List<CalendarSuggestion>> = combine(
+        events(),
+        friends.friends,
+        combine(hangouts.hangouts, plans.plans, ::Pair),
+        decisions.decisions,
+        settings.settings,
+    ) { es, fs, (hs, ps), ds, s ->
+        if (!s.calendarSuggestions) {
+            emptyList()
+        } else {
+            CalendarSuggester.suggestions(es, fs, hs, ds, clock.now(), clock.timeZone, s.calendarOnSince, ps)
         }
+    }
+}
+
+/** The open "Who's Ana?" questions (decision 2026-11-26), coming events first. Empty while suggestions are off. */
+class ObserveCalendarQuestionsUseCase(
+    private val events: ObserveCalendarEventsUseCase,
+    private val friends: FriendRepository,
+    private val hangouts: HangoutRepository,
+    private val decisions: CalendarDecisionRepository,
+    private val settings: SettingsRepository,
+    private val plans: PlanRepository,
+    private val clock: AppClock,
+) {
+    operator fun invoke(): Flow<List<CalendarQuestion>> = combine(
+        events(),
+        friends.friends,
+        combine(hangouts.hangouts, plans.plans, ::Pair),
+        decisions.decisions,
+        settings.settings,
+    ) { es, fs, (hs, ps), ds, s ->
+        if (!s.calendarSuggestions) emptyList() else CalendarSuggester.questions(es, fs, hs, ds, ps, clock.now(), clock.timeZone)
+    }
+}
+
+/**
+ * Answers "Who's Ana?": [friendIds] are the ones it is (empty = none of them), kept for the whole series. Returns the
+ * stored answer; Undo is [UndoCalendarDecisionUseCase].
+ */
+class AnswerCalendarQuestionUseCase(private val decisions: CalendarDecisionRepository, private val clock: AppClock) {
+    suspend operator fun invoke(question: CalendarQuestion, friendIds: Collection<FriendId>): CalendarDecision {
+        val chosen = question.candidates.map { it.id }.filter { it in friendIds }
+        return CalendarDecision(question.key, CalendarDecisionKind.WHO, clock.now(), chosen).also { decisions.upsert(it) }
+    }
 }
 
 /** "No" (this occurrence) or "Never for this series". Undo with [UndoCalendarDecisionUseCase]. */
 class DecideCalendarSuggestionUseCase(private val decisions: CalendarDecisionRepository, private val clock: AppClock) {
-    /** The stored decision, or null when [kind] is NEVER and the event doesn't repeat. */
+    /** The stored decision, or null when [kind] is NEVER and the event doesn't repeat (or is WHO: see [AnswerCalendarQuestionUseCase]). */
     suspend operator fun invoke(suggestion: CalendarSuggestion, kind: CalendarDecisionKind): CalendarDecision? {
         val key = when (kind) {
             CalendarDecisionKind.NO -> suggestion.key
             CalendarDecisionKind.NEVER -> CalendarDecision.seriesKey(suggestion.event) ?: return null
+            CalendarDecisionKind.WHO -> return null
         }
         return CalendarDecision(key, kind, clock.now()).also { decisions.upsert(it) }
     }

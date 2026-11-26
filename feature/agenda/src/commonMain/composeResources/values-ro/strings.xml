@@ -61,6 +61,12 @@
     <string name="cal_empty_body">Evenimentele cu prietenii tăi din calendarele alese apar aici după ce se termină.</string>
     <string name="cal_msg_no">Nu mai sugerez „%1$s”</string>
     <string name="cal_msg_never">Gata cu sugestiile pentru „%1$s”</string>
+    <string name="cal_who_title">Cine este %1$s?</string>
+    <string name="cal_who_event">„%1$s” · %2$s</string>
+    <string name="cal_who_series">Se reține pentru toate „%1$s”</string>
+    <string name="cal_who_none">Niciuna dintre aceste persoane</string>
+    <string name="cal_msg_who">Salvat: „%1$s” este cu %2$s</string>
+    <string name="cal_msg_who_none">Salvat: „%1$s” nu este cu niciuna dintre aceste persoane</string>
     <string name="today_before_you_meet">Înainte să vă vedeți</string>
     <string name="today_catch_up">E timpul să vă revedeți</string>
     <string name="today_drifting">Vă îndepărtați</string>

@@ -43,17 +43,32 @@ enum class CalendarDecisionKind {
 
     /** "Never for this series": no more suggestions from a repeating event. */
     NEVER,
+
+    /**
+     * "Who's Ana?" (decision 2026-11-26): the title names a first name several people share, and the user said which of
+     * them it is ([CalendarDecision.friendIds]; empty = none of them). Kept for the whole series when the event repeats.
+     */
+    WHO,
 }
 
 /**
- * A remembered answer to a calendar suggestion. [key] is [CalendarDecision.occurrenceKey] for [CalendarDecisionKind.NO]
- * and [CalendarDecision.seriesKey] for [CalendarDecisionKind.NEVER]. Part of the backup.
+ * A remembered answer to a calendar suggestion. [key] is [CalendarDecision.occurrenceKey] for [CalendarDecisionKind.NO],
+ * [CalendarDecision.seriesKey] for [CalendarDecisionKind.NEVER] and [CalendarDecision.whoKey] for
+ * [CalendarDecisionKind.WHO], which alone carries [friendIds]. Part of the backup: ids only, never event details.
  */
 @Serializable
-data class CalendarDecision(val key: String, val kind: CalendarDecisionKind, val decidedAt: Instant) {
+data class CalendarDecision(
+    val key: String,
+    val kind: CalendarDecisionKind,
+    val decidedAt: Instant,
+    val friendIds: List<FriendId> = emptyList(),
+) {
     companion object {
         fun occurrenceKey(event: CalendarEvent) = "event:${event.id}@${event.start.epochSeconds}"
 
         fun seriesKey(event: CalendarEvent): String? = event.seriesId?.let { "series:$it" }
+
+        /** "Who's Ana?" is answered once for a whole series, else for the one occurrence. */
+        fun whoKey(event: CalendarEvent): String = "who:" + (seriesKey(event) ?: occurrenceKey(event))
     }
 }

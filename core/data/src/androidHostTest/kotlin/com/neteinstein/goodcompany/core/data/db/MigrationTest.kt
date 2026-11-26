@@ -7,6 +7,8 @@ import com.neteinstein.goodcompany.core.domain.model.AppSettings
 import com.neteinstein.goodcompany.core.domain.model.Attachment
 import com.neteinstein.goodcompany.core.domain.model.AttachmentKind
 import com.neteinstein.goodcompany.core.domain.model.Birthday
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecision
+import com.neteinstein.goodcompany.core.domain.model.CalendarDecisionKind
 import com.neteinstein.goodcompany.core.domain.model.CatchUpCounts
 import com.neteinstein.goodcompany.core.domain.model.CircleColor
 import com.neteinstein.goodcompany.core.domain.model.Closeness
@@ -1114,6 +1116,28 @@ class MigrationTest {
         val after = database.readPreferences(AppSettings())
         assertEquals(setOf(LogKind.MEETUP, LogKind.MESSAGE), after.catchUpKinds)
         assertEquals(listOf("Voice note"), after.catchUpCustomKinds)
+        driver.close()
+    }
+
+    @Test
+    fun version33to34_calendarAnswersKeepTheirKind_startWithNoPeople_andWhoRoundTrips() = runTest {
+        // Decision 2026-11-26 ("Calendar · who's Ana?").
+        val driver = driverAt(33)
+        driver.execute(
+            null,
+            "INSERT INTO calendar_decision (key, kind, decided_at) VALUES ('series:padel', 'NEVER', 1700000000000)",
+            0,
+        ).await()
+
+        GoodCompanyDatabase.Schema.migrate(driver, 33, GoodCompanyDatabase.Schema.version).await()
+        val database = GoodCompanyDatabase(driver)
+        val old = database.readCalendarDecisions().single()
+        assertEquals(CalendarDecisionKind.NEVER, old.kind)
+        assertTrue(old.friendIds.isEmpty())
+
+        val who = CalendarDecision("who:series:padel", CalendarDecisionKind.WHO, old.decidedAt, listOf(FriendId("ana"), FriendId("aj")))
+        database.writeCalendarDecision(who)
+        assertEquals(who, database.readCalendarDecisions().single { it.kind == CalendarDecisionKind.WHO })
         driver.close()
     }
 
