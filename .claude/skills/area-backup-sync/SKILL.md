@@ -64,8 +64,8 @@ of `persistence-change`.
 
 ## Automatic backup, "Back up now", restore from the intro (issue #166)
 
-- **Why Drive "didn't work" on the phone:** the test APKs from the GitHub release are signed with the CI runner's
-  throwaway debug key when the keystore secrets are missing, so no Android OAuth client can ever match
+- **Why Drive "didn't work" on the phone:** older test APKs from the GitHub release were signed with the CI runner's
+  throwaway debug key (the workflow now requires the keystore secrets), so no Android OAuth client could match
   (`DEVELOPER_ERROR`). The "not set up" dialog (`DriveSetupDialog`) now names the package and SHA-1 to register
   (`oauthClientIdentity()` in `Platform.android.kt`). Other sign-in failures show Google's status
   (`SettingsMessage.DriveSignInFailed`); network ones say offline.

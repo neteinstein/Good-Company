@@ -3,7 +3,8 @@
 # Runs after the CI workflow succeeds on a push to main (a merged PR), so only green code is published.
 # Builds the Play (`release`) and `sideload` APKs and the Play bundle (AAB), signs them, and publishes them as the
 # rolling GitHub release tagged v0.1.<n> (the first is v0.1.0; marked "latest") plus a workflow artifact.
-# With the release keystore and PLAY_STORE_SERVICE_ACCOUNT_JSON secrets it also uploads that bundle
+# Everything is signed with the upload keystore from the ANDROID_KEYSTORE_* secrets; without them the run fails.
+# With the PLAY_STORE_SERVICE_ACCOUNT_JSON secret it also uploads that bundle
 # (versionCode = this run's number) to Google Play's internal track. publish-play-store.yml promotes it further.
 name: Test APK
 
@@ -70,33 +71,30 @@ jobs:
             cp androidApp/google-services.json.ci androidApp/google-services.json
           fi
 
-      # With the keystore secrets, builds keep one signature, so each one installs over the last.
-      # Without them, the CI debug key is used: the APKs install, but testers must uninstall between builds.
+      # Every release is signed with the upload keystore from the repository secrets. There is no debug-key
+      # fallback: Play rejects debug-signed bundles, and the in-app update needs one stable signature.
       - name: Signing
-        id: signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
-            {
-              echo "storeFile=$RUNNER_TEMP/release.jks"
-              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
-              echo "keyAlias=$ANDROID_KEY_ALIAS"
-              echo "keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
-            } > keystore.properties
-            echo "flag=" >> "$GITHUB_OUTPUT"
-            echo "release=true" >> "$GITHUB_OUTPUT"
-            echo "key=release keystore" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::No ANDROID_KEYSTORE_* secrets: test APKs are signed with the CI debug key (uninstall before updating)."
-            echo "flag=-Pgoodcompany.signWithDebugKey=true" >> "$GITHUB_OUTPUT"
-            echo "release=false" >> "$GITHUB_OUTPUT"
-            echo "key=CI debug key (uninstall the previous test build first)" >> "$GITHUB_OUTPUT"
+          MISSING=""
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS; do
+            [ -n "${!name}" ] || MISSING="$MISSING $name"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing signing secrets:$MISSING. Releases are only signed with the upload keystore (CI_CD.md, 'Secrets')."
+            exit 1
           fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+          } > keystore.properties
 
       # One Gradle run, so the APK and the bundle share the same R8 output (and mapping.txt).
       - name: Assemble release (Play) + sideload, bundle release (Play)
@@ -104,17 +102,23 @@ jobs:
           ./gradlew :androidApp:assembleRelease :androidApp:assembleSideload :androidApp:bundleRelease
           -Pgoodcompany.versionCode=${{ env.BUILD }}
           -Pgoodcompany.versionName=${{ env.VERSION }}
-          ${{ steps.signing.outputs.flag }}
 
       - name: Verify signatures and Play permissions
         run: |
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           for apk in androidApp/build/outputs/apk/release/*.apk androidApp/build/outputs/apk/sideload/*.apk; do
-            "$BT/apksigner" verify "$apk" || { echo "::error::$apk is not signed"; exit 1; }
+            CERTS=$("$BT/apksigner" verify --print-certs "$apk") || { echo "::error::$apk is not signed"; exit 1; }
+            if echo "$CERTS" | grep -q "CN=Android Debug"; then
+              echo "::error::$apk is signed with a debug key"; exit 1
+            fi
           done
-          # App bundles are jar-signed. Not -strict: upload and debug keys are self-signed, which -strict rejects.
-          jarsigner -verify androidApp/build/outputs/bundle/release/*.aab | grep -q "jar verified" \
+          # App bundles are jar-signed. Not -strict: upload keys are self-signed, which -strict rejects.
+          AAB=$(ls androidApp/build/outputs/bundle/release/*.aab)
+          jarsigner -verify "$AAB" | grep -q "jar verified" \
             || { echo "::error::The Play bundle is not signed"; exit 1; }
+          if keytool -printcert -jarfile "$AAB" | grep -q "CN=Android Debug"; then
+            echo "::error::The Play bundle is signed with a debug key; Play only accepts the upload key"; exit 1
+          fi
           PERMS=$("$BT/aapt2" dump permissions androidApp/build/outputs/apk/release/*.apk)
           if echo "$PERMS" | grep -E "READ_SMS|RECEIVE_SMS|SEND_SMS|READ_CALL_LOG|READ_CONTACTS|WRITE_CONTACTS|REQUEST_INSTALL_PACKAGES|AD_ID"; then
             echo "::error::Release (Play) APK declares a restricted permission"; exit 1
@@ -150,7 +154,6 @@ jobs:
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-          SIGNED_WITH: ${{ steps.signing.outputs.key }}
         run: |
           SUBJECT=$(git log -1 --format=%s "$SHA")
           cat > notes.md <<EOF
@@ -162,7 +165,7 @@ jobs:
           | \`good-company-sideload.apk\` | Everything: full address-book sync and call matching. Installs next to the Play build (\`.sideload\` id). |
           | \`good-company-play.aab\` | The Play build as an Android App Bundle, for uploading to Google Play by hand. |
 
-          Signed with: $SIGNED_WITH.
+          Signed with the release upload keystore.
           Both are R8-optimized release builds. \`mapping-play.txt\` de-obfuscates Play-build crashes.
           Built by ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}. The sideload build is not for the Play Store.
           EOF
@@ -173,7 +176,7 @@ jobs:
             --notes-file notes.md
 
       # Google Play: the bundle attached above (the same `release` build as good-company-play.apk), to the internal track.
-      # Skipped (with a notice) until both the release keystore and the Play service account are set up,
+      # Skipped (with a notice) until the Play service account is set up,
       # so the GitHub release above never depends on Play. See CI_CD.md, "Google Play".
       - name: Google Play upload configured?
         id: play
@@ -182,9 +185,6 @@ jobs:
         run: |
           if [ -z "$PLAY_STORE_SERVICE_ACCOUNT_JSON" ]; then
             echo "::notice::No PLAY_STORE_SERVICE_ACCOUNT_JSON secret: the bundle is not uploaded to Google Play."
-            echo "upload=false" >> "$GITHUB_OUTPUT"
-          elif [ "${{ steps.signing.outputs.release }}" != "true" ]; then
-            echo "::warning::No release keystore: Play only accepts bundles signed with the upload key, so nothing is uploaded."
             echo "upload=false" >> "$GITHUB_OUTPUT"
           else
             echo "upload=true" >> "$GITHUB_OUTPUT"
@@ -219,8 +219,6 @@ jobs:
         run: rm -f "$RUNNER_TEMP/play-store-key.json" "$RUNNER_TEMP/release.jks" keystore.properties
 
       - name: Summary
-        env:
-          SIGNED_WITH: ${{ steps.signing.outputs.key }}
         run: |
           URL="${{ github.server_url }}/${{ github.repository }}/releases/download/$RELEASE_TAG"
           {
@@ -229,6 +227,6 @@ jobs:
             echo "- Play build: $URL/good-company-play.apk"
             echo "- Sideload build: $URL/good-company-sideload.apk"
             echo "- Play bundle: $URL/good-company-play.aab"
-            echo "- Signed with: $SIGNED_WITH"
+            echo "- Signed with: release upload keystore"
             echo "- Google Play internal track: ${{ steps.play.outputs.upload == 'true' && 'uploaded (see above)' || 'not uploaded' }}"
           } >> "$GITHUB_STEP_SUMMARY"

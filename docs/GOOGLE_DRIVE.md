@@ -40,10 +40,9 @@ Nothing goes into the code: Play services' `AuthorizationClient` matches the app
 certificate. A missing client surfaces as `DEVELOPER_ERROR`, which the app shows as "not set up", in a dialog that
 names the package and the SHA-1 of the certificate the running build is signed with (copy it into the client).
 
-**Test APKs from the GitHub release (issue #166).** Without the `ANDROID_KEYSTORE_*` secrets, the Test APK workflow
-signs with the CI runner's debug key, which is a new key on every run ("Signed with: CI debug key" in the release
-notes). No OAuth client can match a key that changes with every build, so Drive always fails with "not set up" on
-those APKs. Add the keystore secrets (CI_CD.md), then register that keystore's SHA-1 for
+**Test APKs from the GitHub release (issue #166).** Older releases were signed with the CI runner's debug key, a new
+key on every run, so no OAuth client could match and Drive always failed with "not set up". The Test APK workflow
+now requires the `ANDROID_KEYSTORE_*` secrets (CI_CD.md) and signs every build with that keystore; register its SHA-1 for
 `org.goodcompany.app.sideload` (and for `org.goodcompany.app` if you test the Play APK).
 
 ## 3. iOS

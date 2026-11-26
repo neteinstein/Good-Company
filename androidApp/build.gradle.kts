@@ -20,10 +20,8 @@ if (file("google-services.json").exists()) {
 val ciVersionCode = providers.gradleProperty("goodcompany.versionCode").orNull?.toIntOrNull()
 val ciVersionName = providers.gradleProperty("goodcompany.versionName").orNull?.takeIf { it.isNotBlank() }
 
-// Without a real keystore, -Pgoodcompany.signWithDebugKey=true signs release/sideload with the debug key so the
-// APKs still install on a test device (never for anything uploaded to Play).
-val signWithDebugKey = providers.gradleProperty("goodcompany.signWithDebugKey").orNull == "true"
-
+// Release and sideload builds are only ever signed with the upload keystore in keystore.properties (written from
+// the repository secrets in CI). Without it they stay unsigned; they are never signed with the debug key.
 val signingProps = Properties().apply {
     rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
@@ -63,7 +61,6 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
-                ?: signingConfigs.getByName("debug").takeIf { signWithDebugKey }
         }
         // Same as release, plus READ_CALL_LOG (src/sideload/AndroidManifest.xml).
         // Google Play restricts that permission to default dialer apps, so this build is for sideloading only.
