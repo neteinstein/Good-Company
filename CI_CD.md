@@ -42,14 +42,13 @@ change the `v0.1.` prefix in the "Next version" step of `test-apk.yml`.
 
 **Signing:**
 
-- With the `ANDROID_KEYSTORE_*` secrets set, both APKs are signed with that keystore, so every test build installs
-  over the previous one and keeps its data.
-- Without them, the workflow passes `-Pgoodcompany.signWithDebugKey=true`, which signs with the runner's debug key.
-  The APKs still install, but each runner has its own debug key, so testers must **uninstall the previous test build**
-  first, which loses its data. The run shows a warning.
+- Every release (both APKs and the bundle) is signed with the upload keystore from the `KEYSTORE_*` / `KEY_*` secrets,
+  so every test build installs over the previous one and Play accepts the bundle.
+- There is no debug-key fallback: if `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD` or `KEY_ALIAS` is
+  missing, the run fails before building and nothing is released.
 
-Either way, the workflow verifies both APK signatures with `apksigner` and the bundle's with `jarsigner`, and re-checks the Play APK's permissions before
-publishing.
+The workflow verifies both APK signatures with `apksigner` and the bundle's with `jarsigner`, fails if any of them
+carries a debug certificate (`CN=Android Debug`), and re-checks the Play APK's permissions before publishing.
 
 **In-app updates:** the sideload build's Settings → **App updates** reads the latest release (title
 `<version> (build #<run>)`, asset `good-company-sideload.apk`) and offers the build when its run number is above the
@@ -79,7 +78,7 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
   as `good-company-play.aab`, and then uploads it to the **internal**
   track with its R8 mapping (for readable crash reports in Play Console) and the "What's new" text from
   `store-listing/text/<locale>/release_notes.txt`. It is skipped, with a notice, while `PLAY_STORE_SERVICE_ACCOUNT_JSON`
-  is missing or the build is signed with the debug key. A Play failure fails the run, but the GitHub release is
+  is missing. A Play failure fails the run, but the GitHub release is
   already out.
 - **By hand, other tracks:** **Actions → Publish to Play Store → Run workflow**, pick `track` (`alpha` = closed
   testing, `beta` = open testing, `production`), `from` (normally `internal`) and `status` (`completed` rolls it out;
@@ -95,9 +94,9 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
    fill in the listing, content rating, Data safety and App access from `store-listing/`.
 2. **Upload the first bundle by hand** (Google requires it), signed with your **upload key**:
    `./gradlew :androidApp:bundleRelease` with a `keystore.properties`, or download `good-company-play.aab` from the
-   latest release (signed with the upload key once the keystore secrets are set). Enrol in
+   latest release (always signed with the upload key from the keystore secrets). Enrol in
    Play App Signing when asked.
-3. **Use the upload key for CI:** the `ANDROID_KEYSTORE_*` secrets must hold that same upload keystore, or Play
+3. **Use the upload key for CI:** the `KEYSTORE_*` / `KEY_*` secrets must hold that same upload keystore, or Play
    rejects every upload ("wrong key").
 4. **Service account:** in Google Cloud (the project linked under Play Console → Setup → API access), create a service
    account and a JSON key. In Play Console → **Users and permissions → Invite new users**, add the service account's
@@ -132,7 +131,7 @@ Actions → Publish to Play Store (by hand)  ───── newest internal rel
 | Secret | Used by | Notes |
 |---|---|---|
 | `GOOGLE_SERVICES_JSON` | Build (Android) on `push`/`workflow_dispatch`, and Test APK | Full contents of the real `google-services.json`. **Pull requests always use the committed placeholder** `androidApp/google-services.json.ci`, so secrets never reach PR builds (including from forks). If the secret is missing, the placeholder is used everywhere. |
-| `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Test APK | Optional. `base64 -w0 your.jks` for the first; the key password falls back to the store password if empty. The workflow writes them into a temporary `keystore.properties`, the same file local signed builds use. Use your **upload key**, never the Play App Signing key: Play uploads (below) are only accepted with the upload key. |
+| `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` | Test APK | **Required**: the run fails without the first three. `base64 -w0 your.jks` for the first; the key password falls back to the store password if empty. The workflow writes them into a temporary `keystore.properties`, the same file local signed builds use. Use your **upload key**, never the Play App Signing key: Play uploads (below) are only accepted with the upload key. |
 | `PLAY_STORE_SERVICE_ACCOUNT_JSON` | Test APK, Publish to Play Store | Optional. The service account's JSON key ([Google Play](#google-play), setup step 4). Without it, nothing is uploaded to Play. |
 | *(planned)* App Store Connect API key, distribution certificate + provisioning profile | iOS archive/upload | Not wired yet. |
 
@@ -142,7 +141,7 @@ Nothing else is secret. The Anthropic API key is supplied by each user in the ap
 
 | Platform | Debug | Release | Distribution |
 |---|---|---|---|
-| Android (Play `release`) | debug keystore (AGP default) | **unsigned** in PR CI. **Signed** test APK on every merge (keystore secrets, else debug key). Locally, signed if `keystore.properties` exists | test APK and AAB on the latest release. Play: the AAB goes to the internal track on every merge (with the Play secrets), other tracks by hand with **Publish to Play Store** |
+| Android (Play `release`) | debug keystore (AGP default) | **unsigned** in PR CI. **Signed** test APK and AAB on every merge (keystore secrets, required). Locally, signed if `keystore.properties` exists | test APK and AAB on the latest release. Play: the AAB goes to the internal track on every merge (with the Play secrets), other tracks by hand with **Publish to Play Store** |
 | Android (`sideload`) | n/a | **unsigned** in PR CI. **Signed** test APK on every merge; same `keystore.properties` mechanism | test APK on the latest release. Never upload this build to Play (it declares `READ_CALL_LOG`, `READ_CONTACTS`, `WRITE_CONTACTS` and `REQUEST_INSTALL_PACKAGES`) |
 | iOS | CI builds the simulator app **without signing** | not built in CI | manual: set `TEAM_ID` in `iosApp/Configuration/Signing.xcconfig` (gitignored), Archive in Xcode |
 | Web | n/a | unsigned static bundle (`web-dist` artifact) | not deployed automatically. Any static host works (needs `application/wasm` MIME type) |
@@ -152,9 +151,9 @@ Nothing else is secret. The Anthropic API key is supplied by each user in the ap
 ```bash
 cp androidApp/google-services.json.ci androidApp/google-services.json   # only needed for release builds
 ./gradlew :androidApp:assembleDebug :androidApp:assembleRelease :androidApp:assembleSideload
-# What the Test APK workflow builds, signed with the debug key when there's no keystore.properties:
-./gradlew :androidApp:assembleRelease :androidApp:assembleSideload \
-  -Pgoodcompany.versionCode=42 -Pgoodcompany.versionName=0.1.42 -Pgoodcompany.signWithDebugKey=true
+# What the Test APK workflow builds (signed only if keystore.properties points at the upload keystore):
+./gradlew :androidApp:assembleRelease :androidApp:assembleSideload :androidApp:bundleRelease \
+  -Pgoodcompany.versionCode=42 -Pgoodcompany.versionName=0.1.42
 ./gradlew testDebugUnitTest koverXmlReport koverVerify
 ./gradlew spotlessCheck :androidApp:lintDebug
 ./gradlew :composeApp:wasmJsBrowserDistribution
